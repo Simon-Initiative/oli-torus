@@ -116,6 +116,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     <React.Fragment>
       <PartsLayoutRenderer
         parts={parts}
+        state={attemptState.snapshot}
         onPartInit={handlePartInit}
         onPartReady={handlePartReady}
         onPartSave={handlePartSave}
@@ -126,6 +127,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     <div className="content" style={styles}>
       <PartsLayoutRenderer
         parts={parts}
+        state={attemptState.snapshot}
         onPartInit={handlePartInit}
         onPartReady={handlePartReady}
         onPartSave={handlePartSave}

@@ -143,7 +143,7 @@ const DeckLayoutFooter: React.FC = () => {
     });
 
     // always process mutateStates
-    actionsByType.mutateState.forEach((action) => {
+    actionsByType.mutateState.forEach((action: any) => {
       // TODO: mutate state
     });
 
@@ -188,7 +188,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
   }, [lastCheckResults]);
 
-  // util / handler funcs
   const checkHandler = () => {
     setIsLoading(true);
     if (displayFeedback) setDisplayFeedback(false);

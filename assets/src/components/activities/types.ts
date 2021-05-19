@@ -81,6 +81,7 @@ export interface ActivityState {
   parts: PartState[];
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
+  snapshot?: any;
 }
 
 export interface Choice extends Identifiable, HasContent {}

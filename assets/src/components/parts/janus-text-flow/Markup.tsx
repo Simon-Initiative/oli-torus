@@ -26,7 +26,13 @@ const templatizeText = (text: string, state: any) => {
 
   // check for state items that were included in the string
   const vals = vars.map((v) => {
-    const stateItem = state.find((item: any) => item.id === v);
+    // TODO: evaluate expressions?
+    const stateValue = state[v];
+    if (!stateValue) {
+      return;
+    }
+    return Array.isArray(stateValue) ? stateValue.join(' ') : stateValue;
+    /* const stateItem = state.find((item: any) => item.id === v);
     if (!stateItem) {
       return;
     }
@@ -34,7 +40,7 @@ const templatizeText = (text: string, state: any) => {
     // return stateItem or stateItem.value if set
     return !!stateItem?.value && Array.isArray(stateItem.value)
       ? stateItem?.value?.join(' ')
-      : stateItem.value;
+      : stateItem.value; */
   });
 
   vars.forEach((v, index) => {

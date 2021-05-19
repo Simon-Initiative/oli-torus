@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
-import { PartComponentDefinition } from 'components/activities/types';
+import { ActivityState, PartComponentDefinition } from 'components/activities/types';
 import React from 'react';
 import PartComponent from './PartComponent';
 
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];
-  state?: any[];
+  state?: ActivityState;
   onPartInit?: any;
   onPartReady?: any;
   onPartSave?: any;
@@ -18,7 +18,7 @@ const defaultHandler = async () => {
 
 const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   parts,
-  state = [],
+  state = {},
   onPartInit = defaultHandler,
   onPartReady = defaultHandler,
   onPartSave = defaultHandler,

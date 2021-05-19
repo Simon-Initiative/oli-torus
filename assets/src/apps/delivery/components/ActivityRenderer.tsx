@@ -16,6 +16,7 @@ import {
 } from 'components/activities/types';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
 import { selectPreviewMode } from '../store/features/page/slice';
 
 interface ActivityRendererProps {
@@ -210,10 +211,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     };
   }, []);
 
+  // send a state snapshot of everything in with the attempt
+  // because we need at least read only access to cross activity values and extrinsic
+  // *maybe* better to have a onInit callback and send it as a response?
+  // because this is BIG
+  const envSnapshot = getEnvState(defaultGlobalEnv);
+  const fullState = { ...attempt, snapshot: envSnapshot };
+
   const elementProps = {
     graded: false,
     model: JSON.stringify(activity),
-    state: JSON.stringify(attempt), // TODO: send *all* state, not just this one (expensive!)
+    state: JSON.stringify(fullState),
     preview: isPreviewMode,
     progressState: 'progressState',
     userId: currentUserId,
