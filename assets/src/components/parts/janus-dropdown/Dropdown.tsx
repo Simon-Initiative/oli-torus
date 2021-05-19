@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { CapiVariableTypes } from 'adaptivity/capi';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { parseBool } from 'utils/helpers';
 import { StateVariable } from '../types/parts';
