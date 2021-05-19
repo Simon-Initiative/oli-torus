@@ -1,5 +1,8 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from 'adaptivity/capi';
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { parseBool } from 'utils/helpers';
+import { StateVariable } from '../types/parts';
 
 const Dropdown: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -47,13 +50,6 @@ const Dropdown: React.FC<any> = (props) => {
     dropDownStyle.width = `${Number(width) - 10}px`;
   }
 
-  const handleChange = (event: any) => {
-    const val = Number(event.target.value);
-    // Update/set the value
-    setSelection(val);
-    //TODO add save state code later
-  };
-
   useEffect(() => {
     if (typeof props?.model === 'string') {
       setModel(JSON.parse(props.model));
@@ -64,7 +60,7 @@ const Dropdown: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    //TODO handle value changes on state updates
+    handleActivityStateChange(state);
   }, [state]);
 
   useEffect(() => {
@@ -72,25 +68,25 @@ const Dropdown: React.FC<any> = (props) => {
       activityId: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `${id}.enabled`,
           key: 'enabled',
           type: 4,
           value: true,
         },
         {
-          id: `stage.${id}.selectedIndex`,
+          id: `${id}.selectedIndex`,
           key: 'selectedIndex',
           type: 1,
           value: -1,
         },
         {
-          id: `stage.${id}.selectedItem`,
+          id: `${id}.selectedItem`,
           key: 'selectedItem',
           type: 2,
           value: '',
         },
         {
-          id: `stage.${id}.value`,
+          id: `${id}.value`,
           key: 'value',
           type: 2,
           value: 'NULL',
@@ -98,6 +94,101 @@ const Dropdown: React.FC<any> = (props) => {
       ],
     });
   }, []);
+
+  const saveState = ({
+    selectedIndex,
+    selectedItem,
+    value,
+    enabled,
+  }: {
+    selectedIndex: number;
+    selectedItem: string;
+    value: string;
+    enabled: boolean;
+  }) => {
+    props.onSave({
+      activityId: `${id}`,
+      partResponses: [
+        {
+          id: `${id}.enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          id: `${id}.selectedIndex`,
+          key: 'selectedIndex',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedIndex,
+        },
+        {
+          id: `${id}.selectedItem`,
+          key: 'selectedItem',
+          type: CapiVariableTypes.STRING,
+          value: selectedItem,
+        },
+        {
+          id: `${id}.value`,
+          key: 'value',
+          type: CapiVariableTypes.STRING,
+          value: value,
+        },
+      ],
+    });
+  };
+
+  const handleChange = (event: any) => {
+    const val = Number(event.target.value);
+    // Update/set the value
+    setSelection(val);
+    saveState({
+      selectedIndex: val,
+      selectedItem: event.target.options[event.target.selectedIndex].text,
+      value: event.target.options[event.target.selectedIndex].text,
+      enabled,
+    });
+  };
+
+  const handleActivityStateChange = (stateData: StateVariable[]) => {
+    // override text value from state
+    //** Changed `stage.${id}` to `stage.${id}.` and this might need to be done in all the components*
+    //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/
+    //** doing `stage.${id}` always get all the variables starting with dropdownInput instead of just filtering variables with dropdownInput id*/
+    const interested = stateData.filter(
+      (stateVar: { id: string | string[] }) => stateVar.id.indexOf(`${id}.`) === 0,
+    );
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        switch (stateVar.key) {
+          case 'selectedIndex':
+            // handle selectedItem, which is a number/index
+            // eslint-disable-next-line no-case-declarations
+            const stateSelection = Number(stateVar.value);
+            if (selection !== stateSelection) {
+              setSelection(stateSelection);
+              setSelectedItem(optionLabels[stateSelection - 1]);
+            }
+            break;
+          case 'selectedItem':
+            // handle selectedItem, which is a string
+            // eslint-disable-next-line no-case-declarations
+            const stateSelectedItem = String(stateVar.value);
+            if (selectedItem !== stateSelectedItem) {
+              const selectionIndex: number = optionLabels.findIndex((str: string) =>
+                stateSelectedItem.includes(str),
+              );
+              setSelectedItem(stateSelectedItem);
+              setSelection(selectionIndex + 1);
+            }
+            break;
+          case 'enabled':
+            // check for boolean and string truthiness
+            setEnabled(parseBool(stateVar.value));
+            break;
+        }
+      });
+    }
+  };
 
   // Generate a list of options using optionLabels
   const dropdownOptions = () => {

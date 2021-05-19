@@ -13,3 +13,10 @@ export interface JanusAbsolutePositioned extends CustomProperties {
   width?: number;
   height?: number;
 }
+
+export interface StateVariable {
+  id: string;
+  key: string;
+  type: number;
+  value: boolean;
+}
