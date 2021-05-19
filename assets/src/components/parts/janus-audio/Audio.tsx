@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { StateVariable } from '../types/parts';
 
 // TODO: fix typing
 const Audio: React.FC<any> = (props) => {
@@ -43,7 +44,7 @@ const Audio: React.FC<any> = (props) => {
   };
   const onReady = props.onReady;
   const [showControls, setShowControls] = useState(true);
-
+  const [classes, setClasses] = useState<any>(customCssClass);
   let finalSrc = src;
   if (startTime && startTime >= 0) {
     finalSrc = `${finalSrc}#t=${startTime || 0}`;
@@ -213,10 +214,27 @@ const Audio: React.FC<any> = (props) => {
     });
   }, []);
 
+  useEffect(() => {
+    handleStateChange(state);
+  }, [state]);
+
+  const handleStateChange = (data: StateVariable[]) => {
+    // this runs every time state is updated from *any* source
+    // the global variable state
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${props.id}.`) === 0);
+
+    interested.forEach((stateVar) => {
+      switch (stateVar.key) {
+        case 'customCssClass':
+          setClasses(String(stateVar.value));
+          break;
+      }
+    });
+  };
   return (
     <audio
       data-janus-type={props.type}
-      className={customCssClass}
+      className={classes}
       style={audioStyles}
       autoPlay={autoPlay}
       controls={showControls}
