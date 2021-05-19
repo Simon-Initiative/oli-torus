@@ -1,5 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { parseBool } from 'utils/helpers';
+import { StateVariable } from '../types/parts';
 
 const NavigationButton: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -53,35 +55,32 @@ const NavigationButton: React.FC<any> = (props) => {
   }
 
   const handleButtonPress = () => {
-    return;
-    //TODO onSubmitActivity not yet implemented
-    /* props.onSubmitActivity({
+    props.onSubmit({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `${id}.Selected`,
           key: 'Selected',
           type: 4,
           value: true,
         },
       ],
-    }); */
+    });
   };
   if (buttonSelected) {
     setButtonSelected(false);
     handleButtonPress();
-    //TODO onSubmitActivity not yet implemented
-    /*  props.onSaveActivity({
+    props.onSave({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `${id}.Selected`,
           key: 'Selected',
           type: 4,
           value: false,
         },
       ],
-    }); */
+    });
   }
   useEffect(() => {
     if (typeof props?.model === 'string') {
@@ -93,57 +92,121 @@ const NavigationButton: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    //TODO handle value changes on state updates
+    handleStateChange(state);
   }, [state]);
+
+  const handleStateChange = (stateData: StateVariable[]) => {
+    // override various things from state
+    const stateVariables: any = {
+      btnTitle: title,
+      btnBackgroundColor: buttonColor,
+      btnEnabled: enabled,
+      btnSelected: selected,
+      btnTextColor: textColor,
+      btnTransparent: transparent,
+      btnVisible: visible,
+      btnaccessibilityText: '',
+    };
+    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    let isTitleSet = false;
+    interested.forEach((stateVar) => {
+      if (stateVar.key === 'title') {
+        setButtonTitle(stateVar.value as string);
+        stateVariables.btnTitle = stateVar.value as string;
+        isTitleSet = true;
+      }
+      if (stateVar.key === 'buttonTitles') {
+        setButtonTitle(stateVar.value[0]);
+        stateVariables.btnTitle = stateVar.value[0];
+        isTitleSet = true;
+      }
+      if (stateVar.key === 'Selected') {
+        const boolSelected: boolean = parseBool(stateVar.value);
+        setButtonSelected(boolSelected);
+        stateVariables.btnSelected = boolSelected;
+      }
+      if (stateVar.key === 'visible') {
+        setButtonVisible(stateVar.value);
+        stateVariables.btnVisible = stateVar.value;
+      }
+      if (stateVar.key === 'enabled') {
+        const boolEnabled: boolean = parseBool(stateVar.value);
+        setbuttonEnabled(boolEnabled);
+        stateVariables.btnEnabled = boolEnabled;
+      }
+      if (stateVar.key === 'textColor') {
+        setButtonTextColor(stateVar.value);
+        stateVariables.btnTextColor = stateVar.value;
+      }
+      if (stateVar.key === 'accessibilityText') {
+        setAccessibilityText(stateVar.value as string);
+        stateVariables.btnaccessibilityText = stateVar.value as string;
+      }
+      if (stateVar.key === 'backgroundColor') {
+        console.log({ backgroundColor: stateVar.value });
+
+        setBackgroundColor(stateVar.value);
+        stateVariables.btnBackgroundColor = stateVar.value;
+      }
+      if (stateVar.key === 'transparent') {
+        setButtonTransparent(stateVar.value);
+        stateVariables.btnTransparent = stateVar.value;
+      }
+    });
+    if (!isTitleSet) {
+      setButtonTitle(title);
+      stateVariables.btnTitle = title;
+    }
+  };
 
   useEffect(() => {
     props.onReady({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `${id}.Selected`,
           key: 'Selected',
           type: 4,
           value: false,
         },
         {
-          id: `stage.${id}.visible`,
+          id: `${id}.visible`,
           key: 'visible',
           type: 4,
           value: visible,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `${id}.enabled`,
           key: 'enabled',
           type: 4,
           value: enabled,
         },
         {
-          id: `stage.${id}.title`,
+          id: `${id}.title`,
           key: 'title',
           type: 2,
           value: title,
         },
         {
-          id: `stage.${id}.textColor`,
+          id: `${id}.textColor`,
           key: 'textColor',
           type: 2,
           value: textColor,
         },
         {
-          id: `stage.${id}.backgroundColor`,
+          id: `${id}.backgroundColor`,
           key: 'backgroundColor',
           type: 2,
           value: buttonColor,
         },
         {
-          id: `stage.${id}.transparent`,
+          id: `${id}.transparent`,
           key: 'transparent',
           type: 4,
           value: transparent,
         },
         {
-          id: `stage.${id}.accessibilityText`,
+          id: `${id}.accessibilityText`,
           key: 'accessibilityText',
           type: 2,
           value: '',
