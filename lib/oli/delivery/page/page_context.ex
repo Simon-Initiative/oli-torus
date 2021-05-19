@@ -29,6 +29,7 @@ defmodule Oli.Delivery.Page.PageContext do
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.{AttemptState, HistorySummary}
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Publishing.DeliveryResolver
@@ -105,10 +106,12 @@ defmodule Oli.Delivery.Page.PageContext do
              user.id,
              activity_provider
            ) do
-        {:ok, {:not_started, {_, resource_attempts}}} ->
+        {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
           {:not_started, resource_attempts, %{}, nil}
 
-        {:ok, {state, {resource_attempt, latest_attempts}}} ->
+        {:ok,
+         {state,
+          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
           {state, [resource_attempt], latest_attempts,
            ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
 

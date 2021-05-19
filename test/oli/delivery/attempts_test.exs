@@ -1,10 +1,15 @@
 defmodule Oli.Delivery.AttemptsTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
+
+  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Attempts.{ClientEvaluation, StudentInput}
+  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput}
 
   describe "creating the attempt tree records" do
     setup do
@@ -127,14 +132,14 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # Page 1
       {:ok, {resource_attempt, _activity_attempts}} =
-        Attempts.start_resource_attempt(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
 
       {:error, {:active_attempt_present}} =
-        Attempts.start_resource_attempt(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
 
       # No page
       {:error, {:not_found}} =
-        Attempts.start_resource_attempt("garbage slug", section.slug, user1.id, activity_provider)
+        PageLifecycle.start("garbage slug", section.slug, user1.id, activity_provider)
 
       # The started attempt should be the latest attempt for this user
       latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
@@ -142,7 +147,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # Make sure the progress state is correct for the latest resource attempt
       {:ok, {:in_progress, _ra}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -163,7 +168,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # User1 - same as above
       {:ok, {resource_attempt, _activity_attempts}} =
-        Attempts.start_resource_attempt(
+        PageLifecycle.start(
           revision.slug,
           section.slug,
           user1.id,
@@ -174,7 +179,7 @@ defmodule Oli.Delivery.AttemptsTest do
       assert latest_attempt.id == resource_attempt.id
 
       {:ok, {:in_progress, _ra}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -184,7 +189,7 @@ defmodule Oli.Delivery.AttemptsTest do
       # User2
       # Should not have an attempt yet
       {:ok, {:not_started, _ra}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user2.id,
@@ -193,13 +198,13 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # Start an attempt, should have same results as user1 above
       {:ok, {resource_attempt2, _activity_attempts}} =
-        Attempts.start_resource_attempt(revision.slug, section.slug, user2.id, activity_provider)
+        PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
 
       latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
       assert latest_attempt2.id == resource_attempt2.id
 
       {:ok, {:in_progress, _ra}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user2.id,
@@ -296,7 +301,7 @@ defmodule Oli.Delivery.AttemptsTest do
       PageContext.create_page_context(section.slug, revision.slug, user1)
 
       {:ok, {_resource_attempt, _activity_attempts}} =
-        Attempts.start_resource_attempt(
+        PageLifecycle.start(
           revision.slug,
           section.slug,
           user1.id,
@@ -349,7 +354,7 @@ defmodule Oli.Delivery.AttemptsTest do
         part_attempt_map
         |> Map.values()
 
-      assert %Oli.Delivery.Attempts.PartAttempt{} = part_attempt
+      assert %Oli.Delivery.Attempts.Core.PartAttempt{} = part_attempt
       assert part_attempt.attempt_number == 1
       assert is_nil(part_attempt.date_evaluated)
     end
@@ -372,7 +377,7 @@ defmodule Oli.Delivery.AttemptsTest do
       PageContext.create_page_context(section.slug, revision.slug, user1)
 
       {:ok, {_resource_attempt, _activity_attempts}} =
-        Attempts.start_resource_attempt(
+        PageLifecycle.start(
           revision.slug,
           section.slug,
           user1.id,
@@ -488,7 +493,7 @@ defmodule Oli.Delivery.AttemptsTest do
              ) ==
                {:ok,
                 [
-                  %Oli.Delivery.Attempts.FeedbackActionResult{
+                  %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
                     attempt_guid: part1_attempt1.attempt_guid,
                     feedback: %Oli.Activities.Model.Feedback{content: "some-feedback", id: "1"},
                     out_of: 1,
@@ -586,7 +591,7 @@ defmodule Oli.Delivery.AttemptsTest do
       ]
 
       # check that client evaluation submission succeeds
-      assert Attempts.submit_client_evaluations(
+      assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
                client_evaluations

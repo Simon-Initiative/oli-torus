@@ -189,8 +189,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   defp determine_page_impl(graded) do
     case graded do
-      true -> Oli.Delivery.Attempts.Page.Graded
-      _ -> Oli.Delivery.Attempts.Page.Ungraded
+      true -> Oli.Delivery.Attempts.PageLifecycle.Graded
+      _ -> Oli.Delivery.Attempts.PageLifecycle.Ungraded
     end
   end
 

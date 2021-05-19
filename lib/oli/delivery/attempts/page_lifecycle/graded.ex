@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   import Oli.Delivery.Attempts.Core
 
   @behaviour Lifecycle

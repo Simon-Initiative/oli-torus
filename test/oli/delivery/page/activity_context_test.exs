@@ -3,7 +3,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
 
   describe "activity context" do
     setup do
