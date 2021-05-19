@@ -27,6 +27,9 @@ const slice: Slice<AdaptivityState> = createSlice({
     setNextActivityId: (state, action: PayloadAction<{ activityId: string }>) => {
       state.nextActivityId = action.payload.activityId;
     },
+    setCurrentFeedbacks: (state, action: PayloadAction<{ feedbacks: any[] }>) => {
+      state.currentFeedbacks = action.payload.feedbacks;
+    },
     setLastCheckTriggered: (state, action: PayloadAction<{ timestamp: any }>) => {
       state.lastCheckTriggered = action.payload.timestamp;
     },
@@ -41,6 +44,7 @@ export const AdaptivitySlice = slice.name;
 export const {
   setIsGoodFeedback,
   setNextActivityId,
+  setCurrentFeedbacks,
   setLastCheckTriggered,
   setLastCheckResults,
 } = slice.actions;

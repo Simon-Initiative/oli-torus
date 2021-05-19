@@ -12,12 +12,16 @@ import {
   selectLastCheckResults,
   selectLastCheckTriggered,
   selectNextActivityId,
+  setCurrentFeedbacks,
   setIsGoodFeedback,
   setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
+  navigateToFirstActivity,
+  navigateToLastActivity,
   navigateToNextActivity,
+  navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectIsEnd } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
@@ -115,36 +119,70 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify check has completed
 
-    const correctEvents = lastCheckResults
-      .filter((r) => r.params.correct)
-      .sort((a, b) => a.params.order - b.params.order);
-    if (correctEvents.length) {
-      // for now do the first "correct" thing
-      const { actions } = correctEvents[0].params;
-      const actionsByType = actions.reduce(
-        (collect: any, action: any) => {
-          collect[action.type].push(action);
-          return collect;
-        },
-        {
-          feedback: [],
-          navigation: [],
-          mutateState: [],
-        },
-      );
+    const isCorrect = lastCheckResults.every((r) => r.params.correct);
 
-      // if there is feedback show that and queue up the navigation
-      // if any mutate, just do them
-      // if nav, do it if no feedback
-      if (actionsByType.feedback.length === 0) {
-        if (actionsByType.navigation.length !== 1) {
-          // this is an error, shouldn't have more than one nav action
-          console.warn('Multiple nav actions??', actionsByType);
-        }
-        const [navAction] = actionsByType.navigation;
-        const navTarget = navAction.params.target;
-        if (navTarget === 'next') {
-          dispatch(navigateToNextActivity());
+    // depending on combineFeedback value is whether we should address more than one event
+    const combineFeedback = !!currentActivity.custom.combineFeedback;
+
+    let eventsToProcess = [lastCheckResults[0]];
+    if (combineFeedback) {
+      eventsToProcess = lastCheckResults;
+    }
+
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+
+    eventsToProcess.forEach((evt) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+
+    // always process mutateStates
+    actionsByType.mutateState.forEach((action) => {
+      // TODO: mutate state
+    });
+
+    const hasFeedback = actionsByType.feedback.length > 0;
+    const hasNavigation = actionsByType.navigation.length > 0;
+
+    if (hasFeedback) {
+      dispatch(
+        setCurrentFeedbacks({
+          feedbacks: actionsByType.feedback.map((fAction: any) => fAction.params.feedback),
+        }),
+      );
+      dispatch(setIsGoodFeedback({ isGood: isCorrect }));
+      // need to queue up the feedback display prior to nav
+      if (isCorrect && hasNavigation) {
+        const [firstNavAction] = actionsByType.navigation;
+        const navTarget = firstNavAction.params.target;
+        dispatch(setNextActivityId({ activityId: navTarget }));
+      }
+    } else {
+      if (isCorrect && hasNavigation) {
+        const [firstNavAction] = actionsByType.navigation;
+        const navTarget = firstNavAction.params.target;
+        switch (navTarget) {
+          case 'next':
+            dispatch(navigateToNextActivity());
+            break;
+          case 'prev':
+            dispatch(navigateToPrevActivity());
+            break;
+          case 'first':
+            dispatch(navigateToFirstActivity());
+            break;
+          case 'last':
+            dispatch(navigateToLastActivity());
+            break;
+          default:
+            // assume it's a sequenceId
+            dispatch(navigateToActivity(navTarget));
         }
       }
     }
