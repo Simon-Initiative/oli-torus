@@ -1,5 +1,6 @@
 import {
   createEntityAdapter,
+  createSelector,
   createSlice,
   EntityAdapter,
   EntityState,
@@ -64,5 +65,10 @@ export const selectActivtyAttemptState = (
   const attempt = attempts.find((a) => a.activityId === activityId);
   return attempt;
 };
+
+export const selectExtrinsicState = createSelector(
+  selectState,
+  (state: AttemptState) => state.extrinsic,
+);
 
 export default slice.reducer;

@@ -1,7 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { check } from '../../../../../../adaptivity/rules-engine';
-import { navigateToNextActivity } from '../../groups/actions/deck';
+import { defaultGlobalEnv, getEnvState } from '../../../../../../adaptivity/scripting';
+import { selectAll, selectExtrinsicState } from '../../attempt/slice';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
 import { selectPreviewMode } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
@@ -23,14 +24,38 @@ export const triggerCheck = createAsyncThunk(
 
     await dispatch(setLastCheckTriggered({ timestamp: Date.now() }));
 
-    const stateSnapshot = {};
+    // this needs to be the attempt state
+    // at the very least needs the "local" version `stage.foo.whatevr` vs `q:1234|stage.foo.whatever`
+    // server side we aren't going to have the scripting engine until just in time (for condition eval)
+    // so the logic here should mimic server and pull only attempt state
+    const allActivityAttempts = selectAll(rootState);
+    const allResponseState = allActivityAttempts.reduce((collect: any, attempt: any) => {
+      attempt.parts.forEach((part: any) => {
+        if (part.response) {
+          Object.keys(part.response).forEach((key) => {
+            collect[part.response[key].path] = part.response[key].value;
+          });
+        }
+      });
+      return collect;
+    }, {});
+    // need to duplicate "local" state based on current sequenceId
+    Object.keys(allResponseState).forEach((key) => {
+      if (key.indexOf(`${currentActivity.id}|`) === 0) {
+        const localKey = key.replace(`${currentActivity.id}|`, '');
+        allResponseState[localKey] = allResponseState[key];
+      }
+    });
+    // add in extrinsic state (lesson level)
+    const extrinsicState = selectExtrinsicState(rootState);
+    const stateSnapshot = { ...allResponseState, ...extrinsicState };
 
     let checkResult;
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
       checkResult = await check(stateSnapshot, currentRules);
-      console.log('CHECK RESULT', { currentActivity, currentRules, checkResult });
+      console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot });
     } else {
       // server mode (delivery) TODO
       checkResult = [

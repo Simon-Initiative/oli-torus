@@ -128,5 +128,7 @@ export const check = async (
     resultEvents = successEvents;
   }
 
+  // TODO: if resultEvents.length === 0 send a "defaultWrong"
+
   return resultEvents;
 };

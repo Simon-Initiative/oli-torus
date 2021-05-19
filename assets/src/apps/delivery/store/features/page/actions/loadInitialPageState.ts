@@ -3,7 +3,7 @@ import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
 import { RootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
-import { loadActivities, loadActivityState } from '../../groups/actions/deck';
+import { loadActivities } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import { loadPageState, PageSlice, PageState, selectResourceAttemptGuid } from '../slice';
