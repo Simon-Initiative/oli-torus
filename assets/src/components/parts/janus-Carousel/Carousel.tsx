@@ -41,8 +41,7 @@ const Carousel: React.FC<any> = (props) => {
   const [carouselCustomCss, setCarouselCustomCss] = useState<string>(customCss);
   const [carouselMode, setCarouselMode] = useState<string>(mode);
   const [carouselZoom, setCarouselZoom] = useState<boolean>(zoom);
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const carouselDefaultCss = require('./Carousel.css');
+
   const MAGIC_NUMBER = 64;
   const PAGINATION_HEIGHT = 32;
   const styles: CSSProperties = {
@@ -200,8 +199,7 @@ const Carousel: React.FC<any> = (props) => {
     >
       {customCss && (
         <style type="text/css" style={{ display: 'none' }}>
-          {carouselDefaultCss}
-          {carouselCustomCss ? carouselCustomCss : null}
+          {customCss}
         </style>
       )}
       {images.length > 0 && (
