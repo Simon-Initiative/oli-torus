@@ -44,13 +44,107 @@ const Audio: React.FC<any> = (props) => {
   const onReady = props.onReady;
   const [showControls, setShowControls] = useState(true);
 
-  const finalSrc = src;
-  // if (startTime && startTime >= 0) {
-  //     finalSrc = `${finalSrc}#t=${startTime || 0}`;
-  //     if (endTime && endTime >= 0) {
-  //         finalSrc = `${finalSrc},${endTime}`;
-  //     }
-  // }
+  let finalSrc = src;
+  if (startTime && startTime >= 0) {
+    finalSrc = `${finalSrc}#t=${startTime || 0}`;
+    if (endTime && endTime >= 0) {
+      finalSrc = `${finalSrc},${endTime}`;
+    }
+  }
+  const saveState = ({
+    isAudioPlayerStarted,
+    currentTime,
+    duration,
+    isAudioCompleted,
+    audioState,
+  }: {
+    isAudioPlayerStarted: boolean;
+    currentTime: any;
+    duration: any;
+    isAudioCompleted: boolean;
+    audioState: string;
+  }) => {
+    const currentVideoTime = parseFloat(currentTime || 0);
+    const audioDuration = parseFloat(duration || 0);
+    const exposureInPercentage = (currentVideoTime / audioDuration) * 100;
+    props.onSave({
+      activityId: `${props.id}`,
+      partResponses: [
+        {
+          id: `${props.id}.hasStarted`,
+          key: 'hasStarted',
+          type: 4,
+          value: isAudioPlayerStarted,
+        },
+        {
+          id: `${props.id}.autoPlay`,
+          key: 'autoPlay',
+          type: 4,
+          value: autoPlay,
+        },
+        {
+          id: `${props.id}.currentTime`,
+          key: 'currentTime',
+          type: 2,
+          value: currentTime,
+        },
+        {
+          id: `${props.id}.duration`,
+          key: 'duration',
+          type: 2,
+          value: duration,
+        },
+        {
+          id: `${props.id}.endTime`,
+          key: 'endTime',
+          type: 2,
+          value: endTime || '',
+        },
+        {
+          id: `${props.id}.exposureInSeconds`,
+          key: 'exposureInSeconds',
+          type: 1,
+          value: currentTime,
+        },
+        {
+          id: `${props.id}.exposureInPercentage`,
+          key: 'exposureInPercentage',
+          type: 1,
+          value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
+        },
+        {
+          id: `${props.id}.hasCompleted`,
+          key: 'hasCompleted',
+          type: 4,
+          value: isAudioCompleted,
+        },
+        {
+          id: `${props.id}.startTime`,
+          key: 'startTime',
+          type: 2,
+          value: startTime || 0,
+        },
+        {
+          id: `${props.id}.state`,
+          key: 'state',
+          type: 2,
+          value: audioState,
+        },
+        {
+          id: `${props.id}.totalSecondsWatched`,
+          key: 'totalSecondsWatched',
+          type: 2,
+          value: currentTime,
+        },
+        {
+          id: `${props.id}.customCssClass`,
+          key: 'customCssClass',
+          type: 2,
+          value: customCssClass,
+        },
+      ],
+    });
+  };
 
   let isAudioStarted = false;
   // handle the Audio player start
@@ -63,28 +157,59 @@ const Audio: React.FC<any> = (props) => {
     if (isAudioStarted) return;
     //Need this otherwise, save state will called on every second
     isAudioStarted = true;
-    // saveState({
-    //     isAudioPlayerStarted: true,
-    //     currentTime: data.target.currentTime,
-    //     duration: data.target.duration,
-    //     isAudioCompleted: false,
-    //     audioState: 'playing',
-    // });
+    saveState({
+      isAudioPlayerStarted: true,
+      currentTime: data.target.currentTime,
+      duration: data.target.duration,
+      isAudioCompleted: false,
+      audioState: 'playing',
+    });
   };
 
   const handleAudioPause = (data: any) => {
-    // saveState({
-    //     isAudioPlayerStarted: true,
-    //     currentTime: data.target.currentTime,
-    //     duration: data.target.duration,
-    //     isAudioCompleted: false,
-    //     audioState: 'paused',
-    // });
+    saveState({
+      isAudioPlayerStarted: true,
+      currentTime: data.target.currentTime,
+      duration: data.target.duration,
+      isAudioCompleted: false,
+      audioState: 'paused',
+    });
   };
   useEffect(() => {
     onReady({
       Id: props.id,
-      partResponses: [],
+      partResponses: [
+        {
+          id: `${props.id}.hasStarted`,
+          key: 'hasStarted',
+          type: 4,
+          value: false,
+        },
+        {
+          id: `${props.id}.currentTime`,
+          key: 'currentTime',
+          type: 2,
+          value: startTime,
+        },
+        {
+          id: `${props.id}.duration`,
+          key: 'duration',
+          type: 2,
+          value: '',
+        },
+        {
+          id: `${props.id}.hasCompleted`,
+          key: 'hasCompleted',
+          type: 4,
+          value: false,
+        },
+        {
+          id: `${props.id}.state`,
+          key: 'state',
+          type: 2,
+          value: false,
+        },
+      ],
     });
   }, []);
 
