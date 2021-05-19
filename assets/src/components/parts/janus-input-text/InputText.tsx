@@ -1,6 +1,9 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from 'adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/helpers';
+import { StateVariable } from '../types/parts';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -19,31 +22,29 @@ const InputText: React.FC<any> = (props) => {
   const [cssClass, setCssClass] = useState(customCssClass);
   const [text, setText] = useState<string>('');
   const saveInputText = (val: string) => {
-    return;
-    //TODO props.onSavePart is not yet implemented
-    /* props.onSavePart({
+    props.onSave({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `${id}.enabled`,
           key: 'enabled',
           type: 4,
           value: enabled,
         },
         {
-          id: `stage.${id}.text`,
+          id: `${id}.text`,
           key: 'text',
           type: 2,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `${id}.textLength`,
           key: 'textLength',
           type: 1,
           value: val.length,
         },
       ],
-    }); */
+    });
   };
   const handleOnChange = (event: any) => {
     const val = event.target.value;
@@ -68,8 +69,40 @@ const InputText: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    //TODO handle value changes on state updates
+    handleStateChange(state);
   }, [state]);
+
+  const handleStateChange = (vars: StateVariable[]) => {
+    // override text value from state
+    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (activity?.length) {
+      activity.forEach((stateVar) => {
+        if (stateVar.key === 'text' && stateVar.value) {
+          const stateText = stateVar.value.toString();
+          if (text !== stateText) {
+            setText(stateText);
+          }
+          props.onSave({
+            activityId: `${id}`,
+            partResponses: [
+              {
+                id: `stage.${id}.textLength`,
+                key: 'textLength',
+                type: CapiVariableTypes.NUMBER,
+                value: stateText.length,
+              },
+            ],
+          });
+        }
+        if (stateVar && stateVar.key === 'enabled') {
+          setEnabled(parseBool(stateVar.value));
+        }
+        if (stateVar && stateVar.key === 'customCssClass') {
+          setCssClass(stateVar.value.toString());
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     props.onReady({
