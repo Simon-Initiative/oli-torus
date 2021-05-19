@@ -3,7 +3,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
 
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.PageLifecycle.Hierarchy
 
   describe "activity context" do
     setup do
@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       attempt1: attempt1,
       a1: a1
     } do
-      latest_attempts = Attempts.get_latest_attempts(attempt1.id)
+      latest_attempts = Hierarchy.get_latest_attempts(attempt1.id)
       m = ActivityContext.create_context_map(false, latest_attempts)
 
       assert length(Map.keys(m)) == 1

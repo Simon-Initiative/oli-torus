@@ -3,8 +3,8 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
 
-  alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.{Hierarchy, VisitContext, AttemptState}
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
   alias Oli.Activities.Model.{Part, Feedback}
@@ -71,22 +71,21 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
       # verify that creating the attempt tree returns both activity attempts
-      {:ok, {resource_attempt, attempts}} =
-        Attempts.create_new_attempt_tree(
-          0,
-          nil,
-          p1.revision,
-          section.slug,
-          user.id,
-          activity_provider
-        )
+      {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: nil,
+          page_revision: p1.revision,
+          section_slug: section.slug,
+          user_id: user.id,
+          activity_provider: activity_provider
+        })
 
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
 
       # verify that reading the latest attempts back from the db gives us
       # the same results
-      attempts = Attempts.get_latest_attempts(resource_attempt.id)
+      attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
     end
@@ -100,12 +99,12 @@ defmodule Oli.Delivery.AttemptsTest do
       Attempts.track_access(resource.id, section.slug, user1.id)
       Attempts.track_access(resource.id, section.slug, user1.id)
 
-      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
+      entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 1
       assert hd(entries).access_count == 2
 
       Attempts.track_access(resource.id, section.slug, user2.id)
-      entries = Oli.Repo.all(Oli.Delivery.Attempts.ResourceAccess)
+      entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 2
 
       # assert the access counts in a way that disregards the order of the access records
@@ -128,10 +127,10 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-      PageContext.create_page_context(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section.slug, revision.slug, user1)
 
       # Page 1
-      {:ok, {resource_attempt, _activity_attempts}} =
+      {:ok, %AttemptState{resource_attempt: resource_attempt}} =
         PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
 
       {:error, {:active_attempt_present}} =
@@ -163,11 +162,11 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-      PageContext.create_page_context(section.slug, revision.slug, user1)
-      PageContext.create_page_context(section.slug, revision.slug, user2)
+      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section.slug, revision.slug, user2)
 
       # User1 - same as above
-      {:ok, {resource_attempt, _activity_attempts}} =
+      {:ok, %AttemptState{resource_attempt: resource_attempt}} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
@@ -197,7 +196,7 @@ defmodule Oli.Delivery.AttemptsTest do
         )
 
       # Start an attempt, should have same results as user1 above
-      {:ok, {resource_attempt2, _activity_attempts}} =
+      {:ok, %AttemptState{resource_attempt: resource_attempt2}} =
         PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
 
       latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
@@ -298,9 +297,9 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-      PageContext.create_page_context(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section.slug, revision.slug, user1)
 
-      {:ok, {_resource_attempt, _activity_attempts}} =
+      {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
@@ -322,7 +321,7 @@ defmodule Oli.Delivery.AttemptsTest do
       activity_attempt2: activity_attempt2,
       activity_a: activity_a
     } do
-      results = Attempts.get_latest_attempts(attempt2.id)
+      results = Hierarchy.get_latest_attempts(attempt2.id)
 
       assert length(Map.keys(results)) == 1
       assert Map.has_key?(results, activity_a.resource.id)
@@ -347,7 +346,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
     test "get latest attempts - part attempts", %{attempt1: attempt1} do
       [{_activity_attempt, part_attempt_map}] =
-        Attempts.get_latest_attempts(attempt1.id)
+        Hierarchy.get_latest_attempts(attempt1.id)
         |> Map.values()
 
       [part_attempt] =
@@ -374,9 +373,9 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-      PageContext.create_page_context(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section.slug, revision.slug, user1)
 
-      {:ok, {_resource_attempt, _activity_attempts}} =
+      {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
@@ -486,7 +485,7 @@ defmodule Oli.Delivery.AttemptsTest do
       ]
 
       # check that client evaluation submission succeeds
-      assert Attempts.submit_client_evaluations(
+      assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
                client_evaluations
