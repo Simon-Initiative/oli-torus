@@ -2,7 +2,7 @@ defmodule OliWeb.Api.AttemptController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.ActivityLifecycle, as: Activity
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.StudentInput
@@ -376,7 +376,7 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => part_attempt_guid,
         "response" => response
       }) do
-    case ActivityLifecyle.save_student_input([
+    case Activity.save_student_input([
            %{attempt_guid: part_attempt_guid, response: response}
          ]) do
       {:ok, _} -> json(conn, %{"type" => "success"})
@@ -403,7 +403,7 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => attempt_guid,
         "input" => input
       }) do
-    case Activity.submit_part_evaluations(section_slug, activity_attempt_guid, [
+    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
            %{attempt_guid: attempt_guid, input: input}
          ]) do
       {:ok, evaluations} -> json(conn, %{"type" => "success", "actions" => evaluations})
@@ -435,7 +435,7 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
-    case ActivityLifecyle.request_hint(activity_attempt_guid, part_attempt_guid) do
+    case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
       {:ok, {hint, has_more_hints}} ->
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
 
@@ -465,7 +465,7 @@ defmodule OliWeb.Api.AttemptController do
         %{attempt_guid: attempt_guid, response: response}
       end)
 
-    case ActivityLifecyle.save_student_input(parsed) do
+    case Activity.save_student_input(parsed) do
       {:ok, _} -> json(conn, %{"type" => "success"})
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -556,7 +556,7 @@ defmodule OliWeb.Api.AttemptController do
         "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid
       }) do
-    case ActivityLifecyle.reset_activity(section_slug, activity_attempt_guid) do
+    case Activity.reset_activity(section_slug, activity_attempt_guid) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 

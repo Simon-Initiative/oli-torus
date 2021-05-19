@@ -1,30 +1,17 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   import Ecto.Query, warn: false
   alias Oli.Repo
-  alias Oli.Delivery.Sections.{Section, Enrollment}
-  alias Oli.Delivery.Sections
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
-    ResourceAccess,
-    ResourceAttempt,
     ActivityAttempt
   }
 
   import Oli.Delivery.Attempts.Core
 
-  alias Oli.Delivery.Snapshots
-
-  alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Activities
-  alias Oli.Activities.State.ActivityState
-  alias Oli.Resources.{Revision}
+  alias Oli.Resources.Revision
   alias Oli.Activities.Model
-  alias Oli.Activities.Model.Part
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.{StudentInput, Result, Scoring, ClientEvaluation}
-  alias Oli.Publishing.{PublishedResource, DeliveryResolver}
-  alias Oli.Delivery.Page.ModelPruner
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext, AttemptState}
 
   @doc """

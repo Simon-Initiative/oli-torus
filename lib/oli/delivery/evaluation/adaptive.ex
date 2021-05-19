@@ -1,7 +1,6 @@
 defmodule Oli.Delivery.Evaluation.Adaptive do
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Evaluation.Result
 
   def perform(
         attempt_guid,

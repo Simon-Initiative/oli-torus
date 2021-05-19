@@ -28,10 +28,10 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts
   ]
 
+  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.Attempts.PageLifecyle
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
@@ -46,10 +46,10 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_review(String.t(), String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
-  def create_for_review(section_slug, page_slug, attempt_guid, user) do
+  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
+  def create_for_review(section_slug, attempt_guid, user) do
     {progress_state, resource_attempts, latest_attempts, activities, page_revision} =
-      case PageLifecyle.review(attempt_guid) do
+      case PageLifecycle.review(attempt_guid) do
         {:ok, {state, {resource_attempt, latest_attempts}}} ->
           page_revision = Oli.Resources.get_revision!(resource_attempt.revision_id)
 
@@ -90,7 +90,7 @@ defmodule Oli.Delivery.Page.PageContext do
   """
   @spec create_for_visit(String.t(), String.t(), Oli.Accounts.User) ::
           %PageContext{}
-  defp create_for_visit(section_slug, page_slug, user) do
+  def create_for_visit(section_slug, page_slug, user) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
@@ -99,7 +99,7 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     {progress_state, resource_attempts, latest_attempts, activities} =
-      case PageLifecyle.visit(
+      case PageLifecycle.visit(
              page_revision,
              section_slug,
              user.id,

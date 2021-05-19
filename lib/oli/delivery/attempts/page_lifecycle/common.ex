@@ -8,11 +8,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Common do
   @doc """
   Common implementation for reviewing an attempt.
   """
-  def review(
-        %ReviewContext{
-          resource_attempt: resource_attempt
-        } = context
-      ) do
+  def review(%ReviewContext{
+        resource_attempt: resource_attempt
+      }) do
     status =
       case resource_attempt.date_evaluated do
         nil -> :in_progress

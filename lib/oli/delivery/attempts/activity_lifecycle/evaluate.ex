@@ -1,18 +1,13 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
+  alias Oli.Repo
   alias Oli.Delivery.Evaluation.{Result, EvaluationContext, Standard, Adaptive}
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation, StudentInput}
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Attempts.Scoring
 
   alias Oli.Delivery.Evaluation.EvaluationContext
-  alias Oli.Activities
-  alias Oli.Activities.State.ActivityState
-  alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
   alias Oli.Activities.Model.Part
-  alias Oli.Activities.Transformers
-  alias Oli.Publishing.{PublishedResource, DeliveryResolver}
-  alias Oli.Delivery.Page.ModelPruner
 
   alias Oli.Activities.Model
   import Oli.Delivery.Attempts.Core

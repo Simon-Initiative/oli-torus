@@ -3,9 +3,8 @@ defmodule OliWeb.Api.ActivityController do
   use OpenApiSpex.Controller
 
   alias Oli.Authoring.Editing.ActivityEditor
-  alias Oli.Delivery.Attempts.Evaluation, as: ActivityEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
   alias Oli.Delivery.Attempts.ActivityLifecycle
-  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver

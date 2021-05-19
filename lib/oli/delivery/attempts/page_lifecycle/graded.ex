@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Hierarchy
   }
 
+  alias Oli.Delivery.Attempts.Scoring
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Evaluation.Result

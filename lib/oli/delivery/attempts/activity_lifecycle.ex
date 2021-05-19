@@ -5,20 +5,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
-    ResourceAccess,
-    ResourceAttempt,
-    ActivityAttempt,
-    Result
+    ActivityAttempt
   }
 
-  alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Activities
   alias Oli.Activities.State.ActivityState
-  alias Oli.Resources.{Revision}
   alias Oli.Activities.Model
-  alias Oli.Activities.Model.Part
   alias Oli.Activities.Transformers
-  alias Oli.Delivery.Attempts.Activity.{StudentInput, Result, ClientEvaluation}
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Page.ModelPruner

@@ -221,13 +221,12 @@ defmodule OliWeb.PageDeliveryController do
 
   def review_attempt(conn, %{
         "section_slug" => section_slug,
-        "revision_slug" => revision_slug,
         "attempt_guid" => attempt_guid
       }) do
     user = conn.assigns.current_user
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      PageContext.create_for_review(section_slug, revision_slug, attempt_guid, user)
+      PageContext.create_for_review(section_slug, attempt_guid, user)
       |> render_page(conn, section_slug, user)
     else
       render(conn, "not_authorized.html")
