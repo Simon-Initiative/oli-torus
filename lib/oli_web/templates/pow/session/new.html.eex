@@ -2,7 +2,7 @@
   <%# social media sign in links %>
   <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
     <hr class="my-4">
-    <%= form_for @changeset, Routes.authoring_pow_session_path(@conn, :create), [as: :user], fn f -> %>
+    <%= form_for @changeset, @action, [as: :user], fn f -> %>
     <div class="form-label-group">
       <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control", placeholder: "Email", required: true, autofocus: true %>
       <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>

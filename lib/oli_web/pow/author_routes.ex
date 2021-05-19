@@ -107,6 +107,13 @@ defmodule OliWeb.Pow.AuthorRoutes do
     Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
   end
 
-  def path_for(conn, plug, verb, vars, query_params),
-    do: Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
+  def path_for(conn, plug, verb, vars, query_params) do
+    "/authoring" <> Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
+  end
+
+  @impl true
+  def url_for(conn, plug, verb, vars, query_params) do
+    path = path_for(conn, plug, verb, vars, query_params)
+    "#{Oli.Utils.get_base_url()}#{path}"
+  end
 end
