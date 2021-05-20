@@ -4,7 +4,7 @@ import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 import {
   JanusMultipleChoiceQuestionProperties,
   JanusMultipleChoiceQuestionItemProperties,
@@ -169,7 +169,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (stateData: StateVariable[]) => {
+  const handleStateChange = (stateData: CapiVariable[]) => {
     // this runs every time state is updated from *any* source
     // the global variable state
     const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);

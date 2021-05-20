@@ -2,7 +2,7 @@
 import React, { createRef, CSSProperties, useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 // TODO: fix typing
 const Carousel: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -153,7 +153,7 @@ const Carousel: React.FC<any> = (props) => {
     });
   };
 
-  const handleStateChange = (data: StateVariable[]) => {
+  const handleStateChange = (data: CapiVariable[]) => {
     // override various things from state
     const stateVariables: any = {
       carouselMode: mode,

@@ -2,7 +2,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 const Dropdown: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -149,7 +149,7 @@ const Dropdown: React.FC<any> = (props) => {
     });
   };
 
-  const handleStateChange = (stateData: StateVariable[]) => {
+  const handleStateChange = (stateData: CapiVariable[]) => {
     // override text value from state
     //** Changed `stage.${id}` to `stage.${id}.` and this might need to be done in all the components*
     //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/

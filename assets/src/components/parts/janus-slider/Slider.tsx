@@ -2,7 +2,7 @@
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Slider: React.FC<any> = (props) => {
@@ -132,7 +132,7 @@ const Slider: React.FC<any> = (props) => {
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (stateData: StateVariable[]) => {
+  const handleStateChange = (stateData: CapiVariable[]) => {
     const interested = stateData.filter(
       (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
     );

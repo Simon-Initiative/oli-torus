@@ -14,7 +14,7 @@ export interface JanusAbsolutePositioned extends CustomProperties {
   height?: number;
 }
 
-export interface StateVariable {
+export interface CapiVariable {
   id: string;
   key: string;
   type: number;

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
 import YouTube from 'react-youtube';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Video: React.FC<any> = (props) => {
@@ -175,9 +175,9 @@ const Video: React.FC<any> = (props) => {
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (stateData: StateVariable[]) => {
+  const handleStateChange = (stateData: CapiVariable[]) => {
     // override various things from state
-    const stateVariables: any = {
+    const CapiVariables: any = {
       isVideoPlayerStarted: videoIsPlayerStarted,
       currentTime: startTime,
       duration: '',
@@ -188,20 +188,20 @@ const Video: React.FC<any> = (props) => {
     interested.forEach((stateVar) => {
       if (stateVar.key === 'hasStarted') {
         setVideoIsPlayerStarted(stateVar.value as boolean);
-        stateVariables.isVideoPlayerStarted = stateVar.value as boolean;
+        CapiVariables.isVideoPlayerStarted = stateVar.value as boolean;
       }
       if (stateVar.key === 'currentTime') {
-        stateVariables.currentTime = stateVar.value as number;
+        CapiVariables.currentTime = stateVar.value as number;
       }
       if (stateVar.key === 'duration') {
-        stateVariables.duration = stateVar.value as number;
+        CapiVariables.duration = stateVar.value as number;
       }
       if (stateVar.key === 'hasCompleted') {
         setVideoIsCompleted(stateVar.value as boolean);
-        stateVariables.isVideoCompleted = stateVar.value as boolean;
+        CapiVariables.isVideoCompleted = stateVar.value as boolean;
       }
       if (stateVar.key === 'state') {
-        stateVariables.videoState = stateVar.value as string;
+        CapiVariables.videoState = stateVar.value as string;
       }
       if (stateVar.key === 'autoPlay') {
         setVideoAutoPlay(stateVar.value as boolean);
@@ -210,7 +210,7 @@ const Video: React.FC<any> = (props) => {
         setVideoEnableReplay(stateVar.value as boolean);
       }
     });
-    saveState(stateVariables);
+    saveState(CapiVariables);
   };
 
   const handleVideoEnd = (data: any) => {

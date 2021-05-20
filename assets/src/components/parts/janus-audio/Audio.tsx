@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Audio: React.FC<any> = (props) => {
@@ -218,7 +218,7 @@ const Audio: React.FC<any> = (props) => {
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (data: StateVariable[]) => {
+  const handleStateChange = (data: CapiVariable[]) => {
     // this runs every time state is updated from *any* source
     // the global variable state
     const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${props.id}.`) === 0);

@@ -3,7 +3,7 @@ import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -72,7 +72,7 @@ const InputText: React.FC<any> = (props) => {
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (vars: StateVariable[]) => {
+  const handleStateChange = (vars: CapiVariable[]) => {
     // override text value from state
     const activity = vars.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     if (activity?.length) {

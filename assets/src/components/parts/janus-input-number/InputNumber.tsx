@@ -2,7 +2,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { StateVariable } from '../types/parts';
+import { CapiVariable } from '../types/parts';
 
 const InputNumber: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -58,7 +58,7 @@ const InputNumber: React.FC<any> = (props) => {
     handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (data: StateVariable[]) => {
+  const handleStateChange = (data: CapiVariable[]) => {
     const interested = data.filter((stateVar) => stateVar.id.indexOf(`${id}.`) === 0);
     if (interested?.length) {
       interested.forEach((stateVar) => {
