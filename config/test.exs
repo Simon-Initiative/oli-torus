@@ -1,17 +1,7 @@
 use Mix.Config
 
-from_boolean_env = fn key, default ->
-  System.get_env(key, default)
-  |> String.downcase()
-  |> case do
-    "true" -> :enabled
-    _ -> :disabled
-  end
-end
-
 config :oli,
   env: :test,
-  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
   s3_media_bucket_name: "torus-media-test",
   media_url: "d1od6xouqrpl5k.cloudfront.net",
   http_client: Oli.Test.MockHTTP,
