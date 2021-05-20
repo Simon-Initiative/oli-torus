@@ -150,7 +150,7 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: user,
       section_slug: section_slug,
-      progress_state: context.progress_state,
+      review_mode: context.review_mode,
       activity_map: context.activities
     }
 

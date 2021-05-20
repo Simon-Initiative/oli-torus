@@ -39,7 +39,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   model: T;
   state: ActivityState;
   preview: boolean;
-  progressState: string;
+  review: boolean;
   sectionSlug?: string;
   userId: number;
 
@@ -66,7 +66,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
   mountPoint: HTMLDivElement;
   connected: boolean;
-  progressState: string;
+  review: string;
 
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
 
@@ -121,7 +121,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
         }
         resolve(result);
       };
-      if (this.progressState === 'in_review') {
+      if (this.review) {
         continuation(null, 'in review mode');
         return;
       }
@@ -136,18 +136,18 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
-    const progressState = this.getAttribute('progress_state') as any;
+    const review = valueOr(JSON.parse(this.getAttribute('review') as any), false);
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
     const userId = this.getAttribute('user_id') as any;
 
-    this.progressState = progressState;
+    this.review = review;
 
     return {
       graded,
       model,
       state,
       preview,
-      progressState,
+      review,
       sectionSlug,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
