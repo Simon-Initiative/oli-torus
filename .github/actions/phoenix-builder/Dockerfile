@@ -7,16 +7,16 @@ RUN yum install ncurses-devel openssl-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_23.2.tar.gz" -O otp23.tar.gz
-RUN tar xfz otp23.tar.gz
-WORKDIR /tmp/otp_src_23.2/
+RUN wget "http://erlang.org/download/otp_src_24.0.tar.gz" -O otp24.tar.gz
+RUN tar xfz otp24.tar.gz
+WORKDIR /tmp/otp_src_24.0/
 RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.11.3.tar.gz"
-RUN tar xfz v1.11.3.tar.gz
-WORKDIR /tmp/elixir-1.11.3/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.12.0.tar.gz"
+RUN tar xfz v1.12.0.tar.gz
+WORKDIR /tmp/elixir-1.12.0/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
@@ -26,7 +26,7 @@ RUN mix archive.install hex phx_new 1.5.6
 
 # install node
 RUN yum install -y gcc-c++ make
-RUN curl -sL https://rpm.nodesource.com/setup_12.x | bash -
+RUN curl -sL https://rpm.nodesource.com/setup_15.x | bash -
 RUN yum install -y nodejs
 
 # fix elixir encoding warning
