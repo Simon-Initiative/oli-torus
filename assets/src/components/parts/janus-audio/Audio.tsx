@@ -36,31 +36,31 @@ const Audio: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${props.id}.hasStarted`,
+          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `stage.${props.id}.currentTime`,
+          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: startTime,
         },
         {
-          id: `stage.${props.id}.duration`,
+          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: '',
         },
         {
-          id: `stage.${props.id}.hasCompleted`,
+          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `stage.${props.id}.state`,
+          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: false,
@@ -133,73 +133,73 @@ const Audio: React.FC<any> = (props) => {
       activityId: `${props.id}`,
       partResponses: [
         {
-          id: `stage.${props.id}.hasStarted`,
+          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: isAudioPlayerStarted,
         },
         {
-          id: `stage.${props.id}.autoPlay`,
+          id: `autoPlay`,
           key: 'autoPlay',
           type: CapiVariableTypes.BOOLEAN,
           value: autoPlay,
         },
         {
-          id: `stage.${props.id}.currentTime`,
+          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `stage.${props.id}.duration`,
+          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: duration,
         },
         {
-          id: `stage.${props.id}.endTime`,
+          id: `endTime`,
           key: 'endTime',
           type: CapiVariableTypes.STRING,
           value: endTime || '',
         },
         {
-          id: `stage.${props.id}.exposureInSeconds`,
+          id: `exposureInSeconds`,
           key: 'exposureInSeconds',
           type: CapiVariableTypes.NUMBER,
           value: currentTime,
         },
         {
-          id: `stage.${props.id}.exposureInPercentage`,
+          id: `exposureInPercentage`,
           key: 'exposureInPercentage',
           type: CapiVariableTypes.NUMBER,
           value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
         },
         {
-          id: `stage.${props.id}.hasCompleted`,
+          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: isAudioCompleted,
         },
         {
-          id: `stage.${props.id}.startTime`,
+          id: `startTime`,
           key: 'startTime',
           type: CapiVariableTypes.STRING,
           value: startTime || 0,
         },
         {
-          id: `stage.${props.id}.state`,
+          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: audioState,
         },
         {
-          id: `stage.${props.id}.totalSecondsWatched`,
+          id: `totalSecondsWatched`,
           key: 'totalSecondsWatched',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `stage.${props.id}.customCssClass`,
+          id: `customCssClass`,
           key: 'customCssClass',
           type: CapiVariableTypes.STRING,
           value: customCssClass,
@@ -246,7 +246,7 @@ const Audio: React.FC<any> = (props) => {
   const handleStateChange = (data: CapiVariable[]) => {
     // this runs every time state is updated from *any* source
     // the global variable state
-    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${props.id}.`) === 0);
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
 
     interested.forEach((stateVar) => {
       switch (stateVar.key) {

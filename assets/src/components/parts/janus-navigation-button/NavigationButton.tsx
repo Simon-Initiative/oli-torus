@@ -35,49 +35,49 @@ const NavigationButton: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `stage.${id}.visible`,
+          id: `visible`,
           key: 'visible',
           type: CapiVariableTypes.BOOLEAN,
           value: visible,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.title`,
+          id: `title`,
           key: 'title',
           type: CapiVariableTypes.STRING,
           value: title,
         },
         {
-          id: `stage.${id}.textColor`,
+          id: `textColor`,
           key: 'textColor',
           type: CapiVariableTypes.STRING,
           value: textColor,
         },
         {
-          id: `stage.${id}.backgroundColor`,
+          id: `backgroundColor`,
           key: 'backgroundColor',
           type: CapiVariableTypes.STRING,
           value: buttonColor,
         },
         {
-          id: `stage.${id}.transparent`,
+          id: `transparent`,
           key: 'transparent',
           type: CapiVariableTypes.STRING,
           value: transparent,
         },
         {
-          id: `stage.${id}.accessibilityText`,
+          id: `accessibilityText`,
           key: 'accessibilityText',
           type: CapiVariableTypes.STRING,
           value: '',
@@ -145,7 +145,7 @@ const NavigationButton: React.FC<any> = (props) => {
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: true,
@@ -160,7 +160,7 @@ const NavigationButton: React.FC<any> = (props) => {
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.Selected`,
+          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: false,

@@ -36,13 +36,13 @@ const InputNumber: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.value`,
+          id: `value`,
           key: 'value',
           type: CapiVariableTypes.NUMBER,
           value: inputNumberValue || '',
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: inputNumberEnabled,

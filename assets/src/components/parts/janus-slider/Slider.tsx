@@ -36,19 +36,19 @@ const Slider: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.value`,
+          id: `value`,
           key: `value`,
           type: CapiVariableTypes.NUMBER,
           value: 0,
         },
         {
-          id: `stage.${id}.userModified`,
+          id: `userModified`,
           key: `userModified`,
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: `enabled`,
           type: CapiVariableTypes.BOOLEAN,
           value: isSliderEnabled,
@@ -123,19 +123,19 @@ const Slider: React.FC<any> = (props) => {
       activityId: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.value`,
+          id: `value`,
           key: `value`,
           type: CapiVariableTypes.NUMBER,
           value: sliderVal,
         },
         {
-          id: `stage.${id}.userModified`,
+          id: `userModified`,
           key: `userModified`,
           type: CapiVariableTypes.BOOLEAN,
           value: userModified,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: `enabled`,
           type: CapiVariableTypes.BOOLEAN,
           value: isSliderEnabled,

@@ -37,19 +37,19 @@ const InputText: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.text`,
+          id: `text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: text,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: text.length,
@@ -83,19 +83,19 @@ const InputText: React.FC<any> = (props) => {
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.text`,
+          id: `text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: val.length,
@@ -135,7 +135,7 @@ const InputText: React.FC<any> = (props) => {
             activityId: `${id}`,
             partResponses: [
               {
-                id: `stage.${id}.textLength`,
+                id: `textLength`,
                 key: 'textLength',
                 type: CapiVariableTypes.NUMBER,
                 value: stateText.length,

@@ -35,25 +35,25 @@ const Dropdown: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: true,
         },
         {
-          id: `stage.${id}.selectedIndex`,
+          id: `selectedIndex`,
           key: 'selectedIndex',
           type: CapiVariableTypes.STRING,
           value: -1,
         },
         {
-          id: `stage.${id}.selectedItem`,
+          id: `selectedItem`,
           key: 'selectedItem',
           type: CapiVariableTypes.STRING,
           value: '',
         },
         {
-          id: `stage.${id}.value`,
+          id: `value`,
           key: 'value',
           type: CapiVariableTypes.STRING,
           value: 'NULL',
@@ -132,25 +132,25 @@ const Dropdown: React.FC<any> = (props) => {
       activityId: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.selectedIndex`,
+          id: `selectedIndex`,
           key: 'selectedIndex',
           type: CapiVariableTypes.NUMBER,
           value: selectedIndex,
         },
         {
-          id: `stage.${id}.selectedItem`,
+          id: `selectedItem`,
           key: 'selectedItem',
           type: CapiVariableTypes.STRING,
           value: selectedItem,
         },
         {
-          id: `stage.${id}.value`,
+          id: `value`,
           key: 'value',
           type: CapiVariableTypes.STRING,
           value: value,
@@ -173,7 +173,7 @@ const Dropdown: React.FC<any> = (props) => {
 
   const handleStateChange = (stateData: CapiVariable[]) => {
     // override text value from state
-    //** Changed `stage.${id}` to `stage.${id}.` and this might need to be done in all the components*
+    //** Changed `stage.${id}` to `` and this might need to be done in all the components*
     //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/
     //** doing `stage.${id}` always get all the variables starting with dropdownInput instead of just filtering variables with dropdownInput id*/
     const interested = stateData.filter(

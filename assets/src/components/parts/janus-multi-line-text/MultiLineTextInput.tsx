@@ -37,19 +37,19 @@ const MultiLineTextInput: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `stage.${id}.text`,
+          id: `text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: value,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: value.length,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
@@ -109,19 +109,19 @@ const MultiLineTextInput: React.FC<any> = (props) => {
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.text`,
+          id: `text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: val.length,
@@ -155,7 +155,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
           activityId: `${id}`,
           partResponses: [
             {
-              id: `stage.${id}.textLength`,
+              id: `textLength`,
               key: 'textLength',
               type: CapiVariableTypes.NUMBER,
               value: stateText.length,
