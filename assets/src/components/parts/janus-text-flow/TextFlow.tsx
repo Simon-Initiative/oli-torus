@@ -118,6 +118,12 @@ const TextFlow: React.FC<any> = (props: any) => {
           : '255, 255, 255'
       },${palette?.fillAlpha})`);
   }
+
+  // TODO: preprocess model to find required variables and/or expressions
+  // using onInit to wait for initial state to be sent, and hold rendering
+  // until isReady (and also then fire onReady)
+  // send pre-calculated map of required values to Markup
+
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });

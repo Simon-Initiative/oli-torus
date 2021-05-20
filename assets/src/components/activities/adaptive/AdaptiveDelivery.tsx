@@ -1,96 +1,138 @@
-import React, { useState } from 'react';
+import chroma from 'chroma-js';
+import React, { CSSProperties } from 'react';
 import ReactDOM from 'react-dom';
+import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import * as ActivityTypes from '../types';
 import { AdaptiveModelSchema } from './schema';
 
-import { useGlobalState } from 'components/hooks/global';
-import * as ActivityTypes from '../types';
-import * as Extrinsic from 'data/persistence/extrinsic';
-
-const randomInt = () => Math.floor(Math.random() * 100);
-
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
-  const [active, setActive] = useState(true);
-  const [handle, setHandle] = useState(null as any);
-  const [local, setLocal] = useState(props.state.parts[0].response);
+  console.log('PROPS', { props });
+  const {
+    content: { custom: config, partsLayout },
+  } = props.model;
 
-  const data = useGlobalState(props.userId, active);
+  const attemptState = props.state;
 
-  const scalar = () => {
-    Extrinsic.upsertGlobal({ scalar: randomInt() });
+  const parts = partsLayout || [];
+
+  const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
+    console.log('onPartInit', payload);
+    // a part should send initial state values
+    return handlePartSave(payload);
   };
 
-  const nested = () => {
-    Extrinsic.upsertGlobal({ nested: { multiple: { levels: randomInt() } } });
+  const handlePartReady = async (payload: { id: string | number }) => {
+    console.log('onPartReady', { payload });
+    return true;
   };
 
-  const save = () => {
-    const local = randomInt();
-    props
-      .onSaveActivity(props.state.attemptGuid, [
-        { attemptGuid: props.state.parts[0].attemptGuid, response: { input: { local } } },
-      ])
-      .then((result: any) => {
-        setLocal({ input: { local } });
-      });
-  };
-
-  const timer = () => {
-    if (handle !== null) {
-      clearInterval(handle);
-      setHandle(null);
-    } else {
-      setHandle(setInterval(() => Extrinsic.upsertGlobal({ randomValue: randomInt() }), 100));
+  const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
+    console.log('onPartSave', { id, responses });
+    // part attempt guid should be located in attemptState.parts matched to id (i think)
+    const partAttempt = attemptState.parts.find((p) => p.partId === id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${id} not found!`);
+      return;
     }
+    const response: ActivityTypes.StudentResponse = {
+      input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
+    };
+    const result = await props.onSavePart(
+      attemptState.attemptGuid,
+      partAttempt?.attemptGuid,
+      response,
+    );
+    // BS: this is the result from the layout pushed down, need to push down to part here?
+    return result;
   };
 
-  const toggle = () => setActive(!active);
+  const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
+    console.log('onPartSubmit', { id, responses });
+    // part attempt guid should be located in attemptState.parts matched to id (i think)
+    const partAttempt = attemptState.parts.find((p) => p.partId === id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${id} not found!`);
+      return;
+    }
+    const response: ActivityTypes.StudentResponse = {
+      input: responses,
+    };
+    const result = await props.onSubmitPart(
+      attemptState.attemptGuid,
+      partAttempt?.attemptGuid,
+      response,
+    );
+    // BS: this is the result from the layout pushed down, need to push down to part here?
+    return result;
+  };
 
-  return (
-    <div style={{ border: '3px dashed lightgray', padding: '10px', margin: '10px' }}>
-      <h3>Adaptive Activity</h3>
+  const styles: CSSProperties = {
+    width: config?.width || 1300,
+  };
+  if (config?.palette) {
+    if (config.palette.useHtmlProps) {
+      styles.backgroundColor = config.palette.backgroundColor;
+      styles.borderColor = config.palette.borderColor;
+      styles.borderWidth = config.palette.borderWidth;
+      styles.borderStyle = config.palette.borderStyle;
+      styles.borderRadius = config.palette.borderRadius;
+    } else {
+      styles.borderWidth = `${
+        config?.palette?.lineThickness ? config?.palette?.lineThickness + 'px' : '1px'
+      }`;
+      styles.borderRadius = '10px';
+      styles.borderStyle = 'solid';
+      styles.borderColor = `rgba(${
+        config?.palette?.lineColor || config?.palette?.lineColor === 0
+          ? chroma(config?.palette?.lineColor).rgb().join(',')
+          : '255, 255, 255'
+      },${config?.palette?.lineAlpha})`;
+      styles.backgroundColor = `rgba(${
+        config?.palette?.fillColor || config?.palette?.fillColor === 0
+          ? chroma(config?.palette?.fillColor).rgb().join(',')
+          : '255, 255, 255'
+      },${config?.palette?.fillAlpha})`;
+    }
+  }
+  if (config?.x) {
+    styles.left = config.x;
+  }
+  if (config?.y) {
+    styles.top = config.y;
+  }
+  if (config?.z) {
+    styles.zIndex = config.z || 0;
+  }
+  if (config?.height) {
+    styles.height = config.height;
+  }
 
-      <h5>Global State</h5>
+  const renderAsLayer = config?.renderAsLayer || false;
 
-      <div className="m-3">
-        <pre>
-          <code>{JSON.stringify(data, undefined, 2)}</code>
-        </pre>
-
-        <div className="form-check">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            value=""
-            checked={active}
-            onChange={toggle}
-          />
-          <label className="form-check-label">Subscribe To Global State</label>
-        </div>
-        <button onClick={scalar} className="btn btn-primary btn-sm mr-2">
-          Set Scalars
-        </button>
-        <button onClick={nested} className="btn btn-primary btn-sm mr-2">
-          Set Nested
-        </button>
-        <button
-          onClick={timer}
-          className={`btn ${handle === null ? 'btn-primary' : 'btn-danger'} btn-sm`}
-        >
-          {handle === null ? 'Run Timer' : 'Stop Timer'}
-        </button>
-      </div>
-
-      <h5>Attempt State</h5>
-      <div className="m-3">
-        <pre>
-          <code>{JSON.stringify(local, undefined, 2)}</code>
-        </pre>
-
-        <button onClick={save} className="btn btn-primary btn-sm mr-2">
-          Update State
-        </button>
-      </div>
+  return renderAsLayer ? (
+    <React.Fragment>
+      <PartsLayoutRenderer
+        parts={parts}
+        state={attemptState.snapshot}
+        onPartInit={handlePartInit}
+        onPartReady={handlePartReady}
+        onPartSave={handlePartSave}
+        onPartSubmit={handlePartSubmit}
+      />
+    </React.Fragment>
+  ) : (
+    <div className="content" style={styles}>
+      <PartsLayoutRenderer
+        parts={parts}
+        state={attemptState.snapshot}
+        onPartInit={handlePartInit}
+        onPartReady={handlePartReady}
+        onPartSave={handlePartSave}
+        onPartSubmit={handlePartSubmit}
+      />
     </div>
   );
 };

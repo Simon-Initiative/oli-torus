@@ -1,9 +1,11 @@
 /* eslint-disable react/prop-types */
+import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import ActivityRenderer from '../../formats/adaptive/ActivityRenderer';
-import { selectCurrentActivity } from '../../store/features/activities/slice';
+import ActivityRenderer from '../../components/ActivityRenderer';
+import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
+import { selectCurrentActivityTreeWithAttemptState } from '../../store/features/groups/selectors/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -31,7 +33,7 @@ const InjectedStyles: React.FC = () => {
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
-  const currentActivity = useSelector(selectCurrentActivity);
+  const currentActivityTree = useSelector(selectCurrentActivityTreeWithAttemptState);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -72,6 +74,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [pageContent]);
 
   useEffect(() => {
+    if (!currentActivityTree) {
+      return;
+    }
+
+    const { activity: currentActivity } = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -80,7 +87,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     dispatch(initializeActivity(currentActivity.resourceId));
 
     // set loaded and userRole class when currentActivity is loaded
-    const customClasses = currentActivity.custom?.customCssClass;
+    const customClasses = currentActivity.content?.custom?.customCssClass;
     /* if (currentActivity.custom?.layerRef) {
       customClasses = `${customClasses} ${getCustomClassAncestry(
         currentActivity.custom?.layerRef,
@@ -117,7 +124,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
       }
     }
-  }, [currentActivity]);
+  }, [currentActivityTree]);
 
   useEffect(() => {
     // clear the body classes in prep for the real classes
@@ -126,6 +133,69 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // strip whitespace and update body class list with page classes
     document.body.classList.add(...pageClasses);
   }, [pageClasses]);
+
+  const handleActivitySave = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => {
+    console.log('DECK HANDLE SAVE', { activityId, attemptGuid, partResponses });
+
+    return true;
+  };
+
+  const handleActivitySubmit = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => {
+    console.log('DECK HANDLE SUBMIT', { activityId, attemptGuid, partResponses });
+    return true;
+  };
+
+  const handleActivitySavePart = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partAttemptGuid: string,
+    response: StudentResponse,
+  ) => {
+    console.log('DECK HANDLE SAVE PART', { activityId, attemptGuid, partAttemptGuid, response });
+    const statePrefix = `${activityId}|stage`;
+    const responseMap = response.input.reduce(
+      (result: { [x: string]: any }, item: { key: string; path: string }) => {
+        result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
+        return result;
+      },
+      {},
+    );
+    const result = await dispatch(
+      savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+    );
+    return result;
+  };
+
+  const renderedActivities = () => {
+    if (!currentActivityTree || !currentActivityTree.length) {
+      return <div>loading...</div>;
+    }
+    return currentActivityTree.map(({ activity, attempt }, index) => {
+      const mutableActivity = JSON.parse(JSON.stringify(activity));
+      const isLast = index === currentActivityTree.length - 1;
+      if (!isLast) {
+        mutableActivity.content.custom.renderAsLayer = true;
+      }
+      return (
+        <ActivityRenderer
+          key={mutableActivity.id}
+          activity={mutableActivity}
+          attempt={attempt as ActivityState}
+          onActivitySave={handleActivitySave}
+          onActivitySubmit={handleActivitySubmit}
+          onActivitySavePart={handleActivitySavePart}
+        />
+      );
+    });
+  };
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
@@ -142,16 +212,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         <div className="stageContainer columnRestriction" style={contentStyles}>
           <InjectedStyles />
           <div id="stage-stage">
-            <div className="stage-content-wrapper">
-              {currentActivity ? (
-                <ActivityRenderer
-                  config={currentActivity?.content?.custom}
-                  parts={currentActivity?.content?.partsLayout}
-                />
-              ) : (
-                <div>loading...</div>
-              )}
-            </div>
+            <div className="stage-content-wrapper">{renderedActivities()}</div>
           </div>
         </div>
       ) : (

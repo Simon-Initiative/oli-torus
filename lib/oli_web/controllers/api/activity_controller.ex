@@ -8,6 +8,7 @@ defmodule OliWeb.Api.ActivityController do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.ApiSchemas
+  alias Oli.Activities
 
   @moduledoc tags: ["Storage Service"]
 
@@ -167,10 +168,17 @@ defmodule OliWeb.Api.ActivityController do
     }
   end
 
-  defp document_to_result(%{objectives: objectives, title: title, content: content, resource_id: resource_id}) do
+  defp document_to_result(%{
+      objectives: objectives,
+      title: title,
+      activity_type_id: activity_type_id,
+      content: content,
+      resource_id: resource_id
+    }) do
     %{
       "result" => "success",
       "resourceId" => resource_id,
+      "activityType" => activity_type_id,
       "objectives" => objectives,
       "title" => title,
       "content" => Map.delete(content, "authoring"),
@@ -258,10 +266,16 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
-  defp document_to_delivery_result(%{title: title, content: content, resource_id: resource_id}) do
+  defp document_to_delivery_result(%{
+      title: title,
+      activity_type_id: activity_type_id,
+      content: content,
+      resource_id: resource_id
+    }) do
     %{
       "result" => "success",
       "title" => title,
+      "activityTypeId" => activity_type_id,
       "resourceId" => resource_id,
       "content" => Map.delete(content, "authoring")
     }

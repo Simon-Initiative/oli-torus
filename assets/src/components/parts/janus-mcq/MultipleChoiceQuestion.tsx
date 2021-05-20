@@ -1,12 +1,15 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { renderFlow } from '../janus-text-flow/TextFlow';
+import { CapiVariable } from '../types/parts';
 import {
   JanusMultipleChoiceQuestionProperties,
   JanusMultipleChoiceQuestionItemProperties,
 } from './MultipleChoiceQuestionType';
+import { parseBool } from 'utils/common';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -102,6 +105,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const {
     x = 0,
@@ -116,13 +120,83 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   } = model;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          id: `enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          id: `randomize`,
+          key: 'randomize',
+          type: CapiVariableTypes.BOOLEAN,
+          value: randomized,
+        },
+        {
+          id: `numberOfSelectedChoices`,
+          key: 'numberOfSelectedChoices',
+          type: CapiVariableTypes.NUMBER,
+          value: numberOfSelectedChoices,
+        },
+        {
+          id: `selectedChoice`,
+          key: 'selectedChoice',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedChoice,
+        },
+        {
+          id: `selectedChoiceText`,
+          key: 'selectedChoiceText',
+          type: CapiVariableTypes.STRING,
+          value: selectedChoiceText,
+        },
+        {
+          id: `selectedChoices`,
+          key: 'selectedChoices',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoices,
+        },
+        {
+          id: `selectedChoicesText`,
+          key: 'selectedChoicesText',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoicesText,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   // Set up the styles
   const styles: CSSProperties = {
@@ -163,58 +237,71 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
 
   useEffect(() => {
-    //TODO handle value changes on state updates
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
-  useEffect(() => {
-    props.onReady({
-      activityId: `${id}`,
-      partResponses: [
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: enabled,
-        },
-        {
-          id: `stage.${id}.randomize`,
-          key: 'randomize',
-          type: 4,
-          value: randomized,
-        },
-        {
-          id: `stage.${id}.numberOfSelectedChoices`,
-          key: 'numberOfSelectedChoices',
-          type: 1,
-          value: numberOfSelectedChoices,
-        },
-        {
-          id: `stage.${id}.selectedChoice`,
-          key: 'selectedChoice',
-          type: 1,
-          value: selectedChoice,
-        },
-        {
-          id: `stage.${id}.selectedChoiceText`,
-          key: 'selectedChoiceText',
-          type: 1,
-          value: selectedChoiceText,
-        },
-        {
-          id: `stage.${id}.selectedChoices`,
-          key: 'selectedChoices',
-          type: 3,
-          value: selectedChoices,
-        },
-        {
-          id: `stage.${id}.selectedChoicesText`,
-          key: 'selectedChoicesText',
-          type: 3,
-          value: selectedChoicesText,
-        },
-      ],
-    });
-  }, []);
+  const handleStateChange = (stateData: CapiVariable[]) => {
+    // this runs every time state is updated from *any* source
+    // the global variable state
+    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        switch (stateVar.key) {
+          case 'enabled':
+            // will check for boolean and string truthiness for enabled
+            setEnabled(parseBool(stateVar.value));
+            break;
+          case 'randomize':
+            // will check for boolean and string truthiness for randomize
+            setRandomized(parseBool(stateVar.value));
+            break;
+          case 'numberOfSelectedChoices':
+            {
+              const num = parseInt(stateVar.value as string, 10);
+              if (numberOfSelectedChoices !== num) {
+                setNumberOfSelectedChoices(num);
+              }
+            }
+            break;
+          case 'selectedChoice':
+            {
+              const choice = parseInt(stateVar.value as string, 10);
+              if (selectedChoice !== choice) {
+                setSelectedChoice(choice);
+              }
+            }
+            break;
+          case 'selectedChoiceText':
+            setSelectedChoiceText(stateVar.value.toString());
+            break;
+          case 'selectedChoices':
+            if (Array.isArray(stateVar.value)) {
+              // converts string values to numbers
+              const updatedValues = stateVar.value.map((item) =>
+                !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
+              );
+              setSelectedChoices(updatedValues);
+            }
+            break;
+          case 'selectedChoicesText':
+            {
+              const vals = stateVar.value;
+              if (Array.isArray(vals)) {
+                // compare selectedChoicesText with array of strings from state
+                // then update 'checked' value based on strings
+                const choices = selectedChoicesText.map((choice) => ({
+                  ...choice,
+                  checked: vals.includes(choice.textValue),
+                }));
+                setSelectedChoicesText(choices);
+              }
+            }
+            break;
+        }
+      });
+    }
+  };
 
   useEffect(() => {
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
@@ -307,6 +394,85 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       setSelectedChoices(newSelectedChoices);
       setSelectedChoicesText(updatedSelections);
     }
+    saveState({
+      numberOfSelectedChoices: newCount,
+      selectedChoice:
+        multipleSelection && newSelectedChoices?.length
+          ? newSelectedChoices[newSelectedChoices.length - 1]
+          : checked
+          ? newChoice
+          : 0,
+      selectedChoiceText:
+        multipleSelection && updatedChoicesText?.length
+          ? updatedChoicesText[updatedChoicesText.length - 1]
+          : checked
+          ? textValue
+          : '',
+      selectedChoices: newSelectedChoices,
+      selectedChoicesText: updatedChoicesText,
+    });
+  };
+
+  const saveState = ({
+    numberOfSelectedChoices,
+    selectedChoice,
+    selectedChoiceText,
+    selectedChoices,
+    selectedChoicesText,
+  }: {
+    numberOfSelectedChoices: number;
+    selectedChoice: number;
+    selectedChoiceText: string;
+    selectedChoices: number[];
+    selectedChoicesText: string[];
+  }) => {
+    props.onSave({
+      activityId: `${id}`,
+      partResponses: [
+        {
+          id: `enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          id: `randomize`,
+          key: 'randomize',
+          type: CapiVariableTypes.BOOLEAN,
+          value: randomized,
+        },
+        {
+          id: `numberOfSelectedChoices`,
+          key: 'numberOfSelectedChoices',
+          type: CapiVariableTypes.NUMBER,
+          value: numberOfSelectedChoices,
+        },
+        {
+          id: `selectedChoice`,
+          key: 'selectedChoice',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedChoice,
+        },
+        {
+          id: `selectedChoiceText`,
+          key: 'selectedChoiceText',
+          type: CapiVariableTypes.STRING,
+          value: selectedChoiceText,
+        },
+        {
+          id: `selectedChoices`,
+          key: 'selectedChoices',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoices,
+        },
+        {
+          id: `selectedChoicesText`,
+          key: 'selectedChoicesText',
+          type: CapiVariableTypes.ARRAY,
+          value: selectedChoicesText,
+        },
+      ],
+    });
   };
 
   const isItemSelected = (index: number) => {

@@ -35,6 +35,7 @@ export type Retrieved = {
   result: 'success';
   resourceId: ResourceId;
   title: string;
+  activityType: number;
   content: ActivityModelSchema;
   authoring?: any;
   objectives?: any; // TODO typing
@@ -72,9 +73,10 @@ export const getBulkActivitiesForAuthoring = async (
   }
 
   return response.results.map((result: Retrieved) => {
-    const { resourceId: id, title, content, authoring, objectives } = result;
+    const { resourceId: id, activityType, title, content, authoring, objectives } = result;
     return {
       id,
+      activityType,
       title,
       content,
       authoring,

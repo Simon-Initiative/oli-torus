@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
   getBulkAttemptState,
@@ -6,13 +7,20 @@ import {
   writePageAttemptState,
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
+import guid from 'utils/guid';
 import { RootState } from '../../../rootReducer';
 import {
   selectCurrentActivityId,
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
+import { loadActivityAttemptState } from '../../attempt/slice';
+import {
+  selectActivityTypes,
+  selectPreviewMode,
+  selectResourceAttemptGuid,
+  selectSectionSlug,
+} from '../../page/slice';
 import { selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
@@ -170,53 +178,77 @@ export const navigateToActivity = createAsyncThunk(
   },
 );
 
-// TODO: split to another file
+interface ActivityAttemptMapping {
+  attemptGuid: string;
+  id: ResourceId;
+}
+
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
-  async (activityIds: ResourceId[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
-    const sequence = selectSequence(thunkApi.getState() as RootState);
+  async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
+    const rootState = thunkApi.getState() as RootState;
+    const sectionSlug = selectSectionSlug(rootState);
+    const isPreviewMode = selectPreviewMode(rootState);
+    let results;
+    if (isPreviewMode) {
+      const activityIds = activityAttemptMapping.map((m) => m.id);
+      results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+    } else {
+      const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);
+      results = await getBulkAttemptState(sectionSlug, attemptGuids);
+    }
+    const sequence = selectSequence(rootState);
+    const activityTypes = selectActivityTypes(rootState);
     const activities = results.map((result) => {
-      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.id);
+      const resultActivityId = isPreviewMode ? result.id : result.activityId;
+      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === resultActivityId);
       if (!sequenceEntry) {
         console.warn(`Activity ${result.id} not found in the page model!`);
         return;
       }
-      const activity = {
-        id: sequenceEntry.custom.sequenceId,
-        resourceId: sequenceEntry.activity_id,
-        content: result.content,
-      };
-      return activity;
-    });
-    // TODO: need a sequence ID and/or some other ID than db id to use here
-    thunkApi.dispatch(setActivities({ activities }));
-  },
-);
-
-export const loadActivityState = createAsyncThunk(
-  `${GroupsSlice}/deck/loadActivityState`,
-  async (attemptGuids: string[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const results = await getBulkAttemptState(sectionSlug, attemptGuids);
-
-    // TODO: map back to activities in model and update everything
-    const sequence = selectSequence(thunkApi.getState() as RootState);
-    const activities = results.map((result) => {
-      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.activityId);
-      if (!sequenceEntry) {
-        console.warn(`Activity ${result.activityId} not found in the page model!`);
-        return;
+      const attemptEntry = activityAttemptMapping.find((m) => m.id === sequenceEntry.activity_id);
+      const activityType = activityTypes.find((t) => t.id === result.activityType);
+      let partAttempts = result.partAttempts;
+      if (isPreviewMode) {
+        partAttempts = result.authoring.parts.map((p) => {
+          return {
+            attemptGuid: `preview_${guid()}`,
+            attemptNumber: 1,
+            dateEvaluated: null,
+            feedback: null,
+            outOf: null,
+            partId: p.id,
+            response: null,
+            score: null,
+          };
+        });
       }
-      const activity = {
+      const activityModel = {
         id: sequenceEntry.custom.sequenceId,
         resourceId: sequenceEntry.activity_id,
-        content: result.model,
+        content: isPreviewMode ? result.content : result.model,
+        authoring: result.authoring || null,
+        activityType,
+        title: result.title,
       };
-      return activity;
+      const attemptState: ActivityState = {
+        attemptGuid: attemptEntry?.attemptGuid || '',
+        activityId: activityModel.resourceId,
+        attemptNumber: result.attemptNumber || 1,
+        dateEvaluated: result.dateEvaluated || null,
+        score: result.score || null,
+        outOf: result.outOf || null,
+        parts: partAttempts,
+        hasMoreAttempts: result.hasMoreAttempts || true,
+        hasMoreHints: result.hasMoreHints || true,
+      };
+      return { model: activityModel, state: attemptState };
     });
 
-    thunkApi.dispatch(setActivities({ activities }));
+    const models = activities.map((a) => a?.model);
+    const states = activities.map((a) => a?.state);
+
+    thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
+    thunkApi.dispatch(setActivities({ activities: models }));
   },
 );

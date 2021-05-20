@@ -48,6 +48,7 @@ defmodule OliWeb.ResourceController do
 
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
+    project = conn.assigns.project
 
     case AuthoringResolver.from_revision_slug(project_slug, revision_slug) do
       nil ->
@@ -58,6 +59,7 @@ defmodule OliWeb.ResourceController do
         |> render("advanced_page_preview.html",
           revision: revision,
           additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+          activity_types: Activities.activities_for_project(project),
           scripts: Activities.get_activity_scripts(:delivery_script),
           part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
           user: author,

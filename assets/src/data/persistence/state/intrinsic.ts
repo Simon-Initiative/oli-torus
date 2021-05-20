@@ -89,6 +89,94 @@ const writePageAttemptStateServer = async (
   state: any,
 ) => {
   const method = 'PUT';
-  const url = `/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
-  return [];
+  const url = `/state/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify(state),
+  });
+  return { result };
+};
+
+export const writeActivityAttemptState = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partResponses: any,
+  finalize = false,
+  previewMode = false,
+): Promise<any> =>
+  previewMode
+    ? writeActivityAttemptStateClient(sectionSlug, attemptGuid, partResponses, finalize)
+    : writeActivityAttemptStateServer(sectionSlug, attemptGuid, partResponses, finalize);
+
+const writeActivityAttemptStateClient = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partResponses: any,
+  finalize = false,
+) => {
+  // on the client side, there is really only one attempt..
+  // could do a map of client guid to env? revisit with history mode??
+  const assignScript = getAssignScript(partResponses);
+  const { result } = evalScript(assignScript, defaultGlobalEnv);
+  return { result };
+};
+
+const writeActivityAttemptStateServer = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partResponses: any,
+  finalize = false,
+) => {
+  const method = finalize ? 'PUT' : 'PATCH';
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify({ partInputs: partResponses }),
+  });
+  return { result };
+};
+
+export const writePartAttemptState = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partAttemptGuid: string,
+  input: any,
+  finalize = false,
+  previewMode = false,
+): Promise<any> =>
+  previewMode
+    ? writePartAttemptStateClient(sectionSlug, attemptGuid, partAttemptGuid, input, finalize)
+    : writePartAttemptStateServer(sectionSlug, attemptGuid, partAttemptGuid, input, finalize);
+
+const writePartAttemptStateClient = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partAttemptGuid: string,
+  input: any,
+  finalize = false,
+) => {
+  // on the client side, there is really only one attempt..
+  // could do a map of client guid to env? revisit with history mode??
+  const assignScript = getAssignScript(input);
+  const { result } = evalScript(assignScript, defaultGlobalEnv);
+  return { result };
+};
+
+const writePartAttemptStateServer = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partAttemptGuid: string,
+  input: any,
+  finalize = false,
+) => {
+  const method = finalize ? 'PUT' : 'PATCH';
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify({ response: input }),
+  });
+  return { result };
 };

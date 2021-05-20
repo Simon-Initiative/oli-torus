@@ -1,11 +1,71 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariable } from '../types/parts';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          id: `enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          id: `text`,
+          key: 'text',
+          type: CapiVariableTypes.STRING,
+          value: text,
+        },
+        {
+          id: `textLength`,
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: text.length,
+        },
+      ],
+    });
+    setReady(true);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
+
   const { x, y, z, width, height, customCssClass, showLabel, label, prompt } = model;
   const styles: CSSProperties = {
     position: 'absolute',
@@ -19,31 +79,29 @@ const InputText: React.FC<any> = (props) => {
   const [cssClass, setCssClass] = useState(customCssClass);
   const [text, setText] = useState<string>('');
   const saveInputText = (val: string) => {
-    return;
-    //TODO props.onSavePart is not yet implemented
-    /* props.onSavePart({
+    props.onSave({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.enabled`,
+          id: `enabled`,
           key: 'enabled',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `stage.${id}.text`,
+          id: `text`,
           key: 'text',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
+          id: `textLength`,
           key: 'textLength',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: val.length,
         },
       ],
-    }); */
+    });
   };
   const handleOnChange = (event: any) => {
     const val = event.target.value;
@@ -59,24 +117,41 @@ const InputText: React.FC<any> = (props) => {
   );
 
   useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
-    }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
-
-  useEffect(() => {
-    //TODO handle value changes on state updates
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
-  useEffect(() => {
-    props.onReady({
-      id: `${id}`,
-      partResponses: [],
-    });
-  }, []);
+  const handleStateChange = (vars: CapiVariable[]) => {
+    // override text value from state
+    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (activity?.length) {
+      activity.forEach((stateVar) => {
+        if (stateVar.key === 'text' && stateVar.value) {
+          const stateText = stateVar.value.toString();
+          if (text !== stateText) {
+            setText(stateText);
+          }
+          props.onSave({
+            activityId: `${id}`,
+            partResponses: [
+              {
+                id: `textLength`,
+                key: 'textLength',
+                type: CapiVariableTypes.NUMBER,
+                value: stateText.length,
+              },
+            ],
+          });
+        }
+        if (stateVar && stateVar.key === 'enabled') {
+          setEnabled(parseBool(stateVar.value));
+        }
+        if (stateVar && stateVar.key === 'customCssClass') {
+          setCssClass(stateVar.value.toString());
+        }
+      });
+    }
+  };
 
   return (
     <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>

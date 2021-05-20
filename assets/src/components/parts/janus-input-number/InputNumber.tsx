@@ -1,11 +1,63 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { CapiVariable } from '../types/parts';
 
 const InputNumber: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          id: `value`,
+          key: 'value',
+          type: CapiVariableTypes.NUMBER,
+          value: inputNumberValue || '',
+        },
+        {
+          id: `enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: inputNumberEnabled,
+        },
+      ],
+    });
+    setReady(true);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const {
     x,
@@ -44,38 +96,42 @@ const InputNumber: React.FC<any> = (props) => {
   );
 
   useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
-    }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
-
-  useEffect(() => {
-    //TODO handle value changes on state updates
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
-  const saveInputText = (val: string, isEnabled = true) => {
-    return;
-    //TODO props.onSavePart is not yet implemented.
-    /* props.onSavePart({
+  const handleStateChange = (data: CapiVariable[]) => {
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        if (stateVar.key === 'value') {
+          setInputNumberValue(stateVar.value as number);
+        }
+        if (stateVar.key === 'enabled') {
+          setInputNumberEnabled(stateVar.value as boolean);
+        }
+      });
+    }
+  };
+
+  const saveInputText = (val: number, isEnabled = true) => {
+    props.onSave({
       id: `${id}`,
       partResponses: [
         {
-          id: `stage.${id}.value`,
+          id: `${id}.value`,
           key: 'value',
-          type: 2,
+          type: CapiVariableTypes.NUMBER,
           value: val,
         },
         {
-          id: `stage.${id}.enabled`,
+          id: `${id}.enabled`,
           key: 'enabled',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isEnabled,
         },
       ],
-    }); */
+    });
   };
 
   const handleOnChange = (event: any) => {
@@ -96,26 +152,6 @@ const InputNumber: React.FC<any> = (props) => {
       debounceSave(val);
     }
   }, [inputNumberValue]);
-
-  useEffect(() => {
-    props.onReady({
-      id: `${id}`,
-      partResponses: [
-        {
-          id: `stage.${id}.value`,
-          key: 'value',
-          type: 2,
-          value: inputNumberValue || '',
-        },
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: inputNumberEnabled,
-        },
-      ],
-    });
-  }, []);
 
   return (
     <div data-janus-type={props.type} className="number-input" style={inputNumberDivStyles}>
