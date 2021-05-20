@@ -170,7 +170,8 @@ const NavigationButton: React.FC<any> = (props) => {
   }
 
   useEffect(() => {
-    handleStateChange(state);
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
   const handleStateChange = (stateData: CapiVariable[]) => {

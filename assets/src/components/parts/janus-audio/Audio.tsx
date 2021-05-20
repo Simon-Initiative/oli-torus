@@ -135,73 +135,73 @@ const Audio: React.FC<any> = (props) => {
         {
           id: `stage.${props.id}.hasStarted`,
           key: 'hasStarted',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isAudioPlayerStarted,
         },
         {
           id: `stage.${props.id}.autoPlay`,
           key: 'autoPlay',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: autoPlay,
         },
         {
           id: `stage.${props.id}.currentTime`,
           key: 'currentTime',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
           id: `stage.${props.id}.duration`,
           key: 'duration',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: duration,
         },
         {
           id: `stage.${props.id}.endTime`,
           key: 'endTime',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: endTime || '',
         },
         {
           id: `stage.${props.id}.exposureInSeconds`,
           key: 'exposureInSeconds',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: currentTime,
         },
         {
           id: `stage.${props.id}.exposureInPercentage`,
           key: 'exposureInPercentage',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
         },
         {
           id: `stage.${props.id}.hasCompleted`,
           key: 'hasCompleted',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isAudioCompleted,
         },
         {
           id: `stage.${props.id}.startTime`,
           key: 'startTime',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: startTime || 0,
         },
         {
           id: `stage.${props.id}.state`,
           key: 'state',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: audioState,
         },
         {
           id: `stage.${props.id}.totalSecondsWatched`,
           key: 'totalSecondsWatched',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
           id: `stage.${props.id}.customCssClass`,
           key: 'customCssClass',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: customCssClass,
         },
       ],
@@ -239,7 +239,8 @@ const Audio: React.FC<any> = (props) => {
   };
 
   useEffect(() => {
-    handleStateChange(state);
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
   const handleStateChange = (data: CapiVariable[]) => {

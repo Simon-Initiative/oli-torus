@@ -1,0 +1,14 @@
+{
+  "id": "janus_capi_iframe",
+  "friendlyName": "ExternalActivity",
+  "description": "Renders a iFrame",
+  "global": true,
+  "delivery": {
+    "element": "janus-capi-iframe",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-capi-iframe",
+    "entry": "./authoring-entry.ts"
+  }
+}

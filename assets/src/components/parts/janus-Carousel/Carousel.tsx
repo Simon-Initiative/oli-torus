@@ -121,7 +121,7 @@ const Carousel: React.FC<any> = (props) => {
   }, [images]);
 
   useEffect(() => {
-    handleStateChange(state);
+    //TODO commenting for now. Need to revisit once state structure logic is in place
   }, [state]);
 
   const saveState = ({

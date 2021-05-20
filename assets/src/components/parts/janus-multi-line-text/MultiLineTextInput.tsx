@@ -100,7 +100,8 @@ const MultiLineTextInput: React.FC<any> = (props) => {
   const [cssClass, setCssClass] = useState(customCssClass);
 
   useEffect(() => {
-    handleStateChange(state);
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
   const saveInputText = (val: string) => {
@@ -110,19 +111,19 @@ const MultiLineTextInput: React.FC<any> = (props) => {
         {
           id: `stage.${id}.enabled`,
           key: 'enabled',
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
           id: `stage.${id}.text`,
           key: 'text',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
           id: `stage.${id}.textLength`,
           key: 'textLength',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: val.length,
         },
       ],
