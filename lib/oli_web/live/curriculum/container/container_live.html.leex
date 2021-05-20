@@ -60,7 +60,7 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {child, index} <- Enum.filter(@children, fn c -> c.slug != @dragging end) |> Enum.with_index() do %>
+        <%= for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end) do %>
           <%= live_component @socket, DropTarget, id: index, index: index %>
           <%= live_component @socket, EntryLive, %{
                   id: child.slug,
