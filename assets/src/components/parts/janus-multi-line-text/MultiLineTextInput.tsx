@@ -107,21 +107,18 @@ const MultiLineTextInput: React.FC<any> = (props) => {
   const saveInputText = (val: string) => {
     props.onSave({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: val.length,
@@ -152,10 +149,9 @@ const MultiLineTextInput: React.FC<any> = (props) => {
           setValue(stateText);
         }
         props.onSave({
-          activityId: `${id}`,
-          partResponses: [
+          id: `${id}`,
+          responses: [
             {
-              id: `textLength`,
               key: 'textLength',
               type: CapiVariableTypes.NUMBER,
               value: stateText.length,

@@ -36,73 +36,61 @@ const Video: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: videoIsPlayerStarted,
         },
         {
-          id: `autoPlay`,
           key: 'autoPlay',
           type: CapiVariableTypes.BOOLEAN,
           value: videoAutoPlay,
         },
         {
-          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: startTime,
         },
         {
-          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: '',
         },
         {
-          id: `endTime`,
           key: 'endTime',
           type: CapiVariableTypes.STRING,
           value: endTime || '',
         },
         {
-          id: `exposureInSeconds`,
           key: 'exposureInSeconds',
           type: CapiVariableTypes.NUMBER,
           value: startTime,
         },
         {
-          id: `exposureInPercentage`,
           key: 'exposureInPercentage',
           type: CapiVariableTypes.NUMBER,
           value: 0,
         },
         {
-          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `startTime`,
           key: 'startTime',
           type: CapiVariableTypes.STRING,
           value: startTime || 0,
         },
         {
-          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: 'notStarted',
         },
         {
-          id: `totalSecondsWatched`,
           key: 'totalSecondsWatched',
           type: CapiVariableTypes.STRING,
           value: startTime,
         },
         {
-          id: `enableReplay`,
           key: 'enableReplay',
           type: CapiVariableTypes.BOOLEAN,
           value: videoEnableReplay,
@@ -245,7 +233,7 @@ const Video: React.FC<any> = (props) => {
       videoState: 'completed',
     });
     if (triggerCheck) {
-      props.onSubmit({ Id: `${id}`, partResponses: [] });
+      props.onSubmit({ id: `${id}`, responses: [] });
     }
   };
 
@@ -290,76 +278,64 @@ const Video: React.FC<any> = (props) => {
     const videoDuration = parseFloat(duration || 0);
     const exposureInPercentage = (currentVideoTime / videoDuration) * 100;
     props.onSave({
-      activityId: `${id}`,
-      partResponses: [
+      id: `${id}`,
+      responses: [
         {
-          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: isVideoPlayerStarted,
         },
         {
-          id: `autoPlay`,
           key: 'autoPlay',
           type: CapiVariableTypes.BOOLEAN,
           value: videoAutoPlay,
         },
         {
-          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: duration,
         },
         {
-          id: `endTime`,
           key: 'endTime',
           type: CapiVariableTypes.STRING,
           value: endTime || '',
         },
         {
-          id: `exposureInSeconds`,
           key: 'exposureInSeconds',
           type: CapiVariableTypes.NUMBER,
           value: currentTime,
         },
         {
-          id: `exposureInPercentage`,
           key: 'exposureInPercentage',
           type: CapiVariableTypes.NUMBER,
           value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
         },
         {
-          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: isVideoCompleted,
         },
         {
-          id: `startTime`,
           key: 'startTime',
           type: CapiVariableTypes.STRING,
           value: startTime || 0,
         },
         {
-          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: videoState,
         },
         {
-          id: `totalSecondsWatched`,
           key: 'totalSecondsWatched',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `enableReplay`,
           key: 'enableReplay',
           type: CapiVariableTypes.BOOLEAN,
           value: videoEnableReplay,

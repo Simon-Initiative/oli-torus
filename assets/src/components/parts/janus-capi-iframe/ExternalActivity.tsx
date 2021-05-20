@@ -345,8 +345,8 @@ const ExternalActivity: React.FC<any> = (props) => {
   const handleCheckRequest = (data: any) => {
     // for now send submitActivity for check
     props.onSubmitActivity({
-      activityId: `${id}`,
-      partResponses: [],
+      id: `${id}`,
+      responses: [],
     });
   };
 
@@ -547,7 +547,7 @@ const ExternalActivity: React.FC<any> = (props) => {
 
     // this might instead need to be something that we wait until the sim says is ready?
     // but also just might not need it at all
-    props.onReady({ activityId: `${id}`, partResponses: [] });
+    props.onReady({ id: `${id}`, responses: [] });
 
     // Introducing listeners requires returning a function that also un-listens
     return () => {

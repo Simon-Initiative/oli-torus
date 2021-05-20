@@ -157,10 +157,9 @@ const Popup: React.FC<any> = (props) => {
     setShowPopup(toggleVal);
     // optimistically write state
     // onSaveActivity({
-    //   activityId: `${id}`,
-    //   partResponses: [
+    //   id: `${id}`,
+    //   responses: [
     //     {
-    //       id: `stage.${id}.isOpen`,
     //       key: 'isOpen',
     //       type: CapiVariableTypes.BOOLEAN,
     //       value: toggleVal,
