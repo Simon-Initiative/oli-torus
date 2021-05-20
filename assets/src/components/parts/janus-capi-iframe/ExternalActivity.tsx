@@ -464,7 +464,8 @@ const ExternalActivity: React.FC<any> = (props) => {
         return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
       }),
     ];
-    state.forEach((stateVar) => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    /*     state.forEach((stateVar) => {
       const exists = newInternalState.find((iVar: { id: any }) => iVar.id === stateVar.id);
       if (exists) {
         exists.value =
@@ -479,7 +480,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         stateVar.value = '[""]';
         newInternalState.push(stateVar);
       }
-    });
+    }); */
     setInternalState(newInternalState);
 
     simLife.currentState = newInternalState;
@@ -559,8 +560,9 @@ const ExternalActivity: React.FC<any> = (props) => {
   }, [simFrame]);
 
   useEffect(() => {
-    updateInternalState(state);
-    setSimIsInitStatePassedOnce(false);
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //updateInternalState(state);
+    // setSimIsInitStatePassedOnce(false);
   }, [state]);
 
   useEffect(() => {
