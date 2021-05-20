@@ -307,9 +307,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     updateInternalState(stateVarsFromSim);
 
     // value change is really the only time we should be saving
-    props.onSaveActivity({
-      activityId: `${id}`,
-      partResponses: stateVarsFromSim,
+    props.onSave({
+      id: `${id}`,
+      responses: stateVarsFromSim,
     });
   };
 
