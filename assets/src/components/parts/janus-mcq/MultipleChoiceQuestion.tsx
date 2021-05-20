@@ -9,7 +9,7 @@ import {
   JanusMultipleChoiceQuestionProperties,
   JanusMultipleChoiceQuestionItemProperties,
 } from './MultipleChoiceQuestionType';
-import { parseBool } from 'utils/helpers';
+import { parseBool } from 'utils/common';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic

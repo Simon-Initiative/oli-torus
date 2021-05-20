@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { parseBool } from 'utils/helpers';
+import { parseBool } from 'utils/common';
 import { StateVariable } from '../types/parts';
 
 const NavigationButton: React.FC<any> = (props) => {

@@ -2,7 +2,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/helpers';
+import { parseBool } from 'utils/common';
 import { StateVariable } from '../types/parts';
 
 const InputText: React.FC<any> = (props) => {

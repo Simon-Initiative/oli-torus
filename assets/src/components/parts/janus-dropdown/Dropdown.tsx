@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { parseBool } from 'utils/helpers';
+import { parseBool } from 'utils/common';
 import { StateVariable } from '../types/parts';
 
 const Dropdown: React.FC<any> = (props) => {
