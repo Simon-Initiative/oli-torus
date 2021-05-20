@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="project" content="OLI Torus v0.9.0">
+
+    <title>Oli.Delivery.Attempts.PageLifecycle.Lifecycle — OLI Torus v0.9.0</title>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+
+    <script src="dist/sidebar_items-f82e75d463.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.9.0
+      </strong>
+    </div>
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+Oli.Delivery.Attempts.PageLifecycle.Lifecycle <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.9.0)</small>
+
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/lifecycle.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-callbacks summary">
+    <h2>
+      <a href="#callbacks">Callbacks</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:finalize/1">finalize(%Oli.Delivery.Attempts.PageLifecycle.FinalizationContext{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Finalizes a page attempt.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:review/1">review(%Oli.Delivery.Attempts.PageLifecycle.ReviewContext{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Accesses the attempt state for a particular resoure attempt. This is guaranteed not not transition
+the page in any way.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:start/1">start(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Explicitly starts a new attempt for a page. Can fail for reasons of no more attempts being available, or
+if there is already an existing attempt present.  On success, returns the tuple</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:visit/1">visit(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Access or create the attempt state necessary to allow the visitation of a page.  Depending
+on the implementation, this request to visit the page may return one of the following result
+statuses</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="callbacks" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#callbacks">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Callbacks
+          </h1>
+          <div class="callbacks-list">
+<section class="detail" id="c:finalize/1">
+
+  <div class="detail-header">
+    <a href="#c:finalize/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">finalize(%Oli.Delivery.Attempts.PageLifecycle.FinalizationContext{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/lifecycle.ex#L63" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>finalize(%Oli.Delivery.Attempts.PageLifecycle.FinalizationContext{
+  resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+}) ::
+  {:ok,
+   %Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary{
+     part_attempt_guids: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_access: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+   }}
+  | {:error, {:already_submitted}}
+  | {:error, {:unsupported}}</pre>
+
+      </div>
+
+<p>Finalizes a page attempt.</p><p>On success, returns a tuple of the form:</p><p>}</p><p>Can fail if the attempt is already submitted or if finalization is not supported by the implementation</p>
+  </section>
+</section>
+<section class="detail" id="c:review/1">
+
+  <div class="detail-header">
+    <a href="#c:review/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">review(%Oli.Delivery.Attempts.PageLifecycle.ReviewContext{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/lifecycle.ex#L50" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>review(%Oli.Delivery.Attempts.PageLifecycle.ReviewContext{
+  resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+}) ::
+  {:ok,
+   {:in_progress,
+    %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+      attempt_hierarchy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    }}}
+  | {:ok,
+     {:finalized,
+      %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+        attempt_hierarchy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      }}}</pre>
+
+      </div>
+
+<p>Accesses the attempt state for a particular resoure attempt. This is guaranteed not not transition
+the page in any way.</p><p>Returns a tuple of the form:</p><p>}}</p><p>Where status can be <code class="inline">:in_progress</code> if the attempt is still active or <code class="inline">:finalized</code> if the attempt has
+been finalized</p>
+  </section>
+</section>
+<section class="detail" id="c:start/1">
+
+  <div class="detail-header">
+    <a href="#c:start/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">start(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/lifecycle.ex#L34" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>start(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{
+  activity_provider: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  latest_resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  page_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  user_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+}) ::
+  {:ok,
+   %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+     attempt_hierarchy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+   }}
+  | {:error, {:no_more_attempts}}
+  | {:error, {:active_attempt_present}}</pre>
+
+      </div>
+
+<p>Explicitly starts a new attempt for a page. Can fail for reasons of no more attempts being available, or
+if there is already an existing attempt present.  On success, returns the tuple:</p><p>}</p>
+  </section>
+</section>
+<section class="detail" id="c:visit/1">
+
+  <div class="detail-header">
+    <a href="#c:visit/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">visit(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/lifecycle.ex#L22" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>visit(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{
+  activity_provider: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  latest_resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  page_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  user_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+}) ::
+  {:ok,
+   {:not_started,
+    %Oli.Delivery.Attempts.PageLifecycle.HistorySummary{
+      resource_access: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+      resource_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    }}}
+  | {:ok,
+     {:in_progress,
+      %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+        attempt_hierarchy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      }}}
+  | {:ok,
+     {:revised,
+      %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+        attempt_hierarchy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+        resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+      }}}
+  | {:error, <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}</pre>
+
+      </div>
+
+<p>Access or create the attempt state necessary to allow the visitation of a page.  Depending
+on the implementation, this request to visit the page may return one of the following result
+statuses:</p><p>:not_started - There is no active attempt and one cannot be implicitly started
+:in_progress - There is an active attempt and its state is returned.  This active attempt may have
+been implicitly created, depending on the implementation
+:revised - There is an active attempt, and its state is returned, but it has been detected that
+the page revision has been changed in a publication since the starte of this attempt</p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+  </body>
+</html>

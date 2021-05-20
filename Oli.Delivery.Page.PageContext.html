@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Page.PageContext — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-004cabded4.js"></script>
+    <script src="dist/sidebar_items-f82e75d463.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -108,26 +108,22 @@ Oli.Delivery.Page.PageContext <small class="app-vsn">(OLI Torus v0.9.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_page_context/3">create_page_context(section_slug, page_slug, user)</a>
+    <a href="#create_for_review/3">create_for_review(section_slug, attempt_guid, user)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Creates the page context required to render a page in delivery model, based
-off of the section context id, the slug of the page to render, and an
-optional id of the parent container that the page exists within. If not
-specified, the container is assumed to be the root resource of the publication.</p></div>
+    <div class="summary-synopsis"><p>Creates the page context required to render a page for reviewing a historical
+attempt.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_page_context/4">create_page_context(section_slug, page_slug, attempt_guid, user)</a>
+    <a href="#create_for_visit/3">create_for_visit(section_slug, page_slug, user)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Creates the page context required to render a page in review model, based
-off of the section context id, the slug of the page to render, and an
-optional id of the parent container that the page exists within. If not
-specified, the container is assumed to be the root resource of the publication.</p></div>
+    <div class="summary-synopsis"><p>Creates the page context required to render a page for visiting a current or new
+attempt.</p></div>
 
 </div>
 <div class="summary-row">
@@ -159,16 +155,16 @@ specified, the container is assumed to be the root resource of the publication.<
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="create_page_context/3">
+<section class="detail" id="create_for_review/3">
 
   <div class="detail-header">
-    <a href="#create_page_context/3" class="detail-link" title="Link to this function">
+    <a href="#create_for_review/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_page_context(section_slug, page_slug, user)</h1>
+    <h1 class="signature">create_for_review(section_slug, attempt_guid, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -181,7 +177,7 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
+          <pre>create_for_review(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
   %Oli.Delivery.Page.PageContext{
     activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     latest_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -191,30 +187,29 @@ Functions
     previous_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     progress_state: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     resource_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     summary: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }</pre>
 
       </div>
 
-<p>Creates the page context required to render a page in delivery model, based
-off of the section context id, the slug of the page to render, and an
-optional id of the parent container that the page exists within. If not
-specified, the container is assumed to be the root resource of the publication.</p><p>The key task performed here is the resolution of all referenced objectives
+<p>Creates the page context required to render a page for reviewing a historical
+attempt.</p><p>The key task performed here is the resolution of all referenced objectives
 and activities that may be present in the content of the page. This
 information is collected and then assembled in a fashion that can be given
 to a renderer.</p>
   </section>
 </section>
-<section class="detail" id="create_page_context/4">
+<section class="detail" id="create_for_visit/3">
 
   <div class="detail-header">
-    <a href="#create_page_context/4" class="detail-link" title="Link to this function">
+    <a href="#create_for_visit/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_page_context(section_slug, page_slug, attempt_guid, user)</h1>
+    <h1 class="signature">create_for_visit(section_slug, page_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L72" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L96" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -227,7 +222,7 @@ to a renderer.</p>
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>create_page_context(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
+          <pre>create_for_visit(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), Oli.Accounts.User) ::
   %Oli.Delivery.Page.PageContext{
     activities: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     latest_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -237,15 +232,14 @@ to a renderer.</p>
     previous_page: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     progress_state: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     resource_attempts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     summary: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }</pre>
 
       </div>
 
-<p>Creates the page context required to render a page in review model, based
-off of the section context id, the slug of the page to render, and an
-optional id of the parent container that the page exists within. If not
-specified, the container is assumed to be the root resource of the publication.</p><p>The key task performed here is the resolution of all referenced objectives
+<p>Creates the page context required to render a page for visiting a current or new
+attempt.</p><p>The key task performed here is the resolution of all referenced objectives
 and activities that may be present in the content of the page. This
 information is collected and then assembled in a fashion that can be given
 to a renderer.</p>
@@ -260,7 +254,7 @@ to a renderer.</p>
     </a>
     <h1 class="signature">determine_previous_next(hierarchy, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L124" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L152" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -282,7 +276,7 @@ to a renderer.</p>
     </a>
     <h1 class="signature">flatten_hierarchy(list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L147" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/page/page_context.ex#L175" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

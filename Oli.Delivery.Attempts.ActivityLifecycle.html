@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="project" content="OLI Torus v0.9.0">
+
+    <title>Oli.Delivery.Attempts.ActivityLifecycle — OLI Torus v0.9.0</title>
+    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+
+    <script src="dist/sidebar_items-f82e75d463.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+
+  </head>
+  <body data-type="modules">
+    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+
+<div class="main">
+
+<button class="sidebar-button sidebar-toggle">
+  <span class="icon-menu" title="Collapse/expand sidebar"></span>
+</button>
+
+<section class="sidebar">
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <span class="icon-search" aria-hidden="true" title="Submit search"></span>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
+    </button>
+    <label class="search-label">
+      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion">
+        v0.9.0
+      </strong>
+    </div>
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+  </div>
+
+  <ul class="sidebar-listNav">
+    <li><a id="extras-list" href="#full-list">Pages</a></li>
+
+      <li><a id="modules-list" href="#full-list">Modules</a></li>
+
+
+      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+
+  </ul>
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+      <h1>
+Oli.Delivery.Attempts.ActivityLifecycle <small class="app-vsn">(OLI Torus v0.9.0)</small>
+
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L1" title="View Source" class="view-source" rel="help">
+            <span class="icon-code" aria-hidden="true"></span>
+            <span class="sr-only">View Source</span>
+          </a>
+
+      </h1>
+
+
+
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#perform_test_transformation/1">perform_test_transformation(model)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Performs activity model transformation for test mode.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#request_hint/2">request_hint(activity_attempt_guid, part_attempt_guid)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieve a hint for an attempt.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#reset_activity/2">reset_activity(section_slug, activity_attempt_guid)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Resets a current activity attempt, creating a new activity attempt and
+new part attempts.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#save_student_input/1">save_student_input(part_inputs)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Processes a list of part inputs and saves the response to the corresponding
+part attempt record.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="perform_test_transformation/1">
+
+  <div class="detail-header">
+    <a href="#perform_test_transformation/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">perform_test_transformation(model)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L191" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Performs activity model transformation for test mode.</p>
+  </section>
+</section>
+<section class="detail" id="request_hint/2">
+
+  <div class="detail-header">
+    <a href="#request_hint/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">request_hint(activity_attempt_guid, part_attempt_guid)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L35" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Retrieve a hint for an attempt.</p><p>Return value is <code class="inline">{:ok, %Hint{}, boolean}</code> where the boolean is an indication as
+to whether there are more hints.</p><p>If there is not a hint available to fulfill this request, this function returns:
+<code class="inline">{:error, {:no_more_hints}}</code></p><p>If the part attempt can not be found this function returns:
+<code class="inline">{:error, {:not_found}}</code></p><p>If the attept record cannot be updated to track the new hint request, returns:
+<code class="inline">{:error, %Changeset{}}</code></p>
+  </section>
+</section>
+<section class="detail" id="reset_activity/2">
+
+  <div class="detail-header">
+    <a href="#reset_activity/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">reset_activity(section_slug, activity_attempt_guid)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L88" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Resets a current activity attempt, creating a new activity attempt and
+new part attempts.</p><p>The return value is of the form:</p><p><code class="inline">{:ok, %ActivityState, model}</code> where model is potentially a new model of the activity</p><p>If all attempts have been exhausted:</p><p><code class="inline">{:error, {:no_more_attempts}}</code></p><p>If the activity attempt cannot be found:</p><p><code class="inline">{:error, {:not_found}}</code></p>
+  </section>
+</section>
+<section class="detail" id="save_student_input/1">
+
+  <div class="detail-header">
+    <a href="#save_student_input/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">save_student_input(part_inputs)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L166" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Processes a list of part inputs and saves the response to the corresponding
+part attempt record.</p><p>On success returns a tuple of the form <code class="inline">{:ok, count}</code></p>
+  </section>
+</section>
+
+          </div>
+        </section>
+
+      <footer class="footer">
+        <p>
+          <span class="line">
+            Built using
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
+          </span>
+          <span class="line">
+            Designed by
+            <a href="https://twitter.com/dignifiedquire" target="_blank" rel="noopener" title="@dignifiedquire">Friedel Ziegelmayer</a>.
+          </span>
+        </p>
+        <p>
+
+            <a href="api-reference.html" title="API reference" class="line footer-button">API Reference</a>
+
+          <button class="line footer-button display-shortcuts-help">
+            Display keyboard shortcuts
+          </button>
+          <button class="line footer-button night-mode-toggle">
+            Toggle night mode
+          </button>
+          <button class="line footer-button display-quick-switch">
+            Go to a HexDocs package
+          </button>
+          <button class="line footer-button tooltips-toggle">
+            <span class="tooltips-option-disable">Disable tooltips</span>
+            <span class="tooltips-option-enable">Enable tooltips</span>
+          </button>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+  </body>
+</html>

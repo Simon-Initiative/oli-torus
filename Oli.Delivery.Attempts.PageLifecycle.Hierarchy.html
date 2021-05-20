@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.23.0">
     <meta name="project" content="OLI Torus v0.9.0">
 
-    <title>Oli.Delivery.Attempts.ResourceAccess — OLI Torus v0.9.0</title>
+    <title>Oli.Delivery.Attempts.PageLifecycle.Hierarchy — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-004cabded4.js"></script>
+    <script src="dist/sidebar_items-f82e75d463.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -78,9 +78,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Attempts.ResourceAccess <small class="app-vsn">(OLI Torus v0.9.0)</small>
+Oli.Delivery.Attempts.PageLifecycle.Hierarchy <small class="app-vsn">(OLI Torus v0.9.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/resource_access.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -89,6 +89,104 @@ Oli.Delivery.Attempts.ResourceAccess <small class="app-vsn">(OLI Torus v0.9.0)</
 
 
 
+        <section id="summary" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#summary">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+            Summary
+          </h1>
+
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create/1">create(context)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates an attempt hierarchy for a given resource visit context.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_latest_attempts/1">get_latest_attempts(resource_attempt_id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Retrieves the state of the latest attempts for a given resource attempt id.</p></div>
+
+</div>
+
+  </div>
+
+        </section>
+
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="create/1">
+
+  <div class="detail-header">
+    <a href="#create/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create(context)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L22" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates an attempt hierarchy for a given resource visit context.</p><p>Returns {:ok, %AttemptState{}}</p>
+  </section>
+</section>
+<section class="detail" id="get_latest_attempts/1">
+
+  <div class="detail-header">
+    <a href="#get_latest_attempts/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_latest_attempts(resource_attempt_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L120" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Retrieves the state of the latest attempts for a given resource attempt id.</p><p>Return value is a map of activity ids to a two element tuple.  The first
+element is the latest activity attempt and the second is a map of part ids
+to their part attempts. As an example:</p><p>%{
+  232 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+  233 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+}</p>
+  </section>
+</section>
+
+          </div>
+        </section>
 
       <footer class="footer">
         <p>
