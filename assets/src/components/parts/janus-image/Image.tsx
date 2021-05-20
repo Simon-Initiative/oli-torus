@@ -1,19 +1,47 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-
-// TODO: fix typing
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 const Image: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const { x, y, z, width, height, src, alt, customCssClass } = model;
   const imageStyles: CSSProperties = {
@@ -24,10 +52,7 @@ const Image: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-  useEffect(() => {
-    // all activities *must* emit onReady
-    props.onReady({ id: `${props.id}` });
-  }, []);
+
   return (
     <img
       // eslint-disable-next-line

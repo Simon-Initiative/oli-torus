@@ -36,7 +36,6 @@ const templatizeText = (text: string, state: any) => {
     if (!stateItem) {
       return;
     }
-
     // return stateItem or stateItem.value if set
     return !!stateItem?.value && Array.isArray(stateItem.value)
       ? stateItem?.value?.join(' ')
