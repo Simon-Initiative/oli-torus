@@ -145,43 +145,36 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       id,
       responses: [
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `randomize`,
           key: 'randomize',
           type: CapiVariableTypes.BOOLEAN,
           value: randomized,
         },
         {
-          id: `numberOfSelectedChoices`,
           key: 'numberOfSelectedChoices',
           type: CapiVariableTypes.NUMBER,
           value: numberOfSelectedChoices,
         },
         {
-          id: `selectedChoice`,
           key: 'selectedChoice',
           type: CapiVariableTypes.NUMBER,
           value: selectedChoice,
         },
         {
-          id: `selectedChoiceText`,
           key: 'selectedChoiceText',
           type: CapiVariableTypes.STRING,
           value: selectedChoiceText,
         },
         {
-          id: `selectedChoices`,
           key: 'selectedChoices',
           type: CapiVariableTypes.ARRAY,
           value: selectedChoices,
         },
         {
-          id: `selectedChoicesText`,
           key: 'selectedChoicesText',
           type: CapiVariableTypes.ARRAY,
           value: selectedChoicesText,
@@ -235,11 +228,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   );
   const prevSelectedChoice = usePrevious<number>(selectedChoice);
   const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
 
   const handleStateChange = (stateData: CapiVariable[]) => {
     // this runs every time state is updated from *any* source
@@ -427,46 +415,39 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     selectedChoicesText: string[];
   }) => {
     props.onSave({
-      activityId: `${id}`,
-      partResponses: [
+      id: `${id}`,
+      responses: [
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `randomize`,
           key: 'randomize',
           type: CapiVariableTypes.BOOLEAN,
           value: randomized,
         },
         {
-          id: `numberOfSelectedChoices`,
           key: 'numberOfSelectedChoices',
           type: CapiVariableTypes.NUMBER,
           value: numberOfSelectedChoices,
         },
         {
-          id: `selectedChoice`,
           key: 'selectedChoice',
           type: CapiVariableTypes.NUMBER,
           value: selectedChoice,
         },
         {
-          id: `selectedChoiceText`,
           key: 'selectedChoiceText',
           type: CapiVariableTypes.STRING,
           value: selectedChoiceText,
         },
         {
-          id: `selectedChoices`,
           key: 'selectedChoices',
           type: CapiVariableTypes.ARRAY,
           value: selectedChoices,
         },
         {
-          id: `selectedChoicesText`,
           key: 'selectedChoicesText',
           type: CapiVariableTypes.ARRAY,
           value: selectedChoicesText,
@@ -486,7 +467,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     return selected;
   };
 
-  return (
+  return ready ? (
     <div
       data-janus-type={props.type}
       id={id}
@@ -512,7 +493,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         />
       ))}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-mcq';

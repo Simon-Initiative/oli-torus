@@ -29,6 +29,10 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     console.log('onPartSave', { id, responses });
+    if (!responses || !responses.length) {
+      // TODO: throw? no reason to save something with no response
+      return;
+    }
     // part attempt guid should be located in attemptState.parts matched to id (i think)
     const partAttempt = attemptState.parts.find((p) => p.partId === id);
     if (!partAttempt) {
