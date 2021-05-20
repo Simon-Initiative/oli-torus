@@ -7,6 +7,7 @@ on:
     tags:
       - package           # manually trigger a package build (no deployment)
       - deploy-test       # manually trigger build and deploy to test
+      - deploy-loadtest   # manually trigger build and deploy to loadtest
 
 jobs:
   package-deploy:
@@ -20,7 +21,7 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::tokamak.oli.cmu.edu"
+          echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/deploy-loadtest$ ]] ; then echo loadtest.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
           echo "::set-output name=workspace::$GITHUB_WORKSPACE"
 
       - name: 📦 Package
@@ -47,7 +48,7 @@ jobs:
 
       - name: 🚢💰 Deploy to test using SSH
         uses: fifsky/ssh-action@master
-        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' }}
+        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest' }}
         with:
           command: |
             cd /torus
