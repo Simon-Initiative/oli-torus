@@ -1,20 +1,69 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Slider: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          id: `stage.${id}.value`,
+          key: `value`,
+          type: CapiVariableTypes.NUMBER,
+          value: 0,
+        },
+        {
+          id: `stage.${id}.userModified`,
+          key: `userModified`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          id: `stage.${id}.enabled`,
+          key: `enabled`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: isSliderEnabled,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const {
     x,
@@ -62,33 +111,64 @@ const Slider: React.FC<any> = (props) => {
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
 
   const inputWidth: any = document.getElementById(`${id}`)?.getBoundingClientRect().width;
-  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect().width;
+  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect()
+    .width;
   const thumbHalfWidth: any = thumbWidth / 2;
   const thumbPosition =
     ((sliderValue - minimum) / (maximum - minimum)) * (inputWidth - thumbWidth + thumbHalfWidth);
   const thumbMargin = thumbHalfWidth * -1 + thumbHalfWidth / 2;
 
-  const handleSliderChange = (e: any) => {
-    setSliderValue(e.target.value);
-    //saveState({ sliderVal: e.target.value, userModified: true });
+  const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
+    props.onSave({
+      activityId: `${id}`,
+      partResponses: [
+        {
+          id: `stage.${id}.value`,
+          key: `value`,
+          type: CapiVariableTypes.NUMBER,
+          value: sliderVal,
+        },
+        {
+          id: `stage.${id}.userModified`,
+          key: `userModified`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: userModified,
+        },
+        {
+          id: `stage.${id}.enabled`,
+          key: `enabled`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: isSliderEnabled,
+        },
+      ],
+    });
   };
 
-//   const handleActivityStateChange = (stateData: any) => {
-//     const interested = stateData.filter(
-//       (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
-//     );
-//     if (interested?.length) {
-//       interested.forEach((stateVar: any) => {
-//         if (stateVar.key === 'enabled') {
-//           setIsSliderEnabled(parseBoolean(stateVar.value));
-//         }
-//         if (stateVar.key === 'value') {
-//           const num = parseInt(stateVar.value as string, 10);
-//           setSliderValue(num);
-//         }
-//       });
-//     }
-//   };
+  const handleSliderChange = (e: any) => {
+    setSliderValue(e.target.value);
+    saveState({ sliderVal: e.target.value, userModified: true });
+  };
+
+  useEffect(() => {
+    handleStateChange(state);
+  }, [state]);
+
+  const handleStateChange = (stateData: CapiVariable[]) => {
+    const interested = stateData.filter(
+      (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
+    );
+    if (interested?.length) {
+      interested.forEach((stateVar: any) => {
+        if (stateVar.key === 'enabled') {
+          setIsSliderEnabled(parseBoolean(stateVar.value));
+        }
+        if (stateVar.key === 'value') {
+          const num = parseInt(stateVar.value as string, 10);
+          setSliderValue(num);
+        }
+      });
+    }
+  };
 
   return (
     <div data-janus-type={props.type} style={styles} className={'slider'}>

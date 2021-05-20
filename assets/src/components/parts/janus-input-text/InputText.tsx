@@ -1,13 +1,15 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { parseBool } from 'utils/common';
+import { CapiVariable } from '../types/parts';
 
 const InputText: React.FC<any> = (props) => {
-  const id: string = props.id;
-  const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
 
   useEffect(() => {
     let pModel;
@@ -35,16 +37,19 @@ const InputText: React.FC<any> = (props) => {
       id,
       responses: [
         {
+          id: `stage.${id}.enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
+          id: `stage.${id}.text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: text,
         },
         {
+          id: `stage.${id}.textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: text.length,
@@ -73,22 +78,24 @@ const InputText: React.FC<any> = (props) => {
   const [enabled, setEnabled] = useState(true);
   const [cssClass, setCssClass] = useState(customCssClass);
   const [text, setText] = useState<string>('');
-
   const saveInputText = (val: string) => {
     props.onSave({
       id: `${id}`,
-      responses: [
+      partResponses: [
         {
+          id: `stage.${id}.enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
+          id: `stage.${id}.text`,
           key: 'text',
           type: CapiVariableTypes.STRING,
           value: val,
         },
         {
+          id: `stage.${id}.textLength`,
           key: 'textLength',
           type: CapiVariableTypes.NUMBER,
           value: val.length,
@@ -96,7 +103,6 @@ const InputText: React.FC<any> = (props) => {
       ],
     });
   };
-
   const handleOnChange = (event: any) => {
     const val = event.target.value;
     // Update/set the value
@@ -110,8 +116,44 @@ const InputText: React.FC<any> = (props) => {
     [],
   );
 
-  return ready ? (
-    <div data-part-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
+  useEffect(() => {
+    handleStateChange(state);
+  }, [state]);
+
+  const handleStateChange = (vars: CapiVariable[]) => {
+    // override text value from state
+    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (activity?.length) {
+      activity.forEach((stateVar) => {
+        if (stateVar.key === 'text' && stateVar.value) {
+          const stateText = stateVar.value.toString();
+          if (text !== stateText) {
+            setText(stateText);
+          }
+          props.onSave({
+            activityId: `${id}`,
+            partResponses: [
+              {
+                id: `stage.${id}.textLength`,
+                key: 'textLength',
+                type: CapiVariableTypes.NUMBER,
+                value: stateText.length,
+              },
+            ],
+          });
+        }
+        if (stateVar && stateVar.key === 'enabled') {
+          setEnabled(parseBool(stateVar.value));
+        }
+        if (stateVar && stateVar.key === 'customCssClass') {
+          setCssClass(stateVar.value.toString());
+        }
+      });
+    }
+  };
+
+  return (
+    <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
       <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
       <input
         name="janus-input-text"
@@ -123,7 +165,7 @@ const InputText: React.FC<any> = (props) => {
         value={text}
       />
     </div>
-  ) : null;
+  );
 };
 
 export const tagName = 'janus-input-text';

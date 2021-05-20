@@ -1,19 +1,81 @@
 /* eslint-disable react/prop-types */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import React, { CSSProperties, useEffect, useState } from 'react';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Audio: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          id: `stage.${props.id}.hasStarted`,
+          key: 'hasStarted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          id: `stage.${props.id}.currentTime`,
+          key: 'currentTime',
+          type: CapiVariableTypes.STRING,
+          value: startTime,
+        },
+        {
+          id: `stage.${props.id}.duration`,
+          key: 'duration',
+          type: CapiVariableTypes.STRING,
+          value: '',
+        },
+        {
+          id: `stage.${props.id}.hasCompleted`,
+          key: 'hasCompleted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          id: `stage.${props.id}.state`,
+          key: 'state',
+          type: CapiVariableTypes.STRING,
+          value: false,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const {
     x,
@@ -43,14 +105,108 @@ const Audio: React.FC<any> = (props) => {
   };
   const onReady = props.onReady;
   const [showControls, setShowControls] = useState(true);
-
-  const finalSrc = src;
-  // if (startTime && startTime >= 0) {
-  //     finalSrc = `${finalSrc}#t=${startTime || 0}`;
-  //     if (endTime && endTime >= 0) {
-  //         finalSrc = `${finalSrc},${endTime}`;
-  //     }
-  // }
+  const [classes, setClasses] = useState<any>(customCssClass);
+  let finalSrc = src;
+  if (startTime && startTime >= 0) {
+    finalSrc = `${finalSrc}#t=${startTime || 0}`;
+    if (endTime && endTime >= 0) {
+      finalSrc = `${finalSrc},${endTime}`;
+    }
+  }
+  const saveState = ({
+    isAudioPlayerStarted,
+    currentTime,
+    duration,
+    isAudioCompleted,
+    audioState,
+  }: {
+    isAudioPlayerStarted: boolean;
+    currentTime: any;
+    duration: any;
+    isAudioCompleted: boolean;
+    audioState: string;
+  }) => {
+    const currentVideoTime = parseFloat(currentTime || 0);
+    const audioDuration = parseFloat(duration || 0);
+    const exposureInPercentage = (currentVideoTime / audioDuration) * 100;
+    props.onSave({
+      activityId: `${props.id}`,
+      partResponses: [
+        {
+          id: `stage.${props.id}.hasStarted`,
+          key: 'hasStarted',
+          type: 4,
+          value: isAudioPlayerStarted,
+        },
+        {
+          id: `stage.${props.id}.autoPlay`,
+          key: 'autoPlay',
+          type: 4,
+          value: autoPlay,
+        },
+        {
+          id: `stage.${props.id}.currentTime`,
+          key: 'currentTime',
+          type: 2,
+          value: currentTime,
+        },
+        {
+          id: `stage.${props.id}.duration`,
+          key: 'duration',
+          type: 2,
+          value: duration,
+        },
+        {
+          id: `stage.${props.id}.endTime`,
+          key: 'endTime',
+          type: 2,
+          value: endTime || '',
+        },
+        {
+          id: `stage.${props.id}.exposureInSeconds`,
+          key: 'exposureInSeconds',
+          type: 1,
+          value: currentTime,
+        },
+        {
+          id: `stage.${props.id}.exposureInPercentage`,
+          key: 'exposureInPercentage',
+          type: 1,
+          value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
+        },
+        {
+          id: `stage.${props.id}.hasCompleted`,
+          key: 'hasCompleted',
+          type: 4,
+          value: isAudioCompleted,
+        },
+        {
+          id: `stage.${props.id}.startTime`,
+          key: 'startTime',
+          type: 2,
+          value: startTime || 0,
+        },
+        {
+          id: `stage.${props.id}.state`,
+          key: 'state',
+          type: 2,
+          value: audioState,
+        },
+        {
+          id: `stage.${props.id}.totalSecondsWatched`,
+          key: 'totalSecondsWatched',
+          type: 2,
+          value: currentTime,
+        },
+        {
+          id: `stage.${props.id}.customCssClass`,
+          key: 'customCssClass',
+          type: 2,
+          value: customCssClass,
+        },
+      ],
+    });
+  };
 
   let isAudioStarted = false;
   // handle the Audio player start
@@ -63,35 +219,46 @@ const Audio: React.FC<any> = (props) => {
     if (isAudioStarted) return;
     //Need this otherwise, save state will called on every second
     isAudioStarted = true;
-    // saveState({
-    //     isAudioPlayerStarted: true,
-    //     currentTime: data.target.currentTime,
-    //     duration: data.target.duration,
-    //     isAudioCompleted: false,
-    //     audioState: 'playing',
-    // });
+    saveState({
+      isAudioPlayerStarted: true,
+      currentTime: data.target.currentTime,
+      duration: data.target.duration,
+      isAudioCompleted: false,
+      audioState: 'playing',
+    });
   };
 
   const handleAudioPause = (data: any) => {
-    // saveState({
-    //     isAudioPlayerStarted: true,
-    //     currentTime: data.target.currentTime,
-    //     duration: data.target.duration,
-    //     isAudioCompleted: false,
-    //     audioState: 'paused',
-    // });
-  };
-  useEffect(() => {
-    onReady({
-      Id: props.id,
-      partResponses: [],
+    saveState({
+      isAudioPlayerStarted: true,
+      currentTime: data.target.currentTime,
+      duration: data.target.duration,
+      isAudioCompleted: false,
+      audioState: 'paused',
     });
-  }, []);
+  };
 
+  useEffect(() => {
+    handleStateChange(state);
+  }, [state]);
+
+  const handleStateChange = (data: CapiVariable[]) => {
+    // this runs every time state is updated from *any* source
+    // the global variable state
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${props.id}.`) === 0);
+
+    interested.forEach((stateVar) => {
+      switch (stateVar.key) {
+        case 'customCssClass':
+          setClasses(String(stateVar.value));
+          break;
+      }
+    });
+  };
   return (
     <audio
       data-janus-type={props.type}
-      className={customCssClass}
+      className={classes}
       style={audioStyles}
       autoPlay={autoPlay}
       controls={showControls}
