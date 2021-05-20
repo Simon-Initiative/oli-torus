@@ -5,7 +5,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
-  alias Oli.Delivery.Attempts.{ResourceAttempt, PartAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -102,7 +102,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       [part_attempt] = Oli.Repo.all(PartAttempt)
 
       # simulate an interaction
-      Oli.Delivery.Attempts.update_part_attempt(part_attempt, %{
+      Oli.Delivery.Attempts.Core.update_part_attempt(part_attempt, %{
         response: %{"input" => "a"}
       })
 
@@ -203,7 +203,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       [part_attempt] = Oli.Repo.all(PartAttempt)
 
       # simulate an interaction
-      Oli.Delivery.Attempts.update_part_attempt(part_attempt, %{
+      Oli.Delivery.Attempts.Core.update_part_attempt(part_attempt, %{
         response: %{"input" => "a"}
       })
 

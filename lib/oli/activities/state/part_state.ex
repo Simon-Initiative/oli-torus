@@ -1,5 +1,5 @@
 defmodule Oli.Activities.State.PartState do
-  alias Oli.Delivery.Attempts.PartAttempt
+  alias Oli.Delivery.Attempts.Core.PartAttempt
   alias Oli.Activities.Model.Part
   alias Oli.Activities.ParseUtils
 

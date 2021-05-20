@@ -68,7 +68,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
-      context = PageContext.create_page_context(section.slug, p1.revision.slug, user)
+      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
 
       # verify activities map
       assert Map.get(context.activities, a1.resource.id).model != nil
@@ -89,7 +89,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
-      context = PageContext.create_page_context(section.slug, p1.revision.slug, user)
+      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page == nil
       assert context.next_page.resource_id == page2.id
 
@@ -100,7 +100,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
-      context = PageContext.create_page_context(section.slug, p1.revision.slug, user)
+      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page.resource_id == page2.id
       assert context.next_page == nil
 
@@ -111,7 +111,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
-      context = PageContext.create_page_context(section.slug, p1.revision.slug, user)
+      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page == nil
       assert context.next_page == nil
     end

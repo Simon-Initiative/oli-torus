@@ -1,16 +1,16 @@
-defmodule Oli.Delivery.Attempts.ResourceAccess do
+defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "resource_accesses" do
-    field :access_count, :integer
-    field :score, :float
-    field :out_of, :float
+    field(:access_count, :integer)
+    field(:score, :float)
+    field(:out_of, :float)
 
-    belongs_to :user, Oli.Accounts.User
-    belongs_to :section, Oli.Delivery.Sections.Section
-    belongs_to :resource, Oli.Resources.Resource
-    has_many :resource_attempts, Oli.Delivery.Attempts.ResourceAttempt
+    belongs_to(:user, Oli.Accounts.User)
+    belongs_to(:section, Oli.Delivery.Sections.Section)
+    belongs_to(:resource, Oli.Resources.Resource)
+    has_many(:resource_attempts, Oli.Delivery.Attempts.Core.ResourceAttempt)
 
     timestamps(type: :utc_datetime)
   end
