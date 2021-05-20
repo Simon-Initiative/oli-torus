@@ -24,13 +24,8 @@ export const selectIsEnd = createSelector(selectSequence, (sequence) => {
 });
 
 export const selectCurrentActivityTree = createSelector(
-  (state: RootState) => {
-    const sequence = selectSequence(state);
-    const activities = selectAllActivities(state);
-    const currentActivityId = selectCurrentActivityId(state);
-    return [sequence, activities, currentActivityId];
-  },
-  ([sequence, activities, currentActivityId]) => {
+  [selectSequence, selectAllActivities, selectCurrentActivityId],
+  (sequence, activities, currentActivityId) => {
     const currentSequenceEntry = (sequence as any[]).find(
       (entry) => entry.custom.sequenceId === currentActivityId,
     );
@@ -47,7 +42,7 @@ export const selectCurrentActivityTree = createSelector(
   },
 );
 
-export const selectCurrentActivityTreeWithAttemptState = createSelector(
+export const selectCurrentActivityTreeAttemptState = createSelector(
   (state: RootState) => {
     const currentTree = selectCurrentActivityTree(state);
     const attempts = currentTree?.map((t) => selectActivtyAttemptState(state, t.resourceId));
@@ -59,7 +54,7 @@ export const selectCurrentActivityTreeWithAttemptState = createSelector(
     }
     const mappedTree = currentTree.map((activity) => {
       const attempt = attempts.find((a) => a.activityId === activity.resourceId);
-      return { activity, attempt };
+      return attempt;
     });
     return mappedTree;
   },

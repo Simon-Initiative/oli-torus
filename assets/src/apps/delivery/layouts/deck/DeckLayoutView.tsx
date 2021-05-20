@@ -1,11 +1,14 @@
 /* eslint-disable react/prop-types */
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTreeWithAttemptState } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../store/features/groups/selectors/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -33,7 +36,8 @@ const InjectedStyles: React.FC = () => {
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
-  const currentActivityTree = useSelector(selectCurrentActivityTreeWithAttemptState);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -78,7 +82,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return;
     }
 
-    const { activity: currentActivity } = currentActivityTree[currentActivityTree.length - 1];
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -174,12 +178,22 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return result;
   };
 
-  const renderedActivities = () => {
+  const renderedActivities = useCallback(() => {
     if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
     }
-    return currentActivityTree.map(({ activity, attempt }, index) => {
+    // attempts are being constantly updated, if we are not careful it will re-render the activity
+    // too many times. instead we want to only send the "initial" attempt state
+    // activities should then keep track of updates internally and if needed request updates
+    return currentActivityTree.map((activity, index) => {
       const mutableActivity = JSON.parse(JSON.stringify(activity));
+      const attempt = currentActivityAttemptTree?.find(
+        (a) => a?.activityId === mutableActivity.resourceId,
+      );
+      if (!attempt) {
+        console.error('could not find attempt state for ', activity);
+        return;
+      }
       const isLast = index === currentActivityTree.length - 1;
       if (!isLast) {
         mutableActivity.content.custom.renderAsLayer = true;
@@ -195,7 +209,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         />
       );
     });
-  };
+  }, [currentActivityTree]);
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
