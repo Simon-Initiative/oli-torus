@@ -22,7 +22,7 @@ RUN make && make install
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install hex phx_new 1.5.6
+RUN mix archive.install hex phx_new 1.5.9
 
 # install node
 RUN yum install -y gcc-c++ make
