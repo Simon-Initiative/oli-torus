@@ -21,6 +21,7 @@
     top: 70px;
     bottom: 0;
     min-width: 350px;
+    max-width: 350px;
     width: auto;
     height: calc(100% - 70px);
   }
@@ -82,9 +83,8 @@
           padding: 8px 8px;
           text-decoration: none;
 
-          &:hover,
           &.selected {
-            color: $primary;
+            color: $white;
           }
         }
         a::before {
@@ -96,6 +96,31 @@
           text-align: right;
           direction: rtl;
         }
+      }
+    }
+    .adaptivity {
+      font-size: 0.8rem;
+
+      .list-group-item {
+        padding: 0.5rem 1rem !important;
+      }
+      .correct {
+        border-left: 4px solid $green;
+      }
+      .incorrect {
+        border-left: 4px solid $yellow;
+      }
+      .chevron-arrow {
+        display: inline-block;
+        transform: rotate(0deg);
+        transition: transform 200ms ease-in-out;
+
+        &.rotate {
+          transform: rotate(90deg);
+        }
+      }
+      .card-header button {
+        color: $body-color !important;
       }
     }
   }
