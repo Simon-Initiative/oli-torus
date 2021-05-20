@@ -1,22 +1,80 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { parseBoolean } from 'utils/common';
-import { getIcon } from './GetIcon';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
+import { getIcon } from './GetIcon';
 
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
+  const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(true);
+  const [iconSrc, setIconSrc] = useState('');
+
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+
+    const { iconURL, defaultURL } = pModel;
+    const getIconSrc = () => {
+      if (iconURL && getIcon(iconURL)) {
+        return getIcon(iconURL);
+      } else if (iconURL) {
+        return iconURL;
+      } else {
+        return getIcon(defaultURL!);
+      }
+    };
+
+    setShowPopup(!!pModel.openByDefault);
+    setPopupVisible(!!pModel.visible);
+    setIconSrc(getIconSrc());
+
+    props.onInit({
+      id,
+      responses: [
+        {
+          key: 'visible',
+          type: CapiVariableTypes.BOOLEAN,
+          value: !!pModel.visible,
+        },
+        {
+          key: 'openByDefault',
+          type: CapiVariableTypes.BOOLEAN,
+          value: !!pModel.openByDefault,
+        },
+        {
+          key: 'isOpen',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
 
   const {
@@ -31,9 +89,10 @@ const Popup: React.FC<any> = (props) => {
     defaultURL,
     iconURL,
     useToggleBehavior,
-    popupEnsembleRef,
+    popup,
     description,
   } = model;
+
   const popupStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -42,46 +101,6 @@ const Popup: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-
-  const [showPopup, setShowPopup] = useState(parseBoolean(openByDefault));
-  const [popupVisible, setPopupVisible] = useState(parseBoolean(visible));
-
-  const getIconSrc = () => {
-    if (iconURL && getIcon(iconURL)) {
-      return getIcon(iconURL);
-    } else if (iconURL) {
-      return iconURL;
-    } else {
-      return getIcon(defaultURL!);
-    }
-  };
-  const [iconSrc, setIconSrc] = useState(getIconSrc);
-
-  // useEffect(() => {
-  //   onReady({
-  //     activityId: `${id}`,
-  //     partResponses: [
-  //       {
-  //         id: `stage.${id}.isOpen`,
-  //         key: 'isOpen',
-  //         type: CapiVariableTypes.BOOLEAN,
-  //         value: false,
-  //       },
-  //       {
-  //         id: `stage.${id}.openByDefault`,
-  //         key: 'openByDefault',
-  //         type: CapiVariableTypes.BOOLEAN,
-  //         value: openByDefault,
-  //       },
-  //       {
-  //         id: `stage.${id}.visible`,
-  //         key: 'visible',
-  //         type: CapiVariableTypes.BOOLEAN,
-  //         value: true, // TODO: need a prop?
-  //       },
-  //     ],
-  //   });
-  // }, []);
 
   // const handleActivityStateChange = (stateData) => {
   //   // override text value from state
@@ -149,11 +168,10 @@ const Popup: React.FC<any> = (props) => {
     //   ],
     // });
   };
-  const partComponents = popupEnsembleRef.activities.reduce((components: any[], activity: any) => {
-    components.push(activity);
-    return components;
-  }, []);
-  return (
+
+  const partComponents = popup?.partsLayout;
+
+  return ready ? (
     <React.Fragment>
       {popupVisible ? (
         <input
@@ -188,17 +206,15 @@ const Popup: React.FC<any> = (props) => {
       ) : null}
       {showPopup ? (
         <React.Fragment>
-          {popupEnsembleRef && popupEnsembleRef.id && popupEnsembleRef.activities ? (
-            <PartsLayoutRenderer
-              parts ={partComponents}
-            ></PartsLayoutRenderer>
+          {partComponents ? (
+            <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
           ) : (
             <div>Popup could not load</div>
           )}
         </React.Fragment>
       ) : null}
     </React.Fragment>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-popup';
