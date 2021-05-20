@@ -96,7 +96,7 @@ defmodule Oli.MixProject do
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
       {:open_api_spex, "~> 3.9"},
-      {:phoenix, "~> 1.5.6"},
+      {:phoenix, "~> 1.5.9"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_dashboard, "~> 0.4.0"},
