@@ -1,0 +1,14 @@
+{
+  "id": "janus_popup",
+  "friendlyName": "Popup",
+  "description": "Displays an popup from a url.",
+  "global": true,
+  "delivery": {
+    "element": "janus-popup",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-popup",
+    "entry": "./authoring-entry.ts"
+  }
+}
