@@ -1,6 +1,11 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle do
   import Ecto.Query, warn: false
 
+  @moduledoc """
+  Façade module providing a uniform interface to initiate page attempt state
+  transitions and to access their state.
+  """
+
   alias Oli.Repo
 
   import Oli.Delivery.Attempts.Core
@@ -19,6 +24,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   }
 
   @doc """
+
   Create a new resource attempt in an active state for the given page revision slug
   in the specified section and for a specific user.
 
@@ -60,19 +66,21 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   end
 
   @doc """
-  Attempt to visit a page, and depending on the state of the attempts and other contraints
-  regarding the page and user, return one of:
+  Attempt to visit a page to either resume an existing or start a new attempt.maybe_improper_list(
+
+  Depending on the state of the attempts and other contraints
+  regarding the page and user, returns one of:
 
   If a resource attempt is in progress, returns a tuple of the form:
 
   `{:ok, {:in_progress, %AttemptState{}}}`
 
   If a resource attempt is in progress and the revision of the resource pertaining to that attempt
-  has changed compared to the supplied resource_revision, returns a tuple of the form:
+  has changed compared to the supplied page_revision, returns a tuple of the form:
 
   `{:ok, {:revised, %AttemptState{}}}`
 
-  If the attempt has not started, and must be done manually, returns a tuple of the form:
+  If the attempt has not started, and must be started manually, returns a tuple of the form:
 
   `{:ok, {:not_started, %HistorySummary{}}}`
   """
@@ -109,7 +117,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   end
 
   @doc """
-  Reviews an attempt for a page
+  Reviews an attempt for a page.
 
   If the resource attempt is in progress, returns a tuple of the form:
 
@@ -118,6 +126,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   If the resource attempt has been finalized, returns a tuple of the form:
 
   `{:ok, {:finalized, %AttemptState{}}}`
+
+  If the resource attempt guid is not found returns:
+
+  `{:error, {:not_found}}`
   """
   def review(resource_attempt_guid) do
     Repo.transaction(fn ->

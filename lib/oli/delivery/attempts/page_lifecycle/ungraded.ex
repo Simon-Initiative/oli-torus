@@ -12,11 +12,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   alias Oli.Delivery.Attempts.PageLifecycle.Common
 
-  @behaviour Lifecycle
+  @moduledoc """
+  Implementation of a page Lifecycle behaviour for ungraded pages.
 
-  # For ungraded pages we can safely throw away an existing resource attempt and create a new one
-  # in the case that the attempt was pinned to an older revision of the resource. This allows newly published
-  # changes to the resource to be seen after a user has visited the resource previously
+  Ungraded pages implicitly start a new attempt when a student visits the page.
+
+  For ungraded pages we can safely throw away an existing resource attempt and create a new one
+  in the case that the attempt was pinned to an older revision of the resource. This allows newly published
+  changes to the resource to be seen after a user has visited the resource previously.
+  """
+
+  @behaviour Lifecycle
 
   @impl Lifecycle
   def visit(

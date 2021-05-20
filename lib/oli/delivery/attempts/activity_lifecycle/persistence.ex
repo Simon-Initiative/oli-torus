@@ -10,13 +10,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
   alias Oli.Delivery.Attempts.Core.PartAttempt
 
-  # Given a list of evaluations that match a list of part_input submissions,
-  # persist the results of each evaluation to the corresponding part_attempt record
-  # On success, continue persistence by calling a roll_up function that will may or
-  # not roll up the results of the these part_attempts to the activity attempt
-  #
-  # The return value here is {:ok, [%{}]}, where the maps in the array are the
-  # evaluation result that will be sent back to the client
+  @moduledoc """
+  Routines for persisting evaluations for part attempts.
+  """
+
+  @doc """
+  Given a list of evaluations that match a list of part_input submissions,
+  persist the results of each evaluation to the corresponding part_attempt record
+  On success, continue persistence by calling a roll_up function that will may or
+  not roll up the results of the these part_attempts to the activity attempt
+
+  The return value here is {:ok, [%{}]}, where the maps in the array are the
+  evaluation result that will be sent back to the client.
+  """
+
   def persist_evaluations({:error, error}, _, _), do: {:error, error}
 
   def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn) do

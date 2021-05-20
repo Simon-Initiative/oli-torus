@@ -20,6 +20,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   import Oli.Delivery.Attempts.Core
 
+  @moduledoc """
+  Implementation of a page Lifecycle behaviour for graded pages.
+  """
+
   @behaviour Lifecycle
 
   @impl Lifecycle
@@ -29,7 +33,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
         section_slug: section_slug,
         user_id: user_id
       }) do
+    # There is no "active" attempt if there has never been an attempt or if the latest
+    # attempt has been finalized.
     if is_nil(latest_resource_attempt) or !is_nil(latest_resource_attempt.date_evaluated) do
+      # Graded pages must be started explicitly by the student, giving them to chance to
+      # see how many attempts, etc.
+
       {access, attempts} =
         get_resource_attempt_history(page_revision.resource_id, section_slug, user_id)
 

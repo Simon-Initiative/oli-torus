@@ -59,7 +59,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   @doc """
-  Processes a preview mode evaulation.
+  Processes a preview mode, or test, evaulation.
   """
   @spec evaluate_from_preview(map(), [map()]) :: {:ok, [map()]} | {:error, any}
   def evaluate_from_preview(model, part_inputs) do
@@ -99,6 +99,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
+  @doc """
+  Evaluates an activity attempt using only the already stored state present in
+  the child part attempts.  This exists primarly to allow graded pages to
+  submit all of the contained activites when the student clicks "Submit Assessment".
+  """
   def evaluate_from_stored_input(activity_attempt_guid) do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 

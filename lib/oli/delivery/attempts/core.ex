@@ -15,6 +15,10 @@ defmodule Oli.Delivery.Attempts.Core do
     ActivityAttempt
   }
 
+  @moduledoc """
+  Core attempt related functions.
+  """
+
   @doc """
   Creates or updates an access record for a given resource, section context id and user. When
   created the access count is set to 1, otherwise on updates the
