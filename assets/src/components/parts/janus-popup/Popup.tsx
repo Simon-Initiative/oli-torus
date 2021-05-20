@@ -6,7 +6,7 @@ import { getIcon } from './GetIcon';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 
 // TODO: fix typing
-const Slider: React.FC<any> = (props) => {
+const Popup: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
@@ -201,6 +201,6 @@ const Slider: React.FC<any> = (props) => {
   );
 };
 
-export const tagName = 'janus-slider';
+export const tagName = 'janus-popup';
 
-export default Slider;
+export default Popup;
