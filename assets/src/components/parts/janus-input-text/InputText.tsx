@@ -107,7 +107,26 @@ const InputText: React.FC<any> = (props) => {
   useEffect(() => {
     props.onReady({
       id: `${id}`,
-      partResponses: [],
+      partResponses: [
+        {
+          id: `stage.${id}.enabled`,
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          id: `stage.${id}.text`,
+          key: 'text',
+          type: CapiVariableTypes.STRING,
+          value: text,
+        },
+        {
+          id: `stage.${id}.textLength`,
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: text.length,
+        },
+      ],
     });
   }, []);
 
