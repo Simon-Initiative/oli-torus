@@ -19,6 +19,8 @@ defmodule Oli.Interop.Scrub do
   # anything else, extract all text from that child and convert the child to
   # a code_line
   def scrub(%{"type" => "code", "children" => children} = item) do
+    item = ensure_id_present(item)
+
     if Enum.any?(children, fn c ->
          !Map.has_key?(c, "type") or Map.get(c, "type") != "code_line"
        end) do
@@ -35,6 +37,8 @@ defmodule Oli.Interop.Scrub do
   end
 
   def scrub(%{"children" => children} = item) do
+    item = ensure_id_present(item)
+
     {changes, children} = scrub(children)
     {changes, Map.put(item, "children", children)}
   end
@@ -46,7 +50,7 @@ defmodule Oli.Interop.Scrub do
     # item by scrubbing well known keys, allowing us to handle current and future
     # activity schemas
     Map.keys(item)
-    |> Enum.reduce({[], item}, fn key, {all, item} ->
+    |> Enum.reduce({[], ensure_id_present(item)}, fn key, {all, item} ->
       {changes, updated} = scrub_well_known(item, key)
       {changes ++ all, updated}
     end)
@@ -57,6 +61,7 @@ defmodule Oli.Interop.Scrub do
   def scrub_well_known(item, "stem"), do: scrub_well_known_key(item, "stem")
   def scrub_well_known(item, "choices"), do: scrub_well_known_key(item, "choices")
   def scrub_well_known(item, "parts"), do: scrub_well_known_key(item, "parts")
+  def scrub_well_known(item, "hints"), do: scrub_well_known_key(item, "hints")
   def scrub_well_known(item, "responses"), do: scrub_well_known_key(item, "responses")
   def scrub_well_known(item, "feedback"), do: scrub_well_known_key(item, "feedback")
   def scrub_well_known(item, "authoring"), do: scrub_well_known_key(item, "authoring")
@@ -68,6 +73,13 @@ defmodule Oli.Interop.Scrub do
       |> scrub()
 
     {changes, Map.put(item, key, scrubbed)}
+  end
+
+  defp ensure_id_present(item) do
+    case Map.get(item, "id") do
+      nil -> Map.put(item, "id", Oli.Utils.random_string(12))
+      _ -> item
+    end
   end
 
   defp to_code_line(%{"type" => "code_line"} = item), do: item

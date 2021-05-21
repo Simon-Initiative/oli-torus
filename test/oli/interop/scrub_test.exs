@@ -96,6 +96,15 @@ defmodule Oli.Interop.ScrubTest do
                updated,
                "model authoring parts 0 responses 0 feedback content 0 children 0 type"
              )
+
+    # verify that the nodes that did not specify ids had them assigned during scrubbing
+    assert traverse(updated, "model") |> Map.has_key?("id")
+    assert traverse(updated, "model stem") |> Map.has_key?("id")
+    assert traverse(updated, "model stem content 0") |> Map.has_key?("id")
+    assert traverse(updated, "model choices 0") |> Map.has_key?("id")
+    assert traverse(updated, "model authoring parts 0") |> Map.has_key?("id")
+    assert traverse(updated, "model authoring parts 0 responses 0") |> Map.has_key?("id")
+    assert traverse(updated, "model authoring parts 0 responses 0 feedback") |> Map.has_key?("id")
   end
 
   test "scrub with a well formed code block" do
