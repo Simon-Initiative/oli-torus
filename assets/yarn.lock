@@ -7562,9 +7562,10 @@ react-redux@^7.2.4:
     prop-types "^15.7.2"
     react-is "^16.13.1"
 
-react-tiny-popover@alexkatz/react-tiny-popover:
-  version "6.0.6"
-  resolved "https://codeload.github.com/alexkatz/react-tiny-popover/tar.gz/f9e3a84e4275eecef8bf2535c869c7a897429f6d"
+react-tiny-popover@6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/react-tiny-popover/-/react-tiny-popover-6.0.0.tgz#9a88c776f13b1082d12056391abffc4a5cc18087"
+  integrity sha512-sqgej8iG/SAU02bl+iDT6wW4lC/sLcylaUYg6lWiHi2yLpDnV/P/2WE6Jt6JFKKFrjXn5zdjE+P+rhsPePvV7Q==
 
 react-transition-group@^4.4.1:
   version "4.4.1"
