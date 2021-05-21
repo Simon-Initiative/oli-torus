@@ -29,7 +29,7 @@ defmodule Oli.Interop.Scrub do
     end
   end
 
-  def scrub(%{"model" => model} = item) do
+  def scrub(%{"model" => model} = item) when is_list(model) do
     {changes, model} = scrub(model)
     {changes, Map.put(item, "model", model)}
   end
@@ -40,7 +40,34 @@ defmodule Oli.Interop.Scrub do
   end
 
   def scrub(item) do
-    {[], item}
+    # To get to this impl of scrub, the item here is not a list, does not have
+    # a "children" attribute, does not have "model" attribute that is a list,
+    # and isn't a code block (or any other handed case). We will scrub this
+    # item by scrubbing well known keys, allowing us to handle current and future
+    # activity schemas
+    Map.keys(item)
+    |> Enum.reduce({[], item}, fn key, {all, item} ->
+      {changes, updated} = scrub_well_known(item, key)
+      {changes ++ all, updated}
+    end)
+  end
+
+  def scrub_well_known(item, "content"), do: scrub_well_known_key(item, "content")
+  def scrub_well_known(item, "model"), do: scrub_well_known_key(item, "model")
+  def scrub_well_known(item, "stem"), do: scrub_well_known_key(item, "stem")
+  def scrub_well_known(item, "choices"), do: scrub_well_known_key(item, "choices")
+  def scrub_well_known(item, "parts"), do: scrub_well_known_key(item, "parts")
+  def scrub_well_known(item, "responses"), do: scrub_well_known_key(item, "responses")
+  def scrub_well_known(item, "feedback"), do: scrub_well_known_key(item, "feedback")
+  def scrub_well_known(item, "authoring"), do: scrub_well_known_key(item, "authoring")
+  def scrub_well_known(item, _), do: {[], item}
+
+  defp scrub_well_known_key(item, key) do
+    {changes, scrubbed} =
+      Map.get(item, key)
+      |> scrub()
+
+    {changes, Map.put(item, key, scrubbed)}
   end
 
   defp to_code_line(%{"type" => "code_line"} = item), do: item

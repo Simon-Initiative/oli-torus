@@ -54,7 +54,7 @@ defmodule Oli.Interop.Ingest do
         with {:ok, %{project: project, resource_revision: root_revision}} <-
                create_project(project_details, as_author),
              {:ok, objective_map} <- create_objectives(project, resource_map, as_author),
-             {:ok, activity_map} <-
+             {:ok, {activity_map, _}} <-
                create_activities(project, resource_map, objective_map, as_author),
              {:ok, {page_map, _}} <-
                create_pages(project, resource_map, activity_map, objective_map, as_author),
@@ -88,10 +88,11 @@ defmodule Oli.Interop.Ingest do
   defp create_activities(project, resource_map, _, as_author) do
     registration_map = get_registration_map()
 
-    activities =
+    {changes, activities} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Activity" end)
+      |> scrub_resources()
 
     Repo.transaction(fn ->
       case Enum.reduce_while(activities, %{}, fn {id, activity}, map ->
@@ -101,25 +102,18 @@ defmodule Oli.Interop.Ingest do
              end
            end) do
         {:error, e} -> Repo.rollback(e)
-        map -> map
+        map -> {map, List.flatten(changes)}
       end
     end)
   end
 
   # Process each resource file of type "Page" to create pages
   defp create_pages(project, resource_map, activity_map, objective_map, as_author) do
-    pages =
+    {changes, pages} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Page" end)
-
-    {changes, pages} = Enum.map(pages, fn %{"content" => content, "title" => title} = page ->
-      case Scrub.scrub(content) do
-        {[], _} -> {[], page}
-        {changes, changed} -> {Enum.map(changes, fn c -> "#{title}: #{c}" end), Map.put(page, "content", changed)}
-      end
-    end)
-    |> Enum.unzip()
+      |> scrub_resources()
 
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
@@ -132,6 +126,20 @@ defmodule Oli.Interop.Ingest do
         map -> {map, List.flatten(changes)}
       end
     end)
+  end
+
+  defp scrub_resources(resources) do
+    Enum.map(resources, fn {id, %{"content" => content, "title" => title} = resource} ->
+      case Scrub.scrub(content) do
+        {[], _} ->
+          {[], {id, resource}}
+
+        {changes, changed} ->
+          {Enum.map(changes, fn c -> "#{title}: #{c}" end),
+           {id, Map.put(resource, "content", changed)}}
+      end
+    end)
+    |> Enum.unzip()
   end
 
   defp create_objectives(project, resource_map, as_author) do
@@ -167,9 +175,9 @@ defmodule Oli.Interop.Ingest do
 
   # Create one page
   defp create_page(project, page, activity_map, objective_map, as_author) do
-
-    content = Map.get(page, "content")
-    |> rewire_activity_references(activity_map),
+    content =
+      Map.get(page, "content")
+      |> rewire_activity_references(activity_map)
 
     %{
       title: Map.get(page, "title"),

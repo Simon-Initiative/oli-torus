@@ -29,6 +29,75 @@ defmodule Oli.Interop.ScrubTest do
     assert "Hello" == traverse(updated, "model 0 children 0 children 0 text")
   end
 
+  test "scrub works on activities" do
+    content = %{
+      "model" => %{
+        "stem" => %{
+          "content" => [
+            %{
+              "type" => "code",
+              "children" => [
+                %{"type" => "p", "children" => [%{"type" => "text", "text" => "Hello"}]},
+                %{"type" => "code_line", "children" => [%{"type" => "text", "text" => "There"}]}
+              ]
+            }
+          ]
+        },
+        "choices" => [
+          %{
+            "content" => [
+              %{
+                "type" => "code",
+                "children" => [
+                  %{"type" => "p", "children" => [%{"type" => "text", "text" => "Hello"}]},
+                  %{"type" => "code_line", "children" => [%{"type" => "text", "text" => "There"}]}
+                ]
+              }
+            ]
+          }
+        ],
+        "authoring" => %{
+          "parts" => [
+            %{
+              "responses" => [
+                %{
+                  "feedback" => %{
+                    "content" => [
+                      %{
+                        "type" => "code",
+                        "children" => [
+                          %{
+                            "type" => "p",
+                            "children" => [%{"type" => "text", "text" => "Hello"}]
+                          },
+                          %{
+                            "type" => "code_line",
+                            "children" => [%{"type" => "text", "text" => "There"}]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+
+    {changes, updated} = Scrub.scrub(content)
+    assert length(changes) == 3
+    assert "code_line" == traverse(updated, "model stem content 0 children 0 type")
+    assert "code_line" == traverse(updated, "model choices 0 content 0 children 0 type")
+
+    assert "code_line" ==
+             traverse(
+               updated,
+               "model authoring parts 0 responses 0 feedback content 0 children 0 type"
+             )
+  end
+
   test "scrub with a well formed code block" do
     content = %{
       "model" => [
