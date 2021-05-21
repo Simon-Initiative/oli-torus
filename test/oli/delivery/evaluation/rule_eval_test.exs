@@ -71,6 +71,6 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     }
 
     {:ok, tree} = Rule.parse("input = {apple}")
-    assert {:error, %ArgumentError{message: "argument error"}} == Rule.evaluate(tree, context)
+    assert {:error, %ArgumentError{message: "errors were found at the given arguments:\n\n  * 1st argument: not a textual representation of an integer\n"}} == Rule.evaluate(tree, context)
   end
 end
