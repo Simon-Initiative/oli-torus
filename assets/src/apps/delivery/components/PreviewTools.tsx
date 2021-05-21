@@ -65,7 +65,7 @@ const ScreenSelector: React.FC<ScreenSelectorProps> = ({
             >
               <a
                 href=""
-                className={currentActivity?.id === s.sequenceId ? 'currentActivity' : ''}
+                className={currentActivity?.id === s.sequenceId ? 'selected' : ''}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate(s.sequenceId);
