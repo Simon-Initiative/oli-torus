@@ -9,7 +9,7 @@ import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
-  async (options: { activityId: string }, { dispatch, getState }) => {
+  async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
 
@@ -54,7 +54,11 @@ export const triggerCheck = createAsyncThunk(
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
-      checkResult = await check(stateSnapshot, currentRules);
+      // custom rules can be provided via PreviewTools Adaptivity pane for specific rule triggering
+      const customRules = options.customRules || [];
+      const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
+
+      checkResult = await check(stateSnapshot, rulesToCheck);
       console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot });
     } else {
       // server mode (delivery) TODO
