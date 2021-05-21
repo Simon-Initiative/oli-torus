@@ -36,31 +36,26 @@ const Audio: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: startTime,
         },
         {
-          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: '',
         },
         {
-          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: false,
@@ -130,76 +125,64 @@ const Audio: React.FC<any> = (props) => {
     const audioDuration = parseFloat(duration || 0);
     const exposureInPercentage = (currentVideoTime / audioDuration) * 100;
     props.onSave({
-      activityId: `${props.id}`,
-      partResponses: [
+      id: `${props.id}`,
+      responses: [
         {
-          id: `hasStarted`,
           key: 'hasStarted',
           type: CapiVariableTypes.BOOLEAN,
           value: isAudioPlayerStarted,
         },
         {
-          id: `autoPlay`,
           key: 'autoPlay',
           type: CapiVariableTypes.BOOLEAN,
           value: autoPlay,
         },
         {
-          id: `currentTime`,
           key: 'currentTime',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `duration`,
           key: 'duration',
           type: CapiVariableTypes.STRING,
           value: duration,
         },
         {
-          id: `endTime`,
           key: 'endTime',
           type: CapiVariableTypes.STRING,
           value: endTime || '',
         },
         {
-          id: `exposureInSeconds`,
           key: 'exposureInSeconds',
           type: CapiVariableTypes.NUMBER,
           value: currentTime,
         },
         {
-          id: `exposureInPercentage`,
           key: 'exposureInPercentage',
           type: CapiVariableTypes.NUMBER,
           value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
         },
         {
-          id: `hasCompleted`,
           key: 'hasCompleted',
           type: CapiVariableTypes.BOOLEAN,
           value: isAudioCompleted,
         },
         {
-          id: `startTime`,
           key: 'startTime',
           type: CapiVariableTypes.STRING,
           value: startTime || 0,
         },
         {
-          id: `state`,
           key: 'state',
           type: CapiVariableTypes.STRING,
           value: audioState,
         },
         {
-          id: `totalSecondsWatched`,
           key: 'totalSecondsWatched',
           type: CapiVariableTypes.STRING,
           value: currentTime,
         },
         {
-          id: `customCssClass`,
           key: 'customCssClass',
           type: CapiVariableTypes.STRING,
           value: customCssClass,

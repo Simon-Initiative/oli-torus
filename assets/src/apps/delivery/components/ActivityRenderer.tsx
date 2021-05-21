@@ -176,6 +176,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const [isReady, setIsReady] = useState(false);
+  const [model, setModel] = useState('');
+  const [state, setState] = useState('');
 
   useEffect(() => {
     // listen at the document level for events coming from activities
@@ -201,6 +203,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       document.addEventListener(eventName, wcEventHandler);
     });
 
+    // send a state snapshot of everything in with the attempt
+    // because we need at least read only access to cross activity values and extrinsic
+    // *maybe* better to have a onInit callback and send it as a response?
+    // because this is BIG
+    const envSnapshot = getEnvState(defaultGlobalEnv);
+    const fullState = { ...attempt, snapshot: envSnapshot };
+    setState(JSON.stringify(fullState));
+
+    setModel(JSON.stringify(activity));
+
     setIsReady(true);
 
     return () => {
@@ -211,17 +223,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     };
   }, []);
 
-  // send a state snapshot of everything in with the attempt
-  // because we need at least read only access to cross activity values and extrinsic
-  // *maybe* better to have a onInit callback and send it as a response?
-  // because this is BIG
-  const envSnapshot = getEnvState(defaultGlobalEnv);
-  const fullState = { ...attempt, snapshot: envSnapshot };
-
   const elementProps = {
     graded: false,
-    model: JSON.stringify(activity),
-    state: JSON.stringify(fullState),
+    model,
+    state,
     preview: isPreviewMode,
     progressState: 'progressState',
     userId: currentUserId,

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Unknown from './UnknownComponent';
 
 const WebComponent: React.FC<any> = (props) => {
@@ -11,36 +11,35 @@ const WebComponent: React.FC<any> = (props) => {
     submit: props.onSubmit,
   };
 
-  const wcEventHandler = async (e: any) => {
-    const handler = wcEvents[e.type];
-    if (handler) {
-      const { payload, callback } = e.detail;
-      const result = await handler(payload);
-      if (callback) {
-        callback(result);
-      }
-    }
-  };
-
-  const ref = useRef(null);
+  const [listening, setIsListening] = useState(false);
   useEffect(() => {
-    if (ref.current) {
-      const wc = ref.current as any;
-      Object.keys(wcEvents).forEach((eventName) => {
-        wc.addEventListener(eventName, wcEventHandler);
-      });
-    }
-    return () => {
-      if (ref.current) {
-        const wc = ref.current as any;
-        Object.keys(wcEvents).forEach((eventName) => {
-          wc.removeEventListener(eventName, wcEventHandler);
-        });
+    const wcEventHandler = async (e: any) => {
+      const { payload, callback } = e.detail;
+      if (payload.id !== props.id) {
+        // because we need to listen to document we'll get all part component events
+        // each PC adds a listener, so we need to filter out our own here
+        return;
+      }
+      const handler = wcEvents[e.type];
+      if (handler) {
+        const result = await handler(payload);
+        if (callback) {
+          callback(result);
+        }
       }
     };
-  }, [ref.current]);
+    Object.keys(wcEvents).forEach((eventName) => {
+      document.addEventListener(eventName, wcEventHandler);
+    });
+    setIsListening(true);
+    return () => {
+      Object.keys(wcEvents).forEach((eventName) => {
+        document.removeEventListener(eventName, wcEventHandler);
+      });
+    };
+  }, []);
+
   const webComponentProps = {
-    ref,
     id: props.id,
     type: props.type,
     ...props,
@@ -54,7 +53,8 @@ const WebComponent: React.FC<any> = (props) => {
     return <Unknown {...unknownProps} />;
   }
 
-  return React.createElement(wcTagName, webComponentProps);
+  // don't render until we're listening because otherwise the init event will post too fast
+  return listening ? React.createElement(wcTagName, webComponentProps) : null;
 };
 
 export default WebComponent;

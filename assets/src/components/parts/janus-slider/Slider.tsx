@@ -36,19 +36,16 @@ const Slider: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `value`,
           key: `value`,
           type: CapiVariableTypes.NUMBER,
           value: 0,
         },
         {
-          id: `userModified`,
           key: `userModified`,
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `enabled`,
           key: `enabled`,
           type: CapiVariableTypes.BOOLEAN,
           value: isSliderEnabled,
@@ -120,22 +117,19 @@ const Slider: React.FC<any> = (props) => {
 
   const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
     props.onSave({
-      activityId: `${id}`,
-      partResponses: [
+      id: `${id}`,
+      responses: [
         {
-          id: `value`,
           key: `value`,
           type: CapiVariableTypes.NUMBER,
           value: sliderVal,
         },
         {
-          id: `userModified`,
           key: `userModified`,
           type: CapiVariableTypes.BOOLEAN,
           value: userModified,
         },
         {
-          id: `enabled`,
           key: `enabled`,
           type: CapiVariableTypes.BOOLEAN,
           value: isSliderEnabled,

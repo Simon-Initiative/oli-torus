@@ -35,49 +35,41 @@ const NavigationButton: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
         {
-          id: `visible`,
           key: 'visible',
           type: CapiVariableTypes.BOOLEAN,
           value: visible,
         },
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `title`,
           key: 'title',
           type: CapiVariableTypes.STRING,
           value: title,
         },
         {
-          id: `textColor`,
           key: 'textColor',
           type: CapiVariableTypes.STRING,
           value: textColor,
         },
         {
-          id: `backgroundColor`,
           key: 'backgroundColor',
           type: CapiVariableTypes.STRING,
           value: buttonColor,
         },
         {
-          id: `transparent`,
           key: 'transparent',
           type: CapiVariableTypes.STRING,
           value: transparent,
         },
         {
-          id: `accessibilityText`,
           key: 'accessibilityText',
           type: CapiVariableTypes.STRING,
           value: '',
@@ -143,9 +135,8 @@ const NavigationButton: React.FC<any> = (props) => {
   const handleButtonPress = () => {
     props.onSubmit({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: true,
@@ -158,9 +149,8 @@ const NavigationButton: React.FC<any> = (props) => {
     handleButtonPress();
     props.onSave({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `Selected`,
           key: 'Selected',
           type: CapiVariableTypes.BOOLEAN,
           value: false,

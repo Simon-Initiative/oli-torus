@@ -8,8 +8,15 @@ import {
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
+import {
+  applyState,
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
+  selectCurrentActivity,
   selectCurrentActivityId,
   setActivities,
   setCurrentActivityId,
@@ -39,6 +46,60 @@ export const initializeActivity = createAsyncThunk(
     if (!currentSequenceId) {
       throw new Error(`Activity ${activityId} not found in sequence!`);
     }
+    const currentActivity = selectCurrentActivity(rootState);
+
+    const visitOperation: ApplyStateOperation = {
+      target: `session.visits.${currentSequenceId}`,
+      operator: '+',
+      value: 1,
+    };
+    const timeStartOp: ApplyStateOperation = {
+      target: 'session.timeStartQuestion',
+      operator: '=',
+      value: Date.now(),
+    };
+    const timeExceededOp: ApplyStateOperation = {
+      target: 'session.questionTimeExceeded',
+      operator: '=',
+      value: false,
+    };
+    const currentAttempNumber = 1; // TODO: increment the server value
+    const attemptNumberOp: ApplyStateOperation = {
+      target: 'session.attemptNumber',
+      operator: '=',
+      value: currentAttempNumber,
+    };
+    const targettedAttemptNumberOp: ApplyStateOperation = {
+      target: `${currentSequenceId}|session.attemptNumber`,
+      operator: '=',
+      value: currentAttempNumber,
+    };
+    const tutorialScoreOp: ApplyStateOperation = {
+      target: 'session.tutorialScore',
+      operator: '+',
+      value: '{session.currentQuestionScore}',
+    };
+    const currentScoreOp: ApplyStateOperation = {
+      target: 'session.currentQuestionScore',
+      operator: '=',
+      value: 0,
+    };
+    const sessionOps = [
+      visitOperation,
+      timeStartOp,
+      timeExceededOp,
+      attemptNumberOp,
+      targettedAttemptNumberOp,
+      tutorialScoreOp,
+      // must come *after* the tutorial score op
+      currentScoreOp,
+    ];
+
+    // TODO: find true parent of facts (globalized)
+    const initState = currentActivity?.content.custom?.facts || [];
+
+    const results = bulkApplyState([...sessionOps, ...initState], defaultGlobalEnv);
+    console.log('INIT REZ', { results, ops: [...sessionOps, ...initState] });
     const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
     const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
     // TODO: more state

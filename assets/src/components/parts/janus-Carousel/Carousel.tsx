@@ -35,19 +35,16 @@ const Carousel: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `Sim Options.Mode`,
-          key: `Mode`,
+          key: `Sim Options.Mode`,
           type: CapiVariableTypes.STRING,
           value: mode,
         },
         {
-          id: `customCss`,
           key: `customCss`,
           type: CapiVariableTypes.STRING,
           value: customCss,
         },
         {
-          id: `zoom`,
           key: `zoom`,
           type: CapiVariableTypes.BOOLEAN,
           value: zoom,
@@ -139,38 +136,33 @@ const Carousel: React.FC<any> = (props) => {
     const currentImage = currentSlide + 1;
 
     vars.push({
-      id: `Sim Options.Mode`,
-      key: `Mode`,
+      key: `Sim Options.Mode`,
       type: CapiVariableTypes.STRING,
       value: carouselMode,
     });
     vars.push({
-      id: `Current Image`,
       key: `Current Image`,
       type: CapiVariableTypes.NUMBER,
       value: currentImage,
     });
     vars.push({
-      id: `Viewed Images Count`,
       key: `Viewed Images Count`,
       type: CapiVariableTypes.NUMBER,
       value: viewedImagesCount,
     });
     vars.push({
-      id: `customCss`,
       key: `customCss`,
       type: CapiVariableTypes.STRING,
       value: carouselCustomCss,
     });
     vars.push({
-      id: `zoom`,
       key: `zoom`,
       type: CapiVariableTypes.BOOLEAN,
       value: carouselZoom,
     });
     props.onSave({
-      activityId: `${id}`,
-      partResponses: vars,
+      id: `${id}`,
+      responses: vars,
     });
   };
 

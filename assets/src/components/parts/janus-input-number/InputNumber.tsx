@@ -36,13 +36,11 @@ const InputNumber: React.FC<any> = (props) => {
       id,
       responses: [
         {
-          id: `value`,
           key: 'value',
           type: CapiVariableTypes.NUMBER,
           value: inputNumberValue || '',
         },
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: inputNumberEnabled,
@@ -117,15 +115,13 @@ const InputNumber: React.FC<any> = (props) => {
   const saveInputText = (val: number, isEnabled = true) => {
     props.onSave({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `${id}.value`,
           key: 'value',
           type: CapiVariableTypes.NUMBER,
           value: val,
         },
         {
-          id: `${id}.enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: isEnabled,

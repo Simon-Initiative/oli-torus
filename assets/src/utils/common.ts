@@ -47,10 +47,11 @@ export const isNumber = (val: string | number): boolean =>
   typeof val === 'number' && !Number.isNaN(val);
 
 export const parseBoolean = (input: string | boolean | number): boolean =>
-  input === true ||
-  input === 1 ||
-  input.toString().toLowerCase() === 'true' ||
-  input.toString().toLowerCase() === '1';
+  input !== undefined &&
+  (input === true ||
+    input === 1 ||
+    input.toString().toLowerCase() === 'true' ||
+    input.toString().toLowerCase() === '1');
 
 export const isStringArray = (s: unknown): boolean =>
   typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';

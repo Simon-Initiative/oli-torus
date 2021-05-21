@@ -1,11 +1,15 @@
 /* eslint-disable react/prop-types */
+import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTreeWithAttemptState } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../store/features/groups/selectors/deck';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -33,7 +37,8 @@ const InjectedStyles: React.FC = () => {
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
-  const currentActivityTree = useSelector(selectCurrentActivityTreeWithAttemptState);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -78,7 +83,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return;
     }
 
-    const { activity: currentActivity } = currentActivityTree[currentActivityTree.length - 1];
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -174,20 +179,69 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return result;
   };
 
-  const renderedActivities = () => {
+  const renderedActivities = useCallback(() => {
     if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
     }
-    return currentActivityTree.map(({ activity, attempt }, index) => {
-      const mutableActivity = JSON.parse(JSON.stringify(activity));
-      const isLast = index === currentActivityTree.length - 1;
-      if (!isLast) {
-        mutableActivity.content.custom.renderAsLayer = true;
+
+    const actualCurrentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const config = actualCurrentActivity.content.custom;
+    const styles: CSSProperties = {
+      width: config?.width || 1300,
+    };
+    if (config?.palette) {
+      if (config.palette.useHtmlProps) {
+        styles.backgroundColor = config.palette.backgroundColor;
+        styles.borderColor = config.palette.borderColor;
+        styles.borderWidth = config.palette.borderWidth;
+        styles.borderStyle = config.palette.borderStyle;
+        styles.borderRadius = config.palette.borderRadius;
+      } else {
+        styles.borderWidth = `${
+          config?.palette?.lineThickness ? config?.palette?.lineThickness + 'px' : '1px'
+        }`;
+        styles.borderRadius = '10px';
+        styles.borderStyle = 'solid';
+        styles.borderColor = `rgba(${
+          config?.palette?.lineColor || config?.palette?.lineColor === 0
+            ? chroma(config?.palette?.lineColor).rgb().join(',')
+            : '255, 255, 255'
+        },${config?.palette?.lineAlpha})`;
+        styles.backgroundColor = `rgba(${
+          config?.palette?.fillColor || config?.palette?.fillColor === 0
+            ? chroma(config?.palette?.fillColor).rgb().join(',')
+            : '255, 255, 255'
+        },${config?.palette?.fillAlpha})`;
+      }
+    }
+    if (config?.x) {
+      styles.left = config.x;
+    }
+    if (config?.y) {
+      styles.top = config.y;
+    }
+    if (config?.z) {
+      styles.zIndex = config.z || 0;
+    }
+    if (config?.height) {
+      styles.height = config.height;
+    }
+
+    // attempts are being constantly updated, if we are not careful it will re-render the activity
+    // too many times. instead we want to only send the "initial" attempt state
+    // activities should then keep track of updates internally and if needed request updates
+    const activities = currentActivityTree.map((activity) => {
+      const attempt = currentActivityAttemptTree?.find(
+        (a) => a?.activityId === activity.resourceId,
+      );
+      if (!attempt) {
+        console.error('could not find attempt state for ', activity);
+        return;
       }
       return (
         <ActivityRenderer
-          key={mutableActivity.id}
-          activity={mutableActivity}
+          key={activity.id}
+          activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
           onActivitySubmit={handleActivitySubmit}
@@ -195,7 +249,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         />
       );
     });
-  };
+
+    return (
+      <div className="content" style={styles}>
+        {activities}
+      </div>
+    );
+  }, [currentActivityTree]);
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>

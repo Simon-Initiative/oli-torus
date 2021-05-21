@@ -129,28 +129,24 @@ const Dropdown: React.FC<any> = (props) => {
     enabled: boolean;
   }) => {
     props.onSave({
-      activityId: `${id}`,
-      partResponses: [
+      id: `${id}`,
+      responses: [
         {
-          id: `enabled`,
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
           value: enabled,
         },
         {
-          id: `selectedIndex`,
           key: 'selectedIndex',
           type: CapiVariableTypes.NUMBER,
           value: selectedIndex,
         },
         {
-          id: `selectedItem`,
           key: 'selectedItem',
           type: CapiVariableTypes.STRING,
           value: selectedItem,
         },
         {
-          id: `value`,
           key: 'value',
           type: CapiVariableTypes.STRING,
           value: value,
