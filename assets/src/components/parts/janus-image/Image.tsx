@@ -53,7 +53,7 @@ const Image: React.FC<any> = (props) => {
     zIndex: z,
   };
 
-  return (
+  return ready ? (
     <img
       // eslint-disable-next-line
       data-janus-type={props.type}
@@ -62,7 +62,7 @@ const Image: React.FC<any> = (props) => {
       className={customCssClass}
       style={imageStyles}
     />
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-image';

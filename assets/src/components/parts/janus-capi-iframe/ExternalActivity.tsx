@@ -3,6 +3,7 @@ import { CapiVariable, CapiVariableTypes, coerceCapiValue } from '../../../adapt
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { parseBool } from '../../../utils/common';
+import debounce from 'lodash/debounce';
 
 const fakeUserStorage: any = {};
 const getFromUserStorage = async (simId: string | number, key: string | number) =>
@@ -91,7 +92,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     // TODO: really this needs to wait until the sim tells it what the initial values are
     props.onInit({
       id,
-      responses: []
+      responses: [],
     });
 
     setReady(true);
@@ -327,6 +328,20 @@ const ExternalActivity: React.FC<any> = (props) => {
     );
   };
 
+  const debounceSave = useCallback(
+    debounce(
+      ({ id, responses }) => {
+        props.onSave({
+          id,
+          responses,
+        });
+      },
+      500,
+      { maxWait: 30000, leading: true },
+    ),
+    [],
+  );
+
   const handleValueChange = (msgData: any) => {
     // TODO: is it possible to set "other" values?
     // like session.whatever from here? if so, the following won't work
@@ -344,10 +359,10 @@ const ExternalActivity: React.FC<any> = (props) => {
     updateInternalState(stateVarsFromSim);
 
     // value change is really the only time we should be saving
-    /* props.onSave({
+    debounceSave({
       id: `${id}`,
       responses: stateVarsFromSim,
-    }); */
+    });
   };
 
   const handleSetData = async (message: any) => {
@@ -631,7 +646,5 @@ const ExternalActivity: React.FC<any> = (props) => {
 };
 
 export const tagName = 'janus-capi-iframe';
-
-// TODO: redo web component
 
 export default ExternalActivity;
