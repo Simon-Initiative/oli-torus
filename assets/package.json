@@ -18,6 +18,7 @@
     "@reduxjs/toolkit": "^1.5.1",
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
+    "css-minimizer-webpack-plugin": "^3.0.0",
     "immer": "^6.0.3",
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
@@ -44,6 +45,7 @@
     "slate-history": "^0.58.1",
     "slate-react": "^0.58.1",
     "swiper": "^6.4.7",
+    "terser-webpack-plugin": "^5.1.2",
     "tsmonad": "^0.8.0",
     "typescript": "^3.7.5",
     "vm-browserify": "^1.1.2",
@@ -84,7 +86,6 @@
     "jest": "^26.0.0",
     "jest-html-reporter": "^3.1.0",
     "mini-css-extract-plugin": "^1.6.0",
-    "optimize-css-assets-webpack-plugin": "^6.0.0",
     "prettier": "^2.2.1",
     "redux-devtools-extension": "^2.13.8",
     "regenerator-runtime": "^0.13.7",
@@ -92,7 +93,6 @@
     "sass-loader": "^11.1.1",
     "ts-jest": "^26.5.4",
     "ts-loader": "^9.2.1",
-    "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^5.36.0",
     "webpack-cli": "^4.7.0"
   }
