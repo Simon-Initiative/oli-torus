@@ -28,29 +28,81 @@ const getExternalActivityMap = () => {
 const ExternalActivity: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
 
-  const id = props.id;
-  const {
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    src,
-    title,
-    customCssClass,
-    configData,
-    visible = true,
-  } = model;
+  // model items, note that we use default values now because
+  // the delay from parsing the json means we can't set them from the model immediately
+  const [frameX, setFrameX] = useState<number>(0);
+  const [frameY, setFrameY] = useState<number>(0);
+  const [frameZ, setFrameZ] = useState<number>(0);
+  const [frameWidth, setFrameWidth] = useState<number>(0);
+  const [frameHeight, setFrameHeight] = useState<number>(0);
+  const [frameVisible, setFrameVisible] = useState<boolean>(true);
+  const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
+  const [activitySrc, setActivitySrc] = useState<string>('');
+
+  // these rely on being set every render and the "model" useState value being set
+  const { src, title, customCssClass, configData } = model;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+
+    const {
+      x = 0,
+      y = 0,
+      z = 0,
+      width,
+      height,
+      src,
+      title,
+      customCssClass,
+      configData,
+      visible = true,
+    } = pModel;
+
+    setFrameX(x);
+    setFrameY(y);
+    setFrameZ(z);
+    setFrameWidth(width);
+    setFrameHeight(height);
+    setFrameVisible(visible);
+
+    // TODO: really this needs to wait until the sim tells it what the initial values are
+    props.onInit({
+      id,
+      responses: []
+    });
+
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   interface CapiHandshake {
     requestToken: string;
@@ -79,25 +131,9 @@ const ExternalActivity: React.FC<any> = (props) => {
   }
 
   const [initState, setInitState] = useState([]);
-  const [frameX, setFrameX] = useState<number>(x || 0);
-  const [frameY, setFrameY] = useState<number>(y || 0);
-  const [frameZ, setFrameZ] = useState<number>(z || 0);
-  const [frameWidth, setFrameWidth] = useState<number>(width || 0);
-  const [frameHeight, setFrameHeight] = useState<number>(height || 0);
-  const [frameVisible, setFrameVisible] = useState<boolean>(visible);
-  const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
-  const [activitySrc, setActivitySrc] = useState<string>(src);
+
   const messageListener = useRef<any>(null);
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
-
-  useEffect(() => {
-    setFrameX(model.x);
-    setFrameY(model.y);
-    setFrameZ(model.z);
-    setFrameWidth(model.width);
-    setFrameHeight(model.height);
-    setFrameVisible(true);
-  }, [model]);
 
   const externalActivityStyles: CSSProperties = {
     position: 'absolute',
@@ -108,6 +144,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     zIndex: frameZ,
     visibility: frameVisible ? 'visible' : 'hidden',
   };
+
   const frameRef = useCallback((frame) => {
     console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame });
     if (frame) {
@@ -307,10 +344,10 @@ const ExternalActivity: React.FC<any> = (props) => {
     updateInternalState(stateVarsFromSim);
 
     // value change is really the only time we should be saving
-    props.onSave({
+    /* props.onSave({
       id: `${id}`,
       responses: stateVarsFromSim,
-    });
+    }); */
   };
 
   const handleSetData = async (message: any) => {
@@ -579,12 +616,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
 
-  useEffect(() => {
-    // all activities *must* emit onReady
-    props.onReady({ id: `${props.id}` });
-  }, []);
-
-  return (
+  return ready ? (
     <iframe
       data-janus-type={props.type}
       id={id}
@@ -595,7 +627,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       src={src}
       scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
     />
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-capi-iframe';
