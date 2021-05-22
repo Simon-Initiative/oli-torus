@@ -103,7 +103,7 @@ module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
     minimize: true,
-    minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
+    minimizer: [new TerserPlugin()],
   },
   entry: populateEntries(),
   output: {
