@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable react/prop-types */
+import chroma from 'chroma-js';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
@@ -170,6 +171,71 @@ const Popup: React.FC<any> = (props) => {
 
   const partComponents = popup?.partsLayout;
 
+  const config = popup?.custom? popup.custom : null;
+  const popupModalStyles: CSSProperties = {
+    width: config?.width || 1300,
+};
+if (config?.palette) {
+    if (config.palette.useHtmlProps) {
+      popupModalStyles.backgroundColor = config.palette.backgroundColor;
+      popupModalStyles.borderColor = config.palette.borderColor;
+      popupModalStyles.borderWidth = config.palette.borderWidth;
+        popupModalStyles.borderStyle = config.palette.borderStyle;
+        popupModalStyles.borderRadius = config.palette.borderRadius;
+    } else {
+        popupModalStyles.borderWidth = `${
+            config?.palette?.lineThickness
+                ? config?.palette?.lineThickness + 'px'
+                : '1px'
+        }`;
+        popupModalStyles.borderRadius = '10px';
+        popupModalStyles.borderStyle = 'solid';
+        popupModalStyles.borderColor = `rgba(${
+            config?.palette?.lineColor ||
+            config?.palette?.lineColor === 0
+                ? chroma(config?.palette?.lineColor).rgb().join(',')
+                : '255, 255, 255'
+        },${config?.palette?.lineAlpha})`;
+        popupModalStyles.backgroundColor = `rgba(${
+            config?.palette?.fillColor ||
+            config?.palette?.fillColor === 0
+                ? chroma(config?.palette?.fillColor).rgb().join(',')
+                : '255, 255, 255'
+        },${config?.palette?.fillAlpha})`;
+    }
+}
+    popupModalStyles.left = config?.x? config.x : 0; // adding the previous logic done for Pop-up and feedback.
+    popupModalStyles.top = config?.y? config.y : 0; // adding the previous logic done for Pop-up and feedback.
+    popupModalStyles.zIndex = config?.z ? config?.z : 1000;
+    popupModalStyles.height = config?.height;
+    popupModalStyles.overflow = 'hidden';
+    popupModalStyles.position = 'absolute';
+
+    const popupCloseStyles: CSSProperties = {
+      position: 'absolute',
+      padding: 0,
+      zIndex: 5000,
+      background: 'transparent',
+      textDecoration: 'none',
+      width: '25px',
+      height: '25px',
+      fontSize: '1.4em',
+      fontFamily: 'Arial',
+      right: 0,
+      opacity: 1,
+  };
+
+  const popupBGStyles: CSSProperties = {
+      top: 0,
+      left: 0,
+      bottom: 0,
+      right: 0,
+      borderRadius: 10,
+      padding: 0,
+      overflow: 'hidden',
+      width: '100%',
+      height: '100%',
+  };
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
@@ -206,7 +272,22 @@ const Popup: React.FC<any> = (props) => {
       {showPopup ? (
         <React.Fragment>
           {partComponents ? (
-            <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
+            <div className={`info-icon-popup ${config?.customCssClass? config.customCssClass : '' }`}
+             style={popupModalStyles}>
+              (
+                    <div className="popup-background" style={popupBGStyles}>
+                      <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
+                        <button
+                            aria-label="Close"
+                            className="close"
+                            style={popupCloseStyles}
+                            onClick={() => handleToggleIcon(false)}
+                        >
+                            <span>x</span>
+                        </button>
+                    </div>
+                )
+            </div>
           ) : (
             <div>Popup could not load</div>
           )}
