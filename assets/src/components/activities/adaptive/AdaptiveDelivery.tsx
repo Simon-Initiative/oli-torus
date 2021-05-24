@@ -20,13 +20,36 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [allPartsInitialized, setAllPartsInitialized] = useState<any>(null);
 
   useEffect(() => {
+    /* if (!allPartsInitialized) { */
+    let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
     const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
+      let resolved = false;
+      resolve = (value: any) => {
+        resolved = true;
+        res(value);
+      };
+      reject = (reason: string) => {
+        resolved = true;
+        rej(reason);
+      };
+      timeout = setTimeout(() => {
+        if (resolved) {
+          return;
+        }
+        console.error('[AllPartsInitialized] failed to resolve within time limit', {
+          timeout,
+          attemptState,
+          parts,
+        });
+      }, 2000);
     });
     setAllPartsInitialized({ promise, resolve, reject });
+    /*  } */
+
+    console.log('ADAPTIVE IN', { id: props.model.id, parts, timeout });
+
     sharedInitMap.set(
       props.model.id,
       parts.reduce((collect: Record<string, boolean>, part) => {
@@ -34,8 +57,10 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         return collect;
       }, {}),
     );
-    // TODO: timeout auto promise resolve/reject?
+
     return () => {
+      console.log('ADAPTIVE OUT', { id: props.model.id, parts, timeout });
+      clearTimeout(timeout);
       sharedInitMap.delete(props.model.id);
     };
   }, []);

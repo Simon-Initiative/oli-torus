@@ -84,17 +84,37 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [allActivitiesInit, setAllActivitiesInit] = useState<any>(null);
 
   useEffect(() => {
-    if (!currentActivityTree) {
+    if (!currentActivityTree || currentActivityTree.length === 0) {
       return;
     }
 
+    /*  if (!allActivitiesInit) { */
+    let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
     const promise = new Promise((res, rej) => {
-      resolve = res;
-      reject = rej;
+      let resolved = false;
+      resolve = (value: any) => {
+        resolved = true;
+        res(value);
+      };
+      reject = (reason: string) => {
+        resolved = true;
+        rej(reason);
+      };
+      timeout = setTimeout(() => {
+        if (resolved) {
+          return;
+        }
+        console.error('[AllActivitiesInit] failed to resolve within time limit', {
+          currentActivityTree,
+          timeout,
+        });
+      }, 2000);
     });
     setAllActivitiesInit({ promise, resolve, reject });
+    /* } */
+    console.log('DLV IN', { currentActivityTree, timeout });
 
     currentActivityTree.forEach((activity) => {
       sharedActivityInit.set(activity.id, false);
@@ -144,6 +164,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
       }
     }
+
+    return () => {
+      console.log('DLV OUT', { currentActivityTree, timeout });
+      clearTimeout(timeout);
+    };
   }, [currentActivityTree]);
 
   useEffect(() => {
@@ -190,7 +215,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // get overwritten by them saving the default value
     //
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-      console.log('all ready!!!!!')
+      console.log('all ready!!!!!');
       await initCurrentActivity();
       allActivitiesInit.resolve({ snapshot: getLocalizedStateSnapshot() });
     }

@@ -1,5 +1,5 @@
 import chroma from 'chroma-js';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
 
@@ -84,6 +84,21 @@ const TextFlow: React.FC<any> = (props: any) => {
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
+
+    setReady(true);
+  }, []);
+
   useEffect(() => {
     let pModel;
     let pState;
@@ -106,11 +121,7 @@ const TextFlow: React.FC<any> = (props: any) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
@@ -168,13 +179,13 @@ const TextFlow: React.FC<any> = (props: any) => {
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  return (
+  return ready ? (
     <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-text-flow';

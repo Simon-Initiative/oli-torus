@@ -11,9 +11,10 @@ const Image: React.FC<any> = (props) => {
       id,
       responses: [],
     });
-    console.log('IMAGE INIT', initResult);
+    /* console.log('IMAGE INIT', initResult); */
     // setState??
     const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
 
     setReady(true);
   }, []);

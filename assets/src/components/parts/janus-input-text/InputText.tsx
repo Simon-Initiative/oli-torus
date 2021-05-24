@@ -1,15 +1,72 @@
 /* eslint-disable react/prop-types */
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
-import { CapiVariable } from '../types/parts';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [enabled, setEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+  const [text, setText] = useState<string>('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dText = pModel.text || '';
+    setText(dText);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'text',
+          type: CapiVariableTypes.STRING,
+          value: dText,
+        },
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: dText.length,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+    const sText = currentStateSnapshot[`stage.${id}.text`];
+    if (sText !== undefined) {
+      setText(sText);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -33,30 +90,7 @@ const InputText: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          id: `enabled`,
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
-        },
-        {
-          id: `text`,
-          key: 'text',
-          type: CapiVariableTypes.STRING,
-          value: text,
-        },
-        {
-          id: `textLength`,
-          key: 'textLength',
-          type: CapiVariableTypes.NUMBER,
-          value: text.length,
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -66,7 +100,7 @@ const InputText: React.FC<any> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, customCssClass, showLabel, label, prompt } = model;
+  const { x, y, z, width, height, showLabel, label, prompt } = model;
   const styles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -75,18 +109,11 @@ const InputText: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-  const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState(customCssClass);
-  const [text, setText] = useState<string>('');
+
   const saveInputText = (val: string) => {
     props.onSave({
-      id: `${id}`,
+      id,
       responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
-        },
         {
           key: 'text',
           type: CapiVariableTypes.STRING,
@@ -100,6 +127,7 @@ const InputText: React.FC<any> = (props) => {
       ],
     });
   };
+
   const handleOnChange = (event: any) => {
     const val = event.target.value;
     // Update/set the value
@@ -113,44 +141,9 @@ const InputText: React.FC<any> = (props) => {
     [],
   );
 
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
+  // TODO: MUTATE STATE CHANGES
 
-  const handleStateChange = (vars: CapiVariable[]) => {
-    // override text value from state
-    const activity = vars.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    if (activity?.length) {
-      activity.forEach((stateVar) => {
-        if (stateVar.key === 'text' && stateVar.value) {
-          const stateText = stateVar.value.toString();
-          if (text !== stateText) {
-            setText(stateText);
-          }
-          props.onSave({
-            id: `${id}`,
-            responses: [
-              {
-                id: `textLength`,
-                key: 'textLength',
-                type: CapiVariableTypes.NUMBER,
-                value: stateText.length,
-              },
-            ],
-          });
-        }
-        if (stateVar && stateVar.key === 'enabled') {
-          setEnabled(parseBool(stateVar.value));
-        }
-        if (stateVar && stateVar.key === 'customCssClass') {
-          setCssClass(stateVar.value.toString());
-        }
-      });
-    }
-  };
-
-  return (
+  return ready ? (
     <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
       <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
       <input
@@ -163,7 +156,7 @@ const InputText: React.FC<any> = (props) => {
         value={text}
       />
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-input-text';
