@@ -2,6 +2,11 @@
 <%= for script <- @part_scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <div id="delivery_container" class="container"></div>
@@ -22,6 +27,7 @@
   <% end %>
 
   const params = {
+    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
     resourceId: <%= @resource_id %>,
     sectionSlug: "<%= @section_slug %>",
     userId: <%= @user_id %>,

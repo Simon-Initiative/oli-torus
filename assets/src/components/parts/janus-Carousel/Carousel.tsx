@@ -1,24 +1,65 @@
 /* eslint-disable react/prop-types */
 import React, { createRef, CSSProperties, useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 
-// TODO: fix typing
 const Carousel: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [viewedSlides, setViewedSlides] = useState<any[]>([]);
-  const [captionRefs, setCaptionRefs] = useState<any[]>([]);
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [
+        {
+          key: `Sim Options.Mode`,
+          type: CapiVariableTypes.STRING,
+          value: mode,
+        },
+        {
+          key: `customCss`,
+          type: CapiVariableTypes.STRING,
+          value: customCss,
+        },
+        {
+          key: `zoom`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: zoom,
+        },
+      ],
+    });
+    setReady(true);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const {
     x,
@@ -36,6 +77,15 @@ const Carousel: React.FC<any> = (props) => {
     zoom = false,
   } = model;
 
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [viewedSlides, setViewedSlides] = useState<any[]>([]);
+  const [captionRefs, setCaptionRefs] = useState<any[]>([]);
+  const [carouselCustomCss, setCarouselCustomCss] = useState<string>(customCss);
+  const [carouselMode, setCarouselMode] = useState<string>(mode);
+  const [carouselZoom, setCarouselZoom] = useState<boolean>(zoom);
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const carouselDefaultCss = require('./Carousel.css');
   const MAGIC_NUMBER = 64;
   const PAGINATION_HEIGHT = 32;
   const styles: CSSProperties = {
@@ -67,6 +117,88 @@ const Carousel: React.FC<any> = (props) => {
     }
   }, [images]);
 
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
+  const saveState = ({
+    carouselMode,
+    carouselCustomCss,
+    carouselZoom,
+  }: {
+    carouselMode: string;
+    carouselCustomCss: string;
+    carouselZoom: boolean;
+  }) => {
+    const vars: any = [];
+    const viewedImagesCount = [...new Set(viewedSlides)].length;
+    const currentImage = currentSlide + 1;
+
+    vars.push({
+      key: `Sim Options.Mode`,
+      type: CapiVariableTypes.STRING,
+      value: carouselMode,
+    });
+    vars.push({
+      key: `Current Image`,
+      type: CapiVariableTypes.NUMBER,
+      value: currentImage,
+    });
+    vars.push({
+      key: `Viewed Images Count`,
+      type: CapiVariableTypes.NUMBER,
+      value: viewedImagesCount,
+    });
+    vars.push({
+      key: `customCss`,
+      type: CapiVariableTypes.STRING,
+      value: carouselCustomCss,
+    });
+    vars.push({
+      key: `zoom`,
+      type: CapiVariableTypes.BOOLEAN,
+      value: carouselZoom,
+    });
+    props.onSave({
+      id: `${id}`,
+      responses: vars,
+    });
+  };
+
+  const handleStateChange = (data: CapiVariable[]) => {
+    // override various things from state
+    const stateVariables: any = {
+      carouselMode: mode,
+      carouselCustomCss: customCss,
+      carouselZoom: zoom,
+    };
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    interested.forEach((stateVar) => {
+      if (stateVar.key === 'Mode') {
+        setCarouselMode(stateVar.value as string);
+        stateVariables.carouselMode = stateVar.value as string;
+      }
+      if (stateVar.key === 'customCss') {
+        setCarouselCustomCss(stateVar.value as string);
+        stateVariables.carouselCustomCss = stateVar.value as string;
+      }
+      if (stateVar.key === 'zoom') {
+        setCarouselZoom(stateVar.value as boolean);
+        stateVariables.carouselZoom = stateVar.value as boolean;
+      }
+    });
+    saveState(stateVariables);
+  };
+
+  useEffect(() => {
+    saveState({
+      carouselMode: mode,
+      carouselCustomCss: customCss,
+      carouselZoom: zoom,
+    });
+  }, [currentSlide]);
+
   const handleSlideChange = (currentSlide: any) => {
     setViewedSlides((viewedSlides) => [...viewedSlides, currentSlide]);
     setCurrentSlide(currentSlide);
@@ -81,7 +213,8 @@ const Carousel: React.FC<any> = (props) => {
     >
       {customCss && (
         <style type="text/css" style={{ display: 'none' }}>
-          {customCss}
+          {carouselDefaultCss}
+          {carouselCustomCss ? carouselCustomCss : null}
         </style>
       )}
       {images.length > 0 && (

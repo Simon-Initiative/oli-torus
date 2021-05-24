@@ -14,6 +14,7 @@
   window.userToken = "<%= assigns[:user_token] %>";
 
   const params = {
+    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
     resourceId: <%= @revision.resource_id %>,
     sectionSlug: "<%= @project_slug %>",
     userId: <%= @user.id %>,
