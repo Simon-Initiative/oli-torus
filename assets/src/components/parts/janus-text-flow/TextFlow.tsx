@@ -81,14 +81,36 @@ export const renderFlow = (
 const TextFlow: React.FC<any> = (props: any) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    props.onInit({
+      id,
+      responses: [],
+    });
+    setReady(true);
   }, [props]);
 
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
@@ -125,9 +147,11 @@ const TextFlow: React.FC<any> = (props: any) => {
   // send pre-calculated map of required values to Markup
 
   useEffect(() => {
-    // all activities *must* emit onReady
-    props.onReady({ id: `${props.id}` });
-  }, []);
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   // due to custom elements, objects will be JSON
   let tree: MarkupTree[] = [];

@@ -1,11 +1,22 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useState } from 'react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 const Image: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+    console.log('IMAGE INIT', initResult);
+    // setState??
+    const currentStateSnapshot = initResult.snapshot;
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -29,11 +40,7 @@ const Image: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {

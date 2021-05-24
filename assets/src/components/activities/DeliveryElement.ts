@@ -56,6 +56,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
   onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
     Promise<EvaluationResponse>;
+  onReady?: (attemptGuid: string) => Promise<Success>
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -82,6 +83,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
   onSubmitEvaluations: (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
     Promise<EvaluationResponse>;
+  onReady: (attemptGuid: string) => Promise<Success>
 
   constructor() {
     super();
@@ -105,6 +107,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       this.dispatch('resetPart', attemptGuid, partAttemptGuid);
     this.onSubmitEvaluations = (attemptGuid: string, clientEvaluations: ClientEvaluation[]) =>
       this.dispatch('submitEvaluations', attemptGuid, undefined, clientEvaluations);
+
+    this.onReady = (attemptGuid: string) => this.dispatch('activityReady', attemptGuid, undefined);
   }
 
   static get observedAttributes() {
@@ -157,6 +161,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitActivity: this.onSubmitActivity,
       onResetActivity: this.onResetActivity,
       onSubmitEvaluations: this.onSubmitEvaluations,
+      onReady: this.onReady,
       userId,
     };
   }
