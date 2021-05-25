@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSlate, ReactEditor } from 'slate-react';
 import { Command, CommandContext } from '../commands/interfaces';
-import Popover from 'react-tiny-popover';
+import * as Popover from 'react-tiny-popover';
 
 export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';
@@ -95,31 +95,25 @@ export const DropdownToolbarButton = ({
   };
 
   return (
-    <Popover
-      onClickOutside={(e) => setIsPopoverOpen(false)}
-      disableReposition={true}
-      transitionDuration={0}
+    <Popover.Popover
+      onClickOutside={(e: any) => setIsPopoverOpen(false)}
       isOpen={isPopoverOpen}
       padding={5}
-      position={position || 'right'}
       content={() => (
         <div>{(command as any).obtainParameters(context, editor, onDone, onCancel)}</div>
       )}
     >
-      {(ref) => (
-        <button
-          ref={ref}
-          data-toggle="tooltip"
-          data-placement="top"
-          title={tooltip}
-          className={`btn btn-sm btn-light ${style || ''} ${(active && 'active') || ''}`}
-          onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-          type="button"
-        >
-          {buttonContent(icon, description)}
-        </button>
-      )}
-    </Popover>
+      <button
+        data-toggle="tooltip"
+        data-placement="top"
+        title={tooltip}
+        className={`btn btn-sm btn-light ${style || ''} ${(active && 'active') || ''}`}
+        onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+        type="button"
+      >
+        {buttonContent(icon, description)}
+      </button>
+    </Popover.Popover>
   );
 };
 

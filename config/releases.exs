@@ -2,6 +2,15 @@
 # from environment variables at runtime
 import Config
 
+from_boolean_env = fn key, default ->
+  System.get_env(key, default)
+  |> String.downcase()
+  |> case do
+    "true" -> :enabled
+    _ -> :disabled
+  end
+end
+
 database_url =
   System.get_env("DATABASE_URL") ||
     raise """
@@ -42,7 +51,8 @@ config :oli,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
-  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")
+  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
+  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false")
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

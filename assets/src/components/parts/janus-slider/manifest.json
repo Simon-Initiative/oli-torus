@@ -1,0 +1,14 @@
+{
+  "id": "janus_slider",
+  "friendlyName": "Slider",
+  "description": "Displays an slider from a url.",
+  "global": true,
+  "delivery": {
+    "element": "janus-slider",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-slider",
+    "entry": "./authoring-entry.ts"
+  }
+}

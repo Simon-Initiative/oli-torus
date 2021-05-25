@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Student.Summary do
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Resources.Numbering
 
   defstruct [:title, :description, :access_map, :hierarchy]

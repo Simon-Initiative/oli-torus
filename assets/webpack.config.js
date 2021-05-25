@@ -4,8 +4,8 @@ const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const globImporter = require('node-sass-glob-importer');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const TerserPlugin = require("terser-webpack-plugin");
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // Determines the entry points for the webpack by looking at activity
@@ -58,6 +58,12 @@ const populateEntries = () => {
     ...glob
       .sync('./styles/themes/delivery/*/dark.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/preview/*/light.scss')
+      .map((p) => ({ prefix: 'preview_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/preview/*/dark.scss')
+      .map((p) => ({ prefix: 'preview_', themePath: p })),
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
@@ -96,10 +102,8 @@ const populateEntries = () => {
 module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
-    minimizer: [
-      new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: true }),
-      new OptimizeCSSAssetsPlugin({}),
-    ],
+    minimize: true,
+    minimizer: [new TerserPlugin()],
   },
   entry: populateEntries(),
   output: {

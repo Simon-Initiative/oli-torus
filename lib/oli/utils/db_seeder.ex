@@ -3,8 +3,8 @@ defmodule Oli.Seeder do
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Author}
   alias Oli.Institutions.Institution
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.{ResourceAccess}
+  import Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Activities
   alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
@@ -13,7 +13,7 @@ defmodule Oli.Seeder do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Attempts.Snapshot
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
 
@@ -359,7 +359,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, resource_tag).revision
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
+    %ResourceAccess{id: id} = track_access(resource.id, section.slug, user.id)
 
     attrs =
       Map.merge(attrs, %{
@@ -368,7 +368,7 @@ defmodule Oli.Seeder do
         attempt_guid: UUID.uuid4()
       })
 
-    {:ok, attempt} = Attempts.create_resource_attempt(attrs)
+    {:ok, attempt} = create_resource_attempt(attrs)
 
     case tag do
       nil -> map
@@ -382,7 +382,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, revision_tag)
     section = map.section
 
-    %ResourceAccess{id: id} = Attempts.track_access(resource.id, section.slug, user.id)
+    %ResourceAccess{id: id} = track_access(resource.id, section.slug, user.id)
 
     attrs =
       Map.merge(attrs, %{
@@ -391,7 +391,7 @@ defmodule Oli.Seeder do
         attempt_guid: UUID.uuid4()
       })
 
-    {:ok, attempt} = Attempts.create_resource_attempt(attrs)
+    {:ok, attempt} = create_resource_attempt(attrs)
 
     case tag do
       nil -> map
@@ -412,7 +412,7 @@ defmodule Oli.Seeder do
         attempt_guid: UUID.uuid4()
       })
 
-    {:ok, attempt} = Attempts.create_activity_attempt(attrs)
+    {:ok, attempt} = create_activity_attempt(attrs)
 
     case tag do
       nil -> map
@@ -430,7 +430,7 @@ defmodule Oli.Seeder do
         attempt_guid: UUID.uuid4()
       })
 
-    {:ok, attempt} = Attempts.create_part_attempt(attrs)
+    {:ok, attempt} = create_part_attempt(attrs)
 
     case tag do
       nil -> map

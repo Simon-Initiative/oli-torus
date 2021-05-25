@@ -14,6 +14,7 @@
 - Add support for course package delete
 - Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
 - Add support for moving curriculum items
+- Allow analytic snapshot creation to run asynchronous to the rest of the attempt finalization code
 
 ### Bug fixes
 
@@ -26,6 +27,8 @@
 - Fix problem with inputs causing clipping in Firefox
 - Fix problem with difficulty selecting and focusing in Firefox
 - Fix problem where containers with no children were rendered as pages in delivery
+- Fix some style inconsistencies in delivery and dark mode
+- Fix an issue where reordering a curriculum item could result in incorrect n-1 position
 
 ## 0.9.0 (2021-4-22)
 

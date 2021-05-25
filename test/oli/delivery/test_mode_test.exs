@@ -1,8 +1,8 @@
 defmodule Oli.Delivery.TestModeTest do
   use ExUnit.Case, async: true
-
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.{StudentInput}
+  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.Core.StudentInput
 
   describe "test mode evaluation and transformation" do
     setup do
@@ -83,7 +83,7 @@ defmodule Oli.Delivery.TestModeTest do
       ]
 
       assert {:ok, [%{part_id: "1", result: _, feedback: _}]} =
-               Attempts.perform_test_evaluation(content, part_inputs)
+               Evaluate.evaluate_from_preview(content, part_inputs)
 
       part_inputs = [
         %{part_id: "1", input: %StudentInput{input: "a"}},
@@ -92,12 +92,12 @@ defmodule Oli.Delivery.TestModeTest do
 
       assert {:ok,
               [%{part_id: "1", result: _, feedback: _}, %{part_id: "2", result: _, feedback: _}]} =
-               Attempts.perform_test_evaluation(content, part_inputs)
+               Evaluate.evaluate_from_preview(content, part_inputs)
     end
 
     test "performing a transformation", %{content: content} do
       assert {:ok, %{"stem" => _, "authoring" => _, "choices" => _}} =
-               Attempts.perform_test_transformation(content)
+               ActivityLifecycle.perform_test_transformation(content)
     end
 
     test "performing evaluations where one should result in an error", %{content: content} do
@@ -110,7 +110,7 @@ defmodule Oli.Delivery.TestModeTest do
               [
                 %{part_id: "1", error: "error in evaluation"},
                 %{part_id: "2", result: _, feedback: _}
-              ]} = Attempts.perform_test_evaluation(content, part_inputs)
+              ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
   end
 end

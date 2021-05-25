@@ -18,9 +18,9 @@ import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { defaultWriterContext } from 'data/content/writers/context';
 
 type Evaluation = {
-  score: number,
-  outOf: number,
-  feedback: ActivityTypes.RichText,
+  score: number;
+  outOf: number;
+  feedback: ActivityTypes.RichText;
 };
 
 type InputProps = {
@@ -31,27 +31,30 @@ type InputProps = {
 };
 
 const Input = (props: InputProps) => {
-
   const input = props.input === null ? '' : props.input.input;
 
   if (props.inputType === 'numeric') {
     return (
-      <input type="number"
+      <input
+        type="number"
         aria-label="answer submission textbox"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
         value={input}
-        disabled={props.isEvaluated} />
+        disabled={props.isEvaluated}
+      />
     );
   }
   if (props.inputType === 'text') {
     return (
-      <input type="text"
+      <input
+        type="text"
         aria-label="answer submission textbox"
         className="form-control"
         onChange={(e: any) => props.onChange(e.target.value)}
         value={input}
-        disabled={props.isEvaluated} />
+        disabled={props.isEvaluated}
+      />
     );
   }
   return (
@@ -62,8 +65,8 @@ const Input = (props: InputProps) => {
       className="form-control"
       onChange={(e: any) => props.onChange(e.target.value)}
       value={input}
-      disabled={props.isEvaluated}>
-    </textarea>
+      disabled={props.isEvaluated}
+    ></textarea>
   );
 };
 
@@ -80,21 +83,22 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
   const onInputChange = (input: string) => {
-
     setInput(input);
 
-    props.onSaveActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }]);
+    props.onSaveActivity(attemptState.attemptGuid, [
+      { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+    ]);
   };
 
   const onSubmit = () => {
-    props.onSubmitActivity(attemptState.attemptGuid,
-      [{ attemptGuid: attemptState.parts[0].attemptGuid, response: { input } }])
+    props
+      .onSubmitActivity(attemptState.attemptGuid, [
+        { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+      ])
       .then((response: EvaluationResponse) => {
         if (response.actions.length > 0) {
-
-          const action: ActivityTypes.FeedbackAction
-            = response.actions[0] as ActivityTypes.FeedbackAction;
+          const action: ActivityTypes.FeedbackAction = response
+            .actions[0] as ActivityTypes.FeedbackAction;
           const { score, out_of, feedback, error } = action;
           const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
           const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
@@ -104,7 +108,8 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
   };
 
   const onRequestHint = () => {
-    props.onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
+    props
+      .onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
       .then((state: RequestHintResponse) => {
         if (state.hint !== undefined) {
           setHints([...hints, state.hint] as any);
@@ -114,53 +119,66 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
   };
 
   const onReset = () => {
-    props.onResetActivity(attemptState.attemptGuid)
-      .then((state: ResetActivityResponse) => {
-        setAttemptState(state.attemptState);
-        setModel(state.model as ShortAnswerModelSchema);
-        setHints([]);
-        setHasMoreHints(props.state.parts[0].hasMoreHints);
-        setInput('');
-      });
+    props.onResetActivity(attemptState.attemptGuid).then((state: ResetActivityResponse) => {
+      setAttemptState(state.attemptState);
+      setModel(state.model as ShortAnswerModelSchema);
+      setHints([]);
+      setHasMoreHints(props.state.parts[0].hasMoreHints);
+      setInput('');
+    });
   };
 
-  const evaluationSummary = isEvaluated
-    ? <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-    : null;
+  const evaluationSummary = isEvaluated ? (
+    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
+  ) : null;
 
-  const reset = isEvaluated && !props.graded
-    ? (<div className="d-flex">
-      <div className="flex-fill"></div>
-      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-    </div>
-    )
-    : null;
+  const reset =
+    isEvaluated && !props.graded ? (
+      <div className="d-flex">
+        <div className="flex-fill"></div>
+        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+      </div>
+    ) : null;
 
-  const ungradedDetails = props.graded ? null : [
-    evaluationSummary,
-    <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext}
-      hasMoreHints={hasMoreHints} isEvaluated={isEvaluated} />];
+  const ungradedDetails = props.graded
+    ? null
+    : [
+        evaluationSummary,
+        <Hints
+          key="hints"
+          onClick={onRequestHint}
+          hints={hints}
+          context={writerContext}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated}
+        />,
+      ];
 
-  const gradedDetails = props.graded && props.progressState === 'in_review' ? [
-    evaluationSummary] : null;
+  const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
 
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
-  const gradedPoints = props.graded && props.progressState === 'in_review' ? [
-    <div key="correct" className="text-info font-italic">
-      {correctnessIcon}
-      <span>Points: </span><span>{attemptState.score + ' out of '
-        + attemptState.outOf}</span></div>] : null;
+  const gradedPoints =
+    props.graded && props.review
+      ? [
+          <div key="correct" className="text-info font-italic">
+            {correctnessIcon}
+            <span>Points: </span>
+            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+          </div>,
+        ]
+      : null;
 
-  const maybeSubmitButton = props.graded
-    ? null
-    : (
-      <button
-        aria-label="submit"
-        className="btn btn-primary mt-2 float-right" disabled={isEvaluated} onClick={onSubmit}>
-        Submit
-      </button>
-    );
+  const maybeSubmitButton = props.graded ? null : (
+    <button
+      aria-label="submit"
+      className="btn btn-primary mt-2 float-right"
+      disabled={isEvaluated}
+      onClick={onSubmit}
+    >
+      Submit
+    </button>
+  );
 
   return (
     <div className="activity short-answer-activity">
@@ -172,7 +190,8 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
             inputType={model.inputType}
             input={input}
             isEvaluated={isEvaluated}
-            onChange={onInputChange} />
+            onChange={onInputChange}
+          />
           {maybeSubmitButton}
         </div>
 

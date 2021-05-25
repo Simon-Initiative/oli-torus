@@ -3,8 +3,9 @@ defmodule OliWeb.Api.ActivityController do
   use OpenApiSpex.Controller
 
   alias Oli.Authoring.Editing.ActivityEditor
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.StudentInput
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.ApiSchemas
@@ -167,7 +168,12 @@ defmodule OliWeb.Api.ActivityController do
     }
   end
 
-  defp document_to_result(%{objectives: objectives, title: title, content: content, resource_id: resource_id}) do
+  defp document_to_result(%{
+         objectives: objectives,
+         title: title,
+         content: content,
+         resource_id: resource_id
+       }) do
     %{
       "result" => "success",
       "resourceId" => resource_id,
@@ -409,7 +415,7 @@ defmodule OliWeb.Api.ActivityController do
         %{part_id: part_id, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    case Attempts.perform_test_evaluation(model, parsed) do
+    case ActivityEvaluation.evaluate_from_preview(model, parsed) do
       {:ok, evaluations} -> json(conn, %{"result" => "success", "evaluations" => evaluations})
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -417,7 +423,7 @@ defmodule OliWeb.Api.ActivityController do
 
   @doc false
   def transform(conn, %{"model" => model}) do
-    case Attempts.perform_test_transformation(model) do
+    case ActivityLifecycle.perform_test_transformation(model) do
       {:ok, transformed} -> json(conn, %{"result" => "success", "transformed" => transformed})
       {:error, _} -> error(conn, 500, "server error")
     end

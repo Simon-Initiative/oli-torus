@@ -1,0 +1,14 @@
+{
+  "id": "janus_audio",
+  "friendlyName": "Audio",
+  "description": "Displays an audio from a url.",
+  "global": true,
+  "delivery": {
+    "element": "janus-audio",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-audio",
+    "entry": "./authoring-entry.ts"
+  }
+}

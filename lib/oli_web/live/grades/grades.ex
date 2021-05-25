@@ -7,8 +7,8 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Lti.LTI_NRPS
   alias Lti_1p3.Tool.AccessToken
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.ResourceAccess
+  alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
 
   def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
