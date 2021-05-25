@@ -35,9 +35,4 @@ defmodule OliWeb.CookieConsentController do
     end
   end
 
-  defp error(conn, code, reason) do
-    conn
-    |> Plug.Conn.send_resp(code, reason)
-    |> Plug.Conn.halt()
-  end
 end
