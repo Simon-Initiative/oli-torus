@@ -43,7 +43,6 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
       default:
         console.error("Unsupported cookie preference");
     }
-
   }
 
   return (
@@ -277,7 +276,6 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
 };
 
 const savePreferences = () => {
-  console.log("The new user options " +JSON.stringify(userOptions));
   const days = 365 * 24 * 60 * 60 * 1000;
   setCookies([{ name: "_cky_opt_choices", value: JSON.stringify(userOptions), duration: days },
   { name: "_cky_opt_in", value: "true", duration: days }]);

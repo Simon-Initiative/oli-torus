@@ -27,7 +27,6 @@ export const setCookies = (cookies: CookieDetails[]) => {
 
 export const consentOptions = () => {
   let optSetCookie = getCookie('_cky_opt_choices');
-  console.log("Opt cookie " + JSON.stringify(optSetCookie));
   let userOptions = {
     necessary: true,
     functionality: true,
@@ -75,7 +74,6 @@ const processConsent = () => {
     setCookies([{ name: "_cky_opt_in_dismiss", value: "true", duration: minutes }]);
     selectCookieConsent();
   }
-  // selectCookieConsent();
 }
 
 const persistCookie = (cookies: CookieDetails[]) => {
@@ -104,18 +102,18 @@ export const retrieveCookies = (url: string) => {
     }
   }).then((response) => response.json())
     .then((json) => {
-      // console.log(JSON.stringify(json));
-      const dateNow = new Date();
-      json.forEach((c: CookieDetails) => {
-        if (c.expiration) {
-          const expiration = new Date(c.expiration);
-          console.log("the cookie from server " + JSON.stringify(c));
-          // if (expiration > dateNow) {
-            c.durationUtc = dateNow.toUTCString();
-            setCookie(c.name, c.value, c.durationUtc);
-          // }
-        }
-      })
+      if (!json.result) {
+        const dateNow = new Date();
+        json.forEach((c: CookieDetails) => {
+          if (c.expiration) {
+            const expiration = new Date(c.expiration);
+            if (expiration > dateNow) {
+              c.durationUtc = expiration.toUTCString();
+              setCookie(c.name, c.value, c.durationUtc);
+            }
+          }
+        })
+      }
       processConsent();
       return json
     })
