@@ -270,7 +270,6 @@ const Popup: React.FC<any> = (props) => {
               className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
               style={popupModalStyles}
             >
-              (
               <div className="popup-background" style={popupBGStyles}>
                 <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
                 <button
@@ -282,7 +281,6 @@ const Popup: React.FC<any> = (props) => {
                   <span>x</span>
                 </button>
               </div>
-              )
             </div>
           ) : (
             <div>Popup could not load</div>
