@@ -63,10 +63,13 @@ const storeConsent = () => {
 }
 
 const display = (c: any) => {
-  const cookieConsentEl = document.querySelector("#cookie_consent_display");
-  if (cookieConsentEl) {
-    ReactDOM.render(c, cookieConsentEl);
+  let cookieConsentEl = document.querySelector("#cookie_consent_display");
+  if(!cookieConsentEl) {
+    cookieConsentEl = document.createElement("div");
+    cookieConsentEl.id = 'cookie_consent_display';
+    document.body.appendChild(cookieConsentEl);
   }
+  ReactDOM.render(c, cookieConsentEl);
 }
 
 const dismiss = () => {

@@ -305,10 +305,13 @@ export function selectCookiePreferences(): void {
 }
 
 const display = (c: any) => {
-  const cookiePrefs = document.querySelector("#cookie_prefs_display");
-  if (cookiePrefs) {
-    ReactDOM.render(c, cookiePrefs);
+  let cookiePrefs = document.querySelector("#cookie_prefs_display");
+  if(!cookiePrefs) {
+    cookiePrefs = document.createElement("div");
+    cookiePrefs.id = 'cookie_prefs_display';
+    document.body.appendChild(cookiePrefs);
   }
+  ReactDOM.render(c, cookiePrefs);
 }
 
 const dismiss = () => {

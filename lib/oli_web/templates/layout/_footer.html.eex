@@ -3,8 +3,6 @@
 <footer>
   <div class="container">
     <div class="row">
-      <div id="cookie_prefs_display"></div>
-      <div id="cookie_consent_display"></div>
       <div class="col-sm text-left">
         <a href='javascript:;' onclick="OLI.selectCookiePreferences()">Cookie Preferences</a>
       </div>
