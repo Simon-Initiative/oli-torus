@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { CapiVariable } from '../types/parts';
 
 const NavigationButton: React.FC<any> = (props) => {
@@ -9,6 +9,154 @@ const NavigationButton: React.FC<any> = (props) => {
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [buttonSelected, setButtonSelected] = useState(false);
+  const [buttonTextColor, setButtonTextColor] = useState('');
+  const [accessibilityText, setAccessibilityText] = useState('');
+  const [backgroundColor, setBackgroundColor] = useState('');
+  const [buttonVisible, setButtonVisible] = useState(true);
+  // BS: why isn't transparent a bool?
+  const [buttonTransparent, setButtonTransparent] = useState('');
+  const [buttonEnabled, setButtonEnabled] = useState(true);
+  const [buttonTitle, setButtonTitle] = useState('');
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setButtonEnabled(dEnabled);
+
+    const dVisible = typeof pModel.visible === 'boolean' ? pModel.visible : buttonVisible;
+    setButtonVisible(dVisible);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dTitle = pModel.title || '';
+    setButtonTitle(dTitle);
+
+    const dAccessibilityText = pModel.ariaLabel || accessibilityText;
+    setAccessibilityText(dAccessibilityText);
+
+    const dSelected = typeof pModel.selected === 'boolean' ? pModel.selected : buttonSelected;
+    setButtonSelected(dSelected);
+
+    const dBackgroundColor = pModel.buttonColor || '';
+    setBackgroundColor(dBackgroundColor);
+
+    const dButtonTextColor = pModel.textColor || '';
+    setButtonTextColor(dButtonTextColor);
+
+    const dTransparent = pModel.transparent || '';
+    setButtonTransparent(dTransparent);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'Selected',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dSelected,
+        },
+        {
+          key: 'selected',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dSelected,
+        },
+        {
+          key: 'visible',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dVisible,
+        },
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'title',
+          type: CapiVariableTypes.STRING,
+          value: dTitle,
+        },
+        {
+          key: 'textColor',
+          type: CapiVariableTypes.STRING,
+          value: dButtonTextColor,
+        },
+        {
+          key: 'backgroundColor',
+          type: CapiVariableTypes.STRING,
+          value: dBackgroundColor,
+        },
+        {
+          key: 'transparent',
+          type: CapiVariableTypes.STRING,
+          value: dTransparent,
+        },
+        {
+          key: 'accessibilityText',
+          type: CapiVariableTypes.STRING,
+          value: dAccessibilityText,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setButtonEnabled(sEnabled);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+    const sVisible = currentStateSnapshot[`stage.${id}.visible`];
+    if (sVisible !== undefined) {
+      setButtonVisible(sVisible);
+    }
+
+    const sTitle = currentStateSnapshot[`stage.${id}.title`];
+    if (sTitle !== undefined) {
+      setButtonTitle(sTitle);
+    }
+
+    const sAccessibilityText = currentStateSnapshot[`stage.${id}.ariaLabel`];
+    if (sAccessibilityText !== undefined) {
+      setAccessibilityText(sAccessibilityText);
+    }
+
+    let sSelected = currentStateSnapshot[`stage.${id}.Selected`];
+    if (sSelected === undefined) {
+      sSelected = currentStateSnapshot[`stage.${id}.selected`];
+    }
+    if (sSelected !== undefined) {
+      setButtonSelected(sSelected);
+    }
+
+    const sBackgroundColor = currentStateSnapshot[`stage.${id}.buttonColor`];
+    if (sBackgroundColor !== undefined) {
+      setBackgroundColor(sBackgroundColor);
+    }
+
+    const sButtonTextColor = currentStateSnapshot[`stage.${id}.textColor`];
+    if (sButtonTextColor !== undefined) {
+      setButtonTextColor(sButtonTextColor);
+    }
+
+    const sTransparent = currentStateSnapshot[`stage.${id}.transparent`];
+    if (sTransparent !== undefined) {
+      setButtonTransparent(sTransparent);
+    }
+
+    setReady(true);
+  }, []);
+
   useEffect(() => {
     let pModel;
     let pState;
@@ -31,52 +179,7 @@ const NavigationButton: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          key: 'Selected',
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-        {
-          key: 'visible',
-          type: CapiVariableTypes.BOOLEAN,
-          value: visible,
-        },
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
-        },
-        {
-          key: 'title',
-          type: CapiVariableTypes.STRING,
-          value: title,
-        },
-        {
-          key: 'textColor',
-          type: CapiVariableTypes.STRING,
-          value: textColor,
-        },
-        {
-          key: 'backgroundColor',
-          type: CapiVariableTypes.STRING,
-          value: buttonColor,
-        },
-        {
-          key: 'transparent',
-          type: CapiVariableTypes.STRING,
-          value: transparent,
-        },
-        {
-          key: 'accessibilityText',
-          type: CapiVariableTypes.STRING,
-          value: '',
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -85,6 +188,7 @@ const NavigationButton: React.FC<any> = (props) => {
     }
     props.onReady({ id, responses: [] });
   }, [ready]);
+
   const {
     title,
     x = 0,
@@ -92,7 +196,6 @@ const NavigationButton: React.FC<any> = (props) => {
     z = 0,
     width,
     height,
-    customCssClass,
     textColor,
     buttonColor,
     visible = true,
@@ -101,6 +204,7 @@ const NavigationButton: React.FC<any> = (props) => {
     transparent,
     selected,
   } = model;
+
   const styles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -110,14 +214,7 @@ const NavigationButton: React.FC<any> = (props) => {
     display: visible ? 'block' : 'none',
     zIndex: z,
   };
-  const [buttonSelected, setButtonSelected] = useState(selected || false);
-  const [buttonTextColor, setButtonTextColor] = useState(textColor);
-  const [accessibilityText, setAccessibilityText] = useState('');
-  const [backgroundColor, setBackgroundColor] = useState(buttonColor);
-  const [buttonVisible, setButtonVisible] = useState(visible);
-  const [buttonTransparent, setButtonTransparent] = useState(transparent);
-  const [buttonEnabled, setbuttonEnabled] = useState(enabled);
-  const [buttonTitle, setButtonTitle] = useState(title);
+
   const janusButtonStyle: CSSProperties = {
     width: width,
   };
@@ -141,9 +238,15 @@ const NavigationButton: React.FC<any> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: true,
         },
+        {
+          key: 'selected',
+          type: CapiVariableTypes.BOOLEAN,
+          value: true,
+        },
       ],
     });
   };
+
   if (buttonSelected) {
     setButtonSelected(false);
     handleButtonPress();
@@ -152,6 +255,11 @@ const NavigationButton: React.FC<any> = (props) => {
       responses: [
         {
           key: 'Selected',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          key: 'selected',
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
@@ -200,7 +308,7 @@ const NavigationButton: React.FC<any> = (props) => {
       }
       if (stateVar.key === 'enabled') {
         const boolEnabled: boolean = parseBool(stateVar.value);
-        setbuttonEnabled(boolEnabled);
+        setButtonEnabled(boolEnabled);
         CapiVariables.btnEnabled = boolEnabled;
       }
       if (stateVar.key === 'textColor') {
@@ -233,9 +341,10 @@ const NavigationButton: React.FC<any> = (props) => {
     onClick: handleButtonPress,
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
-    className: `${customCssClass}`,
+    className: `${cssClass}`,
   };
-  return buttonVisible ? (
+
+  return ready && buttonVisible ? (
     <button data-janus-type={props.type} {...buttonProps} style={styles}>
       {title}
     </button>

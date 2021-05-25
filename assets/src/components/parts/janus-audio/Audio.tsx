@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import React, { CSSProperties, useEffect, useState } from 'react';
 import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
@@ -9,6 +9,63 @@ const Audio: React.FC<any> = (props) => {
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [showControls, setShowControls] = useState(true);
+  const [classes, setClasses] = useState<any>('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dCssClass = pModel.customCssClass || classes;
+    setClasses(dCssClass);
+
+    const dShowControls =
+      typeof pModel.showControls === 'boolean' ? pModel.showControls : showControls;
+    setShowControls(dShowControls);
+
+    const dStartTime = pModel.startTime || 0;
+    const dEndTime = pModel.endTime || '';
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'hasStarted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          key: 'currentTime',
+          type: CapiVariableTypes.STRING,
+          value: dStartTime,
+        },
+        {
+          key: 'duration',
+          type: CapiVariableTypes.STRING,
+          value: '',
+        },
+        {
+          key: 'hasCompleted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          key: 'state',
+          type: CapiVariableTypes.STRING,
+          value: 'notStarted',
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setClasses(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -32,37 +89,7 @@ const Audio: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          key: 'hasStarted',
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-        {
-          key: 'currentTime',
-          type: CapiVariableTypes.STRING,
-          value: startTime,
-        },
-        {
-          key: 'duration',
-          type: CapiVariableTypes.STRING,
-          value: '',
-        },
-        {
-          key: 'hasCompleted',
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-        {
-          key: 'state',
-          type: CapiVariableTypes.STRING,
-          value: false,
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -88,6 +115,7 @@ const Audio: React.FC<any> = (props) => {
     enableReplay,
     subtitles,
   } = model;
+
   const audioStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -98,9 +126,7 @@ const Audio: React.FC<any> = (props) => {
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
-  const onReady = props.onReady;
-  const [showControls, setShowControls] = useState(true);
-  const [classes, setClasses] = useState<any>(customCssClass);
+
   let finalSrc = src;
   if (startTime && startTime >= 0) {
     finalSrc = `${finalSrc}#t=${startTime || 0}`;
@@ -239,9 +265,10 @@ const Audio: React.FC<any> = (props) => {
       }
     });
   };
-  return (
+
+  return ready ? (
     <audio
-      data-janus-type={props.type}
+      data-part-component-type={props.type}
       className={classes}
       style={audioStyles}
       autoPlay={autoPlay}
@@ -269,7 +296,7 @@ const Audio: React.FC<any> = (props) => {
           );
         })}
     </audio>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-audio';
