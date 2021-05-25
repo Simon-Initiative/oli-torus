@@ -13,7 +13,7 @@ config :oli,
   env: :prod,
   s3_media_bucket_name: "torus-media",
   media_url: "d2xvti2irp4c7t.cloudfront.net",
-  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false")
+  load_testing_mode: :enabled
 
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information
