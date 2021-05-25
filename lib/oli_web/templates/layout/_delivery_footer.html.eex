@@ -1,16 +1,20 @@
-<%= render OliWeb.SharedView, "_cookie_consent.html", conn: @conn %>
 <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
+
 <footer class="footer">
   <div class="container">
     <div class="row">
+      <div id="cookie_prefs_display"></div>
+      <div id="cookie_consent_display"></div>
       <div class="col-sm text-left">
-        <a href='javascript:;' onclick="cookiePreferences();">Cookie Preferences</a>
+        <a href='javascript:;' onclick="OLI.selectCookiePreferences()">Cookie Preferences</a>
       </div>
       <div class="col-sm text-center">
       </div>
       <div class="col-sm text-right">
-
       </div>
     </div>
   </div>
+  <script>
+    OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>'));
+  </script>
 </footer>

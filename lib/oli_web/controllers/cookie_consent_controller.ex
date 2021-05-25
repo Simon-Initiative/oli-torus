@@ -10,10 +10,9 @@ defmodule OliWeb.CookieConsentController do
 
     if current_user != nil do
       Enum.each(cookies, fn cookie ->
-        %{"expires" => expires, "name" => name, "value" => value, "duration" => _duration} =
-          cookie
+        %{"expiresIso" => expiresIso, "name" => name, "value" => value} = cookie
 
-        {:ok, expiration} = Timex.parse(expires, "{ISO:Extended:Z}")
+        {:ok, expiration} = Timex.parse(expiresIso, "{ISO:Extended:Z}")
         expiration = DateTime.truncate(expiration, :second)
 
         Consent.insert_cookie(name, value, expiration, current_user.id)
@@ -32,7 +31,7 @@ defmodule OliWeb.CookieConsentController do
       cookies = Consent.retrieve_cookies(current_user.id)
       json(conn, cookies)
     else
-      error(conn, 404, "No cookies")
+      json(conn, %{"result" => "no-op"})
     end
   end
 
