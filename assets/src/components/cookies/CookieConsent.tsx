@@ -12,8 +12,8 @@ export const CookieConsent = (props: CookieConsentProps) => {
   return (
     <div className="form-inline">
       <p>We use cookies on our website to enhance site navigation, analyze site usage,
-      and assist in our marketing efforts. By clicking "Accept", you consent to the storing
-        of cookies on your device. You can change your cookie settings at any time by clicking "Cookie Preferences"</p>
+      and assist in our marketing efforts. By clicking &quot;Accept&quot;, you consent to the storing
+        of cookies on your device. You can change your cookie settings at any time by clicking &quot;Cookie Preferences&quot;</p>
       <p><a href="https://www.cmu.edu/legal/privacy-notice.html">Privacy Notice</a></p>
     </div>
   );

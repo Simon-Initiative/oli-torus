@@ -26,7 +26,7 @@ export const setCookies = (cookies: CookieDetails[]) => {
 }
 
 export const consentOptions = () => {
-  let optSetCookie = getCookie('_cky_opt_choices');
+  const optSetCookie = getCookie('_cky_opt_choices');
   let userOptions = {
     necessary: true,
     functionality: true,
@@ -62,7 +62,7 @@ const getCookie = (cname: string) => {
 
 const processConsent = () => {
   let optInCookie = getCookie('_cky_opt_in');
-  let dismissOptIn = getCookie('_cky_opt_in_dismiss');
+  const dismissOptIn = getCookie('_cky_opt_in_dismiss');
   if (optInCookie === "") {
     const days = 365 * 24 * 60 * 60 * 1000;
     setCookies([{ name: "_cky_opt_in", value: "false", duration: days }]);

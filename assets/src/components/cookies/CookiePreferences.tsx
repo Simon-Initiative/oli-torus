@@ -3,7 +3,7 @@ import ModalSelection from "components/modal/ModalSelection";
 import { consentOptions, setCookies } from "components/cookies/utils";
 import ReactDOM from 'react-dom';
 
-let userOptions = consentOptions();
+const userOptions = consentOptions();
 
 export type CookiePreferencesProps = {
 };
@@ -12,9 +12,9 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
   const [functionalActive, setFunctionalActive] = useState(true);
   const [analyticsActive, setAnalyticActive] = useState(true);
   const [targetingActive, setTargetingActive] = useState(false);
-  const [functionalLabel, setFunctionalLabel] = useState("On");
-  const [analyticsLabel, setAnalyticLabel] = useState("On");
-  const [targetingLabel, setTargetingLabel] = useState("Off");
+  const [functionalLabel, setFunctionalLabel] = useState('On');
+  const [analyticsLabel, setAnalyticLabel] = useState('On');
+  const [targetingLabel, setTargetingLabel] = useState('Off');
 
   useEffect(() => {
     const userOptions = consentOptions();
@@ -239,7 +239,7 @@ export const CookiePreferences = (props: CookiePreferencesProps) => {
                   based on your browsing habits.</p>
                 <p>These cookies, as served by our content and/or advertising providers, may combine
                 information they collected from our website with other information they have
-                independently collected relating to your web browser's activities across their
+                independently collected relating to your web browser&apos;s activities across their
                   network of websites.</p>
                 <p>If you choose to remove or disable these targeting or advertising cookies, you will
                   still see adverts but they may not be relevant to you.</p>
