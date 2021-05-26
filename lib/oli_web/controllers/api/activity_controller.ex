@@ -9,7 +9,6 @@ defmodule OliWeb.Api.ActivityController do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.ApiSchemas
-  alias Oli.Activities
 
   @moduledoc tags: ["Storage Service"]
 
