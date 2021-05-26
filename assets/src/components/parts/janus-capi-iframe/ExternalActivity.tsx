@@ -469,9 +469,13 @@ const ExternalActivity: React.FC<any> = (props) => {
     updateInternalState(stateVarsFromSim);
 
     // value change is really the only time we should be saving
-    debounceSave({
-      id: `${id}`,
-      responses: stateVarsFromSim,
+    // debounceSave({
+    //   id: `${id}`,
+    //   responses: stateVarsFromSim,
+    // });
+    props.onSave({
+      id,
+      stateVarsFromSim,
     });
   };
 
