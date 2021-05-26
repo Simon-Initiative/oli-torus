@@ -11,31 +11,30 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   </dataset>
   """
   import XmlBuilder
-  alias Oli.Publishing
   alias Oli.Repo
 
   def setup(%{
         dataset_name: dataset_name,
         part_attempt: part_attempt,
         problem_name: problem_name,
-        publication: publication
+        publication: publication,
+        revision_map: revision_map
       }) do
     element(:dataset, [
       element(:name, dataset_name),
-      create_problem_hierarchy(problem_name, publication, part_attempt)
+      create_problem_hierarchy(problem_name, publication, part_attempt, revision_map)
     ])
   end
 
-  defp create_problem_hierarchy(problem_name, publication, part_attempt) do
-    root_resource =
-      Publishing.get_published_revision(publication.id, publication.root_resource_id)
+  defp create_problem_hierarchy(problem_name, publication, part_attempt, revision_map) do
+    root_resource = Map.get(revision_map, publication.root_resource_id)
 
     resource_type = Repo.preload(root_resource, :resource_type).resource_type.type
 
     context = %{
       target: part_attempt.activity_attempt.resource_attempt.revision.resource_id,
       problem_name: problem_name,
-      publication: publication
+      revision_map: revision_map
     }
 
     element(:level, %{type: resource_type}, [
@@ -45,7 +44,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   end
 
   defp dfs(
-         %{target: target, problem_name: problem_name, publication: publication} = context,
+         %{target: target, problem_name: problem_name, revision_map: revision_map} = context,
          nodes
        ) do
     case nodes do
@@ -53,8 +52,8 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
         nil
 
       [id | ids] ->
-        revision = Publishing.get_published_revision(publication.id, id)
-        resource_type = Repo.preload(revision, :resource_type).resource_type.type
+        revision = Map.get(revision_map, id)
+        resource_type = Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id)
 
         case resource_type do
           "container" ->

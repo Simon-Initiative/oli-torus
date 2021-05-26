@@ -27,6 +27,11 @@ defmodule Oli.Analytics.Datashop do
     publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
     dataset_name = Utils.make_dataset_name(project.slug)
 
+    # create a map of resource ids to published revision
+    revision_map =
+      Publishing.get_published_resources_by_publication(publication.id)
+      |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
     |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
@@ -45,7 +50,8 @@ defmodule Oli.Analytics.Datashop do
             dataset_name: dataset_name,
             part_attempt: hd(part_attempts),
             publication: publication,
-            problem_name: problem_name
+            problem_name: problem_name,
+            revision_map: revision_map
           }
         })
 
