@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Attempts.FeedbackActionResult do
+defmodule Oli.Delivery.Evaluation.Actions.FeedbackActionResult do
   @derive Jason.Encoder
   defstruct [:type, :score, :out_of, :feedback, :error, :attempt_guid]
 end

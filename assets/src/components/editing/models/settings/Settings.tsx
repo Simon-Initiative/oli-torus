@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import Popover from 'react-tiny-popover';
+import { Popover } from 'react-tiny-popover';
 import { ReactEditor } from 'slate-react';
 import { Transforms, Editor, Location } from 'slate';
 import { ModelElement } from 'data/content/model';
@@ -142,25 +142,17 @@ export const ToolPopupButton = ({ setIsPopoverOpen, isPopoverOpen, contentFn, la
   return (
     <div style={{ float: 'right' }}>
       <Popover
-        transitionDuration={0}
         onClickOutside={() => {
           setIsPopoverOpen(false);
         }}
         isOpen={isPopoverOpen}
         padding={25}
-        position={['bottom', 'top', 'left', 'right']}
         content={contentFn}
       >
-        {(ref) => (
-          <button
-            ref={ref}
-            onClick={() => setIsPopoverOpen(true)}
-            className="btn btn-light btn-sm mt-1"
-          >
-            <i className="fas fa-cog mr-1"></i>
-            {label ? `${label} Options` : 'Options'}
-          </button>
-        )}
+        <button onClick={() => setIsPopoverOpen(true)} className="btn btn-light btn-sm mt-1">
+          <i className="fas fa-cog mr-1"></i>
+          {label ? `${label} Options` : 'Options'}
+        </button>
       </Popover>
     </div>
   );

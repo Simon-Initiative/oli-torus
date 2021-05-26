@@ -1,9 +1,13 @@
 defmodule Oli.Delivery.AttemptsSubmissionTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Attempts.{ActivityAttempt, PartAttempt, StudentInput}
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.ActivityLifecycle
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, StudentInput}
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Student.Summary
@@ -86,19 +90,22 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       {:ok, _summary} = Summary.get_summary(section.slug, user1)
 
       # Open the graded page as user 1 to get the prologue
-      user1_page_context = PageContext.create_page_context(section.slug, revision.slug, user1)
+      user1_page_context = PageContext.create_for_visit(section.slug, revision.slug, user1)
       assert user1_page_context.progress_state == :not_started
       assert Enum.count(user1_page_context.resource_attempts) == 0
 
       # Start the attempt and go into the assessment
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
-      {:ok, {user1_resource_attempt, user1_activity_attempts}} =
-        Attempts.start_resource_attempt(revision.slug, section.slug, user1.id, activity_provider)
+      {:ok,
+       %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+         resource_attempt: user1_resource_attempt,
+         attempt_hierarchy: user1_activity_attempts
+       }} = PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
 
       # Save an activity part on the page but do not submit it
       {:ok, {:ok, 1}} =
-        Attempts.save_student_input([
+        ActivityLifecycle.save_student_input([
           %{
             # attempt_guid: user1_part_attempt.attempt_guid,
             attempt_guid:
@@ -120,7 +127,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert user1_latest_resource_attempt.id == user1_resource_attempt.id
 
       # Make sure the progress state is correct for the latest resource attempt
-      assert PageContext.create_page_context(section.slug, revision.slug, user1).progress_state ==
+      assert PageContext.create_for_visit(section.slug, revision.slug, user1).progress_state ==
                :in_progress
 
       # Now we have an "in progress" resource attempt for student 1 with a saved student input,
@@ -132,15 +139,18 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Access the graded page with user2
       assert is_nil(Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id))
-      user2_page_context = PageContext.create_page_context(section.slug, revision.slug, user2)
+      user2_page_context = PageContext.create_for_visit(section.slug, revision.slug, user2)
       assert user2_page_context.progress_state == :not_started
       assert Enum.count(user2_page_context.resource_attempts) == 0
 
-      {:ok, {user2_resource_attempt, user2_activity_attempts}} =
-        Attempts.start_resource_attempt(revision.slug, section.slug, user2.id, activity_provider)
+      {:ok,
+       %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
+         resource_attempt: user2_resource_attempt,
+         attempt_hierarchy: user2_activity_attempts
+       }} = PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
 
       # Save attempts for both activities
-      Attempts.save_student_input([
+      ActivityLifecycle.save_student_input([
         %{
           attempt_guid:
             user2_activity_attempts
@@ -154,7 +164,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         }
       ])
 
-      Attempts.save_student_input([
+      ActivityLifecycle.save_student_input([
         %{
           attempt_guid:
             user2_activity_attempts
@@ -170,8 +180,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ])
 
       # Make sure user 2 can submit the page
-      {:ok, access} =
-        Attempts.submit_graded_page(section.slug, user2_resource_attempt.attempt_guid)
+      {:ok, access} = PageLifecycle.finalize(section.slug, user2_resource_attempt.attempt_guid)
 
       access = Repo.preload(access, [:resource_attempts])
 
@@ -360,7 +369,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -371,18 +380,18 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Evaluate the parts to allow the graded page to be submitted
       {:ok, _evals} =
-        Attempts.submit_part_evaluations(
+        Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
           part_inputs
         )
 
       # Submit the page to toggle it from "in progress" to completed
-      Attempts.submit_graded_page(section.slug, resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(section.slug, resource_attempt1.attempt_guid)
 
       # determine_resource_attempt_state should no longer retrieve the previously in progress attempt
       {:ok, {:not_started, _resource_attempt}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -400,7 +409,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
       {:ok, {:in_progress, _resource_attempt}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -410,14 +419,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, _evals} =
-        Attempts.submit_part_evaluations(
+        Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
           part_inputs
         )
 
       {:error, "nothing to process"} =
-        Attempts.submit_part_evaluations(
+        Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
           part_inputs
@@ -441,7 +450,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -453,16 +462,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ]
 
       {:ok, _evals} =
-        Attempts.submit_part_evaluations(
+        Evaluate.evaluate_from_input(
           section.slug,
           user1_activity_attempt.attempt_guid,
           part_inputs
         )
 
-      Attempts.submit_graded_page(section.slug, user1_resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(section.slug, user1_resource_attempt1.attempt_guid)
 
       {:ok, {:not_started, _resource_attempt}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user1.id,
@@ -471,7 +480,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # User 2
       {:ok, {:in_progress, resource_attempt_user2}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user2.id,
@@ -486,16 +495,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ]
 
       {:ok, _evals} =
-        Attempts.submit_part_evaluations(
+        Evaluate.evaluate_from_input(
           section.slug,
           user2_activity_attempt.attempt_guid,
           part_inputs
         )
 
-      Attempts.submit_graded_page(section.slug, user2_resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(section.slug, user2_resource_attempt1.attempt_guid)
 
       {:ok, {:not_started, _resource_attempt}} =
-        Attempts.determine_resource_attempt_state(
+        PageLifecycle.visit(
           revision,
           section.slug,
           user2.id,
@@ -513,9 +522,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ]
 
       # The part can be saved once
-      assert {:ok, {:ok, 1}} = Attempts.save_student_input(part_inputs)
+      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
       # The part can be saved again
-      assert {:ok, {:ok, 1}} = Attempts.save_student_input(part_inputs)
+      assert {:ok, {:ok, 1}} = ActivityLifecycle.save_student_input(part_inputs)
     end
 
     test "processing a submission", %{
@@ -529,7 +538,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -551,7 +560,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # now reset the activity
       {:ok, {attempt_state, _}} =
-        Attempts.reset_activity(section.slug, activity_attempt.attempt_guid)
+        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
 
       assert attempt_state.dateEvaluated == nil
       assert attempt_state.score == nil
@@ -561,7 +570,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # now try to reset when there are no more attempts
       assert {:error, {:no_more_attempts}} ==
-               Attempts.reset_activity(section.slug, attempt_state.attemptGuid)
+               ActivityLifecycle.reset_activity(section.slug, attempt_state.attemptGuid)
 
       # verify that a snapshot record was created properly
       [%Snapshot{} = snapshot] = Oli.Repo.all(Snapshot)
@@ -596,19 +605,19 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, _} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # now reset the activity, this is a simulation of the student
       # opening the resource in tab B.
       {:ok, {attempt_state, _}} =
-        Attempts.reset_activity(section.slug, activity_attempt.attempt_guid)
+        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
 
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset the guid from the first attempt, simulating the
       # student clicking 'Reset' in tab A.
       assert {:error, {:no_more_attempts}} ==
-               Attempts.reset_activity(section.slug, activity_attempt.attempt_guid)
+               ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
     end
   end
 
@@ -696,7 +705,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -725,7 +734,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "b"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       assert attempt_guid == part_attempt.attempt_guid
       assert score == 1
@@ -741,7 +750,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
 
       {:error, %{error: error}} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       assert error == "no matching response found"
     end
@@ -868,7 +877,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -904,8 +913,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
        [
          %{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}},
          %{attempt_guid: attempt_guid2, out_of: out_of2, score: score2, feedback: %{id: id2}}
-       ]} =
-        Attempts.submit_part_evaluations(section.slug, activity_attempt.attempt_guid, part_inputs)
+       ]} = Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid

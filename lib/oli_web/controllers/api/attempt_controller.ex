@@ -2,9 +2,11 @@ defmodule OliWeb.Api.AttemptController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.StudentInput
-  alias Oli.Delivery.Attempts.ClientEvaluation
+  alias Oli.Delivery.Attempts.ActivityLifecycle, as: Activity
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
+  alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.Core.StudentInput
+  alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias OpenApiSpex.Schema
 
   @moduledoc tags: ["User State Service: Intrinsic State"]
@@ -377,7 +379,9 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => part_attempt_guid,
         "response" => response
       }) do
-    case Attempts.save_student_input([%{attempt_guid: part_attempt_guid, response: response}]) do
+    case Activity.save_student_input([
+           %{attempt_guid: part_attempt_guid, response: response}
+         ]) do
       {:ok, _} -> json(conn, %{"type" => "success"})
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -402,7 +406,7 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => attempt_guid,
         "input" => input
       }) do
-    case Attempts.submit_part_evaluations(section_slug, activity_attempt_guid, [
+    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
            %{attempt_guid: attempt_guid, input: input}
          ]) do
       {:ok, evaluations} -> json(conn, %{"type" => "success", "actions" => evaluations})
@@ -434,7 +438,7 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
-    case Attempts.request_hint(activity_attempt_guid, part_attempt_guid) do
+    case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
       {:ok, {hint, has_more_hints}} ->
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
 
@@ -464,7 +468,7 @@ defmodule OliWeb.Api.AttemptController do
         %{attempt_guid: attempt_guid, response: response}
       end)
 
-    case Attempts.save_student_input(parsed) do
+    case Activity.save_student_input(parsed) do
       {:ok, _} -> json(conn, %{"type" => "success"})
       {:error, _} -> error(conn, 500, "server error")
     end
@@ -489,7 +493,7 @@ defmodule OliWeb.Api.AttemptController do
         %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    case Attempts.submit_part_evaluations(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, parsed) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -534,7 +538,7 @@ defmodule OliWeb.Api.AttemptController do
         }
       end)
 
-    case Attempts.submit_client_evaluations(
+    case ActivityEvaluation.apply_client_evaluation(
            section_slug,
            activity_attempt_guid,
            client_evaluations
@@ -555,7 +559,7 @@ defmodule OliWeb.Api.AttemptController do
         "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid
       }) do
-    case Attempts.reset_activity(section_slug, activity_attempt_guid) do
+    case Activity.reset_activity(section_slug, activity_attempt_guid) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
