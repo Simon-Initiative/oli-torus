@@ -23,6 +23,15 @@ defmodule Oli.Analytics.Datashop do
     |> generate
   end
 
+  # Creates a map of resource ids to lists, where the lists are the
+  # full paths of revisons from the root to that resource's position in the hierarchy.
+  # An entry in this map for a leaf page of id 34, would look like:
+  #
+  # 34 => [%Revision{}, %Revision{}, %Revision{}, %Revision{}]
+  #         ^                ^            ^            ^
+  #       the page       a module      a unit        Root Resource
+  #
+
   defp build_hierarchy_map(revision_map, root_resource_id) do
     rev = Map.get(revision_map, root_resource_id)
 
@@ -74,7 +83,6 @@ defmodule Oli.Analytics.Datashop do
             part_attempt: hd(part_attempts),
             publication: publication,
             problem_name: problem_name,
-            revision_map: revision_map,
             hierarchy_map: hierarchy_map
           }
         })

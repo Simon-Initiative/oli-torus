@@ -16,7 +16,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
         dataset_name: dataset_name,
         part_attempt: part_attempt,
         problem_name: problem_name,
-        revision_map: revision_map,
         hierarchy_map: hierarchy_map
       }) do
     element(:dataset, [
@@ -24,7 +23,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
       create_problem_hierarchy(
         problem_name,
         part_attempt,
-        revision_map,
         hierarchy_map
       )
     ])
@@ -33,13 +31,11 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   defp create_problem_hierarchy(
          problem_name,
          part_attempt,
-         revision_map,
          hierarchy_map
        ) do
     context = %{
       target: part_attempt.activity_attempt.resource_attempt.revision.resource_id,
       problem_name: problem_name,
-      revision_map: revision_map,
       hierarchy_map: hierarchy_map
     }
 
