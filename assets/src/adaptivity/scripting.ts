@@ -173,3 +173,7 @@ export const bulkApplyState = (operations: ApplyStateOperation[], env?: Environm
   // need to apply one at a time, TODO: break on error?
   return operations.map((op) => applyState(op, env));
 };
+
+export const removeStateValues = (env: Environment, keys: string[]): void => {
+  env.remove(keys);
+};

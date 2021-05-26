@@ -6,6 +6,7 @@ import * as ActivityTypes from '../types';
 import { AdaptiveModelSchema } from './schema';
 
 const sharedInitMap = new Map();
+const sharedPromiseMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   console.log('ADAPTIVE ACTIVITY RENDER: ', { props });
@@ -17,10 +18,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const parts = partsLayout || [];
 
-  const [allPartsInitialized, setAllPartsInitialized] = useState<any>(null);
+  const [init, setInit] = useState<boolean>(false);
 
   useEffect(() => {
-    /* if (!allPartsInitialized) { */
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
@@ -45,8 +45,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         });
       }, 2000);
     });
-    setAllPartsInitialized({ promise, resolve, reject });
-    /*  } */
+    sharedPromiseMap.set(props.model.id, { promise, resolve, reject });
 
     console.log('ADAPTIVE IN', { id: props.model.id, parts, timeout });
 
@@ -58,37 +57,48 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
+    setInit(true);
+
     return () => {
       console.log('ADAPTIVE OUT', { id: props.model.id, parts, timeout });
       clearTimeout(timeout);
       sharedInitMap.delete(props.model.id);
+      sharedPromiseMap.delete(props.model.id);
+      setInit(false);
     };
   }, []);
 
   const partInit = useCallback(
     async (partId: string) => {
-      console.log(`%c INIT ${partId} CB`, 'background: blue;color:white;');
       const partsInitStatus = sharedInitMap.get(props.model.id);
+      const partsInitDeferred = sharedPromiseMap.get(props.model.id);
       partsInitStatus[partId] = true;
+      console.log(`%c INIT ${partId} CB`, 'background: blue;color:white;', {
+        parts,
+        partsInitStatus,
+      });
       if (parts.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady) {
           const readyResults: any = await props.onReady(attemptState.attemptGuid);
           console.log('ACTIVITY READY RESULTS', readyResults);
-          allPartsInitialized.resolve({ snapshot: readyResults.snapshot || {} });
+          partsInitDeferred.resolve({ snapshot: readyResults.snapshot || {} });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
-          allPartsInitialized.resolve({ snapshot: {} });
+          partsInitDeferred.resolve({ snapshot: {} });
         }
       }
-      return allPartsInitialized.promise;
+      return partsInitDeferred.promise;
     },
-    [allPartsInitialized, parts],
+    [parts],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
     console.log('onPartInit', payload);
     // a part should send initial state values
-    const saveResults = await handlePartSave(payload);
+    if (payload.responses.length) {
+      const saveResults = await handlePartSave(payload);
+    }
+
     const { snapshot } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
     return { snapshot };
@@ -145,7 +155,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return result;
   };
 
-  return allPartsInitialized !== null ? (
+  return init ? (
     <PartsLayoutRenderer
       parts={parts}
       onPartInit={handlePartInit}

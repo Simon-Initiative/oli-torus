@@ -30,6 +30,10 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
+
+  const [initState, setInitState] = useState<any>(null);
+  const [initStateReceived, setInitStateReceived] = useState(false);
+
   const id: string = props.id;
 
   // model items, note that we use default values now because
@@ -41,10 +45,143 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [frameHeight, setFrameHeight] = useState<number>(0);
   const [frameVisible, setFrameVisible] = useState<boolean>(true);
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
-  const [activitySrc, setActivitySrc] = useState<string>('');
+  const [frameSrc, setFrameSrc] = useState<string>('');
+  const [frameCssClass, setFrameCssClass] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
   const { src, title, customCssClass, configData } = model;
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dCssClass = pModel.customCssClass || frameCssClass;
+    setFrameCssClass(dCssClass);
+
+    const dSrc = pModel.src || frameSrc;
+    setFrameSrc(dSrc);
+
+    const dX = pModel.x || frameX;
+    setFrameX(dX);
+
+    const dY = pModel.y || frameY;
+    setFrameY(dY);
+
+    const dZ = pModel.z || frameZ;
+    setFrameZ(dZ);
+
+    const dWidth = pModel.width || frameWidth;
+    setFrameWidth(dWidth);
+
+    const dHeight = pModel.height || frameHeight;
+    setFrameHeight(dHeight);
+
+    const dVisible = pModel.visible || frameVisible;
+    setFrameVisible(dVisible);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'IFRAME_frameVisible',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dVisible,
+        },
+        {
+          key: 'IFRAME_frameCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'IFRAME_frameX',
+          type: CapiVariableTypes.NUMBER,
+          value: dX,
+        },
+        {
+          key: 'IFRAME_frameY',
+          type: CapiVariableTypes.NUMBER,
+          value: dY,
+        },
+        {
+          key: 'IFRAME_frameZ',
+          type: CapiVariableTypes.NUMBER,
+          value: dZ,
+        },
+        {
+          key: 'IFRAME_frameWidth',
+          type: CapiVariableTypes.NUMBER,
+          value: dWidth,
+        },
+        {
+          key: 'IFRAME_frameHeight',
+          type: CapiVariableTypes.NUMBER,
+          value: dHeight,
+        },
+        {
+          key: 'IFRAME_frameSrc',
+          type: CapiVariableTypes.STRING,
+          value: dSrc,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    writeCapiLog('INIT RESULT CAPI', initResult);
+    const currentStateSnapshot = initResult.snapshot;
+    writeCapiLog('SNAP', currentStateSnapshot);
+
+    const sVisible = currentStateSnapshot[`stage.${id}.IFRAME_frameVisible`];
+    if (sVisible !== undefined) {
+      setFrameVisible(sVisible);
+    }
+
+    const sX = currentStateSnapshot[`stage.${id}.IFRAME_frameX`];
+    if (sX !== undefined) {
+      setFrameX(sX);
+    }
+
+    const sY = currentStateSnapshot[`stage.${id}.IFRAME_frameY`];
+    if (sY !== undefined) {
+      setFrameY(sY);
+    }
+
+    const sZ = currentStateSnapshot[`stage.${id}.IFRAME_frameZ`];
+    if (sZ !== undefined) {
+      setFrameZ(sZ);
+    }
+
+    const sWidth = currentStateSnapshot[`stage.${id}.IFRAME_frameWidth`];
+    if (sWidth !== undefined) {
+      setFrameWidth(sWidth);
+    }
+
+    const sHeight = currentStateSnapshot[`stage.${id}.IFRAME_frameHeight`];
+    if (sHeight !== undefined) {
+      setFrameHeight(sHeight);
+    }
+
+    const sCssClass = currentStateSnapshot[`stage.${id}.IFRAME_frameCssClass`];
+    if (sCssClass !== undefined) {
+      setFrameCssClass(sCssClass);
+    }
+
+    const sSrc = currentStateSnapshot[`stage.${id}.IFRAME_frameSrc`];
+    if (sSrc !== undefined) {
+      setFrameSrc(sSrc);
+    }
+
+    // INIT STATE also needs to take in all the sim values
+    const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
+      (collect: Record<string, any>, key) => {
+        if (key.indexOf(`stage.${id}.`) === 0) {
+          collect[key] = currentStateSnapshot[key];
+        }
+        return collect;
+      },
+      {},
+    );
+    setInitState(interestedSnapshot);
+
+    setInitStateReceived(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -68,34 +205,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-
-    const {
-      x = 0,
-      y = 0,
-      z = 0,
-      width,
-      height,
-      src,
-      title,
-      customCssClass,
-      configData,
-      visible = true,
-    } = pModel;
-
-    setFrameX(x);
-    setFrameY(y);
-    setFrameZ(z);
-    setFrameWidth(width);
-    setFrameHeight(height);
-    setFrameVisible(visible);
-
-    // TODO: really this needs to wait until the sim tells it what the initial values are
-    props.onInit({
-      id,
-      responses: [],
-    });
-
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -130,8 +240,6 @@ const ExternalActivity: React.FC<any> = (props) => {
     type: JanusCAPIRequestTypes;
     values: any; // usually array, but sometimes more?
   }
-
-  const [initState, setInitState] = useState([]);
 
   const messageListener = useRef<any>(null);
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
@@ -177,7 +285,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -196,6 +304,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     //help debug during development. set boolWriteLog = false once you are ready to check-in the code
     if (boolWriteLog) console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
   };
+
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
     if (vars?.length) {
@@ -223,6 +332,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       }
     }
   };
+
   const createCapiObjectFromStateVars = (vars: any[]) => {
     return vars
       .filter((v) => v.id.indexOf(`stage.${id}.`) === 0)
@@ -597,9 +707,8 @@ const ExternalActivity: React.FC<any> = (props) => {
     });
     messageListener.current = messageListenerRef;
 
-    // this might instead need to be something that we wait until the sim says is ready?
-    // but also just might not need it at all
-    props.onReady({ id: `${id}`, responses: [] });
+    // TODO: set only after SIM says READY???
+    setReady(true);
 
     // Introducing listeners requires returning a function that also un-listens
     return () => {
@@ -618,28 +727,39 @@ const ExternalActivity: React.FC<any> = (props) => {
   }, [state]);
 
   useEffect(() => {
-    if (!simLife.ready || simIsInitStatePassedOnce || initState.length <= 0) {
+    if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
       return;
     }
 
     // This will send inital data when we navigate to next screen inside that layer
-    const filterVars = createCapiObjectFromStateVars(initState);
-    if (filterVars && Object.keys(filterVars)?.length !== 0) {
-      handleIFrameSpecificProperties(initState);
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
+    /* const filterVars = createCapiObjectFromStateVars(initState); */
+    const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
+      const value = initState[key];
+      const cVar = new CapiVariable({
+        key,
+        value,
+      });
+      formatted[key] = cVar;
+      return formatted;
+    }, {});
+    writeCapiLog('doing new init state', initStateVars);
+    if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
+      /* handleIFrameSpecificProperties(initState); */
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
     }
+
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
 
-  return ready ? (
+  return initStateReceived ? (
     <iframe
-      data-janus-type={props.type}
+      data-part-component-type={props.type}
       id={id}
       ref={frameRef}
       className={customCssClass}
       style={externalActivityStyles}
       title={title}
-      src={src}
+      src={frameSrc}
       scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
     />
   ) : null;

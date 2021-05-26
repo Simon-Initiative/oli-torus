@@ -3,7 +3,7 @@ import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../../adaptivity/scripting';
+import { defaultGlobalEnv, getEnvState, removeStateValues } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
@@ -36,6 +36,7 @@ const InjectedStyles: React.FC = () => {
 };
 
 const sharedActivityInit = new Map();
+let sharedActivityPromise: any;
 
 const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, previewMode }) => {
   const dispatch = useDispatch();
@@ -81,14 +82,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     setContentStyles(contentStyle);
   }, [pageContent]);
 
-  const [allActivitiesInit, setAllActivitiesInit] = useState<any>(null);
-
   useEffect(() => {
     if (!currentActivityTree || currentActivityTree.length === 0) {
       return;
     }
 
-    /*  if (!allActivitiesInit) { */
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
@@ -110,14 +108,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           currentActivityTree,
           timeout,
         });
-      }, 2000);
+      }, 4000);
     });
-    setAllActivitiesInit({ promise, resolve, reject });
-    /* } */
+    sharedActivityPromise = { promise, resolve, reject };
+
     console.log('DLV IN', { currentActivityTree, timeout });
 
     currentActivityTree.forEach((activity) => {
-      sharedActivityInit.set(activity.id, false);
+      // layers already might be there
+      // TODO: do I need to reset ever???
+      if (!sharedActivityInit.has(activity.id)) {
+        sharedActivityInit.set(activity.id, false);
+      }
     });
 
     const currentActivity = currentActivityTree[currentActivityTree.length - 1];
@@ -168,6 +170,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return () => {
       console.log('DLV OUT', { currentActivityTree, timeout });
       clearTimeout(timeout);
+      sharedActivityPromise = null;
     };
   }, [currentActivityTree]);
 
@@ -208,18 +211,23 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [currentActivityTree]);
 
   const handleActivityReady = async (activityId: string | number, attemptGuid: string) => {
-    console.log('DECK HANDLE READY', { activityId, attemptGuid });
     sharedActivityInit.set(activityId, true);
     // BS: this is init state phase (mostly) and it needs to run AFTER every part
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
+    console.log('DECK HANDLE READY', {
+      activityId,
+      attemptGuid,
+      currentActivityTree,
+      sharedActivityInit: Array.from(sharedActivityInit.entries()),
+    });
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       console.log('all ready!!!!!');
       await initCurrentActivity();
-      allActivitiesInit.resolve({ snapshot: getLocalizedStateSnapshot() });
+      sharedActivityPromise.resolve({ snapshot: getLocalizedStateSnapshot() });
     }
-    return allActivitiesInit.promise;
+    return sharedActivityPromise.promise;
   };
 
   const handleActivitySave = async (
@@ -269,7 +277,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   };
 
   const renderActivities = useCallback(() => {
-    if (!currentActivityTree || !currentActivityTree.length || !allActivitiesInit) {
+    if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
     }
 
@@ -345,7 +353,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         {activities}
       </div>
     );
-  }, [currentActivityTree, allActivitiesInit]);
+  }, [currentActivityTree]);
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>

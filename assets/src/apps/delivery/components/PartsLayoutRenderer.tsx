@@ -13,7 +13,10 @@ interface PartsLayoutRendererProps {
 }
 
 const defaultHandler = async () => {
-  return true;
+  return {
+    type: 'success',
+    snapshot: {},
+  };
 };
 
 const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
