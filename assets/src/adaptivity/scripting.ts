@@ -4,7 +4,7 @@ import { CapiVariable, CapiVariableTypes } from './capi';
 
 // for use by client side scripting evalution
 export const defaultGlobalEnv = new Environment();
-window['defaultGlobalEnv'] = defaultGlobalEnv;
+(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
 
 export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
   let val: any = v.value;

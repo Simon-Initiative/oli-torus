@@ -99,13 +99,13 @@ export const initializeActivity = createAsyncThunk(
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content.custom?.facts || [];
-    const globalizedInitState = initState.map((s) => {
+    const globalizedInitState = initState.map((s: any) => {
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
-        (activity) => !!activity.content.partsLayout.find((p) => p.id === targetPart),
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
@@ -287,7 +287,7 @@ export const loadActivities = createAsyncThunk(
       const activityType = activityTypes.find((t) => t.id === result.activityType);
       let partAttempts = result.partAttempts;
       if (isPreviewMode) {
-        partAttempts = result.authoring.parts.map((p) => {
+        partAttempts = result.authoring.parts.map((p: any) => {
           return {
             attemptGuid: `preview_${guid()}`,
             attemptNumber: 1,
