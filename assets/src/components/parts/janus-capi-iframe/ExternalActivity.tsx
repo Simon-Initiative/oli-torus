@@ -307,9 +307,10 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
+    const mutableState = [...internalState];
     if (vars?.length) {
       let hasDiff = false;
-      const mutableState = [...internalState];
+
       vars.forEach((changedVar) => {
         const existing = mutableState.find((ms) => ms.id === changedVar.id);
         if (!existing) {
@@ -331,6 +332,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         });
       }
     }
+    return mutableState;
   };
 
   const createCapiObjectFromStateVars = (vars: any[]) => {
@@ -465,13 +467,13 @@ const ExternalActivity: React.FC<any> = (props) => {
       return variableObj;
     }, {} as any);
 
-    // do we *need* to send initial complete every time??
-    updateInternalState(stateVarsFromSim);
+    const updatedInternalState = updateInternalState(stateVarsFromSim);
+    writeCapiLog('VALUE CHANGE INTERNAL STATE', { updatedInternalState, stateVarsFromSim });
 
     // value change is really the only time we should be saving
     debounceSave({
       id: `${id}`,
-      responses: stateVarsFromSim,
+      responses: updatedInternalState,
     });
   };
 
@@ -505,8 +507,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const handleCheckRequest = (data: any) => {
-    // for now send submitActivity for check
-    props.onSubmitActivity({
+    props.onSubmit({
       id: `${id}`,
       responses: [],
     });
@@ -742,7 +743,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       formatted[key] = cVar;
       return formatted;
     }, {});
-    writeCapiLog('doing new init state', initStateVars);
     if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
       /* handleIFrameSpecificProperties(initState); */
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);

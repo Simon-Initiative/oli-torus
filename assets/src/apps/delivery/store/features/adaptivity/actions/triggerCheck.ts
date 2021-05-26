@@ -41,10 +41,13 @@ export const triggerCheck = createAsyncThunk(
     }, {});
     // need to duplicate "local" state based on current sequenceId
     Object.keys(allResponseState).forEach((key) => {
-      if (key.indexOf(`${currentActivity.id}|`) === 0) {
-        const localKey = key.replace(`${currentActivity.id}|`, '');
-        allResponseState[localKey] = allResponseState[key];
-      }
+      // need to localize for all layers
+      currentActivityTree.forEach((activity) => {
+        if (key.indexOf(`${activity.id}|`) === 0) {
+          const localKey = key.replace(`${activity.id}|`, '');
+          allResponseState[localKey] = allResponseState[key];
+        }
+      });
     });
     // add in extrinsic state (lesson level)
     const extrinsicState = selectExtrinsicState(rootState);
@@ -58,6 +61,7 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
+      console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot });
       checkResult = await check(stateSnapshot, rulesToCheck);
       console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot });
     } else {

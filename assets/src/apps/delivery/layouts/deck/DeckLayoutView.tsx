@@ -3,8 +3,9 @@ import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState, removeStateValues } from '../../../../adaptivity/scripting';
+import { defaultGlobalEnv, getEnvState } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
+import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -112,8 +113,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
     sharedActivityPromise = { promise, resolve, reject };
 
-    console.log('DLV IN', { currentActivityTree, timeout });
-
     currentActivityTree.forEach((activity) => {
       // layers already might be there
       // TODO: do I need to reset ever???
@@ -168,7 +167,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     return () => {
-      console.log('DLV OUT', { currentActivityTree, timeout });
       clearTimeout(timeout);
       sharedActivityPromise = null;
     };
@@ -276,6 +274,24 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return { result, snapshot: getLocalizedStateSnapshot() };
   };
 
+  const handleActivitySubmitPart = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partAttemptGuid: string,
+    response: StudentResponse,
+  ) => {
+    const { result, snapshot } = await handleActivitySavePart(
+      activityId,
+      attemptGuid,
+      partAttemptGuid,
+      response,
+    );
+
+    dispatch(triggerCheck({ activityId: activityId.toString() }));
+
+    return { result, snapshot };
+  };
+
   const renderActivities = useCallback(() => {
     if (!currentActivityTree || !currentActivityTree.length) {
       return <div>loading...</div>;
@@ -343,6 +359,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySave={handleActivitySave}
           onActivitySubmit={handleActivitySubmit}
           onActivitySavePart={handleActivitySavePart}
+          onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
         />
       );

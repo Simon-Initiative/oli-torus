@@ -144,7 +144,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       return;
     }
     const response: ActivityTypes.StudentResponse = {
-      input: responses,
+      input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
     const result = await props.onSubmitPart(
       attemptState.attemptGuid,

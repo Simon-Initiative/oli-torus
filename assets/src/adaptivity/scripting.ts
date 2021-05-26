@@ -67,7 +67,7 @@ export const getAssignScript = (state: Record<string, any>): string => {
     const val = state[key];
     let writeVal = { key, value: val };
     // if it's already a capi var like object
-    if (typeof val === 'object' && !Array.isArray(val)) {
+    if (val && val.constructor && val.constructor === Object) {
       // the path should be a full key like stage.foo.text
       writeVal = { ...val, key: val.path ? val.path : val.key };
     }
