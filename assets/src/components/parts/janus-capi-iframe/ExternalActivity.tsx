@@ -255,7 +255,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const frameRef = useCallback((frame) => {
-    console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame });
+    /* console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame }); */
     if (frame) {
       setSimFrame(frame);
     }
@@ -285,7 +285,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -302,7 +302,10 @@ const ExternalActivity: React.FC<any> = (props) => {
       args.shift();
     }
     //help debug during development. set boolWriteLog = false once you are ready to check-in the code
-    if (boolWriteLog) console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
+    if (boolWriteLog) {
+      // eslint-disable-next-line
+      console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
+    }
   };
 
   //#region Capi Handlers
@@ -713,9 +716,9 @@ const ExternalActivity: React.FC<any> = (props) => {
 
     // Introducing listeners requires returning a function that also un-listens
     return () => {
-      console.log('%c MESSAGE LISTENER UNLOADED', 'background: darkred; color: #fff;', {
+      /* console.log('%c MESSAGE LISTENER UNLOADED', 'background: darkred; color: #fff;', {
         activityId: id,
-      });
+      }); */
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };

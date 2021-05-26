@@ -115,7 +115,7 @@ export const initializeActivity = createAsyncThunk(
     });
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
-    console.log('INIT REZ', { results, ops: [...sessionOps, ...globalizedInitState] });
+    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
     const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
     // TODO: more state

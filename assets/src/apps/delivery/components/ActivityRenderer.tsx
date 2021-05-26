@@ -228,13 +228,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
     setIsReady(true);
 
-    console.log('AR IN', activity.id);
     return () => {
       Object.keys(bridgeEvents).forEach((eventName) => {
         document.removeEventListener(eventName, wcEventHandler);
       });
       setIsReady(false);
-      console.log('AR OUT', activity.id);
     };
   }, []);
 

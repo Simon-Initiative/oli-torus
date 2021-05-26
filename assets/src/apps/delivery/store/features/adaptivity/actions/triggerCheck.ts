@@ -61,9 +61,9 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot });
+      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
       checkResult = await check(stateSnapshot, rulesToCheck);
-      console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot });
+      /* console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot }); */
     } else {
       // server mode (delivery) TODO
       checkResult = [

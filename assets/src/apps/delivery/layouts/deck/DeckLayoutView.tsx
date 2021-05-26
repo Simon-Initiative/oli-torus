@@ -214,14 +214,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
-    console.log('DECK HANDLE READY', {
+    /* console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    });
+    }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-      console.log('all ready!!!!!');
       await initCurrentActivity();
       sharedActivityPromise.resolve({ snapshot: getLocalizedStateSnapshot() });
     }
@@ -233,7 +232,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     attemptGuid: string,
     partResponses: PartResponse[],
   ) => {
-    console.log('DECK HANDLE SAVE', { activityId, attemptGuid, partResponses });
+    /* console.log('DECK HANDLE SAVE', { activityId, attemptGuid, partResponses }); */
 
     return true;
   };
@@ -243,7 +242,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     attemptGuid: string,
     partResponses: PartResponse[],
   ) => {
-    console.log('DECK HANDLE SUBMIT', { activityId, attemptGuid, partResponses });
+    /* console.log('DECK HANDLE SUBMIT', { activityId, attemptGuid, partResponses }); */
     return true;
   };
 
@@ -253,13 +252,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    console.log('DECK HANDLE SAVE PART', {
+    /* console.log('DECK HANDLE SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
       response,
       currentActivityTree,
-    });
+    }); */
     const statePrefix = `${activityId}|stage`;
     const responseMap = response.input.reduce(
       (result: { [x: string]: any }, item: { key: string; path: string }) => {

@@ -320,7 +320,7 @@ const NavigationButton: React.FC<any> = (props) => {
         CapiVariables.btnaccessibilityText = stateVar.value as string;
       }
       if (stateVar.key === 'backgroundColor') {
-        console.log({ backgroundColor: stateVar.value });
+        /* console.log({ backgroundColor: stateVar.value }); */
 
         setBackgroundColor(stateVar.value);
         CapiVariables.btnBackgroundColor = stateVar.value;
