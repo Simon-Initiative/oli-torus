@@ -29,6 +29,7 @@
 - Fix problem where containers with no children were rendered as pages in delivery
 - Fix some style inconsistencies in delivery and dark mode
 - Fix an issue where reordering a curriculum item could result in incorrect n-1 position
+- Fix issues related to exporting DataShop events for courses that contain hierarchies
 
 ## 0.9.0 (2021-4-22)
 
