@@ -58,7 +58,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
 
         case resource_type do
           "container" ->
-            element(:level, %{type: "Container"}, dfs(context, [revision.children | nodes]))
+            element(:level, %{type: "Container"}, [dfs(context, revision.children ++ ids)])
 
           "page" ->
             case id == target do
