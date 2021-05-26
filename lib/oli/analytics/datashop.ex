@@ -18,7 +18,6 @@ defmodule Oli.Analytics.Datashop do
     project_id
     |> create_messages
     |> wrap_with_tutor_related_message
-    |> IO.inspect()
     |> document
     |> generate
   end
