@@ -13,6 +13,7 @@ defmodule Oli.Analytics.Datashop do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Analytics.Datashop.Messages.{Context, Tool, Tutor}
   alias Oli.Analytics.Datashop.Utils
+  alias Oli.Resources.{Revision, ResourceType}
 
   def export(project_id) do
     project_id
@@ -20,6 +21,26 @@ defmodule Oli.Analytics.Datashop do
     |> wrap_with_tutor_related_message
     |> document
     |> generate
+  end
+
+  defp build_hierarchy_map(revision_map, root_resource_id) do
+    rev = Map.get(revision_map, root_resource_id)
+
+    build_hierarchy(rev, [], [], revision_map)
+    |> Enum.reduce(%{}, fn [page | _] = path, m -> Map.put(m, page.resource_id, path) end)
+  end
+
+  defp build_hierarchy(%Revision{} = rev, path, acc, revision_map) do
+    case ResourceType.get_type_by_id(rev.resource_type_id) do
+      "page" ->
+        [[rev | path] | acc]
+
+      "container" ->
+        Enum.reduce(rev.children, acc, fn c, a ->
+          child_rev = Map.get(revision_map, c)
+          build_hierarchy(child_rev, [rev] ++ path, [], revision_map) ++ a
+        end)
+    end
   end
 
   defp create_messages(project_id) do
@@ -31,6 +52,8 @@ defmodule Oli.Analytics.Datashop do
     revision_map =
       Publishing.get_published_resources_by_publication(publication.id)
       |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+
+    hierarchy_map = build_hierarchy_map(revision_map, publication.root_resource_id)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
     |> group_part_attempts_by_user_and_part
@@ -51,7 +74,8 @@ defmodule Oli.Analytics.Datashop do
             part_attempt: hd(part_attempts),
             publication: publication,
             problem_name: problem_name,
-            revision_map: revision_map
+            revision_map: revision_map,
+            hierarchy_map: hierarchy_map
           }
         })
 
