@@ -97,11 +97,12 @@
         }
       }
     }
-    .adaptivity {
+    .adaptivity,
+    .inspector {
       font-size: 0.8rem;
 
       .list-group-item {
-        padding: 0.5rem 1rem !important;
+        padding: 0.5rem 1rem;
       }
       .correct {
         border-left: 4px solid $green;
@@ -111,6 +112,12 @@
       }
       .initState {
         border-left: 4px solid $secondary;
+      }
+      .even {
+        border-left: 4px solid $gray-600;
+      }
+      .odd {
+        border-left: 4px solid $gray-500;
       }
       .chevron-arrow {
         display: inline-block;
@@ -124,6 +131,45 @@
       .card-header button {
         color: $body-color !important;
       }
+    }
+  }
+  .inspector {
+    .user-input {
+      display: flex;
+      align-items: center;
+    }
+    .stateKey {
+      flex: 1 0 60%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stateValue {
+      flex: 1;
+      min-width: 75px;
+    }
+    .is-parent {
+      &.list-group-item {
+        padding: 0;
+      }
+      .list-group {
+        margin-left: 1rem;
+      }
+      button {
+        font-size: 0.9rem;
+      }
+    }
+    .custom-control-label {
+      margin-right: -4px;
+    }
+    .custom-select-sm {
+      height: calc(1.5em + 0.5rem + 1px);
+      width: auto;
+      font-size: 0.75rem;
+      max-width: 75px;
+    }
+    .custom-switch {
+      transform: scale(1.5);
     }
   }
 }

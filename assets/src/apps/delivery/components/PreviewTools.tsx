@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -313,9 +314,253 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
   );
 };
 
+interface InspectorProps {
+  currentActivity: any;
+}
 // Inspector Placeholder
-const Inspector: React.FC<any> = () => {
-  return <div className={`preview-tools-view`}>Coming Soon</div>;
+const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
+  const [expandedPanels, setExpandedPanels]: any = useState({});
+
+  return (
+    <div className="inspector">
+      <div className="accordion">
+        {/* TODO Toggle even / odd based on index */}
+        <div className="card even">
+          <div className="card-header p-2" id={`heading${1}`}>
+            <h2 className="mb-0">
+              <button
+                className="btn btn-link btn-block text-left"
+                type="button"
+                data-toggle="collapse"
+                data-target={`#collapse${1}`}
+                aria-expanded={expandedPanels[`panel-${1}`]}
+                aria-controls={`collapse${1}`}
+                onClick={(e) =>
+                  setExpandedPanels({
+                    ...expandedPanels,
+                    [`panel-${1}`]: !expandedPanels[`panel-${1}`],
+                  })
+                }
+              >
+                <span
+                  className={`chevron-arrow mr-2${expandedPanels[`panel-${1}`] ? ' rotate' : ''}`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.646 1.646a.5.5 0 01.708 0l6 6a.5.5 0 010 .708l-6 6a.5.5 0 01-.708-.708L10.293 8 4.646 2.354a.5.5 0 010-.708z"
+                    />
+                  </svg>
+                </span>
+                Session
+              </button>
+            </h2>
+          </div>
+          <div id={`collapse${1}`} className="collapse" aria-labelledby={`heading${1}`}>
+            <div className="card-body py-2">
+              <ul className="list-group list-group-flush">
+                <li className="list-group-item pr-0">
+                  <div className="user-input">
+                    <span className="stateKey" title="currentQuestionScore">
+                      currentQuestionScore
+                    </span>
+                    <input
+                      type="text"
+                      className="input-group-sm stateValue"
+                      aria-label="currentQuestionScore"
+                      defaultValue="0"
+                      // aria-describedby="inputGroup-sizing-sm"
+                    />
+                  </div>
+                </li>
+                <li className="list-group-item pr-0">
+                  <div className="user-input">
+                    <span className="stateKey" title="attemptNumber">
+                      attemptNumber
+                    </span>
+                    <input
+                      type="text"
+                      className="input-group-sm stateValue"
+                      aria-label="attemptNumber"
+                      defaultValue="0"
+                      // aria-describedby="inputGroup-sizing-sm"
+                    />
+                  </div>
+                </li>
+                <li className="list-group-item is-parent">
+                  {/* TODO Toggle even / odd based on index */}
+                  <div className="card-header p-0 m-0 rounded-lg mt-2 even" id={`heading${2}`}>
+                    <button
+                      className="btn btn-link btn-block text-left"
+                      type="button"
+                      data-toggle="collapse"
+                      data-target={`#collapse${2}`}
+                      aria-expanded={expandedPanels[`panel-${2}`]}
+                      aria-controls={`collapse${2}`}
+                      onClick={(e) =>
+                        setExpandedPanels({
+                          ...expandedPanels,
+                          [`panel-${2}`]: !expandedPanels[`panel-${2}`],
+                        })
+                      }
+                    >
+                      <span
+                        className={`chevron-arrow mr-2${
+                          expandedPanels[`panel-${2}`] ? ' rotate' : ''
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M4.646 1.646a.5.5 0 01.708 0l6 6a.5.5 0 010 .708l-6 6a.5.5 0 01-.708-.708L10.293 8 4.646 2.354a.5.5 0 010-.708z"
+                          />
+                        </svg>
+                      </span>
+                      Visits
+                    </button>
+                  </div>
+                  <div id={`collapse${2}`} className="collapse" aria-labelledby={`heading${2}`}>
+                    <ul className="list-group list-group-flush">
+                      <li className="list-group-item pr-0">
+                        <div className="user-input">
+                          <span className="stateKey" title="q:1541198781025:684">
+                            q:1541198781025:684
+                          </span>
+                          <input
+                            type="text"
+                            className="input-group-sm stateValue"
+                            aria-label="q:1541198781025:684"
+                            defaultValue="0"
+                            // aria-describedby="inputGroup-sizing-sm"
+                          />
+                        </div>
+                      </li>
+                      <li className="list-group-item pr-0">
+                        <div className="user-input">
+                          <span className="stateKey" title="session.visits.q:1541198781354:733">
+                            q:1541198781354:733
+                          </span>
+                          <input
+                            type="text"
+                            className="input-group-sm stateValue"
+                            aria-label="session.visits.q:1541198781354:733"
+                            defaultValue="0"
+                            // aria-describedby="inputGroup-sizing-sm"
+                          />
+                        </div>
+                      </li>
+                      <li className="list-group-item is-parent">
+                        {/* TODO Toggle even / odd based on index */}
+                        <div
+                          className="card-header p-0 m-0 rounded-lg mt-2 even"
+                          id={`heading${3}`}
+                        >
+                          <button
+                            className="btn btn-link btn-block text-left"
+                            type="button"
+                            data-toggle="collapse"
+                            data-target={`#collapse${3}`}
+                            aria-expanded={expandedPanels[`panel-${3}`]}
+                            aria-controls={`collapse${3}`}
+                            onClick={(e) =>
+                              setExpandedPanels({
+                                ...expandedPanels,
+                                [`panel-${3}`]: !expandedPanels[`panel-${3}`],
+                              })
+                            }
+                          >
+                            <span
+                              className={`chevron-arrow mr-2${
+                                expandedPanels[`panel-${3}`] ? ' rotate' : ''
+                              }`}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4.646 1.646a.5.5 0 01.708 0l6 6a.5.5 0 010 .708l-6 6a.5.5 0 01-.708-.708L10.293 8 4.646 2.354a.5.5 0 010-.708z"
+                                />
+                              </svg>
+                            </span>
+                            Input 1
+                          </button>
+                        </div>
+                        <div
+                          id={`collapse${3}`}
+                          className="collapse"
+                          aria-labelledby={`heading${3}`}
+                        >
+                          <ul className="list-group list-group-flush">
+                            <li className="list-group-item pr-0">
+                              <div className="user-input">
+                                <span
+                                  className="stateKey"
+                                  title="session.visits.q:1541198781354:733"
+                                >
+                                  q:1541198781354:733
+                                </span>
+                                {/* Toggle switch example. TODO: a11y keyboard select */}
+                                <div className="custom-control custom-switch">
+                                  <input
+                                    type="checkbox"
+                                    className="custom-control-input"
+                                    id="customSwitch1"
+                                    defaultChecked={true}
+                                  />
+                                  <label
+                                    className="custom-control-label"
+                                    htmlFor="customSwitch1"
+                                  ></label>
+                                </div>
+                              </div>
+                            </li>
+                            <li className="list-group-item pr-0">
+                              <div className="user-input">
+                                <span
+                                  className="stateKey"
+                                  title="session.visits.q:1541198781354:733"
+                                >
+                                  q:1541198781354:733
+                                </span>
+                                {/* Dropdown example */}
+                                <select className="custom-select custom-select-sm" defaultValue="3">
+                                  <option value="1">One</option>
+                                  <option value="2">Two</option>
+                                  <option value="3">Three</option>
+                                  <option value="4">
+                                    This option has a very long text node that may stretch out the
+                                    drop down. What happens?
+                                  </option>
+                                </select>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Reusable Icons
@@ -452,7 +697,7 @@ const PreviewTools: React.FC<any> = (props: PreviewToolsProps): any | false => {
           />
         )}
         {opened && view === 'adaptivity' && <Adaptivity currentActivity={currentActivity} />}
-        {opened && view === 'inspector' && <Inspector sequence={sequence} navigate={navigate} />}
+        {opened && view === 'inspector' && <Inspector currentActivity={currentActivity} />}
       </div>
     </div>
   );
