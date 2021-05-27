@@ -126,7 +126,6 @@ const ExternalActivity: React.FC<any> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
-    writeCapiLog('SNAP', currentStateSnapshot);
 
     const sVisible = currentStateSnapshot[`stage.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
@@ -285,7 +284,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -735,15 +734,18 @@ const ExternalActivity: React.FC<any> = (props) => {
       return;
     }
 
+    writeCapiLog('INIT STATE APPLIED', 3);
+
     // This will send inital data when we navigate to next screen inside that layer
     /* const filterVars = createCapiObjectFromStateVars(initState); */
     const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
+      const baseKey = key.replace(`stage.${id}.`, '');
       const value = initState[key];
       const cVar = new CapiVariable({
-        key,
+        key: baseKey,
         value,
       });
-      formatted[key] = cVar;
+      formatted[baseKey] = cVar;
       return formatted;
     }, {});
     if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
