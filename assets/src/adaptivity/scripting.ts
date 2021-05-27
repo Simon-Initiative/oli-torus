@@ -4,7 +4,7 @@ import { CapiVariable, CapiVariableTypes } from './capi';
 
 // for use by client side scripting evalution
 export const defaultGlobalEnv = new Environment();
-window['defaultGlobalEnv'] = defaultGlobalEnv;
+(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
 
 export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
   let val: any = v.value;
@@ -67,7 +67,7 @@ export const getAssignScript = (state: Record<string, any>): string => {
     const val = state[key];
     let writeVal = { key, value: val };
     // if it's already a capi var like object
-    if (typeof val === 'object' && !Array.isArray(val)) {
+    if (val && val.constructor && val.constructor === Object) {
       // the path should be a full key like stage.foo.text
       writeVal = { ...val, key: val.path ? val.path : val.key };
     }
@@ -172,4 +172,8 @@ export const applyState = (operation: ApplyStateOperation, env?: Environment): a
 export const bulkApplyState = (operations: ApplyStateOperation[], env?: Environment): any[] => {
   // need to apply one at a time, TODO: break on error?
   return operations.map((op) => applyState(op, env));
+};
+
+export const removeStateValues = (env: Environment, keys: string[]): void => {
+  env.remove(keys);
 };

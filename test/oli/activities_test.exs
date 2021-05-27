@@ -12,12 +12,16 @@ defmodule Oli.ActivitiesTest do
       Activities.enable_activity_in_project(project.slug, custom_activity.slug)
       project_activities = Activities.activities_for_project(project)
 
+      # BS: seems better to just get the object and check enabled but not sure how
       assert Enum.member?(project_activities, %{
-               enabled: true,
-               global: false,
-               slug: "oli_image_coding",
-               title: "Image Coding"
-             })
+              id: 3,
+              authoring_element: "oli-image-coding-authoring",
+              delivery_element: "oli-image-coding-delivery",
+              enabled: true,
+              global: false,
+              slug: "oli_image_coding",
+              title: "Image Coding"
+            })
     end
 
     test "removing a custom registered activity from a project", %{project: project} do
@@ -28,11 +32,14 @@ defmodule Oli.ActivitiesTest do
       project_activities = Activities.activities_for_project(project)
 
       assert Enum.member?(project_activities, %{
-               enabled: false,
-               global: false,
-               slug: "oli_image_coding",
-               title: "Image Coding"
-             })
+              id: 3,
+              authoring_element: "oli-image-coding-authoring",
+              delivery_element: "oli-image-coding-delivery",
+              enabled: false,
+              global: false,
+              slug: "oli_image_coding",
+              title: "Image Coding"
+            })
     end
 
     test "default editor menu should not include custom activity", %{project: project} do

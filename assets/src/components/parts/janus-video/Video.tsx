@@ -1,14 +1,131 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import YouTube from 'react-youtube';
-import { CapiVariable } from '../types/parts';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 // TODO: fix typing
 const Video: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [videoIsPlayerStarted, setVideoIsPlayerStarted] = useState(false);
+  const [videoIsCompleted, setVideoIsCompleted] = useState(false);
+  const [videoAutoPlay, setVideoAutoPlay] = useState(false);
+  const [videoEnableReplay, setVideoEnableReplay] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dCssClass = pModel.customCssClass || cssClass;
+    setCssClass(dCssClass);
+
+    const dAutoPlay = typeof pModel.autoPlay === 'boolean' ? pModel.autoPlay : videoAutoPlay;
+    setVideoAutoPlay(dAutoPlay);
+
+    const dEnableReplay =
+      typeof pModel.enableReplay === 'boolean' ? pModel.enableReplay : videoEnableReplay;
+    setVideoEnableReplay(dEnableReplay);
+
+    const dStartTime = pModel.startTime || 0;
+    const dEndTime = pModel.endTime || '';
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'hasStarted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: videoIsPlayerStarted,
+        },
+        {
+          key: 'autoPlay',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dAutoPlay,
+        },
+        {
+          key: 'currentTime',
+          type: CapiVariableTypes.STRING,
+          value: dStartTime,
+        },
+        {
+          key: 'duration',
+          type: CapiVariableTypes.STRING,
+          value: '',
+        },
+        {
+          key: 'endTime',
+          type: CapiVariableTypes.STRING,
+          value: dEndTime,
+        },
+        {
+          key: 'exposureInSeconds',
+          type: CapiVariableTypes.NUMBER,
+          value: dStartTime,
+        },
+        {
+          key: 'exposureInPercentage',
+          type: CapiVariableTypes.NUMBER,
+          value: 0,
+        },
+        {
+          key: 'hasCompleted',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+        {
+          key: 'startTime',
+          type: CapiVariableTypes.STRING,
+          value: dStartTime,
+        },
+        {
+          key: 'state',
+          type: CapiVariableTypes.STRING,
+          value: 'notStarted',
+        },
+        {
+          key: 'totalSecondsWatched',
+          type: CapiVariableTypes.STRING,
+          value: 0,
+        },
+        {
+          key: 'enableReplay',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnableReplay,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+
+    const sAutoPlay = currentStateSnapshot[`stage.${id}.autoPlay`];
+    if (sAutoPlay !== undefined) {
+      setVideoAutoPlay(sAutoPlay);
+    }
+
+    const sEnableReplay = currentStateSnapshot[`stage.${id}.enableReplay`];
+    if (sEnableReplay !== undefined) {
+      setVideoEnableReplay(sEnableReplay);
+    }
+
+    /* const sStartTime = currentStateSnapshot[`stage.${id}.startTime`];
+    if (sStartTime !== undefined) {
+      setStartTime(sStartTime);
+    }
+    const sEndTime = currentStateSnapshot[`stage.${id}.endTime`];
+    if (sEndTime !== undefined) {
+      setEndTime(sEndTime);
+    } */
+
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -32,72 +149,7 @@ const Video: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          key: 'hasStarted',
-          type: CapiVariableTypes.BOOLEAN,
-          value: videoIsPlayerStarted,
-        },
-        {
-          key: 'autoPlay',
-          type: CapiVariableTypes.BOOLEAN,
-          value: videoAutoPlay,
-        },
-        {
-          key: 'currentTime',
-          type: CapiVariableTypes.STRING,
-          value: startTime,
-        },
-        {
-          key: 'duration',
-          type: CapiVariableTypes.STRING,
-          value: '',
-        },
-        {
-          key: 'endTime',
-          type: CapiVariableTypes.STRING,
-          value: endTime || '',
-        },
-        {
-          key: 'exposureInSeconds',
-          type: CapiVariableTypes.NUMBER,
-          value: startTime,
-        },
-        {
-          key: 'exposureInPercentage',
-          type: CapiVariableTypes.NUMBER,
-          value: 0,
-        },
-        {
-          key: 'hasCompleted',
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-        {
-          key: 'startTime',
-          type: CapiVariableTypes.STRING,
-          value: startTime || 0,
-        },
-        {
-          key: 'state',
-          type: CapiVariableTypes.STRING,
-          value: 'notStarted',
-        },
-        {
-          key: 'totalSecondsWatched',
-          type: CapiVariableTypes.STRING,
-          value: startTime,
-        },
-        {
-          key: 'enableReplay',
-          type: CapiVariableTypes.BOOLEAN,
-          value: videoEnableReplay,
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -123,6 +175,7 @@ const Video: React.FC<any> = (props) => {
     enableReplay = true,
     subtitles,
   } = model;
+
   const videoStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -131,10 +184,7 @@ const Video: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-  const [videoIsPlayerStarted, setVideoIsPlayerStarted] = useState(false);
-  const [videoIsCompleted, setVideoIsCompleted] = useState(false);
-  const [videoAutoPlay, setVideoAutoPlay] = useState(autoPlay);
-  const [videoEnableReplay, setVideoEnableReplay] = useState(enableReplay);
+
   const youtubeRegex = /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch|v|embed)(?:\.php)?(?:\?.*v=|\/))([a-zA-Z0-9_-]+)/;
 
   let finalSrc = src;
@@ -343,6 +393,7 @@ const Video: React.FC<any> = (props) => {
       ],
     });
   };
+
   const iframeTag = (
     <YouTube
       videoId={videoId}
@@ -352,11 +403,12 @@ const Video: React.FC<any> = (props) => {
       onPause={handleVideoPause}
     />
   );
+
   const videoTag = (
     <video
       width={width}
       height={height}
-      className={customCssClass}
+      className={cssClass}
       autoPlay={autoPlay}
       loop={autoPlay}
       controls={enableReplay}
@@ -384,11 +436,11 @@ const Video: React.FC<any> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-  return (
+  return ready ? (
     <div data-janus-type={props.type} style={videoStyles}>
       {elementTag}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-video';

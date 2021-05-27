@@ -1,6 +1,6 @@
 defmodule Oli.Activities.State.ActivityState do
   alias Oli.Activities.State.PartState
-  alias Oli.Delivery.Attempts.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Activities.Model
 
   @enforce_keys [
@@ -25,8 +25,8 @@ defmodule Oli.Activities.State.ActivityState do
   ]
 
   @spec from_attempt(
-          Oli.Delivery.Attempts.ActivityAttempt.t(),
-          [Oli.Delivery.Attempts.PartAttempt.t()],
+          Oli.Delivery.Attempts.Core.ActivityAttempt.t(),
+          [Oli.Delivery.Attempts.Core.PartAttempt.t()],
           Oli.Activities.Model.t()
         ) ::
           %Oli.Activities.State.ActivityState{}

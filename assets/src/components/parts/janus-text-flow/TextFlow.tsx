@@ -1,5 +1,5 @@
 import chroma from 'chroma-js';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
 
@@ -81,14 +81,47 @@ export const renderFlow = (
 const TextFlow: React.FC<any> = (props: any) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
 
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
@@ -125,9 +158,11 @@ const TextFlow: React.FC<any> = (props: any) => {
   // send pre-calculated map of required values to Markup
 
   useEffect(() => {
-    // all activities *must* emit onReady
-    props.onReady({ id: `${props.id}` });
-  }, []);
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   // due to custom elements, objects will be JSON
   let tree: MarkupTree[] = [];
@@ -144,13 +179,13 @@ const TextFlow: React.FC<any> = (props: any) => {
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  return (
+  return ready ? (
     <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-text-flow';

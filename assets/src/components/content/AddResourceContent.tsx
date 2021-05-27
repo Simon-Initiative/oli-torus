@@ -12,7 +12,7 @@ import { invokeCreationFunc } from 'components/activities/creation';
 import { Objective, ResourceId } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
-import Popover from 'react-tiny-popover';
+import { Popover } from 'react-tiny-popover';
 
 import { modalActions } from 'actions/modal';
 import * as Immutable from 'immutable';
@@ -212,22 +212,18 @@ export const AddResourceContent = ({
             <div className="insert-button-container">
               <Popover
                 containerClassName="add-resource-popover"
-                onClickOutside={(e) => {
+                onClickOutside={(e: any) => {
                   if (e !== latestClickEvent) {
                     setIsPopoverOpen(false);
                   }
                 }}
                 isOpen={isPopoverOpen}
                 align="start"
-                transitionDuration={0}
-                position={['bottom', 'top']}
                 content={contentFn}
               >
-                {(ref) => (
-                  <div ref={ref} className="insert-button">
-                    <i className="fa fa-plus"></i>
-                  </div>
-                )}
+                <div className="insert-button">
+                  <i className="fa fa-plus"></i>
+                </div>
               </Popover>
             </div>
             <div className="insert-adornment"></div>

@@ -28,7 +28,7 @@ import {
   selectResourceAttemptGuid,
   selectSectionSlug,
 } from '../../page/slice';
-import { selectSequence } from '../selectors/deck';
+import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
@@ -47,6 +47,7 @@ export const initializeActivity = createAsyncThunk(
       throw new Error(`Activity ${activityId} not found in sequence!`);
     }
     const currentActivity = selectCurrentActivity(rootState);
+    const currentActivityTree = selectCurrentActivityTree(rootState);
 
     const visitOperation: ApplyStateOperation = {
       target: `session.visits.${currentSequenceId}`,
@@ -95,11 +96,26 @@ export const initializeActivity = createAsyncThunk(
       currentScoreOp,
     ];
 
-    // TODO: find true parent of facts (globalized)
+    // init state is always "local" but the parts may come from parent layers
+    // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content.custom?.facts || [];
+    const globalizedInitState = initState.map((s: any) => {
+      if (s.target.indexOf('stage.') !== 0) {
+        return { ...s };
+      }
+      const [, targetPart] = s.target.split('.');
+      const ownerActivity = currentActivityTree?.find(
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
+      );
+      if (!ownerActivity) {
+        // shouldn't happen, but ignore I guess
+        return { ...s };
+      }
+      return { ...s, target: `${ownerActivity.id}|${s.target}` };
+    });
 
-    const results = bulkApplyState([...sessionOps, ...initState], defaultGlobalEnv);
-    console.log('INIT REZ', { results, ops: [...sessionOps, ...initState] });
+    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
     const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
     // TODO: more state
@@ -271,7 +287,7 @@ export const loadActivities = createAsyncThunk(
       const activityType = activityTypes.find((t) => t.id === result.activityType);
       let partAttempts = result.partAttempts;
       if (isPreviewMode) {
-        partAttempts = result.authoring.parts.map((p) => {
+        partAttempts = result.authoring.parts.map((p: any) => {
           return {
             attemptGuid: `preview_${guid()}`,
             attemptNumber: 1,

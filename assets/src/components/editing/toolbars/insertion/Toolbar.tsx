@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useFocused, useSelected, useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
-import Popover from 'react-tiny-popover';
+import { Popover } from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
 import { shouldShowInsertionToolbar, positionInsertion } from './utils';
 import { classNames } from 'utils/classNames';
@@ -61,11 +61,9 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
       <div className="insert-button-container">
         <Popover
           containerClassName="add-resource-popover"
-          onClickOutside={(e) => setIsPopoverOpen(false)}
+          onClickOutside={(e: any) => setIsPopoverOpen(false)}
           isOpen={isPopoverOpen}
           align="start"
-          transitionDuration={0}
-          position={['bottom', 'top']}
           content={
             <div className="hovering-toolbar">
               <div className="btn-group btn-group-vertical btn-group-sm" role="group">
@@ -99,19 +97,13 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
             </div>
           }
         >
-          {(ref) => (
-            <div
-              ref={ref}
-              className="insert-button"
-              onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-            >
-              {props.isPerformingAsyncAction ? (
-                <LoadingSpinner size={LoadingSpinnerSize.Normal} />
-              ) : (
-                <i className="fa fa-plus"></i>
-              )}
-            </div>
-          )}
+          <div className="insert-button" onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
+            {props.isPerformingAsyncAction ? (
+              <LoadingSpinner size={LoadingSpinnerSize.Normal} />
+            ) : (
+              <i className="fa fa-plus"></i>
+            )}
+          </div>
         </Popover>
       </div>
     </div>

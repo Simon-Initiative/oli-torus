@@ -1,4 +1,4 @@
-import { current } from '@reduxjs/toolkit';
+/* eslint-disable react/prop-types */
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../store/features/activities/slice';
@@ -119,6 +119,10 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
     setExpandedRules({});
   }, [currentActivity]);
 
+  // helper because of lint
+  const hasOwnProperty = (obj: any, property: string) =>
+    Object.prototype.hasOwnProperty.call(obj || {}, property);
+
   return (
     <div className="adaptivity">
       <div className="accordion">
@@ -234,7 +238,7 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
               <div className="card-body pt-2">
                 <ul className="list-group">
                   {/* Conditions for ALL */}
-                  {rule.conditions?.hasOwnProperty('all') && (
+                  {hasOwnProperty(rule.conditions, 'all') && (
                     <>
                       {rule.conditions?.all?.length === 0 && (
                         <li className="list-group-item">
@@ -252,7 +256,7 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                     </>
                   )}
                   {/* Conditions for ANY */}
-                  {rule.conditions?.hasOwnProperty('any') && (
+                  {hasOwnProperty(rule.conditions, 'any') && (
                     <>
                       {rule.conditions?.any?.length === 0 && (
                         <li className="list-group-item">

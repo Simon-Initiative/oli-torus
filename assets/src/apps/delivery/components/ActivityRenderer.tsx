@@ -30,9 +30,11 @@ interface ActivityRendererProps {
   onActivityResetPart?: any;
   onActivityRequestHint?: any;
   onActivitySubmitEvaluations?: any;
+  onActivityReady?: any;
 }
 
 const defaultHandler = async () => {
+  /* console.log('DEFAULT HANDLER AR'); */
   return true;
 };
 
@@ -49,6 +51,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityRequestHint = defaultHandler,
   onActivityResetPart = defaultHandler,
   onActivitySubmitEvaluations = defaultHandler,
+  onActivityReady = defaultHandler,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
@@ -164,6 +167,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return result;
   };
 
+  const onReady = async (attemptGuid: string) => {
+    const results = await onActivityReady(activity.id, attemptGuid);
+    const result: Success = {
+      type: 'success',
+    };
+    // BS: TODO make compatible with *any* activity
+    return { ...results, ...result };
+  };
+
   const bridgeEvents: Record<string, any> = {
     saveActivity: onSaveActivity,
     submitActivity: onSubmitActivity,
@@ -173,6 +185,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     resetPart: onResetPart,
     requestHint: onRequestHint,
     submitEvaluations: onSubmitEvaluations,
+    activityReady: onReady,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -238,6 +251,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSavePart,
     onSubmitEvaluations,
     onSubmitPart,
+    onReady,
   };
 
   // don't render until we're already listening!

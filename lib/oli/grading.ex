@@ -7,8 +7,8 @@ defmodule Oli.Grading do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Attempts
-  alias Oli.Delivery.Attempts.ResourceAccess
+  alias Oli.Delivery.Attempts.Core, as: Attempts
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
   alias Lti_1p3.Tool.ContextRoles
@@ -234,7 +234,7 @@ defmodule Oli.Grading do
     resource_type_id = ResourceType.get_id_by_type("page")
 
     Repo.all(
-      from s in Section,
+      from(s in Section,
         join: p in Publication,
         on: p.id == s.publication_id,
         join: m in PublishedResource,
@@ -248,6 +248,7 @@ defmodule Oli.Grading do
             s.slug == ^section_slug and
             s.status != :deleted,
         select: rev
+      )
     )
   end
 end

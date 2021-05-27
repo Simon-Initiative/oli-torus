@@ -66,11 +66,11 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
               />
             </div>
           }
-          contentLocation={({ popoverRect, targetRect }) => {
+          contentLocation={({ popoverRect, childRect }) => {
             return {
-              top: targetRect.top + window.pageYOffset - 50,
+              top: childRect.top + window.pageYOffset - 50,
               left:
-                targetRect.left + window.pageXOffset + targetRect.width / 2 - popoverRect.width / 2,
+                childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,
             };
           }}
         >

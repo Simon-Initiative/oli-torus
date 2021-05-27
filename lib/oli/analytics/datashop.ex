@@ -10,7 +10,7 @@ defmodule Oli.Analytics.Datashop do
   import XmlBuilder
   alias Oli.Publishing
   alias Oli.Authoring.Course
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Analytics.Datashop.Messages.{Context, Tool, Tutor}
   alias Oli.Analytics.Datashop.Utils
 

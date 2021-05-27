@@ -5,7 +5,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
 
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Rendering.Activity.ActivitySummary
-  alias Oli.Delivery.Attempts.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Activities.State
   alias Oli.Activities.State.ActivityState
   alias Oli.Activities

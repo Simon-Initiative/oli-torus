@@ -1,15 +1,15 @@
 /* eslint-disable react/prop-types */
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { CapiVariable } from '../types/parts';
 import {
-  JanusMultipleChoiceQuestionProperties,
   JanusMultipleChoiceQuestionItemProperties,
+  JanusMultipleChoiceQuestionProperties,
 } from './MultipleChoiceQuestionType';
-import { parseBool } from 'utils/common';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -107,52 +107,52 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-  const {
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    multipleSelection,
-    mcqItems,
-    randomize,
-    customCssClass,
-    layoutType,
-  } = model;
 
-  useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
-    props.onInit({
+  const [enabled, setEnabled] = useState(true);
+  const [randomized, setRandomized] = useState(false);
+  const [options, setOptions] = useState<any[]>([]);
+  const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
+  // note in SS selection is 1 based
+  const [selectedChoice, setSelectedChoice] = useState<number>(0);
+  const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
+  const [selectedChoices, setSelectedChoices] = useState<any[]>([]);
+  const [selectedChoicesText, setSelectedChoicesText] = useState<any[]>([]);
+  const prevSelectedChoice = usePrevious<number>(selectedChoice);
+  const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults from model
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dRandomized = typeof pModel.randomized === 'boolean' ? pModel.randomized : randomized;
+    setRandomized(dRandomized);
+
+    // BS: not sure I grok this one
+    const dMcqItems = pModel.mcqItems || [];
+    setSelectedChoicesText(
+      dMcqItems.map((item: { nodes: any }, index: number) => {
+        return {
+          value: index + 1,
+          textValue: getNodeText(item.nodes),
+          checked: false,
+        };
+      }),
+    );
+
+    // now we need to save the defaults used in adaptivity (not necessarily the same)
+    const initResult = await props.onInit({
       id,
       responses: [
         {
           key: 'enabled',
           type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
+          value: dEnabled,
         },
         {
           key: 'randomize',
           type: CapiVariableTypes.BOOLEAN,
-          value: randomized,
+          value: dRandomized,
         },
         {
           key: 'numberOfSelectedChoices',
@@ -181,7 +181,52 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         },
       ],
     });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+
     setReady(true);
+  }, []);
+
+  const {
+    x = 0,
+    y = 0,
+    z = 0,
+    width,
+    multipleSelection,
+    mcqItems,
+    customCssClass,
+    layoutType,
+  } = model;
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -207,27 +252,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       ),
     );
   }
-  // TODO: Reduce the amount of useStates, thus re-renders
-  // TODO: send this in via model?
-  const [enabled, setEnabled] = useState(true);
-  const [randomized, setRandomized] = useState(randomize);
-  const [options, setOptions] = useState<any[]>([]);
-  const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
-  // note in SS selection is 1 based
-  const [selectedChoice, setSelectedChoice] = useState<number>(0);
-  const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
-  const [selectedChoices, setSelectedChoices] = useState<any[]>([]);
-  const [selectedChoicesText, setSelectedChoicesText] = useState<any[]>(
-    mcqItems?.map((item: { nodes: any }, index: number) => {
-      return {
-        value: index + 1,
-        textValue: getNodeText(item.nodes),
-        checked: false,
-      };
-    }),
-  );
-  const prevSelectedChoice = usePrevious<number>(selectedChoice);
-  const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
 
   const handleStateChange = (stateData: CapiVariable[]) => {
     // this runs every time state is updated from *any* source
@@ -417,16 +441,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     props.onSave({
       id: `${id}`,
       responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
-        },
-        {
-          key: 'randomize',
-          type: CapiVariableTypes.BOOLEAN,
-          value: randomized,
-        },
         {
           key: 'numberOfSelectedChoices',
           type: CapiVariableTypes.NUMBER,

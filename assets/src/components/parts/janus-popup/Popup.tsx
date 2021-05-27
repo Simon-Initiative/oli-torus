@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable react/prop-types */
 import chroma from 'chroma-js';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
@@ -16,6 +16,50 @@ const Popup: React.FC<any> = (props) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'visible',
+          type: CapiVariableTypes.BOOLEAN,
+          value: !!pModel.visible,
+        },
+        {
+          key: 'openByDefault',
+          type: CapiVariableTypes.BOOLEAN,
+          value: !!pModel.openByDefault,
+        },
+        {
+          key: 'isOpen',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+      ],
+    });
+    /* console.log('POPUP INIT', initResult); */
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const isOpen = currentStateSnapshot[`stage.${id}.isOpen`];
+    if (isOpen !== undefined) {
+      setShowPopup(isOpen);
+    }
+    const isVisible = currentStateSnapshot[`stage.${id}.visible`];
+    if (isVisible !== undefined) {
+      setPopupVisible(isVisible);
+    }
+    const initIconUrl = currentStateSnapshot[`stage.${id}.iconURL`];
+    if (initIconUrl !== undefined) {
+      if (getIcon(initIconUrl)) {
+        setIconSrc(getIcon(initIconUrl));
+      } else {
+        setIconSrc(initIconUrl);
+      }
+    }
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     let pModel;
@@ -55,27 +99,7 @@ const Popup: React.FC<any> = (props) => {
     setPopupVisible(!!pModel.visible);
     setIconSrc(getIconSrc());
 
-    props.onInit({
-      id,
-      responses: [
-        {
-          key: 'visible',
-          type: CapiVariableTypes.BOOLEAN,
-          value: !!pModel.visible,
-        },
-        {
-          key: 'openByDefault',
-          type: CapiVariableTypes.BOOLEAN,
-          value: !!pModel.openByDefault,
-        },
-        {
-          key: 'isOpen',
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   const {
@@ -102,32 +126,6 @@ const Popup: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-
-  // const handleActivityStateChange = (stateData) => {
-  //   // override text value from state
-  //   const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-  //   if (interested?.length) {
-  //     interested.forEach((stateVar) => {
-  //       if (stateVar.key === 'openByDefault') {
-  //         const stateIsOpenByDefault: boolean = parseBool(stateVar.value);
-  //         if (stateIsOpenByDefault) {
-  //           setShowPopup(stateIsOpenByDefault);
-  //         }
-  //       }
-  //       if (stateVar.key === 'isOpen') {
-  //         const stateIsOpen: boolean = parseBool(stateVar.value);
-  //         setShowPopup(stateIsOpen);
-  //       }
-  //       if (stateVar.key === 'iconURL' && stateVar.value) {
-  //         setIconSrc(stateVar.value.toString());
-  //       }
-  //       if (stateVar.key === 'visible') {
-  //         const stateIsVisible: boolean = parseBool(stateVar.value);
-  //         setPopupVisible(stateIsVisible);
-  //       }
-  //     });
-  //   }
-  // };
 
   // useEffect(() => {
   //   const mutateStateHandler = (data) => {
@@ -157,84 +155,80 @@ const Popup: React.FC<any> = (props) => {
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
     // optimistically write state
-    // onSaveActivity({
-    //   id: `${id}`,
-    //   responses: [
-    //     {
-    //       key: 'isOpen',
-    //       type: CapiVariableTypes.BOOLEAN,
-    //       value: toggleVal,
-    //     },
-    //   ],
-    // });
+    props.onSave({
+      id,
+      responses: [
+        {
+          key: 'isOpen',
+          type: CapiVariableTypes.BOOLEAN,
+          value: toggleVal,
+        },
+      ],
+    });
   };
 
   const partComponents = popup?.partsLayout;
 
-  const config = popup?.custom? popup.custom : null;
+  const config = popup?.custom ? popup.custom : null;
   const popupModalStyles: CSSProperties = {
     width: config?.width || 1300,
-};
-if (config?.palette) {
+  };
+  if (config?.palette) {
     if (config.palette.useHtmlProps) {
       popupModalStyles.backgroundColor = config.palette.backgroundColor;
       popupModalStyles.borderColor = config.palette.borderColor;
       popupModalStyles.borderWidth = config.palette.borderWidth;
-        popupModalStyles.borderStyle = config.palette.borderStyle;
-        popupModalStyles.borderRadius = config.palette.borderRadius;
+      popupModalStyles.borderStyle = config.palette.borderStyle;
+      popupModalStyles.borderRadius = config.palette.borderRadius;
     } else {
-        popupModalStyles.borderWidth = `${
-            config?.palette?.lineThickness
-                ? config?.palette?.lineThickness + 'px'
-                : '1px'
-        }`;
-        popupModalStyles.borderRadius = '10px';
-        popupModalStyles.borderStyle = 'solid';
-        popupModalStyles.borderColor = `rgba(${
-            config?.palette?.lineColor ||
-            config?.palette?.lineColor === 0
-                ? chroma(config?.palette?.lineColor).rgb().join(',')
-                : '255, 255, 255'
-        },${config?.palette?.lineAlpha})`;
-        popupModalStyles.backgroundColor = `rgba(${
-            config?.palette?.fillColor ||
-            config?.palette?.fillColor === 0
-                ? chroma(config?.palette?.fillColor).rgb().join(',')
-                : '255, 255, 255'
-        },${config?.palette?.fillAlpha})`;
+      popupModalStyles.borderWidth = `${
+        config?.palette?.lineThickness ? config?.palette?.lineThickness + 'px' : '1px'
+      }`;
+      popupModalStyles.borderRadius = '10px';
+      popupModalStyles.borderStyle = 'solid';
+      popupModalStyles.borderColor = `rgba(${
+        config?.palette?.lineColor || config?.palette?.lineColor === 0
+          ? chroma(config?.palette?.lineColor).rgb().join(',')
+          : '255, 255, 255'
+      },${config?.palette?.lineAlpha})`;
+      popupModalStyles.backgroundColor = `rgba(${
+        config?.palette?.fillColor || config?.palette?.fillColor === 0
+          ? chroma(config?.palette?.fillColor).rgb().join(',')
+          : '255, 255, 255'
+      },${config?.palette?.fillAlpha})`;
     }
-}
-    popupModalStyles.left = config?.x? config.x : 0; // adding the previous logic done for Pop-up and feedback.
-    popupModalStyles.top = config?.y? config.y : 0; // adding the previous logic done for Pop-up and feedback.
-    popupModalStyles.zIndex = config?.z ? config?.z : 1000;
-    popupModalStyles.height = config?.height;
-    popupModalStyles.overflow = 'hidden';
-    popupModalStyles.position = 'absolute';
+  }
+  popupModalStyles.left = config?.x ? config.x : 0; // adding the previous logic done for Pop-up and feedback.
+  popupModalStyles.top = config?.y ? config.y : 0; // adding the previous logic done for Pop-up and feedback.
+  popupModalStyles.zIndex = config?.z ? config?.z : 1000;
+  popupModalStyles.height = config?.height;
+  popupModalStyles.overflow = 'hidden';
+  popupModalStyles.position = 'absolute';
 
-    const popupCloseStyles: CSSProperties = {
-      position: 'absolute',
-      padding: 0,
-      zIndex: 5000,
-      background: 'transparent',
-      textDecoration: 'none',
-      width: '25px',
-      height: '25px',
-      fontSize: '1.4em',
-      fontFamily: 'Arial',
-      right: 0,
-      opacity: 1,
+  const popupCloseStyles: CSSProperties = {
+    position: 'absolute',
+    padding: 0,
+    zIndex: 5000,
+    background: 'transparent',
+    textDecoration: 'none',
+    width: '25px',
+    height: '25px',
+    fontSize: '1.4em',
+    fontFamily: 'Arial',
+    right: 0,
+    opacity: 1,
   };
 
   const popupBGStyles: CSSProperties = {
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-      borderRadius: 10,
-      padding: 0,
-      overflow: 'hidden',
-      width: '100%',
-      height: '100%',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    borderRadius: 10,
+    padding: 0,
+    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
   };
   return ready ? (
     <React.Fragment>
@@ -272,21 +266,21 @@ if (config?.palette) {
       {showPopup ? (
         <React.Fragment>
           {partComponents ? (
-            <div className={`info-icon-popup ${config?.customCssClass? config.customCssClass : '' }`}
-             style={popupModalStyles}>
-              (
-                    <div className="popup-background" style={popupBGStyles}>
-                      <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
-                        <button
-                            aria-label="Close"
-                            className="close"
-                            style={popupCloseStyles}
-                            onClick={() => handleToggleIcon(false)}
-                        >
-                            <span>x</span>
-                        </button>
-                    </div>
-                )
+            <div
+              className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
+              style={popupModalStyles}
+            >
+              <div className="popup-background" style={popupBGStyles}>
+                <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
+                <button
+                  aria-label="Close"
+                  className="close"
+                  style={popupCloseStyles}
+                  onClick={() => handleToggleIcon(false)}
+                >
+                  <span>x</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div>Popup could not load</div>

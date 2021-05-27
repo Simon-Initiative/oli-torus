@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { CapiVariable } from '../types/parts';
 
 const Dropdown: React.FC<any> = (props) => {
@@ -9,6 +9,87 @@ const Dropdown: React.FC<any> = (props) => {
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [enabled, setEnabled] = useState(true);
+  const [selection, setSelection] = useState<number>(-1);
+  const [selectedItem, setSelectedItem] = useState<string>('');
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          id: `selectedIndex`,
+          key: 'selectedIndex',
+          type: CapiVariableTypes.STRING,
+          value: -1,
+        },
+        {
+          id: `selectedItem`,
+          key: 'selectedItem',
+          type: CapiVariableTypes.STRING,
+          value: '',
+        },
+        {
+          id: `value`,
+          key: 'value',
+          type: CapiVariableTypes.STRING,
+          value: 'NULL',
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    // TODO: value ??
+
+    const sSelectedIndex = currentStateSnapshot[`stage.${id}.selectedIndex`];
+    if (sSelectedIndex !== undefined) {
+      setSelection(sSelectedIndex);
+      setSelectedItem(optionLabels[sSelectedIndex - 1]);
+    }
+
+    const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
+    if (sSelectedItem !== undefined) {
+      const selectionIndex: number = optionLabels.findIndex((str: string) =>
+        sSelectedItem.includes(str),
+      );
+      setSelectedItem(sSelectedItem);
+      setSelection(selectionIndex + 1);
+    }
+
+    setReady(true);
+  }, []);
+
   useEffect(() => {
     let pModel;
     let pState;
@@ -31,36 +112,7 @@ const Dropdown: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          id: `enabled`,
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: true,
-        },
-        {
-          id: `selectedIndex`,
-          key: 'selectedIndex',
-          type: CapiVariableTypes.STRING,
-          value: -1,
-        },
-        {
-          id: `selectedItem`,
-          key: 'selectedItem',
-          type: CapiVariableTypes.STRING,
-          value: '',
-        },
-        {
-          id: `value`,
-          key: 'value',
-          type: CapiVariableTypes.STRING,
-          value: 'NULL',
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -100,9 +152,6 @@ const Dropdown: React.FC<any> = (props) => {
       (dropdownContainerStyles.borderColor = 'transparent'),
       (dropdownContainerStyles.backgroundColor = 'transparent');
   }
-  const [enabled, setEnabled] = useState(true);
-  const [selection, setSelection] = useState<number>(-1);
-  const [selectedItem, setSelectedItem] = useState<string>('');
 
   const dropDownStyle = {
     width: 'auto',
@@ -239,21 +288,21 @@ const Dropdown: React.FC<any> = (props) => {
     return options;
   };
 
-  return (
+  return ready ? (
     <div data-janus-type={props.type} className="dropdown-input" style={dropdownContainerStyles}>
       <label htmlFor={id}>{showLabel && label ? label : ''}</label>
       <select
         style={dropDownStyle}
         id={id}
         value={selection}
-        className={'dropdown ' + customCssClass}
+        className={'dropdown ' + cssClass}
         onChange={handleChange}
         disabled={!enabled}
       >
         {dropdownOptions()}
       </select>
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-dropdown';

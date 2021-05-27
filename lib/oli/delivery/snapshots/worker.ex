@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
 
-  alias Oli.Delivery.Attempts.{
+  alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
     ResourceAccess,
     ResourceAttempt,

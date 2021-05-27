@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { CapiVariable } from '../types/parts';
@@ -9,7 +9,69 @@ const Slider: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
+
   const id: string = props.id;
+
+  const [sliderValue, setSliderValue] = useState(0);
+  const [isSliderEnabled, setIsSliderEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : isSliderEnabled;
+    setIsSliderEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dMin = pModel.minimum || 0;
+    const dValue = pModel.value || dMin;
+    setSliderValue(dValue);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'value',
+          type: CapiVariableTypes.NUMBER,
+          value: dValue,
+        },
+        {
+          key: 'userModified',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setIsSliderEnabled(sEnabled);
+    }
+    const sValue = currentStateSnapshot[`stage.${id}.value`];
+    if (sValue !== undefined) {
+      setSliderValue(sValue);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
   useEffect(() => {
     let pModel;
     let pState;
@@ -32,27 +94,7 @@ const Slider: React.FC<any> = (props) => {
     if (!pModel) {
       return;
     }
-    props.onInit({
-      id,
-      responses: [
-        {
-          key: `value`,
-          type: CapiVariableTypes.NUMBER,
-          value: 0,
-        },
-        {
-          key: `userModified`,
-          type: CapiVariableTypes.BOOLEAN,
-          value: false,
-        },
-        {
-          key: `enabled`,
-          type: CapiVariableTypes.BOOLEAN,
-          value: isSliderEnabled,
-        },
-      ],
-    });
-    setReady(true);
+    initialize(pModel);
   }, [props]);
 
   useEffect(() => {
@@ -83,6 +125,7 @@ const Slider: React.FC<any> = (props) => {
     invertScale,
     value,
   } = model;
+
   const styles: CSSProperties = {
     position: 'absolute',
     width: `${width}px`,
@@ -103,9 +146,6 @@ const Slider: React.FC<any> = (props) => {
     display: `flex`,
     flexDirection: 'row',
   };
-
-  const [sliderValue, setSliderValue] = useState(value ? value : minimum); // if value is undefined, set default to minimum value;
-  const [isSliderEnabled, setIsSliderEnabled] = useState(true);
 
   const inputWidth: any = document.getElementById(`${id}`)?.getBoundingClientRect().width;
   const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect()
@@ -128,11 +168,6 @@ const Slider: React.FC<any> = (props) => {
           key: `userModified`,
           type: CapiVariableTypes.BOOLEAN,
           value: userModified,
-        },
-        {
-          key: `enabled`,
-          type: CapiVariableTypes.BOOLEAN,
-          value: isSliderEnabled,
         },
       ],
     });
@@ -165,8 +200,8 @@ const Slider: React.FC<any> = (props) => {
     }
   };
 
-  return (
-    <div data-janus-type={props.type} style={styles} className={'slider'}>
+  return ready ? (
+    <div data-part-component-type={props.type} style={styles} className={`slider ${cssClass}`}>
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
@@ -208,7 +243,7 @@ const Slider: React.FC<any> = (props) => {
         </label>
       )}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-slider';
