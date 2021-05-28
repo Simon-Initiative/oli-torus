@@ -10,7 +10,7 @@
     <title>Oli.Activities — OLI Torus v0.9.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-f82e75d463.js"></script>
+    <script src="dist/sidebar_items-7dd7bd8e89.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -110,6 +110,13 @@ Oli.Activities <small class="app-vsn">(OLI Torus v0.9.0)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#activities_for_project/1">activities_for_project(project)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#activities_for_section/0">activities_for_section()</a>
 
   </div>
 
@@ -272,6 +279,28 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="activities_for_section/0">
+
+  <div class="detail-header">
+    <a href="#activities_for_section/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">activities_for_section()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L161" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="change_registration/1">
 
   <div class="detail-header">
@@ -281,7 +310,7 @@ Functions
     </a>
     <h1 class="signature">change_registration(registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L271" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L292" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -295,8 +324,8 @@ Functions
   <a href="#change_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="9023312356-1">(</span><span class="n">registration</span><span class="p" data-group-id="9023312356-1">)</span><span class="w">
-</span><span class="p" data-group-id="9023312356-2">%</span><span class="nc" data-group-id="9023312356-2">Ecto.Changeset</span><span class="p" data-group-id="9023312356-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9023312356-3">%</span><span class="nc" data-group-id="9023312356-3">ActivityRegistration</span><span class="p" data-group-id="9023312356-3">{</span><span class="p" data-group-id="9023312356-3">}</span><span class="p" data-group-id="9023312356-2">}</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="9179215177-1">(</span><span class="n">registration</span><span class="p" data-group-id="9179215177-1">)</span><span class="w">
+</span><span class="p" data-group-id="9179215177-2">%</span><span class="nc" data-group-id="9179215177-2">Ecto.Changeset</span><span class="p" data-group-id="9179215177-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9179215177-3">%</span><span class="nc" data-group-id="9179215177-3">ActivityRegistration</span><span class="p" data-group-id="9179215177-3">{</span><span class="p" data-group-id="9179215177-3">}</span><span class="p" data-group-id="9179215177-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_registered_activity_map/0">
@@ -362,8 +391,8 @@ Functions
   <a href="#create_registered_activity_map/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registered_activity_map</span><span class="p" data-group-id="8817026601-1">(</span><span class="n">philosophy</span><span class="p" data-group-id="8817026601-1">)</span><span class="w">
-</span><span class="p" data-group-id="8817026601-2">[</span><span class="p" data-group-id="8817026601-3">%</span><span class="nc" data-group-id="8817026601-3">ActivityMapEntry</span><span class="p" data-group-id="8817026601-3">{</span><span class="p" data-group-id="8817026601-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="8817026601-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registered_activity_map</span><span class="p" data-group-id="2205706331-1">(</span><span class="n">philosophy</span><span class="p" data-group-id="2205706331-1">)</span><span class="w">
+</span><span class="p" data-group-id="2205706331-2">[</span><span class="p" data-group-id="2205706331-3">%</span><span class="nc" data-group-id="2205706331-3">ActivityMapEntry</span><span class="p" data-group-id="2205706331-3">{</span><span class="p" data-group-id="2205706331-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2205706331-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_registration/1">
@@ -377,7 +406,7 @@ Functions
     </a>
     <h1 class="signature">create_registration(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L222" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L243" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -391,11 +420,11 @@ Functions
   <a href="#create_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="3912228485-1">(</span><span class="p" data-group-id="3912228485-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3912228485-2">}</span><span class="p" data-group-id="3912228485-1">)</span><span class="w">
-</span><span class="p" data-group-id="3912228485-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3912228485-4">%</span><span class="nc" data-group-id="3912228485-4">ActivityRegistration</span><span class="p" data-group-id="3912228485-4">{</span><span class="p" data-group-id="3912228485-4">}</span><span class="p" data-group-id="3912228485-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="2123851895-1">(</span><span class="p" data-group-id="2123851895-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2123851895-2">}</span><span class="p" data-group-id="2123851895-1">)</span><span class="w">
+</span><span class="p" data-group-id="2123851895-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2123851895-4">%</span><span class="nc" data-group-id="2123851895-4">ActivityRegistration</span><span class="p" data-group-id="2123851895-4">{</span><span class="p" data-group-id="2123851895-4">}</span><span class="p" data-group-id="2123851895-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="3912228485-5">(</span><span class="p" data-group-id="3912228485-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3912228485-6">}</span><span class="p" data-group-id="3912228485-5">)</span><span class="w">
-</span><span class="p" data-group-id="3912228485-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3912228485-8">%</span><span class="nc" data-group-id="3912228485-8">Ecto.Changeset</span><span class="p" data-group-id="3912228485-8">{</span><span class="p" data-group-id="3912228485-8">}</span><span class="p" data-group-id="3912228485-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="2123851895-5">(</span><span class="p" data-group-id="2123851895-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2123851895-6">}</span><span class="p" data-group-id="2123851895-5">)</span><span class="w">
+</span><span class="p" data-group-id="2123851895-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2123851895-8">%</span><span class="nc" data-group-id="2123851895-8">Ecto.Changeset</span><span class="p" data-group-id="2123851895-8">{</span><span class="p" data-group-id="2123851895-8">}</span><span class="p" data-group-id="2123851895-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_registration/1">
@@ -407,7 +436,7 @@ Functions
     </a>
     <h1 class="signature">delete_registration(registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L258" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L279" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -421,11 +450,11 @@ Functions
   <a href="#delete_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="7390152526-1">(</span><span class="n">registration</span><span class="p" data-group-id="7390152526-1">)</span><span class="w">
-</span><span class="p" data-group-id="7390152526-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7390152526-3">%</span><span class="nc" data-group-id="7390152526-3">ActivityRegistration</span><span class="p" data-group-id="7390152526-3">{</span><span class="p" data-group-id="7390152526-3">}</span><span class="p" data-group-id="7390152526-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="6480701744-1">(</span><span class="n">registration</span><span class="p" data-group-id="6480701744-1">)</span><span class="w">
+</span><span class="p" data-group-id="6480701744-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6480701744-3">%</span><span class="nc" data-group-id="6480701744-3">ActivityRegistration</span><span class="p" data-group-id="6480701744-3">{</span><span class="p" data-group-id="6480701744-3">}</span><span class="p" data-group-id="6480701744-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="7390152526-4">(</span><span class="n">registration</span><span class="p" data-group-id="7390152526-4">)</span><span class="w">
-</span><span class="p" data-group-id="7390152526-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7390152526-6">%</span><span class="nc" data-group-id="7390152526-6">Ecto.Changeset</span><span class="p" data-group-id="7390152526-6">{</span><span class="p" data-group-id="7390152526-6">}</span><span class="p" data-group-id="7390152526-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="6480701744-4">(</span><span class="n">registration</span><span class="p" data-group-id="6480701744-4">)</span><span class="w">
+</span><span class="p" data-group-id="6480701744-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6480701744-6">%</span><span class="nc" data-group-id="6480701744-6">Ecto.Changeset</span><span class="p" data-group-id="6480701744-6">{</span><span class="p" data-group-id="6480701744-6">}</span><span class="p" data-group-id="6480701744-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="disable_activity_in_project/2">
@@ -483,7 +512,7 @@ Functions
     </a>
     <h1 class="signature">get_activity_scripts(scriptType \\ :authoring_script)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L187" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L208" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -505,7 +534,7 @@ Functions
     </a>
     <h1 class="signature">get_registration(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L208" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L229" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -527,7 +556,7 @@ Functions
     </a>
     <h1 class="signature">get_registration!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L206" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L227" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -541,10 +570,10 @@ Functions
   <a href="#get_registration!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="1471859711-1">(</span><span class="mi">123</span><span class="p" data-group-id="1471859711-1">)</span><span class="w">
-</span><span class="p" data-group-id="1471859711-2">%</span><span class="nc" data-group-id="1471859711-2">ActivityRegistration</span><span class="p" data-group-id="1471859711-2">{</span><span class="p" data-group-id="1471859711-2">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="1668049508-1">(</span><span class="mi">123</span><span class="p" data-group-id="1668049508-1">)</span><span class="w">
+</span><span class="p" data-group-id="1668049508-2">%</span><span class="nc" data-group-id="1668049508-2">ActivityRegistration</span><span class="p" data-group-id="1668049508-2">{</span><span class="p" data-group-id="1668049508-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="1471859711-3">(</span><span class="mi">456</span><span class="p" data-group-id="1471859711-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="1668049508-3">(</span><span class="mi">456</span><span class="p" data-group-id="1668049508-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -557,7 +586,7 @@ Functions
     </a>
     <h1 class="signature">get_registration_by_slug(slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L167" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L188" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -579,7 +608,7 @@ Functions
     </a>
     <h1 class="signature">list_activity_registrations()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L180" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L201" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -593,8 +622,8 @@ Functions
   <a href="#list_activity_registrations/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_activity_registrations</span><span class="p" data-group-id="3332393187-1">(</span><span class="p" data-group-id="3332393187-1">)</span><span class="w">
-</span><span class="p" data-group-id="3332393187-2">[</span><span class="p" data-group-id="3332393187-3">%</span><span class="nc" data-group-id="3332393187-3">ActivityRegistration</span><span class="p" data-group-id="3332393187-3">{</span><span class="p" data-group-id="3332393187-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3332393187-2">]</span></code></pre>
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_activity_registrations</span><span class="p" data-group-id="2276309577-1">(</span><span class="p" data-group-id="2276309577-1">)</span><span class="w">
+</span><span class="p" data-group-id="2276309577-2">[</span><span class="p" data-group-id="2276309577-3">%</span><span class="nc" data-group-id="2276309577-3">ActivityRegistration</span><span class="p" data-group-id="2276309577-3">{</span><span class="p" data-group-id="2276309577-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2276309577-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="register_activity/1">
@@ -628,7 +657,7 @@ Functions
     </a>
     <h1 class="signature">set_global_status(activity_slug, status)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L157" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L178" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -650,7 +679,7 @@ Functions
     </a>
     <h1 class="signature">update_registration(registration, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L240" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/activities.ex#L261" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -664,11 +693,11 @@ Functions
   <a href="#update_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="4407975342-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4407975342-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="4407975342-2">}</span><span class="p" data-group-id="4407975342-1">)</span><span class="w">
-</span><span class="p" data-group-id="4407975342-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4407975342-4">%</span><span class="nc" data-group-id="4407975342-4">ActivityRegistration</span><span class="p" data-group-id="4407975342-4">{</span><span class="p" data-group-id="4407975342-4">}</span><span class="p" data-group-id="4407975342-3">}</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="3883255763-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3883255763-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="3883255763-2">}</span><span class="p" data-group-id="3883255763-1">)</span><span class="w">
+</span><span class="p" data-group-id="3883255763-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3883255763-4">%</span><span class="nc" data-group-id="3883255763-4">ActivityRegistration</span><span class="p" data-group-id="3883255763-4">{</span><span class="p" data-group-id="3883255763-4">}</span><span class="p" data-group-id="3883255763-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="4407975342-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4407975342-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4407975342-6">}</span><span class="p" data-group-id="4407975342-5">)</span><span class="w">
-</span><span class="p" data-group-id="4407975342-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4407975342-8">%</span><span class="nc" data-group-id="4407975342-8">Ecto.Changeset</span><span class="p" data-group-id="4407975342-8">{</span><span class="p" data-group-id="4407975342-8">}</span><span class="p" data-group-id="4407975342-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="3883255763-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3883255763-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3883255763-6">}</span><span class="p" data-group-id="3883255763-5">)</span><span class="w">
+</span><span class="p" data-group-id="3883255763-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3883255763-8">%</span><span class="nc" data-group-id="3883255763-8">Ecto.Changeset</span><span class="p" data-group-id="3883255763-8">{</span><span class="p" data-group-id="3883255763-8">}</span><span class="p" data-group-id="3883255763-7">}</span></code></pre>
   </section>
 </section>
 
