@@ -74,6 +74,7 @@ defmodule OliWeb.PageDeliveryController do
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
       summary: summary,
+      activity_types: Activities.activities_for_section(),
       scripts: Activities.get_activity_scripts(:delivery_script),
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
       section_slug: section_slug,
