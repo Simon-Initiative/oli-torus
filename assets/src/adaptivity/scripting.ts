@@ -1,10 +1,7 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { parseArray } from 'utils/common';
 import { CapiVariable, CapiVariableTypes } from './capi';
-
-// for use by client side scripting evalution
-export const defaultGlobalEnv = new Environment();
-(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
+import { janus_std } from './janus-scripts/builtin_functions';
 
 export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
   let val: any = v.value;
@@ -177,3 +174,9 @@ export const bulkApplyState = (operations: ApplyStateOperation[], env?: Environm
 export const removeStateValues = (env: Environment, keys: string[]): void => {
   env.remove(keys);
 };
+
+// for use by client side scripting evalution
+export const defaultGlobalEnv = new Environment();
+(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
+// load std lib
+evalScript(janus_std, defaultGlobalEnv);
