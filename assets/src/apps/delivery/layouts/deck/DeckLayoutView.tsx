@@ -222,7 +222,19 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      sharedActivityPromise.resolve({ snapshot: getLocalizedStateSnapshot() });
+      /* const contexts = {
+        VIEWER: 'VIEWER',
+        REVIEW: 'REVIEW',
+        AUTHOR: 'AUTHOR',
+        REPORT: 'REPORT',
+      }; */
+      sharedActivityPromise.resolve({
+        snapshot: getLocalizedStateSnapshot(),
+        context: {
+          currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+          mode: 'VIEWER',
+        },
+      });
     }
     return sharedActivityPromise.promise;
   };

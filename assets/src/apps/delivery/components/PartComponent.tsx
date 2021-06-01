@@ -1,8 +1,15 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import {
+  NotificationContext,
+  NotificationType,
+  subscribeToNotification,
+} from './NotificationContext';
 import Unknown from './UnknownComponent';
 
 const WebComponent: React.FC<any> = (props) => {
+  const pusherContext = useContext(NotificationContext);
+
   // TODO: build from configuration instead
   const wcEvents: any = {
     init: props.onInit,
@@ -10,6 +17,37 @@ const WebComponent: React.FC<any> = (props) => {
     save: props.onSave,
     submit: props.onSubmit,
   };
+
+  const ref = useRef<any>(null);
+  useEffect(() => {
+    if (!pusherContext) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (e) => {
+        console.log(`${notificationType.toString()} notification handled [PC]`, e);
+        const el = ref.current;
+        if (el) {
+          if (el.notify) {
+            el.notify(notificationType.toString(), e);
+          }
+        }
+      };
+      const unsub = subscribeToNotification(pusherContext, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [pusherContext]);
 
   const [listening, setIsListening] = useState(false);
   useEffect(() => {
@@ -40,6 +78,7 @@ const WebComponent: React.FC<any> = (props) => {
   }, []);
 
   const webComponentProps = {
+    ref,
     id: props.id,
     type: props.type,
     ...props,
