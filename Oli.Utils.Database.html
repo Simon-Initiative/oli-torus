@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.9.0">
+    <meta name="project" content="OLI Torus v0.10.0">
 
-    <title>Oli.Utils.Database — OLI Torus v0.9.0</title>
+    <title>Oli.Utils.Database — OLI Torus v0.10.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-7dd7bd8e89.js"></script>
@@ -51,7 +51,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.9.0
+        v0.10.0
       </strong>
     </div>
 
@@ -79,7 +79,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Utils.Database <small class="app-vsn">(OLI Torus v0.9.0)</small>
+Oli.Utils.Database <small class="app-vsn">(OLI Torus v0.10.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/database.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -173,7 +173,7 @@ Functions
 
 <p>Explains the query plan for a given Ecto based query.  Options to either inline log
 the result and return the query, or to just return to analyzed result.  Results can be in either
-json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this inline for development on a query by query basis like:</p><pre><code class="nohighlight makeup elixir"><span class="n">from</span><span class="p" data-group-id="2354149724-1">(</span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Section</span><span class="p">,</span><span class="w">
+json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this inline for development on a query by query basis like:</p><pre><code class="nohighlight makeup elixir"><span class="n">from</span><span class="p" data-group-id="9480111898-1">(</span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Section</span><span class="p">,</span><span class="w">
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Publication</span><span class="p">,</span><span class="w">
       </span><span class="ss">on</span><span class="p">:</span><span class="w"> </span><span class="n">p</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">publication_id</span><span class="p">,</span><span class="w">
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">PublishedResource</span><span class="p">,</span><span class="w">
@@ -181,12 +181,12 @@ json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this in
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Revision</span><span class="p">,</span><span class="w">
       </span><span class="ss">on</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">m</span><span class="o">.</span><span class="n">revision_id</span><span class="p">,</span><span class="w">
       </span><span class="ss">where</span><span class="p">:</span><span class="w">
-        </span><span class="p" data-group-id="2354149724-2">(</span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">page_id</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">container_id</span><span class="p" data-group-id="2354149724-2">)</span><span class="w"> </span><span class="ow">and</span><span class="w">
+        </span><span class="p" data-group-id="9480111898-2">(</span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">page_id</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">container_id</span><span class="p" data-group-id="9480111898-2">)</span><span class="w"> </span><span class="ow">and</span><span class="w">
           </span><span class="n">s</span><span class="o">.</span><span class="n">slug</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">section_slug</span><span class="p">,</span><span class="w">
       </span><span class="ss">select</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="w">
-    </span><span class="p" data-group-id="2354149724-1">)</span><span class="w">
-    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Oli.Utils.Database</span><span class="o">.</span><span class="n">explain</span><span class="p" data-group-id="2354149724-3">(</span><span class="p" data-group-id="2354149724-3">)</span><span class="w">
-    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Repo</span><span class="o">.</span><span class="n">all</span><span class="p" data-group-id="2354149724-4">(</span><span class="p" data-group-id="2354149724-4">)</span></code></pre>
+    </span><span class="p" data-group-id="9480111898-1">)</span><span class="w">
+    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Oli.Utils.Database</span><span class="o">.</span><span class="n">explain</span><span class="p" data-group-id="9480111898-3">(</span><span class="p" data-group-id="9480111898-3">)</span><span class="w">
+    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Repo</span><span class="o">.</span><span class="n">all</span><span class="p" data-group-id="9480111898-4">(</span><span class="p" data-group-id="9480111898-4">)</span></code></pre>
   </section>
 </section>
 <section class="detail" id="explain_sql/3">

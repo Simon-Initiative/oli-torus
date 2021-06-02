@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.9.0">
+    <meta name="project" content="OLI Torus v0.10.0">
 
-    <title>OliWeb.Api.ResourceAttemptStateController — OLI Torus v0.9.0</title>
+    <title>OliWeb.Api.ResourceAttemptStateController — OLI Torus v0.10.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
     <script src="dist/sidebar_items-7dd7bd8e89.js"></script>
@@ -51,7 +51,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.9.0
+        v0.10.0
       </strong>
     </div>
 
@@ -79,7 +79,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Api.ResourceAttemptStateController <small class="app-vsn">(OLI Torus v0.9.0)</small>
+OliWeb.Api.ResourceAttemptStateController <small class="app-vsn">(OLI Torus v0.10.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/resource_attempt_state_controller.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -170,7 +170,7 @@ Functions
   <section class="docstring">
 
 <p>Deletes one or more keys from a user's resource attempt context.</p><p>An example request, showing how to structure the keys parameter to contain the key names
-&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="2435743835-1">[</span><span class="p" data-group-id="2435743835-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="2435743835-2">[</span><span class="p" data-group-id="2435743835-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="0374003333-1">[</span><span class="p" data-group-id="0374003333-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="0374003333-2">[</span><span class="p" data-group-id="0374003333-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="read/2">
@@ -195,7 +195,7 @@ Functions
 <p>Reads state from the user's resource attempt context. State exists as key-value pairs. The
 values can be nested JSON structures or simple scalar attributes.</p><p>The optional <code class="inline">keys</code> query parameter allows one to read a subset of the top-level
 keys present in this context.  Omitting this parameter returns all top-level keys.</p><p>An example request, showing how to structure the keys parameter to contain the key names
-&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="4720532330-1">[</span><span class="p" data-group-id="4720532330-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="4720532330-2">[</span><span class="p" data-group-id="4720532330-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
+&quot;one&quot;, &quot;two&quot; and &quot;three&quot;:</p><pre><code class="nohighlight makeup elixir"><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">state?</span><span class="n">keys</span><span class="p" data-group-id="4878010266-1">[</span><span class="p" data-group-id="4878010266-1">]</span><span class="o">=</span><span class="n">one</span><span class="o">&amp;</span><span class="n">keys</span><span class="p" data-group-id="4878010266-2">[</span><span class="p" data-group-id="4878010266-2">]</span><span class="o">=</span><span class="n">two</span><span class="o">&amp;</span><span class="n">keys</span><span class="o">=</span><span class="n">three</span></code></pre>
   </section>
 </section>
 <section class="detail" id="upsert/2">
