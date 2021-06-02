@@ -37,6 +37,7 @@ interface ActivityRendererProps {
   onActivityRequestHint?: any;
   onActivitySubmitEvaluations?: any;
   onActivityReady?: any;
+  onRequestLatestState?: any;
 }
 
 const defaultHandler = async () => {
@@ -58,6 +59,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityResetPart = defaultHandler,
   onActivitySubmitEvaluations = defaultHandler,
   onActivityReady = defaultHandler,
+  onRequestLatestState = async () => ({ snapshot: {} }),
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
@@ -226,9 +228,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because we need at least read only access to cross activity values and extrinsic
     // *maybe* better to have a onInit callback and send it as a response?
     // because this is BIG
-    const envSnapshot = getEnvState(defaultGlobalEnv);
-    const fullState = { ...attempt, snapshot: envSnapshot };
-    setState(JSON.stringify(fullState));
+    /* const envSnapshot = getEnvState(defaultGlobalEnv);
+    const fullState = { ...attempt, snapshot: envSnapshot }; */
+    setState(JSON.stringify(attempt));
 
     setModel(JSON.stringify(activity));
 
@@ -263,12 +265,28 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   }, [checkInProgress, lastCheckResults]);
 
+  // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
+  // maybe it will just be the same and never actually change.
+  // TODO: check if it needs to come from somewhere higher
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const notifyContextChanged = async () => {
+    // even though ActivityRenderer still lives inside the main react app ecosystem
+    // it can't logically access the "localized" version of the state snapshot
+    // because this is a single activity and doesn't know about Layout (Deck View) behavior
+    // so it needs to ask the parent for it.
+    const { snapshot } = await onRequestLatestState();
+    ref.current.notify(NotificationType.CONTEXT_CHANGED, {
+      currentActivityId,
+      mode: 'VIEWER', // TODO: based on isPreviewMOde
+      snapshot,
+    });
+  };
+
   useEffect(() => {
     if (!currentActivityId || !ref.current) {
       return;
     }
-    ref.current.notify(NotificationType.CONTEXT_CHANGED, { currentActivityId, mode: 'VIEWER' });
+    notifyContextChanged();
   }, [currentActivityId]);
 
   const elementProps = {

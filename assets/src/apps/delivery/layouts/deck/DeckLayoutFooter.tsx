@@ -2,16 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+  getLocalizedStateSnapshot,
+} from '../../../../adaptivity/scripting';
+import {
   selectCurrentActivityContent,
   selectCurrentActivityId,
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import {
-  ApplyStateOperation,
-  bulkApplyState,
-  defaultGlobalEnv,
-  getEnvState,
-} from '../../../../adaptivity/scripting';
 import {
   selectCurrentFeedbacks,
   selectIsGoodFeedback,
@@ -112,24 +112,6 @@ const DeckLayoutFooter: React.FC = () => {
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
-
-  // TODO: duplicated in DeckLayoutView factor out into common or pass this as props?
-  const getLocalizedStateSnapshot = () => {
-    const snapshot = getEnvState(defaultGlobalEnv);
-    const finalState: any = { ...snapshot };
-    const allActivityIds = (currentActivityTree || []).map((a) => a.id);
-    allActivityIds.forEach((activityId: string) => {
-      const activityState = Object.keys(snapshot)
-        .filter((key) => key.indexOf(`${activityId}|`) === 0)
-        .reduce((collect: any, key) => {
-          const localizedKey = key.replace(`${activityId}|`, '');
-          collect[localizedKey] = snapshot[key];
-          return collect;
-        }, {});
-      Object.assign(finalState, activityState);
-    });
-    return finalState;
-  };
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -355,6 +337,8 @@ const DeckLayoutFooter: React.FC = () => {
     setIsLoading(false);
   }, [currentActivity]);
 
+  const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
@@ -402,7 +386,7 @@ const DeckLayoutFooter: React.FC = () => {
             <div className="content">
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
-                snapshot={getLocalizedStateSnapshot()}
+                snapshot={getLocalizedStateSnapshot(currentActivityIds)}
               />
             </div>
             {/* <button className="showSolnBtn showSolution displayNone">
