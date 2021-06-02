@@ -164,7 +164,7 @@ const DeckLayoutFooter: React.FC = () => {
         dispatch(setNextActivityId({ activityId: navTarget }));
       }
     } else {
-      if (isCorrect && hasNavigation) {
+      if (hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
         switch (navTarget) {

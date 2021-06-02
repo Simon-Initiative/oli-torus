@@ -34,7 +34,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
-
+  const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
 
@@ -131,6 +131,10 @@ const ExternalActivity: React.FC<any> = (props) => {
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
 
+    processInitStateVariable(currentStateSnapshot);
+  }, []);
+
+  const processInitStateVariable = (currentStateSnapshot: any) => {
     const sVisible = currentStateSnapshot[`stage.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
       setFrameVisible(sVisible);
@@ -184,7 +188,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     setInitState(interestedSnapshot);
 
     setInitStateReceived(true);
-  }, []);
+  };
 
   useEffect(() => {
     let pModel;
@@ -254,20 +258,25 @@ const ExternalActivity: React.FC<any> = (props) => {
               );
             }
             break;
-          case NotificationType.STATE_CHANGED: {
-            writeCapiLog('MUTATE STATE!!!!', 3, {
-              simLife,
-              payload,
-            });
-          }
-          break;
-          case NotificationType.CONTEXT_CHANGED: {
-            writeCapiLog('CONTEXT CHANGED!!!!', 3, {
-              simLife,
-              payload,
-            });
-          }
-          break;
+          case NotificationType.STATE_CHANGED:
+            {
+              writeCapiLog('MUTATE STATE!!!!', 3, {
+                simLife,
+                payload,
+              });
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            {
+              writeCapiLog('CONTEXT CHANGED!!!!', 3, {
+                simLife,
+                payload,
+              });
+              if (simLife.ready) {
+                setActivityChanged(true);
+              }
+            }
+            break;
         }
       };
       const unsub = subscribeToNotification(props.notify, notificationType, handler);
@@ -279,6 +288,21 @@ const ExternalActivity: React.FC<any> = (props) => {
       });
     };
   }, [props.notify]);
+
+  const getAcivityChangeInitStateVariables = async () => {
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+    writeCapiLog('activity Changed - INIT RESULT CAPI', 3, initResult);
+    const currentStateSnapshot = initResult.snapshot;
+    processInitStateVariable(currentStateSnapshot);
+    setSimIsInitStatePassedOnce(false);
+  };
+
+  useEffect(() => {
+    getAcivityChangeInitStateVariables();
+  }, [activityChanged]);
 
   useEffect(() => {
     if (!ready) {
@@ -464,6 +488,8 @@ const ExternalActivity: React.FC<any> = (props) => {
     if (simLife.ready) {
       return;
     }
+    simLife.init = true;
+    simLife.ready = true;
     const updateSimLife = { ...simLife };
     updateSimLife.ready = true;
     updateSimLife.init = true;
@@ -795,12 +821,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       window.removeEventListener('message', messageListener.current);
     };
   }, [simFrame]);
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //updateInternalState(state);
-    // setSimIsInitStatePassedOnce(false);
-  }, [state]);
 
   useEffect(() => {
     if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
