@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.0 (2021-6-2)
+
 ### Enhancements
 
 - Add support for detecting problematic database queries
