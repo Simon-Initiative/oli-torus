@@ -294,13 +294,14 @@ const ExternalActivity: React.FC<any> = (props) => {
       id,
       responses: [],
     });
-    writeCapiLog('activity Changed - INIT RESULT CAPI', 3, initResult);
+    writeCapiLog('ACTIVITY ID CHANGED - RE-INITIATE props.init CALL', 3, initResult);
     const currentStateSnapshot = initResult.snapshot;
     processInitStateVariable(currentStateSnapshot);
     setSimIsInitStatePassedOnce(false);
   };
 
   useEffect(() => {
+    //Currently it is sending the old Activity Id's init state variables and not the new chile screen init state
     getAcivityChangeInitStateVariables();
   }, [activityChanged]);
 
