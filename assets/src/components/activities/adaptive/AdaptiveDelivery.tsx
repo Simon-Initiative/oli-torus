@@ -1,5 +1,11 @@
+import { EventEmitter } from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import {
+  NotificationContext,
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import * as ActivityTypes from '../types';
@@ -13,11 +19,42 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     content: { custom: config, partsLayout },
   } = props.model;
 
+  const [pusher, setPusher] = useState(new EventEmitter());
+
   const attemptState = props.state;
 
   const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (e) => {
+        console.log(`${notificationType.toString()} notification handled [AD]`, e);
+        pusher.emit(notificationType.toString(), e);
+      };
+      const unsub = subscribeToNotification(
+        props.notify as EventEmitter,
+        notificationType,
+        handler,
+      );
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -152,13 +189,15 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   };
 
   return init ? (
-    <PartsLayoutRenderer
-      parts={parts}
-      onPartInit={handlePartInit}
-      onPartReady={handlePartReady}
-      onPartSave={handlePartSave}
-      onPartSubmit={handlePartSubmit}
-    />
+    <NotificationContext.Provider value={pusher}>
+      <PartsLayoutRenderer
+        parts={parts}
+        onPartInit={handlePartInit}
+        onPartReady={handlePartReady}
+        onPartSave={handlePartSave}
+        onPartSubmit={handlePartSubmit}
+      />
+    </NotificationContext.Provider>
   ) : null;
 };
 

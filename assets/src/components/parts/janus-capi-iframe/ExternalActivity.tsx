@@ -1,9 +1,13 @@
 /* eslint-disable react/prop-types */
-import { CapiVariable, CapiVariableTypes, coerceCapiValue } from '../../../adaptivity/capi';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
-import { parseBool } from '../../../utils/common';
 import debounce from 'lodash/debounce';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { CapiVariable, CapiVariableTypes, coerceCapiValue } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
+import { parseBool } from '../../../utils/common';
+import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 
 const fakeUserStorage: any = {};
 const getFromUserStorage = async (simId: string | number, key: string | number) =>
@@ -206,6 +210,75 @@ const ExternalActivity: React.FC<any> = (props) => {
     }
     initialize(pModel);
   }, [props]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        console.log(`${notificationType.toString()} notification handled [CAPI_IFRAME]`, payload);
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            {
+              writeCapiLog('CHECK REQUEST STARTED STATE!!!!', 3, {
+                payload,
+                simLife,
+              });
+              sendFormedResponse(
+                simLife.handshake,
+                {},
+                JanusCAPIRequestTypes.CHECK_START_RESPONSE,
+                {},
+              );
+            }
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            {
+              writeCapiLog('CHECK REQUEST COMPLETED STATE!!!!', 3, {
+                simLife,
+                payload,
+              });
+              // Need to reply to sim with type === 8
+              sendFormedResponse(
+                simLife.handshake,
+                {},
+                JanusCAPIRequestTypes.CHECK_COMPLETE_RESPONSE,
+                {},
+              );
+            }
+            break;
+          case NotificationType.STATE_CHANGED: {
+            writeCapiLog('MUTATE STATE!!!!', 3, {
+              simLife,
+              payload,
+            });
+          }
+          break;
+          case NotificationType.CONTEXT_CHANGED: {
+            writeCapiLog('CONTEXT CHANGED!!!!', 3, {
+              simLife,
+              payload,
+            });
+          }
+          break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   useEffect(() => {
     if (!ready) {

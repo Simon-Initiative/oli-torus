@@ -14,10 +14,16 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
+import { selectCurrentActivityId } from '../store/features/activities/slice';
+import {
+  selectLastCheckResults,
+  selectLastCheckTriggered,
+} from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
+import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -236,7 +242,37 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     };
   }, []);
 
+  const ref = useRef<any>(null);
+
+  const lastCheckTriggered = useSelector(selectLastCheckTriggered);
+  const lastCheckResults = useSelector(selectLastCheckResults);
+  const [checkInProgress, setCheckInProgress] = useState(false);
+
+  useEffect(() => {
+    if (!lastCheckTriggered || !ref.current) {
+      return;
+    }
+    setCheckInProgress(true);
+    ref.current.notify(NotificationType.CHECK_STARTED, { ts: lastCheckTriggered });
+  }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (checkInProgress && lastCheckResults) {
+      ref.current.notify(NotificationType.CHECK_COMPLETE, { results: lastCheckResults });
+      setCheckInProgress(false);
+    }
+  }, [checkInProgress, lastCheckResults]);
+
+  const currentActivityId = useSelector(selectCurrentActivityId);
+  useEffect(() => {
+    if (!currentActivityId || !ref.current) {
+      return;
+    }
+    ref.current.notify(NotificationType.CONTEXT_CHANGED, { currentActivityId, mode: 'VIEWER' });
+  }, [currentActivityId]);
+
   const elementProps = {
+    ref,
     graded: false,
     model,
     state,
