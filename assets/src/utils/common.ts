@@ -47,10 +47,11 @@ export const isNumber = (val: string | number): boolean =>
   typeof val === 'number' && !Number.isNaN(val);
 
 export const parseBoolean = (input: string | boolean | number): boolean =>
-  input === true ||
-  input === 1 ||
-  input.toString().toLowerCase() === 'true' ||
-  input.toString().toLowerCase() === '1';
+  input !== undefined &&
+  (input === true ||
+    input === 1 ||
+    input.toString().toLowerCase() === 'true' ||
+    input.toString().toLowerCase() === '1');
 
 export const isStringArray = (s: unknown): boolean =>
   typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';
@@ -112,4 +113,13 @@ export const parseArray = (val: unknown): unknown[] => {
   const err = new Error('not a valid array');
   // console.error(err, { val });
   throw err;
+};
+
+// parse value and return accurate boolean
+// returns boolean values for both numbers and strings
+export const parseBool = (val: any) => {
+  // cast value to number
+  const num: number = +val;
+  // have to ignore the false searchValue in 'replace'
+  return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
 };

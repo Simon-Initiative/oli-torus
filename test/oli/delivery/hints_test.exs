@@ -1,7 +1,7 @@
 defmodule Oli.Delivery.HintsTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Activities.Model.{Hint, Part}
 
   describe "processing hints" do
@@ -87,7 +87,10 @@ defmodule Oli.Delivery.HintsTest do
                  content: [%{"type" => "p", "children" => [%{"text" => "hint one"}]}]
                },
                true}} ==
-               Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
+               ActivityLifecycle.request_hint(
+                 activity_attempt.attempt_guid,
+                 part_attempt.attempt_guid
+               )
 
       assert {:ok,
               {%Hint{
@@ -95,7 +98,10 @@ defmodule Oli.Delivery.HintsTest do
                  content: [%{"type" => "p", "children" => [%{"text" => "hint two"}]}]
                },
                true}} ==
-               Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
+               ActivityLifecycle.request_hint(
+                 activity_attempt.attempt_guid,
+                 part_attempt.attempt_guid
+               )
 
       assert {:ok,
               {%Hint{
@@ -103,10 +109,16 @@ defmodule Oli.Delivery.HintsTest do
                  content: [%{"type" => "p", "children" => [%{"text" => "hint three"}]}]
                },
                false}} ==
-               Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
+               ActivityLifecycle.request_hint(
+                 activity_attempt.attempt_guid,
+                 part_attempt.attempt_guid
+               )
 
       assert {:error, {:no_more_hints}} ==
-               Attempts.request_hint(activity_attempt.attempt_guid, part_attempt.attempt_guid)
+               ActivityLifecycle.request_hint(
+                 activity_attempt.attempt_guid,
+                 part_attempt.attempt_guid
+               )
     end
 
     test "verify :not_found returned when guids are not found", %{
@@ -114,13 +126,13 @@ defmodule Oli.Delivery.HintsTest do
       activity_attempt1: activity_attempt
     } do
       assert {:error, {:not_found}} ==
-               Attempts.request_hint(activity_attempt.attempt_guid, "does not exist")
+               ActivityLifecycle.request_hint(activity_attempt.attempt_guid, "does not exist")
 
       assert {:error, {:not_found}} ==
-               Attempts.request_hint("does not exist", part_attempt.attempt_guid)
+               ActivityLifecycle.request_hint("does not exist", part_attempt.attempt_guid)
 
       assert {:error, {:not_found}} ==
-               Attempts.request_hint("does not exist", "does not exist")
+               ActivityLifecycle.request_hint("does not exist", "does not exist")
     end
   end
 end

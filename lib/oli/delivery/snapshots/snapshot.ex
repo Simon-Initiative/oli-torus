@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:activity, Oli.Resources.Resource)
     field(:part_id, :string)
-    belongs_to(:part_attempt, Oli.Delivery.Attempts.PartAttempt)
+    belongs_to(:part_attempt, Oli.Delivery.Attempts.Core.PartAttempt)
 
     # Which user and section
     belongs_to(:user, Oli.Accounts.User)

@@ -1,19 +1,19 @@
-defmodule Oli.Delivery.Attempts.ActivityAttempt do
+defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "activity_attempts" do
-    field :attempt_guid, :string
-    field :attempt_number, :integer
-    field :date_evaluated, :utc_datetime
-    field :score, :float
-    field :out_of, :float
-    field :transformed_model, :map
+    field(:attempt_guid, :string)
+    field(:attempt_number, :integer)
+    field(:date_evaluated, :utc_datetime)
+    field(:score, :float)
+    field(:out_of, :float)
+    field(:transformed_model, :map)
 
-    belongs_to :resource, Oli.Resources.Resource
-    belongs_to :revision, Oli.Resources.Revision
-    belongs_to :resource_attempt, Oli.Delivery.Attempts.ResourceAttempt
-    has_many :part_attempts, Oli.Delivery.Attempts.PartAttempt
+    belongs_to(:resource, Oli.Resources.Resource)
+    belongs_to(:revision, Oli.Resources.Revision)
+    belongs_to(:resource_attempt, Oli.Delivery.Attempts.Core.ResourceAttempt)
+    has_many(:part_attempts, Oli.Delivery.Attempts.Core.PartAttempt)
 
     timestamps(type: :utc_datetime)
   end

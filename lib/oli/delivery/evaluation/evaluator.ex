@@ -1,6 +1,5 @@
 defmodule Oli.Delivery.Evaluation.Evaluator do
-  alias Oli.Delivery.Evaluation.EvaluationContext
-  alias Oli.Delivery.Attempts.{Result}
+  alias Oli.Delivery.Evaluation.{EvaluationContext, Result}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
 

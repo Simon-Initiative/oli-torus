@@ -110,11 +110,11 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
     props.state.parts[0].response === null
       ? []
       : props.state.parts[0].response.input
-        .split(' ')
-        .reduce(
-          (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
-          [],
-        ),
+          .split(' ')
+          .reduce(
+            (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
+            [],
+          ),
   );
 
   const { stem, choices } = model;
@@ -205,31 +205,30 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
   const ungradedDetails = props.graded
     ? null
     : [
-      evaluationSummary,
-      <Hints
-        key="hints"
-        onClick={onRequestHint}
-        hints={hints}
-        hasMoreHints={hasMoreHints}
-        isEvaluated={isEvaluated}
-        context={writerContext}
-      />,
-    ];
+        evaluationSummary,
+        <Hints
+          key="hints"
+          onClick={onRequestHint}
+          hints={hints}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated}
+          context={writerContext}
+        />,
+      ];
 
-  const gradedDetails =
-    props.graded && props.progressState === 'in_review' ? [evaluationSummary] : null;
+  const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
 
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints =
-    props.graded && props.progressState === 'in_review'
+    props.graded && props.review
       ? [
-        <div key="reviewed" className=" text-info font-italic">
-          {correctnessIcon}
-          < span > Points: </span >
-          <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
-        </div >,
-      ]
+          <div key="reviewed" className=" text-info font-italic">
+            {correctnessIcon}
+            <span> Points: </span>
+            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+          </div>,
+        ]
       : null;
 
   const maybeSubmitButton = props.graded ? null : (

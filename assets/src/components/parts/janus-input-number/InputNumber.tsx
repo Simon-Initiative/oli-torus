@@ -1,11 +1,101 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 
 const InputNumber: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [inputNumberValue, setInputNumberValue] = useState<string | number>('');
+  const [enabled, setEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    // test undefined because 0 is falsey yet valid
+    const dValue = pModel.value !== undefined ? pModel.value : '';
+    setInputNumberValue(dValue);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'value',
+          type: CapiVariableTypes.NUMBER,
+          value: dValue,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+    const sValue = currentStateSnapshot[`stage.${id}.value`];
+    if (sValue !== undefined) {
+      setInputNumberValue(sValue);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   const {
     x,
@@ -13,16 +103,15 @@ const InputNumber: React.FC<any> = (props) => {
     z,
     width,
     height,
-    number = NaN,
     minValue,
     maxValue,
     customCssClass,
     unitsLabel,
     label,
     showLabel,
-    enabled = true,
     showIncrementArrows,
   } = model;
+
   const inputNumberDivStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -33,8 +122,7 @@ const InputNumber: React.FC<any> = (props) => {
   const inputNumberCompStyles: CSSProperties = {
     width,
   };
-  const [inputNumberValue, setInputNumberValue] = useState(number ? number : '');
-  const [inputNumberEnabled, setInputNumberEnabled] = useState(enabled);
+
   const debouncetime = 300;
   const debounceSave = useCallback(
     debounce((val) => {
@@ -44,38 +132,35 @@ const InputNumber: React.FC<any> = (props) => {
   );
 
   useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
-    }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
-
-  useEffect(() => {
-    //TODO handle value changes on state updates
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
   }, [state]);
 
-  const saveInputText = (val: string, isEnabled = true) => {
-    return;
-    //TODO props.onSavePart is not yet implemented.
-    /* props.onSavePart({
+  const handleStateChange = (data: CapiVariable[]) => {
+    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        if (stateVar.key === 'value') {
+          setInputNumberValue(stateVar.value as number);
+        }
+        if (stateVar.key === 'enabled') {
+          setEnabled(stateVar.value as boolean);
+        }
+      });
+    }
+  };
+
+  const saveInputText = (val: number, isEnabled = true) => {
+    props.onSave({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `stage.${id}.value`,
           key: 'value',
-          type: 2,
+          type: CapiVariableTypes.NUMBER,
           value: val,
         },
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: isEnabled,
-        },
       ],
-    }); */
+    });
   };
 
   const handleOnChange = (event: any) => {
@@ -97,28 +182,12 @@ const InputNumber: React.FC<any> = (props) => {
     }
   }, [inputNumberValue]);
 
-  useEffect(() => {
-    props.onReady({
-      id: `${id}`,
-      partResponses: [
-        {
-          id: `stage.${id}.value`,
-          key: 'value',
-          type: 2,
-          value: inputNumberValue || '',
-        },
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: inputNumberEnabled,
-        },
-      ],
-    });
-  }, []);
-
-  return (
-    <div data-janus-type={props.type} className="number-input" style={inputNumberDivStyles}>
+  return ready ? (
+    <div
+      data-janus-type={props.type}
+      className={`number-input ${cssClass}`}
+      style={inputNumberDivStyles}
+    >
       {showLabel && (
         <React.Fragment>
           <label htmlFor={id} className="inputNumberLabel">
@@ -129,7 +198,7 @@ const InputNumber: React.FC<any> = (props) => {
       )}
       <input
         type="number"
-        disabled={!inputNumberEnabled}
+        disabled={!enabled}
         onChange={handleOnChange}
         id={id}
         min={minValue}
@@ -140,7 +209,7 @@ const InputNumber: React.FC<any> = (props) => {
       />
       {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-input-number';

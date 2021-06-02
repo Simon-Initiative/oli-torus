@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.0 (2021-6-2)
+
 ### Enhancements
 
 - Add support for detecting problematic database queries
@@ -28,6 +30,7 @@
 - Fix problem with difficulty selecting and focusing in Firefox
 - Fix problem where containers with no children were rendered as pages in delivery
 - Fix some style inconsistencies in delivery and dark mode
+- Fix an issue where reordering a curriculum item could result in incorrect n-1 position
 
 ## 0.9.0 (2021-4-22)
 

@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Page.PageContext do
   """
 
   @enforce_keys [
+    :review_mode,
     :summary,
     :page,
     :progress_state,
@@ -15,6 +16,7 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts
   ]
   defstruct [
+    :review_mode,
     :summary,
     :page,
     :progress_state,
@@ -26,67 +28,92 @@ defmodule Oli.Delivery.Page.PageContext do
     :latest_attempts
   ]
 
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.PageLifecycle.{AttemptState, HistorySummary}
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Delivery.Page.PageContext
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Resources.ResourceType
 
   @doc """
-  Creates the page context required to render a page in delivery model, based
-  off of the section context id, the slug of the page to render, and an
-  optional id of the parent container that the page exists within. If not
-  specified, the container is assumed to be the root resource of the publication.
+  Creates the page context required to render a page for reviewing a historical
+  attempt.
 
   The key task performed here is the resolution of all referenced objectives
   and activities that may be present in the content of the page. This
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_page_context(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
-  def create_page_context(section_slug, page_slug, user) do
-    # resolve the page revision per section
-    page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
+  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
+  def create_for_review(section_slug, attempt_guid, user) do
+    {progress_state, resource_attempts, latest_attempts, activities, page_revision} =
+      case PageLifecycle.review(attempt_guid) do
+        {:ok,
+         {state,
+          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
+          page_revision = Oli.Resources.get_revision!(resource_attempt.revision_id)
 
-    # track access to this resource
-    Attempts.track_access(page_revision.resource_id, section_slug, user.id)
+          {state, [resource_attempt], latest_attempts,
+           ActivityContext.create_context_map(page_revision.graded, latest_attempts),
+           page_revision}
 
-    create_page_context(section_slug, page_slug, nil, user)
+        {:error, _} ->
+          {:error, [], %{}}
+      end
+
+    {:ok, summary} = Summary.get_summary(section_slug, user)
+
+    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
+
+    %PageContext{
+      review_mode: true,
+      summary: summary,
+      page: page_revision,
+      progress_state: progress_state,
+      resource_attempts: resource_attempts,
+      activities: activities,
+      objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
+      previous_page: previous,
+      next_page: next,
+      latest_attempts: latest_attempts
+    }
   end
 
   @doc """
-  Creates the page context required to render a page in review model, based
-  off of the section context id, the slug of the page to render, and an
-  optional id of the parent container that the page exists within. If not
-  specified, the container is assumed to be the root resource of the publication.
+  Creates the page context required to render a page for visiting a current or new
+  attempt.
 
   The key task performed here is the resolution of all referenced objectives
   and activities that may be present in the content of the page. This
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_page_context(String.t(), String.t(), String.t(), Oli.Accounts.User) ::
+  @spec create_for_visit(String.t(), String.t(), Oli.Accounts.User) ::
           %PageContext{}
-  def create_page_context(section_slug, page_slug, attempt_guid, user) do
+  def create_for_visit(section_slug, page_slug, user) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
+
+    Attempts.track_access(page_revision.resource_id, section_slug, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     {progress_state, resource_attempts, latest_attempts, activities} =
-      case Attempts.determine_resource_attempt_state(
+      case PageLifecycle.visit(
              page_revision,
              section_slug,
-             attempt_guid,
              user.id,
              activity_provider
            ) do
-        {:ok, {:not_started, {_, resource_attempts}}} ->
+        {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
           {:not_started, resource_attempts, %{}, nil}
 
-        {:ok, {state, {resource_attempt, latest_attempts}}} ->
+        {:ok,
+         {state,
+          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
           {state, [resource_attempt], latest_attempts,
            ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
 
@@ -109,6 +136,7 @@ defmodule Oli.Delivery.Page.PageContext do
     {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
 
     %PageContext{
+      review_mode: false,
       summary: summary,
       page: page_revision,
       progress_state: progress_state,

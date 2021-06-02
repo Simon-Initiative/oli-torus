@@ -1,9 +1,11 @@
-
-import { Part, Transformation, ActivityModelSchema } from '../types';
+import { ActivityModelSchema, Part, PartComponentDefinition, Transformation } from '../types';
 
 export interface AdaptiveModelSchema extends ActivityModelSchema {
   // eslint-disable-next-line
-  content: Object;
+  content: {
+    custom?: Record<string, any>;
+    partsLayout?: PartComponentDefinition[];
+  };
   authoring: {
     parts: Part[];
     transformations: Transformation[];
