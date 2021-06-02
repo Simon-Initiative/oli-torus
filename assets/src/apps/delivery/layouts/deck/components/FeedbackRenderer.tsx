@@ -4,15 +4,23 @@ import PartsLayoutRenderer from '../../../components/PartsLayoutRenderer';
 
 interface FeedbackRendererProps {
   feedbacks: any[];
+  snapshot?: any;
 }
 
-const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks }) => {
+const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot = {} }) => {
   const combinedParts = feedbacks.reduce((collect: any[], feedback) => {
     collect.push(...feedback.partsLayout);
     return collect;
   }, []);
-  // TODO: I don't think they need event handlers, but they *DO* need state
-  return <PartsLayoutRenderer parts={combinedParts} />;
+
+  const handlePartInit = async (partId: string) => {
+    /* console.log('FEEDBACK part init', partId); */
+    return { snapshot };
+  };
+
+  // TODO: other handlers for parts, "advanced" things like tracking part responses within feedback??
+
+  return <PartsLayoutRenderer parts={combinedParts} onPartInit={handlePartInit} />;
 };
 
 export default FeedbackRenderer;

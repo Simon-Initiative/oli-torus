@@ -10,6 +10,7 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentFeedbacks,
@@ -28,7 +29,7 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectIsEnd } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTree, selectIsEnd } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
@@ -97,6 +98,7 @@ const DeckLayoutFooter: React.FC = () => {
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
@@ -110,6 +112,24 @@ const DeckLayoutFooter: React.FC = () => {
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
+
+  // TODO: duplicated in DeckLayoutView factor out into common or pass this as props?
+  const getLocalizedStateSnapshot = () => {
+    const snapshot = getEnvState(defaultGlobalEnv);
+    const finalState: any = { ...snapshot };
+    const allActivityIds = (currentActivityTree || []).map((a) => a.id);
+    allActivityIds.forEach((activityId: string) => {
+      const activityState = Object.keys(snapshot)
+        .filter((key) => key.indexOf(`${activityId}|`) === 0)
+        .reduce((collect: any, key) => {
+          const localizedKey = key.replace(`${activityId}|`, '');
+          collect[localizedKey] = snapshot[key];
+          return collect;
+        }, {});
+      Object.assign(finalState, activityState);
+    });
+    return finalState;
+  };
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -380,7 +400,10 @@ const DeckLayoutFooter: React.FC = () => {
             </div>
             <style type="text/css" aria-hidden="true" />
             <div className="content">
-              <FeedbackRenderer feedbacks={currentFeedbacks} />
+              <FeedbackRenderer
+                feedbacks={currentFeedbacks}
+                snapshot={getLocalizedStateSnapshot()}
+              />
             </div>
             {/* <button className="showSolnBtn showSolution displayNone">
                             <div className="ellipsis">Show solution</div>
