@@ -279,10 +279,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       },
       {},
     );
-    const result = await dispatch(
-      savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-    );
-    return { result, snapshot: getLocalizedStateSnapshot() };
+
+    if (response?.input?.length) {
+      const result = await dispatch(
+        savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+      );
+      return { result, snapshot: getLocalizedStateSnapshot() };
+    } else {
+      return { result: null, snapshot: getLocalizedStateSnapshot() };
+    }
   };
 
   const handleActivitySubmitPart = async (

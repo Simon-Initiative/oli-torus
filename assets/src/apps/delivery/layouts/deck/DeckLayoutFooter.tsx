@@ -7,6 +7,11 @@ import {
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+} from '../../../../adaptivity/scripting';
+import {
   selectCurrentFeedbacks,
   selectIsGoodFeedback,
   selectLastCheckResults,
@@ -145,11 +150,29 @@ const DeckLayoutFooter: React.FC = () => {
     // always process mutateStates
     actionsByType.mutateState.forEach((action: any) => {
       // TODO: mutate state
+      actionsByType[action.type].push(action);
     });
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
+    if (actionsByType.mutateState) {
+      const mutationsModified = actionsByType.mutateState.map((op: any) => {
+        //TODO: Need to find the actual owner of the target. This needs to be handle in the same way
+        // it is handled in store/feature/groups/actions/deck.ts line number - 107
+        const ownerId =
+          op.params.target.indexOf('stage') === 0
+            ? `${currentActivityId}|${op.params.target}`
+            : op.params.target;
+        const globalOp: ApplyStateOperation = {
+          target: ownerId,
+          operator: op.params.operator,
+          value: op.params.value,
+        };
+        return globalOp;
+      });
+      bulkApplyState(mutationsModified, defaultGlobalEnv);
+    }
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
@@ -164,7 +187,7 @@ const DeckLayoutFooter: React.FC = () => {
         dispatch(setNextActivityId({ activityId: navTarget }));
       }
     } else {
-      if (isCorrect && hasNavigation) {
+      if (hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
         switch (navTarget) {
