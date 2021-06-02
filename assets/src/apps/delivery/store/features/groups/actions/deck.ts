@@ -9,10 +9,10 @@ import {
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import {
-  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
@@ -21,7 +21,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { loadActivityAttemptState } from '../../attempt/slice';
+import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
   selectPreviewMode,
@@ -115,13 +115,18 @@ export const initializeActivity = createAsyncThunk(
     });
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
-    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
-    const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
-    const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
-    // TODO: more state
-    const sessionState = {
-      [`session.visits.${currentSequenceId}`]: currentVisitCount + 1,
-    };
+    // now that the scripting env should be up to date, need to update attempt state in redux and server
+    console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] });
+    const currentState = getEnvState(defaultGlobalEnv);
+    const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
+      if (key.indexOf('session.') === 0) {
+        collect[key] = currentState[key];
+      }
+      return collect;
+    }, {});
+
+    // optimistically write to redux
+    thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
     await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState, isPreviewMode);
   },
