@@ -43,20 +43,18 @@ export class Evaluator {
       toPrint = '[' + something.join(', ') + ']';
     }
 
-    ctx.appendOutput(toPrint);
+    const spacer = something === '\n' ? '' : ' ';
+
+    ctx.appendOutput(toPrint + spacer);
   }
 
   static myprint(ctx: EvalContext, ...args: any): void {
     for (let i = 0; i < args.length; i += 1) {
-      // add space between arguments
-      if (i > 0) {
-        this.printOne(' ', ctx)
-      }
       this.printOne(args[i], ctx);
     }
 
     const lastArg = args[args.length - 1];
-    const hasBreak = lastArg instanceof SimpleImageImpl;
+    const hasBreak = lastArg instanceof SimpleImageImpl || lastArg === '\n';
     if (!hasBreak) {
       this.printOne('\n', ctx);
     }
