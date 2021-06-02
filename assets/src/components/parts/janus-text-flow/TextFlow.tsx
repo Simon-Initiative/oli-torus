@@ -23,6 +23,9 @@ export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSi
     // PMP-526
     style.backgroundColor = '';
   }
+  if(node.tag == 'p' && child.tag == 'span' && child.style.color == '#000000'){
+    style.color = 'inherit';
+  }
   if (!(child.style && child.style.fontSize) && fontSize) {
     style.fontSize = `${fontSize}px`;
   }
