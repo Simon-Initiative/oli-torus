@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-### Bug fixes
+### Enhancements 
 
-- Image coding: remove extra space at end of printed lines (problem for regexp grading)
+- Image coding: disable submit button before code is run
 
 ## 0.10.0 (2021-6-2)
 
