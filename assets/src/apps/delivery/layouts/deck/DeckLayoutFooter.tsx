@@ -7,6 +7,11 @@ import {
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+} from '../../../../adaptivity/scripting';
+import {
   selectCurrentFeedbacks,
   selectIsGoodFeedback,
   selectLastCheckResults,
@@ -145,11 +150,26 @@ const DeckLayoutFooter: React.FC = () => {
     // always process mutateStates
     actionsByType.mutateState.forEach((action: any) => {
       // TODO: mutate state
+      actionsByType[action.type].push(action);
     });
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
+    if (actionsByType.mutateState) {
+      const mutationsModified = actionsByType.mutateState.map((op: any) => {
+        const globalOp: ApplyStateOperation = {
+          target:
+            op.params.target.indexOf('stage') === 0
+              ? `${currentActivityId}|${op.params.target}`
+              : op.params.target,
+          operator: op.params.operator,
+          value: op.params.value,
+        };
+        return globalOp;
+      });
+      bulkApplyState(mutationsModified, defaultGlobalEnv);
+    }
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
