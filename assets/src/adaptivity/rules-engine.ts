@@ -87,7 +87,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         );
       }
       if (typeof ogValue === 'string') {
-        modifiedValue = evaluateValueExpression(ogValue, env);
+        modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
       }
       condition.value = modifiedValue;
     });

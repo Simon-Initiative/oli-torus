@@ -162,10 +162,13 @@ const DeckLayoutFooter: React.FC = () => {
       const mutationsModified = actionsByType.mutateState.map((op: any) => {
         //TODO: Need to find the actual owner of the target. This needs to be handle in the same way
         // it is handled in store/feature/groups/actions/deck.ts line number - 107
-        const ownerId =
-          op.params.target.indexOf('stage') === 0
-            ? `${currentActivityId}|${op.params.target}`
-            : op.params.target;
+        const ownerActivity = currentActivityTree?.find(
+          (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
+        );
+        const ownerId = ownerActivity
+          ? `${ownerActivity}|${op.params.target}`
+          : `${currentActivityId}|${op.params.target}`;
+
         const globalOp: ApplyStateOperation = {
           target: ownerId,
           operator: op.params.operator,
