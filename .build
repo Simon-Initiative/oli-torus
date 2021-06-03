@@ -138,11 +138,13 @@ Oli.Help.Dispatcher.html
 Oli.Help.HelpContent.html
 Oli.Help.Providers.EmailHelp.html
 Oli.Help.Providers.FreshdeskHelp.html
+Oli.Ingest.RewireLinks.html
 Oli.Institutions.Institution.html
 Oli.Institutions.PendingRegistration.html
 Oli.Institutions.html
 Oli.Interop.Ingest.html
 Oli.Interop.LegacySupport.html
+Oli.Interop.Scrub.html
 Oli.Lti.LTI_AGS.html
 Oli.Lti.LTI_NRPS.html
 Oli.Lti.LineItem.html
@@ -420,8 +422,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-3d498c6773.js
-dist/sidebar_items-7dd7bd8e89.js
+dist/search_items-3389d3a097.js
+dist/sidebar_items-0ebe7c9741.js
 index.html
 license.html
 readme.html
