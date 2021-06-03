@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Enhancements 
+
+- Image coding: disable submit button before code is run
+
 ### Bug fixes
 
 - Image coding: remove extra space at end of printed lines (problem for regexp grading)

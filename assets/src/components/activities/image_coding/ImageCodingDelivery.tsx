@@ -60,6 +60,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   // runtime evaluation state:
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
+  const [ranCode, setRanCode] = useState(false);
   let currentOutput = output;
 
   const isEvaluated = attemptState.score !== null;
@@ -159,6 +160,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
       // Do we want reset to reload starter code, discarding changes?
       // setInput(model.starterCode);
       clearOutput();
+      setRanCode(false);
     });
   };
 
@@ -197,6 +199,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     if (e != null) {
       setError(e.message);
     }
+
+    setRanCode(true);
   };
 
   const usesImages = () => {
@@ -302,7 +306,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     model.isExample || props.graded ? null : (
       <button
         className="btn btn-primary mt-2 float-right"
-        disabled={isEvaluated}
+        disabled={isEvaluated || !ranCode}
         onClick={onSubmit}
       >
         Submit
