@@ -14,6 +14,7 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -29,7 +30,7 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree, selectIsEnd } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
@@ -57,7 +58,8 @@ const NextButton: React.FC<NextButton> = ({
   isFeedbackIconDisplayed,
   showCheckBtn,
 }) => {
-  const isEnd = useSelector(selectIsEnd);
+  const isEnd = useSelector(selectLessonEnd);
+
   const showDisabled = isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';

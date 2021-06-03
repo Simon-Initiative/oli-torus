@@ -17,12 +17,6 @@ export const selectSequence = createSelector(selectState, (state: GroupsState) =
   return currentGroup ? currentGroup.children : [];
 });
 
-export const selectIsEnd = createSelector(selectSequence, (sequence) => {
-  // check where we are currently
-  // vs sequence end
-  return false;
-});
-
 export const selectCurrentActivityTree = createSelector(
   [selectSequence, selectAllActivities, selectCurrentActivityId],
   (sequence, activities, currentActivityId) => {

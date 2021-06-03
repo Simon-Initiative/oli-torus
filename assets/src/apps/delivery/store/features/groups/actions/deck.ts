@@ -21,6 +21,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
+import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -207,7 +208,7 @@ export const navigateToNextActivity = createAsyncThunk(
       }
       if (!nextSequenceEntry) {
         // If is end of sequence, return and set isEnd to truthy
-        // thunkApi.dispatch(setIsEnd({ isEnd: true }));
+        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
         return;
       }
     } else {

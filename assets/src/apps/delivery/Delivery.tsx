@@ -4,8 +4,10 @@ import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
+import LessonFinishedDialogProps from './layouts/deck/LessonFinishedDialog';
 import { LayoutProps } from './layouts/layouts';
 import store from './store';
+import { selectLessonEnd } from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
 
@@ -65,16 +67,20 @@ const Delivery: React.FC<DeliveryProps> = ({
   if (content?.custom?.viewerSkin) {
     parentDivClasses.push(`skin-${content?.custom?.viewerSkin}`);
   }
-
+  const dialogImageUrl = content?.custom?.logoutPanelImageURL;
+  const dialogMessage = content?.custom?.logoutMessage;
   // this is something SS does...
   const { width: windowWidth } = useWindowSize();
-
+  const isLessonEnded = useSelector(selectLessonEnd);
   return (
     <div className={parentDivClasses.join(' ')}>
       {previewMode && <PreviewTools model={content?.model} />}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
+      {isLessonEnded ? (
+        <LessonFinishedDialogProps imageUrl={dialogImageUrl} message={dialogMessage} />
+      ) : null}
     </div>
   );
 };
