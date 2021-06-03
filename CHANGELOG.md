@@ -2,13 +2,14 @@
 
 ## Unreleased
 
-### Enhancements 
+### Enhancements
 
 - Image coding: disable submit button before code is run
 
 ### Bug fixes
 
 - Image coding: remove extra space at end of printed lines (problem for regexp grading)
+- Fix issues related to exporting DataShop events for courses that contain hierarchies
 
 ## 0.10.0 (2021-6-2)
 
@@ -39,7 +40,6 @@
 - Fix problem where containers with no children were rendered as pages in delivery
 - Fix some style inconsistencies in delivery and dark mode
 - Fix an issue where reordering a curriculum item could result in incorrect n-1 position
-- Fix issues related to exporting DataShop events for courses that contain hierarchies
 
 ## 0.9.0 (2021-4-22)
 
