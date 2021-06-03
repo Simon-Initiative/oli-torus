@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- Image coding: remove extra space at end of printed lines (problem for regexp grading)
+
 ## 0.10.0 (2021-6-2)
 
 ### Enhancements
