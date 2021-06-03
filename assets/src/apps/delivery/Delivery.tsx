@@ -8,6 +8,8 @@ import { LayoutProps } from './layouts/layouts';
 import store from './store';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
+import { selectRestartLesson } from './store/features/adaptivity/slice';
+import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 
 export interface DeliveryProps {
   resourceId: number;
@@ -38,12 +40,17 @@ const Delivery: React.FC<DeliveryProps> = ({
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
+  const restartLesson = useSelector(selectRestartLesson);
   let LayoutView: React.FC<LayoutProps> = () => <div>Unknown Layout</div>;
   if (currentGroup?.layout === LayoutType.DECK) {
     LayoutView = DeckLayoutView;
   }
 
   useEffect(() => {
+    setInitialPageState();
+  }, []);
+
+  const setInitialPageState = () => {
     dispatch(
       loadInitialPageState({
         userId,
@@ -59,8 +66,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityTypes,
       }),
     );
-  }, []);
-
+  }
   const parentDivClasses: string[] = [];
   if (content?.custom?.viewerSkin) {
     parentDivClasses.push(`skin-${content?.custom?.viewerSkin}`);
@@ -75,6 +81,9 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
+      {restartLesson ? (
+            <RestartLessonDialog onRestart={setInitialPageState} />
+        ) : null}
     </div>
   );
 };
