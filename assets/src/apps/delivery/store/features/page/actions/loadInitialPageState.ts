@@ -40,6 +40,7 @@ export const loadInitialPageState = createAsyncThunk(
       sessionState['session.currentQuestionScore'] = 0;
       sessionState['session.timeStartQuestion'] = 0;
       sessionState['session.attemptNumber'] = 0;
+      sessionState['session.timeOnQuestion'] = 0;
       await writePageAttemptState(
         params.sectionSlug,
         resourceAttemptGuid,

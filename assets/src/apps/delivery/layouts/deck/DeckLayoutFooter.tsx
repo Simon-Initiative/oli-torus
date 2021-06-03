@@ -14,6 +14,7 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -29,7 +30,7 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree, selectIsEnd } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
@@ -57,7 +58,8 @@ const NextButton: React.FC<NextButton> = ({
   isFeedbackIconDisplayed,
   showCheckBtn,
 }) => {
-  const isEnd = useSelector(selectIsEnd);
+  const isEnd = useSelector(selectLessonEnd);
+
   const showDisabled = isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
@@ -162,10 +164,13 @@ const DeckLayoutFooter: React.FC = () => {
       const mutationsModified = actionsByType.mutateState.map((op: any) => {
         //TODO: Need to find the actual owner of the target. This needs to be handle in the same way
         // it is handled in store/feature/groups/actions/deck.ts line number - 107
-        const ownerId =
-          op.params.target.indexOf('stage') === 0
-            ? `${currentActivityId}|${op.params.target}`
-            : op.params.target;
+        const ownerActivity = currentActivityTree?.find(
+          (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
+        );
+        const ownerId = ownerActivity
+          ? `${ownerActivity}|${op.params.target}`
+          : `${currentActivityId}|${op.params.target}`;
+
         const globalOp: ApplyStateOperation = {
           target: ownerId,
           operator: op.params.operator,

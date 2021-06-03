@@ -21,6 +21,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
+import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -54,6 +55,11 @@ export const initializeActivity = createAsyncThunk(
       operator: '+',
       value: 1,
     };
+    const timeOnQuestion: ApplyStateOperation = {
+      target: 'session.timeOnQuestion',
+      operator: '=',
+      value: 0,
+    };
     const timeStartOp: ApplyStateOperation = {
       target: 'session.timeStartQuestion',
       operator: '=',
@@ -64,7 +70,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 1; // TODO: increment the server value
+    const currentAttempNumber = 0; // TODO: increment the server value
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
@@ -88,6 +94,7 @@ export const initializeActivity = createAsyncThunk(
     const sessionOps = [
       visitOperation,
       timeStartOp,
+      timeOnQuestion,
       timeExceededOp,
       attemptNumberOp,
       targettedAttemptNumberOp,
@@ -201,7 +208,7 @@ export const navigateToNextActivity = createAsyncThunk(
       }
       if (!nextSequenceEntry) {
         // If is end of sequence, return and set isEnd to truthy
-        // thunkApi.dispatch(setIsEnd({ isEnd: true }));
+        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
         return;
       }
     } else {

@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { check } from '../../../../../../adaptivity/rules-engine';
 import { defaultGlobalEnv, getEnvState } from '../../../../../../adaptivity/scripting';
-import { selectAll, selectExtrinsicState } from '../../attempt/slice';
+import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
 import { selectPreviewMode } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
@@ -21,7 +21,25 @@ export const triggerCheck = createAsyncThunk(
 
     // reset timeStartQuestion (per attempt timer, maybe should wait til resolved)
     // increase attempt number
+    const extrinsicState = selectExtrinsicState(rootState);
+    const modifiedExtrinsicState = [extrinsicState]?.reduce((collect: any, entry: any) => {
+      Object.keys(entry).forEach((key) => {
+        collect[key] = extrinsicState[key];
+      });
+      return collect;
+    }, {});
+    const timeStartQuestion = modifiedExtrinsicState['session.timeStartQuestion'];
+    const timeOnQuestion = Date.now() - timeStartQuestion;
+    modifiedExtrinsicState['session.timeOnQuestion'] = timeOnQuestion;
 
+    const currentAttemptNumber = modifiedExtrinsicState['session.attemptNumber'];
+    modifiedExtrinsicState['session.attemptNumber'] = currentAttemptNumber + 1;
+    modifiedExtrinsicState[`${currentActivity.id}|session.attemptNumber`] =
+      currentAttemptNumber + 1;
+
+    await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
+
+    //update the store with the latest changes
     await dispatch(setLastCheckTriggered({ timestamp: Date.now() }));
 
     // this needs to be the attempt state
@@ -49,9 +67,7 @@ export const triggerCheck = createAsyncThunk(
         }
       });
     });
-    // add in extrinsic state (lesson level)
-    const extrinsicState = selectExtrinsicState(rootState);
-    const stateSnapshot = { ...allResponseState, ...extrinsicState };
+    const stateSnapshot = { ...allResponseState, ...modifiedExtrinsicState };
 
     let checkResult;
     // if preview mode, gather up all state and rules from redux
