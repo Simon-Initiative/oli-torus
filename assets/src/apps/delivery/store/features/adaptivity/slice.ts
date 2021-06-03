@@ -11,6 +11,7 @@ export interface AdaptivityState {
   lessonEnded?: boolean;
   lastMutateTriggered: any; // timestamp
   lastMutateChanges: any;
+  initPhaseComplete: any; // timestamp
 }
 
 const initialState: AdaptivityState = {
@@ -23,6 +24,7 @@ const initialState: AdaptivityState = {
   lessonEnded: false,
   lastMutateTriggered: null,
   lastMutateChanges: null,
+  initPhaseComplete: null,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -54,6 +56,9 @@ const slice: Slice<AdaptivityState> = createSlice({
       state.lastMutateTriggered = Date.now();
       state.lastMutateChanges = action.payload.changes;
     },
+    setInitPhaseComplete(state) {
+      state.initPhaseComplete = Date.now();
+    },
   },
 });
 
@@ -68,6 +73,7 @@ export const {
   setRestartLesson,
   setLessonEnd,
   setMutationTriggered,
+  setInitPhaseComplete,
 } = slice.actions;
 
 // selectors
@@ -110,6 +116,11 @@ export const selectLastMutateTriggered = createSelector(
 export const selectLastMutateChanges = createSelector(
   selectState,
   (state: AdaptivityState) => state.lastMutateChanges,
+);
+
+export const selectInitPhaseComplete = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.initPhaseComplete,
 );
 
 export default slice.reducer;

@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getLocalizedStateSnapshot } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import { selectRestartLesson } from '../../store/features/adaptivity/slice';
+import { selectRestartLesson, setInitPhaseComplete } from '../../store/features/adaptivity/slice';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -222,6 +222,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           mode: 'VIEWER',
         },
       });
+      dispatch(setInitPhaseComplete(true));
     }
     return sharedActivityPromise.promise;
   };

@@ -19,6 +19,7 @@ import { useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
+  selectInitPhaseComplete,
   selectLastCheckResults,
   selectLastCheckTriggered,
   selectLastMutateTriggered,
@@ -270,6 +271,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   // maybe it will just be the same and never actually change.
   // TODO: check if it needs to come from somewhere higher
   const currentActivityId = useSelector(selectCurrentActivityId);
+  const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const notifyContextChanged = async () => {
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
@@ -283,11 +285,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     });
   };
   useEffect(() => {
-    if (!currentActivityId || !ref.current) {
+    if (!initPhaseComplete || !ref.current) {
       return;
     }
     notifyContextChanged();
-  }, [currentActivityId]);
+  }, [initPhaseComplete]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
   const notifyStateMutation = async () => {
