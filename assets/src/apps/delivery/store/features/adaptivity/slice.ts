@@ -8,6 +8,7 @@ export interface AdaptivityState {
   lastCheckTriggered: any; // timestamp
   lastCheckResults: any[];
   restartLesson: boolean;
+  lessonEnded?: boolean;
 }
 
 const initialState: AdaptivityState = {
@@ -17,6 +18,7 @@ const initialState: AdaptivityState = {
   lastCheckTriggered: null,
   lastCheckResults: [],
   restartLesson: false,
+  lessonEnded: false,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -41,6 +43,9 @@ const slice: Slice<AdaptivityState> = createSlice({
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;
     },
+    setLessonEnd(state, action: PayloadAction<{ lessonEnded: boolean }>) {
+      state.lessonEnded = action.payload.lessonEnded;
+    },
   },
 });
 
@@ -53,6 +58,7 @@ export const {
   setLastCheckTriggered,
   setLastCheckResults,
   setRestartLesson,
+  setLessonEnd,
 } = slice.actions;
 
 // selectors
@@ -72,7 +78,11 @@ export const selectNextActivityId = createSelector(
 );
 export const selectRestartLesson = createSelector(
   selectState,
-  (state: AdaptivityState) => state.restartLesson
+  (state: AdaptivityState) => state.restartLesson,
+);
+export const selectLessonEnd = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.lessonEnded,
 );
 export const selectLastCheckTriggered = createSelector(
   selectState,

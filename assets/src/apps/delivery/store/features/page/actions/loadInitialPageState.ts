@@ -35,6 +35,12 @@ export const loadInitialPageState = createAsyncThunk(
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
         return acc;
       }, {});
+      // init variables so add ops can function
+      sessionState['session.tutorialScore'] = 0;
+      sessionState['session.currentQuestionScore'] = 0;
+      sessionState['session.timeStartQuestion'] = 0;
+      sessionState['session.attemptNumber'] = 0;
+      sessionState['session.timeOnQuestion'] = 0;
       await writePageAttemptState(
         params.sectionSlug,
         resourceAttemptGuid,

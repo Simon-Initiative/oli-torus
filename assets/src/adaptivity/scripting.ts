@@ -175,6 +175,25 @@ export const removeStateValues = (env: Environment, keys: string[]): void => {
   env.remove(keys);
 };
 
+export const getLocalizedStateSnapshot = (
+  activityIds: string[],
+  env: Environment = defaultGlobalEnv,
+) => {
+  const snapshot = getEnvState(env);
+  const finalState: any = { ...snapshot };
+  activityIds.forEach((activityId: string) => {
+    const activityState = Object.keys(snapshot)
+      .filter((key) => key.indexOf(`${activityId}|`) === 0)
+      .reduce((collect: any, key) => {
+        const localizedKey = key.replace(`${activityId}|`, '');
+        collect[localizedKey] = snapshot[key];
+        return collect;
+      }, {});
+    Object.assign(finalState, activityState);
+  });
+  return finalState;
+};
+
 // for use by client side scripting evalution
 export const defaultGlobalEnv = new Environment();
 (window as any)['defaultGlobalEnv'] = defaultGlobalEnv;

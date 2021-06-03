@@ -38,8 +38,15 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       NotificationType.STATE_CHANGED,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
-      const handler = (e) => {
+      const handler = (e: any) => {
         console.log(`${notificationType.toString()} notification handled [AD]`, e);
+        // here we need to check when the context changes (current activityId) if we are a layer
+        // (should only be possible as a layer, because other activities should be unloaded and loaded fresh)
+        // layers need to re-init the parts, BUT not re-render them (this is mostly for capi sims)
+        // because of the init promise is already resolved with the state snapshot it had the first time
+        // the layer rendered, the parts can't simply call init again or they will not get the latest changes
+        // still we just currently push notifications straight through, CONTEXT_CHANGED should have the latest snapshot
+
         pusher.emit(notificationType.toString(), e);
       };
       const unsub = subscribeToNotification(

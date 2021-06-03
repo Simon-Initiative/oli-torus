@@ -30,7 +30,7 @@ const WebComponent: React.FC<any> = (props) => {
       NotificationType.STATE_CHANGED,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
-      const handler = (e) => {
+      const handler = (e: any) => {
         console.log(`${notificationType.toString()} notification handled [PC]`, e);
         const el = ref.current;
         if (el) {

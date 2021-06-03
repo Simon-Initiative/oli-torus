@@ -3,9 +3,10 @@ import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../../adaptivity/scripting';
+import { getLocalizedStateSnapshot } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
+import { selectRestartLesson } from '../../store/features/adaptivity/slice';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -15,7 +16,6 @@ import {
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { selectRestartLesson } from '../../store/features/adaptivity/slice';
 
 // TODO: need to factor this into a "legacy" flagged behavior
 const InjectedStyles: React.FC = () => {
@@ -181,23 +181,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     document.body.classList.add(...pageClasses);
   }, [pageClasses]);
 
-  const getLocalizedStateSnapshot = () => {
-    const snapshot = getEnvState(defaultGlobalEnv);
-    const finalState: any = { ...snapshot };
-    const allActivityIds = (currentActivityTree || []).map((a) => a.id);
-    allActivityIds.forEach((activityId: string) => {
-      const activityState = Object.keys(snapshot)
-        .filter((key) => key.indexOf(`${activityId}|`) === 0)
-        .reduce((collect: any, key) => {
-          const localizedKey = key.replace(`${activityId}|`, '');
-          collect[localizedKey] = snapshot[key];
-          return collect;
-        }, {});
-      Object.assign(finalState, activityState);
-    });
-    return finalState;
-  };
-
   const initCurrentActivity = useCallback(async () => {
     if (!currentActivityTree) {
       return;
@@ -229,8 +212,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         AUTHOR: 'AUTHOR',
         REPORT: 'REPORT',
       }; */
+      const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
-        snapshot: getLocalizedStateSnapshot(),
+        snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
           mode: 'VIEWER',
@@ -280,10 +264,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       },
       {},
     );
-    const result = await dispatch(
-      savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-    );
-    return { result, snapshot: getLocalizedStateSnapshot() };
+
+    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+    if (response?.input?.length) {
+      const result = await dispatch(
+        savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+      );
+      return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    } else {
+      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    }
   };
 
   const handleActivitySubmitPart = async (
@@ -303,6 +293,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
     return { result, snapshot };
   };
+
+  const handleActivityRequestLatestState = useCallback(async () => {
+    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+    return { snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+  }, [currentActivityTree]);
 
   const renderActivities = useCallback(() => {
     if (!currentActivityTree || !currentActivityTree.length) {
@@ -373,6 +368,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySavePart={handleActivitySavePart}
           onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
+          onRequestLatestState={handleActivityRequestLatestState}
         />
       );
     });

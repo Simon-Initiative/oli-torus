@@ -2,12 +2,19 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+  getLocalizedStateSnapshot,
+} from '../../../../adaptivity/scripting';
+import {
   selectCurrentActivityContent,
   selectCurrentActivityId,
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -23,7 +30,7 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectIsEnd } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
@@ -51,7 +58,8 @@ const NextButton: React.FC<NextButton> = ({
   isFeedbackIconDisplayed,
   showCheckBtn,
 }) => {
-  const isEnd = useSelector(selectIsEnd);
+  const isEnd = useSelector(selectLessonEnd);
+
   const showDisabled = isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
@@ -92,6 +100,7 @@ const DeckLayoutFooter: React.FC = () => {
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
@@ -145,11 +154,32 @@ const DeckLayoutFooter: React.FC = () => {
     // always process mutateStates
     actionsByType.mutateState.forEach((action: any) => {
       // TODO: mutate state
+      actionsByType[action.type].push(action);
     });
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
+    if (actionsByType.mutateState) {
+      const mutationsModified = actionsByType.mutateState.map((op: any) => {
+        //TODO: Need to find the actual owner of the target. This needs to be handle in the same way
+        // it is handled in store/feature/groups/actions/deck.ts line number - 107
+        const ownerActivity = currentActivityTree?.find(
+          (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
+        );
+        const ownerId = ownerActivity
+          ? `${ownerActivity}|${op.params.target}`
+          : `${currentActivityId}|${op.params.target}`;
+
+        const globalOp: ApplyStateOperation = {
+          target: ownerId,
+          operator: op.params.operator,
+          value: op.params.value,
+        };
+        return globalOp;
+      });
+      bulkApplyState(mutationsModified, defaultGlobalEnv);
+    }
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
@@ -164,7 +194,7 @@ const DeckLayoutFooter: React.FC = () => {
         dispatch(setNextActivityId({ activityId: navTarget }));
       }
     } else {
-      if (isCorrect && hasNavigation) {
+      if (hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
         switch (navTarget) {
@@ -312,6 +342,8 @@ const DeckLayoutFooter: React.FC = () => {
     setIsLoading(false);
   }, [currentActivity]);
 
+  const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
@@ -357,7 +389,10 @@ const DeckLayoutFooter: React.FC = () => {
             </div>
             <style type="text/css" aria-hidden="true" />
             <div className="content">
-              <FeedbackRenderer feedbacks={currentFeedbacks} />
+              <FeedbackRenderer
+                feedbacks={currentFeedbacks}
+                snapshot={getLocalizedStateSnapshot(currentActivityIds)}
+              />
             </div>
             {/* <button className="showSolnBtn showSolution displayNone">
                             <div className="ellipsis">Show solution</div>
