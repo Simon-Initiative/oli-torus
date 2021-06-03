@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Enhancements
+
+- Image coding: disable submit button before code is run
+
+### Bug fixes
+
+- Image coding: remove extra space at end of printed lines (problem for regexp grading)
+- Fix issues related to exporting DataShop events for courses that contain hierarchies
+
 ## 0.10.0 (2021-6-2)
 
 ### Enhancements
