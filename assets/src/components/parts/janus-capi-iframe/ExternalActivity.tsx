@@ -275,9 +275,6 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentStateSnapshot = payload.snapshot;
               processInitStateVariable(currentStateSnapshot);
               setSimIsInitStatePassedOnce(false);
-              /* if (simLife.ready) {
-                setActivityChanged(true);
-              } */
             }
             break;
         }
@@ -291,22 +288,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       });
     };
   }, [props.notify]);
-
-  /* const getAcivityChangeInitStateVariables = async () => {
-    const initResult = await props.onInit({
-      id,
-      responses: [],
-    });
-    writeCapiLog('ACTIVITY ID CHANGED - RE-INITIATE props.init CALL', 3, initResult);
-    const currentStateSnapshot = initResult.snapshot;
-    processInitStateVariable(currentStateSnapshot);
-    setSimIsInitStatePassedOnce(false);
-  };
-
-  useEffect(() => {
-    //Currently it is sending the old Activity Id's init state variables and not the new chile screen init state
-    getAcivityChangeInitStateVariables();
-  }, [activityChanged]); */
 
   useEffect(() => {
     if (!ready) {

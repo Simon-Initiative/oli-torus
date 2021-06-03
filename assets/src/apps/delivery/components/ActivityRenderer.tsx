@@ -21,6 +21,7 @@ import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   selectLastCheckResults,
   selectLastCheckTriggered,
+  selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
@@ -281,13 +282,27 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
     });
   };
-
   useEffect(() => {
     if (!currentActivityId || !ref.current) {
       return;
     }
     notifyContextChanged();
   }, [currentActivityId]);
+
+  const mutationTriggered = useSelector(selectLastMutateTriggered);
+  const notifyStateMutation = async () => {
+    const { snapshot } = await onRequestLatestState();
+    // TODO: don't need to send complete snapshot?
+    ref.current.notify(NotificationType.STATE_CHANGED, {
+      snapshot,
+    });
+  };
+  useEffect(() => {
+    if (!mutationTriggered || !ref.current) {
+      return;
+    }
+    notifyStateMutation();
+  }, [mutationTriggered]);
 
   const elementProps = {
     ref,
