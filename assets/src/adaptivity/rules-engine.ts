@@ -69,7 +69,14 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
   rules.forEach((rule, index) => {
     // tweak priority to match order
     rule.priority = index + 1;
-    rule.event.params = { ...rule.event.params, order: rule.priority, correct: !!rule.correct };
+    // note: maybe authoring / conversion should just write these here so we
+    // dont have to do it at runtime
+    rule.event.params = {
+      ...rule.event.params,
+      order: rule.priority,
+      correct: !!rule.correct,
+      default: !!rule.default,
+    };
     applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
@@ -111,8 +118,32 @@ export const check = async (
 
   const checkResult: EngineResult = await engine.run(facts);
 
-  // for now just returning only success events
+  /* console.log('RE CHECK', { checkResult }); */
+  let resultEvents: Event[] = [];
   const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
+  // if there are any correct in the success, get rid of the incorrect (defaultWrong most likely)
+  if (successEvents.some((evt) => evt.params?.correct === true)) {
+    resultEvents = successEvents.filter((evt) => evt.params?.correct === true);
+  } else {
+    // the failedEvents might be just because the invalid condition didn't trip
+    // can't use these
+    /* const failedEvents = checkResult.failureEvents
+      .filter((evt) => evt.params?.correct === false)
+      .sort((a, b) => a.params?.order - b.params?.order);
+    console.log('INCORRECT RESULT', { failedEvents }); */
+    // should only have "incorrect" at this point
+    resultEvents = successEvents;
+  }
 
-  return successEvents;
+  if (resultEvents.length > 1) {
+    // if we have more events than one, then we don't need the defaults
+    // there shouldn't be more than one (or less really) of default rules (1 correct, 1 incorrect)
+    resultEvents = resultEvents.filter((evt) => evt.params?.default !== true);
+  }
+  // TODO: if resultEvents.length === 0 send a "defaultWrong"
+
+  // BS: refactor this model? to be like:
+  // { correct: false, events: resultEvents }
+
+  return resultEvents;
 };

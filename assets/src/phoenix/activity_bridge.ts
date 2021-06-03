@@ -99,9 +99,9 @@ export const initActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
       makeRequest(
-        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.attemptGuid}`,
+        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'PATCH',
-        { input: e.detail.payload },
+        { response: e.detail.payload },
         e.detail.continuation,
       );
     },
@@ -114,9 +114,9 @@ export const initActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
       makeRequest(
-        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.attemptGuid}`,
+        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'PUT',
-        { input: e.detail.payload },
+        { response: e.detail.payload },
         e.detail.continuation,
       );
     },
@@ -129,7 +129,7 @@ export const initActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
       makeRequest(
-        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.attemptGuid}`,
+        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'POST',
         {},
         e.detail.continuation,

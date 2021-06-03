@@ -1,5 +1,6 @@
-import { ResourceContext } from 'data/content/resource';
 import { ID, Identifiable, ModelElement, Selection } from 'data/content/model';
+import { ResourceContext } from 'data/content/resource';
+import { ResourceId } from 'data/types';
 
 export type ChoiceId = ID;
 export type ResponseId = ID;
@@ -22,13 +23,13 @@ export interface StudentResponse {
 }
 
 export type ModeSpecification = {
-  element: string,
-  entry: string,
+  element: string;
+  entry: string;
 };
 
 export type PartResponse = {
-  attemptGuid: string,
-  response: StudentResponse,
+  attemptGuid: string;
+  response: StudentResponse;
 };
 
 export type ClientEvaluation = {
@@ -40,17 +41,19 @@ export type ClientEvaluation = {
 };
 
 export type Manifest = {
-  id: ID,
-  friendlyName: string,
-  description: string,
-  delivery: ModeSpecification,
-  authoring: ModeSpecification,
+  id: ID;
+  friendlyName: string;
+  description: string;
+  delivery: ModeSpecification;
+  authoring: ModeSpecification;
 };
 
 export interface ActivityModelSchema {
   resourceId?: number;
   authoring?: any;
   content?: any;
+  activityType?: any;
+  id?: string; // maybe slug
 }
 
 export interface PartState {
@@ -62,13 +65,14 @@ export interface PartState {
   response: any;
   feedback: any;
   hints: [];
-  partId: number;
+  partId: string | number;
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
   error?: string;
 }
 
 export interface ActivityState {
+  activityId?: ResourceId;
   attemptGuid: string;
   attemptNumber: number;
   dateEvaluated: Date | null;
@@ -77,19 +81,19 @@ export interface ActivityState {
   parts: PartState[];
   hasMoreAttempts: boolean;
   hasMoreHints: boolean;
+  snapshot?: any;
 }
 
-export interface Choice extends Identifiable, HasContent { }
-export interface Stem extends Identifiable, HasContent { }
-export interface Hint extends Identifiable, HasContent { }
-export interface Feedback extends Identifiable, HasContent { }
+export interface Choice extends Identifiable, HasContent {}
+export interface Stem extends Identifiable, HasContent {}
+export interface Hint extends Identifiable, HasContent {}
+export interface Feedback extends Identifiable, HasContent {}
 export interface Transformation extends Identifiable {
   path: string;
   operation: Operation;
 }
 
 export interface Response extends Identifiable {
-
   // see `parser.ex` and `rule.ex`
   rule: string;
 
@@ -152,7 +156,6 @@ export interface StateUpdateAction extends StateUpdateActionCore, IsAction {
   type: 'StateUpdateAction';
 }
 
-
 export interface Part extends Identifiable {
   responses: Response[];
   outcomes?: ConditionalOutcome[];
@@ -176,6 +179,10 @@ export enum Operation {
   'shuffle' = 'shuffle',
 }
 // eslint-disable-next-line
-export interface CreationContext extends ResourceContext {
+export interface CreationContext extends ResourceContext {}
 
+export interface PartComponentDefinition {
+  id: string;
+  type: string;
+  custom: Record<string, any>;
 }

@@ -1,6 +1,7 @@
 defmodule Oli.Interop.Ingest do
   alias Oli.Repo
   alias Oli.Publishing.ChangeTracker
+  alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
 
   @project_key "_project"
@@ -53,14 +54,14 @@ defmodule Oli.Interop.Ingest do
         with {:ok, %{project: project, resource_revision: root_revision}} <-
                create_project(project_details, as_author),
              {:ok, objective_map} <- create_objectives(project, resource_map, as_author),
-             {:ok, activity_map} <-
+             {:ok, {activity_map, _}} <-
                create_activities(project, resource_map, objective_map, as_author),
-             {:ok, page_map} <-
+             {:ok, {page_map, _}} <-
                create_pages(project, resource_map, activity_map, objective_map, as_author),
              {:ok, _} <- create_media(project, media_details),
              {:ok, _} <-
                create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author),
-             {:ok, _} <- rewire_all_hyperlinks(page_map, project) do
+             {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
           project
         else
           error -> Repo.rollback(error)
@@ -87,10 +88,11 @@ defmodule Oli.Interop.Ingest do
   defp create_activities(project, resource_map, _, as_author) do
     registration_map = get_registration_map()
 
-    activities =
+    {changes, activities} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Activity" end)
+      |> scrub_resources()
 
     Repo.transaction(fn ->
       case Enum.reduce_while(activities, %{}, fn {id, activity}, map ->
@@ -100,17 +102,18 @@ defmodule Oli.Interop.Ingest do
              end
            end) do
         {:error, e} -> Repo.rollback(e)
-        map -> map
+        map -> {map, List.flatten(changes)}
       end
     end)
   end
 
   # Process each resource file of type "Page" to create pages
   defp create_pages(project, resource_map, activity_map, objective_map, as_author) do
-    pages =
+    {changes, pages} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Page" end)
+      |> scrub_resources()
 
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
@@ -120,76 +123,23 @@ defmodule Oli.Interop.Ingest do
              end
            end) do
         {:error, e} -> Repo.rollback(e)
-        map -> map
+        map -> {map, List.flatten(changes)}
       end
     end)
   end
 
-  # Any internal hyperlinks have to be rewired to point to the new resource_id of the
-  # page being linked to.  This function takes all pages and activities and rewires
-  # all links that it finds in their contents, only saving new revisions for those that
-  # have a rewired link.
-  defp rewire_all_hyperlinks(page_map, project) do
-    Map.values(page_map)
-    |> Enum.map(fn revision ->
-      rewire_hyperlinks(revision, page_map, project.slug)
-    end)
+  defp scrub_resources(resources) do
+    Enum.map(resources, fn {id, %{"content" => content, "title" => title} = resource} ->
+      case Scrub.scrub(content) do
+        {[], _} ->
+          {[], {id, resource}}
 
-    {:ok, page_map}
-  end
-
-  defp rewire_hyperlinks(revision, page_map, course) do
-    link_builder = fn id ->
-      case Map.get(page_map, id) do
-        nil -> "/course/link/#{course}"
-        %{slug: slug} -> "/course/link/#{slug}"
+        {changes, changed} ->
+          {Enum.map(changes, fn c -> "#{title}: #{c}" end),
+           {id, Map.put(resource, "content", changed)}}
       end
-    end
-
-    case rewire(revision.content, link_builder) do
-      {true, content} ->
-        ChangeTracker.track_revision(course, revision, %{content: content})
-
-      {false, _} ->
-        {:ok, revision}
-    end
-  end
-
-  defp rewire(items, link_builder) when is_list(items) do
-    results = Enum.map(items, fn i -> rewire(i, link_builder) end)
-
-    children = Enum.map(results, fn {_, c} -> c end)
-
-    changed =
-      Enum.map(results, fn {changed, _} -> changed end) |> Enum.any?(fn c -> c == true end)
-
-    {changed, children}
-  end
-
-  defp rewire(%{"type" => "a", "idref" => idref, "children" => children}, link_builder) do
-    {true, %{"type" => "a", "children" => children, "href" => link_builder.(idref)}}
-  end
-
-  defp rewire(%{"model" => model} = item, link_builder) do
-    case rewire(model, link_builder) do
-      {true, model} -> {true, Map.put(item, "model", model)}
-      {false, _} -> {false, item}
-    end
-  end
-
-  defp rewire(%{"children" => children} = item, link_builder) do
-    results = Enum.map(children, fn i -> rewire(i, link_builder) end)
-
-    children = Enum.map(results, fn {_, c} -> c end)
-
-    changed =
-      Enum.map(results, fn {changed, _} -> changed end) |> Enum.any?(fn c -> c == true end)
-
-    {changed, Map.put(item, "children", children)}
-  end
-
-  defp rewire(item, _) do
-    {false, item}
+    end)
+    |> Enum.unzip()
   end
 
   defp create_objectives(project, resource_map, as_author) do
@@ -225,9 +175,13 @@ defmodule Oli.Interop.Ingest do
 
   # Create one page
   defp create_page(project, page, activity_map, objective_map, as_author) do
+    content =
+      Map.get(page, "content")
+      |> rewire_activity_references(activity_map)
+
     %{
       title: Map.get(page, "title"),
-      content: Map.get(page, "content") |> rewire_activity_references(activity_map),
+      content: content,
       author_id: as_author.id,
       objectives: %{
         "attached" =>

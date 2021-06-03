@@ -9,13 +9,19 @@ import { triggerCheck } from '../../store/features/adaptivity/actions/triggerChe
 import {
   selectCurrentFeedbacks,
   selectIsGoodFeedback,
+  selectLastCheckResults,
+  selectLastCheckTriggered,
   selectNextActivityId,
+  setCurrentFeedbacks,
   setIsGoodFeedback,
   setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
+  navigateToFirstActivity,
+  navigateToLastActivity,
   navigateToNextActivity,
+  navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectIsEnd } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
@@ -90,6 +96,9 @@ const DeckLayoutFooter: React.FC = () => {
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
 
+  const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
+  const lastCheckResults = useSelector(selectLastCheckResults);
+
   const [isLoading, setIsLoading] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
@@ -97,7 +106,88 @@ const DeckLayoutFooter: React.FC = () => {
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
 
-  // util / handler funcs
+  useEffect(() => {
+    if (!lastCheckTimestamp) {
+      return;
+    }
+    // when this changes, notify that check has started
+  }, [lastCheckTimestamp]);
+
+  useEffect(() => {
+    if (!lastCheckResults || !lastCheckResults.length) {
+      return;
+    }
+    // when this changes, notify check has completed
+
+    const isCorrect = lastCheckResults.every((r) => r.params.correct);
+
+    // depending on combineFeedback value is whether we should address more than one event
+    const combineFeedback = !!currentActivity.custom.combineFeedback;
+
+    let eventsToProcess = [lastCheckResults[0]];
+    if (combineFeedback) {
+      eventsToProcess = lastCheckResults;
+    }
+
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+
+    eventsToProcess.forEach((evt) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+
+    // always process mutateStates
+    actionsByType.mutateState.forEach((action: any) => {
+      // TODO: mutate state
+    });
+
+    const hasFeedback = actionsByType.feedback.length > 0;
+    const hasNavigation = actionsByType.navigation.length > 0;
+
+    if (hasFeedback) {
+      dispatch(
+        setCurrentFeedbacks({
+          feedbacks: actionsByType.feedback.map((fAction: any) => fAction.params.feedback),
+        }),
+      );
+      dispatch(setIsGoodFeedback({ isGood: isCorrect }));
+      // need to queue up the feedback display prior to nav
+      if (isCorrect && hasNavigation) {
+        const [firstNavAction] = actionsByType.navigation;
+        const navTarget = firstNavAction.params.target;
+        dispatch(setNextActivityId({ activityId: navTarget }));
+      }
+    } else {
+      if (isCorrect && hasNavigation) {
+        const [firstNavAction] = actionsByType.navigation;
+        const navTarget = firstNavAction.params.target;
+        switch (navTarget) {
+          case 'next':
+            dispatch(navigateToNextActivity());
+            break;
+          case 'prev':
+            dispatch(navigateToPrevActivity());
+            break;
+          case 'first':
+            dispatch(navigateToFirstActivity());
+            break;
+          case 'last':
+            dispatch(navigateToLastActivity());
+            break;
+          default:
+            // assume it's a sequenceId
+            dispatch(navigateToActivity(navTarget));
+        }
+      }
+    }
+  }, [lastCheckResults]);
+
   const checkHandler = () => {
     setIsLoading(true);
     if (displayFeedback) setDisplayFeedback(false);

@@ -44,7 +44,7 @@ describe('Rules Engine', () => {
 
   it('should evaluate complex conditions', async () => {
     const events = await check(mockState, [complexRuleWithMultipleActions, defaultCorrectRule]);
-    expect(events.length).toEqual(2);
+    expect(events.length).toEqual(1);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
