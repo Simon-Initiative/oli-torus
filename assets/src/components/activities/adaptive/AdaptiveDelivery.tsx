@@ -38,7 +38,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       NotificationType.STATE_CHANGED,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
-      const handler = (e) => {
+      const handler = (e: any) => {
         console.log(`${notificationType.toString()} notification handled [AD]`, e);
         // here we need to check when the context changes (current activityId) if we are a layer
         // (should only be possible as a layer, because other activities should be unloaded and loaded fresh)
