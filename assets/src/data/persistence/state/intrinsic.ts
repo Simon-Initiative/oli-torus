@@ -76,3 +76,13 @@ export const writePartAttemptState = async (
   });
   return { result };
 };
+
+export const createActivityAttempt = async (sectionSlug: string, attemptGuid: string) => {
+  const method = 'POST';
+  const url = `/api/v1/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+  });
+  return { result };
+};
