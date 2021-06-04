@@ -264,6 +264,9 @@ const ExternalActivity: React.FC<any> = (props) => {
                 simLife,
                 payload,
               });
+              const currentMutateStateSnapshot = payload.mutateChanges;
+              processInitStateVariable(currentMutateStateSnapshot);
+              setSimIsInitStatePassedOnce(false);
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -471,6 +474,24 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   const handleOnReady = (data: any) => {
     if (simLife.ready) {
+      const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
+        const baseKey = key.replace(`stage.${id}.`, '');
+        const value = initState[key];
+        const cVar = new CapiVariable({
+          key: baseKey,
+          value,
+        });
+        formatted[baseKey] = cVar;
+        return formatted;
+      }, {});
+      if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
+        sendFormedResponse(
+          simLife.handshake,
+          {},
+          JanusCAPIRequestTypes.VALUE_CHANGE,
+          initStateVars,
+        );
+      }
       return;
     }
     simLife.init = true;
@@ -658,45 +679,6 @@ const ExternalActivity: React.FC<any> = (props) => {
     }
   };
 
-  const getInterestedVars = (newVars: any[]) => {
-    const interested = newVars.filter((ms) => {
-      const isMine = ms.id.indexOf(`stage.${id}.`) === 0;
-      if (!isMine) {
-        return false;
-      }
-      const internalValue = externalActivityMap.get(ms.id);
-      let mineValue = ms.value;
-      let intenalVal = internalValue?.value;
-      if (ms.type === CapiVariableTypes.BOOLEAN && typeof intenalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      if (ms.type === CapiVariableTypes.NUMBER && typeof intenalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      if (
-        typeof ms.value === 'object' &&
-        Array.isArray(ms.value) &&
-        typeof intenalVal === 'string'
-      ) {
-        intenalVal = coerceCapiValue(intenalVal, ms.type);
-        if (Array.isArray(intenalVal) && Array.isArray(mineValue)) {
-          return JSON.stringify(intenalVal) !== JSON.stringify(mineValue);
-        }
-      }
-      if (
-        typeof ms.value === 'object' &&
-        Array.isArray(ms.value) &&
-        typeof intenalVal === 'object' &&
-        Array.isArray(intenalVal)
-      ) {
-        return JSON.stringify(intenalVal) !== JSON.stringify(mineValue);
-      }
-      if (mineValue == '' && intenalVal == null) return false;
-      return !internalValue || intenalVal != mineValue;
-    });
-    return interested;
-  };
-
   useEffect(() => {
     if (!simFrame) {
       return;
@@ -827,7 +809,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       return formatted;
     }, {});
     if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
-      /* handleIFrameSpecificProperties(initState); */
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
     }
 

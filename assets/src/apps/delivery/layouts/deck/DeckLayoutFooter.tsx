@@ -157,8 +157,6 @@ const DeckLayoutFooter: React.FC = () => {
 
     if (actionsByType.mutateState.length) {
       const mutationsModified = actionsByType.mutateState.map((op: any) => {
-        //TODO: Need to find the actual owner of the target. This needs to be handle in the same way
-        // it is handled in store/feature/groups/actions/deck.ts line number - 107
         const ownerActivity = currentActivityTree?.find(
           (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
         );
@@ -178,11 +176,18 @@ const DeckLayoutFooter: React.FC = () => {
 
       bulkApplyState(mutationsModified, defaultGlobalEnv);
 
-      // TODO: find the actual diff after the bulk apply state is applied instead of sending
-      // the entire snapshot
+      const latestSnapshot = getLocalizedStateSnapshot(
+        (currentActivityTree || []).map((a) => a.id),
+      );
+      // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
+      const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
+        collect[op.params.target] = latestSnapshot[op.params.target];
+        return collect;
+      }, {});
+
       dispatch(
         setMutationTriggered({
-          changes: getLocalizedStateSnapshot((currentActivityTree || []).map((a) => a.id)),
+          changes: mutatedObjects,
         }),
       );
     }
