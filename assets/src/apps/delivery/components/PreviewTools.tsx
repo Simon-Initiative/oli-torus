@@ -3,10 +3,12 @@
 import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
 import { selectCurrentActivity } from '../store/features/activities/slice';
 import { triggerCheck } from '../store/features/adaptivity/actions/triggerCheck';
 import { setLastCheckResults } from '../store/features/adaptivity/slice';
 import { navigateToActivity } from '../store/features/groups/actions/deck';
+import { CapiVariableTypes, getCapiType } from '../../../adaptivity/capi';
 
 // Title Component
 interface TitleProps {
@@ -321,7 +323,7 @@ interface InspectorProps {
 // Inspector Placeholder
 const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   const [globalState, setGlobalState] = useState<any>({});
-  const [expandedPanels, setExpandedPanels]: any = useState({});
+  const [globalInputState, setGlobalInputState] = useState<any>({});
   const [sessionState, setSessionState] = useState<any>({});
   const [stageState, setStageState] = useState<any>({});
 
@@ -367,7 +369,6 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   useEffect(() => {
     setStageState({});
     setSessionState({});
-    setExpandedPanels({});
     setTimeout(() => {
       // TODO : figure out a better way to setGlobalState AFTER state reset to fix timing jank
       setGlobalState(getEnvState(defaultGlobalEnv));
@@ -379,6 +380,67 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     getStageState();
   }, [globalState]);
 
+  interface AutoDetectInputProps {
+    label: string;
+    value: any;
+    state?: any;
+    // onChange: ()=>void;
+  }
+  const AutoDetectInput: React.FC<AutoDetectInputProps> = ({ label, value, state }): any => {
+    console.log('🚀 > file: PreviewTools.tsx > line 390 > { label, value ,state}', {
+      label,
+      value,
+      state,
+    });
+    const uuid = uuidv4();
+    const capiType = getCapiType(value);
+    switch (capiType) {
+      case CapiVariableTypes.BOOLEAN:
+        return (
+          <div className="custom-control custom-switch">
+            <input
+              type="checkbox"
+              className="custom-control-input"
+              id={uuid}
+              defaultChecked={value}
+              // onChange={(e) => setInputState({ ...inputState, value: e.target.value })}
+            />
+            <label className="custom-control-label" htmlFor={uuid}></label>
+          </div>
+        );
+
+      case CapiVariableTypes.ENUM:
+        return (
+          // TODO : wire this up
+          <div className="user-input">
+            <span className="stateKey" title="session.visits.q:1541198781354:733">
+              q:1541198781354:733
+            </span>
+            {/* Dropdown example */}
+            <select className="custom-select custom-select-sm" defaultValue="3">
+              <option value="1">One</option>
+              <option value="2">Two</option>
+              <option value="3">Three</option>
+              <option value="4">
+                This option has a very long text node that may stretch out the drop down. What
+                happens?
+              </option>
+            </select>
+          </div>
+        );
+
+      default:
+        return (
+          <input
+            type="text"
+            className="input-group-sm stateValue"
+            aria-label={label}
+            defaultValue={JSON.stringify(value)}
+          />
+        );
+    }
+  };
+
   interface NestedStateDisplayProps {
     rootLevel: any;
     levelIndex: number;
@@ -389,6 +451,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     levelIndex,
     state,
   }) => {
+    const [expandedPanels, setExpandedPanels]: any = useState({});
     return (
       <li key={`leaf-branch-${rootLevel}${levelIndex}`} className="list-group-item is-parent">
         {/* TODO Toggle even / odd based on index */}
@@ -401,7 +464,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
             type="button"
             // TODO: figure out why Bootstrap collapse is breaking in recursion
             // data-toggle="collapse"
-            data-target={`#collapse${rootLevel}${levelIndex}`}
+            // data-target={`#collapse${rootLevel}${levelIndex}`}
             aria-expanded={expandedPanels[`panel-${rootLevel}${levelIndex}`]}
             aria-controls={`collapse${rootLevel}${levelIndex}`}
             onClick={() =>
@@ -432,7 +495,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
           id={`collapse${rootLevel}${levelIndex}`}
           // TODO: reset className to 'collapse' after figuring out Bootstrap recursion issue
           className={`${
-            expandedPanels[`panel-${rootLevel}${levelIndex}`] ? 'collapse show' : 'collapse'
+            expandedPanels[`panel-${rootLevel}${levelIndex}`] ? '' : 'visually-hidden'
           }`}
           aria-labelledby={`heading${rootLevel}${levelIndex}`}
         >
@@ -447,11 +510,10 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
                         <span className="stateKey" title={level2}>
                           {level2}
                         </span>
-                        <input
-                          type="text"
-                          className="input-group-sm stateValue"
-                          aria-label={level2}
-                          defaultValue={JSON.stringify(state[rootLevel][level2])}
+                        <AutoDetectInput
+                          label={level2}
+                          value={state[rootLevel][level2]}
+                          state={{ ...state[rootLevel] }}
                         />
                       </div>
                     </li>
@@ -475,7 +537,9 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     state: any;
   }
   const StateDisplay: React.FC<StateDisplayProps> = ({ label, state }) => {
-    return (
+    const [expandedPanels, setExpandedPanels]: any = useState({});
+
+    return Object.keys(state).length > 0 ? (
       <div className="card even">
         <div className="card-header p-2" id={`headingRoot${label}`}>
           <h2 className="mb-0">
@@ -483,7 +547,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
               className="btn btn-link btn-block text-left"
               type="button"
               // data-toggle="collapse"
-              data-target={`#collapseRoot${label}`}
+              // data-target={`#collapseRoot${label}`}
               aria-expanded={expandedPanels[`panel-Root${label}`]}
               aria-controls={`collapseRoot${label}`}
               onClick={() =>
@@ -511,7 +575,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
         </div>
         <div
           id={`collapseRoot${label}`}
-          className={`${expandedPanels[`panel-Root${label}`] ? 'collapse show' : 'collapse'}`}
+          className={`${expandedPanels[`panel-Root${label}`] ? '' : 'visually-hidden'}`}
           aria-labelledby={`headingRoot${label}`}
         >
           <div className="card-body py-2">
@@ -525,12 +589,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
                         <span className="stateKey" title={level1}>
                           {level1}
                         </span>
-                        <input
-                          type="text"
-                          className="input-group-sm stateValue"
-                          aria-label={level1}
-                          defaultValue={JSON.stringify(state[level1])}
-                        />
+                        <AutoDetectInput label={level1} value={state[level1]} state={state} />
                       </div>
                     </li>
                   ) : (
@@ -546,16 +605,14 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
           </div>
         </div>
       </div>
-    );
+    ) : null;
   };
 
   return (
     <div className="inspector">
       <div className="accordion">
-        {Object.keys(sessionState).length > 0 && (
-          <StateDisplay label="Session" state={sessionState} />
-        )}
-        {Object.keys(stageState).length > 0 && <StateDisplay label="Stage" state={stageState} />}
+        <StateDisplay label="Session" state={sessionState} />
+        <StateDisplay label="Stage" state={stageState} />
       </div>
     </div>
   );
