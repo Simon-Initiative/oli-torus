@@ -133,6 +133,8 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
         type: theValue.type,
         value: parseCapiValue(theValue),
       };
+      // TODO: need to create a async thunk we can dispatch that applies these
+      // as mutate state that will update scripting, redux, as well as notify part components
       applyState(applyOp, defaultGlobalEnv);
     };
 
