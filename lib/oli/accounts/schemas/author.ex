@@ -10,7 +10,7 @@ defmodule Oli.Accounts.Author do
     extensions: [PowResetPassword, PowEmailConfirmation, PowInvitation]
 
   import Ecto.Changeset
-  import Oli.Utils, only: [maybe_name_from_given_and_family: 1]
+  import Oli.Utils
 
   alias Oli.Accounts.SystemRole
 
@@ -19,6 +19,11 @@ defmodule Oli.Accounts.Author do
     field :given_name, :string
     field :family_name, :string
     field :picture, :string
+
+    has_many :user_identities,
+             Oli.UserIdentities.AuthorIdentity,
+             on_delete: :delete_all,
+             foreign_key: :user_id
 
     pow_user_fields()
 
@@ -71,6 +76,7 @@ defmodule Oli.Accounts.Author do
     |> cast_embed(:preferences)
     |> default_system_role()
     |> lowercase_email()
+    |> maybe_name_from_given_and_family()
   end
 
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
@@ -98,9 +104,5 @@ defmodule Oli.Accounts.Author do
       _ ->
         changeset
     end
-  end
-
-  defp lowercase_email(changeset) do
-    update_change(changeset, :email, &String.downcase/1)
   end
 end

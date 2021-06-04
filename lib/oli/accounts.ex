@@ -61,6 +61,25 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Creates a guest user.
+  ## Examples
+      iex> create_guest_user(%{field: value})
+      {:ok, %User{}}
+      iex> create_guest_user(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_guest_user(attrs \\ %{}) do
+    %User{
+      # generate a unique sub identifier which is also used so a user can access
+      # their progress in the future or using a different browser
+      sub: UUID.uuid4(),
+      guest: true
+    }
+    |> User.noauth_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Updates a user.
   ## Examples
       iex> update_user(user, %{field: new_value})

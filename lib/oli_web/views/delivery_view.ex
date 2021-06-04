@@ -49,6 +49,9 @@ defmodule OliWeb.DeliveryView do
       :student ->
         true
 
+      :other ->
+        true
+
       _ ->
         false
     end

@@ -330,27 +330,22 @@ defmodule OliWeb.DeliveryController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       section = conn.assigns.section
 
-      with {:ok, user} <-
-             Accounts.create_user(%{
-               # generate a unique sub identifier which is also used so a user can access
-               # their progress in the future or using a different browser
-               sub: UUID.uuid4(),
-               guest: true
-             }) do
-        Accounts.update_user_platform_roles(user, [
-          PlatformRoles.get_role(:institution_learner)
-        ])
+      case Accounts.create_guest_user() do
+        {:ok, user} ->
+          Accounts.update_user_platform_roles(user, [
+            PlatformRoles.get_role(:institution_learner)
+          ])
 
-        conn
-        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-        |> Pow.Plug.create(user)
-        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
-      else
+          conn
+          |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+          |> Pow.Plug.create(user)
+          |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+
         {:error, _} ->
-          render(conn, "new_user.html", error: "Something went wrong, please try again")
+          render(conn, "enroll.html", error: "Something went wrong, please try again")
       end
     else
-      render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
+      render(conn, "enroll.html", error: "ReCaptcha failed, please try again")
     end
   end
 end

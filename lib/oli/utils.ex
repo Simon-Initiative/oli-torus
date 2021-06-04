@@ -50,6 +50,25 @@ defmodule Oli.Utils do
     end
   end
 
+  def maybe_create_unique_sub(changeset) do
+    case changeset do
+      # if changeset is valid and doesn't have a name in changes or data, derive name from given_name and family_name
+      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
+        case {Map.get(changes, :sub), Map.get(data, :sub)} do
+          {nil, nil} ->
+            sub = UUID.uuid4()
+
+            Ecto.Changeset.put_change(changeset, :sub, sub)
+
+          _ ->
+            changeset
+        end
+
+      _ ->
+        changeset
+    end
+  end
+
   def maybe_name_from_given_and_family(changeset) do
     case changeset do
       # if changeset is valid and doesn't have a name in changes or data, derive name from given_name and family_name
@@ -57,15 +76,7 @@ defmodule Oli.Utils do
         case {Map.get(changes, :name), Map.get(data, :name)} do
           {nil, nil} ->
             name =
-              "#{
-                Map.get(changes, :given_name)
-                |> value_or(Map.get(data, :given_name))
-                |> value_or("")
-              } #{
-                Map.get(changes, :family_name)
-                |> value_or(Map.get(data, :family_name))
-                |> value_or("")
-              }"
+              "#{Map.get(changes, :given_name) |> value_or(Map.get(data, :given_name)) |> value_or("")} #{Map.get(changes, :family_name) |> value_or(Map.get(data, :family_name)) |> value_or("")}"
               |> String.trim()
 
             Ecto.Changeset.put_change(changeset, :name, name)
@@ -77,6 +88,10 @@ defmodule Oli.Utils do
       _ ->
         changeset
     end
+  end
+
+  def lowercase_email(changeset) do
+    Ecto.Changeset.update_change(changeset, :email, &String.downcase/1)
   end
 
   def read_json_file(filename) do

@@ -91,7 +91,7 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetCurrentUser)
 
     plug(Pow.Plug.RequireAuthenticated,
-      error_handler: OliWeb.Pow.UserAuthErrorHandler
+      error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
     plug(Oli.Plugs.RemoveXFrameOptions)

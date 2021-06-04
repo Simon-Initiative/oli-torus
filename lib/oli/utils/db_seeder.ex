@@ -545,7 +545,7 @@ defmodule Oli.Seeder do
 
   def add_user(map, attrs, tag \\ nil) do
     {:ok, user} =
-      User.changeset(
+      User.noauth_changeset(
         %User{
           sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
           name: "Ms Jane Marie Doe",
