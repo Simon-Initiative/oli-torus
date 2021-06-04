@@ -369,7 +369,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
