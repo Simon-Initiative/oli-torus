@@ -264,6 +264,9 @@ const ExternalActivity: React.FC<any> = (props) => {
                 simLife,
                 payload,
               });
+              const currentMutateStateSnapshot = payload.mutateChanges;
+              processInitStateVariable(currentMutateStateSnapshot);
+              setSimIsInitStatePassedOnce(false);
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -471,6 +474,24 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   const handleOnReady = (data: any) => {
     if (simLife.ready) {
+      const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
+        const baseKey = key.replace(`stage.${id}.`, '');
+        const value = initState[key];
+        const cVar = new CapiVariable({
+          key: baseKey,
+          value,
+        });
+        formatted[baseKey] = cVar;
+        return formatted;
+      }, {});
+      if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
+        sendFormedResponse(
+          simLife.handshake,
+          {},
+          JanusCAPIRequestTypes.VALUE_CHANGE,
+          initStateVars,
+        );
+      }
       return;
     }
     simLife.init = true;
@@ -827,7 +848,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       return formatted;
     }, {});
     if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
-      /* handleIFrameSpecificProperties(initState); */
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
     }
 

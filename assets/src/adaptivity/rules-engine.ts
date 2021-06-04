@@ -87,7 +87,12 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         );
       }
       if (typeof ogValue === 'string') {
-        modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+        if (ogValue.indexOf('{') === -1) {
+          modifiedValue = ogValue;
+        } else {
+          //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
+          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+        }
       }
       condition.value = modifiedValue;
     });

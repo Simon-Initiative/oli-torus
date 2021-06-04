@@ -22,6 +22,7 @@ import {
   selectInitPhaseComplete,
   selectLastCheckResults,
   selectLastCheckTriggered,
+  selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
@@ -292,11 +293,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   }, [initPhaseComplete]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
+  const mutateChanges = useSelector(selectLastMutateChanges);
+
   const notifyStateMutation = async () => {
-    const { snapshot } = await onRequestLatestState();
-    // TODO: don't need to send complete snapshot?
     ref.current.notify(NotificationType.STATE_CHANGED, {
-      snapshot,
+      mutateChanges,
     });
   };
   useEffect(() => {
