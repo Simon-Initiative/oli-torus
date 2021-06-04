@@ -176,12 +176,10 @@ const DeckLayoutFooter: React.FC = () => {
 
       bulkApplyState(mutationsModified, defaultGlobalEnv);
 
-      // TODO: find the actual diff after the bulk apply state is applied instead of sending
-      // the entire snapshot
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
       );
-
+      // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
       const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
         collect[op.params.target] = latestSnapshot[op.params.target];
         return collect;
