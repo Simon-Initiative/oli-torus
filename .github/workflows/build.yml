@@ -43,7 +43,7 @@ jobs:
         run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
       - name: ▶️ Run tests
-        run: set -a;source oli.env && mix test
+        run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
 
   ts-build-test:
     runs-on: ubuntu-latest

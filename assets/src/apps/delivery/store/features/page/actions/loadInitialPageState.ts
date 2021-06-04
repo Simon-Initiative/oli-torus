@@ -1,11 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { writePageAttemptState } from 'data/persistence/state/intrinsic';
+import guid from 'utils/guid';
 import {
   defaultGlobalEnv,
   evalScript,
   getAssignScript,
 } from '../../../../../../adaptivity/scripting';
-import { writePageAttemptState } from 'data/persistence/state/intrinsic';
-import guid from 'utils/guid';
 import { RootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import { loadActivities } from '../../groups/actions/deck';

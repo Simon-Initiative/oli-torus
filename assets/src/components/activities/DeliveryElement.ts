@@ -1,16 +1,16 @@
+import { EventEmitter } from 'events';
+import { valueOr } from 'utils/common';
 import {
+  Action,
   ActivityModelSchema,
   ActivityState,
+  ClientEvaluation,
   Hint,
   PartResponse,
   PartState,
   StudentResponse,
-  ClientEvaluation,
-  Action,
   Success,
 } from './types';
-import { valueOr } from 'utils/common';
-import { EventEmitter } from 'events';
 
 export interface EvaluationResponse extends Success {
   actions: Action[];

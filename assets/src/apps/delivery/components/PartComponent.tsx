@@ -78,7 +78,6 @@ const WebComponent: React.FC<any> = (props) => {
   }, []);
 
   const webComponentProps = {
-    ref,
     id: props.id,
     type: props.type,
     ...props,

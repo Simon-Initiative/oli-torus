@@ -5,7 +5,6 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';

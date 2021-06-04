@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { CapiVariable, CapiVariableTypes, coerceCapiValue } from '../../../adaptivity/capi';
+import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,

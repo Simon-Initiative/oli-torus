@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Attempts.ScoringTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Oli.Delivery.Attempts.Scoring
   alias Oli.Delivery.Evaluation.Result
 
