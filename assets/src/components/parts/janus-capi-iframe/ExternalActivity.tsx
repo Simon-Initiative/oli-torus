@@ -679,45 +679,6 @@ const ExternalActivity: React.FC<any> = (props) => {
     }
   };
 
-  const getInterestedVars = (newVars: any[]) => {
-    const interested = newVars.filter((ms) => {
-      const isMine = ms.id.indexOf(`stage.${id}.`) === 0;
-      if (!isMine) {
-        return false;
-      }
-      const internalValue = externalActivityMap.get(ms.id);
-      let mineValue = ms.value;
-      let intenalVal = internalValue?.value;
-      if (ms.type === CapiVariableTypes.BOOLEAN && typeof intenalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      if (ms.type === CapiVariableTypes.NUMBER && typeof intenalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      if (
-        typeof ms.value === 'object' &&
-        Array.isArray(ms.value) &&
-        typeof intenalVal === 'string'
-      ) {
-        intenalVal = coerceCapiValue(intenalVal, ms.type);
-        if (Array.isArray(intenalVal) && Array.isArray(mineValue)) {
-          return JSON.stringify(intenalVal) !== JSON.stringify(mineValue);
-        }
-      }
-      if (
-        typeof ms.value === 'object' &&
-        Array.isArray(ms.value) &&
-        typeof intenalVal === 'object' &&
-        Array.isArray(intenalVal)
-      ) {
-        return JSON.stringify(intenalVal) !== JSON.stringify(mineValue);
-      }
-      if (mineValue == '' && intenalVal == null) return false;
-      return !internalValue || intenalVal != mineValue;
-    });
-    return interested;
-  };
-
   useEffect(() => {
     if (!simFrame) {
       return;
