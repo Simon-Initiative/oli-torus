@@ -805,13 +805,38 @@ const ExternalActivity: React.FC<any> = (props) => {
         key: baseKey,
         value,
       });
-      formatted[baseKey] = cVar;
+      if (baseKey.indexOf('Settings') === -1) formatted[baseKey] = cVar;
       return formatted;
     }, {});
     if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
     }
-
+    // for some reason when trap state variable contains 'Settings' then SIM does not behave properly so it needs to be
+    // handled different i.e. on first value change filter the 'Settings' variables and send them in another value_change event
+    const initStateVarsWithSettingsVariable = Object.keys(initState).reduce(
+      (formatted: any, key) => {
+        const baseKey = key.replace(`stage.${id}.`, '');
+        const value = initState[key];
+        const cVar = new CapiVariable({
+          key: baseKey,
+          value,
+        });
+        if (baseKey.indexOf('Settings') !== -1) formatted[baseKey] = cVar;
+        return formatted;
+      },
+      {},
+    );
+    if (
+      initStateVarsWithSettingsVariable &&
+      Object.keys(initStateVarsWithSettingsVariable)?.length !== 0
+    ) {
+      sendFormedResponse(
+        simLife.handshake,
+        {},
+        JanusCAPIRequestTypes.VALUE_CHANGE,
+        initStateVarsWithSettingsVariable,
+      );
+    }
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
 
