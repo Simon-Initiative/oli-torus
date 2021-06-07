@@ -1,0 +1,49 @@
+$nav-height: 65px;
+$panel-side-width: 250px;
+$panel-bg-color-light: #f5f6f7;
+$panel-bg-color-dark: $gray-700;
+
+.advanced-authoring {
+  .aa-panel {
+    position: fixed;
+    overflow-y: auto;
+    visibility: hidden;
+    align-items: start;
+    transition-timing-function: ease-in-out;
+    transition-duration: 0.3s;
+    @media (prefers-color-scheme: light) {
+      background-color: $panel-bg-color-light;
+    }
+    @media (prefers-color-scheme: dark) {
+      background-color: $panel-bg-color-dark;
+    }
+    box-shadow: 0 2px 4px 0 rgba($black, 0.1);
+
+    &.left-panel {
+      top: $nav-height;
+      bottom: 0;
+      // right: 100%;
+      left: -$panel-side-width;
+      width: $panel-side-width;
+      transition-property: left, visibility;
+
+      &.open {
+        left: 0;
+        visibility: visible;
+      }
+    }
+    &.right-panel {
+      top: $nav-height;
+      bottom: 0;
+      // left: 100%;
+      right: -$panel-side-width;
+      width: $panel-side-width;
+      transition-property: right, visibility;
+
+      &.open {
+        right: 0;
+        visibility: visible;
+      }
+    }
+  }
+}
