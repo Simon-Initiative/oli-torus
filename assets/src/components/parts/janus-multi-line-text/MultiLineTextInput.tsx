@@ -1,4 +1,8 @@
 /* eslint-disable react/prop-types */
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { parseBool } from 'utils/common';
@@ -114,6 +118,63 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     showLabel,
     showCharacterCount,
   } = model;
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        console.log(
+          `${notificationType.toString()} notification handled [Multiline text Input]`,
+          payload,
+        );
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            {
+              console.log('CHECK REQUEST STARTED STATE!!!!', {
+                payload,
+              });
+            }
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            {
+              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
+                payload,
+              });
+            }
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              console.log('MUTATE STATE!!!!', {
+                payload,
+              });
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            {
+              console.log('CONTEXT CHANGED!!!!', {
+                payload,
+              });
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   // Set up the styles
   const wrapperStyles: CSSProperties = {
