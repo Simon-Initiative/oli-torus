@@ -94,30 +94,33 @@ const persistCookie = (cookies: CookieDetails[]) => {
 }
 
 export const retrieveCookies = (url: string) => {
-  fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    }
-  }).then((response) => response.json())
-    .then((json) => {
-      if (!json.result) {
-        const dateNow = new Date();
-        json.forEach((c: CookieDetails) => {
-          if (c.expiration) {
-            const expiration = new Date(c.expiration);
-            if (expiration > dateNow) {
-              c.durationUtc = expiration.toUTCString();
-              setCookie(c.name, c.value, c.durationUtc);
-            }
-          }
-        })
+  let optInCookie = getCookie('_cky_opt_in');
+  if (optInCookie === "") {
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
-      processConsent();
-      return json
-    })
-    .catch((error) => {
-      return error
-    });
+    }).then((response) => response.json())
+      .then((json) => {
+        if (!json.result) {
+          const dateNow = new Date();
+          json.forEach((c: CookieDetails) => {
+            if (c.expiration) {
+              const expiration = new Date(c.expiration);
+              if (expiration > dateNow) {
+                c.durationUtc = expiration.toUTCString();
+                setCookie(c.name, c.value, c.durationUtc);
+              }
+            }
+          })
+        }
+        processConsent();
+        return json
+      })
+      .catch((error) => {
+        return error
+      });
+  }
 }
