@@ -20,6 +20,7 @@ const Image: React.FC<any> = (props) => {
   }, []);
 
   useEffect(() => {
+    /* console.log('IMAGE PROPS', props); */
     let pModel;
     let pState;
     if (typeof props?.model === 'string') {

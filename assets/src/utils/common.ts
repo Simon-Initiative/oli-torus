@@ -51,6 +51,7 @@ export const parseBoolean = (input: string | boolean | number): boolean =>
   (input === true ||
     input === 1 ||
     input.toString().toLowerCase() === 'true' ||
+    input.toString().toLowerCase() === 'on' ||
     input.toString().toLowerCase() === '1');
 
 export const isStringArray = (s: unknown): boolean =>

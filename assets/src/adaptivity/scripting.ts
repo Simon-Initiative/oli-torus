@@ -1,10 +1,7 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { parseArray } from 'utils/common';
 import { CapiVariable, CapiVariableTypes } from './capi';
-
-// for use by client side scripting evalution
-export const defaultGlobalEnv = new Environment();
-(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
+import { janus_std } from './janus-scripts/builtin_functions';
 
 export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
   let val: any = v.value;
@@ -78,8 +75,16 @@ export const getAssignScript = (state: Record<string, any>): string => {
 };
 
 export const getEnvState = (env: Environment): Record<string, any> => {
-  // should be array instead?
-  return env.toObj();
+  // filter out functions, TODO: should do this perhaps in the lib instead?
+  const dump: any = env.toObj();
+  const filtered = Object.keys(dump).reduce((collect: any, key) => {
+    const value = dump[key];
+    if (typeof value !== 'function') {
+      collect[key] = value;
+    }
+    return collect;
+  }, {});
+  return filtered;
 };
 
 export const getValues = (identifiers: string[], env?: Environment) => {
@@ -177,3 +182,28 @@ export const bulkApplyState = (operations: ApplyStateOperation[], env?: Environm
 export const removeStateValues = (env: Environment, keys: string[]): void => {
   env.remove(keys);
 };
+
+export const getLocalizedStateSnapshot = (
+  activityIds: string[],
+  env: Environment = defaultGlobalEnv,
+) => {
+  const snapshot = getEnvState(env);
+  const finalState: any = { ...snapshot };
+  activityIds.forEach((activityId: string) => {
+    const activityState = Object.keys(snapshot)
+      .filter((key) => key.indexOf(`${activityId}|`) === 0)
+      .reduce((collect: any, key) => {
+        const localizedKey = key.replace(`${activityId}|`, '');
+        collect[localizedKey] = snapshot[key];
+        return collect;
+      }, {});
+    Object.assign(finalState, activityState);
+  });
+  return finalState;
+};
+
+// for use by client side scripting evalution
+export const defaultGlobalEnv = new Environment();
+(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
+// load std lib
+evalScript(janus_std, defaultGlobalEnv);

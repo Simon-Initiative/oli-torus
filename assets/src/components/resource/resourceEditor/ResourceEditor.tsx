@@ -43,6 +43,7 @@ import {
   unregisterWindowBlur,
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
+import guid from 'utils/guid';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -81,7 +82,14 @@ function prepareSaveFn(
 // of this resource is empty
 function withDefaultContent(content: ResourceContent[]): [string, ResourceContent][] {
   if (content.length > 0) {
-    return content.map((contentItem) => [contentItem.id, contentItem]);
+    return content.map((contentItem) => {
+      // There is the possibility that ingested course material did not specify the
+      // id attribute. If so, we will assign one here that will get persisted once the user
+      // edits the page.
+      contentItem =
+        contentItem.id === undefined ? Object.assign({}, contentItem, { id: guid() }) : contentItem;
+      return [contentItem.id, contentItem];
+    });
   }
   const defaultContent = createDefaultStructuredContent();
   return [[defaultContent.id, defaultContent]];

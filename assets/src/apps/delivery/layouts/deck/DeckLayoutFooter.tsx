@@ -2,12 +2,19 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+  getLocalizedStateSnapshot,
+} from '../../../../adaptivity/scripting';
+import {
   selectCurrentActivityContent,
   selectCurrentActivityId,
 } from '../../store/features/activities/slice';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -15,6 +22,7 @@ import {
   setCurrentFeedbacks,
   setIsGoodFeedback,
   setNextActivityId,
+  setMutationTriggered,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -23,7 +31,7 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectIsEnd } from '../../store/features/groups/selectors/deck';
+import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
@@ -51,7 +59,8 @@ const NextButton: React.FC<NextButton> = ({
   isFeedbackIconDisplayed,
   showCheckBtn,
 }) => {
-  const isEnd = useSelector(selectIsEnd);
+  const isEnd = useSelector(selectLessonEnd);
+
   const showDisabled = isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
@@ -92,6 +101,7 @@ const DeckLayoutFooter: React.FC = () => {
   const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
   const currentActivity = useSelector(selectCurrentActivityContent);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
@@ -142,14 +152,45 @@ const DeckLayoutFooter: React.FC = () => {
       });
     });
 
-    // always process mutateStates
-    actionsByType.mutateState.forEach((action: any) => {
-      // TODO: mutate state
-    });
-
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
+    if (actionsByType.mutateState.length) {
+      const mutationsModified = actionsByType.mutateState.map((op: any) => {
+        const ownerActivity = currentActivityTree?.find(
+          (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
+        );
+        const ownerId = ownerActivity
+          ? `${ownerActivity}|${op.params.target}`
+          : `${currentActivityId}|${op.params.target}`;
+
+        const globalOp: ApplyStateOperation = {
+          target: ownerId,
+          operator: op.params.operator,
+          value: op.params.value,
+        };
+        return globalOp;
+      });
+
+      console.log('FOOT MUTATION!', { mutationsModified });
+
+      bulkApplyState(mutationsModified, defaultGlobalEnv);
+
+      const latestSnapshot = getLocalizedStateSnapshot(
+        (currentActivityTree || []).map((a) => a.id),
+      );
+      // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
+      const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
+        collect[op.params.target] = latestSnapshot[op.params.target];
+        return collect;
+      }, {});
+
+      dispatch(
+        setMutationTriggered({
+          changes: mutatedObjects,
+        }),
+      );
+    }
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
@@ -164,7 +205,7 @@ const DeckLayoutFooter: React.FC = () => {
         dispatch(setNextActivityId({ activityId: navTarget }));
       }
     } else {
-      if (isCorrect && hasNavigation) {
+      if (hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
         switch (navTarget) {
@@ -312,6 +353,8 @@ const DeckLayoutFooter: React.FC = () => {
     setIsLoading(false);
   }, [currentActivity]);
 
+  const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
@@ -357,7 +400,10 @@ const DeckLayoutFooter: React.FC = () => {
             </div>
             <style type="text/css" aria-hidden="true" />
             <div className="content">
-              <FeedbackRenderer feedbacks={currentFeedbacks} />
+              <FeedbackRenderer
+                feedbacks={currentFeedbacks}
+                snapshot={getLocalizedStateSnapshot(currentActivityIds)}
+              />
             </div>
             {/* <button className="showSolnBtn showSolution displayNone">
                             <div className="ellipsis">Show solution</div>
