@@ -23,7 +23,11 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   const [globalState, setGlobalState] = useState<any>(null);
   const [globalInputState, setGlobalInputState] = useState<any>({});
   const [sessionState, setSessionState] = useState<any>({});
+  const [variablesState, setVariablesState] = useState<any>({});
   const [stageState, setStageState] = useState<any>({});
+
+  const [autoApplyChanges, setAutoApplyChanges] = useState(false);
+  const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
 
   // TODO: technically this tree concept only exists in the DECK layout
   // another layout like single activity or stacked might not have layers to deal with
@@ -67,6 +71,13 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     return setSessionState(sessionSlice);
   };
 
+  const getVariablesState = (): any => {
+    const statePuff: any = unflatten(globalState);
+    const variablesSlice = { ...statePuff['variables'] };
+    console.log('VARIABLES STATE PUFF', { statePuff, variablesSlice });
+    return setVariablesState(variablesSlice);
+  };
+
   const getStageState = (): any => {
     const statePuff: any = unflatten(globalState);
     const stageSlice = currentActivityTree?.reduce((collect: any, activity) => {
@@ -93,6 +104,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   useEffect(() => {
     setStageState({});
     setSessionState({});
+    setVariablesState({});
     debounceStateChanges();
     defaultGlobalEnv.addListener('change', debounceStateChanges);
     return () => {
@@ -105,6 +117,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
       return;
     }
     getSessionState();
+    getVariablesState();
     getStageState();
   }, [globalState]);
 
@@ -380,8 +393,25 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
 
   return (
     <div className="inspector">
+      <div className="card even">
+        <div className="card-body">
+          <ul className="list-group list-group-flush">
+            <li className="list-group-item pr-0">
+              <span>
+                <a href="#" className="card-link">
+                  CANCEL
+                </a>
+                <a href="#" className="card-link">
+                  Apply {`(1)`}
+                </a>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div className="accordion">
         <StateDisplay label="Session" state={sessionState} />
+        <StateDisplay label="Variables" state={variablesState} />
         <StateDisplay label="Stage" state={stageState} />
       </div>
     </div>
