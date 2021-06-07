@@ -94,7 +94,7 @@ const persistCookie = (cookies: CookieDetails[]) => {
 }
 
 export const retrieveCookies = (url: string) => {
-  let optInCookie = getCookie('_cky_opt_in');
+  const optInCookie = getCookie('_cky_opt_in');
   if (optInCookie === "") {
     fetch(url, {
       method: 'GET',
