@@ -135,7 +135,12 @@ export const initializeActivity = createAsyncThunk(
     // optimistically write to redux
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
-    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState, isPreviewMode);
+    // in preview mode we don't talk to the server, so we're done
+    if (isPreviewMode) {
+      return { result: results };
+    }
+
+    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState);
   },
 );
 
@@ -144,11 +149,14 @@ const getSessionVisitHistory = async (
   resourceAttemptGuid: string,
   isPreviewMode = false,
 ) => {
-  const pageAttemptState = await getPageAttemptState(
-    sectionSlug,
-    resourceAttemptGuid,
-    isPreviewMode,
-  );
+  let pageAttemptState: any;
+  if (isPreviewMode) {
+    const allState = getEnvState(defaultGlobalEnv);
+    pageAttemptState = allState;
+  } else {
+    const { result } = await getPageAttemptState(sectionSlug, resourceAttemptGuid);
+    pageAttemptState = result;
+  }
   return Object.keys(pageAttemptState)
     .filter((key) => key.indexOf('session.visits.') === 0)
     .map((visitKey: string) => ({

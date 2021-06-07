@@ -1,7 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { check } from '../../../../../../adaptivity/rules-engine';
-import { defaultGlobalEnv, getEnvState } from '../../../../../../adaptivity/scripting';
+import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+} from '../../../../../../adaptivity/scripting';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
 import { selectPreviewMode } from '../../page/slice';
@@ -36,6 +40,26 @@ export const triggerCheck = createAsyncThunk(
     modifiedExtrinsicState['session.attemptNumber'] = currentAttemptNumber + 1;
     modifiedExtrinsicState[`${currentActivity.id}|session.attemptNumber`] =
       currentAttemptNumber + 1;
+
+    const updateScripting: ApplyStateOperation[] = [
+      {
+        target: 'session.timeOnQuestion',
+        operator: '=',
+        value: timeOnQuestion,
+      },
+      {
+        target: 'session.attemptNumber',
+        operator: '=',
+        value: currentAttemptNumber + 1,
+      },
+      {
+        target: `${currentActivity.id}|session.attemptNumber`,
+        operator: '=',
+        value: currentAttemptNumber + 1,
+      },
+    ];
+
+    bulkApplyState(updateScripting, defaultGlobalEnv);
 
     await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
 
@@ -79,7 +103,12 @@ export const triggerCheck = createAsyncThunk(
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
       checkResult = await check(stateSnapshot, rulesToCheck);
-      console.log('CHECK RESULT', { currentActivity, currentRules, checkResult, stateSnapshot, rootState });
+      console.log('CHECK RESULT', {
+        currentActivity,
+        currentRules,
+        checkResult,
+        stateSnapshot,
+      });
     } else {
       // server mode (delivery) TODO
       checkResult = [

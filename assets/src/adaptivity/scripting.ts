@@ -75,8 +75,16 @@ export const getAssignScript = (state: Record<string, any>): string => {
 };
 
 export const getEnvState = (env: Environment): Record<string, any> => {
-  // should be array instead?
-  return env.toObj();
+  // filter out functions, TODO: should do this perhaps in the lib instead?
+  const dump: any = env.toObj();
+  const filtered = Object.keys(dump).reduce((collect: any, key) => {
+    const value = dump[key];
+    if (typeof value !== 'function') {
+      collect[key] = value;
+    }
+    return collect;
+  }, {});
+  return filtered;
 };
 
 export const getValues = (identifiers: string[], env?: Environment) => {
