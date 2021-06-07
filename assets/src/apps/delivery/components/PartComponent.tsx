@@ -31,7 +31,7 @@ const WebComponent: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (e: any) => {
-        console.log(`${notificationType.toString()} notification handled [PC]`, e);
+        console.log(`${notificationType.toString()} notification handled [PC : ${props.id}]`, e);
         const el = ref.current;
         if (el) {
           if (el.notify) {
@@ -78,6 +78,7 @@ const WebComponent: React.FC<any> = (props) => {
   }, []);
 
   const webComponentProps = {
+    ref,
     id: props.id,
     type: props.type,
     ...props,
