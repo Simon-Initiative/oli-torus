@@ -276,14 +276,25 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                 const choice = parseInt(String(sSelectedChoice), 10);
                 if (selectedChoice !== choice) {
                   setSelectedChoice(choice);
+                  // TODO: need to update the number and text
+                  // and array values as well
                 }
+              }
+              const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`]
+              if (sSelectedChoiceText !== undefined) {
+                // TODO: reverse lookup from text value
               }
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
               if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
                 const updatedValues = sSelectedChoices.map((item) =>
                   !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
                 );
+                // TODO: check duplicates? update other values
                 setSelectedChoices(updatedValues);
+              }
+              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`]
+              if (sSelectedChoicesText !== undefined) {
+                // TODO: reverse lookup from text values
               }
               // NOTE: it doesn't make sense (SS doesn't let you) to allow the things like
               // numberOfSelectedChoices to be set via mutate state

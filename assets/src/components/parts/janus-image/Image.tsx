@@ -35,35 +35,25 @@ const Image: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [Image]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [Image]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do for images
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do for images
             break;
           case NotificationType.STATE_CHANGED:
-            {
+            /* {
               console.log('MUTATE STATE!!!!', {
                 payload,
               });
-            }
+            } */
+            // nothing to do for images
+            // TODO: maybe allow repositioning and changing visiblity, src
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do for images
             break;
         }
       };
