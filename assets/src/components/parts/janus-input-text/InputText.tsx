@@ -87,32 +87,33 @@ const InputText: React.FC<any> = (props) => {
         console.log(`${notificationType.toString()} notification handled [InputText]`, payload);
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do... change color if wrong?
             break;
           case NotificationType.STATE_CHANGED:
             {
               console.log('MUTATE STATE!!!!', {
                 payload,
               });
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+              const sText = changes[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText);
+              }
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
         }
       };

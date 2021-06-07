@@ -2,15 +2,15 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { v4 as uuidv4 } from 'uuid';
 import { CapiVariable, CapiVariableTypes, parseCapiValue } from '../../../../adaptivity/capi';
 import {
-  applyState,
   ApplyStateOperation,
   defaultGlobalEnv,
   getEnvState,
 } from '../../../../adaptivity/scripting';
+import { applyStateChange } from '../../store/features/adaptivity/actions/applyStateChange';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 
 interface InspectorProps {
@@ -18,6 +18,8 @@ interface InspectorProps {
 }
 // Inspector Placeholder
 const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
+  const dispatch = useDispatch();
+
   const [globalState, setGlobalState] = useState<any>(null);
   const [globalInputState, setGlobalInputState] = useState<any>({});
   const [sessionState, setSessionState] = useState<any>({});
@@ -120,12 +122,12 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     }); */
     const theValue = value as CapiVariable;
 
-    const handleValueChange = (e) => {
+    const handleValueChange = (e, isCheckbox = false) => {
       if (e.type === 'keydown' && e.key !== 'Enter') {
         return;
       }
-      console.log('VALUE CHANGE INSPECTOR', e.target.value, theValue);
-      const newValue = e.target.value;
+      console.log('VALUE CHANGE INSPECTOR', e, e.target.value, theValue);
+      const newValue = isCheckbox ? e.target.checked : e.target.value;
       theValue.value = newValue;
       const applyOp: ApplyStateOperation = {
         target: theValue.key,
@@ -133,9 +135,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
         type: theValue.type,
         value: parseCapiValue(theValue),
       };
-      // TODO: need to create a async thunk we can dispatch that applies these
-      // as mutate state that will update scripting, redux, as well as notify part components
-      applyState(applyOp, defaultGlobalEnv);
+      dispatch(applyStateChange({ operations: [applyOp] }));
     };
 
     const uuid = uuidv4();
@@ -148,7 +148,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
               className="custom-control-input"
               id={uuid}
               defaultChecked={parseCapiValue(theValue)}
-              onChange={handleValueChange}
+              onChange={(e) => handleValueChange(e, true)}
             />
             <label className="custom-control-label" htmlFor={uuid}></label>
           </div>
