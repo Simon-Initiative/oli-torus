@@ -14,6 +14,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.UserRoutes,
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
+      controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
       mailer_backend: OliWeb.Pow.Mailer,
       web_mailer_module: OliWeb,
       pow_assent: [
@@ -25,8 +26,15 @@ defmodule OliWeb.Pow.PowHelpers do
             strategy: Assent.Strategy.Google,
             authorization_params: [
               scope: "email profile"
-            ],
-            session_params: ["type"]
+            ]
+          ],
+          github: [
+            client_id: System.get_env("GITHUB_CLIENT_ID"),
+            client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+            strategy: Assent.Strategy.Github,
+            authorization_params: [
+              scope: "read:user user:email"
+            ]
           ]
         ]
       ]
