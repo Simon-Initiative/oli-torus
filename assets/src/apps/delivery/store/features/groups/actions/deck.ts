@@ -137,7 +137,10 @@ export const initializeActivity = createAsyncThunk(
 
     // in preview mode we don't talk to the server, so we're done
     if (isPreviewMode) {
-      return { result: results };
+      const allGood = results.every(({result}) => result === null);
+      // TODO: report actual errors?
+      const status = allGood ? 'success' : 'error';
+      return { result: status };
     }
 
     await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState);

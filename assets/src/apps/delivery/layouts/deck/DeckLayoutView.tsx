@@ -16,7 +16,6 @@ import {
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import RestartLessonDialog from './RestartLessonDialog';
 
 // TODO: need to factor this into a "legacy" flagged behavior
 const InjectedStyles: React.FC = () => {
@@ -46,7 +45,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
-  const restartLesson = useSelector(selectRestartLesson);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -405,7 +403,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         <div>loading...</div>
       )}
       <DeckLayoutFooter />
-      {restartLesson ? <RestartLessonDialog /> : null}
     </div>
   );
 };
