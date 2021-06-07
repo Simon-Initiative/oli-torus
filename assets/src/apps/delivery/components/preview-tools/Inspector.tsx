@@ -393,21 +393,13 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
 
   return (
     <div className="inspector">
-      <div className="card even">
-        <div className="card-body">
-          <ul className="list-group list-group-flush">
-            <li className="list-group-item pr-0">
-              <span>
-                <a href="#" className="card-link">
-                  CANCEL
-                </a>
-                <a href="#" className="card-link">
-                  Apply {`(1)`}
-                </a>
-              </span>
-            </li>
-          </ul>
-        </div>
+      <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
+        <button type="button" className="btn btn-secondary mr-1">
+          Cancel
+        </button>
+        <button type="button" className="btn btn-primary ml-1">
+          Apply {`(1)`}
+        </button>
       </div>
       <div className="accordion">
         <StateDisplay label="Session" state={sessionState} />
