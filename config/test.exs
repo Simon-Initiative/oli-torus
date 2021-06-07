@@ -10,10 +10,8 @@ config :oli,
   branding: [
     name: "OLI Torus Test",
     logo: "/images/oli_torus_logo.png",
-    favicons: "/favicons",
-    dark: [
-      logo: "/images/oli_torus_logo_dark.png"
-    ]
+    logo_dark: "/images/oli_torus_logo_dark.png",
+    favicons: "/favicons"
   ]
 
 # Configure your database

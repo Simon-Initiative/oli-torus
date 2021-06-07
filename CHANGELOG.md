@@ -10,6 +10,7 @@
 
 - Image coding: remove extra space at end of printed lines (problem for regexp grading)
 - Fix issues related to exporting DataShop events for courses that contain hierarchies
+- Fix an issue with the torus logo in dark mode
 
 ## 0.10.0 (2021-6-2)
 
