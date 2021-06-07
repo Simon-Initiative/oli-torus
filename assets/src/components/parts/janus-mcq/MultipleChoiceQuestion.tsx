@@ -255,32 +255,42 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         console.log(`${notificationType.toString()} notification handled [MCQ]`, payload);
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // should disable input during check?
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // if disabled above then re-enable now
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+              const sRandomized = changes[`stage.${id}.randomized`];
+              if (sRandomized !== undefined) {
+                setRandomized(sRandomized);
+              }
+              const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
+              if (sSelectedChoice !== undefined) {
+                const choice = parseInt(String(sSelectedChoice), 10);
+                if (selectedChoice !== choice) {
+                  setSelectedChoice(choice);
+                }
+              }
+              const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
+              if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
+                const updatedValues = sSelectedChoices.map((item) =>
+                  !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
+                );
+                setSelectedChoices(updatedValues);
+              }
+              // NOTE: it doesn't make sense (SS doesn't let you) to allow the things like
+              // numberOfSelectedChoices to be set via mutate state
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing
             break;
         }
       };
@@ -310,68 +320,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       ),
     );
   }
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // this runs every time state is updated from *any* source
-    // the global variable state
-    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    if (interested?.length) {
-      interested.forEach((stateVar) => {
-        switch (stateVar.key) {
-          case 'enabled':
-            // will check for boolean and string truthiness for enabled
-            setEnabled(parseBool(stateVar.value));
-            break;
-          case 'randomize':
-            // will check for boolean and string truthiness for randomize
-            setRandomized(parseBool(stateVar.value));
-            break;
-          case 'numberOfSelectedChoices':
-            {
-              const num = parseInt(stateVar.value as string, 10);
-              if (numberOfSelectedChoices !== num) {
-                setNumberOfSelectedChoices(num);
-              }
-            }
-            break;
-          case 'selectedChoice':
-            {
-              const choice = parseInt(stateVar.value as string, 10);
-              if (selectedChoice !== choice) {
-                setSelectedChoice(choice);
-              }
-            }
-            break;
-          case 'selectedChoiceText':
-            setSelectedChoiceText(stateVar.value.toString());
-            break;
-          case 'selectedChoices':
-            if (Array.isArray(stateVar.value)) {
-              // converts string values to numbers
-              const updatedValues = stateVar.value.map((item) =>
-                !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
-              );
-              setSelectedChoices(updatedValues);
-            }
-            break;
-          case 'selectedChoicesText':
-            {
-              const vals = stateVar.value;
-              if (Array.isArray(vals)) {
-                // compare selectedChoicesText with array of strings from state
-                // then update 'checked' value based on strings
-                const choices = selectedChoicesText.map((choice) => ({
-                  ...choice,
-                  checked: vals.includes(choice.textValue),
-                }));
-                setSelectedChoicesText(choices);
-              }
-            }
-            break;
-        }
-      });
-    }
-  };
 
   useEffect(() => {
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
