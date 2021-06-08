@@ -138,9 +138,19 @@ const Slider: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setIsSliderEnabled(sEnabled);
+              }
+              const sValue = changes[`stage.${id}.value`];
+              if (sValue !== undefined) {
+                setSliderValue(sValue);
+              }
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:

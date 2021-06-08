@@ -156,9 +156,31 @@ const Dropdown: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
+              if (sSelectedIndex !== undefined) {
+                const stateSelection = Number(sSelectedIndex);
+                if (selection !== stateSelection) {
+                  setSelection(stateSelection);
+                  setSelectedItem(optionLabels[stateSelection - 1]);
+                }
+              }
+
+              const sSelectedItem = changes[`stage.${id}.selectedItem`];
+              if (sSelectedItem !== undefined) {
+                if (selectedItem !== sSelectedItem) {
+                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
+                    sSelectedItem.includes(str),
+                  );
+                  setSelectedItem(sSelectedItem);
+                  setSelection(selectionIndex + 1);
+                }
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:

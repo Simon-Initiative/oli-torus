@@ -9,6 +9,7 @@ import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
+import { parseBool } from 'utils/common';
 
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
@@ -152,9 +153,29 @@ const Popup: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const isOpen = changes[`stage.${id}.isOpen`];
+              if (isOpen !== undefined) {
+                setShowPopup(isOpen);
+              }
+
+              const openByDefault = changes[`stage.${id}.openByDefault`];
+              if (openByDefault !== undefined) {
+                setShowPopup(parseBool(openByDefault));
+              }
+              const isVisible = changes[`stage.${id}.visible`];
+              if (isVisible !== undefined) {
+                setPopupVisible(isVisible);
+              }
+
+              const initIconUrl = changes[`stage.${id}.iconURL`];
+              if (initIconUrl !== undefined) {
+                if (getIcon(initIconUrl)) {
+                  setIconSrc(getIcon(initIconUrl));
+                } else {
+                  setIconSrc(initIconUrl);
+                }
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:

@@ -152,9 +152,31 @@ const MultiLineTextInput: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sText = changes[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'textLength',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sText.length,
+                    },
+                  ],
+                });
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -227,35 +249,6 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     debounce((val) => saveInputText(val), debounceWaitTime),
     [],
   );
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // override text value from state
-    const activity = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    activity.forEach((stateVar) => {
-      if (stateVar && stateVar.value && stateVar.key === 'text') {
-        const stateText = stateVar.value.toString();
-        if (text !== stateText) {
-          setText(stateText);
-        }
-        props.onSave({
-          id: `${id}`,
-          responses: [
-            {
-              key: 'textLength',
-              type: CapiVariableTypes.NUMBER,
-              value: stateText.length,
-            },
-          ],
-        });
-      }
-      if (stateVar && stateVar.key === 'enabled') {
-        setEnabled(parseBool(stateVar.value));
-      }
-      if (stateVar && stateVar.key === 'customCssClass') {
-        setCssClass(stateVar.value.toString());
-      }
-    });
-  };
 
   const initialCharacterCount = text.length || 0;
 
