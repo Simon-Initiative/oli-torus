@@ -193,9 +193,26 @@ const Video: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sAutoPlay = changes[`stage.${id}.autoPlay`];
+              if (sAutoPlay !== undefined) {
+                setVideoAutoPlay(sAutoPlay);
+              }
+
+              const sEnableReplay = changes[`stage.${id}.enableReplay`];
+              if (sEnableReplay !== undefined) {
+                setVideoEnableReplay(sEnableReplay);
+              }
+
+              const sHasStarted = changes[`stage.${id}.hasStarted`];
+              if (sHasStarted !== undefined) {
+                setVideoIsPlayerStarted(sHasStarted);
+              }
+
+              const sHasCompleted = changes[`stage.${id}.hasCompleted`];
+              if (sHasCompleted !== undefined) {
+                setVideoIsCompleted(sHasCompleted);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -287,49 +304,6 @@ const Video: React.FC<any> = (props) => {
       }
     }
   }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // override various things from state
-    const CapiVariables: any = {
-      isVideoPlayerStarted: videoIsPlayerStarted,
-      currentTime: startTime,
-      duration: '',
-      isVideoCompleted: false,
-      videoState: 'notStarted',
-    };
-    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    interested.forEach((stateVar) => {
-      if (stateVar.key === 'hasStarted') {
-        setVideoIsPlayerStarted(stateVar.value as boolean);
-        CapiVariables.isVideoPlayerStarted = stateVar.value as boolean;
-      }
-      if (stateVar.key === 'currentTime') {
-        CapiVariables.currentTime = stateVar.value as number;
-      }
-      if (stateVar.key === 'duration') {
-        CapiVariables.duration = stateVar.value as number;
-      }
-      if (stateVar.key === 'hasCompleted') {
-        setVideoIsCompleted(stateVar.value as boolean);
-        CapiVariables.isVideoCompleted = stateVar.value as boolean;
-      }
-      if (stateVar.key === 'state') {
-        CapiVariables.videoState = stateVar.value as string;
-      }
-      if (stateVar.key === 'autoPlay') {
-        setVideoAutoPlay(stateVar.value as boolean);
-      }
-      if (stateVar.key === 'enableReplay') {
-        setVideoEnableReplay(stateVar.value as boolean);
-      }
-    });
-    saveState(CapiVariables);
-  };
 
   const handleVideoEnd = (data: any) => {
     setVideoIsPlayerStarted(true);
