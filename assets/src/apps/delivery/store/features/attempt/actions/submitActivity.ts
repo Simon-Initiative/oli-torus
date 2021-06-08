@@ -1,5 +1,10 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writeActivityAttemptState } from 'data/persistence/state/intrinsic';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  getAssignScript,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { AttemptSlice, selectById, upsertActivityAttemptState } from '../slice';
@@ -22,15 +27,18 @@ export const submitActivityState = createAsyncThunk(
       await dispatch(upsertActivityAttemptState({ attempt: updated }));
     }
 
-    // in preview mode the write function will write to the scripting env
-    // in order for that to process properly we need to attach the sequenceId
+    // update script env with latest values
+    const assignScript = getAssignScript(partResponses);
+    const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
-    return writeActivityAttemptState(
-      sectionSlug,
-      attemptGuid,
-      partResponses,
-      true,
-      isPreviewMode,
-    );
+    // in preview mode we don't talk to the server, so we're done
+    if (isPreviewMode) {
+      // TODO: normalize result response between client and server (currently nothing cares)
+      return { result: scriptResult };
+    }
+
+    const finalize = true;
+
+    return writeActivityAttemptState(sectionSlug, attemptGuid, partResponses, finalize);
   },
 );

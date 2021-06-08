@@ -10,6 +10,7 @@ import {
   RuleProperties,
   TopLevelCondition,
 } from 'json-rules-engine';
+import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
@@ -86,7 +87,12 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         );
       }
       if (typeof ogValue === 'string') {
-        modifiedValue = evaluateValueExpression(ogValue, env);
+        if (ogValue.indexOf('{') === -1) {
+          modifiedValue = ogValue;
+        } else {
+          //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
+          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+        }
       }
       condition.value = modifiedValue;
     });
@@ -97,10 +103,12 @@ export const check = async (
   state: Record<string, any>,
   rules: JanusRuleProperties[],
 ): Promise<Event[]> => {
+  // load the std lib
+  const { env } = evalScript(janus_std);
   // setup script env context
   const assignScript = getAssignScript(state);
   // $log.info('assign: ', assignScript);
-  const { env } = evalScript(assignScript);
+  evalScript(assignScript, env);
   // TODO: check result for errors
   // $log.info('eval1', result);
   // evaluate all rule conditions against context

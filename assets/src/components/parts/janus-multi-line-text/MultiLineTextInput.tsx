@@ -1,4 +1,8 @@
 /* eslint-disable react/prop-types */
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { parseBool } from 'utils/common';
@@ -115,6 +119,73 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     showCharacterCount,
   } = model;
 
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(
+          `${notificationType.toString()} notification handled [Multiline text Input]`,
+          payload,
+        ); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const sText = changes[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'textLength',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sText.length,
+                    },
+                  ],
+                });
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
+
   // Set up the styles
   const wrapperStyles: CSSProperties = {
     position: 'absolute',
@@ -166,35 +237,6 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     debounce((val) => saveInputText(val), debounceWaitTime),
     [],
   );
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // override text value from state
-    const activity = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    activity.forEach((stateVar) => {
-      if (stateVar && stateVar.value && stateVar.key === 'text') {
-        const stateText = stateVar.value.toString();
-        if (text !== stateText) {
-          setText(stateText);
-        }
-        props.onSave({
-          id: `${id}`,
-          responses: [
-            {
-              key: 'textLength',
-              type: CapiVariableTypes.NUMBER,
-              value: stateText.length,
-            },
-          ],
-        });
-      }
-      if (stateVar && stateVar.key === 'enabled') {
-        setEnabled(parseBool(stateVar.value));
-      }
-      if (stateVar && stateVar.key === 'customCssClass') {
-        setCssClass(stateVar.value.toString());
-      }
-    });
-  };
 
   const initialCharacterCount = text.length || 0;
 

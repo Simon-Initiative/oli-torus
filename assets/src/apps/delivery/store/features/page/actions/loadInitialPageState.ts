@@ -1,6 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  getAssignScript,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import { loadActivities } from '../../groups/actions/deck';
@@ -35,13 +40,23 @@ export const loadInitialPageState = createAsyncThunk(
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
         return acc;
       }, {});
-      await writePageAttemptState(
-        params.sectionSlug,
-        resourceAttemptGuid,
-        sessionState,
-        params.previewMode,
-      );
+      // init variables so add ops can function
+      sessionState['session.tutorialScore'] = 0;
+      sessionState['session.currentQuestionScore'] = 0;
+      sessionState['session.timeStartQuestion'] = 0;
+      sessionState['session.attemptNumber'] = 0;
+      sessionState['session.timeOnQuestion'] = 0;
+
+      // update scripting env with session state
+      const assignScript = getAssignScript(sessionState);
+      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+
+      if (!params.previewMode) {
+        await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+      }
+
       dispatch(setExtrinsicState({ state: sessionState }));
+
       let activityAttemptMapping;
       if (params.previewMode) {
         // need to load activities from the authoring api

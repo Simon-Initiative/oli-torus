@@ -2,7 +2,12 @@
 /* eslint-disable react/prop-types */
 import chroma from 'chroma-js';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
 
@@ -117,6 +122,68 @@ const Popup: React.FC<any> = (props) => {
     popup,
     description,
   } = model;
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [Pop-up]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const isOpen = changes[`stage.${id}.isOpen`];
+              if (isOpen !== undefined) {
+                setShowPopup(isOpen);
+              }
+
+              const openByDefault = changes[`stage.${id}.openByDefault`];
+              if (openByDefault !== undefined) {
+                setShowPopup(parseBool(openByDefault));
+              }
+              const isVisible = changes[`stage.${id}.visible`];
+              if (isVisible !== undefined) {
+                setPopupVisible(isVisible);
+              }
+
+              const initIconUrl = changes[`stage.${id}.iconURL`];
+              if (initIconUrl !== undefined) {
+                if (getIcon(initIconUrl)) {
+                  setIconSrc(getIcon(initIconUrl));
+                } else {
+                  setIconSrc(initIconUrl);
+                }
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const popupStyles: CSSProperties = {
     position: 'absolute',
