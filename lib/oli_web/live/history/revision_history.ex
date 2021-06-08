@@ -47,7 +47,8 @@ defmodule OliWeb.RevisionHistory do
     selected = fetch_selected(hd(revisions).id)
 
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        tree: tree,
@@ -59,8 +60,11 @@ defmodule OliWeb.RevisionHistory do
        selected: selected,
        project: project,
        page_offset: 0,
-       initial_size: length(revisions)
-     )}
+       initial_size: length(revisions),
+       uploaded_files: [],
+       uploaded_content: nil
+     )
+     |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
 
   defp fetch_all_revisions(resource_id) do
@@ -148,7 +152,7 @@ defmodule OliWeb.RevisionHistory do
         </div>
       </div>
     </div>
-    <div class="row">
+    <div class="row" style="margin-bottom: 30px;">
       <div class="col-sm-12">
         <div class="card">
           <div class="card-header">
@@ -166,18 +170,45 @@ defmodule OliWeb.RevisionHistory do
       </div>
     </div>
 
-    <%= live_component @socket, Modal, title: "Restore this Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            Set JSON Content
+          </div>
+          <div class="card-body">
+
+            <p>Select a <code>.json</code> file to upload and set as the content of this resource.<p>
+
+            <div class="alert alert-danger" role="alert">
+              <p class="mb-4"><b>This is a dangerous operation!</b>  If you upload a JSON file that does not correspond to a
+              valid resource representation you likely will break the ability to view or edit this resource.</p>
+
+              <form id="json-upload" phx-change="validate" phx-submit="save" %>
+                <div class="flex" id="dropzone">
+                  <%= live_file_input @uploads.json %>
+                  <button type="submit" class="btn btn-outline-danger" phx-disable-with="Uploading">
+                    Set Content
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%= live_component @socket, Modal, title: "Restore Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
       <p class="mb-4">Are you sure you want to restore this revision?</p>
 
       <p>This will end any active editing session for other users and will create a
-         new revision to restore the title, content and objectives and other settings
-         of this selected revision.</p>
+        new revision restoring this selected one. </p>
     <% end %>
+
     """
   end
 
-  # creates a new revision by restoring the state of the selected revision
-  def handle_event("restore", _, socket) do
+  defp mimic_edit(socket, base_revision, content) do
     project_slug = socket.assigns.project.slug
     resource_id = socket.assigns.resource_id
 
@@ -192,14 +223,13 @@ defmodule OliWeb.RevisionHistory do
     # Now create and track the new revision, based on the current head for this project but
     # restoring the content, title and objectives and other settigns from the selected revision
     %Revision{
-      content: content,
       title: title,
       objectives: objectives,
       scoring_strategy_id: scoring_strategy_id,
       graded: graded,
       max_attempts: max_attempts,
       author_id: author_id
-    } = socket.assigns.selected
+    } = base_revision
 
     {:ok, revision} =
       AuthoringResolver.from_resource_id(project_slug, resource_id)
@@ -218,6 +248,34 @@ defmodule OliWeb.RevisionHistory do
     Broadcaster.broadcast_revision(revision, project_slug)
 
     {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :json, ref)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save", _params, socket) do
+    uploaded_content =
+      consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
+        File.read!(path)
+        |> Jason.decode!()
+      end)
+
+    revision = fetch_selected(hd(socket.assigns.revisions).id)
+
+    mimic_edit(socket, revision, hd(uploaded_content))
+  end
+
+  # creates a new revision by restoring the state of the selected revision
+  def handle_event("restore", _, socket) do
+    mimic_edit(socket, socket.assigns.selected, socket.assigns.selected.content)
   end
 
   def handle_event("select", %{"rev" => str}, socket) do
@@ -283,4 +341,8 @@ defmodule OliWeb.RevisionHistory do
        publication: determine_most_recent_published(mappings)
      )}
   end
+
+  defp error_to_string(:too_large), do: "Too large"
+  defp error_to_string(:too_many_files), do: "You have selected too many files"
+  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 end
