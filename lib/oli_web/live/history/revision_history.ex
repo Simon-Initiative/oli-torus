@@ -21,6 +21,7 @@ defmodule OliWeb.RevisionHistory do
 
   @page_size 15
 
+  @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
     [{resource_id}] =
       Repo.all(
@@ -113,6 +114,7 @@ defmodule OliWeb.RevisionHistory do
     end
   end
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     size = @page_size
 
@@ -198,7 +200,7 @@ defmodule OliWeb.RevisionHistory do
       </div>
     </div>
 
-    <%= live_component @socket, Modal, title: "Restore Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
+    <%= live_component Modal, title: "Restore Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
       <p class="mb-4">Are you sure you want to restore this revision?</p>
 
       <p>This will end any active editing session for other users and will create a
@@ -274,29 +276,35 @@ defmodule OliWeb.RevisionHistory do
   end
 
   # creates a new revision by restoring the state of the selected revision
+  @impl Phoenix.LiveView
   def handle_event("restore", _, socket) do
     mimic_edit(socket, socket.assigns.selected, socket.assigns.selected.content)
   end
 
+  @impl Phoenix.LiveView
   def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
     selected = fetch_selected(id)
     {:noreply, assign(socket, :selected, selected)}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("table", _, socket) do
     {:noreply, assign(socket, :view, "table")}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("graph", _, socket) do
     {:noreply, assign(socket, view: "graph")}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("page", %{"ordinal" => ordinal}, socket) do
     page_offset = (String.to_integer(ordinal) - 1) * @page_size
     {:noreply, assign(socket, :page_offset, page_offset)}
   end
 
+  @impl Phoenix.LiveView
   def handle_info({:updated, revision, _}, socket) do
     id = revision.id
 
@@ -325,6 +333,7 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, assign(socket, selected: selected, revisions: revisions, tree: tree)}
   end
 
+  @impl Phoenix.LiveView
   def handle_info({:new_publication, _, _}, socket) do
     mappings =
       Publishing.get_all_mappings_for_resource(
@@ -341,8 +350,4 @@ defmodule OliWeb.RevisionHistory do
        publication: determine_most_recent_published(mappings)
      )}
   end
-
-  defp error_to_string(:too_large), do: "Too large"
-  defp error_to_string(:too_many_files), do: "You have selected too many files"
-  defp error_to_string(:not_accepted), do: "You have selected an unacceptable file type"
 end
