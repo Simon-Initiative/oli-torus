@@ -116,7 +116,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     [changeOperations],
   );
 
-  const handleCancelChanges = (e) => {
+  const handleCancelChanges = (e: any) => {
     debounceStateChanges();
     setChangeOperations([]);
   };

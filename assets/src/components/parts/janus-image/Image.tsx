@@ -44,11 +44,6 @@ const Image: React.FC<any> = (props) => {
             // nothing to do for images
             break;
           case NotificationType.STATE_CHANGED:
-            /* {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
-            } */
             // nothing to do for images
             // TODO: maybe allow repositioning and changing visiblity, src
             break;

@@ -100,7 +100,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // they will reference them "globally" so need to track the above
       // in order to prepend the "variables" namespace
       const statements: string[] = pageContent.custom.variables
-        .map((v) => {
+        .map((v: any) => {
           if (!v.name || !v.expression) {
             return '';
           }

@@ -252,7 +252,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [MCQ]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [MCQ]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // should disable input during check?

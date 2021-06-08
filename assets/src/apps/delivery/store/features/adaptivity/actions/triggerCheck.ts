@@ -103,12 +103,12 @@ export const triggerCheck = createAsyncThunk(
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
       checkResult = await check(stateSnapshot, rulesToCheck);
-      console.log('CHECK RESULT', {
+      /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
         checkResult,
         stateSnapshot,
-      });
+      }); */
     } else {
       // server mode (delivery) TODO
       checkResult = [
