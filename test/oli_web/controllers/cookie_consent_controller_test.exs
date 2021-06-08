@@ -22,7 +22,7 @@ defmodule OliWeb.CookieConsentControllerTest do
           cookies: [
             %{
               duration: "Tue, 26 Apr 2022 18:17:21 GMT",
-              expires: "2022-04-26T18:17:21.264Z",
+              expiresIso: "2022-04-26T18:17:21.264Z",
               name: "_cky_opt_in",
               value: "true"
             }

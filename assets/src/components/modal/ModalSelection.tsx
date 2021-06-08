@@ -10,7 +10,6 @@ export enum sizes {
   large = 'lg',
   extraLarge = 'xlg',
 }
-
 export interface ModalSelectionProps {
   okLabel?: string;
   okClassName?: string;
@@ -19,9 +18,10 @@ export interface ModalSelectionProps {
   hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
-  onInsert: () => void;
-  onCancel: () => void;
+  onInsert?: () => void;
+  onCancel?: () => void;
   size?: sizes;
+  footer?: any;
 }
 
 interface ModalSelectionState {
@@ -43,12 +43,14 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
 
   onInsert = (e: any) => {
     e.preventDefault();
-    this.props.onInsert();
+    if (this.props.onInsert)
+      this.props.onInsert();
   };
 
   onCancel = (e: any) => {
     e.preventDefault();
-    this.props.onCancel();
+    if (this.props.onCancel)
+      this.props.onCancel();
   };
 
   render() {
@@ -71,7 +73,7 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
             <div className="modal-header">
               <h5 className="modal-title">{this.props.title}</h5>
               {this.props.hideDialogCloseButton === true ? null : (
-                <button type="button" className="close" onClick={this.onCancel}>
+                <button type="button" className="close" onClick={this.onCancel} data-dismiss="modal">
                   <span aria-hidden="true">&times;</span>
                 </button>
               )}
@@ -84,23 +86,27 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
               )}
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-link"
-                onClick={this.onCancel}
-                data-dismiss="modal"
-              >
-                {cancelLabel}
-              </button>
-              {this.props.hideOkButton === true ? null : (
-                <button
-                  disabled={disableInsert}
-                  type="button"
-                  onClick={this.onInsert}
-                  className={`btn btn-${okClassName}`}
-                >
-                  {okLabel}
-                </button>
+              {this.props.footer ? this.props.footer : (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    onClick={this.onCancel}
+                    data-dismiss="modal"
+                  >
+                    {cancelLabel}
+                  </button>
+                  {this.props.hideOkButton === true ? null : (
+                    <button
+                      disabled={disableInsert}
+                      type="button"
+                      onClick={this.onInsert}
+                      className={`btn btn-${okClassName}`}
+                    >
+                      {okLabel}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
