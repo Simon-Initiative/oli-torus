@@ -76,7 +76,7 @@ defmodule OliWeb.DeliveryView do
     end
   end
 
-  def user_name(conn, user) do
+  def user_name(user) do
     case user do
       %{guest: true} ->
         "Guest"

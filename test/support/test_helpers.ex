@@ -58,8 +58,15 @@ defmodule Oli.TestHelpers do
       })
 
     {:ok, user} =
-      User.changeset(%User{}, params)
-      |> Repo.insert()
+      case attrs do
+        %{password: _password, password_confirmation: _password_confirmation} ->
+          User.changeset(%User{}, params)
+          |> Repo.insert()
+
+        _ ->
+          User.noauth_changeset(%User{}, params)
+          |> Repo.insert()
+      end
 
     user
   end
