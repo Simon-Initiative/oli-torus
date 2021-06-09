@@ -81,6 +81,9 @@ export const parseCapiValue = (capiVar: CapiVariable): any => {
         return parseFloat(capiVar.value);
       }
       return capiVar.value;
+    case CapiVariableTypes.ARRAY:
+    case CapiVariableTypes.ARRAY_POINT:
+      return parseArray(capiVar.value);
     default:
       return capiVar.value;
   }

@@ -1,18 +1,18 @@
 /* eslint-disable react/prop-types */
+import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { JanusCarouselModes } from './types';
 
 const Carousel: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [viewedSlides, setViewedSlides] = useState<any[]>([]);
@@ -86,35 +86,35 @@ const Carousel: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [Carousel]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [Carousel]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sMode = changes[`stage.${id}.Mode`];
+              if (sMode !== undefined) {
+                setCarouselMode(sMode);
+              }
+
+              const sCustomCss = changes[`stage.${id}.customCss`];
+              if (sCustomCss !== undefined) {
+                setCarouselCustomCss(sCustomCss);
+              }
+
+              const sZoom = changes[`stage.${id}.zoom`];
+              if (sZoom !== undefined) {
+                setCarouselZoom(sZoom);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
         }
       };
@@ -160,8 +160,25 @@ const Carousel: React.FC<any> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, fontSize = 16, images = [] } = model;
+  const {
+    title = '',
+    x = 0,
+    y = 0,
+    z = 0,
+    width,
+    height,
+    cssClasses = '',
+    fontSize = 16,
+    showOnAnswersReport = false,
+    requireManualGrading = false,
+    src,
+    mode = JanusCarouselModes.STUDENT,
+    images = [],
+    customCss = '',
+    zoom = false,
+  } = model;
 
+  const [carouselMode, setCarouselMode] = useState<string>(mode);
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const carouselDefaultCss = require('./Carousel.css');
   const MAGIC_NUMBER = 64;

@@ -81,35 +81,33 @@ const InputNumber: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+              const sValue = changes[`stage.${id}.value`];
+              if (sValue !== undefined) {
+                setInputNumberValue(sValue);
+              }
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
         }
       };

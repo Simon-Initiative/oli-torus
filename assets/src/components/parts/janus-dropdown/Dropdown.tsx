@@ -138,35 +138,46 @@ const Dropdown: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
+            // TODO: highlight incorrect?
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
+              if (sSelectedIndex !== undefined) {
+                const stateSelection = Number(sSelectedIndex);
+                if (selection !== stateSelection) {
+                  setSelection(stateSelection);
+                  setSelectedItem(optionLabels[stateSelection - 1]);
+                }
+              }
+
+              const sSelectedItem = changes[`stage.${id}.selectedItem`];
+              if (sSelectedItem !== undefined) {
+                if (selectedItem !== sSelectedItem) {
+                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
+                    sSelectedItem.includes(str),
+                  );
+                  setSelectedItem(sSelectedItem);
+                  setSelection(selectionIndex + 1);
+                }
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
         }
       };

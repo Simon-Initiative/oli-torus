@@ -43,10 +43,12 @@ config :oli,
   branding: [
     name: System.get_env("BRANDING_NAME", "OLI Torus"),
     logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
-    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons"),
-    dark: [
-      logo: System.get_env("BRANDING_LOGO_DARK")
-    ]
+    logo_dark:
+      System.get_env(
+        "BRANDING_LOGO_DARK",
+        System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
+      ),
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ]
 
 # Configure database

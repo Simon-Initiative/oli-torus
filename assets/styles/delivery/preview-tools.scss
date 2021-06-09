@@ -171,6 +171,18 @@
     .custom-switch {
       transform: scale(1.5);
     }
+    .apply-changes {
+      display: flex;
+      @media (prefers-color-scheme: dark) {
+        background-color: $gray-900;
+      }
+      @media (prefers-color-scheme: light) {
+        background-color: $gray-300;
+      }
+      button {
+        flex-grow: 1;
+      }
+    }
   }
   .visually-hidden:not(:focus):not(:active) {
     clip: rect(0 0 0 0);

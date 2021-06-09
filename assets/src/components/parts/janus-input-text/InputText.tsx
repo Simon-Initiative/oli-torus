@@ -84,7 +84,7 @@ const InputText: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [InputText]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
@@ -94,9 +94,9 @@ const InputText: React.FC<any> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
+              /* console.log('MUTATE STATE!!!!', {
                 payload,
-              });
+              }); */
               const { mutateChanges: changes } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
@@ -105,6 +105,16 @@ const InputText: React.FC<any> = (props) => {
               const sText = changes[`stage.${id}.text`];
               if (sText !== undefined) {
                 setText(sText);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'textLength',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sText.length,
+                    },
+                  ],
+                });
               }
               const sCssClass = changes[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {

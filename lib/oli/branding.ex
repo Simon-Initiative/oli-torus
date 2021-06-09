@@ -238,23 +238,8 @@ defmodule Oli.Branding do
     %Brand{
       name: Keyword.get(default_branding, :name),
       logo: Keyword.get(default_branding, :logo),
-      logo_dark: dark_or_default(default_branding, :logo),
+      logo_dark: Keyword.get(default_branding, :logo_dark),
       favicons: Keyword.get(default_branding, :favicons)
     }
-  end
-
-  defp dark_or_default(branding, asset) do
-    branding
-    |> Keyword.get(:dark)
-    |> Keyword.get(asset)
-    |> case do
-      nil ->
-        # no dark asset defined, use the default
-        branding
-        |> Keyword.get(asset)
-
-      result ->
-        result
-    end
   end
 end

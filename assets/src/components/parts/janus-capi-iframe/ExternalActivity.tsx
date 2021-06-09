@@ -227,7 +227,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [CAPI_IFRAME]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [CAPI_IFRAME]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             {
@@ -369,7 +369,8 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
-    const boolWriteLog = true;
+    // TODO: change to a config value?
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;

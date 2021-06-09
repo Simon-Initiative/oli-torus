@@ -4,8 +4,8 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Audio: React.FC<any> = (props) => {
@@ -13,7 +13,6 @@ const Audio: React.FC<any> = (props) => {
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-
   const [showControls, setShowControls] = useState(true);
   const [classes, setClasses] = useState<any>('');
 
@@ -68,6 +67,16 @@ const Audio: React.FC<any> = (props) => {
       setClasses(sCssClass);
     }
 
+    const sAutoPlay = currentStateSnapshot[`stage.${id}.autoPlay`];
+    if (sAutoPlay !== undefined) {
+      setAudioAutoPlay(sAutoPlay);
+    }
+
+    const sEnableReplay = currentStateSnapshot[`stage.${id}.enableReplay`];
+    if (sEnableReplay !== undefined) {
+      setAudioEnableReplay(sEnableReplay);
+    }
+
     setReady(true);
   }, []);
 
@@ -108,35 +117,64 @@ const Audio: React.FC<any> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [Audio]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [Audio]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            {
-              console.log('CHECK REQUEST STARTED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            {
-              console.log('CHECK REQUEST COMPLETED STATE!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
           case NotificationType.STATE_CHANGED:
             {
-              console.log('MUTATE STATE!!!!', {
-                payload,
-              });
+              const { mutateChanges: changes } = payload;
+              const sCustomCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCustomCssClass !== undefined) {
+                setClasses(String(sCustomCssClass));
+              }
+              const sAutoPlay = changes[`stage.${id}.autoPlay`];
+              if (sAutoPlay !== undefined) {
+                setAudioAutoPlay(sAutoPlay);
+              }
+
+              const sEnableReplay = changes[`stage.${id}.enableReplay`];
+              if (sEnableReplay !== undefined) {
+                setAudioEnableReplay(sEnableReplay);
+              }
+
+              const sHasStarted = changes[`stage.${id}.hasStarted`];
+              if (sHasStarted !== undefined) {
+                setAudioIsPlayerStarted(sHasStarted);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'hasCompleted',
+                      type: CapiVariableTypes.NUMBER,
+                      value: parseBool(sHasStarted),
+                    },
+                  ],
+                });
+              }
+
+              const sHasCompleted = changes[`stage.${id}.hasCompleted`];
+              if (sHasCompleted !== undefined) {
+                setAudioIsCompleted(sHasCompleted);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'hasCompleted',
+                      type: CapiVariableTypes.NUMBER,
+                      value: parseBool(sHasCompleted),
+                    },
+                  ],
+                });
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            {
-              console.log('CONTEXT CHANGED!!!!', {
-                payload,
-              });
-            }
+            // nothing to do
             break;
         }
       };
@@ -173,7 +211,10 @@ const Audio: React.FC<any> = (props) => {
     enableReplay,
     subtitles,
   } = model;
-
+  const [audioIsPlayerStarted, setAudioIsPlayerStarted] = useState(false);
+  const [audioIsCompleted, setAudioIsCompleted] = useState(false);
+  const [audioAutoPlay, setAudioAutoPlay] = useState(autoPlay || false);
+  const [audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
   const audioStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -310,26 +351,13 @@ const Audio: React.FC<any> = (props) => {
     //handleStateChange(state);
   }, [state]);
 
-  const handleStateChange = (data: CapiVariable[]) => {
-    // this runs every time state is updated from *any* source
-    // the global variable state
-    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-
-    interested.forEach((stateVar) => {
-      switch (stateVar.key) {
-        case 'customCssClass':
-          setClasses(String(stateVar.value));
-          break;
-      }
-    });
-  };
-
   return ready ? (
     <audio
       data-part-component-type={props.type}
       className={classes}
       style={audioStyles}
-      autoPlay={autoPlay}
+      autoPlay={audioAutoPlay}
+      loop={audioEnableReplay}
       controls={showControls}
       controlsList="nodownload"
       onEnded={handleAudioEnd}

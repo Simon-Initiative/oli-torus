@@ -123,7 +123,7 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] });
+    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
@@ -137,7 +137,7 @@ export const initializeActivity = createAsyncThunk(
 
     // in preview mode we don't talk to the server, so we're done
     if (isPreviewMode) {
-      const allGood = results.every(({result}) => result === null);
+      const allGood = results.every(({ result }) => result === null);
       // TODO: report actual errors?
       const status = allGood ? 'success' : 'error';
       return { result: status };

@@ -193,7 +193,7 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 
   notify(eventName: string, payload: any) {
-    console.log('notify', { eventName, payload });
+    /* console.log('notify', { eventName, payload }); */
     // now to get into react...
     this._notify.emit(eventName, payload);
   }

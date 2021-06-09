@@ -136,7 +136,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response });
+    /* console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response }); */
 
     const result = await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, response);
 

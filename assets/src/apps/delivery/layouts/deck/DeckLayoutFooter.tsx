@@ -172,8 +172,6 @@ const DeckLayoutFooter: React.FC = () => {
         return globalOp;
       });
 
-      console.log('FOOT MUTATION!', { mutationsModified });
-
       bulkApplyState(mutationsModified, defaultGlobalEnv);
 
       const latestSnapshot = getLocalizedStateSnapshot(
