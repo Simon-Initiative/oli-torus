@@ -11,74 +11,87 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   </dataset>
   """
   import XmlBuilder
-  alias Oli.Publishing
-  alias Oli.Repo
 
   def setup(%{
         dataset_name: dataset_name,
         part_attempt: part_attempt,
         problem_name: problem_name,
-        publication: publication
+        hierarchy_map: hierarchy_map
       }) do
     element(:dataset, [
       element(:name, dataset_name),
-      create_problem_hierarchy(problem_name, publication, part_attempt)
+      create_problem_hierarchy(
+        problem_name,
+        part_attempt,
+        hierarchy_map
+      )
     ])
   end
 
-  defp create_problem_hierarchy(problem_name, publication, part_attempt) do
-    root_resource =
-      Publishing.get_published_revision(publication.id, publication.root_resource_id)
-
-    resource_type = Repo.preload(root_resource, :resource_type).resource_type.type
-
+  defp create_problem_hierarchy(
+         problem_name,
+         part_attempt,
+         hierarchy_map
+       ) do
     context = %{
       target: part_attempt.activity_attempt.resource_attempt.revision.resource_id,
       problem_name: problem_name,
-      publication: publication
+      hierarchy_map: hierarchy_map
     }
 
-    element(:level, %{type: resource_type}, [
-      element(:name, root_resource.title),
-      dfs(context, root_resource.children)
-    ])
+    case assemble_from_hierarchy_path(context) do
+      [] ->
+        # if for some reason the path to the page that contained this activity
+        # cannot be located within  the hierarchy, we do a best effort and place
+        # just the <problem> element
+        element(
+          :problem,
+          %{tutorFlag: tutor_or_test(false)},
+          [element(:name, problem_name)]
+        )
+
+      assembled ->
+        assembled
+    end
   end
 
-  defp dfs(
-         %{target: target, problem_name: problem_name, publication: publication} = context,
-         nodes
-       ) do
-    case nodes do
-      [] ->
-        nil
+  # Assembles nested xml elements from a pre-calculated path in the hierarchy to the page
+  defp assemble_from_hierarchy_path(%{
+         target: target,
+         problem_name: problem_name,
+         hierarchy_map: hierarchy_map
+       }) do
+    page_to_element = fn revision ->
+      element(:level, %{type: "Page"}, [
+        element(:name, revision.title),
+        element(
+          :problem,
+          %{tutorFlag: tutor_or_test(revision.graded)},
+          [element(:name, problem_name)]
+        )
+      ])
+    end
 
-      [id | ids] ->
-        revision = Publishing.get_published_revision(publication.id, id)
-        resource_type = Repo.preload(revision, :resource_type).resource_type.type
+    container_to_element = fn revision, c ->
+      element(:level, %{type: "Container"}, [
+        element(:name, revision.title),
+        c
+      ])
+    end
 
-        case resource_type do
-          "container" ->
-            element(:level, %{type: "Container"}, dfs(context, [revision.children | nodes]))
+    case Map.get(hierarchy_map, target) do
+      nil ->
+        []
 
-          "page" ->
-            case id == target do
-              true ->
-                element(:level, %{type: "Page"}, [
-                  element(:name, revision.title),
-                  element(
-                    :problem,
-                    %{tutorFlag: tutor_or_test(revision.graded)},
-                    [element(:name, problem_name)]
-                  )
-                ])
-
-              false ->
-                dfs(context, ids)
+      path ->
+        [
+          Enum.reduce(path, [], fn e, a ->
+            case Oli.Resources.ResourceType.get_type_by_id(e.resource_type_id) do
+              "page" -> page_to_element.(e)
+              "container" -> container_to_element.(e, a)
             end
-
-          _ ->
-            dfs(context, ids)
-        end
+          end)
+        ]
     end
   end
 

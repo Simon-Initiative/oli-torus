@@ -1,7 +1,7 @@
 defmodule Oli.Delivery.Attempts.ScoringTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   alias Oli.Delivery.Attempts.Scoring
-  alias Oli.Delivery.Attempts.Result
+  alias Oli.Delivery.Evaluation.Result
 
   test "lookup via id" do
     items = [%{score: 5, out_of: 10}]

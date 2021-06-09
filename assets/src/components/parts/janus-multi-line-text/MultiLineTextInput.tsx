@@ -1,11 +1,112 @@
 /* eslint-disable react/prop-types */
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 
 const MultiLineTextInput: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const characterCounterRef = useRef<any>(null);
+  const [text, setText] = useState<string>('');
+  const [enabled, setEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dText = pModel.initValue || '';
+    setText(dText);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'text',
+          type: CapiVariableTypes.STRING,
+          value: dText,
+        },
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: dText.length,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+    const sText = currentStateSnapshot[`stage.${id}.text`];
+    if (sText !== undefined) {
+      setText(sText);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
+
   const {
     label,
     x = 0,
@@ -14,11 +115,76 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     width,
     height,
     prompt,
-    customCssClass,
-    initValue,
     showLabel,
     showCharacterCount,
   } = model;
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(
+          `${notificationType.toString()} notification handled [Multiline text Input]`,
+          payload,
+        ); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const sText = changes[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'textLength',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sText.length,
+                    },
+                  ],
+                });
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   // Set up the styles
   const wrapperStyles: CSSProperties = {
@@ -34,72 +200,47 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     height,
     resize: 'none',
   };
-  const initialCharacterCount = initValue?.length || 0;
-  const characterCounterRef = useRef<any>(null);
-  const [value, setValue] = useState<string>(initValue || '');
-  const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState(customCssClass);
+
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
   const saveInputText = (val: string) => {
-    return;
-    //TODO props.onSavePart is not yet implemented
-    /* props.onSavePart({
+    props.onSave({
       id: `${id}`,
-      partResponses: [
+      responses: [
         {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: enabled,
-        },
-        {
-          id: `stage.${id}.text`,
           key: 'text',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
           key: 'textLength',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: val.length,
         },
       ],
-    }); */
+    });
   };
+
   const handleOnChange = (event: any) => {
     const val = event.target.value;
     characterCounterRef.current.innerText = val.length;
-    setValue(val);
+    setText(val);
     // Wait until user has stopped typing to save the new value
     debounceInputText(val);
   };
+
   const debounceWaitTime = 250;
   const debounceInputText = useCallback(
     debounce((val) => saveInputText(val), debounceWaitTime),
     [],
   );
 
-  useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
-    }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
+  const initialCharacterCount = text.length || 0;
 
-  useEffect(() => {
-    //TODO handle value changes on state updates
-  }, [state]);
-
-  useEffect(() => {
-    props.onReady({
-      id: `${id}`,
-      partResponses: [],
-    });
-  }, []);
-
-  return (
+  return ready ? (
     <div
       data-janus-type={props.type}
       className={`long-text-input ${cssClass}`}
@@ -119,7 +260,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
         onChange={handleOnChange}
         style={inputStyles}
         placeholder={prompt}
-        value={value}
+        value={text}
         disabled={!enabled}
       />
       <div
@@ -147,7 +288,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
         </span>
       </div>
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-multi-line-text';

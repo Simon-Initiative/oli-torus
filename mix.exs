@@ -4,8 +4,8 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.9.0",
-      elixir: "~> 1.11",
+      version: "0.10.0",
+      elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -15,7 +15,7 @@ defmodule Oli.MixProject do
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         test: :test,
-        "test.watch": :test,
+        "test.ecto.reset": :test,
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
@@ -87,8 +87,8 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.0"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.3.1"},
-      {:lti_1p3_ecto_provider, "~> 0.2.1"},
+      {:lti_1p3, "~> 0.3.2"},
+      {:lti_1p3_ecto_provider, "~> 0.2.2"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: :test},
@@ -96,7 +96,7 @@ defmodule Oli.MixProject do
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
       {:open_api_spex, "~> 3.9"},
-      {:phoenix, "~> 1.5.6"},
+      {:phoenix, "~> 1.5.9"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.11"},
       {:phoenix_live_dashboard, "~> 0.4.0"},
@@ -132,17 +132,12 @@ defmodule Oli.MixProject do
   defp aliases do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+
+      # resets the database
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.reset", "test"],
 
-      # runs tests and produces a coverage report
-      "test.coverage": ["ecto.reset", "coveralls.html"],
-
-      # runs tests and produces a coverage report
-      "test.coverage.xml": ["ecto.reset", "coveralls.xml"],
-
-      # runs tests in deterministic order, only shows one failure at a time and reruns tests if any changes are made
-      "test.watch": ["ecto.reset", "test.watch --stale --max-failures 1 --trace --seed 0"]
+      # resets the database in the :test env
+      "test.ecto.reset": ["ecto.reset"]
     ]
   end
 end

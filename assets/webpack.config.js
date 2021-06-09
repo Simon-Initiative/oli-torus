@@ -4,8 +4,8 @@ const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const globImporter = require('node-sass-glob-importer');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const TerserPlugin = require("terser-webpack-plugin");
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // Determines the entry points for the webpack by looking at activity
@@ -87,9 +87,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-      2 * foundActivities.length +
-      2 * foundParts.length +
-      foundThemes.length
+    2 * foundActivities.length +
+    2 * foundParts.length +
+    foundThemes.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -102,10 +102,8 @@ const populateEntries = () => {
 module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
-    minimizer: [
-      new UglifyJsPlugin({ cache: true, parallel: true, sourceMap: true }),
-      new OptimizeCSSAssetsPlugin({}),
-    ],
+    minimize: process.env.NODE_ENV == 'production',
+    minimizer: [new TerserPlugin()],
   },
   entry: populateEntries(),
   output: {

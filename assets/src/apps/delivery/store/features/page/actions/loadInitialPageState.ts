@@ -1,7 +1,14 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
+import guid from 'utils/guid';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  getAssignScript,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
-import { loadActivities, loadActivityState } from '../../groups/actions/deck';
+import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
+import { loadActivities } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import { loadPageState, PageSlice, PageState, selectResourceAttemptGuid } from '../slice';
@@ -27,29 +34,45 @@ export const loadInitialPageState = createAsyncThunk(
     if (currentGroup?.layout === LayoutType.DECK) {
       // write initial session state (TODO: factor out elsewhere)
       const resourceAttemptGuid = selectResourceAttemptGuid(getState() as RootState);
+      dispatch(setResourceAttemptGuid({ guid: resourceAttemptGuid }));
       const sequence = selectSequence(getState() as RootState);
       const sessionState = sequence.reduce((acc, entry) => {
         acc[`session.visits.${entry.custom.sequenceId}`] = 0;
         return acc;
       }, {});
-      await writePageAttemptState(
-        params.sectionSlug,
-        resourceAttemptGuid,
-        sessionState,
-        params.previewMode,
-      );
+      // init variables so add ops can function
+      sessionState['session.tutorialScore'] = 0;
+      sessionState['session.currentQuestionScore'] = 0;
+      sessionState['session.timeStartQuestion'] = 0;
+      sessionState['session.attemptNumber'] = 0;
+      sessionState['session.timeOnQuestion'] = 0;
+
+      // update scripting env with session state
+      const assignScript = getAssignScript(sessionState);
+      const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+
+      if (!params.previewMode) {
+        await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+      }
+
+      dispatch(setExtrinsicState({ state: sessionState }));
+
+      let activityAttemptMapping;
       if (params.previewMode) {
         // need to load activities from the authoring api
         const activityIds = currentGroup.children.map((child: any) => child.activity_id);
-        dispatch(loadActivities(activityIds));
+        activityAttemptMapping = activityIds.map((id) => ({
+          id,
+          attemptGuid: `preview_${guid()}`,
+        }));
       } else {
-        // need to load activities from the delivery (attempt) api
-        const attemptGuids = Object.keys(params.activityGuidMapping).map((activityResourceId) => {
-          const { attemptGuid } = params.activityGuidMapping[activityResourceId];
-          return attemptGuid;
-        });
-        dispatch(loadActivityState(attemptGuids));
+        activityAttemptMapping = Object.keys(params.activityGuidMapping).map(
+          (activityResourceId) => {
+            return params.activityGuidMapping[activityResourceId];
+          },
+        );
       }
+      dispatch(loadActivities(activityAttemptMapping));
     }
   },
 );

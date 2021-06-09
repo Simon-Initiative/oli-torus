@@ -1,10 +1,196 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useState } from 'react';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { CapiVariable } from '../types/parts';
 
 const Dropdown: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+
+  const [enabled, setEnabled] = useState(true);
+  const [selection, setSelection] = useState<number>(-1);
+  const [selectedItem, setSelectedItem] = useState<string>('');
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          id: `selectedIndex`,
+          key: 'selectedIndex',
+          type: CapiVariableTypes.STRING,
+          value: -1,
+        },
+        {
+          id: `selectedItem`,
+          key: 'selectedItem',
+          type: CapiVariableTypes.STRING,
+          value: '',
+        },
+        {
+          id: `value`,
+          key: 'value',
+          type: CapiVariableTypes.STRING,
+          value: 'NULL',
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    // TODO: value ??
+
+    const sSelectedIndex = currentStateSnapshot[`stage.${id}.selectedIndex`];
+    if (sSelectedIndex !== undefined) {
+      setSelection(sSelectedIndex);
+      setSelectedItem(optionLabels[sSelectedIndex - 1]);
+    }
+
+    const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
+    if (sSelectedItem !== undefined) {
+      const selectionIndex: number = optionLabels.findIndex((str: string) =>
+        sSelectedItem.includes(str),
+      );
+      setSelectedItem(sSelectedItem);
+      setSelection(selectionIndex + 1);
+    }
+
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            // TODO: highlight incorrect?
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
+              if (sSelectedIndex !== undefined) {
+                const stateSelection = Number(sSelectedIndex);
+                if (selection !== stateSelection) {
+                  setSelection(stateSelection);
+                  setSelectedItem(optionLabels[stateSelection - 1]);
+                }
+              }
+
+              const sSelectedItem = changes[`stage.${id}.selectedItem`];
+              if (sSelectedItem !== undefined) {
+                if (selectedItem !== sSelectedItem) {
+                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
+                    sSelectedItem.includes(str),
+                  );
+                  setSelectedItem(sSelectedItem);
+                  setSelection(selectionIndex + 1);
+                }
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
+
   const {
     x,
     y,
@@ -35,9 +221,6 @@ const Dropdown: React.FC<any> = (props) => {
       (dropdownContainerStyles.borderColor = 'transparent'),
       (dropdownContainerStyles.backgroundColor = 'transparent');
   }
-  const [enabled, setEnabled] = useState(true);
-  const [selection, setSelection] = useState<number>(-1);
-  const [selectedItem, setSelectedItem] = useState<string>('');
 
   const dropDownStyle = {
     width: 'auto',
@@ -47,57 +230,103 @@ const Dropdown: React.FC<any> = (props) => {
     dropDownStyle.width = `${Number(width) - 10}px`;
   }
 
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
+  const saveState = ({
+    selectedIndex,
+    selectedItem,
+    value,
+    enabled,
+  }: {
+    selectedIndex: number;
+    selectedItem: string;
+    value: string;
+    enabled: boolean;
+  }) => {
+    props.onSave({
+      id: `${id}`,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: enabled,
+        },
+        {
+          key: 'selectedIndex',
+          type: CapiVariableTypes.NUMBER,
+          value: selectedIndex,
+        },
+        {
+          key: 'selectedItem',
+          type: CapiVariableTypes.STRING,
+          value: selectedItem,
+        },
+        {
+          key: 'value',
+          type: CapiVariableTypes.STRING,
+          value: value,
+        },
+      ],
+    });
+  };
+
   const handleChange = (event: any) => {
     const val = Number(event.target.value);
     // Update/set the value
     setSelection(val);
-    //TODO add save state code later
+    saveState({
+      selectedIndex: val,
+      selectedItem: event.target.options[event.target.selectedIndex].text,
+      value: event.target.options[event.target.selectedIndex].text,
+      enabled,
+    });
   };
 
-  useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+  const handleStateChange = (stateData: CapiVariable[]) => {
+    // override text value from state
+    //** Changed `stage.${id}` to `` and this might need to be done in all the components*
+    //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/
+    //** doing `stage.${id}` always get all the variables starting with dropdownInput instead of just filtering variables with dropdownInput id*/
+    const interested = stateData.filter(
+      (stateVar: { id: string | string[] }) => stateVar.id.indexOf(`stage.${id}.`) === 0,
+    );
+    if (interested?.length) {
+      interested.forEach((stateVar) => {
+        switch (stateVar.key) {
+          case 'selectedIndex':
+            {
+              // handle selectedItem, which is a number/index
+              const stateSelection = Number(stateVar.value);
+              if (selection !== stateSelection) {
+                setSelection(stateSelection);
+                setSelectedItem(optionLabels[stateSelection - 1]);
+              }
+            }
+            break;
+          case 'selectedItem':
+            // handle selectedItem, which is a string
+            {
+              const stateSelectedItem = String(stateVar.value);
+              if (selectedItem !== stateSelectedItem) {
+                const selectionIndex: number = optionLabels.findIndex((str: string) =>
+                  stateSelectedItem.includes(str),
+                );
+                setSelectedItem(stateSelectedItem);
+                setSelection(selectionIndex + 1);
+              }
+            }
+            break;
+          case 'enabled':
+            // check for boolean and string truthiness
+            setEnabled(parseBool(stateVar.value));
+            break;
+        }
+      });
     }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
-
-  useEffect(() => {
-    //TODO handle value changes on state updates
-  }, [state]);
-
-  useEffect(() => {
-    props.onReady({
-      activityId: `${id}`,
-      partResponses: [
-        {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: true,
-        },
-        {
-          id: `stage.${id}.selectedIndex`,
-          key: 'selectedIndex',
-          type: 1,
-          value: -1,
-        },
-        {
-          id: `stage.${id}.selectedItem`,
-          key: 'selectedItem',
-          type: 2,
-          value: '',
-        },
-        {
-          id: `stage.${id}.value`,
-          key: 'value',
-          type: 2,
-          value: 'NULL',
-        },
-      ],
-    });
-  }, []);
+  };
 
   // Generate a list of options using optionLabels
   const dropdownOptions = () => {
@@ -128,21 +357,21 @@ const Dropdown: React.FC<any> = (props) => {
     return options;
   };
 
-  return (
+  return ready ? (
     <div data-janus-type={props.type} className="dropdown-input" style={dropdownContainerStyles}>
       <label htmlFor={id}>{showLabel && label ? label : ''}</label>
       <select
         style={dropDownStyle}
         id={id}
         value={selection}
-        className={'dropdown ' + customCssClass}
+        className={'dropdown ' + cssClass}
         onChange={handleChange}
         disabled={!enabled}
       >
         {dropdownOptions()}
       </select>
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-dropdown';

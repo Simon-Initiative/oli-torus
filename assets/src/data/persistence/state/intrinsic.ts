@@ -1,9 +1,3 @@
-import {
-  defaultGlobalEnv,
-  evalScript,
-  getAssignScript,
-  getEnvState,
-} from '../../../adaptivity/scripting';
 import { makeRequest } from '../common';
 
 export type BulkAttemptRetrieved = {
@@ -11,16 +5,7 @@ export type BulkAttemptRetrieved = {
   activityAttempts: any[];
 };
 
-export const getBulkAttemptState = async (
-  sectionSlug: string,
-  attemptGuids: string[],
-  previewMode = false,
-) =>
-  previewMode
-    ? getBulkAttemptStateClient(sectionSlug, attemptGuids)
-    : getBulkAttemptStateServer(sectionSlug, attemptGuids);
-
-const getBulkAttemptStateServer = async (sectionSlug: string, attemptGuids: string[]) => {
+export const getBulkAttemptState = async (sectionSlug: string, attemptGuids: string[]) => {
   const params = {
     method: 'POST',
     url: `/state/course/${sectionSlug}/activity_attempt`,
@@ -35,60 +20,69 @@ const getBulkAttemptStateServer = async (sectionSlug: string, attemptGuids: stri
   return response.activityAttempts;
 };
 
-const getBulkAttemptStateClient = async (sectionSlug: string, attemptGuids: string[]) => {
-  return [];
-};
-
-export const getPageAttemptState = async (
-  sectionSlug: string,
-  resourceAttemptGuid: string,
-  previewMode = false,
-): Promise<any> =>
-  previewMode
-    ? getPageAttemptStateClient(sectionSlug, resourceAttemptGuid)
-    : getPageAttemptStateServer(sectionSlug, resourceAttemptGuid);
-
-const getPageAttemptStateClient = async (sectionSlug: string, resourceAttemptGuid: string) => {
-  // on the client side, there is really only one attempt..
-  // could do a map of client guid to env? revisit with history mode??
-  const allState = getEnvState(defaultGlobalEnv);
-  // TODO: convert to capi var? probably needs to be typed for coersion
-  return Object.keys(allState).map((key) => ({ id: key, value: allState[key] }));
-};
-
-const getPageAttemptStateServer = async (sectionSlug: string, resourceAttemptGuid: string) => {
-  const url = `/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
-  return [];
+export const getPageAttemptState = async (sectionSlug: string, resourceAttemptGuid: string) => {
+  const url = `/state/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method: 'GET',
+  });
+  return { result };
 };
 
 export const writePageAttemptState = async (
   sectionSlug: string,
   resourceAttemptGuid: string,
   state: any,
-  previewMode = false,
-): Promise<any> =>
-  previewMode
-    ? writePageAttemptStateClient(sectionSlug, resourceAttemptGuid, state)
-    : writePageAttemptStateServer(sectionSlug, resourceAttemptGuid, state);
-
-const writePageAttemptStateClient = async (
-  sectionSlug: string,
-  resourceAttemptGuid: string,
-  state: any,
 ) => {
-  // on the client side, there is really only one attempt..
-  // could do a map of client guid to env? revisit with history mode??
-  const assignScript = getAssignScript(state);
-  const { result } = evalScript(assignScript, defaultGlobalEnv);
+  const method = 'PUT';
+  const url = `/state/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify(state),
+  });
   return { result };
 };
 
-const writePageAttemptStateServer = async (
+export const writeActivityAttemptState = async (
   sectionSlug: string,
-  resourceAttemptGuid: string,
-  state: any,
+  attemptGuid: string,
+  partResponses: any,
+  finalize = false,
 ) => {
-  const method = 'PUT';
-  const url = `/course/${sectionSlug}/resource_attempt/${resourceAttemptGuid}`;
-  return [];
+  const method = finalize ? 'PUT' : 'PATCH';
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify({ partInputs: partResponses }),
+  });
+  return { result };
+};
+
+export const writePartAttemptState = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partAttemptGuid: string,
+  input: any,
+  finalize = false,
+) => {
+  const method = finalize ? 'PUT' : 'PATCH';
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}/part_attempt/${partAttemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+    body: JSON.stringify({ response: input }),
+  });
+  return { result };
+};
+
+export const createActivityAttempt = async (sectionSlug: string, attemptGuid: string) => {
+  const method = 'POST';
+  const url = `/api/v1/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const result = await makeRequest({
+    url,
+    method,
+  });
+  return { result };
 };

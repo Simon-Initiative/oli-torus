@@ -1,7 +1,11 @@
 import chroma from 'chroma-js';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 
 export interface MarkupTree {
   tag: string;
@@ -22,6 +26,9 @@ export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSi
   ) {
     // PMP-526
     style.backgroundColor = '';
+  }
+  if (node.tag === 'p' && child.tag === 'span' && child.style.color === '#000000') {
+    style.color = 'inherit';
   }
   if (!(child.style && child.style.fontSize) && fontSize) {
     style.fontSize = `${fontSize}px`;
@@ -81,15 +88,92 @@ export const renderFlow = (
 const TextFlow: React.FC<any> = (props: any) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
+
+    setReady(true);
+  }, []);
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do...
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              /* console.log('MUTATE STATE!!!!', {
+                payload,
+              }); */
+              const { mutateChanges: changes } = payload;
+              setState({ ...state, ...changes });
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
 
@@ -118,10 +202,18 @@ const TextFlow: React.FC<any> = (props: any) => {
           : '255, 255, 255'
       },${palette?.fillAlpha})`);
   }
+
+  // TODO: preprocess model to find required variables and/or expressions
+  // using onInit to wait for initial state to be sent, and hold rendering
+  // until isReady (and also then fire onReady)
+  // send pre-calculated map of required values to Markup
+
   useEffect(() => {
-    // all activities *must* emit onReady
-    props.onReady({ id: `${props.id}` });
-  }, []);
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   // due to custom elements, objects will be JSON
   let tree: MarkupTree[] = [];
@@ -138,13 +230,13 @@ const TextFlow: React.FC<any> = (props: any) => {
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  return (
+  return ready ? (
     <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-text-flow';

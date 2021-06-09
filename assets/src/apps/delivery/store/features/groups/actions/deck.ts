@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
   getBulkAttemptState,
@@ -6,14 +7,29 @@ import {
   writePageAttemptState,
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
+import guid from 'utils/guid';
+import {
+  ApplyStateOperation,
+  bulkApplyState,
+  defaultGlobalEnv,
+  getEnvState,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
+  selectCurrentActivity,
   selectCurrentActivityId,
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
-import { selectSequence } from '../selectors/deck';
+import { setLessonEnd } from '../../adaptivity/slice';
+import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
+import {
+  selectActivityTypes,
+  selectPreviewMode,
+  selectResourceAttemptGuid,
+  selectSectionSlug,
+} from '../../page/slice';
+import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
@@ -31,14 +47,103 @@ export const initializeActivity = createAsyncThunk(
     if (!currentSequenceId) {
       throw new Error(`Activity ${activityId} not found in sequence!`);
     }
-    const currentState = await getPageAttemptState(sectionSlug, resourceAttemptGuid, isPreviewMode);
-    const currentVisitCount = currentState[`session.visits.${currentSequenceId}`] || 0;
-    // TODO: more state
-    const sessionState = {
-      [`session.visits.${currentSequenceId}`]: currentVisitCount + 1,
-    };
+    const currentActivity = selectCurrentActivity(rootState);
+    const currentActivityTree = selectCurrentActivityTree(rootState);
 
-    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState, isPreviewMode);
+    const visitOperation: ApplyStateOperation = {
+      target: `session.visits.${currentSequenceId}`,
+      operator: '+',
+      value: 1,
+    };
+    const timeOnQuestion: ApplyStateOperation = {
+      target: 'session.timeOnQuestion',
+      operator: '=',
+      value: 0,
+    };
+    const timeStartOp: ApplyStateOperation = {
+      target: 'session.timeStartQuestion',
+      operator: '=',
+      value: Date.now(),
+    };
+    const timeExceededOp: ApplyStateOperation = {
+      target: 'session.questionTimeExceeded',
+      operator: '=',
+      value: false,
+    };
+    const currentAttempNumber = 0; // TODO: increment the server value
+    const attemptNumberOp: ApplyStateOperation = {
+      target: 'session.attemptNumber',
+      operator: '=',
+      value: currentAttempNumber,
+    };
+    const targettedAttemptNumberOp: ApplyStateOperation = {
+      target: `${currentSequenceId}|session.attemptNumber`,
+      operator: '=',
+      value: currentAttempNumber,
+    };
+    const tutorialScoreOp: ApplyStateOperation = {
+      target: 'session.tutorialScore',
+      operator: '+',
+      value: '{session.currentQuestionScore}',
+    };
+    const currentScoreOp: ApplyStateOperation = {
+      target: 'session.currentQuestionScore',
+      operator: '=',
+      value: 0,
+    };
+    const sessionOps = [
+      visitOperation,
+      timeStartOp,
+      timeOnQuestion,
+      timeExceededOp,
+      attemptNumberOp,
+      targettedAttemptNumberOp,
+      tutorialScoreOp,
+      // must come *after* the tutorial score op
+      currentScoreOp,
+    ];
+
+    // init state is always "local" but the parts may come from parent layers
+    // in that case they actually need to be written to the parent layer values
+    const initState = currentActivity?.content.custom?.facts || [];
+    const globalizedInitState = initState.map((s: any) => {
+      if (s.target.indexOf('stage.') !== 0) {
+        return { ...s };
+      }
+      const [, targetPart] = s.target.split('.');
+      const ownerActivity = currentActivityTree?.find(
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
+      );
+      if (!ownerActivity) {
+        // shouldn't happen, but ignore I guess
+        return { ...s };
+      }
+      return { ...s, target: `${ownerActivity.id}|${s.target}` };
+    });
+
+    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    // now that the scripting env should be up to date, need to update attempt state in redux and server
+    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
+    const currentState = getEnvState(defaultGlobalEnv);
+    const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
+      if (key.indexOf('session.') === 0) {
+        collect[key] = currentState[key];
+      }
+      return collect;
+    }, {});
+
+    // optimistically write to redux
+    thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
+
+    // in preview mode we don't talk to the server, so we're done
+    if (isPreviewMode) {
+      const allGood = results.every(({result}) => result === null);
+      // TODO: report actual errors?
+      const status = allGood ? 'success' : 'error';
+      return { result: status };
+    }
+
+    await writePageAttemptState(sectionSlug, resourceAttemptGuid, sessionState);
   },
 );
 
@@ -47,11 +152,14 @@ const getSessionVisitHistory = async (
   resourceAttemptGuid: string,
   isPreviewMode = false,
 ) => {
-  const pageAttemptState = await getPageAttemptState(
-    sectionSlug,
-    resourceAttemptGuid,
-    isPreviewMode,
-  );
+  let pageAttemptState: any;
+  if (isPreviewMode) {
+    const allState = getEnvState(defaultGlobalEnv);
+    pageAttemptState = allState;
+  } else {
+    const { result } = await getPageAttemptState(sectionSlug, resourceAttemptGuid);
+    pageAttemptState = result;
+  }
   return Object.keys(pageAttemptState)
     .filter((key) => key.indexOf('session.visits.') === 0)
     .map((visitKey: string) => ({
@@ -111,7 +219,7 @@ export const navigateToNextActivity = createAsyncThunk(
       }
       if (!nextSequenceEntry) {
         // If is end of sequence, return and set isEnd to truthy
-        // thunkApi.dispatch(setIsEnd({ isEnd: true }));
+        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
         return;
       }
     } else {
@@ -141,7 +249,7 @@ export const navigateToFirstActivity = createAsyncThunk(
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = 1;
+    const nextActivityId = sequence[0].custom.sequenceId;
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
@@ -170,53 +278,77 @@ export const navigateToActivity = createAsyncThunk(
   },
 );
 
-// TODO: split to another file
+interface ActivityAttemptMapping {
+  attemptGuid: string;
+  id: ResourceId;
+}
+
 export const loadActivities = createAsyncThunk(
   `${GroupsSlice}/deck/loadActivities`,
-  async (activityIds: ResourceId[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
-    const sequence = selectSequence(thunkApi.getState() as RootState);
+  async (activityAttemptMapping: ActivityAttemptMapping[], thunkApi) => {
+    const rootState = thunkApi.getState() as RootState;
+    const sectionSlug = selectSectionSlug(rootState);
+    const isPreviewMode = selectPreviewMode(rootState);
+    let results;
+    if (isPreviewMode) {
+      const activityIds = activityAttemptMapping.map((m) => m.id);
+      results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+    } else {
+      const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);
+      results = await getBulkAttemptState(sectionSlug, attemptGuids);
+    }
+    const sequence = selectSequence(rootState);
+    const activityTypes = selectActivityTypes(rootState);
     const activities = results.map((result) => {
-      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.id);
+      const resultActivityId = isPreviewMode ? result.id : result.activityId;
+      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === resultActivityId);
       if (!sequenceEntry) {
         console.warn(`Activity ${result.id} not found in the page model!`);
         return;
       }
-      const activity = {
-        id: sequenceEntry.custom.sequenceId,
-        resourceId: sequenceEntry.activity_id,
-        content: result.content,
-      };
-      return activity;
-    });
-    // TODO: need a sequence ID and/or some other ID than db id to use here
-    thunkApi.dispatch(setActivities({ activities }));
-  },
-);
-
-export const loadActivityState = createAsyncThunk(
-  `${GroupsSlice}/deck/loadActivityState`,
-  async (attemptGuids: string[], thunkApi) => {
-    const sectionSlug = selectSectionSlug(thunkApi.getState() as RootState);
-    const results = await getBulkAttemptState(sectionSlug, attemptGuids);
-
-    // TODO: map back to activities in model and update everything
-    const sequence = selectSequence(thunkApi.getState() as RootState);
-    const activities = results.map((result) => {
-      const sequenceEntry = sequence.find((entry: any) => entry.activity_id === result.activityId);
-      if (!sequenceEntry) {
-        console.warn(`Activity ${result.activityId} not found in the page model!`);
-        return;
+      const attemptEntry = activityAttemptMapping.find((m) => m.id === sequenceEntry.activity_id);
+      const activityType = activityTypes.find((t) => t.id === result.activityType);
+      let partAttempts = result.partAttempts;
+      if (isPreviewMode) {
+        partAttempts = result.authoring.parts.map((p: any) => {
+          return {
+            attemptGuid: `preview_${guid()}`,
+            attemptNumber: 1,
+            dateEvaluated: null,
+            feedback: null,
+            outOf: null,
+            partId: p.id,
+            response: null,
+            score: null,
+          };
+        });
       }
-      const activity = {
+      const activityModel = {
         id: sequenceEntry.custom.sequenceId,
         resourceId: sequenceEntry.activity_id,
-        content: result.model,
+        content: isPreviewMode ? result.content : result.model,
+        authoring: result.authoring || null,
+        activityType,
+        title: result.title,
       };
-      return activity;
+      const attemptState: ActivityState = {
+        attemptGuid: attemptEntry?.attemptGuid || '',
+        activityId: activityModel.resourceId,
+        attemptNumber: result.attemptNumber || 1,
+        dateEvaluated: result.dateEvaluated || null,
+        score: result.score || null,
+        outOf: result.outOf || null,
+        parts: partAttempts,
+        hasMoreAttempts: result.hasMoreAttempts || true,
+        hasMoreHints: result.hasMoreHints || true,
+      };
+      return { model: activityModel, state: attemptState };
     });
 
-    thunkApi.dispatch(setActivities({ activities }));
+    const models = activities.map((a) => a?.model);
+    const states = activities.map((a) => a?.state);
+
+    thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
+    thunkApi.dispatch(setActivities({ activities: models }));
   },
 );

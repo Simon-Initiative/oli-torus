@@ -1,20 +1,164 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
+import { CapiVariable } from '../types/parts';
 
 // TODO: fix typing
 const Slider: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
+
   const id: string = props.id;
+
+  const [sliderValue, setSliderValue] = useState(0);
+  const [isSliderEnabled, setIsSliderEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : isSliderEnabled;
+    setIsSliderEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dMin = pModel.minimum || 0;
+    const dValue = pModel.value || dMin;
+    setSliderValue(dValue);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'value',
+          type: CapiVariableTypes.NUMBER,
+          value: dValue,
+        },
+        {
+          key: 'userModified',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setIsSliderEnabled(sEnabled);
+    }
+    const sValue = currentStateSnapshot[`stage.${id}.value`];
+    if (sValue !== undefined) {
+      setSliderValue(sValue);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [Slider]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setIsSliderEnabled(sEnabled);
+              }
+              const sValue = changes[`stage.${id}.value`];
+              if (sValue !== undefined) {
+                setSliderValue(sValue);
+              }
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const {
     x,
@@ -37,6 +181,7 @@ const Slider: React.FC<any> = (props) => {
     invertScale,
     value,
   } = model;
+
   const styles: CSSProperties = {
     position: 'absolute',
     width: `${width}px`,
@@ -58,40 +203,61 @@ const Slider: React.FC<any> = (props) => {
     flexDirection: 'row',
   };
 
-  const [sliderValue, setSliderValue] = useState(value ? value : minimum); // if value is undefined, set default to minimum value;
-  const [isSliderEnabled, setIsSliderEnabled] = useState(true);
-
   const inputWidth: any = document.getElementById(`${id}`)?.getBoundingClientRect().width;
-  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect().width;
+  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect()
+    .width;
   const thumbHalfWidth: any = thumbWidth / 2;
   const thumbPosition =
     ((sliderValue - minimum) / (maximum - minimum)) * (inputWidth - thumbWidth + thumbHalfWidth);
   const thumbMargin = thumbHalfWidth * -1 + thumbHalfWidth / 2;
 
-  const handleSliderChange = (e: any) => {
-    setSliderValue(e.target.value);
-    //saveState({ sliderVal: e.target.value, userModified: true });
+  const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
+    props.onSave({
+      id: `${id}`,
+      responses: [
+        {
+          key: `value`,
+          type: CapiVariableTypes.NUMBER,
+          value: sliderVal,
+        },
+        {
+          key: `userModified`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: userModified,
+        },
+      ],
+    });
   };
 
-//   const handleActivityStateChange = (stateData: any) => {
-//     const interested = stateData.filter(
-//       (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
-//     );
-//     if (interested?.length) {
-//       interested.forEach((stateVar: any) => {
-//         if (stateVar.key === 'enabled') {
-//           setIsSliderEnabled(parseBoolean(stateVar.value));
-//         }
-//         if (stateVar.key === 'value') {
-//           const num = parseInt(stateVar.value as string, 10);
-//           setSliderValue(num);
-//         }
-//       });
-//     }
-//   };
+  const handleSliderChange = (e: any) => {
+    setSliderValue(e.target.value);
+    saveState({ sliderVal: e.target.value, userModified: true });
+  };
 
-  return (
-    <div data-janus-type={props.type} style={styles} className={'slider'}>
+  useEffect(() => {
+    //TODO commenting for now. Need to revisit once state structure logic is in place
+    //handleStateChange(state);
+  }, [state]);
+
+  const handleStateChange = (stateData: CapiVariable[]) => {
+    const interested = stateData.filter(
+      (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
+    );
+    if (interested?.length) {
+      interested.forEach((stateVar: any) => {
+        if (stateVar.key === 'enabled') {
+          setIsSliderEnabled(parseBoolean(stateVar.value));
+        }
+        if (stateVar.key === 'value') {
+          const num = parseInt(stateVar.value as string, 10);
+          setSliderValue(num);
+        }
+      });
+    }
+  };
+
+  return ready ? (
+    <div data-part-component-type={props.type} style={styles} className={`slider ${cssClass}`}>
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
@@ -133,7 +299,7 @@ const Slider: React.FC<any> = (props) => {
         </label>
       )}
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-slider';

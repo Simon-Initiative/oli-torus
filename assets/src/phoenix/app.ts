@@ -19,6 +19,9 @@ import {
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
+import {selectCookieConsent} from "components/cookies/CookieConsent";
+import {selectCookiePreferences} from "components/cookies/CookiePreferences";
+import {retrieveCookies} from "components/cookies/utils";
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -49,6 +52,9 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
   initPreviewActivityBridge,
   showModal,
   enableSubmitWhenTitleMatches,
+  selectCookieConsent,
+  selectCookiePreferences,
+  retrieveCookies,
   onReady
 };
 

@@ -9,6 +9,8 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   """
   import XmlBuilder
 
+  def setup(%{date: date, email: nil}), do: setup(%{date: date, email: "Anonymous"})
+
   def setup(%{date: date, email: email}) do
     element(:meta, %{}, [
       element(:user_id, email),

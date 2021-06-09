@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Attempts.Scoring do
-  alias Oli.Delivery.Attempts.Result
+  alias Oli.Delivery.Evaluation.Result
   alias Oli.Resources.ScoringStrategy
 
   @doc """

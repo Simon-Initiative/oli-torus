@@ -193,13 +193,12 @@ export const CheckAllThatApplyComponent = (
         />,
       ];
 
-  const gradedDetails =
-    props.graded && props.progressState === 'in_review' ? [evaluationSummary] : null;
+  const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
 
   const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
 
   const gradedPoints =
-    props.graded && props.progressState === 'in_review'
+    props.graded && props.review
       ? [
           <div key="correct" className="text-info font-italic">
             {correctnessIcon}

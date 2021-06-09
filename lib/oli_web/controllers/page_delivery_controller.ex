@@ -7,7 +7,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
@@ -36,7 +36,7 @@ defmodule OliWeb.PageDeliveryController do
     user = conn.assigns.current_user
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      PageContext.create_page_context(section_slug, revision_slug, user)
+      PageContext.create_for_visit(section_slug, revision_slug, user)
       |> render_page(conn, section_slug, user)
     else
       render(conn, "not_authorized.html")
@@ -67,12 +67,14 @@ defmodule OliWeb.PageDeliveryController do
       |> Jason.encode()
 
     render(conn, "advanced_delivery.html", %{
+      review_mode: context.review_mode,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
       summary: summary,
+      activity_types: Activities.activities_for_section(),
       scripts: Activities.get_activity_scripts(:delivery_script),
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
       section_slug: section_slug,
@@ -149,7 +151,7 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: user,
       section_slug: section_slug,
-      progress_state: context.progress_state,
+      review_mode: context.review_mode,
       activity_map: context.activities
     }
 
@@ -169,6 +171,7 @@ defmodule OliWeb.PageDeliveryController do
       end,
       %{
         page: context.page,
+        review_mode: context.review_mode,
         progress_state: context.progress_state,
         section_slug: section_slug,
         scripts: Enum.map(all_activities, fn a -> a.delivery_script end),
@@ -196,7 +199,7 @@ defmodule OliWeb.PageDeliveryController do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/2
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      case Attempts.start_resource_attempt(
+      case PageLifecycle.start(
              revision_slug,
              section_slug,
              user.id,
@@ -221,20 +224,13 @@ defmodule OliWeb.PageDeliveryController do
 
   def review_attempt(conn, %{
         "section_slug" => section_slug,
-        "revision_slug" => revision_slug,
         "attempt_guid" => attempt_guid
       }) do
     user = conn.assigns.current_user
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      case Attempts.review_resource_attempt(attempt_guid) do
-        {:ok, _} ->
-          PageContext.create_page_context(section_slug, revision_slug, attempt_guid, user)
-          |> render_page(conn, section_slug, user)
-
-        _ ->
-          render(conn, "error.html")
-      end
+      PageContext.create_for_review(section_slug, attempt_guid, user)
+      |> render_page(conn, section_slug, user)
     else
       render(conn, "not_authorized.html")
     end
@@ -265,7 +261,7 @@ defmodule OliWeb.PageDeliveryController do
     user = conn.assigns.current_user
     section = conn.assigns.section
 
-    case Attempts.submit_graded_page(section_slug, attempt_guid) do
+    case PageLifecycle.finalize(section_slug, attempt_guid) do
       {:ok, resource_access} ->
         grade_sync_result = send_one_grade(section, user, resource_access)
         after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)
@@ -289,7 +285,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
-    context = PageContext.create_page_context(section_slug, revision_slug, user)
+    context = PageContext.create_for_visit(section_slug, revision_slug, user)
 
     message =
       if context.page.max_attempts == 0 do

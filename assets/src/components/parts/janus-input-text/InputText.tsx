@@ -1,12 +1,175 @@
 /* eslint-disable react/prop-types */
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-  const { x, y, z, width, height, customCssClass, showLabel, label, prompt } = model;
+
+  const [enabled, setEnabled] = useState(true);
+  const [cssClass, setCssClass] = useState('');
+  const [text, setText] = useState<string>('');
+
+  const initialize = useCallback(async (pModel) => {
+    // set defaults
+    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    setEnabled(dEnabled);
+
+    const dCssClass = pModel.customCssClass || '';
+    setCssClass(dCssClass);
+
+    const dText = pModel.text || '';
+    setText(dText);
+
+    const initResult = await props.onInit({
+      id,
+      responses: [
+        {
+          key: 'enabled',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dEnabled,
+        },
+        {
+          key: 'customCssClass',
+          type: CapiVariableTypes.STRING,
+          value: dCssClass,
+        },
+        {
+          key: 'text',
+          type: CapiVariableTypes.STRING,
+          value: dText,
+        },
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: dText.length,
+        },
+      ],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled !== undefined) {
+      setEnabled(sEnabled);
+    }
+    const sText = currentStateSnapshot[`stage.${id}.text`];
+    if (sText !== undefined) {
+      setText(sText);
+    }
+    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sCssClass !== undefined) {
+      setCssClass(sCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do... change color if wrong?
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              /* console.log('MUTATE STATE!!!!', {
+                payload,
+              }); */
+              const { mutateChanges: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+              const sText = changes[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'textLength',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sText.length,
+                    },
+                  ],
+                });
+              }
+              const sCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
+
+  useEffect(() => {
+    let pModel;
+    let pState;
+    if (typeof props?.model === 'string') {
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (typeof props?.state === 'string') {
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
+    }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
+  }, [props]);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
+
+  const { x, y, z, width, height, showLabel, label, prompt } = model;
   const styles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -15,36 +178,25 @@ const InputText: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-  const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState(customCssClass);
-  const [text, setText] = useState<string>('');
+
   const saveInputText = (val: string) => {
-    return;
-    //TODO props.onSavePart is not yet implemented
-    /* props.onSavePart({
-      id: `${id}`,
-      partResponses: [
+    props.onSave({
+      id,
+      responses: [
         {
-          id: `stage.${id}.enabled`,
-          key: 'enabled',
-          type: 4,
-          value: enabled,
-        },
-        {
-          id: `stage.${id}.text`,
           key: 'text',
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.textLength`,
           key: 'textLength',
-          type: 1,
+          type: CapiVariableTypes.NUMBER,
           value: val.length,
         },
       ],
-    }); */
+    });
   };
+
   const handleOnChange = (event: any) => {
     const val = event.target.value;
     // Update/set the value
@@ -58,27 +210,9 @@ const InputText: React.FC<any> = (props) => {
     [],
   );
 
-  useEffect(() => {
-    if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
-    }
-    if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
-    }
-  }, [props]);
+  // TODO: MUTATE STATE CHANGES
 
-  useEffect(() => {
-    //TODO handle value changes on state updates
-  }, [state]);
-
-  useEffect(() => {
-    props.onReady({
-      id: `${id}`,
-      partResponses: [],
-    });
-  }, []);
-
-  return (
+  return ready ? (
     <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
       <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
       <input
@@ -91,7 +225,7 @@ const InputText: React.FC<any> = (props) => {
         value={text}
       />
     </div>
-  );
+  ) : null;
 };
 
 export const tagName = 'janus-input-text';

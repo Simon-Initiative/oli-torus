@@ -14,7 +14,7 @@ defmodule Oli.Delivery.ExtrinsicState do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.Attempts.Core, as: Attempts
 
   alias Phoenix.PubSub
 
