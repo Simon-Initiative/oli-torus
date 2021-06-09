@@ -35,6 +35,7 @@ defmodule Oli.Accounts.User do
     field :phone_number_verified, :boolean
     field :address, :string
     field :guest, :boolean, default: false
+    field :independent_learner, :boolean, default: true
     field :research_opt_out, :boolean
     field :state, :map, default: %{}
 
@@ -86,9 +87,11 @@ defmodule Oli.Accounts.User do
       :address,
       :author_id,
       :guest,
+      :independent_learner,
       :research_opt_out,
       :state
     ])
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
@@ -122,6 +125,7 @@ defmodule Oli.Accounts.User do
       :address,
       :author_id,
       :guest,
+      :independent_learner,
       :research_opt_out,
       :state
     ])

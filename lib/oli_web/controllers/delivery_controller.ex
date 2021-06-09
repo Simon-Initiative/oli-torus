@@ -316,6 +316,20 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
+  def signin(conn, %{"section" => section}) do
+    conn
+    |> use_pow_config(:user)
+    |> Pow.Plug.delete()
+    |> redirect(to: Routes.pow_session_path(conn, :new, section: section))
+  end
+
+  def create_account(conn, %{"section" => section}) do
+    conn
+    |> use_pow_config(:user)
+    |> Pow.Plug.delete()
+    |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
+  end
+
   def enroll(conn, _params) do
     section = conn.assigns.section
     render(conn, "enroll.html", section: section)
@@ -330,7 +344,7 @@ defmodule OliWeb.DeliveryController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       section = conn.assigns.section
 
-      case Accounts.create_guest_user() do
+      case current_or_guest_user(conn) do
         {:ok, user} ->
           Accounts.update_user_platform_roles(user, [
             PlatformRoles.get_role(:institution_learner)
@@ -346,6 +360,16 @@ defmodule OliWeb.DeliveryController do
       end
     else
       render(conn, "enroll.html", error: "ReCaptcha failed, please try again")
+    end
+  end
+
+  defp current_or_guest_user(conn) do
+    case conn.assigns.current_user do
+      nil ->
+        Accounts.create_guest_user()
+
+      user ->
+        {:ok, user}
     end
   end
 end

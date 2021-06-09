@@ -46,8 +46,8 @@
       <%= error_tag f, :captcha %>
     </div>
 
-    <%= if assigns[:link_account] do %>
-      <%= hidden_input f, :link_account, value: @link_account %>
+    <%= if @conn.params["section"] do %>
+      <%= hidden_input f, :section, value: @conn.params["section"] %>
     <% end %>
 
     <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>

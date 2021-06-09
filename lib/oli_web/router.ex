@@ -514,6 +514,13 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
+    pipe_through([:browser, :delivery, :delivery_layout, :pow_email_layout])
+
+    get("/signin", DeliveryController, :signin)
+    get("/create_account", DeliveryController, :create_account)
+  end
+
+  scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     get("/signout", DeliveryController, :signout)

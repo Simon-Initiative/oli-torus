@@ -130,7 +130,7 @@ defmodule Oli.Accounts do
       nil -> %User{}
       user -> user
     end
-    |> User.changeset(changes)
+    |> User.noauth_changeset(changes)
     |> Repo.insert_or_update()
   end
 
@@ -177,10 +177,23 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns true if an author is signed in
+  Returns true if a user is signed in
   """
   def user_signed_in?(conn) do
     conn.assigns[:current_user]
+  end
+
+  @doc """
+  Returns true if a user is signed in as guest
+  """
+  def user_is_guest?(conn) do
+    case conn.assigns[:current_user] do
+      %{guest: true} ->
+        true
+
+      _ ->
+        false
+    end
   end
 
   @doc """

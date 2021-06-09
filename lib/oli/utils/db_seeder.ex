@@ -554,7 +554,8 @@ defmodule Oli.Seeder do
           middle_name: "Marie",
           picture: "https://platform.example.edu/jane.jpg",
           email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
-          locale: "en-US"
+          locale: "en-US",
+          independent_learner: false
         },
         attrs
       )

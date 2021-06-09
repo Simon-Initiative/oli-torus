@@ -11,9 +11,13 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
       add :invitation_token, :string
       add :invitation_accepted_at, :utc_datetime
       add :invited_by_id, references("users", on_delete: :nothing)
+      add :independent_learner, :boolean, default: true
     end
 
     create unique_index(:users, [:email_confirmation_token])
+
+    # guarantee that independent learners have unique emails
+    create unique_index(:users, [:email, :independent_learner])
 
     # rename current user_identities to author_identities
     drop unique_index(:user_identities, [:uid, :provider])

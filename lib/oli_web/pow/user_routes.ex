@@ -5,11 +5,23 @@ defmodule OliWeb.Pow.UserRoutes do
 
   @impl true
   def after_sign_in_path(conn) do
-    Routes.delivery_path(conn, :open_and_free_index)
+    case conn.params do
+      %{"user" => %{"section" => section_slug}} ->
+        Routes.delivery_path(conn, :enroll, section_slug)
+
+      _ ->
+        Routes.delivery_path(conn, :open_and_free_index)
+    end
   end
 
   @impl true
   def after_registration_path(conn) do
-    Routes.delivery_path(conn, :open_and_free_index)
+    case conn.params do
+      %{"user" => %{"section" => section_slug}} ->
+        Routes.pow_session_path(conn, :new, section: section_slug)
+
+      _ ->
+        Routes.pow_session_path(conn, :new)
+    end
   end
 end
