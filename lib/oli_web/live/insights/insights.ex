@@ -18,6 +18,7 @@ defmodule OliWeb.Insights do
        by_activity_rows: by_activity_rows,
        by_objective_rows: Oli.Analytics.ByObjective.query_against_project_slug(project_slug),
        parent_pages: parent_pages,
+       rendered_rows: by_activity_rows |> sort("title", :asc),
        selected: :by_activity,
        query: "",
        sort_by: "title",
@@ -60,7 +61,7 @@ defmodule OliWeb.Insights do
         <table class="table">
           <%= live_component @socket, TableHeader, assigns %>
           <tbody>
-            <%= for row <- active_rows(assigns) do %>
+            <%= for row <- assigns.rendered_rows do %>
               <%= live_component @socket, TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project %>
             <% end %>
           </tbody>
@@ -87,7 +88,8 @@ defmodule OliWeb.Insights do
 
   # data splits
   def handle_event("by-activity", _event, socket) do
-    {:noreply, assign(socket, :selected, :by_activity)}
+    rendered_rows = active_rows(Keyword.merge(socket.assigns, [selected: :by_activity])
+    {:noreply, assign(socket, selected: :by_activity, rendered_rows: rendered_rows)}
   end
 
   def handle_event("by-page", _event, socket) do
