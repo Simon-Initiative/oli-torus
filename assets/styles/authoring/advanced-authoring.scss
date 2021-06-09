@@ -7,6 +7,15 @@ $rounded: 4px;
 $ui-border-color: #ccc;
 
 .advanced-authoring {
+  position: relative;
+  opacity: 0;
+  transition-timing-function: ease-in-out;
+  transition-duration: 0.3s;
+  transition-property: opacity;
+
+  &.startup {
+    opacity: 1;
+  }
   .aa-panel,
   .aa-header-nav {
     position: fixed;
@@ -27,7 +36,6 @@ $ui-border-color: #ccc;
     &.left-panel {
       top: $nav-height;
       bottom: 0;
-      // right: 100%;
       left: -$panel-side-width;
       width: $panel-side-width;
       transition-property: left, visibility;
@@ -40,7 +48,6 @@ $ui-border-color: #ccc;
     &.right-panel {
       top: $nav-height;
       bottom: 0;
-      // left: 100%;
       right: -$panel-side-width;
       width: $panel-side-width;
       transition-property: right, visibility;
@@ -65,6 +72,32 @@ $ui-border-color: #ccc;
   }
   .aa-header-nav {
     z-index: 201;
+  }
+  .aa-panel-side-toggle {
+    position: fixed;
+    z-index: 200;
+    top: 50vh;
+    transition-timing-function: ease-in-out;
+    transition-duration: 0.3s;
+
+    &.left {
+      transition-property: left;
+      left: 0;
+      &.open {
+        left: 250px;
+      }
+    }
+    &.right {
+      transition-property: right;
+      right: 0;
+      &.open {
+        right: 250px;
+      }
+    }
+  }
+  .aa-panel-inner {
+    position: relative;
+    height: 100%;
   }
   .aa-stage {
     position: fixed;
