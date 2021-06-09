@@ -216,83 +216,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   }, [props]);
 
   useEffect(() => {
-    if (!props.notify) {
-      return;
-    }
-    const notificationsHandled = [
-      NotificationType.CHECK_STARTED,
-      NotificationType.CHECK_COMPLETE,
-      NotificationType.CONTEXT_CHANGED,
-      NotificationType.STATE_CHANGED,
-    ];
-    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
-      const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [CAPI_IFRAME]`, payload); */
-        switch (notificationType) {
-          case NotificationType.CHECK_STARTED:
-            {
-              writeCapiLog('CHECK REQUEST STARTED STATE!!!!', 3, {
-                payload,
-                simLife,
-              });
-              sendFormedResponse(
-                simLife.handshake,
-                {},
-                JanusCAPIRequestTypes.CHECK_START_RESPONSE,
-                {},
-              );
-            }
-            break;
-          case NotificationType.CHECK_COMPLETE:
-            {
-              writeCapiLog('CHECK REQUEST COMPLETED STATE!!!!', 3, {
-                simLife,
-                payload,
-              });
-              // Need to reply to sim with type === 8
-              sendFormedResponse(
-                simLife.handshake,
-                {},
-                JanusCAPIRequestTypes.CHECK_COMPLETE_RESPONSE,
-                {},
-              );
-            }
-            break;
-          case NotificationType.STATE_CHANGED:
-            {
-              writeCapiLog('MUTATE STATE!!!!', 3, {
-                simLife,
-                payload,
-              });
-              const currentMutateStateSnapshot = payload.mutateChanges;
-              processInitStateVariable(currentMutateStateSnapshot);
-              setSimIsInitStatePassedOnce(false);
-            }
-            break;
-          case NotificationType.CONTEXT_CHANGED:
-            {
-              writeCapiLog('CONTEXT CHANGED!!!!', 3, {
-                simLife,
-                payload,
-              });
-              const currentStateSnapshot = payload.snapshot;
-              processInitStateVariable(currentStateSnapshot);
-              setSimIsInitStatePassedOnce(false);
-            }
-            break;
-        }
-      };
-      const unsub = subscribeToNotification(props.notify, notificationType, handler);
-      return unsub;
-    });
-    return () => {
-      notifications.forEach((unsub) => {
-        unsub();
-      });
-    };
-  }, [props.notify]);
-
-  useEffect(() => {
     if (!ready) {
       return;
     }
@@ -392,6 +315,83 @@ const ExternalActivity: React.FC<any> = (props) => {
       console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
     }
   };
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [CAPI_IFRAME]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            {
+              writeCapiLog('CHECK REQUEST STARTED STATE!!!!', 3, {
+                payload,
+                simLife,
+              });
+              sendFormedResponse(
+                simLife.handshake,
+                {},
+                JanusCAPIRequestTypes.CHECK_START_RESPONSE,
+                {},
+              );
+            }
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            {
+              writeCapiLog('CHECK REQUEST COMPLETED STATE!!!!', 3, {
+                simLife,
+                payload,
+              });
+              // Need to reply to sim with type === 8
+              sendFormedResponse(
+                simLife.handshake,
+                {},
+                JanusCAPIRequestTypes.CHECK_COMPLETE_RESPONSE,
+                {},
+              );
+            }
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              writeCapiLog('MUTATE STATE!!!!', 3, {
+                simLife,
+                payload,
+              });
+              const currentMutateStateSnapshot = payload.mutateChanges;
+              processInitStateVariable(currentMutateStateSnapshot);
+              setSimIsInitStatePassedOnce(false);
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            {
+              writeCapiLog('CONTEXT CHANGED!!!!', 3, {
+                simLife,
+                payload,
+              });
+              const currentStateSnapshot = payload.snapshot;
+              processInitStateVariable(currentStateSnapshot);
+              setSimIsInitStatePassedOnce(false);
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify, simLife]);
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
