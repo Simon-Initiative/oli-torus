@@ -88,7 +88,7 @@ defmodule OliWeb.Insights do
 
   # data splits
   def handle_event("by-activity", _event, socket) do
-    rendered_rows = active_rows(Keyword.merge(socket.assigns, [selected: :by_activity])
+    rendered_rows = active_rows(Keyword.merge(socket.assigns, selected: :by_activity))
     {:noreply, assign(socket, selected: :by_activity, rendered_rows: rendered_rows)}
   end
 
