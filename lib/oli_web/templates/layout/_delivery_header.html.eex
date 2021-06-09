@@ -31,7 +31,7 @@
           <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
               <div class="username">
-                <%= "#{@current_user.name}" %>
+                <%= user_name @conn, @current_user %>
               </div>
               <div class="role text-right" style="color: <%= user_role_color @conn, @current_user %>;">
                 <%= user_role_text @conn, @current_user %>
@@ -43,10 +43,9 @@
           </a>
           <%= if user_is_guest?(@conn) do %>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-              <%= link "Sign in", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), id: "signin-link", class: "dropdown-item btn" %>
-              <%= link "Create account", to: Routes.delivery_path(@conn, :create_account, section: maybe_section_slug(@conn)), id: "create-account-link", class: "dropdown-item btn" %>
+              <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "dropdown-item btn" %>
               <div class="dropdown-divider"></div>
-              <%= link "Sign out Guest", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
+              <%= link "Leave course", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
             </div>
             <div id="create-account-popup"></div>
             <script>

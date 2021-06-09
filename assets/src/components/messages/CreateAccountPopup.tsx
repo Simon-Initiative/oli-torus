@@ -51,7 +51,7 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-          You are viewing this course as an anonymous learner. Create an account or sign in to enroll in this course and track your progress.
+          You are viewing this course as a guest. Create an account or sign in to enroll in this course and track your progress.
           <div className="d-flex mt-4">
           <button className="btn btn-sm btn-link" onClick={() => onDontAskAgain()}>Don&apos;t ask again</button>
           <div className="flex-grow-1"></div>

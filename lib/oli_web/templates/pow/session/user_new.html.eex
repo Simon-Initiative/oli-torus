@@ -29,6 +29,15 @@
 
     <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
     <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
-    <%= link "Create an Account", to: value_or(assigns[:create_account_path], Routes.pow_registration_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
+
+    <% registration_path = case @conn.params["section"] do
+          nil ->
+            Routes.pow_registration_path(@conn, :new)
+          section ->
+            Routes.pow_registration_path(@conn, :new, section: section)
+        end
+    %>
+    <%= link "Create an Account", to: registration_path, class: "btn btn-md btn-link btn-block" %>
+
   <% end %>
 <% end %>

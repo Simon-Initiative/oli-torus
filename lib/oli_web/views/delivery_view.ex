@@ -76,6 +76,19 @@ defmodule OliWeb.DeliveryView do
     end
   end
 
+  def user_name(conn, user) do
+    case user do
+      %{guest: true} ->
+        "Guest"
+
+      %{name: name} ->
+        name
+
+      _ ->
+        ""
+    end
+  end
+
   def user_role_color(conn, user) do
     case user_role(conn.assigns[:section], user) do
       :open_and_free ->

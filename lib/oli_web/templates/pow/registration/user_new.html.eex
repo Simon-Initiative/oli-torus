@@ -52,6 +52,14 @@
 
     <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
     <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
-    <%= link "Sign in to Existing Account", to: value_or(assigns[:sign_in_path], Routes.pow_session_path(@conn, :new)), class: "btn btn-md btn-link btn-block" %>
+
+    <% session_path = case @conn.params["section"] do
+          nil ->
+            Routes.pow_session_path(@conn, :new)
+          section ->
+            Routes.pow_session_path(@conn, :new, section: section)
+        end
+    %>
+    <%= link "Sign in to Existing Account", to: session_path, class: "btn btn-md btn-link btn-block" %>
   <% end %>
 <% end %>
