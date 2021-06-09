@@ -24,6 +24,7 @@ SOFTWARE.
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import EventEmitter from 'events';
 
 function toCamelCase(str: string) {
   return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''));
@@ -118,6 +119,7 @@ abstract class ReactCustomElement extends HTMLElement {
   protected _root: any;
   protected _props: any;
   protected _customEvents: any;
+  protected _notify: any;
 
   constructor() {
     super();
@@ -127,6 +129,7 @@ abstract class ReactCustomElement extends HTMLElement {
     this._root = this;
     this._props = {};
     this._customEvents = {};
+    this._notify = new EventEmitter();
   }
 
   connectedCallback() {
@@ -141,9 +144,11 @@ abstract class ReactCustomElement extends HTMLElement {
     this.dispatchEvent(event);
     const context = event.detail.context;
 
+    const notify = this._notify;
+
     this._vdom = React.createElement(
       ContextProvider,
-      { ...this._props, ...this._customEvents, context },
+      { ...this._props, ...this._customEvents, context, notify },
       toVdom(this, this._vdomComponent),
     );
     ReactDOM.render(this._vdom, this._root);
@@ -185,6 +190,12 @@ abstract class ReactCustomElement extends HTMLElement {
         }),
       );
     });
+  }
+
+  notify(eventName: string, payload: any) {
+    /* console.log('notify', { eventName, payload }); */
+    // now to get into react...
+    this._notify.emit(eventName, payload);
   }
 }
 

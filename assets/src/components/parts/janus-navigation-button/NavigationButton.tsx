@@ -1,8 +1,10 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { CapiVariable } from '../types/parts';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 
 const NavigationButton: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -189,6 +191,93 @@ const NavigationButton: React.FC<any> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [Nav Button]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              const { mutateChanges: changes } = payload;
+              const sTitle = changes[`stage.${id}.title`];
+              if (sTitle !== undefined) {
+                setButtonTitle(sTitle);
+              }
+
+              const sTitles = changes[`stage.${id}.buttonTitles`];
+              if (sTitles !== undefined) {
+                setButtonTitle(sTitles[0]);
+              }
+
+              let sSelected = changes[`stage.${id}.Selected`];
+              if (sSelected === undefined) {
+                sSelected = changes[`stage.${id}.selected`];
+              }
+              if (sSelected !== undefined) {
+                setButtonSelected(sSelected);
+              }
+
+              const sVisible = changes[`stage.${id}.visible`];
+              if (sVisible !== undefined) {
+                setButtonVisible(sVisible);
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setButtonEnabled(sEnabled);
+              }
+
+              const sButtonTextColor = changes[`stage.${id}.textColor`];
+              if (sButtonTextColor !== undefined) {
+                setButtonTextColor(sButtonTextColor);
+              }
+
+              const sAccessibilityText = changes[`stage.${id}.accessibilityText`];
+              if (sAccessibilityText !== undefined) {
+                setAccessibilityText(sAccessibilityText);
+              }
+
+              const sBackgroundColor = changes[`stage.${id}.backgroundColor`];
+              if (sBackgroundColor !== undefined) {
+                setBackgroundColor(sBackgroundColor);
+              }
+
+              const sTransparent = changes[`stage.${id}.transparent`];
+              if (sTransparent !== undefined) {
+                setButtonTransparent(sTransparent);
+              }
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
+
   const {
     title,
     x = 0,
@@ -271,70 +360,6 @@ const NavigationButton: React.FC<any> = (props) => {
     //TODO commenting for now. Need to revisit once state structure logic is in place
     //handleStateChange(state);
   }, [state]);
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // override various things from state
-    const CapiVariables: any = {
-      btnTitle: title,
-      btnBackgroundColor: buttonColor,
-      btnEnabled: enabled,
-      btnSelected: selected,
-      btnTextColor: textColor,
-      btnTransparent: transparent,
-      btnVisible: visible,
-      btnaccessibilityText: '',
-    };
-    const interested = stateData.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    let isTitleSet = false;
-    interested.forEach((stateVar) => {
-      if (stateVar.key === 'title') {
-        setButtonTitle(stateVar.value as string);
-        CapiVariables.btnTitle = stateVar.value as string;
-        isTitleSet = true;
-      }
-      if (stateVar.key === 'buttonTitles') {
-        setButtonTitle(stateVar.value[0]);
-        CapiVariables.btnTitle = stateVar.value[0];
-        isTitleSet = true;
-      }
-      if (stateVar.key === 'Selected') {
-        const boolSelected: boolean = parseBool(stateVar.value);
-        setButtonSelected(boolSelected);
-        CapiVariables.btnSelected = boolSelected;
-      }
-      if (stateVar.key === 'visible') {
-        setButtonVisible(stateVar.value);
-        CapiVariables.btnVisible = stateVar.value;
-      }
-      if (stateVar.key === 'enabled') {
-        const boolEnabled: boolean = parseBool(stateVar.value);
-        setButtonEnabled(boolEnabled);
-        CapiVariables.btnEnabled = boolEnabled;
-      }
-      if (stateVar.key === 'textColor') {
-        setButtonTextColor(stateVar.value);
-        CapiVariables.btnTextColor = stateVar.value;
-      }
-      if (stateVar.key === 'accessibilityText') {
-        setAccessibilityText(stateVar.value as string);
-        CapiVariables.btnaccessibilityText = stateVar.value as string;
-      }
-      if (stateVar.key === 'backgroundColor') {
-        /* console.log({ backgroundColor: stateVar.value }); */
-
-        setBackgroundColor(stateVar.value);
-        CapiVariables.btnBackgroundColor = stateVar.value;
-      }
-      if (stateVar.key === 'transparent') {
-        setButtonTransparent(stateVar.value);
-        CapiVariables.btnTransparent = stateVar.value;
-      }
-    });
-    if (!isTitleSet) {
-      setButtonTitle(title);
-      CapiVariables.btnTitle = title;
-    }
-  };
 
   const buttonProps = {
     title: buttonTitle,

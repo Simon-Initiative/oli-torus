@@ -3,9 +3,14 @@ import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../../adaptivity/scripting';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  getLocalizedStateSnapshot,
+} from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
+import { setInitPhaseComplete } from '../../store/features/adaptivity/slice';
 import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -16,24 +21,24 @@ import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 
-// TODO: need to factor this into a "legacy" flagged behavior
-const InjectedStyles: React.FC = () => {
-  return (
-    <style>
-      {`.content *  {text-decoration: none; padding: 0px; margin:0px;white-space: normal; font-family: Arial; font-size: 13px; font-style: normal;border: none; border-collapse: collapse; border-spacing: 0px;line-height: 1.4; color: black; font-weight:inherit;color: inherit; display: inline-block; -moz-binding: none; text-decoration: none; white-space: normal; border: 0px; max-width:none;}
-        .content sup  {vertical-align: middle; font-size:65%; font-style:inherit;}
-        .content sub  {vertical-align: middle; font-size:65%; font-style:inherit;}
-        .content em  {font-style:italic; display:inline; font-size:inherit;}
-        .content strong  {font-weight:bold; display:inline; font-size:inherit;}
-        .content label  {margin-right:2px; display:inline-block; cursor:auto;}
-        .content div  {display:inline-block; margin-top:1px}
-        .content input  {margin:0px;}
-        .content span  {display:inline; font-size:inherit;}
-        .content option {display:block;}
-        .content ul {display:block}
-        .content ol {display:block}`}
-    </style>
-  );
+const InjectedStyles: React.FC<{ css?: string }> = (props) => {
+  // TODO: change defaultCss to '' (or possibly new theme?) once all converted include it
+  // as legacy
+  const defaultCss = `
+  .content *  {text-decoration: none; padding: 0px; margin:0px;white-space: normal; font-family: Arial; font-size: 13px; font-style: normal;border: none; border-collapse: collapse; border-spacing: 0px;line-height: 1.4; color: black; font-weight:inherit;color: inherit; display: inline-block; -moz-binding: none; text-decoration: none; white-space: normal; border: 0px; max-width:none;}
+  .content sup  {vertical-align: middle; font-size:65%; font-style:inherit;}
+  .content sub  {vertical-align: middle; font-size:65%; font-style:inherit;}
+  .content em  {font-style:italic; display:inline; font-size:inherit;}
+  .content strong  {font-weight:bold; display:inline; font-size:inherit;}
+  .content label  {margin-right:2px; display:inline-block; cursor:auto;}
+  .content div  {display:inline-block; margin-top:1px}
+  .content input  {margin:0px;}
+  .content span  {display:inline; font-size:inherit;}
+  .content option {display:block;}
+  .content ul {display:block}
+  .content ol {display:block}`;
+  const injected = props.css || defaultCss;
+  return injected ? <style>{injected}</style> : null;
 };
 
 const sharedActivityInit = new Map();
@@ -81,6 +86,39 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       width: pageContent.custom?.defaultScreenWidth,
     };
     setContentStyles(contentStyle);
+
+    if (pageContent?.custom?.customScript) {
+      // apply a custom *janus* script if defined
+      // this is for user defined functions (also legacy)
+      // TODO: something if there are errors
+      evalScript(pageContent?.custom?.customScript, defaultGlobalEnv);
+    }
+
+    if (Array.isArray(pageContent?.custom?.variables)) {
+      const allNames = pageContent.custom.variables.map((v: any) => v.name);
+      // variables can and will ref previous ones
+      // they will reference them "globally" so need to track the above
+      // in order to prepend the "variables" namespace
+      const statements: string[] = pageContent.custom.variables
+        .map((v: any) => {
+          if (!v.name || !v.expression) {
+            return '';
+          }
+          let expr = v.expression;
+          allNames.forEach((name: string) => {
+            const regex = new RegExp(`{${name}}`, 'g');
+            expr = expr.replace(regex, `{variables.${name}}`);
+          });
+
+          const stmt = `let {variables.${v.name}} = ${expr};`;
+          return stmt;
+        })
+        .filter((s: any) => s);
+      // execute each sequentially in case there are errors (missing functions)
+      statements.forEach((statement) => {
+        evalScript(statement, defaultGlobalEnv);
+      });
+    }
   }, [pageContent]);
 
   useEffect(() => {
@@ -180,23 +218,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     document.body.classList.add(...pageClasses);
   }, [pageClasses]);
 
-  const getLocalizedStateSnapshot = () => {
-    const snapshot = getEnvState(defaultGlobalEnv);
-    const finalState: any = { ...snapshot };
-    const allActivityIds = (currentActivityTree || []).map((a) => a.id);
-    allActivityIds.forEach((activityId: string) => {
-      const activityState = Object.keys(snapshot)
-        .filter((key) => key.indexOf(`${activityId}|`) === 0)
-        .reduce((collect: any, key) => {
-          const localizedKey = key.replace(`${activityId}|`, '');
-          collect[localizedKey] = snapshot[key];
-          return collect;
-        }, {});
-      Object.assign(finalState, activityState);
-    });
-    return finalState;
-  };
-
   const initCurrentActivity = useCallback(async () => {
     if (!currentActivityTree) {
       return;
@@ -222,7 +243,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      sharedActivityPromise.resolve({ snapshot: getLocalizedStateSnapshot() });
+      /* const contexts = {
+        VIEWER: 'VIEWER',
+        REVIEW: 'REVIEW',
+        AUTHOR: 'AUTHOR',
+        REPORT: 'REPORT',
+      }; */
+      const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+      sharedActivityPromise.resolve({
+        snapshot: getLocalizedStateSnapshot(currentActivityIds),
+        context: {
+          currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+          mode: 'VIEWER',
+        },
+      });
+      dispatch(setInitPhaseComplete(true));
     }
     return sharedActivityPromise.promise;
   };
@@ -267,10 +302,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       },
       {},
     );
-    const result = await dispatch(
-      savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-    );
-    return { result, snapshot: getLocalizedStateSnapshot() };
+
+    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+    if (response?.input?.length) {
+      const result = await dispatch(
+        savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+      );
+      return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    } else {
+      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    }
   };
 
   const handleActivitySubmitPart = async (
@@ -290,6 +331,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
     return { result, snapshot };
   };
+
+  const handleActivityRequestLatestState = useCallback(async () => {
+    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+    return { snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+  }, [currentActivityTree]);
 
   const renderActivities = useCallback(() => {
     if (!currentActivityTree || !currentActivityTree.length) {
@@ -360,6 +406,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySavePart={handleActivitySavePart}
           onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
+          onRequestLatestState={handleActivityRequestLatestState}
         />
       );
     });
@@ -384,7 +431,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
       {pageContent ? (
         <div className="stageContainer columnRestriction" style={contentStyles}>
-          <InjectedStyles />
+          <InjectedStyles css={pageContent?.customCss} />
           <div id="stage-stage">
             <div className="stage-content-wrapper">{renderActivities()}</div>
           </div>

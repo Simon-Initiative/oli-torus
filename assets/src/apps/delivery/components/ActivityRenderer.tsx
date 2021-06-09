@@ -14,10 +14,19 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
+import { selectCurrentActivityId } from '../store/features/activities/slice';
+import {
+  selectInitPhaseComplete,
+  selectLastCheckResults,
+  selectLastCheckTriggered,
+  selectLastMutateChanges,
+  selectLastMutateTriggered,
+} from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
+import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -31,6 +40,7 @@ interface ActivityRendererProps {
   onActivityRequestHint?: any;
   onActivitySubmitEvaluations?: any;
   onActivityReady?: any;
+  onRequestLatestState?: any;
 }
 
 const defaultHandler = async () => {
@@ -52,6 +62,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityResetPart = defaultHandler,
   onActivitySubmitEvaluations = defaultHandler,
   onActivityReady = defaultHandler,
+  onRequestLatestState = async () => ({ snapshot: {} }),
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = 1; // TODO from state
@@ -125,7 +136,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response });
+    /* console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response }); */
 
     const result = await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, response);
 
@@ -220,9 +231,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because we need at least read only access to cross activity values and extrinsic
     // *maybe* better to have a onInit callback and send it as a response?
     // because this is BIG
-    const envSnapshot = getEnvState(defaultGlobalEnv);
-    const fullState = { ...attempt, snapshot: envSnapshot };
-    setState(JSON.stringify(fullState));
+    /* const envSnapshot = getEnvState(defaultGlobalEnv);
+    const fullState = { ...attempt, snapshot: envSnapshot }; */
+    setState(JSON.stringify(attempt));
 
     setModel(JSON.stringify(activity));
 
@@ -236,7 +247,68 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     };
   }, []);
 
+  const ref = useRef<any>(null);
+
+  const lastCheckTriggered = useSelector(selectLastCheckTriggered);
+  const lastCheckResults = useSelector(selectLastCheckResults);
+  const [checkInProgress, setCheckInProgress] = useState(false);
+
+  useEffect(() => {
+    if (!lastCheckTriggered || !ref.current) {
+      return;
+    }
+    setCheckInProgress(true);
+    ref.current.notify(NotificationType.CHECK_STARTED, { ts: lastCheckTriggered });
+  }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (checkInProgress && lastCheckResults) {
+      ref.current.notify(NotificationType.CHECK_COMPLETE, { results: lastCheckResults });
+      setCheckInProgress(false);
+    }
+  }, [checkInProgress, lastCheckResults]);
+
+  // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
+  // maybe it will just be the same and never actually change.
+  // TODO: check if it needs to come from somewhere higher
+  const currentActivityId = useSelector(selectCurrentActivityId);
+  const initPhaseComplete = useSelector(selectInitPhaseComplete);
+  const notifyContextChanged = async () => {
+    // even though ActivityRenderer still lives inside the main react app ecosystem
+    // it can't logically access the "localized" version of the state snapshot
+    // because this is a single activity and doesn't know about Layout (Deck View) behavior
+    // so it needs to ask the parent for it.
+    const { snapshot } = await onRequestLatestState();
+    ref.current.notify(NotificationType.CONTEXT_CHANGED, {
+      currentActivityId,
+      mode: 'VIEWER', // TODO: based on isPreviewMOde
+      snapshot,
+    });
+  };
+  useEffect(() => {
+    if (!initPhaseComplete || !ref.current) {
+      return;
+    }
+    notifyContextChanged();
+  }, [initPhaseComplete]);
+
+  const mutationTriggered = useSelector(selectLastMutateTriggered);
+  const mutateChanges = useSelector(selectLastMutateChanges);
+
+  const notifyStateMutation = async () => {
+    ref.current.notify(NotificationType.STATE_CHANGED, {
+      mutateChanges,
+    });
+  };
+  useEffect(() => {
+    if (!mutationTriggered || !ref.current) {
+      return;
+    }
+    notifyStateMutation();
+  }, [mutationTriggered]);
+
   const elementProps = {
+    ref,
     graded: false,
     model,
     state,

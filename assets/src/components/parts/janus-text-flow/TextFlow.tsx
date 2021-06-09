@@ -2,6 +2,10 @@ import chroma from 'chroma-js';
 import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import Markup from './Markup';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 
 export interface MarkupTree {
   tag: string;
@@ -22,6 +26,9 @@ export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSi
   ) {
     // PMP-526
     style.backgroundColor = '';
+  }
+  if (node.tag === 'p' && child.tag === 'span' && child.style.color === '#000000') {
+    style.color = 'inherit';
   }
   if (!(child.style && child.style.fontSize) && fontSize) {
     style.fontSize = `${fontSize}px`;
@@ -123,6 +130,50 @@ const TextFlow: React.FC<any> = (props: any) => {
     }
     initialize(pModel);
   }, [props]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do...
+            break;
+          case NotificationType.STATE_CHANGED:
+            {
+              /* console.log('MUTATE STATE!!!!', {
+                payload,
+              }); */
+              const { mutateChanges: changes } = payload;
+              setState({ ...state, ...changes });
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
 

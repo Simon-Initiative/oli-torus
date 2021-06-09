@@ -1,4 +1,4 @@
-import { isStringArray, parseArray, parseBoolean } from 'utils/common';
+import { isStringArray, parseArray, parseBool, parseBoolean } from 'utils/common';
 
 export enum CapiVariableTypes {
   NUMBER = 1,
@@ -70,6 +70,23 @@ export const coerceCapiValue = (
   }
 
   return value;
+};
+
+export const parseCapiValue = (capiVar: CapiVariable): any => {
+  switch (capiVar.type) {
+    case CapiVariableTypes.BOOLEAN:
+      return parseBoolean(capiVar.value);
+    case CapiVariableTypes.NUMBER:
+      if (!isNaN(parseFloat(capiVar.value))) {
+        return parseFloat(capiVar.value);
+      }
+      return capiVar.value;
+    case CapiVariableTypes.ARRAY:
+    case CapiVariableTypes.ARRAY_POINT:
+      return parseArray(capiVar.value);
+    default:
+      return capiVar.value;
+  }
 };
 
 export interface ICapiVariableOptions {

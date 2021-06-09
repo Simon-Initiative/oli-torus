@@ -197,7 +197,7 @@ defmodule OliWeb.Router do
 
     post("/help/create", HelpController, :create)
     post("/consent/cookie", CookieConsentController, :persist_cookies)
-    get("/consent/cookie/", CookieConsentController, :retrieve)
+    get("/consent/cookie", CookieConsentController, :retrieve)
 
     get("/site.webmanifest", StaticPageController, :site_webmanifest)
   end
