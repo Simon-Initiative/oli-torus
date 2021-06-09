@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
+import store from './store';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 
 export interface AuthoringProps {
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
   content: any;
+  activityTypes?: any[];
+  resourceId?: number;
 }
 
-export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+  const dispatch = useDispatch();
+
   const url = `/project/${props.projectSlug}/preview/${props.revisionSlug}`;
   const windowName = `preview-${props.projectSlug}`;
   const authoringContainer = document.getElementById('advanced-authoring');
@@ -115,3 +121,11 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     </>
   );
 };
+
+const ReduxApp: React.FC<AuthoringProps> = (props) => (
+  <Provider store={store}>
+    <Authoring {...props} />
+  </Provider>
+);
+
+export default ReduxApp;
