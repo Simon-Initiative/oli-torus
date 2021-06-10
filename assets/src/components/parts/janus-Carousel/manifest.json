@@ -1,14 +1,14 @@
 {
-  "id": "janus_carousel",
+  "id": "janus_mage_carousel",
   "friendlyName": "Carousel",
-  "description": "Displays a carousel.",
+  "description": "Displays a image carousel.",
   "global": true,
   "delivery": {
-    "element": "janus-carousel",
+    "element": "janus-image-carousel",
     "entry": "./delivery-entry.ts"
   },
   "authoring": {
-    "element": "janus-carousel",
+    "element": "janus-image-carousel",
     "entry": "./authoring-entry.ts"
   }
 }
