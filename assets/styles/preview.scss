@@ -11,11 +11,81 @@ body {
   flex-direction: column;
 }
 
-.delivery {
-  @import "delivery/variables";
-  @import "bootstrap";
-  @import "common/**/*.scss";
-  @import "components/**/*.scss";
-  @import "delivery/**/*.scss";
-  @import "display.scss";
+.preview {
+  @import 'delivery/variables';
+  @import 'bootstrap';
+  @import 'common/**/*.scss';
+  @import 'components/**/*.scss';
+  @import 'delivery/**/*.scss';
+
+  .style-stopper {
+    all: initial;
+  }
+  .content * {
+    text-decoration: none;
+    padding: 0px;
+    margin: 0px;
+    white-space: normal;
+    font-family: Arial;
+    font-size: 13px;
+    font-style: normal;
+    border: none;
+    border-collapse: collapse;
+    border-spacing: 0px;
+    line-height: 1.4;
+    color: black;
+    font-weight: inherit;
+    color: inherit;
+    display: inline-block;
+    -moz-binding: none;
+    text-decoration: none;
+    white-space: normal;
+    border: 0px;
+    max-width: none;
+  }
+  .content sup {
+    vertical-align: middle;
+    font-size: 65%;
+    font-style: inherit;
+  }
+  .content sub {
+    vertical-align: middle;
+    font-size: 65%;
+    font-style: inherit;
+  }
+  .content em {
+    font-style: italic;
+    display: inline;
+    font-size: inherit;
+  }
+  .content strong {
+    font-weight: bold;
+    display: inline;
+    font-size: inherit;
+  }
+  .content label {
+    margin-right: 2px;
+    display: inline-block;
+    cursor: auto;
+  }
+  .content div {
+    display: inline-block;
+    margin-top: 1px;
+  }
+  .content input {
+    margin: 0px;
+  }
+  .content span {
+    display: inline;
+    font-size: inherit;
+  }
+  .content option {
+    display: block;
+  }
+  .content ul {
+    display: block;
+  }
+  .content ol {
+    display: block;
+  }
 }
