@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 
 // TODO: fix typing
 const Audio: React.FC<any> = (props) => {
