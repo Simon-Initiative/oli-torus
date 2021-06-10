@@ -57,8 +57,6 @@ defmodule OliWeb.Api.GlobalStateController do
          200 => {"Update Response", "application/json", State.UpsertDeleteResponse}
        }
   def upsert(conn, params) do
-    IO.inspect("upsert")
-
     State.upsert(conn, params, fn %{user: user, key_values: key_values} ->
       ExtrinsicState.upsert_global(user.id, key_values)
     end)

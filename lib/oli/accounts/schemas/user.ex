@@ -91,7 +91,7 @@ defmodule Oli.Accounts.User do
       :research_opt_out,
       :state
     ])
-    |> validate_required_if([:email], &is_independent_learner/1)
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
@@ -130,7 +130,7 @@ defmodule Oli.Accounts.User do
       :research_opt_out,
       :state
     ])
-    |> validate_required_if([:email], &is_independent_learner/1)
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
@@ -142,10 +142,15 @@ defmodule Oli.Accounts.User do
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
-  def is_independent_learner(changeset) do
+  def is_independent_learner_not_guest(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
-        Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
+        independent_learner =
+          Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
+
+        guest = Map.get(changes, :guest) || Map.get(data, :guest)
+
+        independent_learner && !guest
 
       _ ->
         false

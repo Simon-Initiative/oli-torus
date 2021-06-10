@@ -97,6 +97,8 @@ defmodule Oli.Utils do
   def validate_required_if(changeset, fields, condition) do
     if condition.(changeset) do
       Ecto.Changeset.validate_required(changeset, fields)
+    else
+      changeset
     end
   end
 

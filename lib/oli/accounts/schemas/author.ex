@@ -82,7 +82,6 @@ defmodule Oli.Accounts.Author do
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
-    |> IO.inspect()
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
