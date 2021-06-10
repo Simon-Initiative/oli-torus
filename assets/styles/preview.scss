@@ -12,14 +12,14 @@ body {
 }
 
 .preview {
-  @import 'delivery/variables';
   @import 'bootstrap';
-  @import 'common/**/*.scss';
-  @import 'components/**/*.scss';
-  @import 'delivery/**/*.scss';
+  @import 'delivery/preview-tools.scss';
 
   .style-stopper {
     all: initial;
+    font-feature-settings: 'kern', 'liga', 'pnum';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizelegibility;
   }
   .content * {
     text-decoration: none;
