@@ -1,6 +1,7 @@
 defmodule OliWeb.Api.AttemptController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
+  require Logger
 
   alias Oli.Delivery.Attempts.ActivityLifecycle, as: Activity
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate, as: ActivityEvaluation
@@ -488,16 +489,18 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "partInputs" => part_inputs
       }) do
+
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
         %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
-      {:error, _} ->
+      {:error, message} ->
+        Logger.error("Error when processing submit_activity #{inspect(message)}")
         error(conn, 500, "server error")
     end
   end

@@ -1,5 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
+import { PartResponse } from 'components/activities/types';
+import { evalActivityAttempt } from 'data/persistence/state/intrinsic';
 import { check } from '../../../../../../adaptivity/rules-engine';
 import {
   ApplyStateOperation,
@@ -7,8 +9,11 @@ import {
   defaultGlobalEnv,
 } from '../../../../../../adaptivity/scripting';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
-import { selectCurrentActivityTree } from '../../groups/selectors/deck';
-import { selectPreviewMode } from '../../page/slice';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState,
+} from '../../groups/selectors/deck';
+import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
 export const triggerCheck = createAsyncThunk(
@@ -111,16 +116,30 @@ export const triggerCheck = createAsyncThunk(
       }); */
     } else {
       // server mode (delivery) TODO
-      checkResult = [
-        {
-          type: 'correct',
-          params: {
-            actions: [{ params: { target: 'next' }, type: 'navigation' }],
-            order: 1,
-            correct: true,
-          },
-        },
-      ];
+      const sectionSlug = selectSectionSlug(rootState);
+      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+      const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
+      const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
+
+      console.log('CHECKING', { sectionSlug, currentActivityTreeAttempts });
+
+      if (!currentActivityAttemptGuid) {
+        console.error('not current attempt, cannot eval', { currentActivityTreeAttempts });
+        return;
+      }
+
+      const partResponses: PartResponse[] =
+        currentAttempt?.parts.map((p) => {
+          return { attemptGuid: p.attemptGuid, response: { input: p.response || '' } };
+        }) || [];
+
+      const evalResult = await evalActivityAttempt(
+        sectionSlug,
+        currentActivityAttemptGuid,
+        partResponses,
+      );
+      console.log('EVAL RESULT', { evalResult });
+      checkResult = (evalResult.result as any).actions;
     }
 
     await dispatch(setLastCheckResults({ results: checkResult }));

@@ -13,6 +13,64 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   import Oli.Delivery.Attempts.Core
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
 
+  def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
+    %ActivityAttempt{
+      transformed_model: transformed_model,
+      attempt_number: attempt_number,
+      resource_attempt: resource_attempt
+    } =
+      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      |> Repo.preload([:resource_attempt])
+
+    {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
+
+    if is_list(rules) do
+      evaluate_from_rules(section_slug, activity_attempt_guid, part_inputs)
+    else
+      evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
+    end
+  end
+
+  def evaluate_from_rules(section_slug, activity_attempt_guid, part_inputs) do
+    %ActivityAttempt{
+      transformed_model: transformed_model,
+      attempt_number: attempt_number,
+      resource_attempt: resource_attempt
+    } =
+      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      |> Repo.preload([:resource_attempt])
+
+    {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
+
+    # need to get all of the extrinsic (resource_attempt state)
+    # need to get *all* of the activity attempts state (part responses saved thus far)
+    # need to combine with part_inputs as latest
+    # need to send rules (just for the current activity)
+
+    # nodejs then evaluates that and returns actions
+
+    {:ok,
+      [
+        %Oli.Delivery.Evaluation.AdaptiveResult{
+          type: "correct (name of rule, doesn't matter for eval)",
+          attempt_guid: activity_attempt_guid,
+          params: %{
+            order: 1,
+            correct: true,
+            actions: [
+              %{
+                type: "navigation",
+                params: %{
+                  target: "next"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  end
+
   @doc """
   Processes a student submission for some number of parts for the given
   activity attempt guid.  If this collection of part attempts completes the activity
