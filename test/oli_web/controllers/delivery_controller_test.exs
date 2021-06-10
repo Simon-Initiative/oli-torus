@@ -123,9 +123,12 @@ defmodule OliWeb.DeliveryControllerTest do
   describe "delivery_controller deleted_project" do
     setup [:setup_session]
 
-    test "removes deleted project from available publications", %{conn: conn, project: project, author: author,
-      institution: institution} do
-
+    test "removes deleted project from available publications", %{
+      conn: conn,
+      project: project,
+      author: author,
+      institution: institution
+    } do
       Publishing.publish_project(project)
 
       delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
@@ -142,7 +145,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> LtiSession.put_user_params(cache_keys.instructor)
-        |> get(Routes.delivery_path(conn, :process_link_account_provider, :google))
+        |> get(Routes.authoring_delivery_path(conn, :process_link_account_provider, :google))
 
       assert html_response(conn, 302) =~ "redirect"
     end
@@ -165,7 +168,9 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> LtiSession.put_user_params(cache_keys.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
+        |> post(Routes.delivery_path(conn, :process_link_account_user),
+          user: author_params
+        )
 
       assert html_response(conn, 200) =~
                "The provided login details did not work. Please verify your credentials, and try again."

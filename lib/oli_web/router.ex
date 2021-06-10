@@ -27,13 +27,12 @@ defmodule OliWeb.Router do
 
   # pipline for REST api endpoint routes
   pipeline :api do
+    plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
-    plug(:accepts, ["json"])
-    plug(Oli.Plugs.SetDefaultPow, :author)
   end
 
   # pipeline for LTI launch endpoints
@@ -176,7 +175,7 @@ defmodule OliWeb.Router do
     pow_assent_authorization_post_callback_routes()
   end
 
-  scope "/authoring", PowInvitation.Phoenix, as: "pow_invitation" do
+  scope "/authoring", PowInvitation.Phoenix, as: :authoring do
     pipe_through([:browser, :delivery, :registration_captcha])
 
     resources("/invitations", InvitationController, only: [:edit, :update])

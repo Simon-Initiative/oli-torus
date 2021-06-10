@@ -23,7 +23,7 @@ defmodule OliWeb.InviteControllerTest do
 
       put(
         conn,
-        Routes.pow_invitation_invitation_path(conn, :update, token),
+        Routes.authoring_invitation_path(conn, :update, token),
         %{
           user: %{
             email: @invite_email,

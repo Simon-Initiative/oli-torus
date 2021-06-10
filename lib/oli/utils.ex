@@ -94,6 +94,12 @@ defmodule Oli.Utils do
     Ecto.Changeset.update_change(changeset, :email, &String.downcase/1)
   end
 
+  def validate_required_if(changeset, fields, condition) do
+    if condition.(changeset) do
+      Ecto.Changeset.validate_required(changeset, fields)
+    end
+  end
+
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end

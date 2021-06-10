@@ -153,7 +153,9 @@ defmodule OliWeb.DeliveryController do
   def process_link_account_provider(conn, %{"provider" => provider}) do
     conn =
       conn
-      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
+      |> merge_assigns(
+        callback_url: Routes.authoring_delivery_url(conn, :link_account_callback, provider)
+      )
 
     PowAssent.Plug.authorize_url(conn, provider, conn.assigns.callback_url)
     |> case do
@@ -193,7 +195,9 @@ defmodule OliWeb.DeliveryController do
   def link_account_callback(conn, %{"provider" => provider} = params) do
     conn =
       conn
-      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
+      |> merge_assigns(
+        callback_url: Routes.authoring_delivery_url(conn, :link_account_callback, provider)
+      )
 
     PowAssent.Plug.callback_upsert(conn, provider, params, conn.assigns.callback_url)
     |> (fn {:ok, conn} ->
