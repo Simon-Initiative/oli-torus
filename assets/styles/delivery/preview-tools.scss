@@ -1,4 +1,6 @@
 #PreviewTools {
+  @import 'bootstrap';
+
   box-shadow: 0px 0px 5px 1px $black;
   background: $gray-100;
   @media (prefers-color-scheme: dark) {

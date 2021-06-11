@@ -428,19 +428,17 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         showScore={true}
         themeId={pageContent?.custom?.themeId}
       />
-      <div className="style-stopper">
-        <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
-        {pageContent ? (
-          <div className="stageContainer columnRestriction" style={contentStyles}>
-            <InjectedStyles css={pageContent?.customCss} />
-            <div id="stage-stage">
-              <div className="stage-content-wrapper">{renderActivities()}</div>
-            </div>
+      <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
+      {pageContent ? (
+        <div className="stageContainer columnRestriction" style={contentStyles}>
+          <InjectedStyles css={pageContent?.customCss} />
+          <div id="stage-stage">
+            <div className="stage-content-wrapper">{renderActivities()}</div>
           </div>
-        ) : (
-          <div>loading...</div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div>loading...</div>
+      )}
       <DeckLayoutFooter />
     </div>
   );
