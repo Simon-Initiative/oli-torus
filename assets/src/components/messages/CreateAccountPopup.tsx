@@ -47,15 +47,21 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
 
         <div className="d-flex flex-row">
           <h4>Welcome to Open and Free!</h4>
-          <button type="button" className="btn close-btn close" aria-label="Close" onClick={() => onDismiss()}>
-            <span aria-hidden="true">&times;</span>
-          </button>
         </div>
         <p>You are viewing this course as a guest. You can access course materials but your <b>progress will not be saved</b>.</p>
 
         <p>Create an account or sign in to enroll in this course and track your progress.</p>
         <div className="d-flex mt-4">
-          <button className="btn btn-sm btn-link" onClick={() => onDontAskAgain()}>Don&apos;t ask again</button>
+          <div className="btn-group">
+            <button type="button" className="btn btn-sm btn-link" onClick={() => onDismiss()}>Maybe later</button>
+            <button type="button" className="btn btn-sm btn-link dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span className="sr-only">Toggle Dropdown</span>
+            </button>
+            <div className="dropdown-menu">
+              <button className="btn btn-sm btn-link dropdown-item text-left" onClick={() => onDontAskAgain()}>Don&apos;t ask again on this browser</button>
+            </div>
+          </div>
+
           <div className="flex-grow-1"></div>
           <a href={`/course/create_account?section=${props.sectionSlug}`} className="btn btn-sm btn-outline-primary ml-1">Create account</a>
           <a href={`/course/signin?section=${props.sectionSlug}`} className="btn btn-sm btn-primary ml-1">Sign in</a>
