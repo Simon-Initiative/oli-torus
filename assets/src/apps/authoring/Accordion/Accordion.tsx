@@ -6,18 +6,17 @@ import React from 'react';
 const Accordion: React.FC<any> = (props) => {
 
   const tabs: [] = props.tabsData.tabs;
-  console.log(props.data);
   return (
-    <div className='accordion' id='accordionExample'>
-      {tabs.map((tab: any, index:number) => (
+    <div className='accordion'>
+      {tabs.map((tab: any) => (
         <div className='card'>
           <div id={tab.id}
             className='d-flex justify-content-between'>
               <span className='col-10'
                 data-toggle='collapse'
-                data-target={'#collapse'+tab.id}
+                data-target={`#collapse${tab.id}`}
                 aria-expanded='true'
-                aria-controls={'collapse'+tab.id}>
+                aria-controls={`collapse${tab.id}`}>
                   {tab.title}
               </span>
               <button type='button' className='btn btn-info some-button col-2'>
@@ -26,7 +25,7 @@ const Accordion: React.FC<any> = (props) => {
           </div>
 
           <div
-            id={'collapse' + tab.id}
+            id={`collapse${tab.id}`}
             className={'collapse show'}
             aria-labelledby={tab.id}
           >
