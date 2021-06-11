@@ -9,7 +9,7 @@
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
-<div id="delivery_container" class="container"></div>
+<div id="delivery_container"></div>
 
 <script>
   window.userToken = "<%= assigns[:user_token] %>";
