@@ -1,8 +1,15 @@
 defmodule Oli.Activities.Model.ConditionalOutcome do
+  @derive Jason.Encoder
   defstruct [:id, :conditions, :event, :name]
 
-  def parse(%{"id" => id}) do
-    {:ok, %Oli.Activities.Model.ConditionalOutcome{id: id}}
+  def parse(%{"id" => id, "event" => event, "name" => name, "conditions" => conditions}) do
+    {:ok,
+     %Oli.Activities.Model.ConditionalOutcome{
+       id: id,
+       event: event,
+       name: name,
+       conditions: conditions
+     }}
   end
 
   def parse(outcomes) when is_list(outcomes) do

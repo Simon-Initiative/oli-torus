@@ -13,6 +13,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   import Oli.Delivery.Attempts.Core
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
 
+  require Logger
+
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
     %ActivityAttempt{
       transformed_model: transformed_model,
@@ -47,28 +49,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     # need to combine with part_inputs as latest
     # need to send rules (just for the current activity)
 
-    # nodejs then evaluates that and returns actions
+    state = %{test: 1}
 
-    {:ok,
-      [
-        %Oli.Delivery.Evaluation.AdaptiveResult{
-          type: "correct (name of rule, doesn't matter for eval)",
-          attempt_guid: activity_attempt_guid,
-          params: %{
-            order: 1,
-            correct: true,
-            actions: [
-              %{
-                type: "navigation",
-                params: %{
-                  target: "next"
-                }
-              }
-            ]
-          }
-        }
-      ]
-    }
+    Logger.debug("eval rules: #{Jason.encode!(rules)}")
+
+    # nodejs then evaluates that and returns actions
+    case NodeJS.call({"rules", :check}, [state, rules]) do
+      {:ok, result} -> {:ok, result}
+      {:error, message} -> {:error, message}
+    end
+
+
   end
 
   @doc """

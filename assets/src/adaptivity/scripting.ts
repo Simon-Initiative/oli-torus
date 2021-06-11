@@ -204,6 +204,8 @@ export const getLocalizedStateSnapshot = (
 
 // for use by client side scripting evalution
 export const defaultGlobalEnv = new Environment();
-(window as any)['defaultGlobalEnv'] = defaultGlobalEnv;
+// note: CANNOT have this window reference in the shared nodejs code
+/* (window as any)['defaultGlobalEnv'] = defaultGlobalEnv; */
+
 // load std lib
 evalScript(janus_std, defaultGlobalEnv);
