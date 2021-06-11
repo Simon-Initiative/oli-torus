@@ -6,7 +6,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Publishing
 
   describe "delivery_controller index" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "handles student with no section", %{conn: conn, cache_keys: cache_keys} do
       conn =
@@ -108,7 +108,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller link_account" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "renders link account form", %{conn: conn, cache_keys: cache_keys} do
       conn =
@@ -121,7 +121,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller deleted_project" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "removes deleted project from available publications", %{
       conn: conn,
@@ -139,7 +139,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller process_link_account_provider" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "processes link account for provider", %{conn: conn, cache_keys: cache_keys} do
       conn =
@@ -152,7 +152,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller process_link_account_user" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "processes link account for user email authentication failure", %{
       conn: conn,
@@ -196,7 +196,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  defp setup_session(%{conn: conn}) do
+  defp setup_lti_session(%{conn: conn}) do
     author =
       author_fixture(%{
         password: "password123",

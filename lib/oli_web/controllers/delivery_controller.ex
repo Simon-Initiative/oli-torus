@@ -9,6 +9,8 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
+  import Oli.Utils
+
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
@@ -336,7 +338,15 @@ defmodule OliWeb.DeliveryController do
 
   def enroll(conn, _params) do
     section = conn.assigns.section
-    render(conn, "enroll.html", section: section)
+
+    # redirect to course index if user is already signed in and enrolled
+    with {:ok, user} <- conn.assigns.current_user |> trap_nil,
+         true <- Sections.is_enrolled?(user.id, section.slug) do
+      redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+    else
+      _ ->
+        render(conn, "enroll.html", section: section)
+    end
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
