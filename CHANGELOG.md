@@ -5,12 +5,15 @@
 ### Enhancements
 
 - Image coding: disable submit button before code is run
+- Allow setting of arbitrary content from upload JSON file in revision history tool
 
 ### Bug fixes
 
 - Image coding: remove extra space at end of printed lines (problem for regexp grading)
 - Fix issues related to exporting DataShop events for courses that contain hierarchies
 - Fix an issue with the torus logo in dark mode
+- Fix to support rich text content with empty models
+- Fix to properly identify the correct choice in multiple choice activities
 
 ## 0.10.0 (2021-6-2)
 
