@@ -237,14 +237,14 @@ defmodule OliWeb.Accounts.AccountsLive do
             </li>
           </ul>
           <div class="mt-4 ml-1 mr-2">
-            <%= live_component @socket, SortableTable, model: (if @model.active_tab == :users do @model.users_model else @model.authors_model end) %>
+            <%= live_component SortableTable, model: (if @model.active_tab == :users do @model.users_model else @model.authors_model end) %>
           </div>
         </div>
       </div>
-      <%= live_component @socket, Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin" do %>
+      <%= live_component Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin" do %>
         <p class="mb-4">Are you sure you want to do grant this user Administrator access?</p>
       <% end %>
-      <%= live_component @socket, Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin" do %>
+      <%= live_component Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin" do %>
         <p class="mb-4">Are you sure you want to do revoke Administrator privileges from this author account?</p>
       <% end %>
     </div>
