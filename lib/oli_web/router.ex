@@ -175,8 +175,8 @@ defmodule OliWeb.Router do
     pow_assent_authorization_post_callback_routes()
   end
 
-  scope "/authoring", PowInvitation.Phoenix, as: :authoring do
-    pipe_through([:browser, :delivery, :registration_captcha])
+  scope "/authoring", PowInvitation.Phoenix, as: :pow_invitation do
+    pipe_through([:browser, :authoring, :registration_captcha])
 
     resources("/invitations", InvitationController, only: [:edit, :update])
   end

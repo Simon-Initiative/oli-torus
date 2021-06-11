@@ -142,7 +142,7 @@ defmodule Oli.Authoring.Collaborators do
       case view do
         :invitation_new_user ->
           token = PowInvitation.Plug.sign_invitation_token(conn, user)
-          Routes.authoring_invitation_path(conn, :edit, token)
+          Routes.pow_invitation_invitation_path(conn, :edit, token)
 
         :invitation_existing_user ->
           Routes.project_path(conn, :overview, project.slug)

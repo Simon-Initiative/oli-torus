@@ -59,7 +59,7 @@ defmodule OliWeb.InviteController do
   defp deliver_invitation_email(conn, user, view) do
     invited_by = Pow.Plug.current_user(conn)
     token = PowInvitation.Plug.sign_invitation_token(conn, user)
-    url = Routes.authoring_invitation_path(conn, :edit, token)
+    url = Routes.pow_invitation_invitation_path(conn, :edit, token)
 
     invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
 

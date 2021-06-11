@@ -85,6 +85,12 @@ defmodule Oli.Accounts.Author do
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
+  def invite_changeset(user_or_changeset, invited_by, attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])
+    |> pow_invite_changeset(invited_by, attrs)
+  end
+
   defp default_system_role(changeset) do
     case changeset do
       # if changeset is valid and doesnt have a system role set, default to author

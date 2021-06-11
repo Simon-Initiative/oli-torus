@@ -49,7 +49,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       put(
         conn,
-        Routes.authoring_invitation_path(conn, :update, token),
+        Routes.pow_invitation_invitation_path(conn, :update, token),
         %{
           user: %{
             email: @invite_email,
