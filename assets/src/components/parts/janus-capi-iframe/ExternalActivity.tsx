@@ -475,24 +475,6 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   const handleOnReady = (data: any) => {
     if (simLife.ready) {
-      const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
-        const baseKey = key.replace(`stage.${id}.`, '');
-        const value = initState[key];
-        const cVar = new CapiVariable({
-          key: baseKey,
-          value,
-        });
-        formatted[baseKey] = cVar;
-        return formatted;
-      }, {});
-      if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
-        sendFormedResponse(
-          simLife.handshake,
-          {},
-          JanusCAPIRequestTypes.VALUE_CHANGE,
-          initStateVars,
-        );
-      }
       return;
     }
     simLife.init = true;
@@ -691,7 +673,7 @@ const ExternalActivity: React.FC<any> = (props) => {
 
     // state should be updated already with init state by the time we get it
     // so here we want to apply configData FIRST, then overwrite it with anything already set in the state
-    const newInternalState: any = [
+    const configDataState: any = [
       ...configData.map((cdVar: { key: any }) => {
         return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
       }),
@@ -713,6 +695,15 @@ const ExternalActivity: React.FC<any> = (props) => {
         newInternalState.push(stateVar);
       }
     }); */
+    const newInternalState =
+      configDataState?.map((item: any) => {
+        const initStateValue = initState[item.id];
+        if (initStateValue?.length || initStateValue?.toString()?.length) {
+          item.value = initStateValue;
+        }
+        return item;
+      }) || [];
+
     setInternalState(newInternalState);
 
     simLife.currentState = newInternalState;
