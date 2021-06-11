@@ -11,25 +11,25 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
 
   const onDismiss = () => {
     setShow(false);
-    sessionStorage.setItem('accountPrompt', 'hide');
+    sessionStorage.setItem('createAccountPrompt', 'hide');
   }
 
   const onDontAskAgain = () => {
     setShow(false);
-    localStorage.setItem('accountPrompt', 'hide');
+    localStorage.setItem('createAccountPrompt', 'hide');
   };
 
   const onBlurClick = (e: any) => {
     if (!e.createAccountPopupClick) {
-      onDismiss()
+      setShow(false);
       window.removeEventListener('click', onBlurClick);
     }
   }
 
   useEffect(() => {
     if (firstRender) {
-      const showPref = sessionStorage.getItem('accountPrompt') != 'hide'
-        && localStorage.getItem('accountPrompt') != 'hide'
+      const showPref = sessionStorage.getItem('createAccountPrompt') != 'hide'
+        && localStorage.getItem('createAccountPrompt') != 'hide'
       setShow(showPref);
       window.addEventListener('click', onBlurClick);
     }
@@ -51,8 +51,10 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-          You are viewing this course as a guest. Create an account or sign in to enroll in this course and track your progress.
-          <div className="d-flex mt-4">
+        <p>You are viewing this course as a guest. You can access course materials but your <b>progress will not be saved</b>.</p>
+
+        <p>Create an account or sign in to enroll in this course and track your progress.</p>
+        <div className="d-flex mt-4">
           <button className="btn btn-sm btn-link" onClick={() => onDontAskAgain()}>Don&apos;t ask again</button>
           <div className="flex-grow-1"></div>
           <a href={`/course/create_account?section=${props.sectionSlug}`} className="btn btn-sm btn-outline-primary ml-1">Create account</a>
