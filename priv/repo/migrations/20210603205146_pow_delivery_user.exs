@@ -17,7 +17,7 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
     create unique_index(:users, [:email_confirmation_token])
 
     # guarantee that independent learners have unique emails
-    create unique_index(:users, [:email, :independent_learner])
+    create unique_index(:users, [:email], where: "independent_learner = true", name: :users_email_independent_learner_index)
 
     # rename current user_identities to author_identities
     drop unique_index(:user_identities, [:uid, :provider])
