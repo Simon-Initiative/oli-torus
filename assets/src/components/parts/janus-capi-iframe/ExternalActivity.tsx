@@ -678,23 +678,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
       }),
     ];
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    /*     state.forEach((stateVar) => {
-      const exists = newInternalState.find((iVar: { id: any }) => iVar.id === stateVar.id);
-      if (exists) {
-        exists.value =
-          stateVar?.value?.toString().trim().length > 0 ? stateVar.value : exists.value;
-      } else if (
-        initState?.length <= 0 ||
-        initState?.find((item: any) => item.id === stateVar.id)
-      ) {
-        newInternalState.push(stateVar);
-      } else if (stateVar.value === '[]') {
-        //hack for Absorbance
-        stateVar.value = '[""]';
-        newInternalState.push(stateVar);
-      }
-    }); */
+    // override configData values from init trap state data.
     const newInternalState =
       configDataState?.map((item: any) => {
         const initStateValue = initState[item.id];
