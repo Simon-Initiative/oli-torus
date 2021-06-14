@@ -41,3 +41,27 @@
 
   <% end %>
 <% end %>
+
+<% IO.inspect @changeset %>
+
+<%= if Keyword.has_key?(@changeset.errors,:password_confirmation) do %>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+      <div class="callout callout-primary">
+        <h4><i class="las la-info-circle mr-2"></i>Looking for Authoring Sign In?</h4>
+        <p>
+          It looks like your credentials failed but you might be in the wrong location. This page is for <b>Learner</b> accounts.
+          If you are trying to sign into an <b>Author</b> account, please use the Authoring Sign In page.</p>
+        <p>
+          <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-sm btn-outline-primary my-2 my-sm-0" do %>
+            Go to Authoring Sign In <i class="fa fa-arrow-right"></i>
+          <% end %>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% end %>
