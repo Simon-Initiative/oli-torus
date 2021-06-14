@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="delivery">
+<html lang="en" class="<%= if @preview_mode == true do %>preview<% else %>delivery<% end %>">
   <head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
@@ -33,7 +33,6 @@
     <% end %>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>

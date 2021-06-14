@@ -12,24 +12,26 @@
       </div>
     <% end %>
 
-    <%= if preview_mode(@conn) do %>
-      <div class="nav-item dropdown form-inline my-2 my-lg-0">
-        <a class="user block nav-link dropdown-toggle" href="#" aria-haspopup="false" aria-expanded="false">
-          <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
-            Preview
-          </span>
-          <div class="user-icon">
-            <%= user_icon() %>
-          </div>
-        </a>
-      </div>
-    <% else %>
-      <%= if user_signed_in?(@conn) do %>
+    <%= cond do %>
+
+      <% preview_mode(@conn) -> %>
+        <div class="nav-item dropdown form-inline my-2 my-lg-0">
+          <a class="user block nav-link dropdown-toggle" href="#" aria-haspopup="false" aria-expanded="false">
+            <span class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline my-1 mr-3">
+              Preview
+            </span>
+            <div class="user-icon">
+              <%= user_icon() %>
+            </div>
+          </a>
+        </div>
+
+      <% user_signed_in?(@conn) -> %>
         <div class="nav-item dropdown form-inline my-2 my-lg-0">
           <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
               <div class="username">
-                <%= "#{@current_user.name}" %>
+                <%= user_name @current_user %>
               </div>
               <div class="role text-right" style="color: <%= user_role_color @conn, @current_user %>;">
                 <%= user_role_text @conn, @current_user %>
@@ -39,23 +41,39 @@
               <%= user_icon(@current_user) %>
             </div>
           </a>
-          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-            <%= if user_role_is_student(@conn, @current_user) do %>
-              <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
-            <% else %>
-              <%= if account_linked?(@current_user) do %>
-                <h6 class="dropdown-header">Linked: <%= @current_user.author.email %></h6>
-                <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>" target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
-                <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link a different account</a>
+          <%= if user_is_guest?(@conn) do %>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+              <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "dropdown-item btn" %>
+              <div class="dropdown-divider"></div>
+              <%= link "Leave course", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
+            </div>
+            <div id="create-account-popup"></div>
+            <script>
+              component.mount('CreateAccountPopup', document.querySelector('#create-account-popup'), {sectionSlug: '<%= maybe_section_slug(@conn) %>'})
+            </script>
+          <% else %>
+            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+              <%= if user_role_is_student(@conn, @current_user) do %>
+                <%= link "My Courses", to: Routes.delivery_path(@conn, :open_and_free_index), class: "dropdown-item btn" %>
                 <div class="dropdown-divider"></div>
                 <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
               <% else %>
-                <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link Existing Account</a>
+                <%= if account_linked?(@current_user) do %>
+                  <h6 class="dropdown-header">Linked: <%= @current_user.author.email %></h6>
+                  <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>" target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
+                  <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link a different account</a>
+                  <div class="dropdown-divider"></div>
+                  <%= link "Sign out", to: Routes.delivery_path(@conn, :signout), id: "signout-link", class: "dropdown-item btn" %>
+                <% else %>
+                  <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link Existing Account</a>
+                <% end %>
               <% end %>
-            <% end %>
-          </div>
+            </div>
+          <% end %>
         </div>
-      <% end %>
+
+      <% true -> %>
+
     <% end %>
   </div>
 </nav>
