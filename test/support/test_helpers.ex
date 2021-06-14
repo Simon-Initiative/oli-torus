@@ -47,7 +47,7 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        sub: UUID.uuid4(),
         name: "Ms Jane Marie Doe",
         given_name: "Jane",
         family_name: "Doe",
