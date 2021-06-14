@@ -19,7 +19,7 @@
         <%= label f, :persistent_session, "Remember me", class: "custom-control-label" %>
       </div>
       <div class="custom-control">
-        <%= link "Forgot password?", to: Routes.pow_reset_password_reset_password_path(@conn, :new), tabindex: "1" %>
+        <%= link "Forgot password?", to: Routes.authoring_pow_reset_password_reset_password_path(@conn, :new), tabindex: "1" %>
       </div>
     </div>
     <%= if assigns[:link_account] do %>
