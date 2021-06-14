@@ -282,8 +282,6 @@ export const navigateToActivity = createAsyncThunk(
       resourceAttemptGuid,
       isPreviewMode,
     );
-    console.log({ desiredIndex, sequenceId });
-
     if (desiredIndex >= 0) {
       nextSequenceEntry = sequence[desiredIndex];
       while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
@@ -302,7 +300,6 @@ export const navigateToActivity = createAsyncThunk(
               entry.custom?.layerRef ===
               (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
           );
-          console.log({ firstChild });
 
           if (!firstChild) {
             navError = 'Target Layer has no children!';
