@@ -66,7 +66,7 @@ defmodule OliWeb.Objectives.Objectives do
         </div>
       </div>
 
-      <%= live_component @socket, CreateNew, changeset: @changeset, project: @project %>
+      <%= live_component CreateNew, changeset: @changeset, project: @project %>
 
       <hr class="my-4" />
 
@@ -80,7 +80,7 @@ defmodule OliWeb.Objectives.Objectives do
 
         <div class="mt-3">
           <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-            <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
+            <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
               children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, breakdown: @breakdown, can_delete?: @can_delete? %>
           <% end %>
         </div>
@@ -91,11 +91,11 @@ defmodule OliWeb.Objectives.Objectives do
 
     <%= case @modal_shown do %>
       <% :delete -> %>
-        <%= live_component @socket, ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger confirm" do %>
-          <%= live_component @socket, Attachments, attachment_summary: @attachment_summary, project: @project %>
+        <%= live_component ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger confirm" do %>
+          <%= live_component Attachments, attachment_summary: @attachment_summary, project: @project %>
         <% end %>
       <% :breakdown -> %>
-        <%= live_component @socket, BreakdownModal, changeset: @changeset, slug: @breakdown %>
+        <%= live_component BreakdownModal, changeset: @changeset, slug: @breakdown %>
       <% :none -> %>
 
     <% end %>

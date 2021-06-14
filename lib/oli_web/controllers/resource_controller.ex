@@ -64,7 +64,8 @@ defmodule OliWeb.ResourceController do
           part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
           user: author,
           project_slug: project_slug,
-          title: revision.title
+          title: revision.title,
+          preview_mode: true
         )
 
       %{content: content} ->
