@@ -50,7 +50,7 @@ if (!window.keepAlive) {
       })
     }
 
-    fetch('/keep-alive')
+    fetch('/authoring/keep-alive')
       .then(wait(60 * 1000 /*ms*/))
       .then(keepAlive)
   }
