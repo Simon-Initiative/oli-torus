@@ -1,0 +1,64 @@
+
+<%= if Keyword.has_key?(@changeset.errors,:password_confirmation) do %>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto">
+        <div class="callout callout-primary">
+          <h4><i class="las la-info-circle mr-2"></i>Looking for Authoring Sign In?</h4>
+          <p>
+            It looks like your credentials failed but you might be in the wrong location. This page is for <b>Learner</b> accounts.
+            If you are trying to sign into an <b>Author</b> account, please use the Authoring Sign In page.</p>
+          <p>
+            <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-sm btn-outline-primary my-2 my-sm-0" do %>
+              Go to Authoring Sign In <i class="fa fa-arrow-right"></i>
+            <% end %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%= render OliWeb.SharedView, "_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Learner Sign In"), bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
+  <%# social media sign in links %>
+  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
+    <hr class="my-4">
+    <%= form_for @changeset, @action, [as: :user], fn f -> %>
+    <div class="form-label-group">
+      <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control", placeholder: "Email", required: true, autofocus: true %>
+      <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+      <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+    </div>
+    <div class="form-label-group">
+      <%= password_input f, :password, class: "form-control", placeholder: "Password", required: true %>
+      <%= label f, :password, class: "control-label" %>
+      <%= error_tag f, :password %>
+    </div>
+    <div class="mb-4 d-flex flex-row">
+      <div class="custom-control custom-checkbox flex-grow-1">
+        <%= checkbox f, :persistent_session, class: "custom-control-input" %>
+        <%= label f, :persistent_session, "Remember me", class: "custom-control-label" %>
+      </div>
+      <div class="custom-control">
+        <%= link "Forgot password?", to: Routes.pow_reset_password_reset_password_path(@conn, :new), tabindex: "1" %>
+      </div>
+    </div>
+
+    <%= if @conn.params["section"] do %>
+      <%= hidden_input f, :section, value: @conn.params["section"] %>
+    <% end %>
+
+    <%= submit "Sign In", class: "btn btn-md btn-primary btn-block" %>
+    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+
+    <% registration_path = case @conn.params["section"] do
+          nil ->
+            Routes.pow_registration_path(@conn, :new)
+          section ->
+            Routes.pow_registration_path(@conn, :new, section: section)
+        end
+    %>
+    <%= link "Create an Account", to: registration_path, class: "btn btn-md btn-link btn-block" %>
+
+  <% end %>
+<% end %>
