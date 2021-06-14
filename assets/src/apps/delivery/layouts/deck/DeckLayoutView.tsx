@@ -155,7 +155,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // layers already might be there
       // TODO: do I need to reset ever???
       if (!sharedActivityInit.has(activity.id)) {
-        sharedActivityInit.set(activity.id, false);
+        sharedActivityInit.set(activity.id, true);
       }
     });
 

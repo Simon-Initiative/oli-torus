@@ -270,11 +270,59 @@ export const navigateToActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToActivity`,
   async (sequenceId: string, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
+    const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
-    const nextActivityId = sequence.filter((s) => s.custom?.sequenceId === sequenceId)[0].custom
-      ?.sequenceId;
+    const desiredIndex = sequence.findIndex((s) => s.custom?.sequenceId === sequenceId);
+    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
+    let navError = '';
+    const visitHistory = await getSessionVisitHistory(
+      sectionSlug,
+      resourceAttemptGuid,
+      isPreviewMode,
+    );
+    console.log({ desiredIndex, sequenceId });
 
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
+    if (desiredIndex >= 0) {
+      nextSequenceEntry = sequence[desiredIndex];
+      while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isBank) {
+          // this runs when we're about to enter a QB for the first time
+          nextSequenceEntry = getNextQBEntry(
+            sequence,
+            nextSequenceEntry as SequenceEntry<SequenceBank>,
+            visitHistory,
+          );
+        }
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isLayer) {
+          // for layers if you try to navigate it should go to first child
+          const firstChild = sequence.find(
+            (entry) =>
+              entry.custom?.layerRef ===
+              (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
+          );
+          console.log({ firstChild });
+
+          if (!firstChild) {
+            navError = 'Target Layer has no children!';
+          }
+          nextSequenceEntry = firstChild;
+        }
+      }
+      if (!nextSequenceEntry) {
+        // If is end of sequence, return and set isEnd to truthy
+        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
+        return;
+      }
+    } else {
+      navError = `Current Activity ${sequenceId} not found in sequence`;
+    }
+    if (navError) {
+      throw new Error(navError);
+    }
+
+    thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
 
