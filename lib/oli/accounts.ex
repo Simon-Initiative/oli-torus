@@ -197,6 +197,19 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Returns true if a user is signed in as an independent learner
+  """
+  def user_is_independent_learner?(current_user) do
+    case current_user do
+      %{independent_learner: true} ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  @doc """
   Returns true if an author is an administrator.
   """
   def is_admin?(%Author{system_role_id: system_role_id}) do

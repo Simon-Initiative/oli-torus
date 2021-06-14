@@ -1,6 +1,8 @@
 defmodule Oli.Repo.Migrations.PowDeliveryUser do
   use Ecto.Migration
 
+  import Ecto.Query, warn: false
+
   def change do
 
     alter table(:users) do
@@ -14,6 +16,14 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
       add :independent_learner, :boolean, default: true
     end
 
+    flush()
+
+    from(_u in "users")
+    |> Oli.Repo.update_all(set: [independent_learner: false])
+
+    flush()
+
+    create unique_index(:users, [:sub])
     create unique_index(:users, [:email_confirmation_token])
 
     # guarantee that independent learners have unique emails
