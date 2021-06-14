@@ -7,7 +7,6 @@ export interface CreateAccountPopupProps {
 
 export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element {
   const [show, setShow] = useState(false);
-  const [firstRender, setFirstRender] = useState(true);
 
   const onDismiss = () => {
     setShow(false);
@@ -27,14 +26,11 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
   }
 
   useEffect(() => {
-    if (firstRender) {
-      const showPref = sessionStorage.getItem('createAccountPrompt') != 'hide'
-        && localStorage.getItem('createAccountPrompt') != 'hide'
-      setShow(showPref);
-      window.addEventListener('click', onBlurClick);
-    }
-    setFirstRender(false);
-  });
+    const showPref = sessionStorage.getItem('createAccountPrompt') != 'hide'
+      && localStorage.getItem('createAccountPrompt') != 'hide'
+    setShow(showPref);
+    window.addEventListener('click', onBlurClick);
+  }, []);
 
   const onClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     (e.nativeEvent as any).createAccountPopupClick = true;
