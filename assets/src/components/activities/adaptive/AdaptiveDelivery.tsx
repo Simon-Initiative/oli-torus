@@ -65,7 +65,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    let resolve;
+    let resolve: any;
     let reject;
     const promise = new Promise((res, rej) => {
       let resolved = false;
@@ -89,7 +89,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, 2000);
     });
     sharedPromiseMap.set(props.model.id, { promise, resolve, reject });
-
+    if (parts.length == 0 && resolve) {
+      //if an activity does not have any parts, send the resole promise
+      if (props.onReady) {
+        const readyResults: any = props.onReady(attemptState.attemptGuid);
+      }
+      resolve({ snapshot: {} });
+    }
     sharedInitMap.set(
       props.model.id,
       parts.reduce((collect: Record<string, boolean>, part) => {
