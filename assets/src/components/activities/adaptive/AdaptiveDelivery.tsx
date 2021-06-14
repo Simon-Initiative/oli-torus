@@ -68,12 +68,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     let resolve: any;
     let reject;
 
-    if (parts.length == 0 && resolve) {
-      //if an activity does not have any parts, send the resole promise
+    if (!parts.length) {
       if (props.onReady) {
-        const readyResults: any = props.onReady(attemptState.attemptGuid);
+        props.onReady(attemptState.attemptGuid);
       }
-      resolve({ snapshot: {} });
+      setInit(true);
+      return;
     }
 
     const promise = new Promise((res, rej) => {
