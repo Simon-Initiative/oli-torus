@@ -18,7 +18,7 @@ defmodule Oli.Repo.Migrations.PowDeliveryUser do
 
     flush()
 
-    from(u in "users")
+    from(_u in "users")
     |> Oli.Repo.update_all(set: [independent_learner: false])
 
     flush()
