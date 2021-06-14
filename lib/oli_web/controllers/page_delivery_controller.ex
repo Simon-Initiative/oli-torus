@@ -83,7 +83,8 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       previous_page: context.previous_page,
       next_page: context.next_page,
-      user_id: user.id
+      user_id: user.id,
+      preview_mode: false
     })
   end
 

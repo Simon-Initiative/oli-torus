@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="delivery">
+<html lang="en" class="<%= if @preview_mode == true do %>preview<% else %>delivery<% end %>">
   <head>
     <meta charset="utf-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
@@ -26,11 +26,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/atom-one-light.min.css" integrity="sha512-11xYl5MU0/AMaYnuBOXDDQdZnl5WGtLVidxqa0XUAXYf6cGnJShNpgtbmB/0MW6ypeev+9Bwj7I/J8wexX8ePw==" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/atom-one-dark.min.css" integrity="sha512-Jlyabam8ztU2kOGN19fSzv1Go9nt9A43UA6vhmL1MPsQMeoPZd+p7pbmegAtyl8kulna0Cqwb7Pgj4adGTLCXA==" crossorigin="anonymous" media="screen and (prefers-color-scheme: dark)"/>
 
+    <%= if @preview_mode == true do %>
     <!-- Preview Mode Styles -->
-    <link id="preview-theme-dark" rel="stylesheet" href="/css/preview_torus_dark.css" media="(prefers-color-scheme: dark)"/>
-    <link id="preview-theme-light" rel="stylesheet" href="/css/preview_torus_light.css" media="(prefers-color-scheme: light)"/>
+      <link id="preview-theme-dark" rel="stylesheet" href="/css/preview_torus_dark.css" media="(prefers-color-scheme: dark)"/>
+      <link id="preview-theme-light" rel="stylesheet" href="/css/preview_torus_light.css" media="(prefers-color-scheme: light)"/>
+    <% end %>
+
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/vendor.js") %>"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>

@@ -240,6 +240,40 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     props.onReady({ id, responses: [] });
   }, [ready]);
 
+  const getOptionTextFromNode = (children: any): any => {
+    let optionText = '';
+    if (children.tag === 'text') {
+      optionText = children.text;
+    } else {
+      optionText = getOptionTextFromNode(children.children[0]);
+    }
+    return optionText;
+  };
+
+  const getOptionTextById = (options: any, optionId: any): any => {
+    const text = options.map((option: any) => {
+      if (option.value === optionId) {
+        if (option.nodes[0].tag === 'text') {
+          return option.nodes[0].text;
+        } else {
+          return getOptionTextFromNode(option.nodes[0]);
+        }
+      }
+    });
+    return text.filter((option: any) => option !== undefined);
+  };
+
+  const getOptionTextByText = (options: any, optionText: any): any => {
+    const text = options.map((option: any) => {
+      const text = getOptionTextFromNode(option.nodes[0]);
+      if (text === optionText) {
+        return option.value;
+      }
+    });
+
+    return text.filter((option: any) => option !== undefined);
+  };
+
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -276,25 +310,30 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                 const choice = parseInt(String(sSelectedChoice), 10);
                 if (selectedChoice !== choice) {
                   setSelectedChoice(choice);
-                  // TODO: need to update the number and text
-                  // and array values as well
                 }
               }
-              const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`]
+              const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
               if (sSelectedChoiceText !== undefined) {
-                // TODO: reverse lookup from text value
+                const updatedSelectedOptions = getOptionTextByText(options, sSelectedChoiceText);
+                setSelectedChoice(updatedSelectedOptions);
               }
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
               if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
                 const updatedValues = sSelectedChoices.map((item) =>
                   !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
                 );
-                // TODO: check duplicates? update other values
                 setSelectedChoices(updatedValues);
               }
-              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`]
+              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
               if (sSelectedChoicesText !== undefined) {
-                // TODO: reverse lookup from text values
+                if (Array.isArray(sSelectedChoicesText)) {
+                  const updatedSelectedOptions = sSelectedChoicesText
+                    .map((item) => getOptionTextByText(options, item))
+                    .map((option) => {
+                      return option[0];
+                    });
+                  setSelectedChoices(updatedSelectedOptions);
+                }
               }
               // NOTE: it doesn't make sense (SS doesn't let you) to allow the things like
               // numberOfSelectedChoices to be set via mutate state
@@ -313,7 +352,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         unsub();
       });
     };
-  }, [props.notify]);
+  }, [props.notify, options]);
 
   // Set up the styles
   const styles: CSSProperties = {

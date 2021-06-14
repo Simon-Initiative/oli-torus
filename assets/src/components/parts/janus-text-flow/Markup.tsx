@@ -225,9 +225,10 @@ const Markup: React.FC<any> = ({
       if (!renderStyles.display) {
         renderStyles.display = 'block';
       }
-      if (!renderStyles.fontSize) {
+      //let's not do this for all P tags forces fontSize to be specified
+      /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
-      }
+      } */
       return (
         <p ref={el} key={key} style={renderStyles}>
           {processedText}
