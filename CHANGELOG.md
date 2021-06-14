@@ -6,6 +6,7 @@
 
 - Image coding: disable submit button before code is run
 - Allow setting of arbitrary content from upload JSON file in revision history tool
+- Add ability for independent learners to create accounts, sign in and track progress
 
 ### Bug fixes
 
