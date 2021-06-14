@@ -32,7 +32,7 @@ export const toInternalLink = (p: any) => `${internalLinkPrefix}/${p.id}`;
 // authors to use the 'Open Link' function and visit the linked course
 // page.
 export const translateDeliveryToAuthoring = (href: string, projectSlug: string) => {
-  return `/project/${projectSlug}/resource/` + href.substr(href.lastIndexOf('/') + 1);
+  return `/authoring/project/${projectSlug}/resource/` + href.substr(href.lastIndexOf('/') + 1);
 };
 
 export const normalizeHref = (href: string) => addProtocol(href.trim());

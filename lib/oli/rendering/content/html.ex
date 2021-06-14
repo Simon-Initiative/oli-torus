@@ -226,7 +226,7 @@ defmodule Oli.Rendering.Content.Html do
       case section_slug do
         nil ->
           if preview do
-            "/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+            "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
           else
             "#"
           end
