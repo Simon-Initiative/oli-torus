@@ -1,4 +1,4 @@
-defmodule OliWeb.PageDeliveryControllerTest do
+defmodule OliWeb.Common.PowSessionTest do
   use OliWeb.ConnCase
 
   alias Oli.Seeder
