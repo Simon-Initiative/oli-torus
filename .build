@@ -217,6 +217,7 @@ Oli.Seeder.html
 Oli.Slack.html
 Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
+Oli.UserIdentities.AuthorIdentity.html
 Oli.UserIdentities.UserIdentity.html
 Oli.Utils.Database.html
 Oli.Utils.FlameGraph.html
@@ -361,13 +362,14 @@ OliWeb.PageDeliveryView.html
 OliWeb.PlatformInstanceController.html
 OliWeb.PlatformInstanceView.html
 OliWeb.Plugs.Guest.html
+OliWeb.Pow.AuthorIdentities.html
 OliWeb.Pow.AuthorRoutes.html
 OliWeb.Pow.Mailer.html
 OliWeb.Pow.PowHelpers.html
 OliWeb.Pow.RegistrationView.html
 OliWeb.Pow.SessionView.html
-OliWeb.Pow.UserAuthErrorHandler.html
 OliWeb.Pow.UserIdentities.html
+OliWeb.Pow.UserRoutes.html
 OliWeb.PowAssent.RegistrationView.html
 OliWeb.PowEmailConfirmation.MailerView.html
 OliWeb.PowInvitation.InvitationView.html
@@ -422,8 +424,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-48029436bb.js
-dist/sidebar_items-47cf2fe4e6.js
+dist/search_items-80b6a03800.js
+dist/sidebar_items-bd18f59dbc.js
 index.html
 license.html
 readme.html

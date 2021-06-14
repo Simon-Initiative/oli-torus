@@ -10,7 +10,7 @@
     <title>Oli.Utils — OLI Torus v0.10.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-47cf2fe4e6.js"></script>
+    <script src="dist/sidebar_items-bd18f59dbc.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -121,6 +121,20 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.10.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#lowercase_email/1">lowercase_email(changeset)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maybe_create_unique_sub/1">maybe_create_unique_sub(changeset)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#maybe_name_from_given_and_family/1">maybe_name_from_given_and_family(changeset)</a>
 
   </div>
@@ -173,6 +187,13 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.10.0)</small>
 
     <div class="summary-synopsis"><p>Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
 the non-nil result as {:ok, result}</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#validate_required_if/3">validate_required_if(changeset, fields, condition)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -230,7 +251,7 @@ Functions
     </a>
     <h1 class="signature">get_base_url()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -243,6 +264,50 @@ Functions
 <p>Returns the base url for torus using the application endpoint configuration</p>
   </section>
 </section>
+<section class="detail" id="lowercase_email/1">
+
+  <div class="detail-header">
+    <a href="#lowercase_email/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">lowercase_email(changeset)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L93" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="maybe_create_unique_sub/1">
+
+  <div class="detail-header">
+    <a href="#maybe_create_unique_sub/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">maybe_create_unique_sub(changeset)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L53" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="maybe_name_from_given_and_family/1">
 
   <div class="detail-header">
@@ -252,7 +317,7 @@ Functions
     </a>
     <h1 class="signature">maybe_name_from_given_and_family(changeset)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L53" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -274,7 +339,7 @@ Functions
     </a>
     <h1 class="signature">positive_or_nil(num)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L86" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L109" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -318,7 +383,7 @@ Functions
     </a>
     <h1 class="signature">read_json_file(filename)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L82" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L105" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -398,6 +463,28 @@ Functions
 
 <p>Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
 the non-nil result as {:ok, result}</p>
+  </section>
+</section>
+<section class="detail" id="validate_required_if/3">
+
+  <div class="detail-header">
+    <a href="#validate_required_if/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">validate_required_if(changeset, fields, condition)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L97" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="value_or/2">
