@@ -46,12 +46,44 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     # need to get all of the extrinsic (resource_attempt state)
     # need to get *all* of the activity attempts state (part responses saved thus far)
+    attempt_hierarchy = Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
+
+    response_state = Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {activity_attempt, part_attempts}, m ->
+      part_responses = Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
+        case pa.response do
+          nil -> acc
+          _ ->
+            part_values = Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
+              Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+            end)
+            Map.merge(acc, part_values)
+        end
+      end)
+      Map.merge(m, part_responses)
+    end)
     # need to combine with part_inputs as latest
-    # need to send rules (just for the current activity)
+    input_state = Enum.reduce(part_inputs, %{}, fn pi, acc ->
+      case pi.input.input do
+        "" -> acc
+        nil -> acc
+        _ ->
+          inputs = Enum.reduce(Map.values(pi.input.input), %{}, fn input, acc1 ->
+            path = Map.get(input, "path")
+            local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+            value = Map.get(input, "value")
+            Map.put(acc1, local_path, value)
+          end)
+          Map.merge(acc, inputs)
+      end
+    end)
 
-    state = %{test: 1}
+    attempt_state = Map.merge(response_state, resource_attempt.state)
+    state = Map.merge(input_state, attempt_state)
 
-    Logger.debug("eval rules: #{Jason.encode!(rules)}")
+    # Logger.debug("***************************PART INPUTS #{Jason.encode!(part_inputs)}")
+
+    # Logger.debug("eval rules: #{Jason.encode!(rules)}")
+    # Logger.debug("eval state #{Jason.encode!(state)}")
 
     # nodejs then evaluates that and returns actions
     case NodeJS.call({"rules", :check}, [state, rules]) do
