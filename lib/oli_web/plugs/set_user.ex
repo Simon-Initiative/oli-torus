@@ -16,9 +16,9 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   def set_author(conn) do
-    conn = OliWeb.Pow.PowHelpers.use_pow_config(conn, :author)
+    pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
 
-    if author = Pow.Plug.current_user(conn) do
+    if author = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_author = Repo.get(Author, author.id) ->
           assign(conn, :current_author, current_author)
@@ -32,9 +32,9 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   def set_user(conn) do
-    conn = OliWeb.Pow.PowHelpers.use_pow_config(conn, :user)
+    pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:user)
 
-    if user = Pow.Plug.current_user(conn) do
+    if user = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_user = Repo.get(User, user.id) |> Repo.preload([:platform_roles, :author]) ->
           assign(conn, :current_user, current_user)

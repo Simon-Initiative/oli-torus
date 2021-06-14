@@ -29,7 +29,7 @@
     </div>
     <div class="row my-4">
       <div class="col-12">
-      <%= link "Change Account Details", to: Routes.pow_registration_path(@conn, :edit), class: "btn btn-outline-primary" %>
+      <%= link "Change Account Details", to: Routes.authoring_pow_registration_path(@conn, :edit), class: "btn btn-outline-primary" %>
       </div>
     </div>
   </div>
