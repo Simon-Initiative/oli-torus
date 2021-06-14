@@ -14,6 +14,7 @@
 - Fix an issue with the torus logo in dark mode
 - Fix to support rich text content with empty models
 - Fix to properly identify the correct choice in multiple choice activities
+- Fix internal authoring links
 
 ## 0.10.0 (2021-6-2)
 
