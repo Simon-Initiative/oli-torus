@@ -12,7 +12,7 @@ export interface AuthoringProps {
 }
 
 export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
-  const url = `/project/${props.projectSlug}/preview/${props.revisionSlug}`;
+  const url = `/authoring/project/${props.projectSlug}/preview/${props.revisionSlug}`;
   const windowName = `preview-${props.projectSlug}`;
   const authoringContainer = document.getElementById('advanced-authoring');
   const [appState, setAppState] = useState<any>({ isVisible: false });
