@@ -8,7 +8,7 @@ defmodule OliWeb.Pow.UsersContext do
     user: Oli.Accounts.User
 
   @doc """
-  Overrides the existing pow get_by/2 and ensures only
+  Overrides the existing pow get_by/1 and ensures only
   independent learners are queried
   """
   @impl true
