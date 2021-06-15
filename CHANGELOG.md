@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.11.0 (2021-6-15)
+
 ### Enhancements
 
 - Image coding: disable submit button before code is run
