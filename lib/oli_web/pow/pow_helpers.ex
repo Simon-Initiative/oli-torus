@@ -15,6 +15,7 @@ defmodule OliWeb.Pow.PowHelpers do
       routes_backend: OliWeb.Pow.UserRoutes,
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
       controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+      users_context: OliWeb.Pow.UsersContext,
       mailer_backend: OliWeb.Pow.Mailer,
       web_mailer_module: OliWeb,
       pow_assent: [
