@@ -111,7 +111,8 @@ Oli.Registrar.register_local_part_components(
     "janus_carousel",
     "janus_mcq",
     "janus_popup",
-    "janus_capi_iframe"
+    "janus_capi_iframe",
+    "janus-fill-blanks"
   ])
 )
 
