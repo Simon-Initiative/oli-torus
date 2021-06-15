@@ -22,16 +22,13 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       {
         id: 1,
         title: 'Sequence',
-        data: ['Intro Screen',
-          'Pick your character',
-          'Choose your title']
+        data: ['Intro Screen', 'Pick your character', 'Choose your title'],
       },
       {
         id: 2,
         title: 'Adaptivity',
-        data: ['Initial Satee',
-          'Default Response']
-      }
+        data: ['Initial Satee', 'Default Response'],
+      },
     ],
   };
   const rightPanelData = {
@@ -98,7 +95,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
         >
           I am the left side panel.
-        <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
+          <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
         <section className="aa-stage">
           <div className="aa-stage-inner">
@@ -148,7 +145,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
         >
           I am the right side panel.
-        <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
+          <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
         </SidePanel>
       </div>
     </>
