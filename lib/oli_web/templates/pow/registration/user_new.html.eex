@@ -1,0 +1,65 @@
+<script src="https://www.google.com/recaptcha/api.js"></script>
+
+<%= render OliWeb.SharedView, "_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Create a Learner Account"), bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
+  <%# social media sign in links %>
+  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw link %>
+
+  <hr class="my-4">
+  <%= form_for @changeset, @action, [as: :user], fn f -> %>
+    <div class="form-label-group">
+      <%= email_input f, Pow.Ecto.Schema.user_id_field(@changeset), class: "form-control " <> error_class(f, Pow.Ecto.Schema.user_id_field(@changeset), "is-invalid"),
+        placeholder: "Email", required: true, autofocus: focusHelper(f, Pow.Ecto.Schema.user_id_field(@changeset), default: true) %>
+      <%= label f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label" %>
+      <%= error_tag f, Pow.Ecto.Schema.user_id_field(@changeset) %>
+    </div>
+
+    <div class="form-label-group">
+      <%= text_input f, :given_name, class: "form-control " <> error_class(f, :given_name, "is-invalid"),
+        placeholder: "First Name", required: true, autofocus: focusHelper(f, :given_name) %>
+      <%= label f, :given_name, "First Name", class: "control-label" %>
+      <%= error_tag f, :given_name %>
+    </div>
+
+    <div class="form-label-group">
+      <%= text_input f, :family_name, class: "form-control " <> error_class(f, :family_name, "is-invalid"),
+        placeholder: "Last Name", required: true, autofocus: focusHelper(f, :family_name) %>
+      <%= label f, :family_name, "Last Name", class: "control-label" %>
+      <%= error_tag f, :family_name %>
+    </div>
+
+    <div class="form-label-group">
+      <%= password_input f, :password, class: "form-control " <> error_class(f, [:password, :password_confirmation], "is-invalid"),
+        placeholder: "Password", required: true, autofocus: focusHelper(f, [:password, :password_confirmation]) %>
+      <%= label f, :password, class: "control-label" %>
+      <%= error_tag f, :password %>
+    </div>
+
+    <div class="form-label-group">
+      <%= password_input f, :password_confirmation, class: "form-control " <> error_class(f, :password_confirmation, "is-invalid"),
+        placeholder: "Confirm Password", required: true, autofocus: focusHelper(f, :password_confirmation) %>
+      <%= label f, :password_confirmation, "Confirm Password", class: "control-label" %>
+      <%= error_tag f, :password_confirmation %>
+    </div>
+
+    <div class="form-label-group">
+      <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+      <%= error_tag f, :captcha %>
+    </div>
+
+    <%= if @conn.params["section"] do %>
+      <%= hidden_input f, :section, value: @conn.params["section"] %>
+    <% end %>
+
+    <%= submit "Register", class: "btn btn-md btn-primary btn-block" %>
+    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+
+    <% session_path = case @conn.params["section"] do
+          nil ->
+            Routes.pow_session_path(@conn, :new)
+          section ->
+            Routes.pow_session_path(@conn, :new, section: section)
+        end
+    %>
+    <%= link "Sign in to Existing Account", to: session_path, class: "btn btn-md btn-link btn-block" %>
+  <% end %>
+<% end %>
