@@ -313,6 +313,6 @@ const Carousel: React.FC<any> = (props) => {
   ) : null;
 };
 
-export const tagName = 'janus-carousel';
+export const tagName = 'janus-image-carousel';
 
 export default Carousel;
