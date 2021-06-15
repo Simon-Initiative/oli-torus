@@ -274,12 +274,12 @@ const Carousel: React.FC<any> = (props) => {
       className={`janus-image-carousel ${cssClass}`}
       style={styles}
     >
-      {carouselCustomCss && (
+      {
         <style type="text/css" style={{ display: 'none' }}>
           {carouselDefaultCss}
           {carouselCustomCss ? carouselCustomCss : null}
         </style>
-      )}
+      }
       {images.length > 0 && (
         <Swiper
           slidesPerView={1}
