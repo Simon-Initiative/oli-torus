@@ -27,22 +27,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
 
     if is_list(rules) do
-      evaluate_from_rules(section_slug, activity_attempt_guid, part_inputs)
+      evaluate_from_rules(resource_attempt, activity_attempt_guid, part_inputs, rules)
     else
       evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
     end
   end
 
-  def evaluate_from_rules(section_slug, activity_attempt_guid, part_inputs) do
-    %ActivityAttempt{
-      transformed_model: transformed_model,
-      attempt_number: attempt_number,
-      resource_attempt: resource_attempt
-    } =
-      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      |> Repo.preload([:resource_attempt])
-
-    {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
+  def evaluate_from_rules(resource_attempt, activity_attempt_guid, part_inputs, rules) do
 
     # need to get all of the extrinsic (resource_attempt state)
     # need to get *all* of the activity attempts state (part responses saved thus far)
