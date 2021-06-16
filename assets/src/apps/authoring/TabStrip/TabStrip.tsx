@@ -14,12 +14,12 @@ const TabStrip: React.FC<any> = (props) => {
   }, []);
   return (
     <div>
-      <ul className="nav nav-tabs" role="tablist">
+      <ul className='nav nav-tabs' role='tablist'>
         {tabs.map((tab: any) => (
           <li
-            role="tab"
+            role='tab'
             id={`${tab.id}-tab`}
-            data-toggle="tab"
+            data-toggle='tab'
             aria-controls={`tab${tab.id}`}
             aria-selected={selectedTab == tab.id}
             className={`nav-item ${
@@ -35,12 +35,12 @@ const TabStrip: React.FC<any> = (props) => {
         ))}
       </ul>
 
-      <div className="tab-content" id="myTabContent">
+      <div className='tab-content' id='myTabContent'>
         {tabs.map((tab: any) => (
           <div
             className={`tab-pane fade${selectedTab == tab.id ? ' show active' : ''}`}
             id={`tab${tab.id}`}
-            role="tabpanel"
+            role='tabpanel'
             aria-labelledby={`${tab.id}-tab`}
           >
             {tab.data}
