@@ -13,7 +13,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   defp render_children(assigns) do
     ~L"""
       <%= for child <- @children do %>
-        <%= live_component @socket, ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
+        <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
               children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit, breakdown: @breakdown %>
       <% end %>
 
@@ -24,7 +24,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
             <div class="col-12 pb-2">
               <div style="margin-left: <%= @depth * 40 %>px">
 
-              <%= live_component @socket, ObjectiveForm, changeset: @changeset,
+              <%= live_component ObjectiveForm, changeset: @changeset,
                 project: @project, title_value: "", slug_value: "", parent_slug_value: @objective_mapping.revision.slug, depth: @depth,
                 form_id: "create-sub-objective", place_holder: "", phx_disable_with: "Creating Sub-Objective...", button_text: "Create", method: "new" %>
 
@@ -64,14 +64,14 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug -> %>
             <div class="py-2">
-              <%= live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
+              <%= live_component ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
                 project: @project, slug: @objective_mapping.revision.slug, form_id: "edit-objective", place_holder: @objective_mapping.revision.title,
                 phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: "", depth: @depth,
                 title_value: @objective_mapping.revision.title, can_delete?: @can_delete?,
                 edit: @edit, method: "edit", mode: :edit %>
             </div>
           <% true -> %>
-            <%= live_component @socket, ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
+            <%= live_component ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
             project: @project, slug: @objective_mapping.revision.slug, depth: @depth, mode: :show, can_delete?: @can_delete?, edit: @edit %>
         <% end %>
       </div>
