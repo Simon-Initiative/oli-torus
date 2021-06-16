@@ -157,15 +157,19 @@ const DeckLayoutFooter: React.FC = () => {
 
     if (actionsByType.mutateState.length) {
       const mutationsModified = actionsByType.mutateState.map((op: any) => {
-        const ownerActivity = currentActivityTree?.find(
-          (activity) => !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
-        );
-        const ownerId = ownerActivity
-          ? `${ownerActivity}|${op.params.target}`
-          : `${currentActivityId}|${op.params.target}`;
+        let scopedTarget = op.params.target;
 
+        if (scopedTarget.indexOf('stage') === 0) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) =>
+              !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
+          );
+          scopedTarget = ownerActivity
+            ? `${ownerActivity}|${op.params.target}`
+            : `${currentActivityId}|${op.params.target}`;
+        }
         const globalOp: ApplyStateOperation = {
-          target: ownerId,
+          target: scopedTarget,
           operator: op.params.operator,
           value: op.params.value,
         };
