@@ -29,14 +29,6 @@ defmodule OliWeb.Pow.PowHelpers do
             authorization_params: [
               scope: "email profile"
             ]
-          ],
-          github: [
-            client_id: System.get_env("GITHUB_CLIENT_ID"),
-            client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-            strategy: Assent.Strategy.Github,
-            authorization_params: [
-              scope: "read:user user:email"
-            ]
           ]
         ]
       ]
