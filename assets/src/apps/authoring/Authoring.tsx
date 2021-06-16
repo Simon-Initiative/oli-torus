@@ -4,6 +4,7 @@ import Accordion from './Accordion/Accordion';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
 import store from './store';
+import { setInitialConfig } from './store/app/slice';
 import TabStrip from './TabStrip/TabStrip';
 
 export interface AuthoringProps {
@@ -13,6 +14,7 @@ export interface AuthoringProps {
   content: any;
   activityTypes?: any[];
   resourceId?: number;
+  paths: Record<string, string>;
 }
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
@@ -23,6 +25,17 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const authoringContainer = document.getElementById('advanced-authoring');
   const [appState, setAppState] = useState<any>({ isVisible: false });
   const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
+
+  useEffect(() => {
+    const appConfig = {
+      paths: props.paths,
+      isAdmin: props.isAdmin,
+      projectSlug: props.projectSlug,
+      revisionSlug: props.revisionSlug,
+    };
+    dispatch(setInitialConfig(appConfig));
+  }, [props]);
+
   const leftPanelData = {
     tabs: [
       {
