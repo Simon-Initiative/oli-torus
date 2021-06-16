@@ -5,6 +5,7 @@
 ### Bug fixes
 
 - Fix an issue preventing deletion of projects whose names contain special characters
+- Fix an issue related to persisting sessions across server restarts
 
 ## 0.11.0 (2021-6-15)
 

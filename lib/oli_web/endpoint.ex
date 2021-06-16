@@ -60,8 +60,7 @@ defmodule OliWeb.Endpoint do
 
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user))
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-  plug(Pow.Plug.Session, otp_app: :oli)
-  plug(PowPersistentSession.Plug.Cookie)
+  plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_persistent_session")
 
   plug(OliWeb.Router)
 end
