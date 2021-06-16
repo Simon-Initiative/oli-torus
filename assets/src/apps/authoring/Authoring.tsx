@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Accordion from './Accordion/Accordion';
+import { AdaptivityEditor } from './AdaptivityEditor';
 import { BottomPanel } from './BottomPanel';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
@@ -104,7 +105,12 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
         <section className="aa-stage">
-          <div className="aa-stage-inner">
+          <div
+            className="aa-stage-inner"
+            style={{
+              marginBottom: panelState['bottom'] ? `calc(40vh + 64px)` : 'calc(39px + 64px)',
+            }}
+          >
             <PreviewButton />
             <h1>Main Content Stage</h1>
             <div className="btn-group" role="group">
@@ -151,7 +157,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           setPanelState={() => setPanelState({ ...panelState, bottom: !panelState.bottom })}
         >
-          Adaptivity panel
+          <AdaptivityEditor />
         </BottomPanel>
         <SidePanel
           position="right"

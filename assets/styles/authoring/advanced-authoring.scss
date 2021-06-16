@@ -5,6 +5,7 @@ $panel-bg-color-dark: $gray-700;
 $torus-panel-side-width: 200px;
 $rounded: 4px;
 $ui-border-color: #ccc;
+$panel-section-title-bar-height: 39px;
 
 .advanced-authoring {
   position: relative;
@@ -70,13 +71,14 @@ $ui-border-color: #ccc;
       }
     }
     &.bottom-panel {
-      bottom: -200px;
-      height: 200px;
-      transition-property: left, right, bottom, visibility;
+      max-height: 40vh;
+      transition-property: left, right, bottom;
+      visibility: visible;
+      overflow: hidden;
 
       &.open {
-        visibility: visible;
         bottom: 0;
+        overflow: auto;
       }
     }
   }
@@ -126,12 +128,38 @@ $ui-border-color: #ccc;
     height: 1000px;
     display: inline-block;
     margin-top: calc(#{$nav-height} + 64px);
-    margin-bottom: 64px;
+    margin-bottom: calc(#{$panel-section-title-bar-height} + 64px);
     margin-left: calc(#{$panel-side-width} + 64px);
     margin-right: calc(#{$panel-side-width} + 64px);
     background-color: $white;
     border-radius: $rounded;
     border: 1px solid $ui-border-color;
     padding: 24px;
+  }
+  .aa-panel-section-title-bar {
+    background: #e8ebed;
+    border-top: 1px solid $ui-border-color;
+    border-bottom: 1px solid $ui-border-color;
+    display: flex;
+    font-family: 'Raleway', $font-family-sans-serif;
+    font-size: 12px;
+    color: #333333;
+    height: $panel-section-title-bar-height;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px;
+    position: sticky;
+    top: 0;
+
+    .title {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .ruleName {
+      display: inline-block;
+      margin-left: 16px;
+      padding-left: 16px;
+      border-left: 1px solid $ui-border-color;
+    }
   }
 }
