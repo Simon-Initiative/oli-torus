@@ -145,10 +145,10 @@ defmodule OliWeb.RevisionHistory do
           </div>
           <div class="card-body">
             <%= if @view == "graph" do %>
-              <%= live_component @socket, Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size %>
+              <%= live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size %>
             <% else %>
-              <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
-              <%= live_component @socket, Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
+              <%= live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
+              <%= live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
             <% end %>
           </div>
         </div>
@@ -166,7 +166,7 @@ defmodule OliWeb.RevisionHistory do
             </div>
           </div>
           <div class="card-body">
-            <%= live_component @socket, Details, revision: @selected %>
+            <%= live_component Details, revision: @selected %>
           </div>
         </div>
       </div>
