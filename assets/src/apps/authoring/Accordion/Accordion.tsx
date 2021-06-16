@@ -7,8 +7,8 @@ const Accordion: React.FC<any> = (props) => {
   const tabs: [] = props.tabsData.tabs;
   return (
     <div className="accordion">
-      {tabs.map((tab: any) => (
-        <div className="card">
+      {tabs.map((tab: any, index: number) => (
+        <div key={index} className="card">
           <div id={tab.id} className="d-flex justify-content-between">
             <span
               className="col-10"
@@ -27,8 +27,10 @@ const Accordion: React.FC<any> = (props) => {
           <div id={`collapse${tab.id}`} className={'collapse show'} aria-labelledby={tab.id}>
             <div className="card-body">
               <ul className="list-group list-group-flush">
-                {tab.data.map((item: any) => (
-                  <li className="list-group-item">{item}</li>
+                {tab.data.map((item: any, index: number) => (
+                  <li key={index} className="list-group-item">
+                    {item}
+                  </li>
                 ))}
               </ul>
             </div>

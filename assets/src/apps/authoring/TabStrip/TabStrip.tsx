@@ -9,7 +9,7 @@ const TabStrip: React.FC<any> = (props) => {
     <div>
       <ul className="nav nav-tabs" role="tablist">
         {tabs.map((tab: any, index: number) => (
-          <li className="nav-item">
+          <li key={index} className="nav-item">
             <a
               id={`${tab.id}-tab`}
               data-toggle="tab"
@@ -28,6 +28,7 @@ const TabStrip: React.FC<any> = (props) => {
       <div className="tab-content" id="myTabContent">
         {tabs.map((tab: any, index: number) => (
           <div
+            key={index}
             className={`tab-pane fade${index == 0 ? ' show active' : ''}`}
             id={`tab${tab.id}`}
             role="tabpanel"
