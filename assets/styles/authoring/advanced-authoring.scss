@@ -69,6 +69,16 @@ $ui-border-color: #ccc;
         visibility: visible;
       }
     }
+    &.bottom-panel {
+      bottom: -200px;
+      height: 200px;
+      transition-property: left, right, bottom, visibility;
+
+      &.open {
+        visibility: visible;
+        bottom: 0;
+      }
+    }
   }
   .aa-header-nav {
     z-index: 201;

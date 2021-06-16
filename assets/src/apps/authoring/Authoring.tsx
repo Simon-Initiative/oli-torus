@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Accordion from './Accordion/Accordion';
+import { BottomPanel } from './BottomPanel';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
 import TabStrip from './TabStrip/TabStrip';
@@ -16,7 +17,12 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const windowName = `preview-${props.projectSlug}`;
   const authoringContainer = document.getElementById('advanced-authoring');
   const [appState, setAppState] = useState<any>({ isVisible: false });
-  const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
+  const [panelState, setPanelState] = useState({
+    left: true,
+    right: true,
+    top: true,
+    bottom: true,
+  });
   const leftPanelData = {
     tabs: [
       {
@@ -108,6 +114,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
                     right: false,
                     left: false,
                     top: false,
+                    bottom: false,
                   })
                 }
                 type="button"
@@ -121,6 +128,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
                     right: true,
                     left: true,
                     top: true,
+                    bottom: true,
                   })
                 }
                 type="button"
@@ -139,6 +147,12 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </div>
           {/* <div>{JSON.stringify(props.content)}</div> */}
         </section>
+        <BottomPanel
+          panelState={panelState}
+          setPanelState={() => setPanelState({ ...panelState, bottom: !panelState.bottom })}
+        >
+          Adaptivity panel
+        </BottomPanel>
         <SidePanel
           position="right"
           panelState={panelState}
