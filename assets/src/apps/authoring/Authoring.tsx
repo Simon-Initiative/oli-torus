@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Provider, useDispatch } from 'react-redux';
+import Accordion from './Accordion/Accordion';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
 import store from './store';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import TabStrip from './TabStrip/TabStrip';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -21,7 +23,39 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const authoringContainer = document.getElementById('advanced-authoring');
   const [appState, setAppState] = useState<any>({ isVisible: false });
   const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
-
+  const leftPanelData = {
+    tabs: [
+      {
+        id: 1,
+        title: 'Sequence',
+        data: ['Intro Screen', 'Pick your character', 'Choose your title'],
+      },
+      {
+        id: 2,
+        title: 'Adaptivity',
+        data: ['Initial Satee', 'Default Response'],
+      },
+    ],
+  };
+  const rightPanelData = {
+    tabs: [
+      {
+        id: 1,
+        title: 'Lesson',
+        data: 'Lesson Data',
+      },
+      {
+        id: 2,
+        title: 'Screen',
+        data: 'Screen Data',
+      },
+      {
+        id: 3,
+        title: 'Component',
+        data: 'Component Data',
+      },
+    ],
+  };
   const PreviewButton = () => (
     <a className="btn btn-sm btn-outline-primary" onClick={() => window.open(url, windowName)}>
       Preview <i className="las la-external-link-alt ml-1"></i>
@@ -67,6 +101,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
         >
           I am the left side panel.
+          <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
         <section className="aa-stage">
           <div className="aa-stage-inner">
@@ -116,6 +151,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
         >
           I am the right side panel.
+          <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
         </SidePanel>
       </div>
     </>

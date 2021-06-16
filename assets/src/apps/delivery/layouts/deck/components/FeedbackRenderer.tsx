@@ -20,7 +20,11 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
 
   // TODO: other handlers for parts, "advanced" things like tracking part responses within feedback??
 
-  return <PartsLayoutRenderer parts={combinedParts} onPartInit={handlePartInit} />;
+  return (
+    <div className="feedback-item">
+      <PartsLayoutRenderer parts={combinedParts} onPartInit={handlePartInit} />
+    </div>
+  );
 };
 
 export default FeedbackRenderer;

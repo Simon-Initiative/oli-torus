@@ -269,6 +269,24 @@ const DeckLayoutFooter: React.FC = () => {
     }
   };
 
+  const lastCheckTriggered = useSelector(selectLastCheckTriggered);
+  const [checkInProgress, setCheckInProgress] = useState(false);
+
+  useEffect(() => {
+    if (!lastCheckTriggered) {
+      return;
+    }
+    setCheckInProgress(true);
+    setIsLoading(true);
+  }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (checkInProgress && lastCheckResults) {
+      setIsLoading(false);
+      setCheckInProgress(false);
+    }
+  }, [checkInProgress, lastCheckResults]);
+
   const checkFeedbackHandler = () => {
     // right now just nav w/o checking
     setDisplayFeedback(!displayFeedback);

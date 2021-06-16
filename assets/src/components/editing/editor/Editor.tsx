@@ -112,11 +112,14 @@ export const Editor = React.memo((props: EditorProps) => {
     }
   };
 
+  const normalizedValue =
+    props.value.length === 0 ? [{ type: 'p', children: [{ text: '' }] }] : props.value;
+
   return (
     <React.Fragment>
       <Slate
         editor={editor}
-        value={props.value}
+        value={normalizedValue}
         onChange={onChange}
         onFocus={emptyOnFocus}
         onPaste={async (

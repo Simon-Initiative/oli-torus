@@ -39,6 +39,6 @@
     <%= hidden_input f, :link_account, value: @link_account %>
   <% end %>
   <%= submit "Create Account", class: "btn btn-md btn-primary btn-block" %>
-  <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-md btn-link btn-block" %>
+  <%= link "Sign in", to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-md btn-link btn-block" %>
 <% end %>
 <% end %>

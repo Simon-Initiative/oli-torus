@@ -10,7 +10,7 @@ defmodule OliWeb.ObjectivesLiveTest do
     setup [:setup_session]
 
     test "objectives mount", %{conn: conn, project: project, map: map} do
-      conn = get(conn, "/project/#{project.slug}/objectives")
+      conn = get(conn, "/authoring/project/#{project.slug}/objectives")
 
       {:ok, view, _} = live(conn)
 

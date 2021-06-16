@@ -21,7 +21,7 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
       conn = get(conn, Routes.global_state_path(conn, :read))
 
       assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 0
+      assert Enum.empty?(keys)
 
       conn = again(conn, user)
 

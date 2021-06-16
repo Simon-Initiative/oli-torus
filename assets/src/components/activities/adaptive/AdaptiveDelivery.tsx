@@ -65,8 +65,17 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-    let resolve;
+    let resolve: any;
     let reject;
+
+    if (!parts.length) {
+      if (props.onReady) {
+        props.onReady(attemptState.attemptGuid);
+      }
+      setInit(true);
+      return;
+    }
+
     const promise = new Promise((res, rej) => {
       let resolved = false;
       resolve = (value: any) => {
