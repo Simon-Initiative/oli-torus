@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- Fix an issue preventing deletion of projects whose names contain special characters
+
 ## 0.11.0 (2021-6-15)
 
 ### Enhancements
