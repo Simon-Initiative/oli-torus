@@ -1,6 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { setActivities } from '../../../../delivery/store/features/activities/slice';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
 import { PageContext } from '../../../types';
+import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
 import { loadPage, PageSlice, PageState } from '../slice';
 
 export const initializeFromContext = createAsyncThunk(
@@ -17,7 +19,14 @@ export const initializeFromContext = createAsyncThunk(
     };
     dispatch(loadPage(pageState));
 
+    // load activities
+    const activities = Object.keys(params.activities).map((id) => {
+      return { ...params.activities[id], id };
+    });
+    await dispatch(setActivities({ activities }));
+
     // populate the group
+    // TODO: can this be recursively nested?
     const groups = params.content.model.filter((item: any) => item.type === 'group');
     const otherTypes = params.content.model.filter((item: any) => item.type !== 'group');
     // for now just stick them into a group, this isn't reallly thought out yet
@@ -25,11 +34,14 @@ export const initializeFromContext = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
-    // wait for this to resolve so that state will be updated
-    await dispatch(setGroups({ groups }));
-    // populate the layout based on group
+    // here we should do any "layout processing" where for example we go and make sure all the parts
+    // are referenced including inherited from layers or parent screens when in "deck" view
+    // afterwards update that group record with a processing timestamp? so that we don't need to do every time?
+    // NOTE: right now there really only is expected to be a single group
+    const groupProcessing = groups.map((group) => dispatch(updateActivityPartInheritance(group)))
+    // TODO: different for different layout types
+    await Promise.all(groupProcessing);
 
-    // maybe do next in the group/layout specific code?
-    // scan through and update all part references?
+    await dispatch(setGroups({ groups }));
   },
 );
