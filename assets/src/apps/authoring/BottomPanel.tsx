@@ -2,13 +2,13 @@ import React from 'react';
 
 export interface BottomPanelProps {
   panelState: any;
-  setPanelState: any;
+  togglePanelState: any;
   children?: any;
   content?: any;
 }
 
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
-  const { panelState, setPanelState, children } = props;
+  const { panelState, togglePanelState, children } = props;
   const PANEL_SIDE_WIDTH = '250px';
 
   return (
@@ -30,7 +30,12 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
               <span className="title">rule editor</span>
               <span className="ruleName">Correct</span>
             </div>
-            <div className="aa-panel-section-controls">{}</div>
+            <div className="aa-panel-section-controls">
+              <button className="btn btn-link" onClick={() => togglePanelState()}>
+                {panelState['bottom'] && '^'}
+                {!panelState['bottom'] && '>'}
+              </button>
+            </div>
           </div>
           {children}
         </div>

@@ -99,7 +99,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         <SidePanel
           position="left"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
+          togglePanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
         >
           I am the left side panel.
           <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
@@ -155,14 +155,14 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         </section>
         <BottomPanel
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, bottom: !panelState.bottom })}
+          togglePanelState={() => setPanelState({ ...panelState, bottom: !panelState.bottom })}
         >
           <AdaptivityEditor />
         </BottomPanel>
         <SidePanel
           position="right"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
+          togglePanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
         >
           I am the right side panel.
           <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
