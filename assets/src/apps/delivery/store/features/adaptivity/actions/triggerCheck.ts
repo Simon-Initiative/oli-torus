@@ -5,6 +5,7 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import { selectCurrentActivityTree } from '../../groups/selectors/deck';
@@ -61,8 +62,6 @@ export const triggerCheck = createAsyncThunk(
 
     bulkApplyState(updateScripting, defaultGlobalEnv);
 
-    await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
-
     //update the store with the latest changes
     await dispatch(setLastCheckTriggered({ timestamp: Date.now() }));
 
@@ -91,7 +90,23 @@ export const triggerCheck = createAsyncThunk(
         }
       });
     });
-    const stateSnapshot = { ...allResponseState, ...modifiedExtrinsicState };
+
+    const spanshot = getEnvState(defaultGlobalEnv);
+    const getGlobalSnapshot = [spanshot].reduce((collect: any, variableSnappshot: any) => {
+      Object.keys(spanshot).forEach((key) => {
+        if (key.indexOf('app.') === 0 || key.indexOf('variables.') === 0) {
+          collect[key] = spanshot[key];
+        }
+      });
+      return collect;
+    }, {});
+    const updatedExtrinsicState = { ...modifiedExtrinsicState, ...getGlobalSnapshot };
+    await dispatch(setExtrinsicState({ state: updatedExtrinsicState }));
+    const stateSnapshot = {
+      ...allResponseState,
+      ...modifiedExtrinsicState,
+      ...getGlobalSnapshot,
+    };
 
     let checkResult;
     // if preview mode, gather up all state and rules from redux
