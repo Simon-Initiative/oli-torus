@@ -274,11 +274,15 @@ defmodule Oli.Interop.Ingest do
 
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author) do
-    # filter for the top-level containers, add recursively add them
+    # Process top-level items and containers, add recursively add containers
     children =
       Map.get(hierarchy_details, "children")
-      |> Enum.filter(fn c -> Map.get(c, "type") == "container" end)
-      |> Enum.map(fn c -> create_container(project, page_map, as_author, c) end)
+      |> Enum.map(fn c ->
+        case Map.get(c, "type") do
+          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
+          "container" -> create_container(project, page_map, as_author, c)
+        end
+      end)
 
     # wire those newly created top-level containers into the root resource
     ChangeTracker.track_revision(project.slug, root_revision, %{children: children})
