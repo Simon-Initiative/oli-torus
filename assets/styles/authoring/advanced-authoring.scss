@@ -162,4 +162,9 @@ $panel-section-title-bar-height: 39px;
       border-left: 1px solid $ui-border-color;
     }
   }
+  .aa-panel-section-controls {
+    .correct-toggle {
+      border-right: 1px solid $ui-border-color;
+    }
+  }
 }

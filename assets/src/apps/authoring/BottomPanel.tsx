@@ -30,10 +30,31 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
               <span className="title">rule editor</span>
               <span className="ruleName">Correct</span>
             </div>
-            <div className="aa-panel-section-controls">
-              <button className="btn btn-link" onClick={() => togglePanelState()}>
-                {panelState['bottom'] && '^'}
-                {!panelState['bottom'] && '>'}
+            <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
+              <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
+                <i className="fa fa-times mr-2" />
+                <div className="custom-control custom-switch">
+                  <input
+                    type="checkbox"
+                    className="custom-control-input"
+                    id={`correct-toggle`}
+                    // checked={true}
+                    // onChange={(e) => handleValueChange(e, true)}
+                    // onBlur={(e) => handleValueChange(e, true)}
+                  />
+                  <label className="custom-control-label" htmlFor={`correct-toggle`}></label>
+                </div>
+                <i className="fa fa-check" />
+              </div>
+              <button className="btn btn-link p-0 ml-3">
+                <i className="fa fa-trash-alt" />
+              </button>
+              <button className="btn btn-link p-0 ml-1">
+                <i className="fa fa-plus" />
+              </button>
+              <button className="btn btn-link p-0 ml-1" onClick={() => togglePanelState()}>
+                {panelState['bottom'] && <i className="fa fa-angle-down" />}
+                {!panelState['bottom'] && <i className="fa fa-angle-right" />}
               </button>
             </div>
           </div>
