@@ -19,7 +19,7 @@ const Accordion: React.FC<any> = (props) => {
   return (
     <div className='accordion'>
       {tabs.map((tab: any) => (
-        <div className='card'>
+        <div id={`card${tab.id}`} className='card'>
           <div id={tab.id} className='d-flex justify-content-between py-2 border-bottom'>
             <div
               className='col-10 font-weight-bold'
