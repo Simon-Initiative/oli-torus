@@ -19,11 +19,13 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       conn =
         get(
           conn,
-          "/authoring/project/#{project.slug}/curriculum/#{AuthoringResolver.root_container(project.slug).slug}"
+          "/project/#{project.slug}/curriculum/#{
+            AuthoringResolver.root_container(project.slug).slug
+          }"
         )
 
       # Routing to the root container redirects to the `curriculum` path
-      redir_path = "/authoring/project/#{project.slug}/curriculum"
+      redir_path = "/project/#{project.slug}/curriculum"
       assert redirected_to(conn, 302) =~ redir_path
 
       conn =

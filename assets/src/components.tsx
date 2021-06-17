@@ -6,13 +6,11 @@ import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
 import ResourceEditor from 'components/resource/resourceEditor/ResourceEditor';
 import { ActivityEditor } from 'components/activity/ActivityEditor';
-import { CreateAccountPopup } from 'components/messages/CreateAccountPopup'
 
 export const registry = {
   Editor,
   ResourceEditor,
   ActivityEditor,
-  CreateAccountPopup,
 } as any;
 
 export type ComponentName = keyof typeof registry;

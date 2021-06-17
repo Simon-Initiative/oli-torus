@@ -66,7 +66,7 @@ defmodule Oli.Plugs.RegistrationCaptcha do
         conn
         |> OliWeb.DeliveryController.render_create_and_link_form(
           changeset: %{changeset | action: :insert},
-          sign_in_path: Routes.authoring_pow_session_path(conn, :new),
+          sign_in_path: Routes.pow_session_path(conn, :new),
           cancel_path: Routes.static_page_path(conn, :index)
         )
         |> halt()

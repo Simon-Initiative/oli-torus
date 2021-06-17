@@ -44,16 +44,14 @@ defmodule Oli.AccountsTest do
     alias Oli.Accounts.User
 
     @valid_attrs %{
-      email: "some_email@example.com",
+      email: "some email",
       given_name: "some given_name",
       family_name: "some family_name",
       sub: "some sub",
-      picture: "some picture",
-      password: "some_pass123",
-      password_confirmation: "some_pass123"
+      picture: "some picture"
     }
     @update_attrs %{
-      email: "some_updated_email@example.com",
+      email: "some updated email",
       given_name: "some updated given_name",
       family_name: "some updated family_name",
       sub: "some updated sub",
@@ -74,7 +72,16 @@ defmodule Oli.AccountsTest do
     end
 
     test "get_user!/1 returns the user with given id", %{user: user} do
-      assert Accounts.get_user!(user.id).email == user.email
+      assert Accounts.get_user!(user.id) == user
+    end
+
+    test "create_user/1 with valid data creates a user", %{valid_attrs: valid_attrs} do
+      assert {:ok, %User{} = user} = Accounts.create_user(valid_attrs)
+      assert user.email == "some email"
+      assert user.given_name == "some given_name"
+      assert user.family_name == "some family_name"
+      assert user.sub == "some sub"
+      assert user.picture == "some picture"
     end
 
     test "create_user/1 with invalid data returns error changeset" do
@@ -83,7 +90,7 @@ defmodule Oli.AccountsTest do
 
     test "update_user/2 with valid data updates the user", %{user: user} do
       assert {:ok, %User{} = user} = Accounts.update_user(user, @update_attrs)
-      assert user.email == "some_updated_email@example.com"
+      assert user.email == "some updated email"
       assert user.given_name == "some updated given_name"
       assert user.family_name == "some updated family_name"
       assert user.sub == "some updated sub"
@@ -92,7 +99,7 @@ defmodule Oli.AccountsTest do
 
     test "update_user/2 with invalid data returns error changeset", %{user: user} do
       assert {:error, %Ecto.Changeset{}} = Accounts.update_user(user, @invalid_attrs)
-      assert user.email == Accounts.get_user!(user.id).email
+      assert user == Accounts.get_user!(user.id)
     end
 
     test "delete_user/1 deletes the user", %{user: user} do

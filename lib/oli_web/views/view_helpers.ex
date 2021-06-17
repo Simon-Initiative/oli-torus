@@ -107,14 +107,4 @@ defmodule OliWeb.ViewHelpers do
         end
     end
   end
-
-  def maybe_section_slug(conn) do
-    case conn.assigns[:section] do
-      %Section{slug: slug} ->
-        slug
-
-      _ ->
-        ""
-    end
-  end
 end

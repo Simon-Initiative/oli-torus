@@ -529,28 +529,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
-
-    test "redirects to enroll page if no user is logged in", %{conn: conn, section: section} do
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :enroll, section.slug)
-    end
-
-    test "automatically enrolls user and redirects to section index page if user is logged in", %{
-      conn: conn,
-      section: section
-    } do
-      user = user_fixture()
-
-      conn =
-        Plug.Test.init_test_session(conn, [])
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "Course Overview"
-    end
   end
 
   defp setup_session(%{conn: conn}) do

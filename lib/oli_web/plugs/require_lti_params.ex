@@ -32,7 +32,7 @@ defmodule Oli.Plugs.RequireLtiParams do
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_status(401)
-    |> render("lms_signin_required.html")
+    |> render("signin_required.html")
     |> halt()
   end
 end

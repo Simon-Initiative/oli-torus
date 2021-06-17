@@ -337,10 +337,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       <a
         className={`btn btn-sm btn-outline-primary ml-3 ${isSaving ? 'disabled' : ''}`}
         onClick={() =>
-          window.open(
-            `/authoring/project/${projectSlug}/preview/${resourceSlug}`,
-            `preview-${projectSlug}`,
-          )
+          window.open(`/project/${projectSlug}/preview/${resourceSlug}`, `preview-${projectSlug}`)
         }
       >
         Preview <i className="las la-external-link-alt ml-1"></i>

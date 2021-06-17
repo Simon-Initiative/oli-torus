@@ -53,6 +53,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
           conn
+          |> Phoenix.Controller.put_flash(:info, "Welcome to Open and Free!")
       end
     end
   end

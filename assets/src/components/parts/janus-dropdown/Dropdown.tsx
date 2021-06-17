@@ -78,14 +78,13 @@ const Dropdown: React.FC<any> = (props) => {
 
     const sSelectedIndex = currentStateSnapshot[`stage.${id}.selectedIndex`];
     if (sSelectedIndex !== undefined) {
-      const stateSelection = Number(sSelectedIndex);
-      setSelection(stateSelection);
-      if (optionLabels) setSelectedItem(optionLabels[stateSelection - 1]);
+      setSelection(sSelectedIndex);
+      setSelectedItem(optionLabels[sSelectedIndex - 1]);
     }
 
     const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
     if (sSelectedItem !== undefined) {
-      const selectionIndex: number = optionLabels?.findIndex((str: string) =>
+      const selectionIndex: number = optionLabels.findIndex((str: string) =>
         sSelectedItem.includes(str),
       );
       setSelectedItem(sSelectedItem);

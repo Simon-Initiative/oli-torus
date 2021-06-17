@@ -78,8 +78,20 @@ config :oli, OliWeb.Endpoint,
   secret_key_base: secret_key_base,
   live_view: [signing_salt: live_view_salt]
 
-# Configure Mnesia directory (used by pow persistent sessions)
-config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
+# OAuth secrets need to be loaded at runtime
+config :oli, :pow,
+  pow_assent: [
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+      ],
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET")
+      ]
+    ]
+  ]
 
 # ## Using releases (Elixir v1.9+)
 #

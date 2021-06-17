@@ -57,9 +57,7 @@ export const DisplayLink = (props: Props) => {
     // so we can send that along as a query param to our request.
     // The server will align this possibly out of date slug with the
     // current ones for us.
-    const slug = href.startsWith('/authoring/project/')
-      ? href.substr(href.lastIndexOf('/') + 1)
-      : undefined;
+    const slug = href.startsWith('/project/') ? href.substr(href.lastIndexOf('/') + 1) : undefined;
 
     Persistence.pages(commandContext.projectSlug, slug)
       .then((result) => {

@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.11.0",
+      version: "0.10.0",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -50,7 +50,7 @@ defmodule Oli.MixProject do
   def application do
     [
       mod: {Oli.Application, []},
-      extra_applications: [:logger, :crypto, :public_key, :mnesia, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :crypto, :public_key, :runtime_tools, :os_mon]
     ]
   end
 

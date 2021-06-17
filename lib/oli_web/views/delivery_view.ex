@@ -49,9 +49,6 @@ defmodule OliWeb.DeliveryView do
       :student ->
         true
 
-      :other ->
-        true
-
       _ ->
         false
     end
@@ -70,19 +67,6 @@ defmodule OliWeb.DeliveryView do
 
       :student ->
         "Student"
-
-      _ ->
-        ""
-    end
-  end
-
-  def user_name(user) do
-    case user do
-      %{guest: true} ->
-        "Guest"
-
-      %{name: name} ->
-        name
 
       _ ->
         ""

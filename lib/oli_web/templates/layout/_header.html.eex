@@ -9,9 +9,10 @@
             <a href="javascript:" onclick="showHelpModal();">Help</a>
         </div>
 
-        <%= if user_signed_in?(@conn) do %>
+        <%= if author_signed_in?(@conn) do %>
         <div>
-            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-outline-primary ml-2" %>
+            <%= link "My Projects", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-primary mx-2" %>
+            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-link ml-2" %>
         </div>
         <% else %>
         <%= if @conn.request_path == "/" do %>

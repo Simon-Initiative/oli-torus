@@ -45,12 +45,7 @@ export const getViewedChildren = (
   bankChildren: SequenceEntry<SequenceEntryType>[],
   viewHistory: { sequenceId: string; visitCount: number }[],
 ): string[] => {
-  const viewedHistoryIds = viewHistory.filter((v) => v.visitCount >= 1).map((v) => v.sequenceId);
-  const viewedChildren = bankChildren
-    .filter((bc) => viewedHistoryIds.includes(bc.custom.sequenceId))
-    .map((v) => v.custom.sequenceId);
-
-  return viewedChildren;
+  return viewHistory.filter((v) => v.visitCount >= 1).map((v) => v.sequenceId);
 };
 
 // determines which QB children are remaining to be viewed

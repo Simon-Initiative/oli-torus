@@ -6,7 +6,7 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Publishing
 
   describe "delivery_controller index" do
-    setup [:setup_lti_session]
+    setup [:setup_session]
 
     test "handles student with no section", %{conn: conn, cache_keys: cache_keys} do
       conn =
@@ -108,7 +108,7 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller link_account" do
-    setup [:setup_lti_session]
+    setup [:setup_session]
 
     test "renders link account form", %{conn: conn, cache_keys: cache_keys} do
       conn =
@@ -121,14 +121,11 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller deleted_project" do
-    setup [:setup_lti_session]
+    setup [:setup_session]
 
-    test "removes deleted project from available publications", %{
-      conn: conn,
-      project: project,
-      author: author,
-      institution: institution
-    } do
+    test "removes deleted project from available publications", %{conn: conn, project: project, author: author,
+      institution: institution} do
+
       Publishing.publish_project(project)
 
       delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
@@ -139,20 +136,20 @@ defmodule OliWeb.DeliveryControllerTest do
   end
 
   describe "delivery_controller process_link_account_provider" do
-    setup [:setup_lti_session]
+    setup [:setup_session]
 
     test "processes link account for provider", %{conn: conn, cache_keys: cache_keys} do
       conn =
         conn
         |> LtiSession.put_user_params(cache_keys.instructor)
-        |> get(Routes.authoring_delivery_path(conn, :process_link_account_provider, :google))
+        |> get(Routes.delivery_path(conn, :process_link_account_provider, :google))
 
       assert html_response(conn, 302) =~ "redirect"
     end
   end
 
   describe "delivery_controller process_link_account_user" do
-    setup [:setup_lti_session]
+    setup [:setup_session]
 
     test "processes link account for user email authentication failure", %{
       conn: conn,
@@ -168,9 +165,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> LtiSession.put_user_params(cache_keys.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account_user),
-          user: author_params
-        )
+        |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
 
       assert html_response(conn, 200) =~
                "The provided login details did not work. Please verify your credentials, and try again."
@@ -196,7 +191,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  defp setup_lti_session(%{conn: conn}) do
+  defp setup_session(%{conn: conn}) do
     author =
       author_fixture(%{
         password: "password123",

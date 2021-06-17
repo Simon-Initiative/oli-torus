@@ -35,9 +35,7 @@ defmodule OliWeb.CollaboratorController do
   defp add_collaborator(conn, email, project_id) do
     case Collaborators.add_collaborator(conn, email, project_id) do
       {:ok, _results} ->
-        conn
-        |> put_flash(:info, "Collaborator invitation sent to #{email}!")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        redirect(conn, to: Routes.project_path(conn, :overview, project_id))
 
       {:error, message} ->
         conn

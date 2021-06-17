@@ -29,8 +29,6 @@ if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   })
 end
 
-pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
-
 # create admin author
 if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "admin@example.edu")) do
   case Pow.Ecto.Context.create(
@@ -43,10 +41,10 @@ if !Oli.Repo.get_by(Oli.Accounts.Author, email: System.get_env("ADMIN_EMAIL", "a
            password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
            system_role_id: Oli.Accounts.SystemRole.role_id().admin
          },
-         pow_config
+         otp_app: :oli
        ) do
     {:ok, user} ->
-      PowEmailConfirmation.Ecto.Context.confirm_email(user, %{}, pow_config)
+      PowEmailConfirmation.Ecto.Context.confirm_email(user, %{}, otp_app: :oli)
   end
 end
 
@@ -111,7 +109,7 @@ Oli.Registrar.register_local_part_components(
     "janus_carousel",
     "janus_mcq",
     "janus_popup",
-    "janus_capi_iframe"
+    "janus_capi_iframe",
   ])
 )
 

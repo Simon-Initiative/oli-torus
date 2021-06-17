@@ -99,6 +99,42 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :oli, :pow,
+  repo: Oli.Repo,
+  user: Oli.Accounts.Author,
+  current_user_assigns_key: :current_author,
+  session_key: "author_auth",
+  web_module: OliWeb,
+  routes_backend: OliWeb.Pow.AuthorRoutes,
+  plug: Pow.Plug.Session,
+  extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
+  controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+  mailer_backend: OliWeb.Pow.Mailer,
+  web_mailer_module: OliWeb,
+  pow_assent: [
+    user_identities_context: OliWeb.Pow.UserIdentities,
+    providers: [
+      google: [
+        client_id: System.get_env("GOOGLE_CLIENT_ID"),
+        client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Google,
+        authorization_params: [
+          scope: "email profile"
+        ],
+        session_params: ["type"]
+      ],
+      github: [
+        client_id: System.get_env("GITHUB_CLIENT_ID"),
+        client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+        strategy: Assent.Strategy.Github,
+        authorization_params: [
+          scope: "read:user user:email"
+        ],
+        session_params: ["type"]
+      ]
+    ]
+  ]
+
 if Mix.env() == :dev do
   config :mix_test_watch,
     clear: true
