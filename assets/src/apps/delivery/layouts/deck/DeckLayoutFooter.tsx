@@ -201,7 +201,8 @@ const DeckLayoutFooter: React.FC = () => {
       );
       dispatch(setIsGoodFeedback({ isGood: isCorrect }));
       // need to queue up the feedback display prior to nav
-      if (isCorrect && hasNavigation) {
+      // there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity
+      if (hasNavigation) {
         const [firstNavAction] = actionsByType.navigation;
         const navTarget = firstNavAction.params.target;
         dispatch(setNextActivityId({ activityId: navTarget }));
@@ -250,6 +251,17 @@ const DeckLayoutFooter: React.FC = () => {
     ) {
       if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.allownavigation) {
         dispatch(triggerCheck({ activityId: currentActivity.id }));
+      } else if (
+        !isGoodFeedback &&
+        nextActivityId?.trim().length &&
+        nextActivityId !== currentActivityId
+      ) {
+        //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
+        //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
+        dispatch(
+          nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+        );
+        dispatch(setNextActivityId({ nextActivityId: '' }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
         setDisplayFeedbackIcon(false);
@@ -262,8 +274,8 @@ const DeckLayoutFooter: React.FC = () => {
       nextActivityId?.trim().length &&
       nextActivityId !== currentActivityId
     ) {
-      //** DT - there are cases when wrong trap state gets trigger but user is still allowed to jump to another ensemble */
-      //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective ensemble */
+      //** DT - there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
+      //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
       dispatch(
         nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
       );
