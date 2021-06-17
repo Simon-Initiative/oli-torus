@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Provider, useDispatch } from 'react-redux';
 import Accordion from './Accordion/Accordion';
 import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
+import store from './store';
+import { setInitialConfig } from './store/app/slice';
+import { loadPage } from './store/page/slice';
 import TabStrip from './TabStrip/TabStrip';
 
 export interface AuthoringProps {
@@ -9,29 +13,46 @@ export interface AuthoringProps {
   projectSlug: string;
   revisionSlug: string;
   content: any;
+  activityTypes?: any[];
+  resourceId?: number;
+  paths: Record<string, string>;
 }
 
-export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
-  const url = `/authoring/project/${props.projectSlug}/preview/${props.revisionSlug}`;
+const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+  const dispatch = useDispatch();
+
+  const url = `/project/${props.projectSlug}/preview/${props.revisionSlug}`;
   const windowName = `preview-${props.projectSlug}`;
   const authoringContainer = document.getElementById('advanced-authoring');
   const [appState, setAppState] = useState<any>({ isVisible: false });
   const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
+
+  useEffect(() => {
+    const appConfig = {
+      paths: props.paths,
+      isAdmin: props.isAdmin,
+      projectSlug: props.projectSlug,
+      revisionSlug: props.revisionSlug,
+    };
+    dispatch(setInitialConfig(appConfig));
+
+    if (props.content) {
+      dispatch(loadPage(props.content));
+    }
+  }, [props]);
+
   const leftPanelData = {
     tabs: [
       {
         id: 1,
         title: 'Sequence',
-        data: ['Intro Screen',
-          'Pick your character',
-          'Choose your title']
+        data: ['Intro Screen', 'Pick your character', 'Choose your title'],
       },
       {
         id: 2,
         title: 'Adaptivity',
-        data: ['Initial Satee',
-          'Default Response']
-      }
+        data: ['Initial Satee', 'Default Response'],
+      },
     ],
   };
   const rightPanelData = {
@@ -98,7 +119,7 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
         >
           I am the left side panel.
-        <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
+          <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
         <section className="aa-stage">
           <div className="aa-stage-inner">
@@ -148,9 +169,17 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
         >
           I am the right side panel.
-        <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
+          <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
         </SidePanel>
       </div>
     </>
   );
 };
+
+const ReduxApp: React.FC<AuthoringProps> = (props) => (
+  <Provider store={store}>
+    <Authoring {...props} />
+  </Provider>
+);
+
+export default ReduxApp;

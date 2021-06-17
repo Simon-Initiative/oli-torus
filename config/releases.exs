@@ -78,6 +78,9 @@ config :oli, OliWeb.Endpoint,
   secret_key_base: secret_key_base,
   live_view: [signing_salt: live_view_salt]
 
+# Configure Mnesia directory (used by pow persistent sessions)
+config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

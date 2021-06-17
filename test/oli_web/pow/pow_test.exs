@@ -1,4 +1,4 @@
-defmodule OliWeb.Common.PowSessionTest do
+defmodule OliWeb.Common.PowTest do
   use OliWeb.ConnCase
 
   alias Oli.Seeder
