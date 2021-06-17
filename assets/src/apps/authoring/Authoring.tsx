@@ -5,14 +5,15 @@ import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
 import store from './store';
 import { setInitialConfig } from './store/app/slice';
-import { loadPage } from './store/page/slice';
+import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import TabStrip from './TabStrip/TabStrip';
+import { PageContext } from './types';
 
 export interface AuthoringProps {
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
-  content: any;
+  content: PageContext;
   activityTypes?: any[];
   resourceId?: number;
   paths: Record<string, string>;
@@ -37,7 +38,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     dispatch(setInitialConfig(appConfig));
 
     if (props.content) {
-      dispatch(loadPage(props.content));
+      dispatch(initializeFromContext(props.content));
     }
   }, [props]);
 
