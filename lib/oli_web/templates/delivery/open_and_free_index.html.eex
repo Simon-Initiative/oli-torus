@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-12">
-    <h3 class="mt-4 mb-4">My Open and Free</h3>
+    <h3 class="mt-4 mb-4">My Courses</h3>
 
     <%= if length(@sections) == 0 do %>
       <p>You are not enrolled in any courses.</p>

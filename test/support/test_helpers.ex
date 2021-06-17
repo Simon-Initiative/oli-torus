@@ -47,7 +47,7 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        sub: "a6d5c443-1f51-4783-ba1a-7686ffe3b54a",
+        sub: UUID.uuid4(),
         name: "Ms Jane Marie Doe",
         given_name: "Jane",
         family_name: "Doe",
@@ -58,8 +58,15 @@ defmodule Oli.TestHelpers do
       })
 
     {:ok, user} =
-      User.changeset(%User{}, params)
-      |> Repo.insert()
+      case attrs do
+        %{password: _password, password_confirmation: _password_confirmation} ->
+          User.changeset(%User{}, params)
+          |> Repo.insert()
+
+        _ ->
+          User.noauth_changeset(%User{}, params)
+          |> Repo.insert()
+      end
 
     user
   end
@@ -260,6 +267,11 @@ defmodule Oli.TestHelpers do
   def recycle_author_session(conn, author) do
     Phoenix.ConnTest.recycle(conn)
     |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+  end
+
+  def recycle_user_session(conn, user) do
+    Phoenix.ConnTest.recycle(conn)
+    |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
   end
 
   def author_project_fixture(), do: author_project_fixture(nil)

@@ -4,6 +4,7 @@ defmodule OliWeb.LayoutView do
   import OliWeb.DeliveryView,
     only: [
       user_role_is_student: 2,
+      user_name: 1,
       user_role_text: 2,
       user_role_color: 2,
       user_icon: 1,

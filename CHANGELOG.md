@@ -2,10 +2,17 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- Fix an issue related to persisting sessions across server restarts
+
+## 0.11.0 (2021-6-15)
+
 ### Enhancements
 
 - Image coding: disable submit button before code is run
 - Allow setting of arbitrary content from upload JSON file in revision history tool
+- Add ability for independent learners to create accounts, sign in and track progress
 
 ### Bug fixes
 
@@ -14,6 +21,7 @@
 - Fix an issue with the torus logo in dark mode
 - Fix to support rich text content with empty models
 - Fix to properly identify the correct choice in multiple choice activities
+- Fix internal authoring links
 
 ## 0.10.0 (2021-6-2)
 

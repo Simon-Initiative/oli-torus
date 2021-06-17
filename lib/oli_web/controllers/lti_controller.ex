@@ -220,9 +220,7 @@ defmodule OliWeb.LtiController do
               "text" => %{
                 "type" => "mrkdwn",
                 "text" =>
-                  "New registration request from *#{pending_registration.name}*. <#{
-                    Routes.institution_url(conn, :index)
-                  }#pending-registrations|Click here to view all pending requests>."
+                  "New registration request from *#{pending_registration.name}*. <#{Routes.institution_url(conn, :index)}#pending-registrations|Click here to view all pending requests>."
               }
             },
             %{
@@ -243,9 +241,7 @@ defmodule OliWeb.LtiController do
                 %{
                   "type" => "mrkdwn",
                   "text" =>
-                    "*Location:*\n#{pending_registration.country_code} - #{
-                      pending_registration.timezone
-                    }"
+                    "*Location:*\n#{pending_registration.country_code} - #{pending_registration.timezone}"
                 },
                 %{
                   "type" => "mrkdwn",
@@ -356,6 +352,7 @@ defmodule OliWeb.LtiController do
                phone_number: lti_params["phone_number"],
                phone_number_verified: lti_params["phone_number_verified"],
                address: lti_params["address"],
+               independent_learner: false,
                institution_id: institution.id
              }) do
           {:ok, user} ->

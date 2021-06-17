@@ -9,6 +9,8 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
+  import Oli.Utils
+
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
@@ -153,7 +155,9 @@ defmodule OliWeb.DeliveryController do
   def process_link_account_provider(conn, %{"provider" => provider}) do
     conn =
       conn
-      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
+      |> merge_assigns(
+        callback_url: Routes.authoring_delivery_url(conn, :link_account_callback, provider)
+      )
 
     PowAssent.Plug.authorize_url(conn, provider, conn.assigns.callback_url)
     |> case do
@@ -193,7 +197,9 @@ defmodule OliWeb.DeliveryController do
   def link_account_callback(conn, %{"provider" => provider} = params) do
     conn =
       conn
-      |> merge_assigns(callback_url: Routes.delivery_url(conn, :link_account_callback, provider))
+      |> merge_assigns(
+        callback_url: Routes.authoring_delivery_url(conn, :link_account_callback, provider)
+      )
 
     PowAssent.Plug.callback_upsert(conn, provider, params, conn.assigns.callback_url)
     |> (fn {:ok, conn} ->
@@ -316,9 +322,31 @@ defmodule OliWeb.DeliveryController do
     |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
+  def signin(conn, %{"section" => section}) do
+    conn
+    |> use_pow_config(:user)
+    |> Pow.Plug.delete()
+    |> redirect(to: Routes.pow_session_path(conn, :new, section: section))
+  end
+
+  def create_account(conn, %{"section" => section}) do
+    conn
+    |> use_pow_config(:user)
+    |> Pow.Plug.delete()
+    |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
+  end
+
   def enroll(conn, _params) do
     section = conn.assigns.section
-    render(conn, "enroll.html", section: section)
+
+    # redirect to course index if user is already signed in and enrolled
+    with {:ok, user} <- conn.assigns.current_user |> trap_nil,
+         true <- Sections.is_enrolled?(user.id, section.slug) do
+      redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
+    else
+      _ ->
+        render(conn, "enroll.html", section: section)
+    end
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
@@ -330,27 +358,32 @@ defmodule OliWeb.DeliveryController do
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       section = conn.assigns.section
 
-      with {:ok, user} <-
-             Accounts.create_user(%{
-               # generate a unique sub identifier which is also used so a user can access
-               # their progress in the future or using a different browser
-               sub: UUID.uuid4(),
-               guest: true
-             }) do
-        Accounts.update_user_platform_roles(user, [
-          PlatformRoles.get_role(:institution_learner)
-        ])
+      case current_or_guest_user(conn) do
+        {:ok, user} ->
+          Accounts.update_user_platform_roles(user, [
+            PlatformRoles.get_role(:institution_learner)
+          ])
 
-        conn
-        |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-        |> Pow.Plug.create(user)
-        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
-      else
+          conn
+          |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+          |> Pow.Plug.create(user)
+          |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+
         {:error, _} ->
-          render(conn, "new_user.html", error: "Something went wrong, please try again")
+          render(conn, "enroll.html", error: "Something went wrong, please try again")
       end
     else
-      render(conn, "new_user.html", error: "ReCaptcha failed, please try again")
+      render(conn, "enroll.html", error: "ReCaptcha failed, please try again")
+    end
+  end
+
+  defp current_or_guest_user(conn) do
+    case conn.assigns.current_user do
+      nil ->
+        Accounts.create_guest_user()
+
+      user ->
+        {:ok, user}
     end
   end
 end
