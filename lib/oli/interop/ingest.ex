@@ -161,11 +161,23 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  # import / export can lead to situations where we need to consider first the key
+  # as an integer, and secondly the key as a string
+  defp retrieve(map, key) do
+    case Map.get(map, key) do
+      nil ->
+        Map.get(map, Integer.to_string(key, 10))
+
+      m ->
+        m
+    end
+  end
+
   defp rewire_activity_references(content, activity_map) do
     PageContent.map(content, fn e ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
-          Map.put(ref, "activity_id", Map.get(activity_map, original).resource_id)
+          Map.put(ref, "activity_id", retrieve(activity_map, original).resource_id)
 
         other ->
           other
