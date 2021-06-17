@@ -5,6 +5,7 @@ import HeaderNav from './HeaderNav';
 import { SidePanel } from './SidePanel';
 import store from './store';
 import { setInitialConfig } from './store/app/slice';
+import { loadPage } from './store/page/slice';
 import TabStrip from './TabStrip/TabStrip';
 
 export interface AuthoringProps {
@@ -34,6 +35,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       revisionSlug: props.revisionSlug,
     };
     dispatch(setInitialConfig(appConfig));
+
+    if (props.content) {
+      dispatch(loadPage(props.content));
+    }
   }, [props]);
 
   const leftPanelData = {
