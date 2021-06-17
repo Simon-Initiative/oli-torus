@@ -104,8 +104,7 @@ export const triggerCheck = createAsyncThunk(
     await dispatch(setExtrinsicState({ state: updatedExtrinsicState }));
     const stateSnapshot = {
       ...allResponseState,
-      ...modifiedExtrinsicState,
-      ...getGlobalSnapshot,
+      ...updatedExtrinsicState,
     };
 
     let checkResult;
