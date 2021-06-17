@@ -64,10 +64,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   if (pageContent?.custom?.backgroundImageScaleContent) {
     backgroundClasses.push('background-scaled');
   }
-  const getCustomClassAncestry = (className: string) => {
+  const getCustomClassAncestry = () => {
+    let className = '';
     if (currentActivityTree) {
-      console.log({ currentActivityTree });
-
       currentActivityTree.forEach((activity) => {
         if (activity?.content?.custom?.customCssClass) {
           className += activity?.content?.custom?.customCssClass;
@@ -180,7 +179,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     let customClasses = currentActivity.content?.custom?.customCssClass || '';
 
     if (currentActivityTree.length) {
-      customClasses = `${customClasses} ${getCustomClassAncestry(customClasses)}`;
+      customClasses = `${customClasses} ${getCustomClassAncestry()}`;
     }
     setActivityClasses([...defaultClasses, customClasses]);
     if (fieldRef.current) {
