@@ -277,6 +277,7 @@ defmodule Oli.Interop.Ingest do
     # Process top-level items and containers, add recursively add containers
     children =
       Map.get(hierarchy_details, "children")
+      |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
           "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
