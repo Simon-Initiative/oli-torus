@@ -106,6 +106,14 @@
 
       <div class="row my-4">
         <div class="col-12">
+          <h4>Course export</h4>
+          <%= button("Export Course", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-primary") %>
+        </div>
+      </div>
+
+
+      <div class="row my-4">
+        <div class="col-12">
           <h4>Datashop export</h4>
           <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
             <% nil -> %>
