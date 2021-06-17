@@ -4,7 +4,6 @@
 /* eslint-disable react/prop-types */
 
 import React, { useEffect, useState } from 'react';
-const plusIcon = require('../../../../static/images/plusIcon.svg');
 const Accordion: React.FC<any> = (props) => {
   const tabs: [] = props.tabsData.tabs;
   const clickHandler = (tabid: any) => {
