@@ -24,6 +24,7 @@ defmodule Oli.Interop.Export do
     |> zip
   end
 
+  # zip up the given filename and content tuples
   defp zip(filename_content_tuples) do
     {:ok, {_filename, data}} =
       :zip.create(
@@ -35,6 +36,7 @@ defmodule Oli.Interop.Export do
     data
   end
 
+  # create entries for all objectives
   defp objectives(resources) do
     Enum.filter(resources, fn r ->
       r.resource_type_id == ResourceType.get_id_by_type("objective")
@@ -55,6 +57,7 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  # create entries for all activities
   defp activities(resources) do
     registrations =
       Activities.list_activity_registrations()
@@ -79,6 +82,7 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  # convert an attached collection of objective id references to be string based
   defp to_string_ids(attached_objectives) do
     Map.keys(attached_objectives)
     |> Enum.reduce(%{}, fn part_id, m ->
@@ -86,6 +90,7 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  # create entries for all pages
   defp pages(resources) do
     Enum.filter(resources, fn r ->
       r.resource_type_id == ResourceType.get_id_by_type("page")
@@ -106,12 +111,14 @@ defmodule Oli.Interop.Export do
     end)
   end
 
+  # retrieve all resource revisions for this publication
   defp fetch_all_resources(publication) do
     Publishing.get_published_resources_by_publication(publication.id)
     |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
     |> Enum.map(fn mapping -> mapping.revision end)
   end
 
+  # create the _project.json file
   defp create_project_file(project) do
     %{
       title: project.title,
@@ -121,6 +128,7 @@ defmodule Oli.Interop.Export do
     |> entry("_project.json")
   end
 
+  # create the media manifest file
   defp create_media_manifest_file(project) do
     {:ok, {items, _}} =
       MediaLibrary.items(project.slug, Map.merge(ItemOptions.default(), %{limit: nil}))
@@ -144,6 +152,7 @@ defmodule Oli.Interop.Export do
     |> entry("_media-manifest.json")
   end
 
+  # create the singular hierarchy file
   defp create_hierarchy_file(resources, publication) do
     revisions_by_id = Enum.reduce(resources, %{}, fn r, m -> Map.put(m, r.resource_id, r) end)
     root = Map.get(revisions_by_id, publication.root_resource_id)
@@ -159,16 +168,19 @@ defmodule Oli.Interop.Export do
     |> entry("_hierarchy.json")
   end
 
+  # helper to create a zip entry tuple
   defp entry(contents, name) do
     {String.to_charlist(name), pretty(contents)}
   end
 
+  # ensure that the JSON that we write to files is nicely formatted
   defp pretty(map) do
     Jason.encode_to_iodata!(map)
     |> Jason.Formatter.pretty_print()
   end
 
-  def full_hierarchy(revisions_by_id, resource_id) do
+  # recursive impl to build out the nested, digest specific representation of the course hierarchy
+  defp full_hierarchy(revisions_by_id, resource_id) do
     revision = Map.get(revisions_by_id, resource_id)
 
     case ResourceType.get_type_by_id(revision.resource_type_id) do
