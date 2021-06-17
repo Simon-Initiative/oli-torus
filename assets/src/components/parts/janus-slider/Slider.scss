@@ -1,0 +1,191 @@
+$sliderTrackColor: rgb(230, 230, 230);
+$sliderThumbColor: rgb(41, 41, 255);
+$sliderThumbBoxShadowColor: rgba(0, 0, 0, 1);
+$sliderThumbHoverColor: rgba(41, 41, 255, 0.4);
+$sliderShowCurrentValueLableBackgroundColor: #03a9f4;
+$sliderShowCurrentValueLableFontColor: #fff;
+
+@mixin track {
+    width: 100%;
+    height: 4px;
+    cursor: pointer;
+    animate: 0.2s;
+    background: $sliderTrackColor;
+    border-radius: 25px;
+}
+@mixin trackHover {
+    background: rgb(230, 230, 230);
+}
+@mixin trackFocus {
+    background: rgb(230, 230, 230);
+}
+@mixin thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: $sliderThumbColor !important;
+    box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -8px;
+}
+@mixin thumbHover {
+    box-shadow: 0 0 0 4px $sliderThumbHoverColor;
+    transform: scale(1.4);
+}
+
+input[type='range'] {
+    -webkit-appearance: none;
+    margin: 20px 0;
+
+    &::-webkit-slider-runnable-track {
+        @include track;
+    }
+    &::-moz-range-track {
+        @include track;
+    }
+    &::-webkit-slider-thumb {
+        @include thumb;
+    }
+    &::-moz-range-thumb {
+        @include thumb;
+    }
+    &:hover {
+        &::-moz-range-thumb {
+            @include thumbHover;
+        }
+        &::-webkit-slider-thumb {
+            @include thumbHover;
+        }
+        &::-moz-range-track {
+            @include trackHover;
+        }
+        &::-webkit-slider-runnable-track {
+            @include trackHover;
+        }
+    }
+    &:focus {
+        outline: none;
+
+        &::-webkit-slider-runnable-track {
+            @include trackFocus;
+        }
+        &::-moz-range-track {
+            @include trackFocus;
+        }
+    }
+    &:disabled {
+        &::-webkit-slider-runnable-track {
+            @include track;
+            opacity: 0.75;
+        }
+        &::-moz-range-track {
+            @include track;
+            opacity: 0.75;
+        }
+        &::-webkit-slider-thumb {
+            @include thumb;
+            opacity: 0.75;
+        }
+        &::-moz-range-thumb {
+            @include thumb;
+            opacity: 0.75;
+        }
+        &:hover {
+            &::-moz-range-thumb {
+                @include thumbHover;
+                box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+                transform: scale(1);
+                cursor: default;
+            }
+            &::-webkit-slider-thumb {
+                @include thumbHover;
+                box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+                transform: scale(1);
+                cursor: default;
+            }
+            &::-moz-range-track {
+                @include trackHover;
+                background: $sliderTrackColor;
+                cursor: default;
+            }
+            &::-webkit-slider-runnable-track {
+                @include trackHover;
+                background: $sliderTrackColor;
+                cursor: default;
+            }
+        }
+        &:focus {
+            outline: none;
+
+            &::-webkit-slider-runnable-track {
+                @include trackFocus;
+                background: $sliderTrackColor;
+            }
+            &::-moz-range-track {
+                @include trackFocus;
+                background: $sliderTrackColor;
+            }
+        }
+    }
+}
+
+.content {
+    .rangeWrap {
+        display: flex;
+        position: relative;
+        width: 100%;
+    }
+    .rangeValue {
+        position: absolute;
+        top: -40px;
+        width: 100%;
+    }
+    .rangeValue span {
+        width: auto;
+        min-width: 30px;
+        padding: 1px 4px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        background: $sliderShowCurrentValueLableBackgroundColor;
+        color: $sliderShowCurrentValueLableFontColor;
+        font-size: 12px;
+        display: block;
+        position: absolute;
+        border-radius: 6px;
+
+        &:before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 10px solid $sliderShowCurrentValueLableBackgroundColor;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            margin-top: -1px;
+        }
+    }
+    .slider label {
+        margin: 0 8px;
+        display: block;
+
+        &.input-label {
+            text-align: center;
+            margin-top: 8px;
+        }
+    }
+}
+
+.slider {
+    display: flex !important;
+    height: auto !important;
+
+    .sliderInner {
+        display: flex !important;
+        height: auto !important;
+    }
+}

@@ -7,6 +7,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { CapiVariable } from '../types/parts';
+import './Slider.scss'
 
 // TODO: fix typing
 const Slider: React.FC<any> = (props) => {
@@ -258,9 +259,9 @@ const Slider: React.FC<any> = (props) => {
 
   return ready ? (
     <div data-part-component-type={props.type} style={styles} className={`slider ${cssClass}`}>
-      <div className="sliderInner">
+      <div className="sliderInner" style={{display:'flex'}}>
         {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
-        <div className="rangeWrap">
+        <div className="rangeWrap" style={divStyles}>
           <div style={divStyles}>
             {showDataTip && (
               <div className="rangeValue" id={`rangeV-${id}`}>
