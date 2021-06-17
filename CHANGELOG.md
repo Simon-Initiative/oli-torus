@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+## 0.11.1 (2021-6-16)
+
 ### Bug fixes
 
+- Fix an issue preventing deletion of projects whose names contain special characters
 - Fix an issue related to persisting sessions across server restarts
+- Fix an issue where modals and rearrange were broken in curriculum view
 
 ## 0.11.0 (2021-6-15)
 

@@ -18,7 +18,7 @@ defmodule OliWeb.Curriculum.MoveModal do
               </button>
             </div>
             <div class="modal-body">
-            <%= live_component @socket, HierarchyPicker,
+            <%= live_component HierarchyPicker,
               id: "hierarchy_picker_#{@revision.slug}",
               project: @project,
               container: @container,
