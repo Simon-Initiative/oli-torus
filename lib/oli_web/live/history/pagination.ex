@@ -28,7 +28,7 @@ defmodule OliWeb.RevisionHistory.Pagination do
       <nav aria-label="table results paging">
         <ul class="pagination justify-content-center">
           <%= for page <- 1..total_pages do %>
-            <%= live_component @socket, PaginationLink, page_ordinal: page, active: current_page == page, page_offset: @page_offset %>
+            <%= live_component PaginationLink, page_ordinal: page, active: current_page == page, page_offset: @page_offset %>
           <% end %>
         </ul>
       </nav>

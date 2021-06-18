@@ -89,6 +89,9 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetDefaultPow, :user)
     plug(Oli.Plugs.SetCurrentUser)
 
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
@@ -100,6 +103,9 @@ defmodule OliWeb.Router do
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
     plug(Oli.Plugs.SetCurrentUser)
+
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
 
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler

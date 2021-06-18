@@ -39,9 +39,9 @@ defmodule OliWeb.Curriculum.EntryLive do
         <div>
           <%= case @view do
             "Detailed" ->
-              live_component @socket, DetailsLive, assigns
+              live_component DetailsLive, assigns
             "Learning Summary" ->
-              live_component @socket, LearningSummaryLive, assigns
+              live_component LearningSummaryLive, assigns
             _ ->
               nil
           end %>
@@ -50,7 +50,7 @@ defmodule OliWeb.Curriculum.EntryLive do
 
       <%# prevent dragging of actions menu and modals using this draggable wrapper %>
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <%= live_component @socket, Actions, assigns %>
+        <%= live_component Actions, assigns %>
       </div>
     </div>
     """

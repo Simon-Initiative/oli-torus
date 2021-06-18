@@ -29,8 +29,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb custom-breadcrumb">
 
-        <%= live_component @socket,
-          BreadcrumbLive,
+        <%= live_component BreadcrumbLive,
           id: "breadcrumb-project",
           breadcrumb: Breadcrumb.new(%{
             full_title: @project.title,
@@ -41,8 +40,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
         %>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <%= live_component @socket,
-            BreadcrumbLive,
+          <%= live_component BreadcrumbLive,
             id: "breadcrumb-#{index}",
             breadcrumb: breadcrumb,
             project: @project,
