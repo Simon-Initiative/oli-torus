@@ -25,6 +25,7 @@ import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
   selectSectionSlug,
@@ -253,7 +254,12 @@ export const navigateToFirstActivity = createAsyncThunk(
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = sequence[0].custom.sequenceId;
+    const navigationSequences = selectNavigationSequence(sequence);
+    if (!navigationSequences?.length) {
+      console.warn(`Invalid sequence!`);
+      return;
+    }
+    const nextActivityId = navigationSequences[0].custom.sequenceId;
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },

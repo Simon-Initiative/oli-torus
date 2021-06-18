@@ -68,6 +68,10 @@ export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
 );
+export const selectNavigationSequence = (sequence: any[]) => {
+  return sequence?.filter((entry: any) => !entry.custom?.isLayer);
+};
+
 export const selectActivityTypes = createSelector(selectState, (state) => state.activityTypes);
 export const selectActivityGuidMapping = createSelector(
   selectState,
