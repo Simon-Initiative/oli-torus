@@ -6,20 +6,21 @@ interface SchemaOptions {
   label?: string;
   input_width?: string | number;
 }
-interface Schema {
+export interface Schema {
   type: string;
   description?: string;
   format?: string;
-  options: SchemaOptions;
+  options?: SchemaOptions;
   default?: any;
   properties?: Record<string, Schema>;
   items?: Schema;
 }
 interface PropertyEditorProps {
   schema: Schema;
+  value: any;
 }
 
-const PropertyEditor: React.FC<PropertyEditorProps> = ({ schema }) => {
+const PropertyEditor: React.FC<PropertyEditorProps> = ({ schema, value }) => {
   const rootProps = schema.properties || {};
   // for now just using properties, but going to need to make a recursive schema renderer
   const inputs = Object.keys(rootProps).map((schemaKey) => {
@@ -41,10 +42,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ schema }) => {
       // render checkbox instead
     }
 
+    const controlValue = (value && value[schemaKey]) || defaultValue;
+
     return (
       <Form.Group key={schemaKey} controlId={`form_${schemaKey}`}>
         <Form.Label>{label}</Form.Label>
-        <Form.Control type={controlType} placeholder={`Enter ${label}`} />
+        <Form.Control type={controlType} placeholder={`Enter ${label}`} defaultValue={controlValue} />
         {description ? <Form.Text className="text-muted">{description}</Form.Text> : null}
       </Form.Group>
     );

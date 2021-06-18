@@ -1,5 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { setActivities } from '../../../../delivery/store/features/activities/slice';
+import {
+  setActivities,
+  setCurrentActivityId,
+} from '../../../../delivery/store/features/activities/slice';
+import { selectSequence } from '../../../../delivery/store/features/groups/selectors/deck';
 import { setGroups } from '../../../../delivery/store/features/groups/slice';
 import { PageContext } from '../../../types';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
@@ -38,10 +42,14 @@ export const initializeFromContext = createAsyncThunk(
     // are referenced including inherited from layers or parent screens when in "deck" view
     // afterwards update that group record with a processing timestamp? so that we don't need to do every time?
     // NOTE: right now there really only is expected to be a single group
-    const groupProcessing = groups.map((group) => dispatch(updateActivityPartInheritance(group)))
+    const groupProcessing = groups.map((group) => dispatch(updateActivityPartInheritance(group)));
     // TODO: different for different layout types
     await Promise.all(groupProcessing);
 
     await dispatch(setGroups({ groups }));
+
+    // TODO: some initial creation if blank
+    const sequence = selectSequence(getState() as any);
+    await dispatch(setCurrentActivityId({ activityId: sequence[0]?.activitySlug }));
   },
 );
