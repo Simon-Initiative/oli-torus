@@ -124,4 +124,15 @@ $ui-border-color: #ccc;
     border: 1px solid $ui-border-color;
     padding: 24px;
   }
+  .aa-canvas-header {
+    position: relative;
+    width: 100%;
+    top: -64px;
+  }
+  .aa-canvas-inner {
+    width: 100%;
+    height: 100%;
+    top: -48px;
+    position: relative;
+  }
 }
