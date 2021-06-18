@@ -24,6 +24,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode?: boolean;
+  enableHistory?: boolean;
   activityTypes?: any[];
 }
 
@@ -39,6 +40,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   activityGuidMapping,
   activityTypes = [],
   previewMode = false,
+  enableHistory = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -66,9 +68,10 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityGuidMapping,
         previewMode: !!previewMode,
         activityTypes,
+        enableHistory,
       }),
     );
-  }
+  };
   const parentDivClasses: string[] = [];
   if (content?.custom?.viewerSkin) {
     parentDivClasses.push(`skin-${content?.custom?.viewerSkin}`);
@@ -84,9 +87,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
-      {restartLesson ? (
-            <RestartLessonDialog onRestart={setInitialPageState} />
-        ) : null}
+      {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
       {isLessonEnded ? (
         <LessonFinishedDialogProps imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
