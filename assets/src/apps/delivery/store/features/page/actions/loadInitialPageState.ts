@@ -8,7 +8,7 @@ import {
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
-import { loadActivities } from '../../groups/actions/deck';
+import { loadActivities, navigateToFirstActivity } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import { loadPageState, PageSlice, PageState, selectResourceAttemptGuid } from '../slice';
@@ -73,6 +73,7 @@ export const loadInitialPageState = createAsyncThunk(
         );
       }
       dispatch(loadActivities(activityAttemptMapping));
+      dispatch(navigateToFirstActivity());
     }
   },
 );

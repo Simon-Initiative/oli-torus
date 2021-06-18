@@ -13,6 +13,7 @@ export interface PageState {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode: boolean;
+  enableHistory: boolean;
   activityTypes: any[];
 }
 
@@ -27,6 +28,7 @@ const initialState: PageState = {
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
+  enableHistory: false,
   activityTypes: [],
 };
 
@@ -41,6 +43,7 @@ const pageSlice = createSlice({
       state.pageTitle = action.payload.pageTitle;
       state.sectionSlug = action.payload.sectionSlug;
       state.content = action.payload.content;
+      state.enableHistory = action.payload?.content?.custom?.enableHistory || false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
@@ -64,10 +67,15 @@ export const selectPageTitle = createSelector(selectState, (state) => state.page
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
 );
+export const selectNavigationSequence = (sequence: any[]) => {
+  return sequence?.filter((entry: any) => !entry.custom?.isLayer && !entry.custom?.isBank);
+};
+
 export const selectActivityTypes = createSelector(selectState, (state) => state.activityTypes);
 export const selectActivityGuidMapping = createSelector(
   selectState,
