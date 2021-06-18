@@ -110,7 +110,7 @@ export const initializeActivity = createAsyncThunk(
     //Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
-
+    // Don't do anything id isHistoryModeOn is ON
     if (!isHistoryModeOn && currentActivityTree) {
       const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
 
