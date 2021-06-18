@@ -19,7 +19,7 @@
     "@restart/hooks": "^0.3.26",
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
-    "fabricjs": "^1.0.0",
+    "fabric": "^4.5.0",
     "immer": "^6.0.3",
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
