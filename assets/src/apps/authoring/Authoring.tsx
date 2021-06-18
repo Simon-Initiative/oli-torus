@@ -3,8 +3,8 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
+import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
-import TabStrip from './components/TabStrip/TabStrip';
 import store from './store';
 import {
   selectLeftPanel,
@@ -65,40 +65,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     }
   }, [props]);
 
-  const leftPanelData = {
-    tabs: [
-      {
-        id: 1,
-        title: 'Sequence',
-        data: ['Intro Screen', 'Pick your character', 'Choose your title'],
-      },
-      {
-        id: 2,
-        title: 'Adaptivity',
-        data: ['Initial Satee', 'Default Response'],
-      },
-    ],
-  };
-  const rightPanelData = {
-    tabs: [
-      {
-        id: 1,
-        title: 'Lesson',
-        data: 'Lesson Data',
-      },
-      {
-        id: 2,
-        title: 'Screen',
-        data: 'Screen Data',
-      },
-      {
-        id: 3,
-        title: 'Component',
-        data: 'Component Data',
-      },
-    ],
-  };
-
   useEffect(() => {
     if (isAppVisible) {
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
@@ -145,7 +111,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           onToggle={() => handlePanelStateChange({ right: !panelState.right })}
         >
-          <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
+          <RightMenu />
         </SidePanel>
       </div>
     </>
