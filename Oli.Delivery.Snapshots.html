@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Snapshots — OLI Torus v0.11.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-6caf46dc38.js"></script>
+    <script src="dist/sidebar_items-28a2a85e6e.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -163,10 +163,10 @@ Functions
 <p>Function designed to be piped the result of a Repo transaction that is finalizing
 one or more part attempt records, and if that function was successful this will
 trigger the creation of the corresponding snapshot records. This is designed to be used
-like:</p><pre><code class="nohighlight makeup elixir"><span class="nc">Repo</span><span class="o">.</span><span class="n">transaction</span><span class="p" data-group-id="3777858486-1">(</span><span class="k" data-group-id="3777858486-2">fn</span><span class="w"> </span><span class="bp">_</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
+like:</p><pre><code class="nohighlight makeup elixir"><span class="nc">Repo</span><span class="o">.</span><span class="n">transaction</span><span class="p" data-group-id="0960678099-1">(</span><span class="k" data-group-id="0960678099-2">fn</span><span class="w"> </span><span class="bp">_</span><span class="w"> </span><span class="o">-&gt;</span><span class="w">
   </span><span class="c1"># impl that evaluates and finalizes part attempts based on part inputs</span><span class="w">
-</span><span class="k" data-group-id="3777858486-2">end</span><span class="p" data-group-id="3777858486-1">)</span><span class="w">
-</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Snapshots</span><span class="o">.</span><span class="n">maybe_create_snapshot</span><span class="p" data-group-id="3777858486-3">(</span><span class="n">part_inputs</span><span class="p">,</span><span class="w"> </span><span class="n">section_slug</span><span class="p" data-group-id="3777858486-3">)</span></code></pre>
+</span><span class="k" data-group-id="0960678099-2">end</span><span class="p" data-group-id="0960678099-1">)</span><span class="w">
+</span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Snapshots</span><span class="o">.</span><span class="n">maybe_create_snapshot</span><span class="p" data-group-id="0960678099-3">(</span><span class="n">part_inputs</span><span class="p">,</span><span class="w"> </span><span class="n">section_slug</span><span class="p" data-group-id="0960678099-3">)</span></code></pre>
   </section>
 </section>
 <section class="detail" id="queue_or_create_snapshot/2">

@@ -142,6 +142,7 @@ Oli.Ingest.RewireLinks.html
 Oli.Institutions.Institution.html
 Oli.Institutions.PendingRegistration.html
 Oli.Institutions.html
+Oli.Interop.Export.html
 Oli.Interop.Ingest.html
 Oli.Interop.LegacySupport.html
 Oli.Interop.Scrub.html
@@ -425,8 +426,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-19dc97adb9.js
-dist/sidebar_items-6caf46dc38.js
+dist/search_items-5679153982.js
+dist/sidebar_items-28a2a85e6e.js
 index.html
 license.html
 readme.html
