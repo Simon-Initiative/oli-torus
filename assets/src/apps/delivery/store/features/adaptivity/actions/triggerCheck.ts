@@ -27,12 +27,13 @@ export const triggerCheck = createAsyncThunk(
     // reset timeStartQuestion (per attempt timer, maybe should wait til resolved)
     // increase attempt number
     const extrinsicState = selectExtrinsicState(rootState);
-    const modifiedExtrinsicState = [extrinsicState]?.reduce((collect: any, entry: any) => {
-      Object.keys(entry).forEach((key) => {
+    const modifiedExtrinsicState = Object.keys(extrinsicState).reduce(
+      (collect: any, key: string) => {
         collect[key] = extrinsicState[key];
-      });
-      return collect;
-    }, {});
+        return collect;
+      },
+      {},
+    );
     const timeStartQuestion = modifiedExtrinsicState['session.timeStartQuestion'];
     const timeOnQuestion = Date.now() - timeStartQuestion;
     modifiedExtrinsicState['session.timeOnQuestion'] = timeOnQuestion;
@@ -91,20 +92,19 @@ export const triggerCheck = createAsyncThunk(
       });
     });
 
-    const spanshot = getEnvState(defaultGlobalEnv);
-    const getGlobalSnapshot = [spanshot].reduce((collect: any, variableSnappshot: any) => {
-      Object.keys(spanshot).forEach((key) => {
-        if (key.indexOf('app.') === 0 || key.indexOf('variables.') === 0) {
-          collect[key] = spanshot[key];
-        }
-      });
+    const snapshot = getEnvState(defaultGlobalEnv);
+    const globalSnapshot = Object.keys(snapshot).reduce((collect: any, key: string) => {
+      if (key.indexOf('app.') === 0 || key.indexOf('variables.') === 0) {
+        collect[key] = snapshot[key];
+      }
       return collect;
     }, {});
-    const updatedExtrinsicState = { ...modifiedExtrinsicState, ...getGlobalSnapshot };
-    await dispatch(setExtrinsicState({ state: updatedExtrinsicState }));
+
+    await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
     const stateSnapshot = {
       ...allResponseState,
-      ...updatedExtrinsicState,
+      ...modifiedExtrinsicState,
+      ...globalSnapshot,
     };
 
     let checkResult;
