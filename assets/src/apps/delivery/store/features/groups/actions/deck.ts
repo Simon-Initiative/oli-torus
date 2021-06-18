@@ -13,6 +13,8 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getEnvState,
+  getLocalizedStateSnapshot,
+  removeStateValues,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
@@ -103,7 +105,24 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
+    if (currentActivityTree) {
+      const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
 
+      const currentActivitySnapshot = getLocalizedStateSnapshot(
+        [currentActivityId],
+        defaultGlobalEnv,
+      );
+      const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
+        .map((key: string) => {
+          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
+            return key;
+          }
+        })
+        .filter((item) => item);
+      if (idsToBeRemoved) {
+        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
+      }
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content.custom?.facts || [];
@@ -127,11 +146,7 @@ export const initializeActivity = createAsyncThunk(
     /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
-      if (
-        key.indexOf('session.') === 0 ||
-        key.indexOf('variables.') === 0 ||
-        key.indexOf('app.') === 0
-      ) {
+      if (key.indexOf('session.') === 0) {
         collect[key] = currentState[key];
       }
       return collect;
