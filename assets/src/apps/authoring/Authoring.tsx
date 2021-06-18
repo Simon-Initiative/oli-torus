@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Provider, useDispatch } from 'react-redux';
-import Accordion from './Accordion/Accordion';
-import HeaderNav from './HeaderNav';
-import { SidePanel } from './SidePanel';
+import Accordion from './components/Accordion/Accordion';
+import HeaderNav from './components/HeaderNav';
+import { SidePanel } from './components/SidePanel';
+import TabStrip from './components/TabStrip/TabStrip';
 import store from './store';
 import { setInitialConfig } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
-import TabStrip from './TabStrip/TabStrip';
 import { PageContext } from './types';
 
 export interface AuthoringProps {
