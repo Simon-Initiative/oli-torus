@@ -119,7 +119,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
         >
-          I am the left side panel.
           <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
         <section className="aa-stage">
@@ -169,7 +168,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
         >
-          I am the right side panel.
           <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
         </SidePanel>
       </div>
