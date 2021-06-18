@@ -161,11 +161,23 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  # import / export can lead to situations where we need to consider first the key
+  # as an integer, and secondly the key as a string
+  defp retrieve(map, key) do
+    case Map.get(map, key) do
+      nil ->
+        Map.get(map, Integer.to_string(key, 10))
+
+      m ->
+        m
+    end
+  end
+
   defp rewire_activity_references(content, activity_map) do
     PageContent.map(content, fn e ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
-          Map.put(ref, "activity_id", Map.get(activity_map, original).resource_id)
+          Map.put(ref, "activity_id", retrieve(activity_map, original).resource_id)
 
         other ->
           other
@@ -274,11 +286,16 @@ defmodule Oli.Interop.Ingest do
 
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author) do
-    # filter for the top-level containers, add recursively add them
+    # Process top-level items and containers, add recursively add containers
     children =
       Map.get(hierarchy_details, "children")
-      |> Enum.filter(fn c -> Map.get(c, "type") == "container" end)
-      |> Enum.map(fn c -> create_container(project, page_map, as_author, c) end)
+      |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
+      |> Enum.map(fn c ->
+        case Map.get(c, "type") do
+          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
+          "container" -> create_container(project, page_map, as_author, c)
+        end
+      end)
 
     # wire those newly created top-level containers into the root resource
     ChangeTracker.track_revision(project.slug, root_revision, %{children: children})
