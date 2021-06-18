@@ -43,8 +43,8 @@ const Accordion: React.FC<any> = (props) => {
 
           <div id={`collapse${tab.id}`} className='collapse show' aria-labelledby={tab.id}>
             <ul style={{listStyleType: 'none'}}>
-              {tab.data.map((item: any) => (
-                <li>{item}</li>
+              {tab.data.map((item: any,index: number) => (
+                <li id={`li${index}`}>{item}</li>
               ))}
             </ul>
           </div>
