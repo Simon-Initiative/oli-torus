@@ -1,11 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { Provider, useDispatch } from 'react-redux';
+import React, { useEffect } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import Accordion from './components/Accordion/Accordion';
+import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import { SidePanel } from './components/SidePanel';
 import TabStrip from './components/TabStrip/TabStrip';
 import store from './store';
-import { setInitialConfig } from './store/app/slice';
+import {
+  selectLeftPanel,
+  selectRightPanel,
+  selectTopPanel,
+  selectVisible,
+  setInitialConfig,
+  setPanelState,
+  setVisible,
+} from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
 
@@ -22,11 +31,25 @@ export interface AuthoringProps {
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
 
-  const url = `/project/${props.projectSlug}/preview/${props.revisionSlug}`;
-  const windowName = `preview-${props.projectSlug}`;
   const authoringContainer = document.getElementById('advanced-authoring');
-  const [appState, setAppState] = useState<any>({ isVisible: false });
-  const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
+  const isAppVisible = useSelector(selectVisible);
+
+  const leftPanelState = useSelector(selectLeftPanel);
+  const rightPanelState = useSelector(selectRightPanel);
+  const topPanelState = useSelector(selectTopPanel);
+  const panelState = { left: leftPanelState, right: rightPanelState, top: topPanelState };
+
+  const handlePanelStateChange = ({
+    top,
+    right,
+    left,
+  }: {
+    top?: boolean;
+    right?: boolean;
+    left?: boolean;
+  }) => {
+    dispatch(setPanelState({ top, right, left }));
+  };
 
   useEffect(() => {
     const appConfig = {
@@ -75,21 +98,16 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       },
     ],
   };
-  const PreviewButton = () => (
-    <a className="btn btn-sm btn-outline-primary" onClick={() => window.open(url, windowName)}>
-      Preview <i className="las la-external-link-alt ml-1"></i>
-    </a>
-  );
 
   useEffect(() => {
-    if (appState.isVisible) {
+    if (isAppVisible) {
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
       authoringContainer?.classList.remove('d-none');
       setTimeout(() => {
         authoringContainer?.classList.add('startup');
       }, 50);
     }
-    if (!appState.isVisible) {
+    if (!isAppVisible) {
       document.body.classList.remove('overflow-hidden');
       authoringContainer?.classList.remove('startup');
       setTimeout(() => {
@@ -99,13 +117,13 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
-  }, [appState.isVisible]);
+  }, [isAppVisible]);
 
   return (
     <>
-      {!appState.isVisible && (
+      {!isAppVisible && (
         <button
-          onClick={() => setAppState({ ...appState, isVisible: true })}
+          onClick={() => dispatch(setVisible({ visible: true }))}
           type="button"
           className="btn btn-primary"
         >
@@ -117,56 +135,15 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         <SidePanel
           position="left"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
+          onToggle={() => handlePanelStateChange({ left: !panelState.left })}
         >
           <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
         </SidePanel>
-        <section className="aa-stage">
-          <div className="aa-stage-inner">
-            <PreviewButton />
-            <h1>Main Content Stage</h1>
-            <div className="btn-group" role="group">
-              <button
-                onClick={() =>
-                  setPanelState({
-                    right: false,
-                    left: false,
-                    top: false,
-                  })
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                hide all
-              </button>
-              <button
-                onClick={() =>
-                  setPanelState({
-                    right: true,
-                    left: true,
-                    top: true,
-                  })
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                show all
-              </button>
-              <button
-                onClick={() => setAppState({ ...appState, isVisible: false })}
-                type="button"
-                className="btn btn-secondary"
-              >
-                quit
-              </button>
-            </div>
-          </div>
-          {/* <div>{JSON.stringify(props.content)}</div> */}
-        </section>
+        <EditingCanvas />
         <SidePanel
           position="right"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
+          onToggle={() => handlePanelStateChange({ right: !panelState.right })}
         >
           <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
         </SidePanel>
