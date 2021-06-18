@@ -69,7 +69,7 @@ export const selectResourceAttemptGuid = createSelector(
   (state) => state.resourceAttemptGuid,
 );
 export const selectNavigationSequence = (sequence: any[]) => {
-  return sequence?.filter((entry: any) => !entry.custom?.isLayer);
+  return sequence?.filter((entry: any) => !entry.custom?.isLayer && !entry.custom?.isBank);
 };
 
 export const selectActivityTypes = createSelector(selectState, (state) => state.activityTypes);
