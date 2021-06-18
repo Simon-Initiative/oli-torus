@@ -27,6 +27,7 @@ import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectEnableHistory,
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -42,6 +43,7 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
+    const isHistoryModeOn = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -105,7 +107,11 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
-    if (currentActivityTree) {
+    //Need to clear out snapshot for the current activity before we send the init trap state.
+    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
+    // some screens go in loop
+
+    if (!isHistoryModeOn && currentActivityTree) {
       const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
 
       const currentActivitySnapshot = getLocalizedStateSnapshot(
