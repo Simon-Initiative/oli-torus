@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import Accordion from './components/Accordion/Accordion';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
+import LeftMenu from './components/LeftMenu/LeftMenu';
 import { SidePanel } from './components/SidePanel';
 import TabStrip from './components/TabStrip/TabStrip';
 import store from './store';
@@ -137,7 +137,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           onToggle={() => handlePanelStateChange({ left: !panelState.left })}
         >
-          <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
+          <LeftMenu />
         </SidePanel>
         <EditingCanvas />
         <SidePanel

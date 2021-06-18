@@ -52,7 +52,7 @@ const EditingCanvas: React.FC<any> = (props) => {
               </button>
             </div>
           </div>
-          <FabricCanvas />
+          <FabricCanvas items={[]} />
         </div>
       </section>
     </React.Fragment>
