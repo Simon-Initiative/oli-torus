@@ -2,6 +2,8 @@ $nav-height: 65px;
 $panel-side-width: 250px;
 $panel-bg-color-light: #f5f6f7;
 $panel-bg-color-dark: $gray-700;
+$panel-font-color-light: #333;
+$panel-font-color-dark: $panel-font-color-light;
 $torus-panel-side-width: 200px;
 $rounded: 4px;
 $ui-border-color: #ccc;
@@ -110,6 +112,8 @@ $panel-section-title-bar-height: 39px;
   .aa-panel-inner {
     position: relative;
     height: 100%;
+    background-color: $panel-bg-color-light;
+    color: $panel-font-color-light;
   }
   .aa-stage {
     position: fixed;
@@ -150,6 +154,7 @@ $panel-section-title-bar-height: 39px;
     padding: 0 16px;
     position: sticky;
     top: 0;
+    z-index: 1;
 
     .title {
       font-weight: 700;
@@ -165,6 +170,38 @@ $panel-section-title-bar-height: 39px;
   .aa-panel-section-controls {
     .correct-toggle {
       border-right: 1px solid $ui-border-color;
+    }
+  }
+  .aa-adaptivity-editor {
+    font-size: 12px;
+    padding: 16px;
+
+    .aa-add-button {
+      position: sticky;
+      top: 55px;
+      height: fit-content;
+    }
+    .aa-condition {
+      &:first-of-type {
+        margin-top: 4px !important;
+      }
+    }
+    .custom-select {
+      font-size: 12px;
+      padding: 4px 36px 4px 8px;
+    }
+    .aa-condition-header {
+      margin-top: -22px;
+
+      > div {
+        background-color: $panel-bg-color-light;
+        padding: 0 4px;
+        margin: 0 -4px;
+      }
+    }
+    .aa-actions {
+      position: relative;
+      border-top: 1px solid $ui-border-color;
     }
   }
 }

@@ -65,6 +65,9 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   useEffect(() => {
     if (appState.isVisible) {
+      // forced light mode to save on initial dev time
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_light.css';
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
       authoringContainer?.classList.remove('d-none');
       setTimeout(() => {
@@ -72,6 +75,9 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       }, 50);
     }
     if (!appState.isVisible) {
+      // reset forced light mode
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_dark.css';
       document.body.classList.remove('overflow-hidden');
       authoringContainer?.classList.remove('startup');
       setTimeout(() => {
