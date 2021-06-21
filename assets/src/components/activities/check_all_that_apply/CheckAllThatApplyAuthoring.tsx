@@ -15,6 +15,7 @@ import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
 import { getHints, isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
 import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
+import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
 
 const store = configureStore();
 
@@ -30,10 +31,10 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
 
   return (
     <React.Fragment>
-      <Stem
+      <StemAuthoring
         {...sharedProps}
         stem={props.model.stem}
-        onEditStem={(content) => dispatch(Actions.editStem(content))}
+        onEdit={(content) => dispatch(Actions.editStem(content))}
       />
 
       <Choices

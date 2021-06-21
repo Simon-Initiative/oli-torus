@@ -34,6 +34,8 @@ export type EditorProps = {
   editMode: boolean;
   commandContext: CommandContext;
   className?: string;
+  style?: React.CSSProperties;
+  placeholder?: string;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -148,11 +150,12 @@ export const Editor = React.memo((props: EditorProps) => {
         </HoveringToolbar>
 
         <Editable
-          className={'slate-editor' + (props.className ? ' ' + props.className : '')}
+          style={props.style}
+          className={'slate-editor overflow-auto' + (props.className ? ' ' + props.className : '')}
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
-          placeholder="Enter some content here..."
+          placeholder={props.placeholder || 'Enter some content here...'}
           onKeyDown={onKeyDown}
         />
       </Slate>
