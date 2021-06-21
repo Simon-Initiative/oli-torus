@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Accordion, Card, ListGroup } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
@@ -12,9 +13,11 @@ const AdaptivityEditor: React.FC<any> = (props) => {
   return (
     <Accordion defaultActiveKey="0">
       <Card>
-        <Card.Header>
+        <Card.Header className='d-flex justify-content-between'
+          style={{alignItems:'center'}}>
           <ContextAwareToggle eventKey="0" />
           Adaptivity
+          <i className="fa fa-plus"></i>
         </Card.Header>
         <Accordion.Collapse eventKey="0">
           <Card.Body>
