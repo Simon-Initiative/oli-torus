@@ -17,10 +17,18 @@ defmodule OliWeb.Projects.ProjectsLive do
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
     is_admin = Accounts.is_admin?(author)
-    projects = Course.get_projects_for_author(author) |> Enum.filter(fn p -> is_admin || p.status === :active end)
+
+    projects =
+      Course.get_projects_for_author(author)
+      |> Enum.filter(fn p -> is_admin || p.status === :active end)
+
     author_projects = Accounts.project_authors(Enum.map(projects, fn %{id: id} -> id end))
 
-    {:ok, assign(socket, Map.merge(State.initialize_state(author, projects, author_projects), %{is_admin: is_admin}))}
+    {:ok,
+     assign(
+       socket,
+       Map.merge(State.initialize_state(author, projects, author_projects), %{is_admin: is_admin})
+     )}
   end
 
   def handle_params(params, _, socket) do
@@ -80,12 +88,12 @@ defmodule OliWeb.Projects.ProjectsLive do
     </div>
     <%= case @display_mode do %>
       <% "cards" -> %>
-        <%= live_component @socket, Cards, projects: @projects, authors: @authors %>
+        <%= live_component Cards, projects: @projects, authors: @authors %>
       <% "table" -> %>
         <div class="container">
           <div class="row">
             <div class="col-12">
-              <%= live_component @socket, Table, projects: @projects, authors: @authors, sort_by: @sort_by, sort_order: @sort_order, is_admin: @is_admin %>
+              <%= live_component Table, projects: @projects, authors: @authors, sort_by: @sort_by, sort_order: @sort_order, is_admin: @is_admin %>
             </div>
           </div>
         </div>

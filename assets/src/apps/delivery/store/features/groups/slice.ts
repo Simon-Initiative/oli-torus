@@ -14,11 +14,15 @@ export enum LayoutType {
   UNKNOWN = 'unknown',
 }
 
-interface IGroup {
+export interface IGroup {
   id?: number;
   type: 'group';
   layout: LayoutType;
   children: any[]; // TODO: activity types
+}
+
+export interface DeckLayoutGroup extends IGroup {
+  layout: LayoutType.DECK;
 }
 
 export interface GroupsState extends EntityState<IGroup> {

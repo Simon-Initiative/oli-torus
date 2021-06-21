@@ -103,7 +103,14 @@ defmodule OliWeb do
       alias OliWeb.Router.Helpers, as: Routes
       import OliWeb.ViewHelpers
 
-      import Oli.Accounts, only: [author_signed_in?: 1, user_signed_in?: 1]
+      import Oli.Accounts,
+        only: [
+          author_signed_in?: 1,
+          user_signed_in?: 1,
+          user_is_guest?: 1,
+          user_is_independent_learner?: 1
+        ]
+
       import Oli.Utils
       import Oli.Branding
     end

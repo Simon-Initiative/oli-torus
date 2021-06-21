@@ -13,6 +13,8 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getEnvState,
+  getLocalizedStateSnapshot,
+  removeStateValues,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
@@ -25,6 +27,8 @@ import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectEnableHistory,
+  selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
   selectSectionSlug,
@@ -39,6 +43,7 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
+    const isHistoryModeOn = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -102,7 +107,28 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
+    //Need to clear out snapshot for the current activity before we send the init trap state.
+    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
+    // some screens go in loop
+    // Don't do anything id isHistoryModeOn is ON
+    if (!isHistoryModeOn && currentActivityTree) {
+      const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
 
+      const currentActivitySnapshot = getLocalizedStateSnapshot(
+        [currentActivityId],
+        defaultGlobalEnv,
+      );
+      const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
+        .map((key: string) => {
+          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
+            return key;
+          }
+        })
+        .filter((item) => item);
+      if (idsToBeRemoved) {
+        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
+      }
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content.custom?.facts || [];
@@ -249,7 +275,12 @@ export const navigateToFirstActivity = createAsyncThunk(
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = sequence[0].custom.sequenceId;
+    const navigationSequences = selectNavigationSequence(sequence);
+    if (!navigationSequences?.length) {
+      console.warn(`Invalid sequence!`);
+      return;
+    }
+    const nextActivityId = navigationSequences[0].custom.sequenceId;
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
@@ -270,11 +301,56 @@ export const navigateToActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToActivity`,
   async (sequenceId: string, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
+    const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
-    const nextActivityId = sequence.filter((s) => s.custom?.sequenceId === sequenceId)[0].custom
-      ?.sequenceId;
+    const desiredIndex = sequence.findIndex((s) => s.custom?.sequenceId === sequenceId);
+    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
+    let navError = '';
+    const visitHistory = await getSessionVisitHistory(
+      sectionSlug,
+      resourceAttemptGuid,
+      isPreviewMode,
+    );
+    if (desiredIndex >= 0) {
+      nextSequenceEntry = sequence[desiredIndex];
+      while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isBank) {
+          // this runs when we're about to enter a QB for the first time
+          nextSequenceEntry = getNextQBEntry(
+            sequence,
+            nextSequenceEntry as SequenceEntry<SequenceBank>,
+            visitHistory,
+          );
+        }
+        while (nextSequenceEntry && nextSequenceEntry?.custom?.isLayer) {
+          // for layers if you try to navigate it should go to first child
+          const firstChild = sequence.find(
+            (entry) =>
+              entry.custom?.layerRef ===
+              (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
+          );
 
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
+          if (!firstChild) {
+            navError = 'Target Layer has no children!';
+          }
+          nextSequenceEntry = firstChild;
+        }
+      }
+      if (!nextSequenceEntry) {
+        // If is end of sequence, return and set isEnd to truthy
+        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
+        return;
+      }
+    } else {
+      navError = `Current Activity ${sequenceId} not found in sequence`;
+    }
+    if (navError) {
+      throw new Error(navError);
+    }
+
+    thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
 

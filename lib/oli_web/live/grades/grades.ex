@@ -72,9 +72,9 @@ defmodule OliWeb.Grades.GradesLive do
 
     <div class="card-group">
 
-      <%= live_component @socket, OliWeb.Grades.LineItems, assigns %>
-      <%= live_component @socket, OliWeb.Grades.GradeSync, assigns %>
-      <%= live_component @socket, OliWeb.Grades.Export, assigns %>
+      <%= live_component OliWeb.Grades.LineItems, assigns %>
+      <%= live_component OliWeb.Grades.GradeSync, assigns %>
+      <%= live_component OliWeb.Grades.Export, assigns %>
 
     </div>
 

@@ -30,7 +30,7 @@ defmodule OliWeb.WorkspaceControllerTest do
     test "Has a `create project` button", %{conn: conn} do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
-      assert html_response(conn, 200) =~ "action=\"/project\""
+      assert html_response(conn, 200) =~ "action=\"/authoring/project\""
     end
   end
 

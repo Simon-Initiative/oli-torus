@@ -2,15 +2,30 @@
 
 ## Unreleased
 
+## 0.11.1 (2021-6-16)
+
+### Bug fixes
+
+- Fix an issue preventing deletion of projects whose names contain special characters
+- Fix an issue related to persisting sessions across server restarts
+- Fix an issue where modals and rearrange were broken in curriculum view
+
+## 0.11.0 (2021-6-15)
+
 ### Enhancements
 
 - Image coding: disable submit button before code is run
+- Allow setting of arbitrary content from upload JSON file in revision history tool
+- Add ability for independent learners to create accounts, sign in and track progress
 
 ### Bug fixes
 
 - Image coding: remove extra space at end of printed lines (problem for regexp grading)
 - Fix issues related to exporting DataShop events for courses that contain hierarchies
 - Fix an issue with the torus logo in dark mode
+- Fix to support rich text content with empty models
+- Fix to properly identify the correct choice in multiple choice activities
+- Fix internal authoring links
 
 ## 0.10.0 (2021-6-2)
 

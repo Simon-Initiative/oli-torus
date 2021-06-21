@@ -3,7 +3,7 @@
   <% nil -> %>
 
   <% %{component: component, assigns: assigns} -> %>
-    <%= live_component @socket, component, assigns %>
+    <%= live_component component, assigns %>
 <% end %>
 <div id="curriculum-container" class="container container-editor">
   <div class="row">
@@ -61,8 +61,8 @@
           </div>
         <% end %>
         <%= for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end) do %>
-          <%= live_component @socket, DropTarget, id: index, index: index %>
-          <%= live_component @socket, EntryLive, %{
+          <%= live_component DropTarget, id: index, index: index %>
+          <%= live_component EntryLive, %{
                   id: child.slug,
                   editor: Map.get(@resources_being_edited, child.resource_id),
                   author: @author,
@@ -78,7 +78,7 @@
                   numberings: @numberings
                 } %>
         <% end %>
-        <%= live_component @socket, DropTarget, id: "last", index: length(@children) %>
+        <%= live_component DropTarget, id: "last", index: length(@children) %>
       </div>
       <div class="mt-5">
         <span class="text-secondary mr-2">Add new</span>

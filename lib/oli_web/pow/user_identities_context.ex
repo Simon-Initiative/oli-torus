@@ -1,7 +1,7 @@
 defmodule OliWeb.Pow.UserIdentities do
   use PowAssent.Ecto.UserIdentities.Context,
     repo: Oli.Repo,
-    user: Oli.Accounts.Author
+    user: Oli.Accounts.User
 
   alias Oli.Accounts
 
@@ -12,14 +12,15 @@ defmodule OliWeb.Pow.UserIdentities do
         %{"email" => email, "email_verified" => true} = user_params,
         user_id_params
       ) do
-    case Accounts.get_author_by_email(email) do
+    case Accounts.get_user_by(email: email) do
       nil ->
-        # author account with the given email doesnt exist, so create it
+        # user account with the given email doesnt exist, so create it
+        # user_params = Map.merge(user_params, %{"sub" => UUID.uuid4()})
         pow_assent_create_user(user_identity_params, user_params, user_id_params)
 
       user ->
-        # if an author with the given email already exists and the email is verified by the provider,
-        # link the existing author account with that email to this social login provider
+        # if a user with the given email already exists and the email is verified by the provider,
+        # link the existing user account with that email to this social login provider
         pow_assent_upsert(user, user_identity_params)
 
         {:ok, user}

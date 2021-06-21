@@ -83,7 +83,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
             <EditLink
               label={props.label}
-              href={`/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`}
+              href={`/authoring/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`}
             />
           </div>
 

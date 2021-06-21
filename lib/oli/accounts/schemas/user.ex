@@ -1,5 +1,14 @@
 defmodule Oli.Accounts.User do
   use Ecto.Schema
+
+  use Pow.Ecto.Schema,
+    password_hash_methods: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2}
+
+  use PowAssent.Ecto.Schema
+
+  use Pow.Extension.Ecto.Schema,
+    extensions: [PowResetPassword, PowEmailConfirmation, PowInvitation]
+
   import Ecto.Changeset
   import Oli.Utils
 
@@ -26,8 +35,16 @@ defmodule Oli.Accounts.User do
     field :phone_number_verified, :boolean
     field :address, :string
     field :guest, :boolean, default: false
+    field :independent_learner, :boolean, default: true
     field :research_opt_out, :boolean
     field :state, :map, default: %{}
+
+    has_many :user_identities,
+             Oli.UserIdentities.UserIdentity,
+             on_delete: :delete_all,
+             foreign_key: :user_id
+
+    pow_user_fields()
 
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
@@ -45,6 +62,47 @@ defmodule Oli.Accounts.User do
 
   @doc false
   def changeset(user, attrs \\ %{}) do
+    user
+    |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :author_id,
+      :guest,
+      :independent_learner,
+      :research_opt_out,
+      :state
+    ])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
+  Creates a changeset that doesnt require a current password, used for lower risk changes to user
+  (as opposed to higher risk, like password changes)
+  """
+  def noauth_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [
       :sub,
@@ -68,11 +126,35 @@ defmodule Oli.Accounts.User do
       :address,
       :author_id,
       :guest,
+      :independent_learner,
       :research_opt_out,
       :state
     ])
-    |> validate_required([:sub])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
     |> maybe_name_from_given_and_family()
+  end
+
+  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
+    user_or_changeset
+    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
+    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
+  end
+
+  def is_independent_learner_not_guest(changeset) do
+    case changeset do
+      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
+        independent_learner =
+          Map.get(changes, :independent_learner) || Map.get(data, :independent_learner)
+
+        guest = Map.get(changes, :guest) || Map.get(data, :guest)
+
+        independent_learner && !guest
+
+      _ ->
+        false
+    end
   end
 end
 

@@ -21,6 +21,7 @@ defmodule OliWeb.RevisionHistory do
 
   @page_size 15
 
+  @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
     [{resource_id}] =
       Repo.all(
@@ -47,7 +48,8 @@ defmodule OliWeb.RevisionHistory do
     selected = fetch_selected(hd(revisions).id)
 
     {:ok,
-     assign(socket,
+     socket
+     |> assign(
        breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        tree: tree,
@@ -59,8 +61,11 @@ defmodule OliWeb.RevisionHistory do
        selected: selected,
        project: project,
        page_offset: 0,
-       initial_size: length(revisions)
-     )}
+       initial_size: length(revisions),
+       uploaded_files: [],
+       uploaded_content: nil
+     )
+     |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
 
   defp fetch_all_revisions(resource_id) do
@@ -109,6 +114,7 @@ defmodule OliWeb.RevisionHistory do
     end
   end
 
+  @impl Phoenix.LiveView
   def render(assigns) do
     size = @page_size
 
@@ -139,16 +145,16 @@ defmodule OliWeb.RevisionHistory do
           </div>
           <div class="card-body">
             <%= if @view == "graph" do %>
-              <%= live_component @socket, Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size %>
+              <%= live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size %>
             <% else %>
-              <%= live_component @socket, Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
-              <%= live_component @socket, Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
+              <%= live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
+              <%= live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
             <% end %>
           </div>
         </div>
       </div>
     </div>
-    <div class="row">
+    <div class="row" style="margin-bottom: 30px;">
       <div class="col-sm-12">
         <div class="card">
           <div class="card-header">
@@ -160,24 +166,51 @@ defmodule OliWeb.RevisionHistory do
             </div>
           </div>
           <div class="card-body">
-            <%= live_component @socket, Details, revision: @selected %>
+            <%= live_component Details, revision: @selected %>
           </div>
         </div>
       </div>
     </div>
 
-    <%= live_component @socket, Modal, title: "Restore this Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            Set JSON Content
+          </div>
+          <div class="card-body">
+
+            <p>Select a <code>.json</code> file to upload and set as the content of this resource.<p>
+
+            <div class="alert alert-danger" role="alert">
+              <p class="mb-4"><b>This is a dangerous operation!</b>  If you upload a JSON file that does not correspond to a
+              valid resource representation you likely will break the ability to view or edit this resource.</p>
+
+              <form id="json-upload" phx-change="validate" phx-submit="save" %>
+                <div class="flex" id="dropzone">
+                  <%= live_file_input @uploads.json %>
+                  <button type="submit" class="btn btn-outline-danger" phx-disable-with="Uploading">
+                    Set Content
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%= live_component Modal, title: "Restore Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
       <p class="mb-4">Are you sure you want to restore this revision?</p>
 
       <p>This will end any active editing session for other users and will create a
-         new revision to restore the title, content and objectives and other settings
-         of this selected revision.</p>
+        new revision restoring this selected one. </p>
     <% end %>
+
     """
   end
 
-  # creates a new revision by restoring the state of the selected revision
-  def handle_event("restore", _, socket) do
+  defp mimic_edit(socket, base_revision, content) do
     project_slug = socket.assigns.project.slug
     resource_id = socket.assigns.resource_id
 
@@ -192,14 +225,13 @@ defmodule OliWeb.RevisionHistory do
     # Now create and track the new revision, based on the current head for this project but
     # restoring the content, title and objectives and other settigns from the selected revision
     %Revision{
-      content: content,
       title: title,
       objectives: objectives,
       scoring_strategy_id: scoring_strategy_id,
       graded: graded,
       max_attempts: max_attempts,
       author_id: author_id
-    } = socket.assigns.selected
+    } = base_revision
 
     {:ok, revision} =
       AuthoringResolver.from_resource_id(project_slug, resource_id)
@@ -220,25 +252,59 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, socket}
   end
 
+  @impl Phoenix.LiveView
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :json, ref)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save", _params, socket) do
+    uploaded_content =
+      consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
+        File.read!(path)
+        |> Jason.decode!()
+      end)
+
+    revision = fetch_selected(hd(socket.assigns.revisions).id)
+
+    mimic_edit(socket, revision, hd(uploaded_content))
+  end
+
+  # creates a new revision by restoring the state of the selected revision
+  @impl Phoenix.LiveView
+  def handle_event("restore", _, socket) do
+    mimic_edit(socket, socket.assigns.selected, socket.assigns.selected.content)
+  end
+
+  @impl Phoenix.LiveView
   def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
     selected = fetch_selected(id)
     {:noreply, assign(socket, :selected, selected)}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("table", _, socket) do
     {:noreply, assign(socket, :view, "table")}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("graph", _, socket) do
     {:noreply, assign(socket, view: "graph")}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("page", %{"ordinal" => ordinal}, socket) do
     page_offset = (String.to_integer(ordinal) - 1) * @page_size
     {:noreply, assign(socket, :page_offset, page_offset)}
   end
 
+  @impl Phoenix.LiveView
   def handle_info({:updated, revision, _}, socket) do
     id = revision.id
 
@@ -267,6 +333,7 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, assign(socket, selected: selected, revisions: revisions, tree: tree)}
   end
 
+  @impl Phoenix.LiveView
   def handle_info({:new_publication, _, _}, socket) do
     mappings =
       Publishing.get_all_mappings_for_resource(

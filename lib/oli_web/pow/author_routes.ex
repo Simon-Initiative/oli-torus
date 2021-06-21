@@ -33,7 +33,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
     if conn.params["provider"] do
       # this is a social provider login, we need to check if it is simply a login action or a link account action
       link_account_callback_path =
-        Routes.delivery_path(conn, :link_account_callback, conn.params["provider"])
+        Routes.authoring_delivery_path(conn, :link_account_callback, conn.params["provider"])
 
       case conn do
         %Plug.Conn{request_path: ^link_account_callback_path} ->
@@ -94,7 +94,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
         [provider],
         _query_params
       ) do
-    Routes.delivery_path(conn, :process_link_account_provider, provider)
+    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
   end
 
   def path_for(
@@ -104,9 +104,26 @@ defmodule OliWeb.Pow.AuthorRoutes do
         [provider],
         _query_params
       ) do
-    Routes.delivery_path(conn, :process_link_account_provider, provider)
+    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
   end
 
-  def path_for(conn, plug, verb, vars, query_params),
-    do: Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
+  def path_for(conn, PowInvitation.Phoenix.InvitationController, :update, [token], query_params) do
+    Pow.Phoenix.Routes.path_for(
+      conn,
+      PowInvitation.Phoenix.InvitationController,
+      :update,
+      [token],
+      query_params
+    )
+  end
+
+  def path_for(conn, plug, verb, vars, query_params) do
+    "/authoring" <> Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
+  end
+
+  @impl true
+  def url_for(conn, plug, verb, vars, query_params) do
+    path = path_for(conn, plug, verb, vars, query_params)
+    "#{Oli.Utils.get_base_url()}#{path}"
+  end
 end

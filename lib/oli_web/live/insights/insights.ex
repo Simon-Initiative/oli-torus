@@ -58,10 +58,10 @@ defmodule OliWeb.Insights do
           _ -> "activity"
         end %></h5>
         <table class="table">
-          <%= live_component @socket, TableHeader, assigns %>
+          <%= live_component TableHeader, assigns %>
           <tbody>
             <%= for row <- active_rows(assigns) do %>
-              <%= live_component @socket, TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project %>
+              <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project %>
             <% end %>
           </tbody>
         </table>

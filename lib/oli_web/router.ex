@@ -23,19 +23,16 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
-    plug(Oli.Plugs.SetCurrentUser)
-    plug(Oli.Plugs.SetDefaultPow, :author)
   end
 
   # pipline for REST api endpoint routes
   pipeline :api do
+    plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
-    plug(:accepts, ["json"])
-    plug(Oli.Plugs.SetDefaultPow, :author)
   end
 
   # pipeline for LTI launch endpoints
@@ -57,8 +54,13 @@ defmodule OliWeb.Router do
   # Extend the base pipelines specific routes
 
   pipeline :authoring do
+    plug(Oli.Plugs.SetDefaultPow, :author)
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
+  end
+
+  pipeline :delivery do
+    plug(Oli.Plugs.SetDefaultPow, :user)
   end
 
   # set the layout to be workspace
@@ -71,20 +73,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :maybe_enroll_open_and_free do
-    plug(Oli.Plugs.SetDefaultPow, :user)
     plug(Oli.Plugs.MaybeEnrollOpenAndFreeUser)
-  end
-
-  # Ensure that we have a logged in user
-  pipeline :delivery_protected do
-    plug(Oli.Plugs.SetDefaultPow, :user)
-
-    plug(Pow.Plug.RequireAuthenticated,
-      error_handler: OliWeb.Pow.UserAuthErrorHandler
-    )
-
-    plug(Oli.Plugs.RemoveXFrameOptions)
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
   pipeline :require_lti_params do
@@ -96,7 +85,28 @@ defmodule OliWeb.Router do
   end
 
   # Ensure that we have a logged in user
+  pipeline :delivery_protected do
+    plug(Oli.Plugs.SetDefaultPow, :user)
+    plug(Oli.Plugs.SetCurrentUser)
+
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(Oli.Plugs.RemoveXFrameOptions)
+    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+  end
+
   pipeline :authoring_protected do
+    plug(Oli.Plugs.SetDefaultPow, :author)
+    plug(Oli.Plugs.SetCurrentUser)
+
+    plug PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
@@ -140,19 +150,21 @@ defmodule OliWeb.Router do
   ### ROUTES ###
 
   scope "/" do
-    pipe_through(:skip_csrf_protection)
+    pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
+
+    pow_routes()
+    pow_assent_routes()
+    pow_extension_routes()
+  end
+
+  scope "/" do
+    pipe_through([:delivery, :skip_csrf_protection])
 
     pow_assent_authorization_post_callback_routes()
   end
 
-  scope "/", PowInvitation.Phoenix, as: "pow_invitation" do
-    pipe_through([:browser, :registration_captcha])
-
-    resources("/invitations", InvitationController, only: [:edit, :update])
-  end
-
-  scope "/" do
-    pipe_through([:browser, :pow_email_layout, :registration_captcha])
+  scope "/authoring", as: :authoring do
+    pipe_through([:browser, :authoring, :registration_captcha, :pow_email_layout])
 
     pow_routes()
     pow_assent_routes()
@@ -161,6 +173,18 @@ defmodule OliWeb.Router do
     # handle linking accounts when using a social account provider to login
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
+  end
+
+  scope "/authoring" do
+    pipe_through([:authoring, :skip_csrf_protection])
+
+    pow_assent_authorization_post_callback_routes()
+  end
+
+  scope "/authoring", PowInvitation.Phoenix, as: :pow_invitation do
+    pipe_through([:browser, :authoring, :registration_captcha])
+
+    resources("/invitations", InvitationController, only: [:edit, :update])
   end
 
   # open access routes
@@ -190,7 +214,7 @@ defmodule OliWeb.Router do
   end
 
   # authorization protected routes
-  scope "/", OliWeb do
+  scope "/authoring", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
 
     live("/projects", Projects.ProjectsLive, session: {__MODULE__, :with_session, []})
@@ -203,12 +227,12 @@ defmodule OliWeb.Router do
     get("/keep-alive", StaticPageController, :keep_alive)
   end
 
-  scope "/project", OliWeb do
+  scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
     post("/", ProjectController, :create)
   end
 
-  scope "/project", OliWeb do
+  scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring, :authorize_project])
 
     # Project display pages
@@ -441,7 +465,13 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections", OliWeb do
-    pipe_through([:browser, :maybe_enroll_open_and_free, :delivery_protected, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :delivery,
+      :maybe_enroll_open_and_free,
+      :delivery_protected,
+      :pow_email_layout
+    ])
 
     get("/", DeliveryController, :open_and_free_index)
   end
@@ -449,6 +479,7 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
+      :delivery,
       :require_section,
       :maybe_enroll_open_and_free,
       :delivery_protected,
@@ -485,6 +516,13 @@ defmodule OliWeb.Router do
 
     get("/:section_slug/enroll", DeliveryController, :enroll)
     post("/:section_slug/create_user", DeliveryController, :create_user)
+  end
+
+  scope "/course", OliWeb do
+    pipe_through([:browser, :delivery, :delivery_layout, :pow_email_layout])
+
+    get("/signin", DeliveryController, :signin)
+    get("/create_account", DeliveryController, :create_account)
   end
 
   scope "/course", OliWeb do
