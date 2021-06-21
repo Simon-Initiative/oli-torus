@@ -79,10 +79,26 @@ export const writePartAttemptState = async (
 
 export const createActivityAttempt = async (sectionSlug: string, attemptGuid: string) => {
   const method = 'POST';
-  const url = `/api/v1/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
   const result = await makeRequest({
     url,
     method,
+  });
+  return { result };
+};
+
+export const evalActivityAttempt = async (
+  sectionSlug: string,
+  attemptGuid: string,
+  partInputs: any[], // TODO: type for PartInput / PartResponse
+) => {
+  const method = 'PUT';
+  const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
+  const body = JSON.stringify({ partInputs });
+  const result = await makeRequest({
+    url,
+    method,
+    body,
   });
   return { result };
 };

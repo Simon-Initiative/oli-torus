@@ -58,7 +58,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
       }
     });
     if (activitiesToUpdate.length) {
-      console.log('UPDATE: ', { activitiesToUpdate });
+      /* console.log('UPDATE: ', { activitiesToUpdate }); */
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);
