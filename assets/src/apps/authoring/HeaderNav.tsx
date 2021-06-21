@@ -17,7 +17,6 @@ interface HeaderNavProps {
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const { content, isVisible } = props;
-  console.log(content);
   return (
     <nav
       className={`aa-header-nav top-panel${
