@@ -214,6 +214,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          authorEmail: author.email,
          projectSlug: project_slug,
          resourceSlug: revision_slug,
+         resource_id: revision.id,
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
@@ -325,6 +326,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       {:ok,
        Publishing.get_published_activity_revisions(publication_id, found_activities)
        |> Enum.map(fn %Revision{
+                        resource_id: activity_id,
                         activity_type_id: activity_type_id,
                         objectives: objectives,
                         slug: slug,
@@ -334,6 +336,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            type: "activity",
            typeSlug: Map.get(id_to_slug, activity_type_id),
            activitySlug: slug,
+           activity_id: activity_id,
            model: content,
            objectives: objectives
          }
