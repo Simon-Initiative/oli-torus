@@ -1,9 +1,18 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { writePartAttemptState } from 'data/persistence/state/intrinsic';
-import { defaultGlobalEnv, evalScript, getAssignScript } from '../../../../../../adaptivity/scripting';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  getAssignScript,
+} from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
-import { AttemptSlice, selectById, upsertActivityAttemptState } from '../slice';
+import {
+  AttemptSlice,
+  selectActivtyAttemptState,
+  selectById,
+  upsertActivityAttemptState,
+} from '../slice';
 
 export const savePartState = createAsyncThunk(
   `${AttemptSlice}/savePartState`,
@@ -44,12 +53,35 @@ export const savePartState = createAsyncThunk(
 
     const finalize = false;
 
-    return writePartAttemptState(
-      sectionSlug,
-      attemptGuid,
-      partAttemptGuid,
-      response,
-      finalize,
-    );
+    return writePartAttemptState(sectionSlug, attemptGuid, partAttemptGuid, response, finalize);
+  },
+);
+
+export const savePartStateToTree = createAsyncThunk(
+  `${AttemptSlice}/savePartStateToTree`,
+  async (payload: any, { dispatch, getState }) => {
+    const { attemptGuid, partAttemptGuid, response, activityTree } = payload;
+    const rootState = getState() as RootState;
+
+    const attemptRecord = selectById(rootState, attemptGuid);
+    const partId = attemptRecord?.parts.find(p => p.attemptGuid === partAttemptGuid)?.partId;
+    if (!partId) {
+      throw new Error('cannot find the partId to update');
+    }
+
+    const updates = activityTree.map((activity: any) => {
+      const attempt = selectActivtyAttemptState(rootState, activity.resourceId);
+      if (!attempt) {
+        return Promise.reject('could not find attempt!');
+      }
+      const attemptGuid = attempt.attemptGuid;
+      const partAttemptGuid = attempt.parts.find((p) => p.partId === partId)?.attemptGuid;
+      if (!partAttemptGuid) {
+        return Promise.resolve('does not own part but thats OK');
+      }
+      return dispatch(savePartState({ attemptGuid, partAttemptGuid, response }));
+    });
+
+    return Promise.all(updates);
   },
 );
