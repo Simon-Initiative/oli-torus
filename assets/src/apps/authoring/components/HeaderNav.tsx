@@ -22,7 +22,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
 
-  const url = `/project/${projectSlug}/preview/${revisionSlug}`;
+  const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
   return (
