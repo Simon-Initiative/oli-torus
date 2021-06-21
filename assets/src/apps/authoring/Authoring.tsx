@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
+import { AdaptivityEditor } from './AdaptivityEditor';
+import { BottomPanel } from './BottomPanel';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
@@ -7,6 +9,7 @@ import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
 import {
+  selectBottomPanel,
   selectLeftPanel,
   selectRightPanel,
   selectTopPanel,
@@ -37,18 +40,26 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const leftPanelState = useSelector(selectLeftPanel);
   const rightPanelState = useSelector(selectRightPanel);
   const topPanelState = useSelector(selectTopPanel);
-  const panelState = { left: leftPanelState, right: rightPanelState, top: topPanelState };
+  const bottomPanelState = useSelector(selectBottomPanel);
+  const panelState = {
+    left: leftPanelState,
+    right: rightPanelState,
+    top: topPanelState,
+    bottom: bottomPanelState,
+  };
 
   const handlePanelStateChange = ({
     top,
     right,
     left,
+    bottom,
   }: {
     top?: boolean;
     right?: boolean;
     left?: boolean;
+    bottom?: boolean;
   }) => {
-    dispatch(setPanelState({ top, right, left }));
+    dispatch(setPanelState({ top, right, left, bottom }));
   };
 
   useEffect(() => {
@@ -67,6 +78,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   useEffect(() => {
     if (isAppVisible) {
+      // forced light mode to save on initial dev time
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_light.css';
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
       authoringContainer?.classList.remove('d-none');
       setTimeout(() => {
@@ -74,6 +88,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       }, 50);
     }
     if (!isAppVisible) {
+      // reset forced light mode
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_dark.css';
       document.body.classList.remove('overflow-hidden');
       authoringContainer?.classList.remove('startup');
       setTimeout(() => {
@@ -106,6 +123,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           <LeftMenu />
         </SidePanel>
         <EditingCanvas />
+        <BottomPanel
+          panelState={panelState}
+          onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+        >
+          <AdaptivityEditor />
+        </BottomPanel>
         <SidePanel
           position="right"
           panelState={panelState}

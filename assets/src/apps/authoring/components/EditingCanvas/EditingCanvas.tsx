@@ -1,15 +1,19 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { setPanelState, setVisible } from '../../store/app/slice';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectBottomPanel, setPanelState, setVisible } from '../../store/app/slice';
 import FabricCanvas from './FabricCanvas';
 
 const EditingCanvas: React.FC<any> = (props) => {
   const dispatch = useDispatch();
+  const bottomPanelState = useSelector(selectBottomPanel);
 
   return (
     <React.Fragment>
       <section className="aa-stage">
-        <div className="aa-stage-inner">
+        <div
+          className="aa-stage-inner"
+          style={{ marginBottom: bottomPanelState ? 'calc(40vh + 64px)' : 'calc(64px + 39px)' }}
+        >
           <div className="aa-canvas-header">
             <h2 style={{ display: 'inline-block' }}>Active Screen Title</h2>
             <div style={{ float: 'right' }} className="btn-group" role="group">
@@ -20,6 +24,7 @@ const EditingCanvas: React.FC<any> = (props) => {
                       right: false,
                       left: false,
                       top: false,
+                      bottom: false,
                     }),
                   )
                 }
@@ -35,6 +40,7 @@ const EditingCanvas: React.FC<any> = (props) => {
                       right: true,
                       left: true,
                       top: true,
+                      bottom: true,
                     }),
                   )
                 }

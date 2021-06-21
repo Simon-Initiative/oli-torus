@@ -9,6 +9,7 @@ export interface AppState {
   leftPanel: boolean;
   rightPanel: boolean;
   topPanel: boolean;
+  bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
 }
 
@@ -20,6 +21,7 @@ const initialState: AppState = {
   leftPanel: true,
   rightPanel: true,
   topPanel: true,
+  bottomPanel: true,
   visible: false,
 };
 
@@ -42,7 +44,7 @@ const slice: Slice<AppState> = createSlice({
     },
     setPanelState(
       state,
-      action: PayloadAction<{ left?: boolean; right?: boolean; top?: boolean }>,
+      action: PayloadAction<{ left?: boolean; right?: boolean; top?: boolean; bottom?: boolean }>,
     ) {
       if (action.payload.left !== undefined) {
         state.leftPanel = !!action.payload.left;
@@ -52,6 +54,9 @@ const slice: Slice<AppState> = createSlice({
       }
       if (action.payload.top !== undefined) {
         state.topPanel = !!action.payload.top;
+      }
+      if (action.payload.bottom !== undefined) {
+        state.bottomPanel = !!action.payload.bottom;
       }
     },
     setVisible(state, action: PayloadAction<{ visible: boolean }>) {
@@ -77,6 +82,10 @@ export const selectRevisionSlug = createSelector(
 export const selectLeftPanel = createSelector(selectState, (state: AppState) => state.leftPanel);
 export const selectRightPanel = createSelector(selectState, (state: AppState) => state.rightPanel);
 export const selectTopPanel = createSelector(selectState, (state: AppState) => state.topPanel);
+export const selectBottomPanel = createSelector(
+  selectState,
+  (state: AppState) => state.bottomPanel,
+);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
 
