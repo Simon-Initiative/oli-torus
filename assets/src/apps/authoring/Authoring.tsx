@@ -1,73 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import Accordion from './Accordion/Accordion';
-import HeaderNav from './HeaderNav';
-import { SidePanel } from './SidePanel';
-import TabStrip from './TabStrip/TabStrip';
+import React, { useEffect } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { AdaptivityEditor } from './AdaptivityEditor';
+import { BottomPanel } from './BottomPanel';
+import EditingCanvas from './components/EditingCanvas/EditingCanvas';
+import HeaderNav from './components/HeaderNav';
+import LeftMenu from './components/LeftMenu/LeftMenu';
+import RightMenu from './components/RightMenu/RightMenu';
+import { SidePanel } from './components/SidePanel';
+import store from './store';
+import {
+  selectBottomPanel,
+  selectLeftPanel,
+  selectRightPanel,
+  selectTopPanel,
+  selectVisible,
+  setInitialConfig,
+  setPanelState,
+  setVisible,
+} from './store/app/slice';
+import { initializeFromContext } from './store/page/actions/initializeFromContext';
+import { PageContext } from './types';
 
 export interface AuthoringProps {
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
-  content: any;
+  content: PageContext;
+  activityTypes?: any[];
+  resourceId?: number;
+  paths: Record<string, string>;
 }
 
-export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
-  const url = `/authoring/project/${props.projectSlug}/preview/${props.revisionSlug}`;
-  const windowName = `preview-${props.projectSlug}`;
+const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
+  const dispatch = useDispatch();
+
   const authoringContainer = document.getElementById('advanced-authoring');
-  const [appState, setAppState] = useState<any>({ isVisible: false });
-  const [panelState, setPanelState] = useState({ left: true, right: true, top: true });
-  const leftPanelData = {
-    tabs: [
-      {
-        id: 1,
-        title: 'Sequence',
-        data: ['Intro Screen',
-          'Pick your character',
-          'Choose your title']
-      },
-      {
-        id: 2,
-        title: 'Adaptivity',
-        data: ['Initial Satee',
-          'Default Response']
-      }
-    ],
+  const isAppVisible = useSelector(selectVisible);
+
+  const leftPanelState = useSelector(selectLeftPanel);
+  const rightPanelState = useSelector(selectRightPanel);
+  const topPanelState = useSelector(selectTopPanel);
+  const bottomPanelState = useSelector(selectBottomPanel);
+  const panelState = {
+    left: leftPanelState,
+    right: rightPanelState,
+    top: topPanelState,
+    bottom: bottomPanelState,
   };
-  const rightPanelData = {
-    tabs: [
-      {
-        id: 1,
-        title: 'Lesson',
-        data: 'Lesson Data',
-      },
-      {
-        id: 2,
-        title: 'Screen',
-        data: 'Screen Data',
-      },
-      {
-        id: 3,
-        title: 'Component',
-        data: 'Component Data',
-      },
-    ],
+
+  const handlePanelStateChange = ({
+    top,
+    right,
+    left,
+    bottom,
+  }: {
+    top?: boolean;
+    right?: boolean;
+    left?: boolean;
+    bottom?: boolean;
+  }) => {
+    dispatch(setPanelState({ top, right, left, bottom }));
   };
-  const PreviewButton = () => (
-    <a className="btn btn-sm btn-outline-primary" onClick={() => window.open(url, windowName)}>
-      Preview <i className="las la-external-link-alt ml-1"></i>
-    </a>
-  );
 
   useEffect(() => {
-    if (appState.isVisible) {
+    const appConfig = {
+      paths: props.paths,
+      isAdmin: props.isAdmin,
+      projectSlug: props.projectSlug,
+      revisionSlug: props.revisionSlug,
+    };
+    dispatch(setInitialConfig(appConfig));
+
+    if (props.content) {
+      dispatch(initializeFromContext(props.content));
+    }
+  }, [props]);
+
+  useEffect(() => {
+    if (isAppVisible) {
+      // forced light mode to save on initial dev time
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_light.css';
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
       authoringContainer?.classList.remove('d-none');
       setTimeout(() => {
         authoringContainer?.classList.add('startup');
       }, 50);
     }
-    if (!appState.isVisible) {
+    if (!isAppVisible) {
+      // reset forced light mode
+      const darkModeCss: any = document.getElementById('authoring-theme-dark');
+      darkModeCss.href = '/css/authoring_torus_dark.css';
       document.body.classList.remove('overflow-hidden');
       authoringContainer?.classList.remove('startup');
       setTimeout(() => {
@@ -77,13 +100,13 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
-  }, [appState.isVisible]);
+  }, [isAppVisible]);
 
   return (
     <>
-      {!appState.isVisible && (
+      {!isAppVisible && (
         <button
-          onClick={() => setAppState({ ...appState, isVisible: true })}
+          onClick={() => dispatch(setVisible({ visible: true }))}
           type="button"
           className="btn btn-primary"
         >
@@ -95,62 +118,33 @@ export const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         <SidePanel
           position="left"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, left: !panelState.left })}
+          onToggle={() => handlePanelStateChange({ left: !panelState.left })}
         >
-          I am the left side panel.
-        <Accordion tabsData={leftPanelData} data={props.content}></Accordion>
+          <LeftMenu />
         </SidePanel>
-        <section className="aa-stage">
-          <div className="aa-stage-inner">
-            <PreviewButton />
-            <h1>Main Content Stage</h1>
-            <div className="btn-group" role="group">
-              <button
-                onClick={() =>
-                  setPanelState({
-                    right: false,
-                    left: false,
-                    top: false,
-                  })
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                hide all
-              </button>
-              <button
-                onClick={() =>
-                  setPanelState({
-                    right: true,
-                    left: true,
-                    top: true,
-                  })
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                show all
-              </button>
-              <button
-                onClick={() => setAppState({ ...appState, isVisible: false })}
-                type="button"
-                className="btn btn-secondary"
-              >
-                quit
-              </button>
-            </div>
-          </div>
-          {/* <div>{JSON.stringify(props.content)}</div> */}
-        </section>
+        <EditingCanvas />
+        <BottomPanel
+          panelState={panelState}
+          onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+        >
+          <AdaptivityEditor />
+        </BottomPanel>
         <SidePanel
           position="right"
           panelState={panelState}
-          setPanelState={() => setPanelState({ ...panelState, right: !panelState.right })}
+          onToggle={() => handlePanelStateChange({ right: !panelState.right })}
         >
-          I am the right side panel.
-        <TabStrip tabsData={rightPanelData} data={props.content}></TabStrip>
+          <RightMenu />
         </SidePanel>
       </div>
     </>
   );
 };
+
+const ReduxApp: React.FC<AuthoringProps> = (props) => (
+  <Provider store={store}>
+    <Authoring {...props} />
+  </Provider>
+);
+
+export default ReduxApp;

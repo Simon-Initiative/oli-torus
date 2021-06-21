@@ -20,6 +20,7 @@ export type SequenceEntryType = SequenceEntryChild | SequenceLayer | SequenceBan
 
 export interface SequenceEntry<T> {
   activity_id: number;
+  activitySlug?: string;
   custom: T;
 }
 
