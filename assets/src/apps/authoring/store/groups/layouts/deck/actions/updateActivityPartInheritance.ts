@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ActivityUpdate, edit } from 'data/persistence/activity';
 import {
   selectActivityById,
   upsertActivities,
@@ -8,6 +9,8 @@ import {
   DeckLayoutGroup,
   GroupsSlice,
 } from '../../../../../../delivery/store/features/groups/slice';
+import { selectProjectSlug } from '../../../../app/slice';
+import { selectResourceId } from '../../../../page/slice';
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,
@@ -58,6 +61,18 @@ export const updateActivityPartInheritance = createAsyncThunk(
       console.log('UPDATE: ', { activitiesToUpdate });
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
+      const projectSlug = selectProjectSlug(rootState);
+      const resourceId = selectResourceId(rootState);
+      // in lieu of bulk edit
+      const updates = activitiesToUpdate.map((activity) => {
+        const changeData: ActivityUpdate = {
+          title: activity.title,
+          objectives: activity.objectives,
+          content: activity.model,
+        };
+        edit(projectSlug, resourceId, activity.activity_id, changeData, false);
+      });
+      return Promise.all(updates);
     }
   },
 );
