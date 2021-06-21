@@ -32,10 +32,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
                 <button className="btn btn-link p-0 ml-1">
                   <i className="fa fa-plus" />
                 </button>
-                <button className="btn btn-link p-0 ml-1">
+                {/* TODO: implement collapse / expand for rule groups */}
+                {/* <button className="btn btn-link p-0 ml-1">
                   <i className="fa fa-angle-down" />
-                  {/* {!panelState['bottom'] && <i className="fa fa-angle-right" />} */}
-                </button>
+                  {!panelState['bottom'] && <i className="fa fa-angle-right" />}
+                </button> */}
               </div>
             </div>
             <div className="d-flex align-items-center">
