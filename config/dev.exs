@@ -133,3 +133,6 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
+
+# Configure Mnesia directory (used by pow persistent sessions)
+config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))

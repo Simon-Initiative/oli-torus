@@ -155,19 +155,19 @@ defmodule OliWeb.Qa.QaLive do
             <%= if !Enum.empty?(@warnings_by_type) do %>
               <div class="d-flex">
                 <%= for type <- @warning_types do %>
-                  <%= live_component @socket, WarningFilter, active: MapSet.member?(@filters, type), type: type, warnings: Map.get(@warnings_by_type, type) %>
+                  <%= live_component WarningFilter, active: MapSet.member?(@filters, type), type: type, warnings: Map.get(@warnings_by_type, type) %>
                 <% end %>
               </div>
 
               <div class="reviews">
                 <ul class="review-links">
                   <%= for warning <- @filtered_warnings do %>
-                    <%= live_component @socket, WarningSummary, warning: warning, selected: @selected %>
+                    <%= live_component WarningSummary, warning: warning, selected: @selected %>
                   <% end %>
                 </ul>
                 <div class="review-cards">
                   <%= if @selected != nil do %>
-                    <%= live_component @socket, WarningDetails,
+                    <%= live_component WarningDetails,
                       parent_pages: @parent_pages,
                       selected: @selected,
                       author: @author,

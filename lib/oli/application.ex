@@ -22,6 +22,9 @@ defmodule Oli.Application do
       # Start the Oban background job processor
       {Oban, oban_config()},
 
+      # Start the Pow MnesiaCache to persist session across server restarts
+      Pow.Store.Backend.MnesiaCache,
+
       # Start the NodeJS bridge
       %{
         id: NodeJS,

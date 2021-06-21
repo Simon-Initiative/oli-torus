@@ -5,7 +5,7 @@ defmodule OliWeb.Common.Modal do
   Minimal example usage specifying only the required properties:
 
   ```
-  <%= live_component @socket, Modal, title: "Confirm your request", modal_id: "my_unique_modal_id", ok_action: "confirm" do %>
+  <%= live_component Modal, title: "Confirm your request", modal_id: "my_unique_modal_id", ok_action: "confirm" do %>
     <p class="mb-4">Are you sure you want to do this?</p>
   <% end %>
   ```

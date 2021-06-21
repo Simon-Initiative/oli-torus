@@ -2,13 +2,13 @@ import React from 'react';
 
 export interface BottomPanelProps {
   panelState: any;
-  togglePanelState: any;
+  onToggle: any;
   children?: any;
   content?: any;
 }
 
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
-  const { panelState, togglePanelState, children } = props;
+  const { panelState, onToggle, children } = props;
   const PANEL_SIDE_WIDTH = '250px';
 
   return (
@@ -52,7 +52,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
               <button className="btn btn-link p-0 ml-1">
                 <i className="fa fa-plus" />
               </button>
-              <button className="btn btn-link p-0 ml-1" onClick={() => togglePanelState()}>
+              <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
                 {panelState['bottom'] && <i className="fa fa-angle-down" />}
                 {!panelState['bottom'] && <i className="fa fa-angle-right" />}
               </button>

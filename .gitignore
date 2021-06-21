@@ -67,3 +67,4 @@ docker-compose.override.yml
 supervisord.log
 supervisord.pid
 stacks.out
+.mnesia

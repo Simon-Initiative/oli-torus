@@ -98,14 +98,14 @@ $panel-section-title-bar-height: 39px;
       transition-property: left;
       left: 0;
       &.open {
-        left: 250px;
+        left: $panel-side-width;
       }
     }
     &.right {
       transition-property: right;
       right: 0;
       &.open {
-        right: 250px;
+        right: $panel-side-width;
       }
     }
   }
@@ -132,7 +132,6 @@ $panel-section-title-bar-height: 39px;
     height: 1000px;
     display: inline-block;
     margin-top: calc(#{$nav-height} + 64px);
-    margin-bottom: calc(#{$panel-section-title-bar-height} + 64px);
     margin-left: calc(#{$panel-side-width} + 64px);
     margin-right: calc(#{$panel-side-width} + 64px);
     background-color: $white;
@@ -202,6 +201,17 @@ $panel-section-title-bar-height: 39px;
     .aa-actions {
       position: relative;
       border-top: 1px solid $ui-border-color;
+    }
+    .aa-canvas-header {
+      position: relative;
+      width: 100%;
+      top: -64px;
+    }
+    .aa-canvas-inner {
+      width: 100%;
+      height: 100%;
+      top: -48px;
+      position: relative;
     }
   }
 }
