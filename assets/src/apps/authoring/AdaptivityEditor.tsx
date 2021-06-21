@@ -73,8 +73,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
               <select
                 className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
                 id="target"
+                defaultValue="0"
               >
-                <option selected>Choose...</option>
+                <option value="0">Choose...</option>
                 <option value="1">One</option>
                 <option value="2">Two</option>
                 <option value="3">Three</option>
@@ -85,8 +86,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
               <select
                 className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
                 id="type"
+                defaultValue="0"
               >
-                <option selected>Choose...</option>
+                <option value="0">Choose...</option>
                 <option value="1">One</option>
                 <option value="2">Two</option>
                 <option value="3">Three</option>
@@ -97,8 +99,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
               <select
                 className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
                 id="operator"
+                defaultValue="0"
               >
-                <option selected>
+                <option value="0">
                   Choose with a really long name that might stretch out the labeel?...
                 </option>
                 <option value="1">One</option>
@@ -125,8 +128,12 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
             <label className="sr-only" htmlFor="operator">
               operator
             </label>
-            <select className="custom-select mr-2 form-control form-control-sm w-25" id="operator">
-              <option selected>Choose...</option>
+            <select
+              className="custom-select mr-2 form-control form-control-sm w-25"
+              id="operator"
+              defaultValue="0"
+            >
+              <option value="0">Choose...</option>
               <option value="1">One</option>
               <option value="2">Two</option>
               <option value="3">Three</option>
