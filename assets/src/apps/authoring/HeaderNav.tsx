@@ -25,7 +25,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       } d-flex justify-content-between`}
       style={{ alignItems: 'center' }}
     >
-      <div className='col-4'>
+      <div>
         <div className="btn-group" role="group">
           <div className="pr-3 border-right">
             INFINISCOPE{/* Place for Logo */}
@@ -35,7 +35,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
           </div>
         </div>
       </div>
-      <div className="col-7 btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+      <div className="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
         <div className="btn-group pr-3 border-right" role="group" aria-label="First group">
           <div className="px-2">
             <TextIcon />
@@ -64,7 +64,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
           </div>
         </div>
       </div>
-      <div className='col-1'>
+      <div >
         <div className="btn-group" role="group" aria-label="Third group">
           <div className="px-2">
             <PreviewIcon />
