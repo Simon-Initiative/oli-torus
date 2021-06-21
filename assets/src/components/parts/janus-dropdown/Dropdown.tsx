@@ -223,12 +223,17 @@ const Dropdown: React.FC<any> = (props) => {
       (dropdownContainerStyles.backgroundColor = 'transparent');
   }
 
-  const dropDownStyle = {
+  const dropDownStyle: CSSProperties = {
     width: 'auto',
     height: 'auto',
   };
   if (!(showLabel && label)) {
     dropDownStyle.width = `${Number(width) - 10}px`;
+  }
+  if (showLabel && label && width) {
+    //is this the best way to handle?
+    //if lable is visible then need to set the maxWidth otherwise it gets out of the container
+    dropDownStyle.maxWidth = `${Number(width * 0.63)}px`;
   }
 
   useEffect(() => {

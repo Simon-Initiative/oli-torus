@@ -1,5 +1,6 @@
 defmodule Oli.Interop.IngestTest do
   alias Oli.Interop.Ingest
+  alias Oli.Interop.Export
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
@@ -12,6 +13,35 @@ defmodule Oli.Interop.IngestTest do
         limit: 1
 
     AuthoringResolver.from_revision_slug(project.slug, Repo.one(query).slug)
+  end
+
+  def unzip_to_memory(data) do
+    File.write("export.zip", data)
+    result = :zip.unzip(to_charlist("export.zip"), [:memory])
+    File.rm!("export.zip")
+
+    case result do
+      {:ok, entries} -> entries
+      _ -> []
+    end
+  end
+
+  def verify_export(entries) do
+    assert length(entries) == 9
+
+    m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+    assert Map.has_key?(m, '_hierarchy.json')
+    assert Map.has_key?(m, '_media-manifest.json')
+    assert Map.has_key?(m, '_project.json')
+
+    hierarchy =
+      Map.get(m, '_hierarchy.json')
+      |> Jason.decode!()
+
+    assert length(Map.get(hierarchy, "children")) == 1
+    unit = Map.get(hierarchy, "children") |> hd
+    assert Map.get(unit, "title") == "Analog and Digital Unit"
   end
 
   # This mimics the result of unzipping a digest file, but instead reads the individual
@@ -31,6 +61,16 @@ defmodule Oli.Interop.IngestTest do
   describe "course project ingest" do
     setup do
       Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "ingest/1 and then export/1 works end to end", %{author: author} do
+      {:ok, project} =
+        simulate_unzipping()
+        |> Ingest.process(author)
+
+      Export.export(project)
+      |> unzip_to_memory()
+      |> verify_export()
     end
 
     test "ingest/1 processes the digest files and creates a course", %{author: author} do

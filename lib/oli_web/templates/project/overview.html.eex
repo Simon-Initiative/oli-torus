@@ -1,3 +1,9 @@
+<style>
+  .action-button {
+    width: 100px;
+  }
+</style>
+
 <div class="overview container">
   <div class="row">
     <div class="col-12">
@@ -93,36 +99,50 @@
         </div>
       </div>
 
-      <div class="row my-4">
-        <div class="col-12">
-          <h4>Duplicate this course</h4>
-          <%= button("Duplicate Course",
-            to: Routes.project_path(@conn, :clone_project, @project),
-            method: :post,
-            class: "btn btn-primary",
-            data_confirm: "Are you sure you want to duplicate this project?") %>
-        </div>
-      </div>
+      <div class="card mt-4">
+        <div class="card-body">
+          <h4>Actions</h4>
 
-      <div class="row my-4">
-        <div class="col-12">
-          <h4>Datashop export</h4>
-          <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
-            <% nil -> %>
-              <p class="mb-2">
-                Project must be published to generate a datashop export file.
-              </p>
-              <button disabled class="btn btn-primary">Download Datashop Export</button>
-            <% _pub -> %>
-              <%= button("Download Datashop Export", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary") %>
-          <% end %>
-        </div>
-      </div>
+            <div style="margin: auto 0; width: 80%">
+              <div class="d-flex flex-row-reverse mt-3">
 
-      <div class="row my-4">
-        <div class="col-12">
-          <h4>Delete this course</h4>
-          <button type="button" class="btn btn-danger" onclick="OLI.showModal('delete-package-modal')">Delete this Course</button>
+                  <%= button("Duplicate",
+                    to: Routes.project_path(@conn, :clone_project, @project),
+                    method: :post,
+                    class: "btn btn-primary ml-5 action-button",
+                    data_confirm: "Are you sure you want to duplicate this project?") %>
+
+                  <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
+
+              </div>
+
+                <div class="d-flex flex-row-reverse mt-3">
+                  <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
+
+                  <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
+                  </div>
+
+                <div class="d-flex flex-row-reverse mt-3">
+
+                   <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+                      <% nil -> %>
+                        <button disabled class="btn btn-primary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+                      <% _pub -> %>
+                        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
+                    <% end %>
+
+                    <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
+
+                </div>
+
+                <div class="d-flex flex-row-reverse mt-3">
+                  <button type="button" class="btn btn-danger ml-5 action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
+
+                  <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
+                </div>
+
+            </div>
+
         </div>
       </div>
 
