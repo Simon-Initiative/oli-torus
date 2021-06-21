@@ -10,9 +10,11 @@ const SequenceEditor: React.FC<any> = (props) => {
   return (
     <Accordion defaultActiveKey="0">
       <Card>
-        <Card.Header>
+        <Card.Header className='d-flex justify-content-between'
+          style={{alignItems:'center'}}>
           <ContextAwareToggle eventKey="0" />
           Sequence Editor
+          <i className="fa fa-plus"></i>
         </Card.Header>
         <Accordion.Collapse eventKey="0">
           <Card.Body>
