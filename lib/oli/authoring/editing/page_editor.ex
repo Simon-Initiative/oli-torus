@@ -214,7 +214,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          authorEmail: author.email,
          projectSlug: project_slug,
          resourceSlug: revision_slug,
-         resource_id: revision.id,
+         resource_id: revision.resource_id,
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,

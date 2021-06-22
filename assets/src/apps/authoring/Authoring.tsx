@@ -8,7 +8,6 @@ import LeftMenu from './components/LeftMenu/LeftMenu';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
-import { acquireEditingLock, releaseEditingLock } from './store/app/actions/locking';
 import {
   selectBottomPanel,
   selectLeftPanel,
@@ -75,11 +74,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     if (props.content) {
       dispatch(initializeFromContext(props.content));
     }
-
-    dispatch(acquireEditingLock());
-    return () => {
-      dispatch(releaseEditingLock());
-    };
   }, [props]);
 
   useEffect(() => {

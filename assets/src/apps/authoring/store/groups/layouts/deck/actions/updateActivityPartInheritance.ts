@@ -9,8 +9,10 @@ import {
   DeckLayoutGroup,
   GroupsSlice,
 } from '../../../../../../delivery/store/features/groups/slice';
+import { acquireEditingLock, releaseEditingLock } from '../../../../app/actions/locking';
 import { selectProjectSlug } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
+import {isEqual} from 'lodash'
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,
@@ -51,13 +53,15 @@ export const updateActivityPartInheritance = createAsyncThunk(
       if (!childActivity) {
         return;
       }
-      if (JSON.stringify(childActivity.model.authoring.parts) !== JSON.stringify(combinedParts)) {
+
+      if (!isEqual(childActivity.model.authoring.parts, combinedParts)) {
         const clone = JSON.parse(JSON.stringify(childActivity));
         clone.model.authoring.parts = combinedParts;
         activitiesToUpdate.push(clone);
       }
     });
     if (activitiesToUpdate.length) {
+      await dispatch(acquireEditingLock());
       /* console.log('UPDATE: ', { activitiesToUpdate }); */
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
@@ -70,9 +74,11 @@ export const updateActivityPartInheritance = createAsyncThunk(
           objectives: activity.objectives,
           content: activity.model,
         };
-        edit(projectSlug, resourceId, activity.activity_id, changeData, false);
+        return edit(projectSlug, resourceId, activity.activity_id, changeData, false);
       });
-      return Promise.all(updates);
+      await Promise.all(updates);
+      await dispatch(releaseEditingLock());
+      return;
     }
   },
 );
