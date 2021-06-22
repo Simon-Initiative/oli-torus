@@ -458,6 +458,26 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
   end
 
+  @spec create_context(any, any, any, any) ::
+          {:error, :not_found}
+          | {:ok,
+             %Oli.Authoring.Editing.ActivityContext{
+               activityId: any,
+               activitySlug: binary,
+               allObjectives: list,
+               authorEmail: any,
+               authoringElement: any,
+               authoringScript: any,
+               description: any,
+               friendlyName: any,
+               model: any,
+               objectives: any,
+               projectSlug: any,
+               resourceId: any,
+               resourceSlug: binary,
+               resourceTitle: any,
+               title: any
+             }}
   @doc """
   Creates the context necessary to power a client side activity editor,
   where this activity is being editing within the context of being
@@ -491,13 +511,38 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: title,
         model: model,
         objectives: objectives,
-        allObjectives: PageEditor.construct_parent_references(all_objectives)
+        allObjectives: PageEditor.construct_parent_references(all_objectives),
+        typeSlug: activity_type.slug
       }
 
       {:ok, context}
     else
       _ -> {:error, :not_found}
     end
+  end
+
+  def create_contexts(project_slug, activity_ids) do
+    type_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
+
+    AuthoringResolver.from_resource_id(project_slug, activity_ids)
+    |> Enum.map(fn r ->
+      activity_type = Map.get(type_by_id, r.activity_type_id)
+
+      %ActivityContext{
+        authoringScript: activity_type.authoring_script,
+        authoringElement: activity_type.authoring_element,
+        friendlyName: activity_type.title,
+        description: activity_type.description,
+        activityId: r.resource_id,
+        activitySlug: r.slug,
+        title: r.title,
+        model: r.content,
+        objectives: r.objectives,
+        typeSlug: activity_type.slug
+      }
+    end)
   end
 
   # Retrieve the latest (current) revision for a resource given the

@@ -20,6 +20,7 @@ import { withInlines } from './overrides/inlines';
 import { withTables } from './overrides/tables';
 import { withMarkdown } from './overrides/markdown';
 import { onPaste } from './handlers/paste';
+import { withHistory } from 'slate-history';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -60,7 +61,9 @@ export const Editor = React.memo((props: EditorProps) => {
 
   const editor: ReactEditor & SlateEditor = useMemo(
     () =>
-      withMarkdown(commandContext)(withReact(withTables(withInlines(withVoids(createEditor()))))),
+      withMarkdown(commandContext)(
+        withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
+      ),
     [],
   );
   const [installed, setInstalled] = useState(false);

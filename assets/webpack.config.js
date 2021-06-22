@@ -16,7 +16,6 @@ const populateEntries = () => {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
     components: ['./src/components.tsx'],
     resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
-    activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx']
   };

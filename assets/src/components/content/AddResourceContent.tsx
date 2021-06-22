@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ResourceContent,
-  Activity,
   ResourceContext,
   ActivityReference,
   createDefaultStructuredContent,
@@ -13,7 +12,7 @@ import { Objective, ResourceId } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 import { Popover } from 'react-tiny-popover';
-
+import { ActivityEditContext } from 'data/content/activity';
 import { modalActions } from 'actions/modal';
 import * as Immutable from 'immutable';
 
@@ -24,7 +23,7 @@ import { classNames } from 'utils/classNames';
 import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
 import ModalSelection from 'components/modal/ModalSelection';
 
-type AddCallback = (content: ResourceContent, index: number, a?: Activity) => void;
+type AddCallback = (content: ResourceContent, index: number, a?: ActivityEditContext) => void;
 
 const promptForObjectiveSelection = (
   objectives: Immutable.List<Objective>,
@@ -137,12 +136,18 @@ export const AddResourceContent = ({
                 return p;
               }, {});
 
-            const activity: Activity = {
-              type: 'activity',
+            const editor = editorMap[editorDesc.slug];
+
+            const activity: ActivityEditContext = {
+              authoringElement: editor.authoringElement as string,
+              authoringScript: '',
+              description: editor.description,
+              friendlyName: editor.friendlyName,
               activitySlug: result.revisionSlug,
               typeSlug: editorDesc.slug,
+              activityId: 0,
+              title: '',
               model,
-              transformed: result.transformed,
               objectives,
             };
 

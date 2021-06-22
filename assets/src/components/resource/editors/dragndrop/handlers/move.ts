@@ -1,13 +1,14 @@
-import { ResourceContent, Activity } from 'data/content/resource';
+import { ResourceContent } from 'data/content/resource';
 import { ActivityEditorMap } from 'data/content/editors';
 import { getFriendlyName } from '../utils';
+import { ActivityEditContext } from 'data/content/activity';
 import * as Immutable from 'immutable';
 
 export const moveHandler = (
   content: Immutable.OrderedMap<string, ResourceContent>,
   onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void,
   editorMap: ActivityEditorMap,
-  activities: Immutable.Map<string, Activity>,
+  activities: Immutable.Map<string, ActivityEditContext>,
   setAssistive: (s: string) => void,
 ) => (key: string, up: boolean) => {
   if (content.first<ResourceContent>().id === key && up) return;

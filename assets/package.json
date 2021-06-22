@@ -43,7 +43,7 @@
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "slate": "^0.58.1",
-    "slate-history": "^0.58.1",
+    "slate-history": "^0.62.0",
     "slate-react": "^0.58.1",
     "swiper": "^6.4.7",
     "terser-webpack-plugin": "^5.1.2",

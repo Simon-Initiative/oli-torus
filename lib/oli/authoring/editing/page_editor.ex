@@ -21,6 +21,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Authoring.Editing.ActivityEditor
 
   import Ecto.Query, warn: false
 
@@ -209,11 +210,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
       hierarchy = root_container_node.children
       {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
 
+      activity_ids = activities_from_content(revision.content)
+
       {:ok,
        %Oli.Authoring.Editing.ResourceContext{
          authorEmail: author.email,
          projectSlug: project_slug,
          resourceSlug: revision_slug,
+         resourceId: revision.resource_id,
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
@@ -221,6 +225,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          graded: revision.graded,
          content: convert_to_activity_slugs(revision.content, publication.id),
          activities: activities,
+         activityContexts: ActivityEditor.create_contexts(project_slug, activity_ids),
          project: publication.project,
          previous_page: previous,
          next_page: next
@@ -303,16 +308,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
+  defp activities_from_content(content) do
+    Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+      type == "activity-reference"
+    end)
+    |> Enum.map(fn %{"activity_id" => id} -> id end)
+  end
+
   # From the array of maps found in a resource revision content, produce a
   # map of the content of the activity revisions that pertain to the
   # current publication
   defp create_activities_map(_, publication_id, content) do
     # Now see if we even have any activities that need to be mapped
-    found_activities =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
-        type == "activity-reference"
-      end)
-      |> Enum.map(fn %{"activity_id" => id} -> id end)
+    found_activities = activities_from_content(content)
 
     if length(found_activities) != 0 do
       # create a mapping of registered activity type id to the registered activity slug
