@@ -155,8 +155,7 @@ module.exports = (env, options) => ({
           {
             loader: 'css-loader',
             options: {
-              sourceMap: false,
-              esModule: false,
+              sourceMap: true,
             },
           },
           {
