@@ -1,8 +1,8 @@
-defmodule Oli.Repo.Migrations.AddPackageStatus do
+defmodule Oli.Repo.Migrations.RemoveJanusCarousel do
   use Ecto.Migration
   def up do
     execute "DELETE FROM part_component_registrations
-      WHERE slug = 'janus_carousel';"
+      WHERE delivery_element = 'janus-carousel';"
 
       flush()
   end
