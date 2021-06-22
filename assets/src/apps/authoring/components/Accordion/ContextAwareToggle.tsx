@@ -10,7 +10,7 @@ const ContextAwareToggle: React.FC<any> = ({ children, eventKey, callback }) => 
   const isCurrentEventKey = currentEventKey === eventKey;
 
   return (
-    <button type="button" className='my-1 mr-2' onClick={decoratedOnClick}>
+    <button type="button" className="btn btn-link p-0 mr-1" onClick={decoratedOnClick}>
       {isCurrentEventKey ? (
         <i className="fa fa-angle-down"></i>
       ) : (

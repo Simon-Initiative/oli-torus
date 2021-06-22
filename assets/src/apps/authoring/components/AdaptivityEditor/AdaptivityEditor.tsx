@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Accordion, Card, ListGroup } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
@@ -11,24 +10,23 @@ const AdaptivityEditor: React.FC<any> = (props) => {
   const rules = currentActivity?.model.authoring.rules || [];
 
   return (
-    <Accordion defaultActiveKey="0">
-      <Card>
-        <Card.Header className='d-flex justify-content-between'
-          style={{alignItems:'center'}}>
+    <Accordion className="aa-adaptivity-rules" defaultActiveKey="0">
+      <div className="aa-panel-section-title-bar">
+        <div className="d-flex align-items-center">
           <ContextAwareToggle eventKey="0" />
-          Adaptivity
-          <i className="fa fa-plus"></i>
-        </Card.Header>
-        <Accordion.Collapse eventKey="0">
-          <Card.Body>
-            <ListGroup>
-              {rules.map((rule: any) => (
-                <ListGroup.Item key={rule.id}>{rule.name}</ListGroup.Item>
-              ))}
-            </ListGroup>
-          </Card.Body>
-        </Accordion.Collapse>
-      </Card>
+          <span className="title">Adaptivity</span>
+        </div>
+        <i className="fa fa-plus"></i>
+      </div>
+      <Accordion.Collapse eventKey="0">
+        <ListGroup className="aa-rules-list" as="ol">
+          {rules.map((rule: any) => (
+            <ListGroup.Item className="aa-rules-list-item" as="li" key={rule.id}>
+              {rule.name}
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Accordion.Collapse>
     </Accordion>
   );
 };

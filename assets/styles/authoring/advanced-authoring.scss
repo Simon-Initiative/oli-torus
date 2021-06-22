@@ -28,12 +28,7 @@ $panel-section-title-bar-height: 39px;
     align-items: start;
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
-    @media (prefers-color-scheme: light) {
-      background-color: $panel-bg-color-light;
-    }
-    @media (prefers-color-scheme: dark) {
-      background-color: $panel-bg-color-dark;
-    }
+    background-color: $panel-bg-color-light;
     box-shadow: 0 2px 4px 0 rgba($black, 0.1);
 
     &.left-panel {
@@ -111,7 +106,6 @@ $panel-section-title-bar-height: 39px;
   }
   .aa-panel-inner {
     position: relative;
-    height: 100%;
     background-color: $panel-bg-color-light;
     color: $panel-font-color-light;
   }
@@ -212,6 +206,21 @@ $panel-section-title-bar-height: 39px;
       height: 100%;
       top: -48px;
       position: relative;
+    }
+  }
+  .aa-sequence-editor,
+  .aa-adaptivity-rules {
+    .aa-sequence,
+    .aa-rules-list {
+      border-radius: inherit;
+      padding: 4px 0;
+    }
+    .aa-sequence-item,
+    .aa-rules-list-item {
+      padding: 6px 16px;
+      background-color: inherit;
+      border: none;
+      font-size: 0.85rem;
     }
   }
 }
