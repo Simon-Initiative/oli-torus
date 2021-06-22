@@ -47,7 +47,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ schema, value }) => {
     return (
       <Form.Group key={schemaKey} controlId={`form_${schemaKey}`}>
         <Form.Label>{label}</Form.Label>
-        <Form.Control type={controlType} placeholder={`Enter ${label}`} defaultValue={controlValue} />
+        <Form.Control
+          size="sm"
+          type={controlType}
+          placeholder={`Enter ${label}`}
+          defaultValue={controlValue}
+        />
         {description ? <Form.Text className="text-muted">{description}</Form.Text> : null}
       </Form.Group>
     );

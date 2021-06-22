@@ -37,6 +37,8 @@ $panel-section-title-bar-height: 39px;
       left: -$panel-side-width;
       width: $panel-side-width;
       transition-property: left, visibility;
+      border-left: 1px solid $ui-border-color;
+      border-right: 1px solid $ui-border-color;
 
       &.open {
         left: 0;
@@ -49,6 +51,8 @@ $panel-section-title-bar-height: 39px;
       right: -$panel-side-width;
       width: $panel-side-width;
       transition-property: right, visibility;
+      border-left: 1px solid $ui-border-color;
+      border-right: 1px solid $ui-border-color;
 
       &.open {
         right: 0;
@@ -108,6 +112,20 @@ $panel-section-title-bar-height: 39px;
     position: relative;
     background-color: $panel-bg-color-light;
     color: $panel-font-color-light;
+
+    .tab-content {
+      padding: 16px;
+      font-size: 12px;
+    }
+    .form-group {
+      margin-bottom: 0.75rem;
+    }
+    .form-label {
+      font-weight: 700;
+    }
+    .form-control {
+      font-size: 12px;
+    }
   }
   .aa-stage {
     position: fixed;
@@ -140,7 +158,7 @@ $panel-section-title-bar-height: 39px;
     display: flex;
     font-family: 'Raleway', $font-family-sans-serif;
     font-size: 12px;
-    color: #333333;
+    color: $panel-font-color-light;
     height: $panel-section-title-bar-height;
     justify-content: space-between;
     align-items: center;
@@ -182,6 +200,7 @@ $panel-section-title-bar-height: 39px;
     .custom-select {
       font-size: 12px;
       padding: 4px 36px 4px 8px;
+      height: inherit;
     }
     .aa-condition-header {
       margin-top: -22px;
@@ -221,6 +240,31 @@ $panel-section-title-bar-height: 39px;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
+    }
+  }
+  .aa-panel-tabs {
+    flex-wrap: inherit;
+    padding: 0 16px;
+    text-transform: uppercase;
+    font-weight: 700;
+
+    .nav-link {
+      border: none;
+      background: none;
+      padding: 0;
+      margin: 0;
+      color: $panel-font-color-light;
+      opacity: 0.5;
+
+      &.active {
+        color: $panel-font-color-light;
+        opacity: 1;
+        background: none;
+        border-top: 4px solid $primary;
+        border-radius: 0;
+        margin-top: -10px;
+        padding-top: 6px;
+      }
     }
   }
 }
