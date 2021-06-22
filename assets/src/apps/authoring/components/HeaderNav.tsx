@@ -5,7 +5,6 @@ import { selectProjectSlug, selectRevisionSlug, selectPaths } from '../store/app
 
 interface HeaderNavProps {
   content: any;
-  paths: any;
   isVisible: boolean;
 }
 
@@ -19,10 +18,10 @@ const PreviewButton: React.FC<{ url: string; windowName?: string }> = (props) =>
 );
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const { content, paths, isVisible } = props;
+  const { content, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
-  const path = useSelector(selectPaths);
+  const paths = useSelector(selectPaths);
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
