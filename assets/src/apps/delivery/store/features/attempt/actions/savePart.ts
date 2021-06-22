@@ -77,11 +77,11 @@ export const savePartStateToTree = createAsyncThunk(
       const attemptGuid = attempt.attemptGuid;
       const partAttemptGuid = attempt.parts.find((p) => p.partId === partId)?.attemptGuid;
       if (!partAttemptGuid) {
+        // means its in the tree, but doesn't own or inherit this part (some grandparent likely)
         return Promise.resolve('does not own part but thats OK');
       }
       return dispatch(savePartState({ attemptGuid, partAttemptGuid, response }));
     });
-
     return Promise.all(updates);
   },
 );
