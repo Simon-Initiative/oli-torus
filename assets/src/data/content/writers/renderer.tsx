@@ -7,8 +7,13 @@ import React from 'react';
 interface Props {
   text: RichText;
   context: WriterContext;
+  style?: React.CSSProperties;
 }
-export const HtmlContentModelRenderer = ({ text, context }: Props) =>
-  <div dangerouslySetInnerHTML={{
-    __html: new ContentWriter().render(context, text.model, new HtmlParser()),
-  }} />;
+export const HtmlContentModelRenderer: React.FC<Props> = ({ text, context, style }: Props) => (
+  <div
+    style={style}
+    dangerouslySetInnerHTML={{
+      __html: new ContentWriter().render(context, text.model, new HtmlParser()),
+    }}
+  />
+);

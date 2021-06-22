@@ -1,16 +1,28 @@
-import React, { useState } from 'react';
-import { AuthoringButton } from 'components/misc/AuthoringButton';
+import React from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
-import { Choice } from 'components/activities/types';
+import { Choice, RichText } from 'components/activities/types';
+import { ChoiceAuthoringConnected } from 'components/activities/common/choices/ChoiceAuthoring';
+import {
+  AuthoringButton,
+  AuthoringButtonConnected,
+} from 'components/activities/common/authoring/AuthoringButton';
 
 interface Props {
   icon: React.ReactNode;
-
   choices: Choice[];
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
+  onEdit: (id: string, content: RichText) => void;
+  onRemove: (id: string) => void;
 }
-export const ChoicesAuthoring: React.FC<Props> = ({ icon, choices, addOne, setAll }) => {
+export const ChoicesAuthoringConnected: React.FC<Props> = ({
+  icon,
+  choices,
+  addOne,
+  setAll,
+  onEdit,
+  onRemove,
+}) => {
   return (
     <>
       <DragDropContext
@@ -37,12 +49,14 @@ export const ChoicesAuthoring: React.FC<Props> = ({ icon, choices, addOne, setAl
           {(provided) => (
             <div {...provided.droppableProps} className="mt-3" ref={provided.innerRef}>
               {choices.map((choice, index) => (
-                <Choice.Authoring.Connected
+                <ChoiceAuthoringConnected
                   icon={icon}
                   key={index + 'choice'}
                   index={index}
                   choice={choice}
                   canRemove={choices.length > 1}
+                  onEdit={onEdit}
+                  onRemove={onRemove}
                 />
               ))}
               {provided.placeholder}
@@ -55,9 +69,9 @@ export const ChoicesAuthoring: React.FC<Props> = ({ icon, choices, addOne, setAl
           <div style={{ width: 30, lineHeight: 1, pointerEvents: 'none', cursor: 'default' }}>
             {icon}
           </div>
-          <AuthoringButton className="btn btn-link pl-2" onClick={addOne}>
+          <AuthoringButtonConnected className="btn btn-link pl-2" onClick={addOne}>
             Add choice
-          </AuthoringButton>
+          </AuthoringButtonConnected>
         </>
       </div>
     </>

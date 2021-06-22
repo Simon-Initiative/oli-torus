@@ -44,6 +44,7 @@ import {
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
+import './ResourceEditor.scss';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements

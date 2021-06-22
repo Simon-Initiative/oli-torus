@@ -1,6 +1,7 @@
 import { ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
+import guid from 'utils/guid';
 
 export type ChoiceId = ID;
 export type ResponseId = ID;
@@ -85,13 +86,36 @@ export interface ActivityState {
 }
 
 export interface Choice extends Identifiable, HasContent {}
+export const makeChoice: (text: string) => Choice = makeContent;
+export interface HasChoices {
+  choices: Choice[];
+}
+
 export interface Stem extends Identifiable, HasContent {}
+export interface HasStem {
+  stem: Stem;
+}
+export const makeStem: (text: string) => Stem = makeContent;
 export interface Hint extends Identifiable, HasContent {}
+export type HasHints = HasParts;
+export const makeHint: (text: string) => Hint = makeContent;
 export interface Feedback extends Identifiable, HasContent {}
+export const makeFeedback: (text: string) => Feedback = makeContent;
 export interface Transformation extends Identifiable {
   path: string;
   operation: Operation;
 }
+export interface HasTransformations {
+  authoring: {
+    transformations: Transformation[];
+  };
+}
+
+export const makeTransformation = (path: string, operation: Operation): Transformation => ({
+  id: guid(),
+  path: 'choices',
+  operation,
+});
 
 export interface Response extends Identifiable {
   // see `parser.ex` and `rule.ex`
@@ -102,6 +126,12 @@ export interface Response extends Identifiable {
 
   feedback: Feedback;
 }
+export const makeResponse = (rule: string, score: number, text: ''): Response => ({
+  id: guid(),
+  rule,
+  score,
+  feedback: makeFeedback(text),
+});
 
 export interface ConditionalOutcome extends Identifiable {
   // eslint-disable-next-line
@@ -162,6 +192,11 @@ export interface Part extends Identifiable {
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
 }
+export interface HasParts {
+  authoring: {
+    parts: Part[];
+  };
+}
 
 export enum ScoringStrategy {
   'average' = 'average',
@@ -186,3 +221,10 @@ export interface PartComponentDefinition {
   type: string;
   custom: Record<string, any>;
 }
+
+export interface HasPreviewText {
+  authoring: {
+    previewText: string;
+  };
+}
+export const makePreviewText = () => '';

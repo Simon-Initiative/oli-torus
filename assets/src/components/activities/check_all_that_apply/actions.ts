@@ -60,6 +60,12 @@ export class Actions {
     };
   }
 
+  static setAllChoices(choices: Choice[]) {
+    return (model: CATA) => {
+      model.choices = choices;
+    };
+  }
+
   static removeChoice(id: string) {
     return (model: CATA) => {
       const removeIdFrom = (list: string[]) => removeFromList(id, list);

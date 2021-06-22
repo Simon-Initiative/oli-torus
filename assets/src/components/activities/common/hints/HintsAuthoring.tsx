@@ -1,0 +1,139 @@
+import React from 'react';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { ID } from 'data/content/model';
+import { Hint, RichText } from 'components/activities/types';
+import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { Card } from 'components/misc/Card';
+import { Tooltip } from 'components/misc/Tooltip';
+
+export interface HintMapping {
+  deerInHeadlights: ID;
+  cognitive: ID[];
+  bottomOut: ID;
+}
+export interface HintMappings {
+  [partId: string]: HintMapping;
+}
+
+export const HintCard: React.FC<{
+  title: JSX.Element;
+  placeholder: string;
+  hint: Hint;
+  updateOne: (id: ID, content: RichText) => void;
+}> = ({ title, placeholder, hint, updateOne }) => {
+  return (
+    <Card.Card>
+      <Card.Title>{title}</Card.Title>
+      <Card.Content>
+        <RichTextEditorConnected
+          placeholder={placeholder}
+          style={{ backgroundColor: 'white' }}
+          text={hint.content}
+          onEdit={(content) => updateOne(hint.id, content)}
+        />
+      </Card.Content>
+    </Card.Card>
+  );
+};
+
+interface HintProps {
+  hint: Hint;
+  updateOne: (id: ID, content: RichText) => void;
+}
+const DeerInHeadlightsHint: React.FC<HintProps> = ({ hint, updateOne }) => (
+  <HintCard
+    title={
+      <>
+        {'"Deer in headlights" hint'}
+        <Tooltip title={'Restate the question for students who are totally confused'} />
+      </>
+    }
+    placeholder="Restate the question"
+    hint={hint}
+    updateOne={updateOne}
+  />
+);
+
+interface CognitiveProps {
+  hints: Hint[];
+  updateOne: (id: ID, content: RichText) => void;
+  removeOne: (id: ID) => void;
+  addOne: () => void;
+}
+const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne, addOne }) => (
+  <Card.Card>
+    <Card.Title>
+      {'"Cognitive" hints'}
+      <Tooltip title={'Explain how to solve the problem'} />
+    </Card.Title>
+    <Card.Content>
+      {hints.map((hint, index) => (
+        <div key={hint.id} className="d-flex">
+          <span className="mr-3 mt-2">{index + 1}.</span>
+          <RichTextEditorConnected
+            placeholder="Explain how to solve the problem"
+            style={{ backgroundColor: 'white' }}
+            className="mb-2 flex-grow-1"
+            text={hint.content}
+            onEdit={(content) => updateOne(hint.id, content)}
+          />
+          <div className="d-flex align-items-stretch">
+            {index > 0 && <RemoveButtonConnected onClick={() => removeOne(hint.id)} />}
+          </div>
+        </div>
+      ))}
+      <AuthoringButtonConnected
+        onClick={addOne}
+        style={{ marginLeft: '22px' }}
+        className="btn btn-sm btn-link"
+      >
+        Add cognitive hint
+      </AuthoringButtonConnected>
+    </Card.Content>
+  </Card.Card>
+);
+
+const BottomOutHint = ({ hint, updateOne }: { hint: Hint; updateOne: any }) => (
+  <HintCard
+    title={
+      <>
+        {'"Bottom out" hint'}
+        <Tooltip title={'Explain the answer for students who are still lost'} />
+      </>
+    }
+    placeholder="Explain how to solve the problem"
+    hint={hint}
+    updateOne={updateOne}
+  />
+);
+
+interface HintsProps {
+  addOne: () => void;
+  updateOne: (id: ID, content: RichText) => void;
+  removeOne: (id: ID) => void;
+  deerInHeadlightsHint: Hint;
+  cognitiveHints: Hint[];
+  bottomOutHint: Hint;
+}
+export const HintsAuthoring: React.FC<HintsProps> = ({
+  deerInHeadlightsHint,
+  cognitiveHints,
+  bottomOutHint,
+  addOne,
+  updateOne,
+  removeOne,
+}) => {
+  return (
+    <>
+      <DeerInHeadlightsHint hint={deerInHeadlightsHint} updateOne={updateOne} />
+      <CognitiveHints
+        hints={cognitiveHints}
+        updateOne={updateOne}
+        addOne={addOne}
+        removeOne={removeOne}
+      />
+      <BottomOutHint hint={bottomOutHint} updateOne={updateOne} />
+    </>
+  );
+};

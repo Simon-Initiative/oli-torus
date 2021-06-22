@@ -1,7 +1,11 @@
-import { fromText } from 'components/activities/check_all_that_apply/utils';
 import { EvaluationResponse, RequestHintResponse } from 'components/activities/DeliveryElement';
-import { Action, ActivityState, PartState } from 'components/activities/types';
-import { createFalse } from 'typescript';
+import {
+  Action,
+  ActivityState,
+  makeFeedback,
+  makeHint,
+  PartState,
+} from 'components/activities/types';
 
 const partState: PartState = {
   attemptGuid: 'guid',
@@ -33,7 +37,7 @@ const feedbackAction: Action = {
   attempt_guid: '1',
   out_of: 1,
   score: 1,
-  feedback: fromText('correct feedback'),
+  feedback: makeFeedback('correct feedback'),
 };
 
 const evaluationResponse: EvaluationResponse = {
@@ -43,7 +47,7 @@ const evaluationResponse: EvaluationResponse = {
 
 const requestHintResponse: RequestHintResponse = {
   type: 'success',
-  hint: fromText('hint'),
+  hint: makeHint('hint'),
   hasMoreHints: false,
 };
 

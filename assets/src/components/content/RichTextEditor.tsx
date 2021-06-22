@@ -5,6 +5,10 @@ import { getToolbarForResourceType } from 'components/editing/toolbars/insertion
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { classNames } from 'utils/classNames';
+import {
+  AuthoringElementState,
+  useAuthoringElementContext,
+} from 'components/activities/AuthoringElement';
 
 type Props = {
   projectSlug: ProjectSlug;
@@ -40,4 +44,11 @@ export const RichTextEditor: React.FC<Props> = ({
       </ErrorBoundary>
     </div>
   );
+};
+
+export const RichTextEditorConnected: React.FC<Omit<Props, 'projectSlug' | 'editMode'>> = (
+  props,
+) => {
+  const { editMode, projectSlug } = useAuthoringElementContext();
+  return <RichTextEditor {...props} editMode={editMode} projectSlug={projectSlug} />;
 };

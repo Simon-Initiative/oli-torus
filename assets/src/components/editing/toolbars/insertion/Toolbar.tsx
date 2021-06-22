@@ -54,6 +54,7 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
 
   return (
     <div
+      style={{ display: 'none' }}
       onMouseDown={(e) => e.preventDefault()}
       ref={ref as any}
       className={classNames(['toolbar add-resource-content', isPopoverOpen ? 'active' : ''])}

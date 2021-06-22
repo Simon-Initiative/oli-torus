@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  AuthoringElementProvider,
+} from '../AuthoringElement';
 import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/Stem';
-import { Choices } from './sections/Choices';
 import { Feedback } from './sections/Feedback';
-import { Hints } from '../common/Hints';
 import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
@@ -14,8 +15,10 @@ import { configureStore } from 'state/store';
 import produce from 'immer';
 import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
 import { getHints, isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
-import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
 import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
+import { ChoicesAuthoringConnected } from 'components/activities/common/choices/ChoicesAuthoring';
+import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import { HintsAuthoring } from 'components/activities/common/hints/HintsAuthoring';
 
 const store = configureStore();
 
@@ -37,7 +40,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         onEdit={(content) => dispatch(Actions.editStem(content))}
       />
 
-      <Choices
+      {/* <Choices
         {...sharedProps}
         onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
         onAddChoice={() => dispatch(Actions.addChoice())}
@@ -46,8 +49,16 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         onToggleChoiceCorrectness={(choiceId) =>
           dispatch(Actions.toggleChoiceCorrectness(choiceId))
         }
-      />
+      /> */}
 
+      <ChoicesAuthoringConnected
+        icon={<Checkbox.Unchecked />}
+        choices={props.model.choices}
+        addOne={() => dispatch(Actions.addChoice())}
+        setAll={(choices: ActivityTypes.Choice[]) => dispatch(Actions.setAllChoices(choices))}
+        onEdit={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
+        onRemove={(id) => dispatch(Actions.removeChoice(id))}
+      />
       <Feedback
         {...sharedProps}
         onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
@@ -74,13 +85,21 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         ) : null}
       </Feedback>
 
-      <Hints
+      {/* <Hints
         projectSlug={props.projectSlug}
         hints={getHints(props.model)}
         editMode={props.editMode}
         onAddHint={() => dispatch(Actions.addHint())}
         onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
         onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
+      /> */}
+      <HintsAuthoring
+        addOne={() => dispatch(Actions.addHint())}
+        updateOne={(id, content) => dispatch(Actions.editHint(id, content))}
+        removeOne={(id) => dispatch(Actions.removeHint(id))}
+        deerInHeadlightsHint={getHints(props.model)[0]}
+        cognitiveHints={getHints(props.model).slice(1, getHints(props.model).length - 1)}
+        bottomOutHint={getHints(props.model)[getHints(props.model).length - 1]}
       />
     </React.Fragment>
   );
@@ -90,7 +109,9 @@ export class CheckAllThatApplyAuthoring extends AuthoringElement<CheckAllThatApp
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<CheckAllThatApplyModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <CheckAllThatApply {...props} />
+        <AuthoringElementProvider {...props}>
+          <CheckAllThatApply {...props} />
+        </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,
       mountPoint,
