@@ -149,16 +149,9 @@ module.exports = (env, options) => ({
         ],
       },
       {
-        test: /\.[s]?css$/,
+        test: /\.scss$/,
         use: [
-          'to-string-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              sourceMap: false,
-              esModule: false,
-            },
-          },
+          MiniCssExtractPlugin.loader,
           {
             loader: 'sass-loader',
             options: {
@@ -167,6 +160,19 @@ module.exports = (env, options) => ({
                 importer: globImporter(),
               },
               sourceMap: true,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.css$/,
+        use: [
+          'to-string-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: false,
+              esModule: false,
             },
           },
         ],
