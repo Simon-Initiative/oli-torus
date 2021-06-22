@@ -78,7 +78,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     const dHeight = pModel.height || frameHeight;
     setFrameHeight(dHeight);
 
-    const dVisible = pModel.visible || frameVisible;
+    const dVisible = pModel.visible === undefined ? undefined : pModel.visible || frameVisible;
     setFrameVisible(dVisible);
 
     const initResult = await props.onInit({
@@ -258,7 +258,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
-    visibility: frameVisible ? 'visible' : 'hidden',
+    visibility: frameVisible === undefined ? undefined : frameVisible ? 'visible' : 'hidden',
   };
 
   const frameRef = useCallback((frame) => {
