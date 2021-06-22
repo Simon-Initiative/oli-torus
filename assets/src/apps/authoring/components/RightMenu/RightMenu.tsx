@@ -22,7 +22,11 @@ const RightMenu: React.FC<any> = (props) => {
   };
 
   return (
-    <Tabs activeKey={selectedTab} onSelect={handleSelectTab}>
+    <Tabs
+      className="aa-panel-section-title-bar aa-panel-tabs"
+      activeKey={selectedTab}
+      onSelect={handleSelectTab}
+    >
       <Tab eventKey="lesson" title="Lesson">
         <PropertyEditor schema={lessonSchema} value={currentLesson} />
       </Tab>
