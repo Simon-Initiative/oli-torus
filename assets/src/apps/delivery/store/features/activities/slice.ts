@@ -33,6 +33,9 @@ const slice: Slice<ActivitiesState> = createSlice({
     upsertActivity(state, action: PayloadAction<{ activity: IActivity }>) {
       adapter.upsertOne(state, action.payload.activity);
     },
+    upsertActivities(state, action: PayloadAction<{ activities: IActivity[] }>) {
+      adapter.upsertMany(state, action.payload.activities);
+    },
     deleteActivity(state, action: PayloadAction<{ activityId: string }>) {
       adapter.removeOne(state, action.payload.activityId);
     },
@@ -63,6 +66,7 @@ export const ActivitiesSlice = slice.name;
 export const {
   setActivities,
   upsertActivity,
+  upsertActivities,
   deleteActivity,
   deleteActivities,
   setCurrentActivityId,

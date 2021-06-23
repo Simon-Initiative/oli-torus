@@ -56,6 +56,7 @@ jobs:
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+          port: 44067
 
   docs:
     runs-on: ubuntu-latest
