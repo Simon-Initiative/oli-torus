@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@import 'delivery/variables';
 
 .activity {
   margin-top: 1em;
@@ -172,4 +172,5 @@
       background-color: $choice-selected-bg;
       border-color: $choice-selected-border-color;
     }
+  }
 }
