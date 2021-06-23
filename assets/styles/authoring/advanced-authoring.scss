@@ -8,6 +8,7 @@ $torus-panel-side-width: 200px;
 $rounded: 4px;
 $ui-border-color: #ccc;
 $panel-section-title-bar-height: 39px;
+$panel-section-title-bar-color: #e8ebed;
 
 .advanced-authoring {
   position: relative;
@@ -111,8 +112,34 @@ $panel-section-title-bar-height: 39px;
     top: 50vh;
     transition-timing-function: ease-in-out;
     transition-duration: 0.3s;
+    border-radius: 100%;
+    height: 37px;
+    width: 37px;
+    border-color: $ui-border-color;
+    background-color: #dfdfdf;
 
+    .bg-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      width: 24px;
+      background-color: #444;
+      border-radius: 100%;
+    }
+    &:hover,
+    &:focus {
+      background-color: #dfdfdf;
+      border-color: $ui-border-color;
+    }
+    &:hover {
+      .bg-circle {
+        background-color: $primary;
+      }
+    }
     &.left {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
       transition-property: left;
       left: 0;
       &.open {
@@ -120,6 +147,8 @@ $panel-section-title-bar-height: 39px;
       }
     }
     &.right {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
       transition-property: right;
       right: 0;
       &.open {
@@ -172,7 +201,7 @@ $panel-section-title-bar-height: 39px;
     padding: 24px;
   }
   .aa-panel-section-title-bar {
-    background: #e8ebed;
+    background: $panel-section-title-bar-color;
     border-top: 1px solid $ui-border-color;
     border-bottom: 1px solid $ui-border-color;
     display: flex;
@@ -185,7 +214,7 @@ $panel-section-title-bar-height: 39px;
     padding: 0 16px;
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 3;
 
     i {
       font-size: 1rem;
@@ -264,6 +293,10 @@ $panel-section-title-bar-height: 39px;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
+
+      &.active {
+        background-color: $primary;
+      }
     }
   }
   .aa-panel-tabs {

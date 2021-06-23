@@ -14,13 +14,15 @@ export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
       <button
         className={`aa-panel-side-toggle ${position}${
           panelState[position] ? ' open' : ''
-        } btn btn-secondary btn-sm`}
+        } btn btn-secondary btn-sm m-0 p-0 d-flex justify-content-center align-items-center`}
         onClick={() => onToggle()}
       >
-        {position === 'left' && panelState[position] && '<'}
-        {position === 'left' && !panelState[position] && '>'}
-        {position === 'right' && panelState[position] && '>'}
-        {position === 'right' && !panelState[position] && '<'}
+        <span className="bg-circle">
+          {position === 'left' && panelState[position] && <i className="fa fa-angle-left" />}
+          {position === 'left' && !panelState[position] && <i className="fa fa-angle-right" />}
+          {position === 'right' && panelState[position] && <i className="fa fa-angle-right" />}
+          {position === 'right' && !panelState[position] && <i className="fa fa-angle-left" />}
+        </span>
       </button>
       <section className={`aa-panel ${position}-panel${panelState[position] ? ' open' : ''}`}>
         <div className="aa-panel-inner">{children}</div>
