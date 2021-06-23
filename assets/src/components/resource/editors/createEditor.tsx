@@ -1,9 +1,9 @@
 // Factory for creating top level editors, for things like structured
 
 import React from 'react';
-import { ResourceContent, ResourceContext, ResourceType, Activity } from 'data/content/resource';
+import { ResourceContent, ResourceContext, ResourceType } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
-import { EditorDesc, ActivityEditorMap } from 'data/content/editors';
+import { EditorDesc } from 'data/content/editors';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
@@ -13,6 +13,7 @@ import { defaultState } from '../TestModeHandler';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
+import { Undoable } from 'components/activities/types';
 
 const unsupported: EditorDesc = {
   deliveryElement: UnsupportedActivity,
@@ -27,12 +28,10 @@ const unsupported: EditorDesc = {
 
 // content or referenced activities
 export const createEditor = (
-  contentKey: string,
   resourceContext: ResourceContext,
   content: ResourceContent,
   index: number,
   activities: Immutable.Map<string, ActivityEditContext>,
-  editorMap: ActivityEditorMap,
   editMode: boolean,
   resourceSlug: string,
   projectSlug: string,
@@ -41,6 +40,7 @@ export const createEditor = (
   editorProps: any,
   onEdit: (content: ResourceContent) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
+  onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
 ): JSX.Element => {
   if (content.type === 'content') {
@@ -94,6 +94,7 @@ export const createEditor = (
       activityId: activity.activityId,
       title: activity.title,
       onEdit: (update: EditorUpdate) => onActivityEdit(activity.activitySlug, update),
+      onPostUndoable: (undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable),
       onRegisterNewObjective,
     };
 

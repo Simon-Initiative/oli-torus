@@ -1,9 +1,10 @@
-import { ActivityModelSchema } from './types';
+import { ActivityModelSchema, Undoable } from './types';
 import { ProjectSlug } from 'data/types';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
   onEdit: (model: T) => void;
+  onPostUndoable: (undoable: Undoable) => void;
   editMode: boolean;
   projectSlug: ProjectSlug;
 }
@@ -36,9 +37,13 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
     };
+    const onPostUndoable = (undoable: Undoable) => {
+      this.dispatchEvent(new CustomEvent('postUndoable', { bubbles: true, detail: { undoable } }));
+    };
 
     return {
       onEdit,
+      onPostUndoable,
       model,
       editMode,
       projectSlug,

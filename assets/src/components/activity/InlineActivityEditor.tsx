@@ -5,9 +5,11 @@ import { TitleBar } from '../content/TitleBar';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
+import { Undoable } from 'components/activities/types';
 
 export interface ActivityEditorProps extends ActivityEditContext, ProjectResourceContext {
   onEdit: (state: EditorUpdate) => void;
+  onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
   editMode: boolean;
 }
@@ -41,6 +43,12 @@ export class InlineActivityEditor extends React.Component<
 
         // Convert it back to using 'content', instead of 'model'
         this.update({ content: Object.assign({}, e.detail.model) });
+      });
+      this.ref.current.addEventListener('postUndoable', (e: CustomEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        this.props.onPostUndoable(e.detail.undoable);
       });
     }
   }

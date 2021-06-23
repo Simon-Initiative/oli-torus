@@ -21,6 +21,7 @@ import { dropHandler } from './dragndrop/handlers/drop';
 import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
+import { Undoable } from 'components/activities/types';
 
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
@@ -40,6 +41,7 @@ export type EditorsProps = {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewObjectiveByTitle: (text: string) => Promise<Objective>;
   onActivityEdit: (key: string, update: EditorUpdate) => void;
+  onPostUndoable: (key: string, undoable: Undoable) => void;
 };
 
 // The list of editors
@@ -60,6 +62,7 @@ export const Editors = (props: EditorsProps) => {
     onEditContentList,
     onAddItem,
     onActivityEdit,
+    onPostUndoable,
     onRegisterNewObjective,
   } = props;
 
@@ -107,12 +110,10 @@ export const Editors = (props: EditorsProps) => {
     };
 
     const editor = createEditor(
-      contentKey,
       props.resourceContext,
       contentValue,
       index,
       activityContexts,
-      editorMap,
       editMode,
       resourceSlug,
       projectSlug,
@@ -121,6 +122,7 @@ export const Editors = (props: EditorsProps) => {
       editorProps,
       onEdit,
       onActivityEdit,
+      onPostUndoable,
       onRegisterNewObjective,
     );
 

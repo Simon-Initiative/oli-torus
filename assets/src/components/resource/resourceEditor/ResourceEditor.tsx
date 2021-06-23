@@ -24,6 +24,7 @@ import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../../messages/Banner';
 import { ActivityEditContext } from 'data/content/activity';
 import { create } from 'data/persistence/objective';
+import { Undoable as ActivityUndoable } from 'components/activities/types';
 import {
   registerUnload,
   registerKeydown,
@@ -36,6 +37,9 @@ import {
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
+import { Undoables, empty } from './types';
+import { UndoToasts } from './UndoToasts';
+import { applyOperations } from 'utils/undo';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -61,6 +65,7 @@ type ResourceEditorState = {
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
   metaModifier: boolean;
+  undoables: Undoables;
 };
 
 // Creates a function that when invoked submits a save request
@@ -139,12 +144,15 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
       metaModifier: false,
+      undoables: empty(),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
 
     this.update = this.update.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
+    this.onPostUndoable = this.onPostUndoable.bind(this);
+    this.onInvokeUndo = this.onInvokeUndo.bind(this);
   }
 
   componentDidMount() {
@@ -254,7 +262,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       model: update.content !== undefined ? update.content : undefined,
       objectives: update.objectives !== undefined ? update.objectives : undefined,
     };
-
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
     const activityContexts = this.state.activityContexts.set(key, merged);
@@ -265,12 +272,57 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           this.props.projectSlug,
           this.props.resourceId,
           merged.activityId,
-          update,
+          update as any,
           releaseLock,
         );
 
       this.activityPersistence[key].save(saveFn);
     });
+  }
+
+  onPostUndoable(key: string, undoable: ActivityUndoable) {
+    const id = guid();
+    this.setState(
+      {
+        undoables: this.state.undoables.set(id, {
+          guid: id,
+          contentKey: key,
+          undoable,
+        }),
+      },
+      () =>
+        setTimeout(
+          () =>
+            this.setState({
+              undoables: this.state.undoables.delete(id),
+            }),
+          5000,
+        ),
+    );
+  }
+
+  onInvokeUndo(guid: string) {
+    const item = this.state.undoables.get(guid);
+
+    if (item !== undefined) {
+      if (item.undoable.type === 'PageUndoable') {
+        console.log('page undo');
+      } else {
+        const context = this.state.activityContexts.get(item.contentKey);
+        if (context !== undefined) {
+          const model = JSON.parse(JSON.stringify(context.model));
+          applyOperations(model as any, item.undoable.operations);
+
+          this.onActivityEdit(item.contentKey, {
+            content: model,
+            title: context.title,
+            objectives: context.objectives,
+          });
+        }
+      }
+    }
+
+    this.setState({ undoables: this.state.undoables.delete(guid) });
   }
 
   createObjectiveErrorMessage(failure: any) {
@@ -395,6 +447,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div className="resource-editor row">
         <div className="col-12">
+          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+
           <Banner
             dismissMessage={(msg) =>
               this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
@@ -420,6 +474,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               onEdit={(c, key) => onEdit(this.state.content.set(key, c))}
               onEditContentList={onEdit}
               onActivityEdit={this.onActivityEdit}
+              onPostUndoable={this.onPostUndoable}
               content={this.state.content}
               onAddItem={onAddItem}
               resourceContext={props}
