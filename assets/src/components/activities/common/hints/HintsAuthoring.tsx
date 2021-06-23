@@ -94,7 +94,13 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
   </Card.Card>
 );
 
-const BottomOutHint = ({ hint, updateOne }: { hint: Hint; updateOne: any }) => (
+const BottomOutHint = ({
+  hint,
+  updateOne,
+}: {
+  hint: Hint;
+  updateOne: (id: ID, text: RichText) => void;
+}) => (
   <HintCard
     title={
       <>

@@ -4,12 +4,12 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
 import './StemDelivery.scss';
 
-interface DeliveryProps {
+interface Props {
   stem: Stem;
   context: WriterContext;
 }
 
-export const Delivery = ({ stem, context }: DeliveryProps) => {
+export const StemDelivery: React.FC<Props> = ({ stem, context }) => {
   return (
     <div className="stem__delivery">
       <HtmlContentModelRenderer text={stem.content} context={context} />

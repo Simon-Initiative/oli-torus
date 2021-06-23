@@ -5,8 +5,17 @@ import {
   TargetedCATA,
   SimpleCATA,
 } from './schema';
-import { RichText, Operation, ScoringStrategy, ChoiceId, Choice } from '../types';
-import { create, ID, Identifiable, Paragraph } from 'data/content/model';
+import { ID, Identifiable } from 'data/content/model';
+import {
+  ChoiceId,
+  makeChoice,
+  makeHint,
+  makeResponse,
+  makeStem,
+  makeTransformation,
+  Operation,
+  ScoringStrategy,
+} from 'components/activities/types';
 
 // Helper. Assumes a correct ID is given
 export function getByIdUnsafe<T extends Identifiable>(slice: T[], id: string): T {
@@ -63,8 +72,8 @@ export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
 
 // Model creation
 export const defaultCATAModel: () => CATA = () => {
-  const correctChoice: Choice = fromText('Choice 1');
-  const incorrectChoice: Choice = fromText('Choice 2');
+  const correctChoice = makeChoice('Choice 1');
+  const incorrectChoice = makeChoice('Choice 2');
 
   const correctResponse = makeResponse(
     createRuleForIds([correctChoice.id], [incorrectChoice.id]),
@@ -75,7 +84,7 @@ export const defaultCATAModel: () => CATA = () => {
 
   return {
     type: 'SimpleCATA',
-    stem: fromText(''),
+    stem: makeStem(''),
     choices: [correctChoice, incorrectChoice],
     authoring: {
       parts: [
@@ -83,42 +92,13 @@ export const defaultCATAModel: () => CATA = () => {
           id: '1', // a only has one part, so it is safe to hardcode the id
           scoringStrategy: ScoringStrategy.average,
           responses: [correctResponse, incorrectResponse],
-          hints: [fromText(''), fromText(''), fromText('')],
+          hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
       correct: [[correctChoice.id], correctResponse.id],
       incorrect: [[incorrectChoice.id], incorrectResponse.id],
-      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
+      transformations: [makeTransformation('choices', Operation.shuffle)],
       previewText: '',
     },
   };
 };
-
-export const makeResponse = (rule: string, score: number, text: '') => ({
-  id: guid(),
-  rule,
-  score,
-  feedback: fromText(text),
-});
-
-export function fromText(text: string): { id: string; content: RichText } {
-  return {
-    id: guid() + '',
-    content: {
-      model: [
-        create<Paragraph>({
-          type: 'p',
-          children: [{ text }],
-          id: guid() + '',
-        }),
-      ],
-      selection: null,
-    },
-  };
-}
-
-export const feedback = (text: string, match: string | number, score = 0) => ({
-  ...fromText(text),
-  match,
-  score,
-});

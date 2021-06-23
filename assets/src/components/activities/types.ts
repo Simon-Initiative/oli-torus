@@ -1,4 +1,4 @@
-import { ID, Identifiable, ModelElement, Selection } from 'data/content/model';
+import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
@@ -17,6 +17,21 @@ export interface Success {
 
 export interface HasContent {
   content: RichText;
+}
+export function makeContent(text: string): { id: string; content: RichText } {
+  return {
+    id: guid() + '',
+    content: {
+      model: [
+        create({
+          type: 'p',
+          children: [{ text }],
+          id: guid() + '',
+        }),
+      ],
+      selection: null,
+    },
+  };
 }
 
 export interface StudentResponse {

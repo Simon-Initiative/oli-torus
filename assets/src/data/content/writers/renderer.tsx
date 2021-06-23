@@ -1,8 +1,8 @@
 import { ContentWriter } from './writer';
 import { HtmlParser } from './html';
-import { RichText } from 'components/activities/types';
 import { WriterContext } from './context';
 import React from 'react';
+import { RichText } from 'components/activities/types';
 
 interface Props {
   text: RichText;

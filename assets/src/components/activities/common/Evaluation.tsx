@@ -1,7 +1,7 @@
 import React from 'react';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { WriterContext } from 'data/content/writers/context';
-import { ActivityState } from 'components/activities/types';
+import { ActivityState, makeContent, makeFeedback } from 'components/activities/types';
 
 interface Props {
   shouldShow?: boolean;

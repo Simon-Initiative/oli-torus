@@ -40,17 +40,6 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         onEdit={(content) => dispatch(Actions.editStem(content))}
       />
 
-      {/* <Choices
-        {...sharedProps}
-        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
-        onAddChoice={() => dispatch(Actions.addChoice())}
-        onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
-        onToggleChoiceCorrectness={(choiceId) =>
-          dispatch(Actions.toggleChoiceCorrectness(choiceId))
-        }
-      /> */}
-
       <ChoicesAuthoringConnected
         icon={<Checkbox.Unchecked />}
         choices={props.model.choices}
@@ -66,7 +55,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
           dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
         }
       >
-        {isTargetedCATA(props.model) ? (
+        {isTargetedCATA(props.model) && (
           <TargetedFeedback
             {...sharedProps}
             model={props.model}
@@ -82,17 +71,9 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
               choiceIds: ActivityTypes.ChoiceId[],
             ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
           />
-        ) : null}
+        )}
       </Feedback>
 
-      {/* <Hints
-        projectSlug={props.projectSlug}
-        hints={getHints(props.model)}
-        editMode={props.editMode}
-        onAddHint={() => dispatch(Actions.addHint())}
-        onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
-      /> */}
       <HintsAuthoring
         addOne={() => dispatch(Actions.addHint())}
         updateOne={(id, content) => dispatch(Actions.editHint(id, content))}

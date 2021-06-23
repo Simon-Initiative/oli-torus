@@ -5,7 +5,7 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { Choice, ChoiceId, Feedback, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
 import { Card } from 'components/misc/Card';
-import { DeliveryChoices } from 'components/activities/common/choices/delivery/DeliveryChoices';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 
 export const ResponseFeedbackCard: React.FC<{
   title: React.ReactNode;
@@ -38,7 +38,7 @@ export const ResponseFeedbackCard: React.FC<{
         </>
       </Card.Title>
       <Card.Content>
-        <DeliveryChoices
+        <ChoicesDelivery
           unselectedIcon={unselectedIcon}
           selectedIcon={selectedIcon}
           choices={choices}

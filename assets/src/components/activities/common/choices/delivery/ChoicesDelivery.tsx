@@ -2,7 +2,7 @@ import { WriterContext } from 'data/content/writers/context';
 import React from 'react';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Choice, ChoiceId } from 'components/activities/types';
-import './DeliveryChoices.scss';
+import './ChoicesDelivery.scss';
 
 interface Props {
   choices: Choice[];
@@ -13,7 +13,7 @@ interface Props {
   unselectedIcon: React.ReactNode;
   selectedIcon: React.ReactNode;
 }
-export const DeliveryChoices: React.FC<Props> = ({
+export const ChoicesDelivery: React.FC<Props> = ({
   choices,
   selected,
   context,
