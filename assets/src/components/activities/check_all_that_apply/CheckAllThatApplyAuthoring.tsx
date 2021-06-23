@@ -37,18 +37,11 @@ const store = configureStore();
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
   const dispatch = (action: any) => props.onEdit(produce(props.model, action));
 
-  const sharedProps = {
-    model: props.model,
-    editMode: props.editMode,
-    projectSlug: props.projectSlug,
-  };
-
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <StemAuthoring
-            {...sharedProps}
             stem={props.model.stem}
             onEdit={(content) => dispatch(Actions.editStem(content))}
           />
@@ -76,10 +69,6 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
             incorrectResponse={getIncorrectResponse(props.model)}
             update={(id, content) => dispatch(Actions.editResponseFeedback(id, content))}
           />
-
-          {/*
-Fix CATA UI tests
-*/}
 
           {isTargetedCATA(props.model) && (
             <TargetedFeedback
