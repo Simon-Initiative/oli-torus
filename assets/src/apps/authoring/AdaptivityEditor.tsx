@@ -1,4 +1,5 @@
 import React from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -18,20 +19,54 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
 
       {/* Has Conditions */}
       <div className="aa-conditions d-flex w-100">
-        <button className="aa-add-button btn btn-primary btn-sm mr-3">
-          <i className="fa fa-plus" />
-        </button>
+        <OverlayTrigger
+          placement="top"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              New Condition
+            </Tooltip>
+          }
+        >
+          <button className="aa-add-button btn btn-primary btn-sm mr-3">
+            <i className="fa fa-plus" />
+          </button>
+        </OverlayTrigger>
         <div className="d-flex flex-column w-100">
           <div className="aa-condition border rounded p-2 mt-4">
             <div className="aa-condition-header d-flex justify-content-between align-items-center">
               <div>CONDITIONS</div>
               <div>
-                <button className="btn btn-link p-0">
-                  <i className="fa fa-trash-alt" />
-                </button>
-                <button className="btn btn-link p-0 ml-1">
-                  <i className="fa fa-plus" />
-                </button>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      Delete Group
+                    </Tooltip>
+                  }
+                >
+                  <span>
+                    <button className="btn btn-link p-0">
+                      <i className="fa fa-trash-alt" />
+                    </button>
+                  </span>
+                </OverlayTrigger>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      New Condition
+                    </Tooltip>
+                  }
+                >
+                  <span>
+                    <button className="btn btn-link p-0 ml-1">
+                      <i className="fa fa-plus" />
+                    </button>
+                  </span>
+                </OverlayTrigger>
                 {/* TODO: implement collapse / expand for rule groups */}
                 {/* <button className="btn btn-link p-0 ml-1">
                   <i className="fa fa-angle-down" />
@@ -115,15 +150,40 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
                 className="form-control form-control-sm flex-grow-1 mw-25"
                 id="value"
               />
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    Delete Condition
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button className="btn btn-link p-0 ml-1">
+                    <i className="fa fa-trash-alt" />
+                  </button>
+                </span>
+              </OverlayTrigger>
             </div>
           </div>
         </div>
       </div>
       <p className="mt-3 mb-0">Perform the following actions:</p>
       <div className="aa-actions pt-3 mt-2 d-flex w-100">
-        <button className="aa-add-button btn btn-primary btn-sm mr-3">
-          <i className="fa fa-plus" />
-        </button>
+        <OverlayTrigger
+          placement="top"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              New Action
+            </Tooltip>
+          }
+        >
+          <button className="aa-add-button btn btn-primary btn-sm mr-3">
+            <i className="fa fa-plus" />
+          </button>
+        </OverlayTrigger>
         <div className="d-flex flex-column w-100">
           <div className="aa-action d-flex mb-2">
             <label className="sr-only" htmlFor="operator">
@@ -141,6 +201,21 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
             </select>
             <label className="sr-only">value</label>
             <input type="email" className="form-control form-control-sm w-75" id="value" />
+            <OverlayTrigger
+              placement="top"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  Delete Action
+                </Tooltip>
+              }
+            >
+              <span>
+                <button className="btn btn-link p-0 ml-1">
+                  <i className="fa fa-trash-alt" />
+                </button>
+              </span>
+            </OverlayTrigger>
           </div>
         </div>
       </div>
