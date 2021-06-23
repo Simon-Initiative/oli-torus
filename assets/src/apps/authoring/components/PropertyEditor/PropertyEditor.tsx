@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Form } from 'react-bootstrap';
+import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 interface SchemaOptions {
   label?: string;
@@ -46,14 +46,28 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ schema, value }) => {
 
     return (
       <Form.Group key={schemaKey} controlId={`form_${schemaKey}`}>
-        <Form.Label>{label}</Form.Label>
+        <Form.Label>
+          {label}
+          {description && (
+            <OverlayTrigger
+              placement="top"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  {description}
+                </Tooltip>
+              }
+            >
+              <i className="fa fa-question-circle ml-1" />
+            </OverlayTrigger>
+          )}
+        </Form.Label>
         <Form.Control
           size="sm"
           type={controlType}
           placeholder={`Enter ${label}`}
           defaultValue={controlValue}
         />
-        {description ? <Form.Text className="text-muted">{description}</Form.Text> : null}
       </Form.Group>
     );
   });

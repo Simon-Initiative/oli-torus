@@ -1,4 +1,5 @@
 import React from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -46,12 +47,36 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                 </div>
                 <i className="fa fa-check" />
               </div>
-              <button className="btn btn-link p-0 ml-3">
-                <i className="fa fa-trash-alt" />
-              </button>
-              <button className="btn btn-link p-0 ml-1">
-                <i className="fa fa-plus" />
-              </button>
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    Delete Rule
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button className="btn btn-link p-0 ml-3">
+                    <i className="fa fa-trash-alt" />
+                  </button>
+                </span>
+              </OverlayTrigger>
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    New Rule
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button className="btn btn-link p-0 ml-1">
+                    <i className="fa fa-plus" />
+                  </button>
+                </span>
+              </OverlayTrigger>
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
                 {panelState['bottom'] && <i className="fa fa-angle-down" />}
                 {!panelState['bottom'] && <i className="fa fa-angle-right" />}
