@@ -328,6 +328,17 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           .concat(this.state.content.skip(index)),
       });
       if (a) {
+        const persistence = new DeferredPersistenceStrategy();
+        persistence.initialize(
+          () => Promise.resolve({ type: 'acquired' }),
+          () => Promise.resolve({ type: 'acquired' }),
+          // eslint-disable-next-line
+          () => {},
+          (failure) => this.publishErrorMessage(failure),
+          (persistence) => this.setState({ persistence }),
+        );
+        this.activityPersistence[a.activitySlug] = persistence;
+
         this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
       }
     };

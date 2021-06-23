@@ -1,4 +1,3 @@
-import * as Immutable from 'immutable';
 import { ProjectSlug, ActivityTypeSlug, ResourceId } from 'data/types';
 import { ActivityModelSchema, PartResponse } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
@@ -14,7 +13,7 @@ export type ActivityUpdate = {
 export type Created = {
   result: 'success';
   revisionSlug: string;
-  transformed: null | ActivityModelSchema;
+  resourceId: ResourceId;
 };
 
 export type Updated = {

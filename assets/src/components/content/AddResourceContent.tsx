@@ -104,60 +104,51 @@ export const AddResourceContent = ({
     let model: ActivityModelSchema;
     let selectedObjectives: ResourceId[];
 
-    promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective).then(
-      (objectives: ResourceId[]) =>
-        invokeCreationFunc(editorDesc.slug, resourceContext)
-          .then((createdModel) => {
-            model = createdModel;
-            selectedObjectives = objectives;
+    invokeCreationFunc(editorDesc.slug, resourceContext)
+      .then((createdModel) => {
+        model = createdModel;
 
-            return Persistence.create(
-              resourceContext.projectSlug,
-              editorDesc.slug,
-              model,
-              objectives,
-            );
-          })
-          .then((result: Persistence.Created) => {
-            const resourceContent: ActivityReference = {
-              type: 'activity-reference',
-              id: guid(),
-              activitySlug: result.revisionSlug,
-              purpose: 'none',
-              children: [],
-            };
+        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, []);
+      })
+      .then((result: Persistence.Created) => {
+        const resourceContent: ActivityReference = {
+          type: 'activity-reference',
+          id: guid(),
+          activitySlug: result.revisionSlug,
+          purpose: 'none',
+          children: [],
+        };
 
-            // For every part that we find in the model, we attach the selected
-            // objectives to it
-            const objectives = model.authoring.parts
-              .map((p: any) => p.id)
-              .reduce((p: any, id: string) => {
-                p[id] = selectedObjectives;
-                return p;
-              }, {});
+        // For every part that we find in the model, we attach the selected
+        // objectives to it
+        const objectives = model.authoring.parts
+          .map((p: any) => p.id)
+          .reduce((p: any, id: string) => {
+            p[id] = [];
+            return p;
+          }, {});
 
-            const editor = editorMap[editorDesc.slug];
+        const editor = editorMap[editorDesc.slug];
 
-            const activity: ActivityEditContext = {
-              authoringElement: editor.authoringElement as string,
-              authoringScript: '',
-              description: editor.description,
-              friendlyName: editor.friendlyName,
-              activitySlug: result.revisionSlug,
-              typeSlug: editorDesc.slug,
-              activityId: 0,
-              title: '',
-              model,
-              objectives,
-            };
+        const activity: ActivityEditContext = {
+          authoringElement: editor.authoringElement as string,
+          authoringScript: '',
+          description: editor.description,
+          friendlyName: editor.friendlyName,
+          activitySlug: result.revisionSlug,
+          typeSlug: editorDesc.slug,
+          activityId: result.resourceId,
+          title: editor.friendlyName,
+          model,
+          objectives,
+        };
 
-            onAddItem(resourceContent, index, activity);
-          })
-          .catch((err) => {
-            // tslint:disable-next-line
-            console.error(err);
-          }),
-    );
+        onAddItem(resourceContent, index, activity);
+      })
+      .catch((err) => {
+        // tslint:disable-next-line
+        console.error(err);
+      });
   };
 
   const activityEntries = Object.keys(editorMap).map((k: string) => {
