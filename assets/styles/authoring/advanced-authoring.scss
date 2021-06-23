@@ -131,7 +131,8 @@ $panel-section-title-bar-color: #e8ebed;
     &:focus {
       background-color: #dfdfdf;
       border-color: $ui-border-color;
-
+    }
+    &:hover {
       .bg-circle {
         background-color: $primary;
       }
@@ -213,7 +214,7 @@ $panel-section-title-bar-color: #e8ebed;
     padding: 0 16px;
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 3;
 
     i {
       font-size: 1rem;
@@ -292,6 +293,10 @@ $panel-section-title-bar-color: #e8ebed;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
+
+      &.active {
+        background-color: $primary;
+      }
     }
   }
   .aa-panel-tabs {
