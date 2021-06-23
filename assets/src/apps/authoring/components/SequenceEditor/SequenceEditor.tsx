@@ -1,5 +1,5 @@
 import React from 'react';
-import { Accordion, Card, ListGroup } from 'react-bootstrap';
+import { Accordion, Card, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
@@ -14,7 +14,21 @@ const SequenceEditor: React.FC<any> = (props) => {
           <ContextAwareToggle eventKey="0" />
           <span className="title">Sequence Editor</span>
         </div>
-        <i className="fa fa-plus"></i>
+        <OverlayTrigger
+          placement="right"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              New Sequence
+            </Tooltip>
+          }
+        >
+          <span>
+            <button className="btn btn-link p-0">
+              <i className="fa fa-plus" />
+            </button>
+          </span>
+        </OverlayTrigger>
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup as="ol" className="aa-sequence">
