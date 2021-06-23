@@ -1,4 +1,5 @@
 import { AnyAction, createSlice, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
+import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
 import {
   EvaluationResponse,
   RequestHintResponse,
@@ -51,7 +52,6 @@ export const slice = createSlice({
           outOf: out_of,
           parts: [{ ...state.attemptState.parts[0], feedback, error }],
         };
-        // dispatch(setAttemptState(updated));
       }
     },
     setSelectedChoices(state, action: PayloadAction<ChoiceId[]>) {
@@ -75,7 +75,6 @@ export const slice = createSlice({
         : state.selectedChoices.push(action.payload);
     },
   },
-  // extraReducers: (builder) => {},
 });
 
 export const selectedChoicesToInput = (state: ActivityDeliveryState) =>
@@ -91,7 +90,7 @@ export const reset = (
   dispatch(slice.actions.clearSelectedChoices());
   dispatch(slice.actions.clearHints());
   dispatch(slice.actions.setAttemptState(response.attemptState));
-  dispatch(slice.actions.setModel(response.model as CATASchema));
+  dispatch(slice.actions.setModel(response.model as CheckAllThatApplyModelSchema));
   dispatch(slice.actions.setHasMoreHints(getState().attemptState.parts[0].hasMoreHints));
 };
 
@@ -110,10 +109,11 @@ export const submit = (
   dispatch(slice.actions.activitySubmissionReceived(response));
 };
 
-export const initializeState = (model: CATASchema, state: ActivityState): AppThunk => async (
-  dispatch,
-  getState,
-) => {
+// TODO in follow-up activities - make generic
+export const initializeState = (
+  model: CheckAllThatApplyModelSchema,
+  state: ActivityState,
+): AppThunk => async (dispatch, getState) => {
   dispatch(slice.actions.setHints(state.parts[0].hints));
   dispatch(slice.actions.setModel(model));
   dispatch(slice.actions.setAttemptState(state));

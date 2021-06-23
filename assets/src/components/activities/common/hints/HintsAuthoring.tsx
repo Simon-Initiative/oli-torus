@@ -6,36 +6,7 @@ import { AuthoringButtonConnected } from 'components/activities/common/authoring
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Card } from 'components/misc/Card';
 import { Tooltip } from 'components/misc/Tooltip';
-
-export interface HintMapping {
-  deerInHeadlights: ID;
-  cognitive: ID[];
-  bottomOut: ID;
-}
-export interface HintMappings {
-  [partId: string]: HintMapping;
-}
-
-export const HintCard: React.FC<{
-  title: JSX.Element;
-  placeholder: string;
-  hint: Hint;
-  updateOne: (id: ID, content: RichText) => void;
-}> = ({ title, placeholder, hint, updateOne }) => {
-  return (
-    <Card.Card>
-      <Card.Title>{title}</Card.Title>
-      <Card.Content>
-        <RichTextEditorConnected
-          placeholder={placeholder}
-          style={{ backgroundColor: 'white' }}
-          text={hint.content}
-          onEdit={(content) => updateOne(hint.id, content)}
-        />
-      </Card.Content>
-    </Card.Card>
-  );
-};
+import { HintCard } from 'components/activities/common/hints/HintCard';
 
 interface HintProps {
   hint: Hint;
@@ -72,8 +43,8 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
         <div key={hint.id} className="d-flex">
           <span className="mr-3 mt-2">{index + 1}.</span>
           <RichTextEditorConnected
-            placeholder="Explain how to solve the problem"
             style={{ backgroundColor: 'white' }}
+            placeholder="Explain how to solve the problem"
             className="mb-2 flex-grow-1"
             text={hint.content}
             onEdit={(content) => updateOne(hint.id, content)}
@@ -94,13 +65,7 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
   </Card.Card>
 );
 
-const BottomOutHint = ({
-  hint,
-  updateOne,
-}: {
-  hint: Hint;
-  updateOne: (id: ID, text: RichText) => void;
-}) => (
+const BottomOutHint: React.FC<HintProps> = ({ hint, updateOne }) => (
   <HintCard
     title={
       <>
@@ -114,7 +79,7 @@ const BottomOutHint = ({
   />
 );
 
-interface HintsProps {
+interface HintsAuthoringProps {
   addOne: () => void;
   updateOne: (id: ID, content: RichText) => void;
   removeOne: (id: ID) => void;
@@ -122,7 +87,7 @@ interface HintsProps {
   cognitiveHints: Hint[];
   bottomOutHint: Hint;
 }
-export const HintsAuthoring: React.FC<HintsProps> = ({
+export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
   deerInHeadlightsHint,
   cognitiveHints,
   bottomOutHint,

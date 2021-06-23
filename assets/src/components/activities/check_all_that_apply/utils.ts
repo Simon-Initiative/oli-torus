@@ -1,4 +1,3 @@
-import guid from 'utils/guid';
 import {
   CheckAllThatApplyModelSchema as CATA,
   ChoiceIdsToResponseId,
@@ -14,6 +13,7 @@ import {
   makeStem,
   makeTransformation,
   Operation,
+  Response,
   ScoringStrategy,
 } from 'components/activities/types';
 
@@ -51,9 +51,23 @@ export const getIncorrectResponse = (model: CATA) =>
 export const getTargetedResponses = (model: TargetedCATA) =>
   model.authoring.targeted.map((assoc) => getResponse(model, getResponseId(assoc)));
 
+export interface ResponseMapping {
+  response: Response;
+  choiceIds: ChoiceId[];
+}
+export const getTargetedResponseMappings = (model: TargetedCATA): ResponseMapping[] =>
+  model.authoring.targeted.map((assoc) => ({
+    response: getResponse(model, getResponseId(assoc)),
+    choiceIds: getChoiceIds(assoc),
+  }));
+
 // Hints
 export const getHints = (model: CATA) => model.authoring.parts[0].hints;
 export const getHint = (model: CATA, id: ID) => getByIdUnsafe(getHints(model), id);
+export const getDeerInHeadlightsHint = (model: CATA) => getHints(model)[0];
+export const getCognitiveHints = (model: CATA) =>
+  getHints(model).slice(1, getHints(model).length - 1);
+export const getBottomOutHint = (model: CATA) => getHints(model)[getHints(model).length - 1];
 
 // Rules
 export const createRuleForIds = (toMatch: ID[], notToMatch: ID[]) =>

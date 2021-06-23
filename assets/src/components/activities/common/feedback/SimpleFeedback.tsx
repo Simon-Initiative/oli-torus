@@ -1,17 +1,17 @@
 import { FeedbackCard } from 'components/activities/common/feedback/FeedbackCard';
-import { Feedback, RichText } from 'components/activities/types';
+import { Response, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
 import { ID } from 'data/content/model';
 import React from 'react';
 
 interface Props {
-  correctFeedback: Feedback;
-  incorrectFeedback: Feedback;
-  update: (id: ID, content: RichText) => void;
+  correctResponse: Response;
+  incorrectResponse: Response;
+  update: (responseId: ID, content: RichText) => void;
 }
 export const SimpleFeedback: React.FC<Props> = ({
-  correctFeedback,
-  incorrectFeedback,
+  correctResponse,
+  incorrectResponse,
   update,
   children,
 }) => {
@@ -19,8 +19,8 @@ export const SimpleFeedback: React.FC<Props> = ({
     <>
       <FeedbackCard
         title="Feedback for correct answer"
-        feedback={correctFeedback}
-        update={update}
+        feedback={correctResponse.feedback}
+        update={(id, content) => update(correctResponse.id, content)}
       />
       <FeedbackCard
         title={
@@ -33,8 +33,8 @@ export const SimpleFeedback: React.FC<Props> = ({
             />
           </>
         }
-        feedback={incorrectFeedback}
-        update={update}
+        feedback={incorrectResponse.feedback}
+        update={(id, content) => update(incorrectResponse.id, content)}
       />
       {children}
     </>

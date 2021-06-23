@@ -7,12 +7,11 @@
   border-radius: 0.25em;
 }
 
-.activity {
-  max-width: 768px;
-  margin: 0 auto;
-}
 .activity,
 .activity-editor {
+  max-width: 768px;
+  margin: 0 auto;
+
   .card {
     border: 0;
     background-color: #f8f9fa;

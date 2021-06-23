@@ -56,11 +56,7 @@ export const CheckAllThatApplyComponent = (
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
   console.log('evaluation', state.attemptState);
 
-  // Change to support partial credit
-  const isCorrect = attemptState.score === 0;
-
-  // Make choice icons styled differently depending on whether they're correct or incorrect
-  // Change choice icon colors - blue for selected, green/red for evaluated
+  const isCorrect = attemptState.score !== 0;
 
   return (
     <div className={`activity cata-activity ${isEvaluated(state) ? 'evaluated' : ''}`}>
@@ -68,12 +64,20 @@ export const CheckAllThatApplyComponent = (
         <StemDelivery stem={stem} context={writerContext} />
         <GradedPoints
           shouldShow={props.graded && props.review}
-          icon={isCorrect ? <IconIncorrect /> : <IconCorrect />}
+          icon={isCorrect ? <IconCorrect /> : <IconIncorrect />}
           attemptState={attemptState}
         />
         <ChoicesDelivery
           unselectedIcon={<Checkbox.Unchecked />}
-          selectedIcon={<Checkbox.Checked />}
+          selectedIcon={
+            !isEvaluated(state) ? (
+              <Checkbox.Checked />
+            ) : isCorrect ? (
+              <Checkbox.Correct />
+            ) : (
+              <Checkbox.Incorrect />
+            )
+          }
           choices={choices}
           selected={selectedChoices}
           onSelect={(id) => dispatch(selectChoice(id, props.onSaveActivity))}

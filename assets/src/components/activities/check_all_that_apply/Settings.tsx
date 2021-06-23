@@ -1,42 +1,29 @@
-import { connect } from 'react-redux';
-import { createAction } from '@reduxjs/toolkit';
-import { HasTransformations } from 'components/activities/types';
-import { isShuffled } from 'components/activities/common/utils';
-import { Setting } from 'components/activities/common/authoring/settings/main';
+import { isShuffled, toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
+import { SettingsComponent } from 'components/activities/common/authoring/settings/main';
+import React from 'react';
+import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
+import { Actions } from 'components/activities/check_all_that_apply/actions';
+import { isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
 
-const toggleAnswerChoiceShuffling = createAction<void>('settings/toggleAnswerChoiceShuffling');
-const toggleTargetedFeedback = createAction<void>('settings/toggleTargetedFeedback');
-export const CheckAllThatApplySettings = connect(
-  (state: HasTransformations & HasResponseMappings) => ({
-    settingsState: [
-      {
-        isEnabled: isShuffled(selectAllTransformations(state)),
-        label: 'Shuffle answer choice order',
-      },
-      {
-        // isEnabled: isTargetedFeedbackEnabled(state),
-        isEnabled: true,
-        label: 'Targeted feedback',
-      },
-      {
-        isEnabled: true,
-        label: 'Partial credit',
-      },
-    ],
-  }),
-  (dispatch) => ({
-    settingsDispatch: [
-      { onToggle: () => dispatch(toggleAnswerChoiceShuffling()) },
-      { onToggle: () => dispatch(toggleTargetedFeedback()) },
-      { onToggle: () => undefined },
-    ],
-  }),
-  (stateProps, dispatchProps) => ({
-    // zip both lists together into a single list of Setting objects
-    settings: stateProps.settingsState.reduce(
-      (acc, settingsState, i) =>
-        acc.concat({ ...settingsState, ...dispatchProps.settingsDispatch[i] }),
-      [] as Setting[],
-    ),
-  }),
-)(CheckAllThatApplySettingsComponent);
+interface Props {
+  dispatch: (action: any) => void;
+  model: CheckAllThatApplyModelSchema;
+}
+export const CheckAllThatApplySettings: React.FC<Props> = ({ dispatch, model }) => {
+  return (
+    <SettingsComponent
+      settings={[
+        {
+          isEnabled: isShuffled(model.authoring.transformations),
+          label: 'Shuffle answer choice order',
+          onToggle: () => dispatch(toggleAnswerChoiceShuffling()),
+        },
+        {
+          isEnabled: isTargetedCATA(model),
+          label: 'Targeted feedback',
+          onToggle: () => dispatch(Actions.toggleType()),
+        },
+      ]}
+    />
+  );
+};

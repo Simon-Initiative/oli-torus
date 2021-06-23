@@ -2,10 +2,7 @@ import React from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { Choice, RichText } from 'components/activities/types';
 import { ChoiceAuthoringConnected } from 'components/activities/common/choices/ChoiceAuthoring';
-import {
-  AuthoringButton,
-  AuthoringButtonConnected,
-} from 'components/activities/common/authoring/AuthoringButton';
+import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 
 interface Props {
   icon: React.ReactNode;
@@ -27,12 +24,9 @@ export const ChoicesAuthoringConnected: React.FC<Props> = ({
     <>
       <DragDropContext
         onDragEnd={({ destination, source }) => {
-          if (!destination) {
-            return;
-          }
           if (
-            destination.droppableId === source.droppableId &&
-            destination.index === source.index
+            !destination ||
+            (destination.droppableId === source.droppableId && destination.index === source.index)
           ) {
             return;
           }
@@ -69,7 +63,7 @@ export const ChoicesAuthoringConnected: React.FC<Props> = ({
           <div style={{ width: 30, lineHeight: 1, pointerEvents: 'none', cursor: 'default' }}>
             {icon}
           </div>
-          <AuthoringButtonConnected className="btn btn-link pl-2" onClick={addOne}>
+          <AuthoringButtonConnected className="btn btn-link pl-0" onClick={addOne}>
             Add choice
           </AuthoringButtonConnected>
         </>

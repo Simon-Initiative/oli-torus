@@ -19,7 +19,6 @@ import {
 } from './utils';
 import {
   RichText,
-  Hint as HintType,
   ChoiceId,
   Choice,
   ResponseId,

@@ -2,29 +2,32 @@ import { ID } from 'data/content/model';
 import React, { useMemo } from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { defaultWriterContext } from 'data/content/writers/context';
-import { Choice, ChoiceId, Feedback, RichText } from 'components/activities/types';
+import { Choice, ChoiceId, Response, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
 import { Card } from 'components/misc/Card';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 
-export const ResponseFeedbackCard: React.FC<{
+export const ResponseCard: React.FC<{
   title: React.ReactNode;
-  feedback: Feedback;
+  response: Response;
   choices: Choice[];
   correctChoiceIds: ChoiceId[];
   toggleChoice: (id: ChoiceId) => void;
   updateFeedback: (id: ID, content: RichText) => void;
   unselectedIcon: React.ReactNode;
   selectedIcon: React.ReactNode;
+  onRemove: (responseId: ID) => void;
 }> = ({
   title,
-  feedback,
+  response,
   choices,
   toggleChoice,
   updateFeedback,
   correctChoiceIds,
   unselectedIcon,
   selectedIcon,
+  onRemove,
 }) => {
   const context = useMemo(defaultWriterContext, []);
   return (
@@ -35,6 +38,7 @@ export const ResponseFeedbackCard: React.FC<{
           <Tooltip
             title={'Shown only when a student response matches this answer choice combination'}
           />
+          <RemoveButtonConnected className="" onClick={() => onRemove(response.id)} />
         </>
       </Card.Title>
       <Card.Content>
@@ -50,8 +54,8 @@ export const ResponseFeedbackCard: React.FC<{
         <RichTextEditorConnected
           style={{ backgroundColor: 'white' }}
           placeholder="Enter feedback"
-          text={feedback.content}
-          onEdit={(content) => updateFeedback(feedback.id, content)}
+          text={response.feedback.content}
+          onEdit={(content) => updateFeedback(response.feedback.id, content)}
         />
       </Card.Content>
     </Card.Card>
