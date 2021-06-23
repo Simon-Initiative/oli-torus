@@ -35,7 +35,11 @@ export const HintsDelivery: React.FC<Props> = ({
       <Card.Title>Hints</Card.Title>
       <Card.Content>
         {hints.map((hint, index) => (
-          <div key={hint.id} className="d-flex align-items-center mb-2">
+          <div
+            aria-label={`hint ${index + 1}`}
+            key={hint.id}
+            className="d-flex align-items-center mb-2"
+          >
             <span className="mr-2">{index + 1}.</span>
             <HtmlContentModelRenderer text={hint.content} context={context} />
           </div>
