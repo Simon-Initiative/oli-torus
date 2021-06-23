@@ -38,7 +38,7 @@ export const ResponseCard: React.FC<{
           <Tooltip
             title={'Shown only when a student response matches this answer choice combination'}
           />
-          <RemoveButtonConnected className="" onClick={() => onRemove(response.id)} />
+          <RemoveButtonConnected onClick={() => onRemove(response.id)} />
         </>
       </Card.Title>
       <Card.Content>
