@@ -107,3 +107,69 @@
     }
   }
 }
+
+// To remove later
+.choice-index {
+  background-color: initial;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e5e5e5;
+  color: #afafaf;
+  height: 30px;
+  width: 30px;
+  font-weight: bold;
+  margin-right: 16px;
+
+  &:hover {
+    background-color: $white;
+  }
+}
+
+.selected {
+  .choice-index {
+    background-color: $choice-selected-color;
+    border: 2px solid $choice-selected-color;
+    color: $white;
+  }
+}
+
+.activity {
+  &.evaluated {
+    .choice {
+      cursor: default;
+
+      &:hover {
+        background-color: initial;
+
+        &.selected {
+          background-color: $choice-selected-bg;
+        }
+      }
+    }
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: top;
+    border-width: 1px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-style: solid;
+    border-color: #e5e5e5;
+    cursor: pointer;
+
+    &:hover {
+      background-color: $choice-selected-bg-hover;
+    }
+
+    &.selected {
+      color: $choice-selected-color;
+      background-color: $choice-selected-bg;
+      border-color: $choice-selected-border-color;
+    }
+}
