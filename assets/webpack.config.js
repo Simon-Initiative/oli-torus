@@ -105,7 +105,7 @@ module.exports = (env, options) => ({
     minimize: process.env.NODE_ENV == 'production',
     minimizer: [new TerserPlugin(), new CssMinimizerPlugin()],
     chunkIds: "named",
-		splitChunks: {
+    splitChunks: {
       chunks: 'async',
       minSize: 20000,
       minRemainingSize: 0,
