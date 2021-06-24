@@ -18,7 +18,7 @@ const populateEntries = () => {
     resourceeditor: { import: './src/components/resource/ResourceEditorApp.tsx', dependOn: 'shared' },
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
-    shared: ['react', 'react-dom']
+    shared: ['babel-polyfill', 'react', 'react-dom']
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
