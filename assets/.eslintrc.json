@@ -17,8 +17,10 @@
     "ecmaVersion": 12,
     "sourceType": "module"
   },
-  "plugins": [
-    "react",
-    "@typescript-eslint"
-  ]
+  "plugins": ["react", "@typescript-eslint"],
+  "rules": {
+    "@typescript-eslint/explicit-module-boundary-types": 0,
+    "react/prop-types": 0,
+    "no-case-declarations": 0
+  }
 }

@@ -1,5 +1,7 @@
 import { ActivityModelSchema } from './types';
 import { ProjectSlug } from 'data/types';
+import React, { Provider, useContext } from 'react';
+import { Maybe } from 'tsmonad';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -16,7 +18,6 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
 // 'modelUpdated' CustomEvent.  It is this CustomEvent that is handled by
 // Torus to process updates from the authoring web component.
 export abstract class AuthoringElement<T extends ActivityModelSchema> extends HTMLElement {
-
   mountPoint: HTMLDivElement;
   connected: boolean;
 
@@ -26,8 +27,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.mountPoint = document.createElement('div');
   }
 
-  props() : AuthoringElementProps<T> {
-
+  props(): AuthoringElementProps<T> {
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = getProp('model');
     const editMode: boolean = getProp('editMode');
@@ -45,7 +45,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     };
   }
 
-  abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>) : void;
+  abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>): void;
 
   connectedCallback() {
     this.appendChild(this.mountPoint);
@@ -59,5 +59,29 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     }
   }
 
-  static get observedAttributes() { return ['model', 'editMode']; }
+  static get observedAttributes() {
+    return ['model', 'editMode'];
+  }
 }
+
+export interface AuthoringElementState {
+  projectSlug: string;
+  editMode: boolean;
+}
+const AuthoringElementContext = React.createContext<AuthoringElementState | undefined>(undefined);
+export function useAuthoringElementContext() {
+  return Maybe.maybe(useContext(AuthoringElementContext)).valueOrThrow(
+    new Error('useAuthoringElementContext must be used within an AuthoringElementProvider'),
+  );
+}
+export const AuthoringElementProvider: React.FC<AuthoringElementState> = ({
+  projectSlug,
+  editMode,
+  children,
+}) => {
+  return (
+    <AuthoringElementContext.Provider value={{ projectSlug, editMode }}>
+      {children}
+    </AuthoringElementContext.Provider>
+  );
+};
