@@ -7,11 +7,11 @@ import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
 
 export type ObjectivesProps = {
-  objectives: Immutable.List<Objective>;
-  selected: Immutable.List<ResourceId>;
+  objectives: Objective[];
+  selected: ResourceId[];
   editMode: boolean;
   projectSlug: ProjectSlug;
-  onEdit: (objectives: Immutable.List<ResourceId>) => void;
+  onEdit: (objectives: ResourceId[]) => void;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
@@ -24,8 +24,8 @@ export const Objectives = (props: ObjectivesProps) => {
 
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
-  const map = Immutable.Map<ResourceId, Objective>(objectives.toArray().map((o) => [o.id, o]));
-  const asObjectives = selected.toArray().map((s) => map.get(s) as Objective);
+  const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
+  const asObjectives = selected.map((s) => map.get(s) as Objective);
 
   return (
     <div className="flex-grow-1 objectives">
@@ -55,7 +55,7 @@ export const Objectives = (props: ObjectivesProps) => {
                     return o.id;
                   });
 
-                  onEdit(Immutable.List<ResourceId>(updatedObjectives));
+                  onEdit(updatedObjectives);
                 } else {
                   throw result;
                 }
@@ -69,13 +69,13 @@ export const Objectives = (props: ObjectivesProps) => {
           } else {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
-            if (updated.length !== selected.size) {
+            if (updated.length !== selected.length) {
               const updatedObjectives = updated.map((o) => o.id);
-              onEdit(Immutable.List<ResourceId>(updatedObjectives));
+              onEdit(updatedObjectives);
             }
           }
         }}
-        options={props.objectives.toArray()}
+        options={props.objectives}
         allowNew={true}
         newSelectionPrefix="Create new objective: "
         selectHintOnEnter={true}

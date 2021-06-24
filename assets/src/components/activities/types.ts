@@ -1,7 +1,17 @@
 import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
+import { InsertOperation } from 'utils/undo';
 import guid from 'utils/guid';
+
+export type PostUndoable = (undoable: Undoable) => void;
+
+export type Undoable = {
+  type: 'Undoable';
+  description: string;
+  operations: InsertOperation[];
+}
+
 
 export type ChoiceId = ID;
 export type ResponseId = ID;

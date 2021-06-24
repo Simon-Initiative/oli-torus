@@ -1,4 +1,5 @@
-import { ActivityReference, Activity, ResourceContent } from 'data/content/resource';
+import { ActivityReference, ResourceContent } from 'data/content/resource';
+import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import * as Immutable from 'immutable';
 import { DragPayload, ActivityPayload, UnknownPayload } from './interfaces';
@@ -6,7 +7,7 @@ import { DragPayload, ActivityPayload, UnknownPayload } from './interfaces';
 export const getFriendlyName = (
   item: ActivityReference,
   editorMap: ActivityEditorMap,
-  activities: Immutable.Map<string, Activity>) => {
+  activities: Immutable.Map<string, ActivityEditContext>) => {
 
   const activity = activities.get(item.activitySlug);
   return editorMap[(activity as any).typeSlug].friendlyName;
@@ -14,7 +15,7 @@ export const getFriendlyName = (
 
 export const getDragPayload = (
   contentItem: ResourceContent,
-  activities: Immutable.Map<string, Activity>,
+  activities: Immutable.Map<string, ActivityEditContext>,
   projectSlug: string,
 ): DragPayload => {
   if (contentItem.type === 'content') {
@@ -26,7 +27,7 @@ export const getDragPayload = (
       type: 'ActivityPayload',
       id: contentItem.id,
       reference: contentItem,
-      activity: activity as Activity,
+      activity: activity as ActivityEditContext,
       project: projectSlug,
     } as ActivityPayload;
   }

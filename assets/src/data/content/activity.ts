@@ -1,4 +1,3 @@
-
 import { ProjectSlug, ResourceSlug, ActivitySlug, ResourceId } from 'data/types';
 import { Objective } from 'data/content/objective';
 
@@ -14,19 +13,25 @@ export type SiblingActivity = {
   activitySlug: string,           // Activity revision slug
 };
 
-export type ActivityContext = {
+export type ActivityEditContext = {
+  authoringScript: string,        // The script file to include the editor
   authoringElement: string,       // Activity authoring component name
   friendlyName: string,           // Activity type friendly name
   description: string,            // Activity type description
-  authorEmail: string,            // The current author
-  projectSlug: ProjectSlug,       // The current project
-  resourceId: ResourceId,         // The id of the parent resource
-  resourceSlug: ResourceSlug,     // The slug of parent resource
-  resourceTitle: string,          // The title of the parent resource
+  typeSlug: string,               // Slug of the activity type
   activitySlug: ActivitySlug,     // The current resource
   activityId: ResourceId,         // The current resource id
   title: string,                  // The title of the resource
   model: ActivityModelSchema,     // Content of the resource
   objectives: ObjectiveMap,       // Attached objectives, based on part id
-  allObjectives: Objective[],     // All objectives
 };
+
+
+export type ProjectResourceContext = {
+  projectSlug: ProjectSlug,       // The current project
+  resourceId: ResourceId,         // The id of the parent resource
+  resourceSlug: ResourceSlug,     // The slug of parent resource
+  resourceTitle: string,          // The title of the parent resource
+  allObjectives: Objective[],     // All objectives
+}
+

@@ -8,7 +8,7 @@ const applyAction = (
   model: MultipleChoiceModelSchema,
   action: any) => {
 
-  return produce(model, draftState => action(draftState));
+  return produce(model, draftState => action(draftState, () => { return; }));
 };
 
 function testFromText(text: string) {
@@ -27,7 +27,7 @@ function testFromText(text: string) {
   };
 }
 
-function testResponse(text: string, rule: string, score: number = 0) {
+function testResponse(text: string, rule: string, score = 0) {
   return {
     id: Math.random() + '',
     feedback: testFromText(text),

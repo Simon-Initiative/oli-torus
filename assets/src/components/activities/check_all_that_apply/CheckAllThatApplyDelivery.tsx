@@ -54,7 +54,6 @@ export const CheckAllThatApplyComponent = (
   } = state;
 
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
-  console.log('evaluation', state.attemptState);
 
   const isCorrect = attemptState.score !== 0;
 

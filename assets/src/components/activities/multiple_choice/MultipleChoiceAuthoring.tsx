@@ -18,7 +18,9 @@ const store = configureStore();
 
 const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>) => {
   const dispatch = (action: any) => {
-    const nextModel = produce(props.model, (draftState) => action(draftState));
+    const nextModel = produce(props.model, (draftState) =>
+      action(draftState, props.onPostUndoable),
+    );
     props.onEdit(nextModel);
   };
 

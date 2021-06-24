@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   height: 500px;
+  z-index: 1000;
   @include disable-select;
 
   .media-toolbar {
@@ -13,7 +14,8 @@
     justify-content: space-between;
     padding-bottom: 15px;
 
-    & > *, .media-toolbar-item {
+    & > *,
+    .media-toolbar-item {
       margin-right: 15px;
 
       &:last-child {
@@ -70,7 +72,8 @@
           background-color: $gray-100;
         }
 
-        &:active, &.selected {
+        &:active,
+        &.selected {
           background-color: $secondary;
           color: $white;
           border-color: $secondary;
@@ -217,7 +220,7 @@
           float: left;
           margin: 5px 5px 55px;
           list-style: none;
-          border: 1px solid rgba(255,255,255,0);
+          border: 1px solid rgba(255, 255, 255, 0);
           width: 117px;
           height: 60px;
           border: 1px solid transparent;
@@ -267,7 +270,8 @@
               }
             }
 
-            &:active, &.selected {
+            &:active,
+            &.selected {
               background-color: rgba($selection, 0.3);
               border: 1px solid $selection;
 
@@ -289,7 +293,11 @@
           flex-direction: row;
           background-color: $gray-100;
 
-          .sel-col, .name-col, .refs-col, .date-col, .size-col {
+          .sel-col,
+          .name-col,
+          .refs-col,
+          .date-col,
+          .size-col {
             padding: 0;
           }
         }
@@ -400,7 +408,8 @@
               }
             }
 
-            &:active, &.selected {
+            &:active,
+            &.selected {
               background-color: rgba($selection, 0.3);
               border: 1px solid $selection;
 

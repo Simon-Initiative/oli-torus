@@ -15,6 +15,7 @@ defmodule Oli.Authoring.Editing.ActivityContext do
     :title,
     :model,
     :objectives,
-    :allObjectives
+    :allObjectives,
+    :typeSlug
   ]
 end
