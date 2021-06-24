@@ -188,6 +188,15 @@ defmodule OliWeb.ProjectController do
     )
   end
 
+  def download_export(conn, _project_params) do
+    project = conn.assigns.project
+
+    conn
+    |> send_download({:binary, Oli.Interop.Export.export(project)},
+      filename: "export_#{project.slug}.zip"
+    )
+  end
+
   def clone_project(conn, _project_params) do
     case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
       {:ok, project} ->

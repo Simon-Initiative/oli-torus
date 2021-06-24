@@ -240,6 +240,7 @@ defmodule OliWeb.Router do
     get("/:project_id/publish", ProjectController, :publish)
     post("/:project_id/publish", ProjectController, :publish_active)
     post("/:project_id/datashop", ProjectController, :download_datashop)
+    post("/:project_id/export", ProjectController, :download_export)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Project

@@ -81,7 +81,7 @@ export const Objectives = (props: ObjectivesProps) => {
         selectHintOnEnter={true}
         labelKey="title"
         selected={asObjectives}
-        placeholder="Select learning objectives..."
+        placeholder="Attach learning objectives..."
       />
     </div>
   );

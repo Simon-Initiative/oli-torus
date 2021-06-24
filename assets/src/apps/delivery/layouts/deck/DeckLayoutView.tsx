@@ -64,7 +64,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   if (pageContent?.custom?.backgroundImageScaleContent) {
     backgroundClasses.push('background-scaled');
   }
+  const getCustomClassAncestry = () => {
+    let className = '';
+    if (currentActivityTree) {
+      currentActivityTree.forEach((activity) => {
+        if (activity?.content?.custom?.customCssClass) {
+          className += activity?.content?.custom?.customCssClass;
+        }
+      });
+    }
 
+    return className;
+  };
   useEffect(() => {
     // clear body classes on init for a clean slate
     document.body.className = '';
@@ -165,12 +176,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     // set loaded and userRole class when currentActivity is loaded
-    const customClasses = currentActivity.content?.custom?.customCssClass;
-    /* if (currentActivity.custom?.layerRef) {
-      customClasses = `${customClasses} ${getCustomClassAncestry(
-        currentActivity.custom?.layerRef,
-      )}`;
-    } */
+    let customClasses = currentActivity.content?.custom?.customCssClass || '';
+
+    if (currentActivityTree.length) {
+      customClasses = `${customClasses} ${getCustomClassAncestry()}`;
+    }
     setActivityClasses([...defaultClasses, customClasses]);
     if (fieldRef.current) {
       fieldRef.current.scrollIntoView();

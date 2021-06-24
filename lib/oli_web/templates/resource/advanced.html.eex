@@ -11,7 +11,10 @@
     isAdmin: <%= @is_admin? %>,
     revisionSlug: "<%= @revision_slug %>",
     projectSlug: "<%= @project_slug %>",
-    content: "<%= Base.encode64(@context) %>"
+    content: "<%= Base.encode64(@context) %>",
+    paths: {
+      images: "<%= Routes.static_path(@conn, "/images") %>"
+    }
   };
 
   window.oliMountApplication(document.getElementById('editor'), params);

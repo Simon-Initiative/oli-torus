@@ -12,7 +12,6 @@
 
 alias Oli.Seeder
 alias Oli.Utils
-alias Oli.Snapshots.SnapshotSeeder
 alias Oli.Authoring.Collaborators
 alias Oli.Features
 
@@ -155,11 +154,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
     admin_author =
       Oli.Accounts.get_author_by_email(System.get_env("ADMIN_EMAIL", "admin@example.edu"))
 
-    seeds =
-      Seeder.base_project_with_resource(admin_author)
-      |> Seeder.create_section()
-      |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
-      |> SnapshotSeeder.setup_csv(Path.expand(__DIR__) <> "/test_snapshots.csv")
+    seeds = Seeder.base_project_with_resource(admin_author)
 
     Collaborators.add_collaborator(admin_author, seeds.project)
 

@@ -1,0 +1,47 @@
+@import 'bootstrap';
+
+.btn.settings__open-button {
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.settings__setting-button {
+  @extend .d-flex;
+  @extend .align-items-center;
+  height: 46px;
+  line-height: 46px;
+  border: 0;
+  background-color: white;
+}
+
+.settings__is-enabled {
+  @extend .d-flex;
+  @extend .align-items-center;
+  @extend .justify-content-end;
+  width: 40px;
+  margin-left: 8px;
+  font-size: 24px;
+}
+
+.settings__label {
+  @extend .d-flex;
+  @extend .flex-column;
+  padding: 0 16px;
+}
+
+.settings__menu {
+  @extend .d-flex;
+  @extend .flex-column;
+  padding: 8px 0;
+  width: 320px;
+  background-color: white;
+
+  .insert-button {
+    @extend .float-right;
+    @extend .d-flex;
+    @extend .align-self-center;
+    padding: 2px;
+  }
+}

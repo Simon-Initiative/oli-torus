@@ -1,6 +1,28 @@
 @use 'delivery/variables' as delivery;
 @import "authoring/variables.scss";
 
+.slate-editor {
+  padding: 0.5rem;
+  border: 1px solid $gray-400;
+  border-radius: 0.25em;
+}
+
+.activity,
+.activity-editor {
+  max-width: 768px;
+  margin: 0 auto;
+
+  .card {
+    border: 0;
+    background-color: #f8f9fa;
+    @extend .mb-3;
+  }
+
+  .card-title {
+    font-weight: 500;
+  }
+}
+
 .editors {
   .resource-content-frame {
     width: 100%;
@@ -10,14 +32,14 @@
       border: none;
     }
 
-    .card-header {
+    > .card-header {
       cursor: grab;
       border-bottom: 0;
       border-top-left-radius: 8px;
       border-top-right-radius: 8px;
     }
 
-    .card-body {
+    > .card-body {
       padding: 0;
       border: 4px solid $card-cap-bg;
       border-top: none;

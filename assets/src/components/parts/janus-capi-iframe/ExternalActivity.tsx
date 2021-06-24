@@ -6,7 +6,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBool } from '../../../utils/common';
+import { parseBool, parseBoolean } from '../../../utils/common';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 
 const fakeUserStorage: any = {};
@@ -78,7 +78,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     const dHeight = pModel.height || frameHeight;
     setFrameHeight(dHeight);
 
-    const dVisible = pModel.visible || frameVisible;
+    const dVisible = pModel.visible === undefined ? frameVisible : !!parseBoolean(pModel.visible);
     setFrameVisible(dVisible);
 
     const initResult = await props.onInit({
@@ -258,7 +258,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
-    visibility: frameVisible ? 'visible' : 'hidden',
+    // writing 'visible' by default will take precedence (inline styles) over
+    // any (legacy) override css attempt at hiding it
+    visibility: frameVisible ? undefined : 'hidden',
   };
 
   const frameRef = useCallback((frame) => {

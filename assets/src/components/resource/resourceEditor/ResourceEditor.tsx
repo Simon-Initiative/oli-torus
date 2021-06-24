@@ -40,6 +40,7 @@ import guid from 'utils/guid';
 import { Undoables, empty } from './types';
 import { UndoToasts } from './UndoToasts';
 import { applyOperations } from 'utils/undo';
+import './ResourceEditor.scss';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements

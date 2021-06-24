@@ -1,0 +1,87 @@
+@import 'delivery/variables';
+@import 'bootstrap';
+
+.choices__container {
+  width: 100%;
+}
+.choices__choice-row {
+  width: 100%;
+}
+.choices__choice-wrapper {
+  @extend .d-flex;
+  align-items: center;
+  padding: 0.5em 0.5em 0.5em 0;
+  width: 100%;
+}
+.choices__choice-label {
+  @extend .d-flex;
+  @extend .flex-row;
+  margin: 0;
+  min-width: 0%;
+  display: flex;
+  -webkit-box-flex: 1;
+  box-flex: 1;
+  flex-grow: 1;
+  box-pack: justify;
+  flex-grow: 1;
+  -webkit-box-pack: justify;
+  justify-content: space-between;
+}
+
+.choices__choice {
+  padding: 12px 16px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $choice-selected-bg-hover;
+  }
+
+  &.selected {
+    color: $choice-selected-color;
+    background-color: $choice-selected-bg;
+    border-color: $choice-selected-border-color;
+  }
+}
+.choices__choice-index {
+  background-color: initial;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e5e5e5;
+  height: 30px;
+  width: 30px;
+  font-weight: bold;
+  margin-right: 16px;
+
+  &:hover {
+    background-color: $white;
+  }
+}
+
+.evaluated {
+  .choice__choice {
+    cursor: default;
+
+    &:hover {
+      background-color: initial;
+
+      &.selected {
+        background-color: $choice-selected-bg;
+      }
+    }
+  }
+}
+
+.selected {
+  .choices__choice-index {
+    // background-color: $choice-selected-color;
+    // border: 2px solid $choice-selected-color;
+    // color: $white;
+  }
+}
+
+.choices__choice-content {
+  margin-left: 0.6rem;
+  font-size: 14px;
+  line-height: 20px;
+}
