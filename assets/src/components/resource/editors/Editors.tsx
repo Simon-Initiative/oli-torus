@@ -39,7 +39,6 @@ export type EditorsProps = {
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (o: Objective) => void;
-  onRegisterNewObjectiveByTitle: (text: string) => Promise<Objective>;
   onActivityEdit: (key: string, update: EditorUpdate) => void;
   onPostUndoable: (key: string, undoable: Undoable) => void;
 };
@@ -73,6 +72,7 @@ export const Editors = (props: EditorsProps) => {
   const onMove = moveHandler(content, onEditContentList, editorMap, activityContexts, setAssistive);
   const onDragEnd = dragEndHandler(setActiveDragId);
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
+  const allObjectives = props.objectives.toArray();
 
   const editors = content.entrySeq().map(([contentKey, contentValue], index) => {
     const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
@@ -120,6 +120,7 @@ export const Editors = (props: EditorsProps) => {
       graded,
       objectivesMap,
       editorProps,
+      allObjectives,
       onEdit,
       onActivityEdit,
       onPostUndoable,
@@ -140,7 +141,7 @@ export const Editors = (props: EditorsProps) => {
           id={contentKey}
           objectives={props.objectives}
           childrenObjectives={props.childrenObjectives}
-          onRegisterNewObjective={props.onRegisterNewObjectiveByTitle}
+          onRegisterNewObjective={props.onRegisterNewObjective}
           index={index}
           editMode={editMode}
           isReorderMode={isReorderMode}
@@ -170,7 +171,7 @@ export const Editors = (props: EditorsProps) => {
 
       <AddResourceOrDropTarget
         {...props}
-        onRegisterNewObjective={props.onRegisterNewObjectiveByTitle}
+        onRegisterNewObjective={props.onRegisterNewObjective}
         id="last"
         index={editors.size || 0}
         editMode={editMode}

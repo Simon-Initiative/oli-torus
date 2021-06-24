@@ -19,7 +19,7 @@ export type AddResourceOrDropTargetProps = {
   onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
-  onRegisterNewObjective: (text: string) => Promise<Objective>;
+  onRegisterNewObjective: (objective: Objective) => void;
 };
 
 export const AddResourceOrDropTarget = (props: AddResourceOrDropTargetProps) => {

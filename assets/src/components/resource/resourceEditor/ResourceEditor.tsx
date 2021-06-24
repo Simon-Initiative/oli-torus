@@ -420,36 +420,13 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       }
     };
 
-    const onRegisterNewObjectiveByTitle = (o: Objective) => onRegisterNewObjective(o.title);
-
-    const onRegisterNewObjective = (title: string): Promise<Objective> => {
-      return new Promise((resolve, reject) => {
-        create(props.projectSlug, title)
-          .then((result) => {
-            if (result.result === 'success') {
-              const objective = {
-                id: result.resourceId,
-                title,
-                parentId: null,
-              };
-
-              this.setState({
-                allObjectives: this.state.allObjectives.push(objective),
-                childrenObjectives: this.state.childrenObjectives.set(
-                  objective.id,
-                  Immutable.List<Objective>(),
-                ),
-              });
-
-              resolve(objective);
-            } else {
-              throw result;
-            }
-          })
-          .catch((e) => {
-            this.createObjectiveErrorMessage(e);
-            console.error('objective creation failed', e);
-          });
+    const onRegisterNewObjective = (objective: Objective) => {
+      this.setState({
+        allObjectives: this.state.allObjectives.push(objective),
+        childrenObjectives: this.state.childrenObjectives.set(
+          objective.id,
+          Immutable.List<Objective>(),
+        ),
       });
     };
 
@@ -492,8 +469,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               editMode={this.state.editMode}
               objectives={this.state.allObjectives}
               childrenObjectives={this.state.childrenObjectives}
-              onRegisterNewObjective={onRegisterNewObjectiveByTitle}
-              onRegisterNewObjectiveByTitle={onRegisterNewObjective}
+              onRegisterNewObjective={onRegisterNewObjective}
               activityContexts={this.state.activityContexts}
               onRemove={(key) => this.onRemove(key)}
               onEdit={(c, key) => onEdit(this.state.content.set(key, c))}

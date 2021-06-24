@@ -83,7 +83,7 @@ interface AddResourceContentProps {
   isLast: boolean;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
-  onRegisterNewObjective: (text: string) => Promise<Objective>;
+  onRegisterNewObjective: (objective: Objective) => void;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
 }
