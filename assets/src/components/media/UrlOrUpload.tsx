@@ -14,7 +14,6 @@ interface Props {
   onMediaSelectionChange: (items: MediaItem[]) => void;
 }
 export const UrlOrUpload = (props: Props) => {
-
   const { toggleDisableInsert, onUrlChange } = props;
   const [source, setSource] = useState<Source>('url');
   const [url, setUrl] = useState('');
@@ -27,65 +26,78 @@ export const UrlOrUpload = (props: Props) => {
     setSource(value === 'upload' ? 'upload' : 'url');
   };
 
+  console.log(source);
+
   return (
     <>
       <div className="mb-2">
         <div className="form-check">
-          <input
-            className="form-check-input"
-            defaultChecked={source === 'url'}
-            onChange={onChangeSource}
-            type="radio"
-            name="inlineRadioOptions"
-            id="inlineRadio2"
-            value="url" />
-          <label className="form-check-label" htmlFor="inlineRadio2">
+          <label
+            className="form-check-label"
+            htmlFor="inlineRadio2"
+            onClick={() => setSource('url')}
+          >
+            <input
+              className="form-check-input"
+              defaultChecked={source === 'url'}
+              onChange={onChangeSource}
+              checked={source === 'url'}
+              type="radio"
+              name="inlineRadioOptions"
+              id="inlineRadio2"
+              value="url"
+            />
             Use external media item
           </label>
+          <div className="media-url mb-4">
+            <input
+              className="form-control w-100"
+              placeholder="Enter the media URL address"
+              value={url}
+              disabled={source === 'upload'}
+              onChange={({ target: { value } }) => {
+                setUrl(value);
+                onUrlChange(value);
+
+                if (!toggleDisableInsert) {
+                  return;
+                }
+                return value.trim() ? toggleDisableInsert(false) : toggleDisableInsert(true);
+              }}
+            />
+          </div>
         </div>
-        <div className="form-check">
-          <input
-            className="form-check-input"
-            defaultChecked={source === 'upload'}
-            onChange={onChangeSource}
-            type="radio"
-            name="inlineRadioOptions"
-            id="inlineRadio1"
-            value="upload" />
-          <label className="form-check-label" htmlFor="inlineRadio1">
+        <div className="form-check mb-3">
+          <label
+            className="form-check-label"
+            htmlFor="inlineRadio1"
+            onClick={() => setSource('upload')}
+          >
+            <input
+              className="form-check-input"
+              defaultChecked={source === 'upload'}
+              onChange={onChangeSource}
+              checked={source !== 'url'}
+              type="radio"
+              name="inlineRadioOptions"
+              id="inlineRadio1"
+              value="upload"
+            />
             Upload new or use existing media library item
           </label>
         </div>
       </div>
-      {source === 'upload'
-        ? <MediaManager
-          toggleDisableInsert={props.toggleDisableInsert}
-          projectSlug={props.projectSlug}
-          // eslint-disable-next-line
-          onEdit={() => { }}
-          mimeFilter={props.mimeFilter}
-          selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={props.initialSelectionPaths}
-          onSelectionChange={props.onMediaSelectionChange} />
-        : <div className="media-url">
-          <input
-            className="form-control w-100"
-            placeholder="Enter the media URL address"
-            value={url}
-            onChange={({ target: { value } }) => {
-              setUrl(value);
-              onUrlChange(value);
-
-              if (!toggleDisableInsert) {
-                return;
-              }
-              return value.trim()
-                ? toggleDisableInsert(false)
-                : toggleDisableInsert(true);
-            }}
-          />
-        </div>
-      }
+      <MediaManager
+        disabled={source === 'url'}
+        toggleDisableInsert={props.toggleDisableInsert}
+        projectSlug={props.projectSlug}
+        // eslint-disable-next-line
+        onEdit={() => {}}
+        mimeFilter={props.mimeFilter}
+        selectionType={SELECTION_TYPES.SINGLE}
+        initialSelectionPaths={props.initialSelectionPaths}
+        onSelectionChange={props.onMediaSelectionChange}
+      />
     </>
   );
 };
