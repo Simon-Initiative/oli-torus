@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.ActivityEditor — OLI Torus v0.11.1</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-28a2a85e6e.js"></script>
+    <script src="dist/sidebar_items-789703c68a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -125,6 +125,13 @@ Oli.Authoring.Editing.ActivityEditor <small class="app-vsn">(OLI Torus v0.11.1)<
     <div class="summary-synopsis"><p>Creates the context necessary to power a client side activity editor,
 where this activity is being editing within the context of being
 referenced from a resource.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_contexts/2">create_contexts(project_slug, activity_ids)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -305,7 +312,7 @@ Functions
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, activity_slug, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L466" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L486" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -315,9 +322,58 @@ Functions
 
   <section class="docstring">
 
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>create_context(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) ::
+  {:error, :not_found}
+  | {:ok,
+     %Oli.Authoring.Editing.ActivityContext{
+       activityId: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       activitySlug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+       allObjectives: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
+       authorEmail: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       authoringElement: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       authoringScript: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       description: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       friendlyName: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       model: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       objectives: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       projectSlug: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       resourceId: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       resourceSlug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+       resourceTitle: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       title: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       typeSlug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+     }}</pre>
+
+      </div>
+
 <p>Creates the context necessary to power a client side activity editor,
 where this activity is being editing within the context of being
 referenced from a resource.</p>
+  </section>
+</section>
+<section class="detail" id="create_contexts/2">
+
+  <div class="detail-header">
+    <a href="#create_contexts/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_contexts(project_slug, activity_ids)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L524" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="create_secondary/4">
@@ -546,7 +602,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">get_latest_revision(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L505" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L550" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
