@@ -8,7 +8,7 @@ export type InsertOperation = {
 
 export function applyOperations(json: Record<string, any>, ops: InsertOperation[]) : void {
   ops.forEach((op) => {
-    jp.apply(json, op.path, function(result) {
+    jp.apply(json, op.path, function(result: any) {
       result.splice(op.index, 0, op.item);
       return result;
     });
