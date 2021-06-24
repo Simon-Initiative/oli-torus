@@ -26,13 +26,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
 
     if is_list(rules) do
-      evaluate_from_rules(resource_attempt, part_inputs, rules)
+      evaluate_from_rules(resource_attempt, activity_attempt_guid, part_inputs, rules)
     else
       evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
     end
   end
 
-  def evaluate_from_rules(resource_attempt, part_inputs, rules) do
+  def evaluate_from_rules(resource_attempt, activity_attempt_guid, part_inputs, rules) do
     # need to get all of the extrinsic (resource_attempt state)
     extrinsic_state = resource_attempt.state
 
@@ -76,6 +76,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     # Logger.debug("eval rules: #{Jason.encode!(rules)}")
     # Logger.debug("eval state #{Jason.encode!(state)}")
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    update_activity_attempt(activity_attempt, %{
+      score: 0,
+      out_of: 0,
+      date_evaluated: DateTime.utc_now()
+    })
 
     # nodejs then evaluates that and returns actions
     case NodeJS.call({"rules", :check}, [state, rules]) do
