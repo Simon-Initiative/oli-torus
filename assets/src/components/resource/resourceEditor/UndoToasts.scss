@@ -8,7 +8,7 @@
 }
 
 .undotoast {
-  background-color: #3eabbf !important;
+  background-color: #3eabbf;
   color: white;
   position: relative;
   z-index: 1000;
@@ -26,29 +26,29 @@
 }
 
 .btn.undo-toast-btn {
-  background-color: #199ab1 !important;
+  background-color: #199ab1;
   color: white;
 
   &:hover {
-    background-color: #51adbd !important;
+    background-color: #51adbd;
     color: white;
   }
 }
 
 .undotoast-enter {
-  opacity: 0 !important;
+  opacity: 0;
 }
 
 .undotoast-enter.undotoast-enter-active {
-  opacity: 1 !important;
+  opacity: 1;
   transition: opacity 500ms;
 }
 
 .undotoast-leave {
-  opacity: 1 !important;
+  opacity: 1;
 }
 
 .undotoast-leave.undotoast-leave-active {
-  opacity: 0 !important;
+  opacity: 0;
   transition: opacity 100ms;
 }
