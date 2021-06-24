@@ -310,8 +310,6 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       return insertList;
     },
   );
-  console.log({ quill, select2Styles, css });
-
   return (
     <div
       data-janus-type={props.type}
