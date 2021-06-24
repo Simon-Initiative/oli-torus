@@ -37,7 +37,7 @@ import {
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
-import { Undoables, empty } from './types';
+import { Undoables, empty, PageUndoable } from './types';
 import { UndoToasts } from './UndoToasts';
 import { applyOperations } from 'utils/undo';
 import './ResourceEditor.scss';
@@ -281,7 +281,25 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     });
   }
 
-  onPostUndoable(key: string, undoable: ActivityUndoable) {
+  onRemove(key: string) {
+    const item = this.state.content.get(key);
+    const index = this.state.content.toArray().findIndex(([k, item]) => k === key);
+
+    if (item !== undefined) {
+      const undoable: PageUndoable = {
+        type: 'PageUndoable',
+        description: 'Removed ' + (item.type === 'content' ? 'Content' : 'Activity'),
+        index,
+        item,
+      };
+
+      const content = this.state.content.delete(key);
+      this.update({ content });
+      this.onPostUndoable(key, undoable);
+    }
+  }
+
+  onPostUndoable(key: string, undoable: ActivityUndoable | PageUndoable) {
     const id = guid();
     this.setState(
       {
@@ -307,13 +325,19 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     if (item !== undefined) {
       if (item.undoable.type === 'PageUndoable') {
-        console.log('page undo');
+        const content = this.state.content.toArray();
+        content.splice(item.undoable.index, 0, [item.contentKey, item.undoable.item]);
+        this.update({ content: Immutable.OrderedMap<string, ResourceContent>(content) });
       } else {
         const context = this.state.activityContexts.get(item.contentKey);
         if (context !== undefined) {
+          // Perform a deep copy
           const model = JSON.parse(JSON.stringify(context.model));
+
+          // Apply the undo operations to the model
           applyOperations(model as any, item.undoable.operations);
 
+          // Now save the change and push it down to the activity editor
           this.onActivityEdit(item.contentKey, {
             content: model,
             title: context.title,
@@ -471,7 +495,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               onRegisterNewObjective={onRegisterNewObjectiveByTitle}
               onRegisterNewObjectiveByTitle={onRegisterNewObjective}
               activityContexts={this.state.activityContexts}
-              onRemove={(key) => onEdit(this.state.content.delete(key))}
+              onRemove={(key) => this.onRemove(key)}
               onEdit={(c, key) => onEdit(this.state.content.set(key, c))}
               onEditContentList={onEdit}
               onActivityEdit={this.onActivityEdit}
