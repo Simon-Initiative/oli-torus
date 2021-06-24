@@ -1,13 +1,11 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from 'utils/common';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { CapiVariable } from '../types/parts';
-
+import './Slider.scss';
 // TODO: fix typing
 const Slider: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -15,6 +13,8 @@ const Slider: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
 
   const id: string = props.id;
+  const [inputInnerWidth, setInputInnerWidth] = useState<any>(0);
+  const [spanInnerWidth, setSpanInnerWidth] = useState<any>(0);
 
   const [sliderValue, setSliderValue] = useState(0);
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
@@ -203,12 +203,12 @@ const Slider: React.FC<any> = (props) => {
     flexDirection: 'row',
   };
 
-  const inputWidth: any = document.getElementById(`${id}`)?.getBoundingClientRect().width;
-  const thumbWidth: any = document.getElementById(`slider-thumb-${id}`)?.getBoundingClientRect()
-    .width;
+  const inputWidth: any = inputInnerWidth;
+  const thumbWidth: any = spanInnerWidth;
   const thumbHalfWidth: any = thumbWidth / 2;
   const thumbPosition =
-    ((sliderValue - minimum) / (maximum - minimum)) * (inputWidth - thumbWidth + thumbHalfWidth);
+    ((Number(sliderValue) - minimum) / (maximum - minimum)) *
+    (inputWidth - thumbWidth + thumbHalfWidth);
   const thumbMargin = thumbHalfWidth * -1 + thumbHalfWidth / 2;
 
   const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
@@ -233,28 +233,19 @@ const Slider: React.FC<any> = (props) => {
     setSliderValue(e.target.value);
     saveState({ sliderVal: e.target.value, userModified: true });
   };
-
+  const inputTargetRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
-
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    const interested = stateData.filter(
-      (stateVar: any) => stateVar.id.indexOf(`stage.${id}.`) >= 0,
-    );
-    if (interested?.length) {
-      interested.forEach((stateVar: any) => {
-        if (stateVar.key === 'enabled') {
-          setIsSliderEnabled(parseBoolean(stateVar.value));
-        }
-        if (stateVar.key === 'value') {
-          const num = parseInt(stateVar.value as string, 10);
-          setSliderValue(num);
-        }
-      });
+    if (inputTargetRef && inputTargetRef.current) {
+      setInputInnerWidth(inputTargetRef?.current?.offsetWidth);
     }
-  };
+  });
+
+  const divTargetRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (divTargetRef && divTargetRef.current) {
+      setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
+    }
+  });
 
   return ready ? (
     <div data-part-component-type={props.type} style={styles} className={`slider ${cssClass}`}>
@@ -265,6 +256,7 @@ const Slider: React.FC<any> = (props) => {
             {showDataTip && (
               <div className="rangeValue" id={`rangeV-${id}`}>
                 <span
+                  ref={divTargetRef}
                   id={`slider-thumb-${id}`}
                   style={{
                     left: `${invertScale ? undefined : thumbPosition}px`,
@@ -278,6 +270,7 @@ const Slider: React.FC<any> = (props) => {
               </div>
             )}
             <input
+              ref={inputTargetRef}
               disabled={!isSliderEnabled}
               style={inputStyles}
               min={minimum}

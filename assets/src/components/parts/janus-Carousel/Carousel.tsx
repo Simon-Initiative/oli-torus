@@ -179,8 +179,7 @@ const Carousel: React.FC<any> = (props) => {
   } = model;
 
   const [carouselMode, setCarouselMode] = useState<string>(mode);
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const carouselDefaultCss = require('./Carousel.css');
+
   const MAGIC_NUMBER = 64;
   const PAGINATION_HEIGHT = 32;
   const styles: CSSProperties = {
@@ -274,12 +273,7 @@ const Carousel: React.FC<any> = (props) => {
       className={`janus-image-carousel ${cssClass}`}
       style={styles}
     >
-      {carouselCustomCss && (
-        <style type="text/css" style={{ display: 'none' }}>
-          {carouselDefaultCss}
-          {carouselCustomCss ? carouselCustomCss : null}
-        </style>
-      )}
+      {}
       {images.length > 0 && (
         <Swiper
           slidesPerView={1}
@@ -313,6 +307,6 @@ const Carousel: React.FC<any> = (props) => {
   ) : null;
 };
 
-export const tagName = 'janus-carousel';
+export const tagName = 'janus-image-carousel';
 
 export default Carousel;
