@@ -6,7 +6,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: true,
     registration_open: true,
     start_date: ~D[2010-04-17],
-    time_zone: "some time_zone",
+    timezone: "some timezone",
     title: "some title",
     context_id: "some context_id"
   }
@@ -15,7 +15,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: true,
     registration_open: false,
     start_date: ~D[2011-05-18],
-    time_zone: "some updated time_zone",
+    timezone: "some updated timezone",
     title: "some updated title",
     context_id: "some updated context_id"
   }
@@ -24,7 +24,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: nil,
     registration_open: nil,
     start_date: nil,
-    time_zone: nil,
+    timezone: nil,
     title: nil,
     context_id: nil
   }

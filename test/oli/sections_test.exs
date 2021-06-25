@@ -13,7 +13,7 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      timezone: "some timezone",
       title: "some title",
       context_id: "context_id"
     }
@@ -106,7 +106,7 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      timezone: "some timezone",
       title: "some title",
       context_id: "some context_id"
     }
@@ -115,7 +115,7 @@ defmodule Oli.SectionsTest do
       open_and_free: false,
       registration_open: false,
       start_date: ~D[2011-05-18],
-      time_zone: "some updated time_zone",
+      timezone: "some updated timezone",
       title: "some updated title",
       context_id: "some updated context_id"
     }
@@ -124,7 +124,7 @@ defmodule Oli.SectionsTest do
       open_and_free: nil,
       registration_open: nil,
       start_date: nil,
-      time_zone: nil,
+      timezone: nil,
       title: nil,
       context_id: nil
     }
@@ -152,7 +152,7 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~D[2010-04-17]
       assert section.registration_open == true
       assert section.start_date == ~D[2010-04-17]
-      assert section.time_zone == "some time_zone"
+      assert section.timezone == "some timezone"
       assert section.title == "some title"
     end
 
@@ -200,7 +200,7 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~D[2011-05-18]
       assert section.registration_open == false
       assert section.start_date == ~D[2011-05-18]
-      assert section.time_zone == "some updated time_zone"
+      assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
 

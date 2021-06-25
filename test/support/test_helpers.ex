@@ -31,7 +31,7 @@ defmodule Oli.TestHelpers do
       |> Enum.into(%{
         open_and_free: false,
         registration_open: true,
-        time_zone: "US/Eastern",
+        timezone: "US/Eastern",
         title: "some title",
         context_id: "context_id"
       })

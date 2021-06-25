@@ -71,7 +71,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       {:ok, _} =
         Sections.create_section(%{
           title: "1",
-          time_zone: "1",
+          timezone: "1",
           registration_open: true,
           context_id: "1",
           institution_id: map.institution.id,
@@ -82,7 +82,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       {:ok, _} =
         Sections.create_section(%{
           title: "2",
-          time_zone: "1",
+          timezone: "1",
           registration_open: true,
           context_id: "2",
           institution_id: map.institution.id,

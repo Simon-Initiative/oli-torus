@@ -293,7 +293,7 @@ defmodule Oli.PublishingTest do
 
       {:ok, %Section{id: section_id}} =
         Sections.create_section(%{
-          time_zone: "US/Central",
+          timezone: "US/Central",
           title: "title",
           context_id: "some-context-id",
           institution_id: institution.id,

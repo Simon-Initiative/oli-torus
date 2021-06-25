@@ -297,7 +297,7 @@ defmodule OliWeb.DeliveryController do
 
     {:ok, %Section{id: section_id}} =
       Sections.create_section(%{
-        time_zone: institution.timezone,
+        timezone: institution.timezone,
         title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
         context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
         institution_id: institution.id,

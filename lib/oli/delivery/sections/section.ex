@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :registration_open, :boolean, default: false
     field :start_date, :date
     field :end_date, :date
-    field :time_zone, :string
+    field :timezone, :string
     field :title, :string
     field :context_id, :string
     field :slug, :string
@@ -40,7 +40,7 @@ defmodule Oli.Delivery.Sections.Section do
       :title,
       :start_date,
       :end_date,
-      :time_zone,
+      :timezone,
       :registration_open,
       :context_id,
       :slug,
@@ -56,7 +56,7 @@ defmodule Oli.Delivery.Sections.Section do
       :publication_id,
       :brand_id
     ])
-    |> validate_required([:title, :time_zone, :registration_open, :project_id, :publication_id])
+    |> validate_required([:title, :timezone, :registration_open, :project_id, :publication_id])
     |> Slug.update_never("sections")
   end
 end

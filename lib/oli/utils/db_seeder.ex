@@ -261,7 +261,7 @@ defmodule Oli.Seeder do
       open_and_free: false,
       registration_open: true,
       start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      timezone: "some timezone",
       title: "some title",
       context_id: "context_id",
       project_id: map.project.id,
