@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import SwiperCore, { Navigation, Pagination, A11y, Keyboard, Zoom } from 'swiper';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -20,7 +21,8 @@ const Carousel: React.FC<any> = (props) => {
   const [carouselCustomCss, setCarouselCustomCss] = useState<string>('');
   const [carouselZoom, setCarouselZoom] = useState<boolean>(true);
   const [cssClass, setCssClass] = useState('');
-
+  // initialize the swiper
+  SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
