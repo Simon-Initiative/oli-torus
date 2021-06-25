@@ -7,7 +7,7 @@ defmodule Oli.Repo.Migrations.RemoveJanusCarousel do
     flush()
 
     from(p in "part_component_registrations",
-      where: delivery_element = 'janus-carousel'
+      where: delivery_element == 'janus-carousel'
     )
     |> Oli.Repo.update_all(set: [slug: "janus_image_carousel",
     delivery_element: "janus-image-carousel",
