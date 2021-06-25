@@ -1,11 +1,25 @@
 import React from 'react';
-import { Accordion, Card, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  selectCurrentActivityId,
+  setCurrentActivityId,
+} from '../../../delivery/store/features/activities/slice';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+} from '../../../delivery/store/features/groups/actions/sequence';
 import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
 const SequenceEditor: React.FC<any> = (props) => {
+  const dispatch = useDispatch();
+  const currentActivityId = useSelector(selectCurrentActivityId);
   const sequence = useSelector(selectSequence);
+
+  const handleItemClick = (entry: SequenceEntry<SequenceEntryChild>) => {
+    dispatch(setCurrentActivityId({ activityId: entry.activitySlug }));
+  };
 
   return (
     <Accordion className="aa-sequence-editor" defaultActiveKey="0">
@@ -37,7 +51,8 @@ const SequenceEditor: React.FC<any> = (props) => {
               as="li"
               className="aa-sequence-item"
               key={entry.custom.sequenceId}
-              active={index === 2}
+              active={entry.activitySlug === currentActivityId}
+              onClick={() => handleItemClick(entry)}
             >
               {entry.custom.sequenceName}
             </ListGroup.Item>
