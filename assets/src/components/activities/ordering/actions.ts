@@ -65,15 +65,15 @@ export class Actions {
 
   static removeChoice(id: ChoiceId) {
     return (model: Ordering, post: PostUndoable) => {
+
+      post(makeUndoable('Removed choice',
+      [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+       { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
+      ]));
+
       const removeIdFrom = (list: ChoiceId[]) => removeFromList(id, list);
       model.choices = model.choices.filter((choice) => choice.id !== id);
       removeIdFrom(getChoiceIds(model.authoring.correct));
-
-      post(makeUndoable('Removed choice',
-        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
-         { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
-        ]));
-
 
       switch (model.type) {
         case 'SimpleOrdering':

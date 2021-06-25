@@ -12,7 +12,7 @@ export type InsertOperation = {
 export type ReplaceOperation = {
   type: 'ReplaceOperation',
   path: string;
-  item: Record<string, unknown>;
+  item: any;
 }
 
 export function applyOperations(json: Record<string, any>, ops: UndoOperation[]) : void {
@@ -23,6 +23,7 @@ export function applyOperations(json: Record<string, any>, ops: UndoOperation[])
         result.splice(op.index, 0, op.item);
         return result;
       } else {
+        console.log(op.item);
         return op.item;
       }
     });

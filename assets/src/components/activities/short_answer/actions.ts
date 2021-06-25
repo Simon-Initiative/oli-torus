@@ -66,9 +66,10 @@ export class ShortAnswerActions {
     return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
 
       const index = draftState.authoring.parts[0].responses.findIndex(
-        (r) => r.rule === `input like {${id}}`,
+        (r) => r.id === id,
       );
       const response = draftState.authoring.parts[0].responses[index];
+
       post(makeUndoable('Removed a response',
         [{ type: 'InsertOperation', path: '$.authoring.parts[0].responses', index, item: clone(response)}]));
 
