@@ -21,7 +21,9 @@ export const selectCurrentActivityTree = createSelector(
       (entry) => entry.custom.sequenceId === currentActivityId,
     );
     if (!currentSequenceEntry) {
-      console.error(`Current Activity ${currentActivityId} not found in sequence!`);
+      // because this is a selector, might be undefined; stringify to display that
+      // TODO: Logging System that can be turned off in prod and/or instrumented
+      console.warn(`Current Activity ${JSON.stringify(currentActivityId)} not found in sequence!`);
       return null;
     }
     const lineage = getSequenceLineage(sequence as any[], currentSequenceEntry.custom.sequenceId);
