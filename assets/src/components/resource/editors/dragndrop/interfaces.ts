@@ -1,10 +1,11 @@
-import { Activity, ActivityReference, StructuredContent } from 'data/content/resource';
+import { ActivityReference, StructuredContent } from 'data/content/resource';
 import { ProjectSlug } from 'data/types';
+import { ActivityEditContext } from 'data/content/activity';
 
 export interface ActivityPayload {
   type: 'ActivityPayload';
   id: string;
-  activity: Activity;
+  activity: ActivityEditContext;
   reference: ActivityReference;
   project: ProjectSlug;
 }

@@ -5,6 +5,8 @@
 ### Enhancements
 
 - Add ability to generate and download a course digest from existing course projects
+- Redesign check all that apply activity
+- Merge activity editing into the page editor
 
 ## 0.11.1 (2021-6-16)
 

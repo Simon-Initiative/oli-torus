@@ -34,8 +34,13 @@ const AdaptivityEditor: React.FC<any> = (props) => {
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
-          {rules.map((rule: any) => (
-            <ListGroup.Item className="aa-rules-list-item" as="li" key={rule.id}>
+          {rules.map((rule: any, index: any) => (
+            <ListGroup.Item
+              className="aa-rules-list-item"
+              as="li"
+              key={rule.id}
+              active={index === 0}
+            >
               {rule.name}
             </ListGroup.Item>
           ))}

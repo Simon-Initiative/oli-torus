@@ -1,87 +1,111 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  AuthoringElementProvider,
+} from '../AuthoringElement';
 import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/Stem';
-import { Choices } from './sections/Choices';
-import { Feedback } from './sections/Feedback';
-import { Hints } from '../common/Hints';
 import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
-import { TargetedFeedback } from 'components/activities/check_all_that_apply/sections/TargetedFeedback';
-import { getHints, isTargetedCATA } from 'components/activities/check_all_that_apply/utils';
-import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
+import {
+  getBottomOutHint,
+  getCognitiveHints,
+  getCorrectChoiceIds,
+  getCorrectResponse,
+  getDeerInHeadlightsHint,
+  getIncorrectResponse,
+  getTargetedResponseMappings,
+  isTargetedCATA,
+} from 'components/activities/check_all_that_apply/utils';
+import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
+import { ChoicesAuthoringConnected } from 'components/activities/common/choices/ChoicesAuthoring';
+import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import { HintsAuthoring } from 'components/activities/common/hints/HintsAuthoring';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { AnswerKeyAuthoring } from 'components/activities/common/authoring/answerKey/AnswerKeyAuthoring';
+import { CheckAllThatApplySettings } from 'components/activities/check_all_that_apply/Settings';
+import { SimpleFeedback } from 'components/activities/common/feedback/SimpleFeedback';
+import { TargetedFeedback } from 'components/activities/common/feedback/TargetedFeedback';
 
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-  const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, (draftState) => action(draftState)));
-
-  const sharedProps = {
-    model: props.model,
-    editMode: props.editMode,
-    projectSlug: props.projectSlug,
-  };
+  const dispatch = (action: any) => props.onEdit(produce(props.model, action));
 
   return (
-    <React.Fragment>
-      <Stem
-        {...sharedProps}
-        stem={props.model.stem}
-        onEditStem={(content) => dispatch(Actions.editStem(content))}
-      />
-
-      <Choices
-        {...sharedProps}
-        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
-        onAddChoice={() => dispatch(Actions.addChoice())}
-        onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
-        onToggleChoiceCorrectness={(choiceId) =>
-          dispatch(Actions.toggleChoiceCorrectness(choiceId))
-        }
-      />
-
-      <Feedback
-        {...sharedProps}
-        onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
-        onEditResponseFeedback={(responseId, feedbackContent) =>
-          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
-        }
-      >
-        {isTargetedCATA(props.model) ? (
-          <TargetedFeedback
-            {...sharedProps}
-            model={props.model}
-            onEditResponseFeedback={(responseId, feedbackContent) =>
-              dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
-            }
-            onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
-            onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
-              dispatch(Actions.removeTargetedFeedback(responseId))
-            }
-            onEditTargetedFeedbackChoices={(
-              responseId: ActivityTypes.ResponseId,
-              choiceIds: ActivityTypes.ChoiceId[],
-            ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
+    <>
+      <TabbedNavigation.Tabs>
+        <TabbedNavigation.Tab label="Question">
+          <StemAuthoring
+            stem={props.model.stem}
+            onEdit={(content) => dispatch(Actions.editStem(content))}
           />
-        ) : null}
-      </Feedback>
 
-      <Hints
-        projectSlug={props.projectSlug}
-        hints={getHints(props.model)}
-        editMode={props.editMode}
-        onAddHint={() => dispatch(Actions.addHint())}
-        onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
-      />
-    </React.Fragment>
+          <ChoicesAuthoringConnected
+            icon={<Checkbox.Unchecked />}
+            choices={props.model.choices}
+            addOne={() => dispatch(Actions.addChoice())}
+            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Actions.setAllChoices(choices))}
+            onEdit={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
+            onRemove={(id) => dispatch(Actions.removeChoice(id))}
+          />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Answer Key">
+          <AnswerKeyAuthoring
+            stem={props.model.stem}
+            choices={props.model.choices}
+            selectedChoiceIds={getCorrectChoiceIds(props.model)}
+            selectedIcon={<Checkbox.Correct />}
+            unselectedIcon={<Checkbox.Unchecked />}
+            onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
+          />
+          <SimpleFeedback
+            correctResponse={getCorrectResponse(props.model)}
+            incorrectResponse={getIncorrectResponse(props.model)}
+            update={(id, content) => dispatch(Actions.editResponseFeedback(id, content))}
+          />
+
+          {isTargetedCATA(props.model) && (
+            <TargetedFeedback
+              choices={props.model.choices}
+              targetedMappings={getTargetedResponseMappings(props.model)}
+              toggleChoice={(choiceId, mapping) => {
+                dispatch(
+                  Actions.editTargetedFeedbackChoices(
+                    mapping.response.id,
+                    mapping.choiceIds.includes(choiceId)
+                      ? mapping.choiceIds.filter((id) => id !== choiceId)
+                      : mapping.choiceIds.concat(choiceId),
+                  ),
+                );
+              }}
+              updateResponse={(id, content) => dispatch(Actions.editResponseFeedback(id, content))}
+              addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
+              unselectedIcon={<Checkbox.Unchecked />}
+              selectedIcon={<Checkbox.Checked />}
+              onRemove={(id) => dispatch(Actions.removeTargetedFeedback(id))}
+            />
+          )}
+        </TabbedNavigation.Tab>
+
+        <TabbedNavigation.Tab label="Hints">
+          <HintsAuthoring
+            addOne={() => dispatch(Actions.addHint())}
+            updateOne={(id, content) => dispatch(Actions.editHint(id, content))}
+            removeOne={(id) => dispatch(Actions.removeHint(id))}
+            deerInHeadlightsHint={getDeerInHeadlightsHint(props.model)}
+            cognitiveHints={getCognitiveHints(props.model)}
+            bottomOutHint={getBottomOutHint(props.model)}
+          />
+        </TabbedNavigation.Tab>
+        <CheckAllThatApplySettings dispatch={dispatch} model={props.model} />
+      </TabbedNavigation.Tabs>
+    </>
   );
 };
 
@@ -89,7 +113,9 @@ export class CheckAllThatApplyAuthoring extends AuthoringElement<CheckAllThatApp
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<CheckAllThatApplyModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <CheckAllThatApply {...props} />
+        <AuthoringElementProvider {...props}>
+          <CheckAllThatApply {...props} />
+        </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,
       mountPoint,

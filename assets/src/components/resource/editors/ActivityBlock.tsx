@@ -2,8 +2,6 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { State, Dispatch } from 'state';
 import { DragHandle } from '../DragHandle';
-import { EditLink } from '../../misc/EditLink';
-import { ObjectivesList } from './ObjectivesList';
 import { Purpose } from 'components/content/Purpose';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { Purpose as PurposeType, ResourceContent, ActivityReference } from 'data/content/resource';
@@ -39,36 +37,6 @@ interface ActivityBlockProps {
 const ActivityBlock = (props: ActivityBlockProps) => {
   const id = `activity-header${props.contentItem.activitySlug}`;
 
-  const renderLivePreview = (props: ActivityBlockProps) => (
-    <div className="card-body">
-      {props.children}
-
-      <div className="activity-preview-info">
-        This is a live preview of your activity.
-        <button
-          className="btn btn-xs btn-link ml-2"
-          onClick={() => props.onUpdatePreferences({ live_preview_display: 'hidden' })}
-        >
-          <i className="lar la-eye-slash"></i> Hide
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderHidden = (props: ActivityBlockProps) => (
-    <div className="card-body">
-      <div className="activity-preview-info d-flex">
-        <div className="flex-grow-1 px-4 preview-text">{props.previewText}</div>
-        <button
-          className="btn btn-xs btn-link flex-shrink-0 ml-2"
-          onClick={() => props.onUpdatePreferences({ live_preview_display: 'show' })}
-        >
-          <i className="lar la-eye"></i> Live Preview
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="activity-block resource-content-frame card">
       <div
@@ -80,11 +48,6 @@ const ActivityBlock = (props: ActivityBlockProps) => {
         <div className="d-flex flex-row align-items-center">
           <div className="d-flex align-items-center flex-grow-1">
             <DragHandle style={{ height: 24, marginRight: 10 }} />
-
-            <EditLink
-              label={props.label}
-              href={`/authoring/project/${props.projectSlug}/resource/${props.resourceSlug}/activity/${props.contentItem.activitySlug}`}
-            />
           </div>
 
           <Purpose
@@ -97,15 +60,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
-
-      <ObjectivesList objectives={props.objectives}></ObjectivesList>
-
-      {props.preferences.caseOf({
-        just: ({ live_preview_display }) =>
-          live_preview_display !== 'hidden' ? renderLivePreview(props) : renderHidden(props),
-        nothing: () => renderLivePreview(props),
-      })}
-
+      <div className="card-body">{props.children}</div>
       <div className="reorder-mode-description">{getDescription(props)}</div>
     </div>
   );

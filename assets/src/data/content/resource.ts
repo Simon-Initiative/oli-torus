@@ -1,6 +1,7 @@
 import { ModelElement, Selection } from './model';
 import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
+import { ActivityEditContext } from './activity';
 
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
@@ -24,10 +25,12 @@ export type ResourceContext = {
   authorEmail: string,            // The current author
   projectSlug: ProjectSlug,       // The current project
   resourceSlug: ResourceSlug,     // The current resource
+  resourceId: ResourceId,         // The resource id
   title: string,                  // The title of the resource
   content: PageContent,           // Content of the resource
   objectives: AttachedObjectives, // Attached objectives
   allObjectives: Objective[],     // All objectives
+  activityContexts: ActivityEditContext[],  // Contexts for inline activity editing
 };
 
 export enum ResourceType {

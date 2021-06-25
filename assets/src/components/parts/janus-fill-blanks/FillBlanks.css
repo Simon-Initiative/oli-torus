@@ -1,0 +1,1196 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto:300,400);
+
+/*** Dropdown ***/
+.dropdown-blot {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 1px;
+}
+
+.dropdown-container {
+  display: inline-block;
+  position: relative;
+  vertical-align: top;
+}
+
+.dropdown-option-wrapper {
+  width: auto;
+  padding: 5px;
+  background: 0 0;
+}
+
+.dropdown-option {
+  width: auto;
+}
+
+.dropdown-option-select {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 10px;
+  border: 1px solid #979797;
+  background: 0 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 8px 10px 0 0;
+  vertical-align: top;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.dropdown-option-select:focus,
+.dropdown-option-select:hover {
+  background-color: rgba(52, 210, 175, 0.3);
+  outline: 0;
+}
+
+.dropdown-option__correct .dropdown-option-select {
+  background-color: #34d2af;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6" viewBox="0 0 8 6">  <g fill="none" fill-rule="evenodd" transform="translate(-3 -4)">  <rect width="14" height="14" fill="#D8D8D8" opacity="0"/>  <polygon fill="#FFF" points="5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818"/>  </g>  </svg>');
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+}
+
+.dropdown {
+  display: none !important;
+}
+
+.dropdown-option-input {
+  display: inline-block;
+  word-wrap: normal;
+  margin-right: 3px;
+  pointer-events: auto;
+  min-width: 66px;
+  width: calc(100% - 50px);
+  vertical-align: middle;
+  cursor: text;
+  box-sizing: border-box;
+  min-height: 30px;
+  padding: 0 5px 0 3px;
+}
+
+.dropdown-option-input:focus {
+  outline: 0;
+  border-bottom: 1px solid #333;
+}
+
+.override-top {
+  top: auto !important;
+}
+
+.override-top .select2-dropdown {
+  box-shadow: 0 -1px 12px -5px #000;
+}
+
+.override-left {
+  left: auto !important;
+}
+
+.select2-container {
+  width: auto !important;
+  height: auto;
+  min-height: 26px;
+  padding: 2rem 0 0 0;
+  max-width: calc(100vw - 34px) !important;
+  vertical-align: top;
+  display: initial !important;
+}
+
+.select2-dropdown {
+  min-width: 130px;
+  width: auto !important;
+  position: relative;
+  box-shadow: 0 3px 15px -5px #000;
+  border-bottom-left-radius: 5px !important;
+  border-bottom-right-radius: 5px !important;
+  border: none;
+  overflow: hidden;
+}
+
+.selection:focus {
+  outline: 0;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  pointer-events: none;
+  top: 0;
+  bottom: 0;
+  margin: auto;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: #253445 transparent transparent transparent;
+}
+
+h3 .select2-container--default .select2-selection--single .select2-selection__arrow {
+  top: -8px;
+}
+
+p .select2-container--default .select2-selection--single .select2-selection__arrow {
+  top: -3px;
+}
+
+code .select2-container--default .select2-selection--single .select2-selection__arrow {
+  top: -5px;
+}
+
+blockquote .select2-container--default .select2-selection--single .select2-selection__arrow {
+  top: -5px;
+}
+
+.select2-container--default.select2-container--open
+  .select2-selection--single
+  .select2-selection__arrow
+  b {
+  border-color: transparent transparent #253445 transparent;
+}
+
+.select2-container--default .select2-selection--single {
+  position: relative;
+  border: none;
+  width: auto;
+  outline: 0;
+  height: auto;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  padding-right: 25px;
+}
+
+.select2-selection__rendered {
+  min-height: 26px;
+  min-width: 120px;
+  width: auto;
+  border: 0;
+  box-shadow: none;
+  border-radius: 3px 3px 0 0;
+  background-color: #f8f9fa;
+  transition: background-color 0.3s ease-in-out;
+  border-bottom: 1px solid #253445;
+  display: inline-block;
+  padding: 0;
+  font-size: 1em;
+  margin-top: -1px;
+}
+
+.select2-selection__rendered:focus,
+.select2-selection__rendered:hover {
+  background-color: #d9d9de;
+}
+
+.select2-selection__rendered:focus .dropdown-menu {
+  display: block;
+}
+
+.select2-container--focus .select2-selection__rendered {
+  border-bottom: 1px solid #2196f3;
+}
+
+.select2-container--disabled .select2-selection__rendered {
+  background-color: rgba(0, 0, 0, 0.07);
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.8);
+  border-bottom: none;
+}
+
+.select2-container .select2-selection--single .select2-selection__rendered {
+  white-space: normal;
+}
+
+#scene_Configuration .select2-selection__rendered {
+  white-space: nowrap;
+}
+
+.select2-container--default.select2-container--disabled .select2-selection--single {
+  background-color: transparent;
+}
+
+.select2-results {
+  width: auto;
+}
+
+.config .select2-results {
+  padding-bottom: 40px;
+}
+
+.select2-container--default .select2-results > .select2-results__options {
+  width: auto;
+  max-width: 100%;
+  padding: 0;
+  max-height: 160px;
+}
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  background: 0 0;
+}
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #c1c1c1;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar-track {
+  background: 0 0;
+  border-radius: 10px;
+}
+
+.select2-results__option {
+  font-size: 1rem;
+  line-height: 1;
+  max-width: 100%;
+  outline: 0;
+  padding: 5px 10px;
+  word-wrap: break-word;
+}
+
+.select2-results__option::before {
+  display: none;
+}
+
+.select2-container--default .select2-results__option--highlighted[data-selected],
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted {
+  background-color: #eee;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.select2-container--default
+  .select2-dropdown:not(.config)
+  .select2-results__option[aria-selected='true'],
+.select2-container--default
+  .select2-dropdown:not(.config)
+  .select2-results__option[data-selected='true'] {
+  background-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.select2-container--default .config .select2-results__option {
+  pointer-events: none;
+}
+
+.select2-container--default .config .select2-results__option:last-child {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.select2-container--default .config .select2-results__option--highlighted[aria-selected],
+.select2-container--default .config .select2-results__option[aria-selected='true'],
+.select2-container--default .config .select2-results__option--highlighted[data-selected],
+.select2-container--default .config .select2-results__option[data-selected='true'] {
+  background-color: transparent;
+}
+
+.select2-selection__rendered .incorrect-icon,
+.select2-selection__rendered::before {
+  content: '';
+  display: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 10px;
+  background-color: #4ad3ad;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6" viewBox="0 0 8 6">  <g fill="none" fill-rule="evenodd" transform="translate(-3 -4)">  <rect width="14" height="14" fill="%23D8D8D8" opacity="0"/>  <polygon fill="%23FFF" points="5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818"/>  </g>  </svg>');
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.dropdown.correct + .select2-container .select2-selection__rendered::before {
+  display: inline-block;
+}
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered .incorrect-icon {
+  display: inline-block;
+  background-color: #f96155;
+  background-image: none;
+  color: #fff;
+  padding-left: 6.5px;
+  line-height: 17px;
+  font-size: 11px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.dropdown.correct + .select2-container .select2-selection__rendered {
+  border-bottom: none;
+  background-color: #daf6ee !important;
+}
+
+.dropdown.correct + .select2-container .select2-selection__rendered:hover {
+  background-color: #b9eedf !important;
+}
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered {
+  border-bottom: none;
+  background-color: #fddfdd !important;
+}
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered:hover {
+  background-color: #fbb7b2 !important;
+}
+
+.dropdown.correct + .select2-container .select2-selection--single:focus {
+  outline: -webkit-focus-ring-color auto 5px;
+}
+
+.dropdown.incorrect + .select2-container .select2-selection--single:focus {
+  outline: -webkit-focus-ring-color auto 5px;
+}
+
+p .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.85em;
+  min-height: 30px;
+  margin-top: 1px;
+}
+
+h1 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.4em;
+  min-height: 69px;
+  margin-top: 16px;
+}
+
+h2 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.5em;
+  min-height: 49px;
+  margin-top: 4px;
+}
+
+h3 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.7em;
+  min-height: 36px;
+  margin-top: 3px;
+}
+
+h3
+  .dropdown-blot
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered::before {
+  margin-bottom: 2px;
+}
+
+code .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 2em;
+  min-height: 27px;
+  margin-top: 0;
+}
+
+blockquote
+  .dropdown-blot
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 2em;
+  min-height: 30px;
+  margin-top: -4px;
+}
+
+sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 4px;
+}
+
+sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 10px;
+}
+
+s .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  text-decoration: line-through;
+}
+
+p
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.85em;
+  min-height: 31px;
+  margin-top: 1px;
+}
+
+h1
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.4em;
+  min-height: 70px;
+  margin-top: 16px;
+}
+
+h2
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.5em;
+  min-height: 50px;
+  margin-top: 4px;
+}
+
+h3
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.7em;
+  min-height: 37px;
+  margin-top: -3px;
+}
+
+h3
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered::before {
+  margin-bottom: 2px;
+}
+
+code
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 2em;
+  min-height: 28px;
+  margin-top: 0;
+}
+
+blockquote
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 2em;
+  min-height: 31px;
+  margin-top: -5px;
+}
+
+sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 2px;
+}
+
+sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 11px;
+}
+
+s
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  text-decoration: line-through;
+}
+
+h1 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 49px;
+  margin-top: 16px;
+}
+
+h1 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 49px;
+  margin-top: 38px;
+}
+
+h1
+  sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 50px;
+  margin-top: 16px;
+}
+
+h1
+  sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 50px;
+  margin-top: 38px;
+}
+
+h2 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 33px;
+  margin-top: 7px;
+}
+
+h2 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 33px;
+  margin-top: 21px;
+}
+
+h2
+  sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 34px;
+  margin-top: 7px;
+}
+
+h2
+  sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 34px;
+  margin-top: 21px;
+}
+
+h3 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 21px;
+  margin-top: 8px;
+}
+
+h3 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 21px;
+  margin-top: 18px;
+}
+
+h3
+  sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 22px;
+  margin-top: 8px;
+}
+
+h3
+  sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.2;
+  min-height: 22px;
+  margin-top: 18px;
+}
+
+code sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 19px;
+  margin-top: 5px;
+}
+
+code sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 19px;
+  margin-top: 9px;
+}
+
+code
+  sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 20px;
+  margin-top: 5px;
+}
+
+code
+  sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 20px;
+  margin-top: 9px;
+}
+
+blockquote
+  sup
+  .dropdown-blot
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 0;
+}
+
+blockquote
+  sub
+  .dropdown-blot
+  .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 5px;
+}
+
+blockquote
+  sup
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 0;
+}
+
+blockquote
+  sub
+  .dropdown-blot
+  .config
+  + .select2-container
+  .select2-selection--single
+  .select2-selection__rendered {
+  line-height: 1.6;
+  min-height: 22px;
+  margin-top: 5px;
+}
+
+@media only screen and (max-width: 440px) {
+  .select2-container {
+    max-width: calc(100vw - 40px);
+  }
+}
+/*** End Dropdown ***/
+
+/*** Text Input ***/
+.text-input-blot {
+  display: inline;
+  margin: 0 1px;
+}
+
+.text-input-container {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  border-radius: 3px;
+}
+
+.text-input {
+  height: auto;
+  width: auto;
+  border: 0;
+  box-shadow: none;
+  border-radius: 3px 3px 0 0;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #253445;
+  display: inline;
+  margin: 0;
+  padding: 5px 5px;
+  position: relative;
+  min-width: 120px;
+}
+
+.text-input:focus {
+  outline: 0;
+  border-bottom: 1px solid #2196f3;
+}
+.text-input:disabled {
+  cursor: not-allowed;
+}
+
+.text-input.force-inline-block {
+  display: inline-block !important;
+  padding: 0 5px;
+  line-height: 1.9em;
+  height: 30px;
+  margin-top: 1px;
+}
+
+.text-input[contenteditable='false'] {
+  border-bottom: none;
+}
+
+.text-input[contenteditable='false'][placeholder]:empty::after {
+  display: none;
+}
+
+.text-input.disabled {
+  background-color: rgba(0, 0, 0, 0.07);
+  cursor: not-allowed;
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.text-input[contenteditable][placeholder]:after {
+  padding: 0 5px;
+  display: inline-block;
+}
+
+.text-input.config[contenteditable][placeholder]:empty::after {
+  content: attr(placeholder);
+  display: inline-block;
+  opacity: 0.5;
+  min-width: 100px;
+  font-size: 0.7em;
+  line-height: 1em;
+  letter-spacing: -0.1px;
+  color: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.text-input[contenteditable][placeholder]:focus:empty::after {
+  display: none;
+}
+
+.text-input-container::before {
+  content: '';
+  display: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 10px;
+  background-color: #4ad3ad;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6" viewBox="0 0 8 6">  <g fill="none" fill-rule="evenodd" transform="translate(-3 -4)">  <rect width="14" height="14" fill="%23D8D8D8" opacity="0"/>  <polygon fill="%23FFF" points="5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818"/>  </g>  </svg>');
+  background-size: 50%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: auto 5px 1px 0;
+  vertical-align: middle;
+}
+.text-input-container:focus {
+  outline: none;
+}
+
+.text-input-container.correct,
+.text-input-container.correct .text-input {
+  background-color: #daf6ee !important;
+}
+.text-input-container.correct::before {
+  display: inline-block;
+}
+
+.text-input-container.incorrect,
+.text-input-container.incorrect .text-input {
+  background-color: #fddfdd !important;
+}
+.text-input-container.incorrect::before {
+  display: inline-block;
+  background-color: #f96155;
+  background-image: none;
+  content: '!';
+  color: #fff;
+  padding-left: 6.5px;
+  line-height: 17px;
+  font-size: 11px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.text-input.config[contenteditable][placeholder]:empty::before {
+  display: none;
+}
+
+.text-input.config[contenteditable][placeholder]::before {
+  display: inline-block;
+}
+
+.text-input.config[contenteditable][placeholder] {
+  border-bottom: 2px solid transparent;
+  background-color: #daf6ee;
+}
+
+.text-input.config[contenteditable][placeholder]:focus {
+  outline: 0;
+  border-bottom: 2px solid #4ad3ad;
+}
+
+.text-input.config[contenteditable][placeholder]:empty {
+  border-bottom: 1px solid #253445;
+  margin-right: 0;
+}
+
+.text-input.correct {
+  border-bottom: none;
+  background-color: rgba(74, 211, 173, 0.2);
+}
+
+.text-input.incorrect {
+  border-bottom: none;
+  background-color: rgba(249, 97, 85, 0.2);
+}
+
+h1 .text-input-blot .text-input.force-inline-block {
+  line-height: 1.45em;
+  height: 69px;
+  margin-top: 15px;
+}
+
+h2 .text-input-blot .text-input.force-inline-block {
+  line-height: 1.55em;
+  height: 49px;
+  margin-top: 3px;
+}
+
+h3 .text-input-blot .text-input.force-inline-block {
+  line-height: 1.7em;
+  height: 36px;
+  margin-top: 3px;
+}
+
+code .text-input-blot .text-input.force-inline-block {
+  line-height: 2em;
+  height: 27px;
+  margin-top: 0;
+}
+
+blockquote .text-input-blot .text-input.force-inline-block {
+  line-height: 1.9em;
+  height: 30px;
+  margin-top: -4px;
+}
+
+s .text-input-blot .text-input.force-inline-block {
+  text-decoration: line-through;
+}
+
+p .text-input-blot .text-input.config.force-inline-block {
+  line-height: 1.9em;
+  height: 31px;
+  margin-top: 1px;
+}
+
+h1 .text-input-blot .text-input.config.force-inline-block {
+  line-height: 1.45em;
+  height: 70px;
+  margin-top: 15px;
+}
+
+h2 .text-input-blot .text-input.config.force-inline-block {
+  line-height: 1.55em;
+  height: 50px;
+  margin-top: 3px;
+}
+
+h3 .text-input-blot .text-input.config.force-inline-block {
+  line-height: 1.7em;
+  height: 37px;
+  margin-top: 3px;
+}
+
+code .text-input-blot .text-input.config.force-inline-block {
+  line-height: 2em;
+  height: 28px;
+  margin-top: 0;
+}
+
+blockquote .text-input-blot .text-input.config.force-inline-block {
+  line-height: 1.9em;
+  height: 31px;
+  margin-top: -4px;
+}
+
+s .text-input-blot .text-input.config.force-inline-block {
+  text-decoration: line-through;
+}
+
+sub .text-input-blot .text-input.force-inline-block,
+sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 22px;
+  padding: 2px 5px 0 5px;
+}
+
+sub .text-input-blot .text-input.config.force-inline-block,
+sup .text-input-blot .text-input.config.force-inline-block {
+  line-height: initial;
+  height: 22px;
+  padding: 2px 5px 0 5px;
+}
+
+sub .text-input-blot .text-input,
+sup .text-input-blot .text-input {
+  padding: 2px 5px 3px 5px;
+}
+
+sub .text-input-blot .text-input.config,
+sup .text-input-blot .text-input.config {
+  padding: 2px 5px 2px 5px;
+}
+
+h1 sub .text-input-blot .text-input,
+h1 sup .text-input-blot .text-input,
+h2 sub .text-input-blot .text-input,
+h2 sup .text-input-blot .text-input,
+h3 sub .text-input-blot .text-input,
+h3 sup .text-input-blot .text-input {
+  padding: 0 5px 0 5px;
+}
+
+h1 sub .text-input-blot .text-input.config,
+h1 sup .text-input-blot .text-input.config,
+h2 sub .text-input-blot .text-input.config,
+h2 sup .text-input-blot .text-input.config,
+h3 sub .text-input-blot .text-input.config,
+h3 sup .text-input-blot .text-input.config {
+  padding: 0 5px;
+}
+
+h1 sub .text-input-blot .text-input.force-inline-block,
+h1 sup .text-input-blot .text-input.force-inline-block,
+h2 sub .text-input-blot .text-input.force-inline-block,
+h2 sup .text-input-blot .text-input.force-inline-block,
+h3 sub .text-input-blot .text-input.force-inline-block,
+h3 sup .text-input-blot .text-input.force-inline-block {
+  padding: 0 5px 0 5px;
+}
+
+h1 sub .text-input-blot .text-input.config.force-inline-block,
+h1 sup .text-input-blot .text-input.config.force-inline-block,
+h2 sub .text-input-blot .text-input.config.force-inline-block,
+h2 sup .text-input-blot .text-input.config.force-inline-block,
+h3 sub .text-input-blot .text-input.config.force-inline-block,
+h3 sup .text-input-blot .text-input.config.force-inline-block {
+  padding: 0 5px;
+}
+
+h1 sub .text-input-blot .text-input.force-inline-block,
+h1 sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 49px;
+}
+
+h1 sub .text-input-blot .text-input.config.force-inline-block,
+h1 sup .text-input-blot .text-input.config.force-inline-block {
+  height: 50px;
+}
+
+h2 sub .text-input-blot .text-input.force-inline-block,
+h2 sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 33px;
+}
+
+h2 sub .text-input-blot .text-input.config.force-inline-block,
+h2 sup .text-input-blot .text-input.config.force-inline-block {
+  height: 34px;
+}
+
+h3 sub .text-input-blot .text-input.force-inline-block,
+h3 sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 21px;
+}
+
+h3 sub .text-input-blot .text-input.config.force-inline-block,
+h3 sup .text-input-blot .text-input.config.force-inline-block {
+  height: 22px;
+}
+
+code sub .text-input-blot .text-input.force-inline-block,
+code sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 19px;
+}
+
+code sub .text-input-blot .text-input.config.force-inline-block,
+code sup .text-input-blot .text-input.config.force-inline-block {
+  height: 20px;
+  padding: 1px 5px 3px 5px;
+}
+
+code sub .text-input-blot .text-input.config,
+code sup .text-input-blot .text-input.config {
+  padding: 2px 5px 3px 5px;
+}
+
+blockquote sub .text-input-blot .text-input.force-inline-block,
+blockquote sup .text-input-blot .text-input.force-inline-block {
+  line-height: initial;
+  height: 22px;
+}
+
+blockquote sub .text-input-blot .text-input.config.force-inline-block,
+blockquote sup .text-input-blot .text-input.config.force-inline-block {
+  height: 22px;
+}
+/*** End Text Input ***/
+
+/*** Quill Overrides ***/
+.editor {
+  counter-reset: code-line-count 0;
+}
+
+.ql-snow .ql-editor code {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.editor.ql-container.ql-snow {
+  height: 100%;
+}
+
+.ql-snow .ql-editor {
+  font-size: 1rem;
+  overflow-y: auto;
+}
+
+.ql-snow .ql-editor::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  background: 0 0;
+}
+
+.ql-snow .ql-editor::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #c1c1c1;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.ql-snow .ql-editor::-webkit-scrollbar-track {
+  background: 0 0;
+  border-radius: 10px;
+}
+
+.ql-editor.ql-blank::before {
+  line-height: 2em;
+  font-family: Roboto, sans-serif;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.ql-editor.ql-blank::before.ql-blank::before {
+  line-height: 2em;
+}
+
+.ql-snow .ql-editor code {
+  line-height: 2em;
+  font-family: monospace;
+  background-color: #ccc;
+  padding-left: 16px;
+  display: block;
+  border-radius: 0;
+}
+
+.ql-snow .ql-editor h1 {
+  font-weight: 300;
+  font-size: 3rem;
+  line-height: 2;
+  letter-spacing: -1.5px;
+}
+
+.ql-snow .ql-editor h2 {
+  font-weight: 300;
+  font-size: 2rem;
+  line-height: 1.7;
+  letter-spacing: -0.5px;
+}
+
+.ql-snow .ql-editor h3 {
+  font-weight: 400;
+  font-size: 1.3rem;
+  line-height: 2;
+  letter-spacing: 0;
+}
+
+.ql-snow .ql-editor p {
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 2;
+  letter-spacing: 0.5px;
+}
+/*** End Quill Overrides ***/
+
+/*** Custom ***/
+.scene,
+body,
+html {
+  font-family: Roboto, sans-serif;
+  font-size: 16px;
+  height: 100%;
+  margin: 0;
+  color: #333;
+}
+
+.app {
+  height: 100%;
+}
+
+.error {
+  text-align: center;
+  color: #ab0000;
+}
+.accessibility-instructions {
+  position: fixed;
+  top: -100%;
+  font-size: 1px;
+}
+
+.dropdown-instructions,
+.text-input-instructions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  color: transparent;
+  overflow: hidden;
+  white-space: nowrap;
+}

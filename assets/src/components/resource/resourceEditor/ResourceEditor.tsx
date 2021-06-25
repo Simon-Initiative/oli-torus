@@ -2,12 +2,12 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { State, Dispatch } from 'state';
 import * as Immutable from 'immutable';
+import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
 import {
   ResourceContent,
   ResourceContext,
-  Activity,
   ActivityMap,
   createDefaultStructuredContent,
 } from 'data/content/resource';
@@ -15,23 +15,16 @@ import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Editors } from '../editors/Editors';
 import { TitleBar } from '../../content/TitleBar';
-import { UndoRedo } from '../../content/UndoRedo';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
-import {
-  UndoableState,
-  processRedo,
-  processUndo,
-  processUpdate,
-  init,
-  registerUndoRedoHotkeys,
-  unregisterUndoRedoHotkeys,
-} from '../undo';
+import * as ActivityPersistence from 'data/persistence/activity';
 import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../../messages/Banner';
+import { ActivityEditContext } from 'data/content/activity';
 import { create } from 'data/persistence/objective';
+import { Undoable as ActivityUndoable } from 'components/activities/types';
 import {
   registerUnload,
   registerKeydown,
@@ -44,6 +37,10 @@ import {
 } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
+import { Undoables, empty, PageUndoable } from './types';
+import { UndoToasts } from './UndoToasts';
+import { applyOperations } from 'utils/undo';
+import './ResourceEditor.scss';
 
 export interface ResourceEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -51,8 +48,8 @@ export interface ResourceEditorProps extends ResourceContext {
   onLoadPreferences: () => void;
 }
 
-// This is the state of our resource that is undoable
-type Undoable = {
+// The changes that the editor can make
+type EditorUpdate = {
   title: string;
   content: Immutable.OrderedMap<string, ResourceContent>;
   objectives: Immutable.List<ResourceId>;
@@ -60,13 +57,16 @@ type Undoable = {
 
 type ResourceEditorState = {
   messages: Message[];
-  undoable: UndoableState<Undoable>;
+  title: string;
+  content: Immutable.OrderedMap<string, ResourceContent>;
+  activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
+  objectives: Immutable.List<ResourceId>;
   allObjectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
-  activities: Immutable.Map<string, Activity>;
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
   metaModifier: boolean;
+  undoables: Undoables;
 };
 
 // Creates a function that when invoked submits a save request
@@ -114,6 +114,7 @@ function mapChildrenObjectives(
 // The resource editor
 export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
   persistence: PersistenceStrategy;
+  activityPersistence: { [id: string]: PersistenceStrategy };
   windowUnloadListener: any;
   undoRedoListener: any;
   keydownListener: any;
@@ -127,28 +128,32 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 
     const { title, objectives, allObjectives, content, activities } = props;
 
+    const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
+      this.props.activityContexts.map((c) => {
+        return [c.activitySlug, c];
+      }),
+    );
+
     this.state = {
+      activityContexts,
       messages: [],
       editMode: true,
-      undoable: init({
-        title,
-        objectives: Immutable.List<ResourceId>(objectives.attached),
-        content: Immutable.OrderedMap<string, ResourceContent>(withDefaultContent(content.model)),
-      }),
+      title,
+      objectives: Immutable.List<ResourceId>(objectives.attached),
+      content: Immutable.OrderedMap<string, ResourceContent>(withDefaultContent(content.model)),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
-      activities: Immutable.Map<string, Activity>(
-        Object.keys(activities).map((k) => [k, activities[k]]),
-      ),
       metaModifier: false,
+      undoables: empty(),
     };
 
     this.persistence = new DeferredPersistenceStrategy();
 
     this.update = this.update.bind(this);
-    this.undo = this.undo.bind(this);
-    this.redo = this.redo.bind(this);
+    this.onActivityEdit = this.onActivityEdit.bind(this);
+    this.onPostUndoable = this.onPostUndoable.bind(this);
+    this.onInvokeUndo = this.onInvokeUndo.bind(this);
   }
 
   componentDidMount() {
@@ -168,19 +173,14 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       .then((editMode) => {
         this.setState({ editMode });
         if (editMode) {
+          this.initActivityPersistence();
           this.windowUnloadListener = registerUnload(this.persistence);
-          this.undoRedoListener = registerUndoRedoHotkeys(
-            this.undo.bind(this),
-            this.redo.bind(this),
-          );
           this.keydownListener = registerKeydown(this);
           this.keyupListener = registerKeyup(this);
           this.windowBlurListener = registerWindowBlur(this);
-        } else {
-          if (this.persistence.getLockResult().type === 'not_acquired') {
-            const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
-            this.editingLockedMessage(notAcquired.user);
-          }
+        } else if (this.persistence.getLockResult().type === 'not_acquired') {
+          const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
+          this.editingLockedMessage(notAcquired.user);
         }
       });
   }
@@ -189,10 +189,33 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
-    unregisterUndoRedoHotkeys(this.undoRedoListener);
     unregisterKeydown(this.keydownListener);
     unregisterKeyup(this.keyupListener);
     unregisterWindowBlur(this.windowBlurListener);
+  }
+
+  initActivityPersistence() {
+    this.activityPersistence = Object.keys(this.state.activityContexts.toObject()).reduce(
+      (map, key) => {
+        const activity: ActivityEditContext = this.state.activityContexts.get(
+          key,
+        ) as ActivityEditContext;
+
+        const persistence = new DeferredPersistenceStrategy();
+        persistence.initialize(
+          () => Promise.resolve({ type: 'acquired' }),
+          () => Promise.resolve({ type: 'acquired' }),
+          // eslint-disable-next-line
+          () => {},
+          (failure) => this.publishErrorMessage(failure),
+          (persistence) => this.setState({ persistence }),
+        );
+
+        (map as any)[activity.activitySlug] = persistence;
+        return map;
+      },
+      {},
+    );
   }
 
   editingLockedMessage(email: string) {
@@ -234,6 +257,99 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     );
   }
 
+  onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+    const withModel = {
+      title: update.title !== undefined ? update.title : undefined,
+      model: update.content !== undefined ? update.content : undefined,
+      objectives: update.objectives !== undefined ? update.objectives : undefined,
+    };
+    // apply the edit
+    const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
+    const activityContexts = this.state.activityContexts.set(key, merged);
+
+    this.setState({ activityContexts }, () => {
+      const saveFn = (releaseLock: boolean) =>
+        ActivityPersistence.edit(
+          this.props.projectSlug,
+          this.props.resourceId,
+          merged.activityId,
+          update as any,
+          releaseLock,
+        );
+
+      this.activityPersistence[key].save(saveFn);
+    });
+  }
+
+  onRemove(key: string) {
+    const item = this.state.content.get(key);
+    const index = this.state.content.toArray().findIndex(([k, item]) => k === key);
+
+    if (item !== undefined) {
+      const undoable: PageUndoable = {
+        type: 'PageUndoable',
+        description: 'Removed ' + (item.type === 'content' ? 'Content' : 'Activity'),
+        index,
+        item,
+      };
+
+      const content = this.state.content.delete(key);
+      this.update({ content });
+      this.onPostUndoable(key, undoable);
+    }
+  }
+
+  onPostUndoable(key: string, undoable: ActivityUndoable | PageUndoable) {
+    const id = guid();
+    this.setState(
+      {
+        undoables: this.state.undoables.set(id, {
+          guid: id,
+          contentKey: key,
+          undoable,
+        }),
+      },
+      () =>
+        setTimeout(
+          () =>
+            this.setState({
+              undoables: this.state.undoables.delete(id),
+            }),
+          5000,
+        ),
+    );
+  }
+
+  onInvokeUndo(guid: string) {
+    const item = this.state.undoables.get(guid);
+
+    if (item !== undefined) {
+      if (item.undoable.type === 'PageUndoable') {
+        const content = this.state.content.toArray();
+        content.splice(item.undoable.index, 0, [item.contentKey, item.undoable.item]);
+        this.update({ content: Immutable.OrderedMap<string, ResourceContent>(content) });
+      } else {
+        const context = this.state.activityContexts.get(item.contentKey);
+        if (context !== undefined) {
+          // Perform a deep copy
+          const model = JSON.parse(JSON.stringify(context.model));
+
+          // Apply the undo operations to the model
+          applyOperations(model as any, item.undoable.operations);
+
+          // Now save the change and push it down to the activity editor
+          this.onActivityEdit(item.contentKey, {
+            content: model,
+            title: context.title,
+            objectives: context.objectives,
+          });
+        }
+      }
+    }
+
+    this.setState({ undoables: this.state.undoables.delete(guid) });
+  }
+
   createObjectiveErrorMessage(failure: any) {
     const message = createMessage({
       guid: 'objective-error',
@@ -249,29 +365,22 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.setState({ messages: [...messages, message] });
   }
 
-  update(update: Partial<Undoable>) {
-    this.setState({ undoable: processUpdate(this.state.undoable, update) }, () => this.save());
+  update(update: Partial<EditorUpdate>) {
+    const mergedState = Object.assign({}, this.state, update);
+    this.setState(mergedState, () => this.save());
   }
 
   save() {
     const { projectSlug, resourceSlug } = this.props;
 
     const toSave: Persistence.ResourceUpdate = {
-      objectives: { attached: this.state.undoable.current.objectives.toArray() },
-      title: this.state.undoable.current.title,
-      content: { model: this.state.undoable.current.content.toArray().map(([k, v]) => v) },
+      objectives: { attached: this.state.objectives.toArray() },
+      title: this.state.title,
+      content: { model: this.state.content.toArray().map(([k, v]) => v) },
       releaseLock: false,
     };
 
     this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
-  }
-
-  undo() {
-    this.setState({ undoable: processUndo(this.state.undoable) }, () => this.save());
-  }
-
-  redo() {
-    this.setState({ undoable: processRedo(this.state.undoable) }, () => this.save());
   }
 
   render() {
@@ -288,46 +397,36 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c: ResourceContent, index: number, a?: Activity) => {
+    const onAddItem = (c: ResourceContent, index: number, a?: ActivityEditContext) => {
       this.update({
-        content: this.state.undoable.current.content
+        content: this.state.content
           .take(index)
           .concat([[c.id, c]])
-          .concat(this.state.undoable.current.content.skip(index)),
+          .concat(this.state.content.skip(index)),
       });
       if (a) {
-        this.setState({ activities: this.state.activities.set(a.activitySlug, a) });
+        const persistence = new DeferredPersistenceStrategy();
+        persistence.initialize(
+          () => Promise.resolve({ type: 'acquired' }),
+          () => Promise.resolve({ type: 'acquired' }),
+          // eslint-disable-next-line
+          () => {},
+          (failure) => this.publishErrorMessage(failure),
+          (persistence) => this.setState({ persistence }),
+        );
+        this.activityPersistence[a.activitySlug] = persistence;
+
+        this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
       }
     };
 
-    const onRegisterNewObjective = (title: string): Promise<Objective> => {
-      return new Promise((resolve, reject) => {
-        create(props.projectSlug, title)
-          .then((result) => {
-            if (result.result === 'success') {
-              const objective = {
-                id: result.resourceId,
-                title,
-                parentId: null,
-              };
-
-              this.setState({
-                allObjectives: this.state.allObjectives.push(objective),
-                childrenObjectives: this.state.childrenObjectives.set(
-                  objective.id,
-                  Immutable.List<Objective>(),
-                ),
-              });
-
-              resolve(objective);
-            } else {
-              throw result;
-            }
-          })
-          .catch((e) => {
-            this.createObjectiveErrorMessage(e);
-            console.error('objective creation failed', e);
-          });
+    const onRegisterNewObjective = (objective: Objective) => {
+      this.setState({
+        allObjectives: this.state.allObjectives.push(objective),
+        childrenObjectives: this.state.childrenObjectives.set(
+          objective.id,
+          Immutable.List<Objective>(),
+        ),
       });
     };
 
@@ -350,6 +449,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     return (
       <div className="resource-editor row">
         <div className="col-12">
+          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+
           <Banner
             dismissMessage={(msg) =>
               this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
@@ -357,21 +458,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
             executeAction={(message, action) => action.execute(message)}
             messages={this.state.messages}
           />
-          <TitleBar
-            title={state.undoable.current.title}
-            onTitleEdit={onTitleEdit}
-            editMode={this.state.editMode}
-          >
+          <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
             <PersistenceStatus persistence={this.state.persistence} />
 
             <PreviewButton />
-
-            <UndoRedo
-              canRedo={this.state.undoable.redoStack.size > 0}
-              canUndo={this.state.undoable.undoStack.size > 0}
-              onUndo={this.undo}
-              onRedo={this.redo}
-            />
           </TitleBar>
           <div>
             <Editors
@@ -380,11 +470,13 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               objectives={this.state.allObjectives}
               childrenObjectives={this.state.childrenObjectives}
               onRegisterNewObjective={onRegisterNewObjective}
-              activities={this.state.activities}
-              onRemove={(key) => onEdit(this.state.undoable.current.content.delete(key))}
-              onEdit={(c, key) => onEdit(this.state.undoable.current.content.set(key, c))}
+              activityContexts={this.state.activityContexts}
+              onRemove={(key) => this.onRemove(key)}
+              onEdit={(c, key) => onEdit(this.state.content.set(key, c))}
               onEditContentList={onEdit}
-              content={this.state.undoable.current.content}
+              onActivityEdit={this.onActivityEdit}
+              onPostUndoable={this.onPostUndoable}
+              content={this.state.content}
               onAddItem={onAddItem}
               resourceContext={props}
             />

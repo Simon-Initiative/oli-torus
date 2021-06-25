@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   ResourceContent,
-  Activity,
   ResourceContext,
   ActivityReference,
   createDefaultStructuredContent,
@@ -13,7 +12,7 @@ import { Objective, ResourceId } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 import { Popover } from 'react-tiny-popover';
-
+import { ActivityEditContext } from 'data/content/activity';
 import { modalActions } from 'actions/modal';
 import * as Immutable from 'immutable';
 
@@ -24,7 +23,7 @@ import { classNames } from 'utils/classNames';
 import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
 import ModalSelection from 'components/modal/ModalSelection';
 
-type AddCallback = (content: ResourceContent, index: number, a?: Activity) => void;
+type AddCallback = (content: ResourceContent, index: number, a?: ActivityEditContext) => void;
 
 const promptForObjectiveSelection = (
   objectives: Immutable.List<Objective>,
@@ -84,7 +83,7 @@ interface AddResourceContentProps {
   isLast: boolean;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
-  onRegisterNewObjective: (text: string) => Promise<Objective>;
+  onRegisterNewObjective: (objective: Objective) => void;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
 }
@@ -105,54 +104,51 @@ export const AddResourceContent = ({
     let model: ActivityModelSchema;
     let selectedObjectives: ResourceId[];
 
-    promptForObjectiveSelection(objectives, childrenObjectives, onRegisterNewObjective).then(
-      (objectives: ResourceId[]) =>
-        invokeCreationFunc(editorDesc.slug, resourceContext)
-          .then((createdModel) => {
-            model = createdModel;
-            selectedObjectives = objectives;
+    invokeCreationFunc(editorDesc.slug, resourceContext)
+      .then((createdModel) => {
+        model = createdModel;
 
-            return Persistence.create(
-              resourceContext.projectSlug,
-              editorDesc.slug,
-              model,
-              objectives,
-            );
-          })
-          .then((result: Persistence.Created) => {
-            const resourceContent: ActivityReference = {
-              type: 'activity-reference',
-              id: guid(),
-              activitySlug: result.revisionSlug,
-              purpose: 'none',
-              children: [],
-            };
+        return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, []);
+      })
+      .then((result: Persistence.Created) => {
+        const resourceContent: ActivityReference = {
+          type: 'activity-reference',
+          id: guid(),
+          activitySlug: result.revisionSlug,
+          purpose: 'none',
+          children: [],
+        };
 
-            // For every part that we find in the model, we attach the selected
-            // objectives to it
-            const objectives = model.authoring.parts
-              .map((p: any) => p.id)
-              .reduce((p: any, id: string) => {
-                p[id] = selectedObjectives;
-                return p;
-              }, {});
+        // For every part that we find in the model, we attach the selected
+        // objectives to it
+        const objectives = model.authoring.parts
+          .map((p: any) => p.id)
+          .reduce((p: any, id: string) => {
+            p[id] = [];
+            return p;
+          }, {});
 
-            const activity: Activity = {
-              type: 'activity',
-              activitySlug: result.revisionSlug,
-              typeSlug: editorDesc.slug,
-              model,
-              transformed: result.transformed,
-              objectives,
-            };
+        const editor = editorMap[editorDesc.slug];
 
-            onAddItem(resourceContent, index, activity);
-          })
-          .catch((err) => {
-            // tslint:disable-next-line
-            console.error(err);
-          }),
-    );
+        const activity: ActivityEditContext = {
+          authoringElement: editor.authoringElement as string,
+          authoringScript: '',
+          description: editor.description,
+          friendlyName: editor.friendlyName,
+          activitySlug: result.revisionSlug,
+          typeSlug: editorDesc.slug,
+          activityId: result.resourceId,
+          title: editor.friendlyName,
+          model,
+          objectives,
+        };
+
+        onAddItem(resourceContent, index, activity);
+      })
+      .catch((err) => {
+        // tslint:disable-next-line
+        console.error(err);
+      });
   };
 
   const activityEntries = Object.keys(editorMap).map((k: string) => {

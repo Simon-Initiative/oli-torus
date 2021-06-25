@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TransitionGroup, Transition, CSSTransition } from 'react-transition-group';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import { Message as Msg, MessageAction, Severity } from 'data/messages/messages';
 import { Message } from './Message';
 

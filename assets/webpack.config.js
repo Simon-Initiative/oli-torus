@@ -14,11 +14,11 @@ const populateEntries = () => {
   // These are the non-activity bundles
   const initialEntries = {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
-    components: ['./src/components.tsx'],
-    resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
-    activityeditor: ['./src/components/activity/ActivityEditorApp.tsx'],
+    components: { import: './src/components.tsx', dependOn: 'shared' },
+    resourceeditor: { import: './src/components/resource/ResourceEditorApp.tsx', dependOn: 'shared' },
     authoring: ['./src/apps/AuthoringApp.tsx'],
-    delivery: ['./src/apps/DeliveryApp.tsx']
+    delivery: ['./src/apps/DeliveryApp.tsx'],
+    shared: ['react', 'react-dom']
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -27,8 +27,8 @@ const populateEntries = () => {
     const manifest = require(manifestPath);
     const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
     return {
-      [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
-      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
+      [manifest.id + '_authoring']: { import: [rootPath + manifest.authoring.entry], dependOn: 'shared' },
+      [manifest.id + '_delivery']: { import: [rootPath + manifest.delivery.entry], dependOn: 'shared' }
     };
   });
 

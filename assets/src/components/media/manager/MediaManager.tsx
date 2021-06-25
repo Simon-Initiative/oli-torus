@@ -81,7 +81,7 @@ const popOpenImage = (e: any) => {
     link.href,
     link.target || '_blank',
     'menubar=no,toolbar=no,location=no,directories=no,status=no,scrollbars=no,' +
-    'resizable=no,dependent,width=800,height=620',
+      'resizable=no,dependent,width=800,height=620',
   );
 
   // allow the link to work if popup is blocked
@@ -89,6 +89,7 @@ const popOpenImage = (e: any) => {
 };
 
 export interface MediaManagerProps {
+  disabled?: boolean;
   className?: string;
   projectSlug: string;
   media: OrderedMediaLibrary;
@@ -232,7 +233,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     if (
       !isLoadingMedia &&
       this.scrollView.scrollTop + PAGELOAD_TRIGGER_MARGIN_PX >
-      this.scrollContent.offsetHeight - this.scrollView.offsetHeight
+        this.scrollContent.offsetHeight - this.scrollView.offsetHeight
     ) {
       onLoadCourseMediaNextPage(
         this.props.projectSlug,
@@ -363,7 +364,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     selectionType !== SELECTION_TYPES.NONE &&
     (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
 
-  renderMediaList() {
+  renderMediaList(disabled: boolean) {
     const { media, selectionType } = this.props;
 
     const isLoadingMedia = media.isLoading;
@@ -390,10 +391,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
                 key={item.guid}
                 className={
                   `media-item ${this.isSelected(item.guid) ? 'selected' : ''} ` +
-                  `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`
+                  `${
+                    this.isItemSelectable(selectionType, item) && !disabled
+                      ? 'selectable'
+                      : 'not-selectable'
+                  }`
                 }
                 onClick={() =>
-                  this.isItemSelectable(selectionType, item) ? this.onSelect(item.guid) : null
+                  this.isItemSelectable(selectionType, item) && !disabled
+                    ? this.onSelect(item.guid)
+                    : null
                 }
               >
                 <div className="sel-col">
@@ -429,7 +436,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     );
   }
 
-  renderMediaGrid() {
+  renderMediaGrid(disabled: boolean) {
     const { media, selectionType } = this.props;
 
     const isLoadingMedia = media.isLoading;
@@ -446,10 +453,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               key={item.guid}
               className={
                 `media-item ${this.isSelected(item.guid) ? 'selected' : ''} ` +
-                `${this.isItemSelectable(selectionType, item) ? 'selectable' : 'not-selectable'}`
+                `${
+                  this.isItemSelectable(selectionType, item) && !disabled
+                    ? 'selectable'
+                    : 'not-selectable'
+                }`
               }
               onClick={() =>
-                this.isItemSelectable(selectionType, item) ? this.onSelect(item.guid) : null
+                this.isItemSelectable(selectionType, item) && !disabled
+                  ? this.onSelect(item.guid)
+                  : null
               }
             >
               <input
@@ -476,7 +489,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     );
   }
 
-  renderMediaSelectionDetails() {
+  renderMediaSelectionDetails(disabled: boolean) {
     const { media } = this.props;
     const { selection, showDetails } = this.state;
 
@@ -504,7 +517,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <div className="details-title">
             <span>
               Selected:{' '}
-              <a href={selectedItem.url} rel="noreferrer" target="_blank" onClick={popOpenImage}>
+              <a
+                href={selectedItem.url}
+                rel="noreferrer"
+                target="_blank"
+                onClick={(e) => {
+                  if (!disabled) {
+                    popOpenImage(e);
+                  }
+                }}
+              >
                 {stringFormat.ellipsize(selectedItem.fileName, 65, 5)}
               </a>
             </span>
@@ -582,6 +604,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   render() {
     const { className, mimeFilter, media } = this.props;
     const { searchText, layout, orderBy, order } = this.state;
+    const disabled = this.props.disabled === undefined ? false : this.props.disabled;
 
     const id = guid();
 
@@ -594,12 +617,14 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <input
             id={id}
             style={{ display: 'none' }}
+            disabled={disabled}
             accept={mimeFilter && `${mimeFilter}`}
             multiple
             onChange={({ target: { files } }) => this.onFileUpload(files as FileList)}
             type="file"
           />
           <button
+            disabled={disabled}
             className="btn btn-primary media-toolbar-item upload"
             onClick={() => this.onUploadClick(id)}
           >
@@ -607,12 +632,14 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           </button>
           <div className="media-toolbar-item btn-group layout-control">
             <button
+              disabled={disabled}
               className={`btn btn-outline-primary ${layout === LAYOUTS.GRID ? 'selected' : ''}`}
               onClick={() => this.onChangeLayout(LAYOUTS.GRID)}
             >
               <i className="fa fa-th" /> Grid
             </button>
             <button
+              disabled={disabled}
               className={`btn btn-outline-primary ${layout === LAYOUTS.LIST ? 'selected' : ''}`}
               onClick={() => this.onChangeLayout(LAYOUTS.LIST)}
             >
@@ -631,6 +658,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             <div className="dropdown-menu">
               {Object.keys(SORT_MAPPINGS).map((sortKey) => (
                 <button
+                  disabled={disabled}
                   key={sortKey}
                   type="button"
                   className="dropdown-item"
@@ -644,6 +672,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           <div className="media-toolbar-item search">
             <div className="input-group">
               <input
+                disabled={disabled}
                 type="text"
                 className="form-control"
                 placeholder="Search"
@@ -679,8 +708,10 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             </li>
           </ol>
           <div className="media-content">
-            {layout === LAYOUTS.GRID ? this.renderMediaGrid() : this.renderMediaList()}
-            {this.renderMediaSelectionDetails()}
+            {layout === LAYOUTS.GRID
+              ? this.renderMediaGrid(disabled)
+              : this.renderMediaList(disabled)}
+            {this.renderMediaSelectionDetails(disabled)}
           </div>
         </div>
         <div className="media-infobar">

@@ -148,8 +148,12 @@ defmodule OliWeb.Api.ActivityController do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.create(project_slug, activity_type_slug, author, model, objectives) do
-      {:ok, {%{slug: slug}, transformed}} ->
-        json(conn, %{"type" => "success", "revisionSlug" => slug, "transformed" => transformed})
+      {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
+        json(conn, %{
+          "type" => "success",
+          "revisionSlug" => slug,
+          "resourceId" => resource_id
+        })
 
       {:error, {:not_found}} ->
         error(conn, 404, "not found")
@@ -169,12 +173,12 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   defp document_to_result(%{
-      objectives: objectives,
-      title: title,
-      activity_type_id: activity_type_id,
-      content: content,
-      resource_id: resource_id
-    }) do
+         objectives: objectives,
+         title: title,
+         activity_type_id: activity_type_id,
+         content: content,
+         resource_id: resource_id
+       }) do
     %{
       "result" => "success",
       "resourceId" => resource_id,
@@ -267,11 +271,11 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   defp document_to_delivery_result(%{
-      title: title,
-      activity_type_id: activity_type_id,
-      content: content,
-      resource_id: resource_id
-    }) do
+         title: title,
+         activity_type_id: activity_type_id,
+         content: content,
+         resource_id: resource_id
+       }) do
     %{
       "result" => "success",
       "title" => title,

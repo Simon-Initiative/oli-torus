@@ -12,7 +12,8 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :allObjectives,
     :editorMap,
     :activities,
-
+    :activityContexts,
+    :resourceId,
     # these fields are not JSON encoded
     :project,
     :previous_page,

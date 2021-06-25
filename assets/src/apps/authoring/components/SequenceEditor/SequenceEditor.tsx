@@ -32,8 +32,13 @@ const SequenceEditor: React.FC<any> = (props) => {
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup as="ol" className="aa-sequence">
-          {sequence.map((entry) => (
-            <ListGroup.Item as="li" className="aa-sequence-item" key={entry.custom.sequenceId}>
+          {sequence.map((entry, index) => (
+            <ListGroup.Item
+              as="li"
+              className="aa-sequence-item"
+              key={entry.custom.sequenceId}
+              active={index === 2}
+            >
               {entry.custom.sequenceName}
             </ListGroup.Item>
           ))}

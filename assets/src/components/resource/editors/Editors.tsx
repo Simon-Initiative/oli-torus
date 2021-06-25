@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import isHotkey from 'is-hotkey';
 import {
   ResourceContent,
-  Activity,
   ActivityPurposes,
   ContentPurposes,
   ResourceContext,
 } from 'data/content/resource';
+import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug, ResourceSlug } from 'data/types';
 import { Objective, ResourceId } from 'data/content/objective';
@@ -20,6 +20,8 @@ import { dragEndHandler } from './dragndrop/handlers/dragEnd';
 import { dropHandler } from './dragndrop/handlers/drop';
 import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
+import { EditorUpdate } from 'components/activity/InlineActivityEditor';
+import { Undoable } from 'components/activities/types';
 
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
@@ -27,16 +29,18 @@ export type EditorsProps = {
   onEdit: (content: ResourceContent, key: string) => void;
   onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void;
   onRemove: (key: string) => void;
-  onAddItem: (c: ResourceContent, index: number, a?: Activity) => void;
+  onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
-  activities: Immutable.Map<string, Activity>;
+  activityContexts: Immutable.Map<string, ActivityEditContext>;
   projectSlug: ProjectSlug;
   resourceSlug: ResourceSlug;
   resourceContext: ResourceContext;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
-  onRegisterNewObjective: (text: string) => Promise<Objective>;
+  onRegisterNewObjective: (o: Objective) => void;
+  onActivityEdit: (key: string, update: EditorUpdate) => void;
+  onPostUndoable: (key: string, undoable: Undoable) => void;
 };
 
 // The list of editors
@@ -51,20 +55,24 @@ export const Editors = (props: EditorsProps) => {
     editMode,
     graded,
     content,
-    activities,
+    activityContexts,
     projectSlug,
     resourceSlug,
     onEditContentList,
     onAddItem,
+    onActivityEdit,
+    onPostUndoable,
+    onRegisterNewObjective,
   } = props;
 
   const [assistive, setAssistive] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const isReorderMode = activeDragId !== null;
-  const onFocus = focusHandler(setAssistive, content, editorMap, activities);
-  const onMove = moveHandler(content, onEditContentList, editorMap, activities, setAssistive);
+  const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
+  const onMove = moveHandler(content, onEditContentList, editorMap, activityContexts, setAssistive);
   const onDragEnd = dragEndHandler(setActiveDragId);
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
+  const allObjectives = props.objectives.toArray();
 
   const editors = content.entrySeq().map(([contentKey, contentValue], index) => {
     const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
@@ -76,7 +84,7 @@ export const Editors = (props: EditorsProps) => {
     const purposes =
       contentValue.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
 
-    const dragPayload = getDragPayload(contentValue, activities, projectSlug);
+    const dragPayload = getDragPayload(contentValue, activityContexts, projectSlug);
     const onDragStart = dragStartHandler(dragPayload, contentValue, setActiveDragId);
 
     // register keydown handlers
@@ -102,17 +110,21 @@ export const Editors = (props: EditorsProps) => {
     };
 
     const editor = createEditor(
+      props.resourceContext,
       contentValue,
       index,
-      activities,
-      editorMap,
+      activityContexts,
       editMode,
       resourceSlug,
       projectSlug,
       graded,
       objectivesMap,
       editorProps,
+      allObjectives,
       onEdit,
+      onActivityEdit,
+      onPostUndoable,
+      onRegisterNewObjective,
     );
 
     return (
@@ -159,6 +171,7 @@ export const Editors = (props: EditorsProps) => {
 
       <AddResourceOrDropTarget
         {...props}
+        onRegisterNewObjective={props.onRegisterNewObjective}
         id="last"
         index={editors.size || 0}
         editMode={editMode}

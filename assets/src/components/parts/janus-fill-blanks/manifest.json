@@ -1,0 +1,14 @@
+{
+    "id": "janus_fill_blanks",
+    "friendlyName": "FillBlanks",
+    "description": "Displays a fill in the blanks element",
+    "global": true,
+    "delivery": {
+        "element": "janus-fill-blanks",
+        "entry": "./delivery-entry.ts"
+    },
+    "authoring": {
+        "element": "janus-fill-blanks",
+        "entry": "./authoring-entry.ts"
+    }
+}

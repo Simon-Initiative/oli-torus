@@ -1,7 +1,6 @@
 import { CheckAllThatApplyModelSchema as CATA, TargetedCATA } from './schema';
 import {
   createRuleForIds,
-  fromText,
   getChoice,
   getCorrectResponse,
   getHint,
@@ -15,11 +14,18 @@ import {
   invertRule,
   unionRules,
   getResponses,
-  makeResponse,
   isSimpleCATA,
   getHints,
 } from './utils';
-import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
+import {
+  RichText,
+  ChoiceId,
+  Choice,
+  ResponseId,
+  makeChoice,
+  makeResponse,
+  makeHint,
+} from '../types';
 import { toSimpleText } from 'data/content/text';
 
 export class Actions {
@@ -46,7 +52,7 @@ export class Actions {
 
   static addChoice() {
     return (model: CATA) => {
-      const newChoice: Choice = fromText('');
+      const newChoice: Choice = makeChoice('');
 
       model.choices.push(newChoice);
       getChoiceIds(model.authoring.incorrect).push(newChoice.id);
@@ -57,6 +63,12 @@ export class Actions {
   static editChoiceContent(id: string, content: RichText) {
     return (model: CATA) => {
       getChoice(model, id).content = content;
+    };
+  }
+
+  static setAllChoices(choices: Choice[]) {
+    return (model: CATA) => {
+      model.choices = choices;
     };
   }
 
@@ -153,7 +165,7 @@ export class Actions {
 
   static addHint() {
     return (model: CATA) => {
-      const newHint: HintType = fromText('');
+      const newHint = makeHint('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
       const bottomOutIndex = getHints(model).length - 1;

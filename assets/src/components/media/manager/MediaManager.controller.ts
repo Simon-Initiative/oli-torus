@@ -21,6 +21,7 @@ interface DispatchProps {
 }
 
 interface OwnProps {
+  disabled?: boolean;
   className?: string;
   projectSlug: string;
   mimeFilter?: string[] | undefined;
