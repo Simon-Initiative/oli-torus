@@ -137,7 +137,7 @@ const NavigationButton: React.FC<any> = (props) => {
     if (sSelected === undefined) {
       sSelected = currentStateSnapshot[`stage.${id}.selected`];
     }
-    if (sSelected !== undefined) {
+    if (sSelected !== undefined && typeof sSelected === 'boolean') {
       setButtonSelected(sSelected);
     }
 
@@ -228,7 +228,7 @@ const NavigationButton: React.FC<any> = (props) => {
               if (sSelected === undefined) {
                 sSelected = changes[`stage.${id}.selected`];
               }
-              if (sSelected !== undefined) {
+              if (sSelected !== undefined && typeof sSelected === 'boolean') {
                 setButtonSelected(sSelected);
               }
 
