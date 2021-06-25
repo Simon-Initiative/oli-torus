@@ -317,7 +317,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       className={`fib-container ${customCssClass}`}
       ref={fibContainer}
     >
-      <style type="text/css">{`${customCss}`};</style>
+      <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <div className="scene">
         <div className="app">
           <div className="editor ql-container ql-snow ql-disabled">
