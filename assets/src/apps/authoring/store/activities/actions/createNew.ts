@@ -4,7 +4,7 @@ import {
   IActivity,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { createCorrectRule } from './rules';
+import { createCorrectRule, createIncorrectRule } from './rules';
 
 export const createNew = createAsyncThunk(
   `${ActivitiesSlice}/createNew`,
@@ -31,6 +31,8 @@ export const createNew = createAsyncThunk(
     await dispatch(upsertActivity({ activity }));
 
     await dispatch(createCorrectRule({ isDefault: true, activityId: activity.id }));
+
+    await dispatch(createIncorrectRule({ isDefault: true, activityId: activity.id }));
 
     return activity;
   },

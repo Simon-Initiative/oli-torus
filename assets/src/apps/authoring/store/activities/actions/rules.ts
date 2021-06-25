@@ -1,10 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import guid from 'utils/guid';
 import {
   ActivitiesSlice,
   selectActivityById,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import guid from 'utils/guid';
+import { createFeedback } from './createFeedback';
 
 export const createCorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createCorrectRule`,
@@ -49,8 +50,7 @@ export const createIncorrectRule = createAsyncThunk(
   async (payload: any, { dispatch, getState }) => {
     const { ruleId = `r:${guid()}`, isDefault = false, activityId } = payload;
 
-    // TODO
-    const feedbackAction = undefined;
+    const { payload: feedbackAction } = await dispatch(createFeedback({}));
 
     const name = isDefault ? 'defaultWrong' : 'incorrect';
 
