@@ -53,10 +53,8 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
 };
 
 const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
-  const dispatch = (action: any) => {
-    const nextModel = produce(props.model, (draftState) => action(draftState));
-    props.onEdit(nextModel);
-  };
+  const dispatch = (action: any) =>
+    props.onEdit(produce(props.model, (draftState) => action(draftState, props.onPostUndoable)));
 
   const sharedProps = {
     model: props.model,

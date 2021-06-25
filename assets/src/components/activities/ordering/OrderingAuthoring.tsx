@@ -20,7 +20,7 @@ const store = configureStore();
 
 const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
   const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, (draftState) => action(draftState)));
+    props.onEdit(produce(props.model, (draftState) => action(draftState, props.onPostUndoable)));
 
   const sharedProps = {
     model: props.model,

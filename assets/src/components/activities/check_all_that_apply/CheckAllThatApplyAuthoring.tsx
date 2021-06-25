@@ -35,7 +35,12 @@ import { TargetedFeedback } from 'components/activities/common/feedback/Targeted
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-  const dispatch = (action: any) => props.onEdit(produce(props.model, action));
+  const dispatch = (action: any) => {
+    const nextModel = produce(props.model, (draftState) =>
+      action(draftState, props.onPostUndoable),
+    );
+    props.onEdit(nextModel);
+  };
 
   return (
     <>

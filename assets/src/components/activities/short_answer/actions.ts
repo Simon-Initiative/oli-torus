@@ -5,6 +5,7 @@ import { RichText, Hint as HintType, Response } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
+import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
 
 export class ShortAnswerActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -18,7 +19,7 @@ export class ShortAnswerActions {
     ShortAnswerActions.getById(draftState.authoring.parts[0].hints, id);
 
   static setModel(model: ShortAnswerModelSchema) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       draftState.authoring = model.authoring;
       draftState.inputType = model.inputType;
       draftState.stem = model.stem;
@@ -26,7 +27,7 @@ export class ShortAnswerActions {
   }
 
   static editStem(content: RichText) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       draftState.stem.content = content;
       const previewText = toSimpleText({ children: content.model } as any);
       draftState.authoring.previewText = previewText;
@@ -34,19 +35,19 @@ export class ShortAnswerActions {
   }
 
   static editFeedback(id: string, content: RichText) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       ShortAnswerActions.getResponse(draftState, id).lift((r) => (r.feedback.content = content));
     };
   }
 
   static editRule(id: string, rule: string) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       ShortAnswerActions.getResponse(draftState, id).lift((r) => (r.rule = rule));
     };
   }
 
   static addResponse() {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       let rule;
       if (draftState.inputType === 'numeric') {
         rule = 'input = {1}';
@@ -62,7 +63,15 @@ export class ShortAnswerActions {
   }
 
   static removeReponse(id: string) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
+
+      const index = draftState.authoring.parts[0].responses.findIndex(
+        (r) => r.rule === `input like {${id}}`,
+      );
+      const response = draftState.authoring.parts[0].responses[index];
+      post(makeUndoable('Removed a response',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].responses', index, item: clone(response)}]));
+
       draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses.filter(
         (r) => r.id !== id,
       );
@@ -70,7 +79,7 @@ export class ShortAnswerActions {
   }
 
   static addHint() {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       const newHint: HintType = fromText('');
 
       const bottomOutIndex = draftState.authoring.parts[0].hints.length - 1;
@@ -79,13 +88,19 @@ export class ShortAnswerActions {
   }
 
   static editHint(id: string, content: RichText) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       ShortAnswerActions.getHint(draftState, id).lift((hint) => (hint.content = content));
     };
   }
 
   static removeHint(id: string) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
+
+      const hint = draftState.authoring.parts[0].hints.find((h) => h.id === id);
+      const index = draftState.authoring.parts[0].hints.findIndex((h) => h.id === id);
+      post(makeUndoable('Removed a hint',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+
       draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
         (h) => h.id !== id,
       );
@@ -93,7 +108,7 @@ export class ShortAnswerActions {
   }
 
   static setInputType(inputType: InputType) {
-    return (draftState: ShortAnswerModelSchema) => {
+    return (draftState: ShortAnswerModelSchema, post: PostUndoable) => {
       // When we transition from numeric to text(area) or back, we reset the responses
       if (draftState.inputType === 'numeric' && inputType !== 'numeric') {
         draftState.authoring.parts[0].responses = [

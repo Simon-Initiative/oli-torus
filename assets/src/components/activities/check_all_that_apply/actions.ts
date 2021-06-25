@@ -27,10 +27,11 @@ import {
   makeHint,
 } from '../types';
 import { toSimpleText } from 'data/content/text';
+import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
 
 export class Actions {
   static toggleType() {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       if (isSimpleCATA(model)) {
         (model as any).type = 'TargetedCATA';
         (model as any).authoring.targeted = [];
@@ -43,7 +44,7 @@ export class Actions {
   }
 
   static editStem(content: RichText) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       model.stem.content = content;
       const previewText = toSimpleText({ children: content.model } as any);
       model.authoring.previewText = previewText;
@@ -51,7 +52,7 @@ export class Actions {
   }
 
   static addChoice() {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       const newChoice: Choice = makeChoice('');
 
       model.choices.push(newChoice);
@@ -61,19 +62,25 @@ export class Actions {
   }
 
   static editChoiceContent(id: string, content: RichText) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       getChoice(model, id).content = content;
     };
   }
 
   static setAllChoices(choices: Choice[]) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       model.choices = choices;
     };
   }
 
   static removeChoice(id: string) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
+
+      post(makeUndoable('Removed choice',
+        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+         { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
+        ]));
+
       const removeIdFrom = (list: string[]) => removeFromList(id, list);
       model.choices = model.choices.filter((choice) => choice.id !== id);
       removeIdFrom(getChoiceIds(model.authoring.correct));
@@ -91,7 +98,7 @@ export class Actions {
   }
 
   static toggleChoiceCorrectness(choiceId: ChoiceId) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       const addOrRemoveId = (list: string[]) => addOrRemoveFromList(choiceId, list);
       // targeted response choices do not need to change
 
@@ -102,13 +109,13 @@ export class Actions {
   }
 
   static editResponseFeedback(responseId: ResponseId, content: RichText) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       getResponse(model, responseId).feedback.content = content;
     };
   }
 
   static addTargetedFeedback() {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleCATA':
           return;
@@ -131,7 +138,11 @@ export class Actions {
   }
 
   static removeTargetedFeedback(responseId: ResponseId) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
+
+      post(makeUndoable('Removed feedback',
+        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)}]));
+
       switch (model.type) {
         case 'SimpleCATA':
           return;
@@ -146,7 +157,7 @@ export class Actions {
   }
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleCATA':
           break;
@@ -164,7 +175,7 @@ export class Actions {
   }
 
   static addHint() {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       const newHint = makeHint('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
@@ -174,13 +185,19 @@ export class Actions {
   }
 
   static editHint(id: string, content: RichText) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       getHint(model, id).content = content;
     };
   }
 
   static removeHint(id: string) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
+
+      const hint = model.authoring.parts[0].hints.find((h) => h.id === id);
+      const index = model.authoring.parts[0].hints.findIndex((h) => h.id === id);
+      post(makeUndoable('Removed a hint',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+
       model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
     };
   }

@@ -4,7 +4,7 @@ import { RichText, Hint as HintType, Choice } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
-import { PostUndoable } from 'components/activities/types';
+import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
 
 export class MCActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -44,10 +44,24 @@ export class MCActions {
 
   static removeChoice(id: string) {
     return (draftState: MultipleChoiceModelSchema, post: PostUndoable) => {
+
+      const choiceIndex = draftState.choices.findIndex(c => c.id === id);
+      const choice = draftState.choices[choiceIndex];
+      const responseIndex = draftState.authoring.parts[0].responses.findIndex(
+        (r) => r.rule === `input like {${id}}`,
+      );
+      const response = draftState.authoring.parts[0].responses[responseIndex];
+
       draftState.choices = draftState.choices.filter((c) => c.id !== id);
       draftState.authoring.parts[0].responses = draftState.authoring.parts[0].responses.filter(
         (r) => r.rule !== `input like {${id}}`,
       );
+
+      const undoable = makeUndoable('Removed a choice', [
+        { type: 'InsertOperation', path: '$.authoring.parts[0].responses', index: responseIndex, item: clone(response)},
+        { type: 'InsertOperation', path: '$.choices', index: choiceIndex, item: clone(choice)}
+      ])
+      post(undoable);
     };
   }
 
@@ -77,16 +91,13 @@ export class MCActions {
     return (draftState: MultipleChoiceModelSchema, post: PostUndoable) => {
       const hint = draftState.authoring.parts[0].hints.find((h) => h.id === id);
       const index = draftState.authoring.parts[0].hints.findIndex((h) => h.id === id);
+      post(makeUndoable('Removed a hint',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+
       draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
         (h) => h.id !== id,
       );
-      if (hint !== undefined) {
-        post({
-          description: 'Removed a hint',
-          operations: [{ path: '$.authoring.parts[0].hints', index, item: JSON.parse(JSON.stringify(hint as any))}],
-          type: 'Undoable',
-        })
-      }
+
     };
   }
 }

@@ -23,6 +23,7 @@ import {
 } from './utils';
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
+import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
 
 export class Actions {
   static toggleType() {
@@ -39,7 +40,7 @@ export class Actions {
   }
 
   static editStem(content: RichText) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       model.stem.content = content;
       const previewText = toSimpleText({ children: content.model } as any);
       model.authoring.previewText = previewText;
@@ -47,7 +48,7 @@ export class Actions {
   }
 
   static addChoice() {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       const newChoice: Choice = fromText('');
 
       model.choices.push(newChoice);
@@ -57,16 +58,22 @@ export class Actions {
   }
 
   static editChoiceContent(id: string, content: RichText) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       getChoice(model, id).content = content;
     };
   }
 
   static removeChoice(id: ChoiceId) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       const removeIdFrom = (list: ChoiceId[]) => removeFromList(id, list);
       model.choices = model.choices.filter((choice) => choice.id !== id);
       removeIdFrom(getChoiceIds(model.authoring.correct));
+
+      post(makeUndoable('Removed choice',
+        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+         { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
+        ]));
+
 
       switch (model.type) {
         case 'SimpleOrdering':
@@ -91,7 +98,7 @@ export class Actions {
   }
 
   static moveChoice(direction: ChoiceMoveDirection, id: ChoiceId) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       const thisChoiceIndex = getChoiceIndex(model, id);
 
       const swap = (index1: number, index2: number) => {
@@ -112,13 +119,13 @@ export class Actions {
   }
 
   static editResponseFeedback(responseId: ResponseId, content: RichText) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       getResponse(model, responseId).feedback.content = content;
     };
   }
 
   static addTargetedFeedback() {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleOrdering':
           return;
@@ -134,7 +141,11 @@ export class Actions {
   }
 
   static removeTargetedFeedback(responseId: ResponseId) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
+
+      post(makeUndoable('Removed feedback',
+        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)}]));
+
       switch (model.type) {
         case 'SimpleOrdering':
           return;
@@ -149,7 +160,7 @@ export class Actions {
   }
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleOrdering':
           break;
@@ -167,7 +178,7 @@ export class Actions {
   }
 
   static addHint() {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       const newHint: HintType = fromText('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
@@ -177,13 +188,18 @@ export class Actions {
   }
 
   static editHint(id: string, content: RichText) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
       getHint(model, id).content = content;
     };
   }
 
   static removeHint(id: string) {
-    return (model: Ordering) => {
+    return (model: Ordering, post: PostUndoable) => {
+      const hint = model.authoring.parts[0].hints.find((h) => h.id === id);
+      const index = model.authoring.parts[0].hints.findIndex((h) => h.id === id);
+      post(makeUndoable('Removed a hint',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+
       model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
     };
   }
