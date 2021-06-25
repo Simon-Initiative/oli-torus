@@ -8,9 +8,8 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
-import { loadPageState } from '../page/slice';
 
-interface IActivity {
+export interface IActivity {
   // TODO
   [key: string]: any;
 }
@@ -45,19 +44,6 @@ const slice: Slice<ActivitiesState> = createSlice({
     setCurrentActivityId(state, action: PayloadAction<{ activityId: string }>) {
       state.currentActivityId = action.payload.activityId;
     },
-  },
-  extraReducers: (builder) => {
-    builder.addCase(loadPageState, (state, action) => {
-      const { content } = action.payload;
-      // for now auto set current to index 0
-      // until layouts are supported, 2 choices here
-      const [rootContainer] = content.model;
-      if (rootContainer.type === 'group') {
-        state.currentActivityId = rootContainer.children[0].custom.sequenceId;
-      } else {
-        state.currentActivityId = rootContainer.custom.sequenceId;
-      }
-    });
   },
 });
 
