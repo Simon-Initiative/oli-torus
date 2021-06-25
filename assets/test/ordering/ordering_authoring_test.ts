@@ -15,7 +15,7 @@ const applyAction = (
   model: OrderingModelSchema,
   action: any) => {
 
-  return produce(model, draftState => action(draftState));
+  return produce(model, draftState => action(draftState, () => { return; }));
 };
 
 function testFromText(text: string) {
