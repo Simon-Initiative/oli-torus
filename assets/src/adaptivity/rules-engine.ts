@@ -151,7 +151,7 @@ export const check = async (
   // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
   // BS: refactor this model? to be like:
-  // { correct: false, events: resultEvents }
+  // { score: XXX, correct: false, events: resultEvents }
 
   return resultEvents;
 };
