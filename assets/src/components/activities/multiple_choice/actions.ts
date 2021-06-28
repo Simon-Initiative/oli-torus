@@ -4,7 +4,8 @@ import { RichText, Hint as HintType, Choice } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
-import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
+import { PostUndoable, makeUndoable } from 'components/activities/types';
+import { clone } from 'utils/common';
 
 export class MCActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {

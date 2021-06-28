@@ -27,7 +27,8 @@ import {
   makeHint,
 } from '../types';
 import { toSimpleText } from 'data/content/text';
-import { PostUndoable, makeUndoable, clone } from 'components/activities/types';
+import { PostUndoable, makeUndoable } from 'components/activities/types';
+import { clone } from 'utils/common';
 
 export class Actions {
   static toggleType() {

@@ -1,3 +1,14 @@
+
+/**
+ * Performs a deep copy, or clone, of an object.
+ *
+ * @param o the object to clone
+ * @returns the cloned object
+ */
+export function clone(o : any) {
+  return JSON.parse(JSON.stringify(o));
+}
+
 /**
  * Returns the given value if it is not null or undefined. Otherwise, it returns
  * the default value. The return value will always be a defined value of the type given
