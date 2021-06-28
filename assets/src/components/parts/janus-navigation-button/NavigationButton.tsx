@@ -229,7 +229,9 @@ const NavigationButton: React.FC<any> = (props) => {
               if (sSelected === undefined) {
                 sSelected = changes[`stage.${id}.selected`];
               }
-              setButtonSelected(parseBoolean(sSelected));
+              if (sSelected !== undefined) {
+                setButtonSelected(parseBoolean(sSelected));
+              }
 
               const sVisible = changes[`stage.${id}.visible`];
               if (sVisible !== undefined) {
