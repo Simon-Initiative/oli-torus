@@ -14,11 +14,9 @@ const populateEntries = () => {
   // These are the non-activity bundles
   const initialEntries = {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
-    components: { import: './src/components.tsx', dependOn: 'shared' },
-    resourceeditor: { import: './src/components/resource/ResourceEditorApp.tsx', dependOn: 'shared' },
+    resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
-    shared: ['react', 'react-dom']
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -27,8 +25,8 @@ const populateEntries = () => {
     const manifest = require(manifestPath);
     const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
     return {
-      [manifest.id + '_authoring']: { import: [rootPath + manifest.authoring.entry], dependOn: 'shared' },
-      [manifest.id + '_delivery']: { import: [rootPath + manifest.delivery.entry], dependOn: 'shared' }
+      [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
+      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry]
     };
   });
 
@@ -100,6 +98,20 @@ const populateEntries = () => {
 };
 
 module.exports = (env, options) => ({
+  externals: {
+    react: {
+      root: "React",
+      commonjs2: "react",
+      commonjs: "react",
+      amd: "react"
+    },
+    'react-dom': {
+      root: "ReactDOM",
+      commonjs2: "react-dom",
+      commonjs: "react-dom",
+      amd: "react-dom"
+    }
+  },
   devtool: 'source-map',
   optimization: {
     minimize: process.env.NODE_ENV == 'production',
@@ -108,6 +120,7 @@ module.exports = (env, options) => ({
   entry: populateEntries(),
   output: {
     path: path.resolve(__dirname, '../priv/static/js'),
+    libraryTarget: 'umd'
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
@@ -177,9 +190,6 @@ module.exports = (env, options) => ({
     ],
   },
   plugins: [
-    new webpack.ProvidePlugin({
-      React: 'react',
-    }),
     new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
     new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] })
   ],
