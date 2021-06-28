@@ -59,6 +59,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onSelected,
   val,
   disabled,
+  index,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -73,6 +74,10 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     );
     if (hasImages || hasBlankSpans) {
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      mcqItemStyles.position = `absolute`;
+
+      if(index !== 0)
+        mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
     }
     mcqItemStyles.display = `inline-block`;
   }
@@ -89,6 +94,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   };
 
   return (
+    <React.Fragment>
     <div style={mcqItemStyles}>
       <input
         name={groupId}
@@ -104,6 +110,9 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
         <MCQItemContent nodes={nodes} state={state} />
       </label>
     </div>
+    {layoutType !== 'horizontalLayout' &&
+    <br style={{padding:'0px;'}}/>}
+    </React.Fragment>
   );
 };
 const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
@@ -546,6 +555,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     >
       {options?.map((item, index) => (
         <MCQItem
+          index={index}
           key={`${id}-item-${index}`}
           totalItems={options.length}
           layoutType={layoutType}
