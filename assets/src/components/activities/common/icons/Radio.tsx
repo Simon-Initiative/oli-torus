@@ -1,32 +1,23 @@
 import React from 'react';
+import './Radio.scss';
 
-const Checked = () => (
-  <i
-    style={{
-      color: '#00bc8c',
-      fontSize: '30px',
-      cursor: 'pointer',
-    }}
-    className="material-icons-outlined"
-  >
-    radio_button_checked
-  </i>
+interface Props {
+  className?: string;
+}
+
+const Checked = ({ className }: Props) => (
+  <input className={`oli-radio ${className}`} type="radio" checked readOnly />
 );
 
-const Unchecked = () => (
-  <i
-    style={{
-      color: 'rgba(0,0,0,0.26)',
-      fontSize: '30px',
-      cursor: 'pointer',
-    }}
-    className="material-icons-outlined"
-  >
-    radio_button_unchecked
-  </i>
+const Unchecked = ({ className }: Props) => (
+  <input className={`oli-radio ${className}`} type="radio" readOnly />
 );
+const Correct = () => <Checked className="correct" />;
+const Incorrect = () => <Checked className="incorrect" />;
 
 export const Radio = {
   Checked,
   Unchecked,
+  Correct,
+  Incorrect,
 };

@@ -95,7 +95,6 @@ export const CheckAllThatApplyComponent = (
         />
         <HintsDelivery
           shouldShow={!isEvaluated(state) && !props.graded}
-          key="hints"
           onClick={() => dispatch(requestHint(props.onRequestHint))}
           hints={hints}
           hasMoreHints={hasMoreHints}
@@ -104,7 +103,6 @@ export const CheckAllThatApplyComponent = (
         />
         <Evaluation
           shouldShow={isEvaluated(state) && (!props.graded || props.review)}
-          key="evaluation"
           attemptState={attemptState}
           context={writerContext}
         />
