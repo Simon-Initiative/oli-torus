@@ -113,7 +113,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [randomized, setRandomized] = useState(model.randomize);
+  const [randomized, setRandomized] = useState(false);
   const [options, setOptions] = useState<any[]>([]);
   const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
   // note in SS selection is 1 based
