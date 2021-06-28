@@ -42,10 +42,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     response_state = Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
       part_responses = Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
         case pa.response do
+          "" -> acc
           nil -> acc
           _ ->
             part_values = Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
-              Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+              case pv do
+                nil -> acc1
+                "" -> acc1
+                _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+              end
             end)
             Map.merge(acc, part_values)
         end
@@ -60,10 +65,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         nil -> acc
         _ ->
           inputs = Enum.reduce(Map.values(pi.input.input), %{}, fn input, acc1 ->
-            path = Map.get(input, "path")
-            local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
-            value = Map.get(input, "value")
-            Map.put(acc1, local_path, value)
+            case input do
+              nil -> acc1
+              "" -> acc1
+              _ ->
+                path = Map.get(input, "path")
+                local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                value = Map.get(input, "value")
+                Map.put(acc1, local_path, value)
+            end
           end)
           Map.merge(acc, inputs)
       end
@@ -78,17 +88,42 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     # Logger.debug("eval state #{Jason.encode!(state)}")
 
     # nodejs then evaluates that and returns actions
-    {:ok, checkResults} <- NodeJS.call({"rules", :check}, [state, rules])
+    checkResults = case NodeJS.call({"rules", :check}, [state, rules]) do
+      {:ok, results} -> results
+      _ -> nil # FIXME return early from function with error?
+    end
 
-    Logger.debug("eval check results: #{Jason.encode!(checkResults)}")
-    # loop through results and test if correct or not (TODO: do that in JS instead maybe and return it? see 154 of rules-engine.ts)
+    isCorrect = Map.get(checkResults, "correct", false)
+    results = Map.get(checkResults, "results")
+
+    score = if isCorrect do
+      1
+    else
+      0
+    end
 
     # generate client_evaluations based on result correctness (score 1 or 0)
-    client_evaluations = []
+    client_evaluations =
+      Enum.map(part_inputs, fn pi ->
+        %{
+          attempt_guid: pi.attempt_guid,
+          client_evaluation: %ClientEvaluation{
+            input: pi.input,
+            score: score,
+            out_of: 1,
+            feedback: nil
+          }
+        }
+      end)
 
-    apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations)
+    Logger.debug("EVAL *************************************************\n #{Jason.encode!(client_evaluations)}")
 
-    checkResults
+    case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+      {:ok, _} -> Logger.debug("EVAL WAS SUCCESSFUL!*********************")
+      {:error, msg} -> Logger.debug("EVAL UNSUCCESSFUL :( ************************************\nMSG: #{msg}")
+    end
+
+    {:ok, results}
   end
 
   @doc """

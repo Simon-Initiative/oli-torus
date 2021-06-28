@@ -80,7 +80,15 @@ export const triggerCheck = createAsyncThunk(
       attempt.parts.forEach((part: any) => {
         if (part.response) {
           Object.keys(part.response).forEach((key) => {
-            collect[part.response[key].path] = part.response[key].value;
+            const input_response = part.response[key];
+            if (!input_response) {
+              return;
+            }
+            const { path, value } = input_response;
+            if (!path) {
+              return;
+            }
+            collect[path] = value;
           });
         }
       });
@@ -121,7 +129,8 @@ export const triggerCheck = createAsyncThunk(
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
-      checkResult = await check(stateSnapshot, rulesToCheck);
+      const check_call_result = await check(stateSnapshot, rulesToCheck);
+      checkResult = check_call_result.results;
       /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
@@ -143,7 +152,7 @@ export const triggerCheck = createAsyncThunk(
 
       const partResponses: PartResponse[] =
         currentAttempt?.parts.map((p) => {
-          return { attemptGuid: p.attemptGuid, response: { input: p.response || '' } };
+          return { attemptGuid: p.attemptGuid, response: { input: p.response || null } };
         }) || [];
 
       const evalResult = await evalActivityAttempt(

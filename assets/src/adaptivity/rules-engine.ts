@@ -102,7 +102,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
 export const check = async (
   state: Record<string, any>,
   rules: JanusRuleProperties[],
-): Promise<Event[]> => {
+): Promise<{ correct: boolean; results: Event[] }> => {
   // load the std lib
   const { env } = evalScript(janus_std);
   // setup script env context
@@ -130,7 +130,8 @@ export const check = async (
   let resultEvents: Event[] = [];
   const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
   // if there are any correct in the success, get rid of the incorrect (defaultWrong most likely)
-  if (successEvents.some((evt) => evt.params?.correct === true)) {
+  const isCorrect = successEvents.some((evt) => evt.params?.correct === true);
+  if (isCorrect) {
     resultEvents = successEvents.filter((evt) => evt.params?.correct === true);
   } else {
     // the failedEvents might be just because the invalid condition didn't trip
@@ -150,8 +151,5 @@ export const check = async (
   }
   // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
-  // BS: refactor this model? to be like:
-  // { score: XXX, correct: false, events: resultEvents }
-
-  return resultEvents;
+  return { correct: isCorrect, results: resultEvents };
 };
