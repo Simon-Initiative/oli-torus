@@ -2,6 +2,7 @@ import * as ContentModel from 'data/content/model';
 import { Operation, RichText, Transformation } from '../types';
 import guid from 'utils/guid';
 import React from 'react';
+import { Maybe } from 'tsmonad';
 
 export function fromText(text: string): { id: string; content: RichText } {
   return {
@@ -62,3 +63,25 @@ export const ShuffleChoicesOption: React.FC<ShuffleChoicesOptionProps> = ({
     </label>
   </div>
 );
+
+export function addOrRemove<T>(item: T, list: T[]): T[] {
+  return Maybe.maybe(list.find((x) => x === item)).caseOf({
+    just: (item) => remove(item, list),
+    nothing: () => list.concat(item),
+  });
+}
+
+export function remove<T>(item: T, list: T[]): T[] {
+  const index = list.indexOf(item);
+  if (index > -1) {
+    return list.splice(index, 1);
+  }
+  return list;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const noop = () => {};
+
+export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
+  return subtractedFrom.filter((x) => !toSubtract.includes(x));
+}

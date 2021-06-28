@@ -4,55 +4,57 @@ import {
   AuthoringElement,
   AuthoringElementProps,
   AuthoringElementProvider,
+  useAuthoringElementContext,
 } from '../AuthoringElement';
 import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Actions } from './actions';
+import { CATAActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import produce from 'immer';
 import {
-  getBottomOutHint,
-  getCognitiveHints,
   getCorrectChoiceIds,
   getCorrectResponse,
-  getDeerInHeadlightsHint,
   getIncorrectResponse,
   getTargetedResponseMappings,
   isTargetedCATA,
 } from 'components/activities/check_all_that_apply/utils';
 import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
-import { ChoicesAuthoringConnected } from 'components/activities/common/choices/ChoicesAuthoring';
+import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Checkbox } from 'components/activities/common/icons/Checkbox';
-import { HintsAuthoring } from 'components/activities/common/hints/HintsAuthoring';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { AnswerKeyAuthoring } from 'components/activities/common/authoring/answerKey/AnswerKeyAuthoring';
-import { CheckAllThatApplySettings } from 'components/activities/check_all_that_apply/Settings';
-import { SimpleFeedback } from 'components/activities/common/feedback/SimpleFeedback';
-import { TargetedFeedback } from 'components/activities/common/feedback/TargetedFeedback';
+import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
+import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { CATASettingsConnected } from 'components/activities/check_all_that_apply/Settings';
 
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-  const dispatch = (action: any) => props.onEdit(produce(props.model, action));
-
+  const { dispatch } = useAuthoringElementContext();
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <StemAuthoring
             stem={props.model.stem}
-            onEdit={(content) => dispatch(Actions.editStem(content))}
+            onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
           />
 
           <ChoicesAuthoringConnected
             icon={<Checkbox.Unchecked />}
             choices={props.model.choices}
-            addOne={() => dispatch(Actions.addChoice())}
-            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Actions.setAllChoices(choices))}
-            onEdit={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-            onRemove={(id) => dispatch(Actions.removeChoice(id))}
+            addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
+            setAll={(choices: ActivityTypes.Choice[]) =>
+              dispatch(ChoiceActions.setAllChoices(choices))
+            }
+            onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
+            onRemove={(id) => dispatch(CATAActions.removeChoice(id))}
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
@@ -62,12 +64,12 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
             selectedChoiceIds={getCorrectChoiceIds(props.model)}
             selectedIcon={<Checkbox.Correct />}
             unselectedIcon={<Checkbox.Unchecked />}
-            onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
+            onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
           />
           <SimpleFeedback
             correctResponse={getCorrectResponse(props.model)}
             incorrectResponse={getIncorrectResponse(props.model)}
-            update={(id, content) => dispatch(Actions.editResponseFeedback(id, content))}
+            update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
           />
 
           {isTargetedCATA(props.model) && (
@@ -76,7 +78,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
               targetedMappings={getTargetedResponseMappings(props.model)}
               toggleChoice={(choiceId, mapping) => {
                 dispatch(
-                  Actions.editTargetedFeedbackChoices(
+                  CATAActions.editTargetedFeedbackChoices(
                     mapping.response.id,
                     mapping.choiceIds.includes(choiceId)
                       ? mapping.choiceIds.filter((id) => id !== choiceId)
@@ -84,26 +86,21 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
                   ),
                 );
               }}
-              updateResponse={(id, content) => dispatch(Actions.editResponseFeedback(id, content))}
-              addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
+              updateResponse={(id, content) =>
+                dispatch(ResponseActions.editResponseFeedback(id, content))
+              }
+              addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
               unselectedIcon={<Checkbox.Unchecked />}
               selectedIcon={<Checkbox.Checked />}
-              onRemove={(id) => dispatch(Actions.removeTargetedFeedback(id))}
+              onRemove={(id) => dispatch(CATAActions.removeTargetedFeedback(id))}
             />
           )}
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoring
-            addOne={() => dispatch(Actions.addHint())}
-            updateOne={(id, content) => dispatch(Actions.editHint(id, content))}
-            removeOne={(id) => dispatch(Actions.removeHint(id))}
-            deerInHeadlightsHint={getDeerInHeadlightsHint(props.model)}
-            cognitiveHints={getCognitiveHints(props.model)}
-            bottomOutHint={getBottomOutHint(props.model)}
-          />
+          <HintsAuthoringConnected />
         </TabbedNavigation.Tab>
-        <CheckAllThatApplySettings dispatch={dispatch} model={props.model} />
+        <CATASettingsConnected />
       </TabbedNavigation.Tabs>
     </>
   );

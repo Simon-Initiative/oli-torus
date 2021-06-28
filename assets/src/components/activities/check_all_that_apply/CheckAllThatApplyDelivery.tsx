@@ -3,17 +3,17 @@ import { ChoicesDelivery } from 'components/activities/common/choices/delivery/C
 import { ResetButton } from 'components/activities/common/delivery/ResetButton';
 import { Evaluation } from 'components/activities/common/Evaluation';
 import { GradedPoints } from 'components/activities/common/GradedPoints';
-import { HintsDelivery } from 'components/activities/common/hints/HintsDelivery';
+import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
 import { Checkbox } from 'components/activities/common/icons/Checkbox';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { SubmitButton } from 'components/activities/common/SubmitButton';
 import { HasChoices, HasStem, Manifest } from 'components/activities/types';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { requestHint } from 'data/content/activities/delivery/hintsState';
 import {
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
-  requestHint,
   reset,
   selectChoice,
   slice,

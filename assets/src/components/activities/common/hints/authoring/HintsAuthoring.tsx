@@ -6,7 +6,37 @@ import { AuthoringButtonConnected } from 'components/activities/common/authoring
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
 import { Card } from 'components/misc/Card';
 import { Tooltip } from 'components/misc/Tooltip';
-import { HintCard } from 'components/activities/common/hints/HintCard';
+import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
+
+interface HintsAuthoringProps {
+  addOne: () => void;
+  updateOne: (id: ID, content: RichText) => void;
+  removeOne: (id: ID) => void;
+  deerInHeadlightsHint: Hint;
+  cognitiveHints: Hint[];
+  bottomOutHint: Hint;
+}
+export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
+  deerInHeadlightsHint,
+  cognitiveHints,
+  bottomOutHint,
+  addOne,
+  updateOne,
+  removeOne,
+}) => {
+  return (
+    <>
+      <DeerInHeadlightsHint hint={deerInHeadlightsHint} updateOne={updateOne} />
+      <CognitiveHints
+        hints={cognitiveHints}
+        updateOne={updateOne}
+        addOne={addOne}
+        removeOne={removeOne}
+      />
+      <BottomOutHint hint={bottomOutHint} updateOne={updateOne} />
+    </>
+  );
+};
 
 interface HintProps {
   hint: Hint;
@@ -78,33 +108,3 @@ const BottomOutHint: React.FC<HintProps> = ({ hint, updateOne }) => (
     updateOne={updateOne}
   />
 );
-
-interface HintsAuthoringProps {
-  addOne: () => void;
-  updateOne: (id: ID, content: RichText) => void;
-  removeOne: (id: ID) => void;
-  deerInHeadlightsHint: Hint;
-  cognitiveHints: Hint[];
-  bottomOutHint: Hint;
-}
-export const HintsAuthoring: React.FC<HintsAuthoringProps> = ({
-  deerInHeadlightsHint,
-  cognitiveHints,
-  bottomOutHint,
-  addOne,
-  updateOne,
-  removeOne,
-}) => {
-  return (
-    <>
-      <DeerInHeadlightsHint hint={deerInHeadlightsHint} updateOne={updateOne} />
-      <CognitiveHints
-        hints={cognitiveHints}
-        updateOne={updateOne}
-        addOne={addOne}
-        removeOne={removeOne}
-      />
-      <BottomOutHint hint={bottomOutHint} updateOne={updateOne} />
-    </>
-  );
-};

@@ -23,11 +23,13 @@ import { ChoicesDelivery } from 'components/activities/common/choices/delivery/C
 import { Radio } from 'components/activities/common/icons/Radio';
 import { ResetButton } from 'components/activities/common/delivery/ResetButton';
 import { SubmitButton } from 'components/activities/common/SubmitButton';
-import { HintsDelivery } from 'components/activities/common/hints/HintsDelivery';
-import {combineReducers} from 'redux';
+import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
+import { combineReducers } from 'redux';
+import { requestHint } from 'data/content/activities/delivery/hintsState';
 
-export const store = configureStore({}, combineReducers({
-  slice.reducer}));
+// export const store = configureStore({}, combineReducers({
+//   slice.reducer}));
+export const store = configureStore({}, slice.reducer);
 
 export const MultipleChoiceComponent = (props: DeliveryElementProps<MultipleChoiceModelSchema>) => {
   const state = useSelector(
