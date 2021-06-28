@@ -149,6 +149,16 @@ const Popup: React.FC<any> = (props) => {
               const isOpen = changes[`stage.${id}.isOpen`];
               if (isOpen !== undefined) {
                 setShowPopup(isOpen);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'isOpen',
+                      type: CapiVariableTypes.BOOLEAN,
+                      value: isOpen,
+                    },
+                  ],
+                });
               }
 
               const openByDefault = changes[`stage.${id}.openByDefault`];
@@ -193,30 +203,6 @@ const Popup: React.FC<any> = (props) => {
     height,
     zIndex: z,
   };
-
-  // useEffect(() => {
-  //   const mutateStateHandler = (data) => {
-  //     handleActivityStateChange(data);
-  //   };
-  //   componentEventService.on('mutate', ({ data }) => {
-  //     mutateStateHandler(data);
-  //   });
-  //   return () => {
-  //     componentEventService.off('mutate', mutateStateHandler);
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   const initHappend = (data) => {
-  //     handleActivityStateChange(data);
-  //   };
-  //   componentEventService.on('init', ({ data }) => {
-  //     initHappend(data);
-  //   });
-  //   return () => {
-  //     componentEventService.off('init', initHappend);
-  //   };
-  // }, []);
 
   // Toggle popup open/close
   const handleToggleIcon = (toggleVal: boolean) => {
