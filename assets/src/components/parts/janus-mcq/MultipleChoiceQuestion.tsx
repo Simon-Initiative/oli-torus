@@ -6,7 +6,7 @@ import {
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { CapiVariable } from '../types/parts';
@@ -113,7 +113,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [randomized, setRandomized] = useState(false);
+  const [randomized, setRandomized] = useState(model.randomize);
   const [options, setOptions] = useState<any[]>([]);
   const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
   // note in SS selection is 1 based
@@ -129,7 +129,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
 
-    const dRandomized = typeof pModel.randomized === 'boolean' ? pModel.randomized : randomized;
+    const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
 
     // BS: not sure I grok this one
@@ -301,9 +301,9 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
               }
-              const sRandomized = changes[`stage.${id}.randomized`];
+              const sRandomized = changes[`stage.${id}.randomize`];
               if (sRandomized !== undefined) {
-                setRandomized(sRandomized);
+                setRandomized(parseBoolean(sRandomized));
               }
               const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
               if (sSelectedChoice !== undefined) {
