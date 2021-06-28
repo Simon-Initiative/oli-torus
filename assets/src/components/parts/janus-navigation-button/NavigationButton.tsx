@@ -138,7 +138,9 @@ const NavigationButton: React.FC<any> = (props) => {
     if (sSelected === undefined) {
       sSelected = currentStateSnapshot[`stage.${id}.selected`];
     }
-    setButtonSelected(parseBoolean(sSelected));
+    if (sSelected !== undefined) {
+      setButtonSelected(parseBoolean(sSelected));
+    }
 
     const sBackgroundColor = currentStateSnapshot[`stage.${id}.buttonColor`];
     if (sBackgroundColor !== undefined) {
