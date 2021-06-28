@@ -8,7 +8,8 @@
 //     import socket from './socket'
 //
 import 'phoenix_html';
-import { Socket } from 'phoenix';
+
+import { Socket } from 'phoenix'
 import NProgress from 'nprogress';
 import { LiveSocket } from 'phoenix_live_view';
 import { Hooks } from 'hooks';
@@ -22,6 +23,10 @@ import { onReady } from './ready';
 import {selectCookieConsent} from "components/cookies/CookieConsent";
 import {selectCookiePreferences} from "components/cookies/CookiePreferences";
 import {retrieveCookies} from "components/cookies/utils";
+import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
+
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -46,6 +51,12 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 (window as any).initActivityBridge = initActivityBridge;
 (window as any).initPreviewActivityBridge = initPreviewActivityBridge;
 
+// Expose React/Redux APIs to server-side rendered templates
+function mount(Component: any, element: HTMLElement, context: any = {}) {
+
+  ReactDOM.render(React.createElement(Component, context), element);
+};
+
 // Global functions and objects:
 (window as any).OLI = {
   initActivityBridge,
@@ -55,7 +66,8 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
   selectCookieConsent,
   selectCookiePreferences,
   retrieveCookies,
-  onReady
+  onReady,
+  CreateAccountPopup:  (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
 // connect if there are any LiveViews on the page
