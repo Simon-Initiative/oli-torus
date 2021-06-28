@@ -1,14 +1,14 @@
-const lessonSchema = {
+import { JSONSchema7 } from 'json-schema';
+const lessonSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     title: {
       type: 'string',
-      options: { label: 'Title' },
+      title: 'Title' ,
     },
     customCssUrl: {
       type: 'string',
       description: 'global css override file for overriding the theme',
-      options: { input_width: '500px' },
     },
     customCss: {
       type: 'string',
