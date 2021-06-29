@@ -18,6 +18,7 @@ import {
   invertRule,
   unionRules,
 } from 'components/activities/common/responses/authoring/responseUtils';
+import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 
 export class CATAActions {
   static toggleType() {
@@ -35,7 +36,7 @@ export class CATAActions {
 
   static addChoice(choice: Choice) {
     return (model: CATA, post: PostUndoable) => {
-      ChoiceActions.addChoice(choice)(model, post);
+      ChoiceActions.addChoice(choice)(model);
 
       getChoiceIds(model.authoring.incorrect).push(choice.id);
       updateResponseRules(model);
@@ -44,7 +45,9 @@ export class CATAActions {
 
   static removeChoice(id: string) {
     return (model: CATA, post: PostUndoable) => {
-      ChoiceActions.removeChoice(id)(model, post);
+      const choice = getChoice(model, id);
+      const index = getChoices(model).findIndex((c) => c.id === id);
+      ChoiceActions.removeChoice(id)(model);
 
       remove(id, getChoiceIds(model.authoring.correct));
       remove(id, getChoiceIds(model.authoring.incorrect));
@@ -54,6 +57,18 @@ export class CATAActions {
       }
 
       updateResponseRules(model);
+
+      post({
+        description: 'Removed a choice',
+        operations: [
+          {
+            path: '$.choices',
+            index,
+            item: JSON.parse(JSON.stringify(choice)),
+          },
+        ],
+        type: 'Undoable',
+      });
     };
   }
 

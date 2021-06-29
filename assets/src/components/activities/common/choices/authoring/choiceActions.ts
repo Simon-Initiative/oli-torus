@@ -1,4 +1,4 @@
-import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
+import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { Choice, HasChoices, PostUndoable, RichText } from 'components/activities/types';
 
 export const ChoiceActions = {
@@ -22,21 +22,7 @@ export const ChoiceActions = {
 
   removeChoice(id: string) {
     return (model: HasChoices, post: PostUndoable) => {
-      const choice = getChoice(model, id);
-      const index = getChoices(model).findIndex((c) => c.id === id);
       model.choices = model.choices.filter((choice) => choice.id !== id);
-
-      post({
-        description: 'Removed a choice',
-        operations: [
-          {
-            path: '$.choices',
-            index,
-            item: JSON.parse(JSON.stringify(choice)),
-          },
-        ],
-        type: 'Undoable',
-      });
     };
   },
 };
