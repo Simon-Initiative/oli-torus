@@ -85,8 +85,7 @@ describe('multiple choice question', () => {
     expect(model.choices.length).toBeGreaterThan(0);
   });
 
-  // Creating guids causes failures
-  xit('can add a choice', () => {
+  it('can add a choice', () => {
     expect(applyAction(model, MCActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
       model.choices.length,
     );
