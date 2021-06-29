@@ -12,7 +12,7 @@ import { getChoice, getChoices } from 'components/activities/common/choices/auth
 export const MCActions = {
   addChoice(choice: Choice) {
     return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
-      ChoiceActions.addChoice(choice)(model);
+      ChoiceActions.addChoice(choice)(model, post);
 
       model.authoring.parts[0].responses.push(makeResponse(`input like {${choice.id}}`, 0, ''));
     };
@@ -22,7 +22,7 @@ export const MCActions = {
     return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
       const choice = getChoice(model, id);
       const index = getChoices(model).findIndex((c) => c.id === id);
-      ChoiceActions.removeChoice(id)(model);
+      ChoiceActions.removeChoice(id)(model, post);
 
       model.authoring.parts[0].responses = getResponses(model).filter(
         (r) => r.rule !== createMatchRule(id),
