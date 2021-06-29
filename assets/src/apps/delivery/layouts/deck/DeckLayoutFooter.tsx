@@ -431,7 +431,7 @@ const DeckLayoutFooter: React.FC = () => {
               </button>
             </div>
             <style type="text/css" aria-hidden="true" />
-            <div className="content">
+            <div className="content" style={{display:'inline-table'}}>
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}
