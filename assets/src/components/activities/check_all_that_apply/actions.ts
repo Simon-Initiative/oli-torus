@@ -8,7 +8,7 @@ import {
   getResponseId,
   isSimpleCATA,
 } from './utils';
-import { ChoiceId, Choice, ResponseId, makeResponse } from '../types';
+import { ChoiceId, Choice, ResponseId, makeResponse, PostUndoable } from '../types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { addOrRemove, remove, setDifference } from 'components/activities/common/utils';
 import {
@@ -34,8 +34,8 @@ export class CATAActions {
   }
 
   static addChoice(choice: Choice) {
-    return (model: CATA) => {
-      ChoiceActions.addChoice(choice);
+    return (model: CATA, post: PostUndoable) => {
+      ChoiceActions.addChoice(choice)(model, post);
 
       getChoiceIds(model.authoring.incorrect).push(choice.id);
       updateResponseRules(model);
@@ -43,8 +43,8 @@ export class CATAActions {
   }
 
   static removeChoice(id: string) {
-    return (model: CATA) => {
-      ChoiceActions.removeChoice(id);
+    return (model: CATA, post: PostUndoable) => {
+      ChoiceActions.removeChoice(id)(model, post);
 
       remove(id, getChoiceIds(model.authoring.correct));
       remove(id, getChoiceIds(model.authoring.incorrect));
@@ -89,16 +89,30 @@ export class CATAActions {
   }
 
   static removeTargetedFeedback(responseId: ResponseId) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleCATA':
           return;
         case 'TargetedCATA':
-          remove(getResponse(model, responseId), getResponses(model));
+          const response = getResponse(model, responseId);
+          const index = getResponses(model).findIndex((r) => r.id === responseId);
+
+          remove(response, getResponses(model));
           remove(
             model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
             model.authoring.targeted,
           );
+          post({
+            description: 'Removed a targeted feedback',
+            operations: [
+              {
+                path: '$.authoring.parts[0].responses',
+                index,
+                item: JSON.parse(JSON.stringify(response)),
+              },
+            ],
+            type: 'Undoable',
+          });
       }
     };
   }

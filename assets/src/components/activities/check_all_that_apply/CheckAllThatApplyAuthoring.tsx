@@ -12,7 +12,6 @@ import { CATAActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import produce from 'immer';
 import {
   getCorrectChoiceIds,
   getCorrectResponse,

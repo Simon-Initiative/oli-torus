@@ -8,7 +8,6 @@ import {
   makeChoice,
   makeStem,
   makeResponse,
-  Response,
   ChoiceId,
 } from '../types';
 import { Maybe } from 'tsmonad';
