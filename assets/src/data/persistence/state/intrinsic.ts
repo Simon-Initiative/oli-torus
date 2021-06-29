@@ -77,14 +77,17 @@ export const writePartAttemptState = async (
   return { result };
 };
 
-export const createActivityAttempt = async (sectionSlug: string, attemptGuid: string) => {
+export const createNewActivityAttempt = async (
+  sectionSlug: string,
+  attemptGuid: string,
+): Promise<any> => {
   const method = 'POST';
   const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
   const result = await makeRequest({
     url,
     method,
   });
-  return { result };
+  return result;
 };
 
 export const evalActivityAttempt = async (

@@ -9,6 +9,7 @@ import {
   defaultGlobalEnv,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
+import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
@@ -22,6 +23,10 @@ export const triggerCheck = createAsyncThunk(
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
+    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
 
     const currentActivityTree = selectCurrentActivityTree(rootState);
     if (!currentActivityTree || !currentActivityTree.length) {
@@ -121,6 +126,7 @@ export const triggerCheck = createAsyncThunk(
     };
 
     let checkResult;
+    let isCorrect = false;
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
@@ -131,6 +137,7 @@ export const triggerCheck = createAsyncThunk(
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
       const check_call_result = await check(stateSnapshot, rulesToCheck);
       checkResult = check_call_result.results;
+      isCorrect = check_call_result.correct;
       /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
@@ -138,11 +145,6 @@ export const triggerCheck = createAsyncThunk(
         stateSnapshot,
       }); */
     } else {
-      const sectionSlug = selectSectionSlug(rootState);
-      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-      const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-      const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
-
       console.log('CHECKING', { sectionSlug, currentActivityTreeAttempts });
 
       if (!currentActivityAttemptGuid) {
@@ -162,6 +164,13 @@ export const triggerCheck = createAsyncThunk(
       );
       console.log('EVAL RESULT', { evalResult });
       checkResult = (evalResult.result as any).actions;
+      isCorrect = checkResult.every((action: any) => action.params.correct);
+    }
+
+    if (!isCorrect) {
+      await dispatch(
+        createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
+      );
     }
 
     await dispatch(setLastCheckResults({ results: checkResult }));
