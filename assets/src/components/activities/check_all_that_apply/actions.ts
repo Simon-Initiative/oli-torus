@@ -36,7 +36,7 @@ export class CATAActions {
 
   static addChoice(choice: Choice) {
     return (model: CATA, post: PostUndoable) => {
-      ChoiceActions.addChoice(choice)(model);
+      ChoiceActions.addChoice(choice)(model, post);
 
       getChoiceIds(model.authoring.incorrect).push(choice.id);
       updateResponseRules(model);
@@ -47,7 +47,7 @@ export class CATAActions {
     return (model: CATA, post: PostUndoable) => {
       const choice = getChoice(model, id);
       const index = getChoices(model).findIndex((c) => c.id === id);
-      ChoiceActions.removeChoice(id)(model);
+      ChoiceActions.removeChoice(id)(model, post);
 
       remove(id, getChoiceIds(model.authoring.correct));
       remove(id, getChoiceIds(model.authoring.incorrect));
