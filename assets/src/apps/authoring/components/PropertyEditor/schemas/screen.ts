@@ -4,6 +4,9 @@ const screenSchema: JSONSchema7 = {
   properties: {
     width: { type: 'number' },
     height: { type: 'number' },
+    x: { type: 'number' },
+    y: { type: 'number' },
+    z: { type: 'number' },
     trapStateScoring: {
       title: 'Trap State Scoring',
       type: 'boolean',

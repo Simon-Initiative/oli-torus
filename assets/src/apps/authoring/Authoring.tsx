@@ -47,7 +47,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     top: topPanelState,
     bottom: bottomPanelState,
   };
-
+  const handlePropertyChangeHandler = (properties:any) => {
+    console.log(properties);
+  };
   const handlePanelStateChange = ({
     top,
     right,
@@ -134,7 +136,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           onToggle={() => handlePanelStateChange({ right: !panelState.right })}
         >
-          <RightMenu />
+          <RightMenu onChangeHandler={handlePropertyChangeHandler} />
         </SidePanel>
       </div>
     </>
