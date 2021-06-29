@@ -1,7 +1,7 @@
 import { createReducer, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { Hint } from 'components/activities/types';
-import { AppThunk } from 'data/content/activities/DeliveryState';
+import { AppThunk, slice } from 'data/content/activities/DeliveryState';
 import { Maybe } from 'tsmonad';
 
 export const hintsSlice = createSlice({
@@ -11,18 +11,7 @@ export const hintsSlice = createSlice({
     hasMoreHints: false,
   },
   reducers: {
-    setHints(state, action: PayloadAction<Hint[]>) {
-      state.hints = action.payload;
-    },
-    addHint(state, action: PayloadAction<Hint>) {
-      state.hints.push(action.payload);
-    },
-    setHasMoreHints(state, action: PayloadAction<boolean>) {
-      state.hasMoreHints = action.payload;
-    },
-    clearHints(state) {
-      state.hints = [];
-    },
+
   },
 });
 
@@ -36,7 +25,7 @@ export const requestHint =
       getState().attemptState.parts[0].attemptGuid,
     );
     Maybe.maybe(response.hint).lift((hint) => {
-      dispatch(hintsSlice.actions.addHint(hint));
+      dispatch(slice.actions.addHint(hint));
     });
-    dispatch(hintsSlice.actions.setHasMoreHints(response.hasMoreHints));
+    dispatch(slice.actions.setHasMoreHints(response.hasMoreHints));
   };

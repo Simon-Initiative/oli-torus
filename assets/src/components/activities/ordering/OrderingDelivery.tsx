@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
@@ -16,6 +16,36 @@ import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/Evaluation';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
+import {
+  ActivityDeliveryState,
+  initializeState,
+  isEvaluated,
+  reset,
+  selectChoice,
+  slice,
+  submit,
+} from 'data/content/activities/DeliveryState';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { GradedPoints } from 'components/activities/common/GradedPoints';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { ResetButton } from 'components/activities/common/delivery/ResetButton';
+import { SubmitButton } from 'components/activities/common/SubmitButton';
+import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
+import { requestHint } from 'data/content/activities/delivery/hintsState';
+import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import {
+  DragDropContext,
+  Draggable,
+  DraggableStateSnapshot,
+  DraggingStyle,
+  Droppable,
+  NotDraggingStyle,
+} from 'react-beautiful-dnd';
+import './OrderingDelivery.scss';
+
+export const store = configureStore({}, slice.reducer);
 
 type Evaluation = {
   score: number;
@@ -102,170 +132,154 @@ const Choice = ({ choice, index, selected, context, onClick, isEvaluated }: Choi
 };
 
 export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchema>) => {
-  const [model, setModel] = useState(props.model);
-  const [attemptState, setAttemptState] = useState(props.state);
-  const [hints, setHints] = useState(props.state.parts[0].hints);
-  const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [selected, setSelected] = useState<ActivityTypes.ChoiceId[]>(
-    props.state.parts[0].response === null
-      ? []
-      : props.state.parts[0].response.input
-          .split(' ')
-          .reduce(
-            (acc: ActivityTypes.ChoiceId[], curr: ActivityTypes.ChoiceId) => acc.concat([curr]),
-            [],
-          ),
+  const state = useSelector(
+    (state: ActivityDeliveryState & { model: ActivityTypes.HasStem & ActivityTypes.HasChoices }) =>
+      state,
   );
+  const dispatch = useDispatch();
+  const [showDragIndicator, setShowDragIndicator] = useState(false);
 
-  const { stem, choices } = model;
+  useEffect(() => {
+    dispatch(initializeState(props.model, props.state));
+  }, []);
 
-  const isEvaluated = attemptState.score !== null;
-  const orderedChoiceIds = (newSelection: string | undefined) =>
-    newSelection === undefined ? selected.join(' ') : selected.concat(newSelection).join(' ');
+  // First render initializes state
+  if (!state.model) {
+    return null;
+  }
+
+  const {
+    attemptState,
+    model: { stem, choices },
+    selectedChoices,
+    hints,
+    hasMoreHints,
+  } = state;
 
   const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
 
-  const onSubmit = () => {
-    props
-      .onSubmitActivity(attemptState.attemptGuid, [
-        {
-          attemptGuid: attemptState.parts[0].attemptGuid,
-          response: { input: orderedChoiceIds(undefined) },
-        },
-      ])
-      .then((response: EvaluationResponse) => {
-        if (response.actions.length > 0) {
-          const action: ActivityTypes.FeedbackAction = response
-            .actions[0] as ActivityTypes.FeedbackAction;
-          const { score, out_of, feedback, error } = action;
-          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
-          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
-          setAttemptState(updated);
-        }
-      });
+  const isCorrect = attemptState.score !== 0;
+  const getStyle = (
+    style: DraggingStyle | NotDraggingStyle | undefined,
+    snapshot: DraggableStateSnapshot,
+  ) => {
+    const snapshotStyle = snapshot.draggingOver ? { 'pointer-events': 'none' } : {};
+    if (style?.transform) {
+      const axisLockY = `translate(0px, ${style.transform.split(',').pop()}`;
+      return {
+        ...style,
+        ...snapshotStyle,
+        minHeight: 41,
+        transform: axisLockY,
+      };
+    }
+    return {
+      ...style,
+      ...snapshotStyle,
+      minHeight: 41,
+    };
   };
-
-  const updateSelection = (id: string) => {
-    // eslint-disable-next-line
-    const newSelection = !!selected.find((s) => s === id)
-      ? selected.filter((s) => s !== id)
-      : selected.concat([id]);
-    setSelected(newSelection);
-  };
-
-  const onSelect = (id: string) => {
-    // Update local state by adding or removing the id
-    updateSelection(id);
-
-    // Post the student response to save it
-    // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
-    // Then in the rule evaluator, we will say
-    // `input like id1 && input like id2 && input like id3`
-    props.onSaveActivity(attemptState.attemptGuid, [
-      {
-        attemptGuid: attemptState.parts[0].attemptGuid,
-        response: { input: orderedChoiceIds(id) },
-      },
-    ]);
-  };
-
-  const onRequestHint = () => {
-    props
-      .onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
-      .then((state: RequestHintResponse) => {
-        if (state.hint !== undefined) {
-          setHints([...hints, state.hint] as any);
-        }
-        setHasMoreHints(state.hasMoreHints);
-      });
-  };
-
-  const onReset = () => {
-    props.onResetActivity(attemptState.attemptGuid).then((state: ResetActivityResponse) => {
-      setSelected([]);
-      setAttemptState(state.attemptState);
-      setModel(state.model as OrderingModelSchema);
-      setHints([]);
-      setHasMoreHints(props.state.parts[0].hasMoreHints);
-    });
-  };
-
-  const evaluationSummary = isEvaluated ? (
-    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-  ) : null;
-
-  const reset =
-    isEvaluated && !props.graded ? (
-      <div className="d-flex my-3">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-      </div>
-    ) : null;
-
-  const ungradedDetails = props.graded
-    ? null
-    : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-          context={writerContext}
-        />,
-      ];
-
-  const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
-
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
-
-  const gradedPoints =
-    props.graded && props.review
-      ? [
-          <div key="reviewed" className=" text-info font-italic">
-            {correctnessIcon}
-            <span> Points: </span>
-            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
-          </div>,
-        ]
-      : null;
-
-  const maybeSubmitButton = props.graded ? null : (
-    <button
-      aria-label="submit"
-      className="btn btn-primary mt-2 float-right"
-      disabled={isEvaluated || selected.length !== choices.length}
-      onClick={onSubmit}
-    >
-      Submit
-    </button>
-  );
 
   return (
-    <div className={`activity ordering-activity ${isEvaluated ? 'evaluated' : ''}`}>
+    <div className={`activity ordering-activity ${isEvaluated(state) ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <div>
-          <Stem stem={stem} context={writerContext} />
-          {gradedPoints}
-          <Selection
-            onDeselect={(id: ActivityTypes.ChoiceId) => updateSelection(id)}
-            selected={selected.map((s) => [s, choices.findIndex((c) => c.id === s)])}
-            isEvaluated={isEvaluated}
-          />
-          <Choices
-            choices={choices}
-            selected={selected}
-            onSelect={onSelect}
-            isEvaluated={isEvaluated}
-            context={writerContext}
-          />
-          {maybeSubmitButton}
-        </div>
-        {ungradedDetails}
-        {gradedDetails}
+        <StemDelivery stem={stem} context={writerContext} />
+        <GradedPoints
+          shouldShow={props.graded && props.review}
+          icon={isCorrect ? <IconCorrect /> : <IconIncorrect />}
+          attemptState={attemptState}
+        />
+        {/* <ChoicesDelivery
+          unselectedIcon={<Checkbox.Unchecked />}
+          selectedIcon={
+            !isEvaluated(state) ? (
+              <Checkbox.Checked />
+            ) : isCorrect ? (
+              <Checkbox.Correct />
+            ) : (
+              <Checkbox.Incorrect />
+            )
+          }
+          choices={choices}
+          selected={selectedChoices}
+          onSelect={(id) => dispatch(selectChoice(id, props.onSaveActivity))}
+          isEvaluated={isEvaluated(state)}
+          context={writerContext}
+        /> */}
+        <DragDropContext
+          onDragEnd={({ destination, source }) => {
+            if (
+              !destination ||
+              (destination.droppableId === source.droppableId && destination.index === source.index)
+            ) {
+              return;
+            }
+
+            const choice = choices[source.index];
+            const newChoices = Array.from(choices);
+            newChoices.splice(source.index, 1);
+            newChoices.splice(destination.index, 0, choice);
+
+            dispatch(slice.actions.setSelectedChoices(newChoices.map((c) => c.id)));
+          }}
+        >
+          <Droppable droppableId={'choices'}>
+            {(provided) => (
+              <div {...provided.droppableProps} className="mt-3" ref={provided.innerRef}>
+                {choices.map((choice, index) => (
+                  <Draggable draggableId={choice.id} key={choice.id} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className="d-flex mb-3 align-items-center ordering-choice-card"
+                        style={getStyle(provided.draggableProps.style, snapshot)}
+                      >
+                        <div
+                          style={{
+                            cursor: 'move',
+                            width: 24,
+                            color: 'rgba(0,0,0,0.26)',
+                          }}
+                          className="material-icons"
+                        >
+                          drag_indicator
+                        </div>
+                        <HtmlContentModelRenderer text={choice.content} context={writerContext} />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <ResetButton
+          shouldShow={isEvaluated(state) && !props.graded}
+          disabled={!attemptState.hasMoreAttempts}
+          onClick={() => dispatch(reset(props.onResetActivity))}
+        />
+        <SubmitButton
+          shouldShow={!isEvaluated(state) && !props.graded}
+          disabled={selectedChoices.length === 0}
+          onClick={() => dispatch(submit(props.onSubmitActivity))}
+        />
+        <HintsDelivery
+          shouldShow={!isEvaluated(state) && !props.graded}
+          onClick={() => dispatch(requestHint(props.onRequestHint))}
+          hints={hints}
+          hasMoreHints={hasMoreHints}
+          isEvaluated={isEvaluated(state)}
+          context={writerContext}
+        />
+        <Evaluation
+          shouldShow={isEvaluated(state) && (!props.graded || props.review)}
+          attemptState={attemptState}
+          context={writerContext}
+        />
       </div>
-      {reset}
     </div>
   );
 };
@@ -273,7 +287,12 @@ export const OrderingComponent = (props: DeliveryElementProps<OrderingModelSchem
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingModelSchema>) {
-    ReactDOM.render(<OrderingComponent {...props} />, mountPoint);
+    ReactDOM.render(
+      <Provider store={store}>
+        <OrderingComponent {...props} />
+      </Provider>,
+      mountPoint,
+    );
   }
 }
 

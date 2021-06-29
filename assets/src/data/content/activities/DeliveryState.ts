@@ -15,7 +15,6 @@ import {
   PartResponse,
   Success,
 } from 'components/activities/types';
-import { hintsSlice } from 'data/content/activities/delivery/hintsState';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
@@ -64,6 +63,18 @@ export const slice = createSlice({
         ? (state.selectedChoices = state.selectedChoices.filter((id) => id !== action.payload))
         : state.selectedChoices.push(action.payload);
     },
+    setHints(state, action: PayloadAction<Hint[]>) {
+      state.hints = action.payload;
+    },
+    addHint(state, action: PayloadAction<Hint>) {
+      state.hints.push(action.payload);
+    },
+    setHasMoreHints(state, action: PayloadAction<boolean>) {
+      state.hasMoreHints = action.payload;
+    },
+    clearHints(state) {
+      state.hints = [];
+    },
   },
 });
 
@@ -78,10 +89,10 @@ export const reset =
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
     dispatch(slice.actions.clearSelectedChoices());
-    dispatch(hintsSlice.actions.clearHints());
+    dispatch(slice.actions.clearHints());
     dispatch(slice.actions.setAttemptState(response.attemptState));
     dispatch(slice.actions.setModel(response.model as CheckAllThatApplyModelSchema));
-    dispatch(hintsSlice.actions.setHasMoreHints(getState().attemptState.parts[0].hasMoreHints));
+    dispatch(slice.actions.setHasMoreHints(getState().attemptState.parts[0].hasMoreHints));
   };
 
 export const submit =
@@ -108,10 +119,10 @@ export const initializeState =
     state: ActivityState,
   ): AppThunk =>
   async (dispatch, getState) => {
-    dispatch(hintsSlice.actions.setHints(state.parts[0].hints));
+    dispatch(slice.actions.setHints(state.parts[0].hints));
     dispatch(slice.actions.setModel(model));
     dispatch(slice.actions.setAttemptState(state));
-    dispatch(hintsSlice.actions.setHasMoreHints(state.parts[0].hasMoreHints));
+    dispatch(slice.actions.setHasMoreHints(state.parts[0].hasMoreHints));
     dispatch(
       slice.actions.setSelectedChoices(
         state.parts[0].response === null

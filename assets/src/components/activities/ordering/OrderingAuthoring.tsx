@@ -39,7 +39,7 @@ const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
       <Choices
         {...sharedProps}
         onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
-        onAddChoice={() => dispatch(Actions.addChoice())}
+        onAddChoice={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
         onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
         onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
         canMoveChoiceUp={(id) => canMoveChoice(props.model, id, 'up')}
