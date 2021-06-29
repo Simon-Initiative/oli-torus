@@ -36,7 +36,7 @@ defmodule Oli.Accounts.Author do
       on_replace: :delete
 
     many_to_many :sections, Oli.Delivery.Sections.Section,
-      join_through: Oli.Delivery.Sections.AuthorSection
+      join_through: Oli.Delivery.Sections.AuthorsSections
 
     timestamps(type: :utc_datetime)
   end

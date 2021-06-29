@@ -1,12 +1,13 @@
-defmodule Oli.Delivery.Sections.AuthorSection do
+defmodule Oli.Delivery.Sections.AuthorsSections do
   use Ecto.Schema
   import Ecto.Changeset
 
   @primary_key false
   schema "authors_sections" do
-    timestamps(type: :utc_datetime)
     belongs_to :author, Oli.Accounts.Author
     belongs_to :section, Oli.Delivery.Sections.Section
+
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

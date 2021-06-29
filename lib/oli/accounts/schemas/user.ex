@@ -57,6 +57,10 @@ defmodule Oli.Accounts.User do
       join_through: "users_platform_roles",
       on_replace: :delete
 
+    many_to_many :users, Oli.Delivery.Sections.UserGroup,
+      join_through: "user_groups_users",
+      on_replace: :delete
+
     timestamps(type: :utc_datetime)
   end
 
