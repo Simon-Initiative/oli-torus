@@ -6,7 +6,7 @@ import {
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { CapiVariable } from '../types/parts';
@@ -59,6 +59,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onSelected,
   val,
   disabled,
+  index,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -73,6 +74,10 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     );
     if (hasImages || hasBlankSpans) {
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      mcqItemStyles.position = `absolute`;
+
+      if(index !== 0)
+        mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
     }
     mcqItemStyles.display = `inline-block`;
   }
@@ -89,6 +94,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   };
 
   return (
+    <React.Fragment>
     <div style={mcqItemStyles}>
       <input
         name={groupId}
@@ -104,6 +110,9 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
         <MCQItemContent nodes={nodes} state={state} />
       </label>
     </div>
+    {layoutType !== 'horizontalLayout' &&
+    <br style={{padding:'0px;'}}/>}
+    </React.Fragment>
   );
 };
 const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
@@ -129,7 +138,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
 
-    const dRandomized = typeof pModel.randomized === 'boolean' ? pModel.randomized : randomized;
+    const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
 
     // BS: not sure I grok this one
@@ -301,9 +310,9 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
               }
-              const sRandomized = changes[`stage.${id}.randomized`];
+              const sRandomized = changes[`stage.${id}.randomize`];
               if (sRandomized !== undefined) {
-                setRandomized(sRandomized);
+                setRandomized(parseBoolean(sRandomized));
               }
               const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
               if (sSelectedChoice !== undefined) {
@@ -546,6 +555,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     >
       {options?.map((item, index) => (
         <MCQItem
+          index={index}
           key={`${id}-item-${index}`}
           totalItems={options.length}
           layoutType={layoutType}

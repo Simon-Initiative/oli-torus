@@ -17,4 +17,5 @@ export interface JanusMultipleChoiceQuestionItemProperties
     selected: boolean;
     val: number;
     disabled?: boolean;
+    index:number;
 }
