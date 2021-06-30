@@ -1,6 +1,6 @@
 import { ResponseMapping } from 'components/activities/check_all_that_apply/utils';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { ResponseCard } from 'components/activities/common/feedback/ResponseCard';
+import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { Choice, ChoiceId, RichText } from 'components/activities/types';
 import { ID } from 'data/content/model';
 import React from 'react';

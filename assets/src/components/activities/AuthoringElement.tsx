@@ -1,7 +1,8 @@
-import { ActivityModelSchema, Undoable } from './types';
+import { ActivityModelSchema, PostUndoable, Undoable } from './types';
 import { ProjectSlug } from 'data/types';
-import React, { Provider, useContext } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { Maybe } from 'tsmonad';
+import produce from 'immer';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -72,6 +73,8 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
 export interface AuthoringElementState {
   projectSlug: string;
   editMode: boolean;
+  dispatch: (action: (model: any, post: PostUndoable) => any) => void;
+  model: any;
 }
 const AuthoringElementContext = React.createContext<AuthoringElementState | undefined>(undefined);
 export function useAuthoringElementContext() {
@@ -79,13 +82,18 @@ export function useAuthoringElementContext() {
     new Error('useAuthoringElementContext must be used within an AuthoringElementProvider'),
   );
 }
-export const AuthoringElementProvider: React.FC<AuthoringElementState> = ({
+export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityModelSchema>> = ({
   projectSlug,
   editMode,
   children,
+  model,
+  onPostUndoable,
+  onEdit,
 }) => {
+  const dispatch: AuthoringElementState['dispatch'] = (action) =>
+    onEdit(produce(model, (draftState) => action(draftState, onPostUndoable)));
   return (
-    <AuthoringElementContext.Provider value={{ projectSlug, editMode }}>
+    <AuthoringElementContext.Provider value={{ projectSlug, editMode, dispatch, model }}>
       {children}
     </AuthoringElementContext.Provider>
   );

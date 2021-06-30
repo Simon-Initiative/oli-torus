@@ -1,4 +1,4 @@
-
+import { ChoiceIdsToResponseId } from 'components/activities/check_all_that_apply/schema';
 import { Part, Transformation, ActivityModelSchema, Stem, Choice } from '../types';
 
 export interface MultipleChoiceModelSchema extends ActivityModelSchema {

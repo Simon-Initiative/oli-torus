@@ -127,71 +127,6 @@ const Dropdown: React.FC<any> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  useEffect(() => {
-    if (!props.notify) {
-      return;
-    }
-    const notificationsHandled = [
-      NotificationType.CHECK_STARTED,
-      NotificationType.CHECK_COMPLETE,
-      NotificationType.CONTEXT_CHANGED,
-      NotificationType.STATE_CHANGED,
-    ];
-    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
-      const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
-        switch (notificationType) {
-          case NotificationType.CHECK_STARTED:
-            // nothing to do
-            break;
-          case NotificationType.CHECK_COMPLETE:
-            // nothing to do
-            // TODO: highlight incorrect?
-            break;
-          case NotificationType.STATE_CHANGED:
-            {
-              const { mutateChanges: changes } = payload;
-              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
-              if (sSelectedIndex !== undefined) {
-                const stateSelection = Number(sSelectedIndex);
-                if (selection !== stateSelection) {
-                  setSelection(stateSelection);
-                  setSelectedItem(optionLabels[stateSelection - 1]);
-                }
-              }
-
-              const sSelectedItem = changes[`stage.${id}.selectedItem`];
-              if (sSelectedItem !== undefined) {
-                if (selectedItem !== sSelectedItem) {
-                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
-                    sSelectedItem.includes(str),
-                  );
-                  setSelectedItem(sSelectedItem);
-                  setSelection(selectionIndex + 1);
-                }
-              }
-
-              const sEnabled = changes[`stage.${id}.enabled`];
-              if (sEnabled !== undefined) {
-                setEnabled(parseBool(sEnabled));
-              }
-            }
-            break;
-          case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
-            break;
-        }
-      };
-      const unsub = subscribeToNotification(props.notify, notificationType, handler);
-      return unsub;
-    });
-    return () => {
-      notifications.forEach((unsub) => {
-        unsub();
-      });
-    };
-  }, [props.notify]);
-
   const {
     x,
     y,
@@ -291,48 +226,80 @@ const Dropdown: React.FC<any> = (props) => {
     });
   };
 
-  const handleStateChange = (stateData: CapiVariable[]) => {
-    // override text value from state
-    //** Changed `stage.${id}` to `` and this might need to be done in all the components*
-    //** reason of doing this is if there are multiple variables with Ids - dropdownInput, dropdownInput2 & dropdownInput3/
-    //** doing `stage.${id}` always get all the variables starting with dropdownInput instead of just filtering variables with dropdownInput id*/
-    const interested = stateData.filter(
-      (stateVar: { id: string | string[] }) => stateVar.id.indexOf(`stage.${id}.`) === 0,
-    );
-    if (interested?.length) {
-      interested.forEach((stateVar) => {
-        switch (stateVar.key) {
-          case 'selectedIndex':
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            // TODO: highlight incorrect?
+            break;
+          case NotificationType.STATE_CHANGED:
             {
-              // handle selectedItem, which is a number/index
-              const stateSelection = Number(stateVar.value);
-              if (selection !== stateSelection) {
-                setSelection(stateSelection);
-                setSelectedItem(optionLabels[stateSelection - 1]);
+              const { mutateChanges: changes } = payload;
+              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
+              if (sSelectedIndex !== undefined) {
+                const stateSelection = Number(sSelectedIndex);
+                if (selection !== stateSelection) {
+                  setSelection(stateSelection);
+                  setSelectedItem(optionLabels[stateSelection - 1]);
+                }
+                props.onSave({
+                  id: `${id}`,
+                  responses: [
+                    {
+                      key: 'selectedIndex',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sSelectedIndex,
+                    },
+                  ],
+                });
+              }
+
+              const sSelectedItem = changes[`stage.${id}.selectedItem`];
+              if (sSelectedItem !== undefined) {
+                if (selectedItem !== sSelectedItem) {
+                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
+                    sSelectedItem.includes(str),
+                  );
+                  setSelectedItem(sSelectedItem);
+                  setSelection(selectionIndex + 1);
+                }
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
               }
             }
             break;
-          case 'selectedItem':
-            // handle selectedItem, which is a string
-            {
-              const stateSelectedItem = String(stateVar.value);
-              if (selectedItem !== stateSelectedItem) {
-                const selectionIndex: number = optionLabels.findIndex((str: string) =>
-                  stateSelectedItem.includes(str),
-                );
-                setSelectedItem(stateSelectedItem);
-                setSelection(selectionIndex + 1);
-              }
-            }
-            break;
-          case 'enabled':
-            // check for boolean and string truthiness
-            setEnabled(parseBool(stateVar.value));
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
             break;
         }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
       });
-    }
-  };
+    };
+  }, [props.notify, optionLabels]);
 
   // Generate a list of options using optionLabels
   const dropdownOptions = () => {

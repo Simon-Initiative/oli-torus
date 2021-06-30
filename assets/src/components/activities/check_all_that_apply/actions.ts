@@ -1,34 +1,26 @@
-import { CheckAllThatApplyModelSchema as CATA, TargetedCATA } from './schema';
+import { CheckAllThatApplyModelSchema as CATA } from './schema';
 import {
-  createRuleForIds,
-  getChoice,
   getCorrectResponse,
-  getHint,
-  getResponse,
   getChoiceIds,
   getCorrectChoiceIds,
   getIncorrectChoiceIds,
   getIncorrectResponse,
   getResponseId,
-  setDifference,
+  isSimpleCATA,
+} from './utils';
+import { ChoiceId, Choice, ResponseId, makeResponse, PostUndoable } from '../types';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { addOrRemove, remove, setDifference } from 'components/activities/common/utils';
+import {
+  createRuleForIds,
+  getResponse,
+  getResponses,
   invertRule,
   unionRules,
-  getResponses,
-  isSimpleCATA,
-  getHints,
-} from './utils';
-import {
-  RichText,
-  ChoiceId,
-  Choice,
-  ResponseId,
-  makeChoice,
-  makeResponse,
-  makeHint,
-} from '../types';
-import { toSimpleText } from 'data/content/text';
+} from 'components/activities/common/responses/authoring/responseUtils';
+import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 
-export class Actions {
+export class CATAActions {
   static toggleType() {
     return (model: CATA) => {
       if (isSimpleCATA(model)) {
@@ -42,68 +34,49 @@ export class Actions {
     };
   }
 
-  static editStem(content: RichText) {
-    return (model: CATA) => {
-      model.stem.content = content;
-      const previewText = toSimpleText({ children: content.model } as any);
-      model.authoring.previewText = previewText;
-    };
-  }
+  static addChoice(choice: Choice) {
+    return (model: CATA, post: PostUndoable) => {
+      ChoiceActions.addChoice(choice)(model, post);
 
-  static addChoice() {
-    return (model: CATA) => {
-      const newChoice: Choice = makeChoice('');
-
-      model.choices.push(newChoice);
-      getChoiceIds(model.authoring.incorrect).push(newChoice.id);
+      getChoiceIds(model.authoring.incorrect).push(choice.id);
       updateResponseRules(model);
-    };
-  }
-
-  static editChoiceContent(id: string, content: RichText) {
-    return (model: CATA) => {
-      getChoice(model, id).content = content;
-    };
-  }
-
-  static setAllChoices(choices: Choice[]) {
-    return (model: CATA) => {
-      model.choices = choices;
     };
   }
 
   static removeChoice(id: string) {
-    return (model: CATA) => {
-      const removeIdFrom = (list: string[]) => removeFromList(id, list);
-      model.choices = model.choices.filter((choice) => choice.id !== id);
-      removeIdFrom(getChoiceIds(model.authoring.correct));
-      removeIdFrom(getChoiceIds(model.authoring.incorrect));
+    return (model: CATA, post: PostUndoable) => {
+      const choice = getChoice(model, id);
+      const index = getChoices(model).findIndex((c) => c.id === id);
+      ChoiceActions.removeChoice(id)(model, post);
 
-      switch (model.type) {
-        case 'SimpleCATA':
-          break;
-        case 'TargetedCATA':
-          model.authoring.targeted.forEach((assoc) => removeIdFrom(getChoiceIds(assoc)));
+      remove(id, getChoiceIds(model.authoring.correct));
+      remove(id, getChoiceIds(model.authoring.incorrect));
+
+      if (model.type === 'TargetedCATA') {
+        model.authoring.targeted.forEach((assoc) => remove(id, getChoiceIds(assoc)));
       }
 
       updateResponseRules(model);
+
+      post({
+        description: 'Removed a choice',
+        operations: [
+          {
+            path: '$.choices',
+            index,
+            item: JSON.parse(JSON.stringify(choice)),
+          },
+        ],
+        type: 'Undoable',
+      });
     };
   }
 
   static toggleChoiceCorrectness(choiceId: ChoiceId) {
     return (model: CATA) => {
-      const addOrRemoveId = (list: string[]) => addOrRemoveFromList(choiceId, list);
-      // targeted response choices do not need to change
-
-      addOrRemoveId(getChoiceIds(model.authoring.correct));
-      addOrRemoveId(getChoiceIds(model.authoring.incorrect));
+      addOrRemove(choiceId, getChoiceIds(model.authoring.correct));
+      addOrRemove(choiceId, getChoiceIds(model.authoring.incorrect));
       updateResponseRules(model);
-    };
-  }
-
-  static editResponseFeedback(responseId: ResponseId, content: RichText) {
-    return (model: CATA) => {
-      getResponse(model, responseId).feedback.content = content;
     };
   }
 
@@ -131,16 +104,30 @@ export class Actions {
   }
 
   static removeTargetedFeedback(responseId: ResponseId) {
-    return (model: CATA) => {
+    return (model: CATA, post: PostUndoable) => {
       switch (model.type) {
         case 'SimpleCATA':
           return;
         case 'TargetedCATA':
-          removeFromList(getResponse(model, responseId), getResponses(model));
-          removeFromList(
+          const response = getResponse(model, responseId);
+          const index = getResponses(model).findIndex((r) => r.id === responseId);
+
+          remove(response, getResponses(model));
+          remove(
             model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
             model.authoring.targeted,
           );
+          post({
+            description: 'Removed a targeted feedback',
+            operations: [
+              {
+                path: '$.authoring.parts[0].responses',
+                index,
+                item: JSON.parse(JSON.stringify(response)),
+              },
+            ],
+            type: 'Undoable',
+          });
       }
     };
   }
@@ -161,43 +148,6 @@ export class Actions {
       }
       updateResponseRules(model);
     };
-  }
-
-  static addHint() {
-    return (model: CATA) => {
-      const newHint = makeHint('');
-      // new hints are always cognitive hints. they should be inserted
-      // right before the bottomOut hint at the end of the list
-      const bottomOutIndex = getHints(model).length - 1;
-      getHints(model).splice(bottomOutIndex, 0, newHint);
-    };
-  }
-
-  static editHint(id: string, content: RichText) {
-    return (model: CATA) => {
-      getHint(model, id).content = content;
-    };
-  }
-
-  static removeHint(id: string) {
-    return (model: CATA) => {
-      model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
-    };
-  }
-}
-
-// mutable
-function addOrRemoveFromList<T>(item: T, list: T[]) {
-  if (list.find((x) => x === item)) {
-    return removeFromList(item, list);
-  }
-  return list.push(item);
-}
-// mutable
-function removeFromList<T>(item: T, list: T[]) {
-  const index = list.findIndex((x) => x === item);
-  if (index > -1) {
-    list.splice(index, 1);
   }
 }
 
