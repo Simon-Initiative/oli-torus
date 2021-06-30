@@ -37,19 +37,19 @@ describe('Rules Engine', () => {
   });
 
   it('should return successful events of rules with no conditions', async () => {
-    const events = await check(mockState, [defaultCorrectRule]);
+    const {results: events} = await check(mockState, [defaultCorrectRule]);
     expect(events.length).toEqual(1);
     expect(events[0]).toEqual(defaultCorrectRule.event);
   });
 
   it('should evaluate complex conditions', async () => {
-    const events = await check(mockState, [complexRuleWithMultipleActions, defaultCorrectRule]);
+    const {results: events} = await check(mockState, [complexRuleWithMultipleActions, defaultCorrectRule]);
     expect(events.length).toEqual(1);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
   it('should not process disabled rules', async () => {
-    const events = await check(mockState, [disabledCorrectRule]);
+    const {results: events} = await check(mockState, [disabledCorrectRule]);
     expect(events.length).toEqual(0);
   });
 });
