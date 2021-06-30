@@ -202,6 +202,10 @@ describe('check all that apply question functionality', () => {
 
   it('can remove a hint', () => {
     const firstHint = getHints(model)[0];
-    expect(getHints(applyAction(model, HintActions.removeHint(firstHint.id)))).toHaveLength(2);
+    expect(
+      getHints(
+        applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints')),
+      ),
+    ).toHaveLength(2);
   });
 });

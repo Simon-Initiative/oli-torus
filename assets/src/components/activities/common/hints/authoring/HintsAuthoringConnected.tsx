@@ -6,16 +6,19 @@ import {
   getCognitiveHints,
   getDeerInHeadlightsHint,
 } from 'components/activities/common/hints/authoring/hintUtils';
-import { HasHints, makeHint } from 'components/activities/types';
+import { makeHint } from 'components/activities/types';
 import React from 'react';
 
-export const HintsAuthoringConnected: React.FC = () => {
+interface Props {
+  hintsPath: string;
+}
+export const HintsAuthoringConnected: React.FC<Props> = ({ hintsPath }) => {
   const { dispatch, model } = useAuthoringElementContext();
   return (
     <HintsAuthoring
       addOne={() => dispatch(HintActions.addHint(makeHint('')))}
       updateOne={(id, content) => dispatch(HintActions.editHint(id, content))}
-      removeOne={(id) => dispatch(HintActions.removeHint(id))}
+      removeOne={(id) => dispatch(HintActions.removeHint(id, hintsPath))}
       deerInHeadlightsHint={getDeerInHeadlightsHint(model)}
       cognitiveHints={getCognitiveHints(model)}
       bottomOutHint={getBottomOutHint(model)}

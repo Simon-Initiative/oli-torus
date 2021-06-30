@@ -142,7 +142,8 @@ describe('multiple choice question', () => {
   it('can remove a hint', () => {
     const firstHint = model.authoring.parts[0].hints[0];
     expect(
-      applyAction(model, HintActions.removeHint(firstHint.id)).authoring.parts[0].hints,
+      applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints'))
+        .authoring.parts[0].hints,
     ).toHaveLength(2);
   });
 });

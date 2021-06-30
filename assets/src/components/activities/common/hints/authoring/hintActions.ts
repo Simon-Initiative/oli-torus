@@ -17,7 +17,7 @@ export const HintActions = {
     };
   },
 
-  removeHint(id: string) {
+  removeHint(id: string, path: string) {
     return (model: HasHints, post: PostUndoable) => {
       const hint = getHint(model, id);
       const index = getHints(model).findIndex((h) => h.id === id);
@@ -26,7 +26,7 @@ export const HintActions = {
         description: 'Removed a hint',
         operations: [
           {
-            path: '$.authoring.parts[0].hints',
+            path,
             index,
             item: JSON.parse(JSON.stringify(hint)),
           },
