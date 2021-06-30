@@ -5,6 +5,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { parseBoolean } from 'utils/common';
 
 const NavigationButton: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -40,7 +41,7 @@ const NavigationButton: React.FC<any> = (props) => {
     const dAccessibilityText = pModel.ariaLabel || accessibilityText;
     setAccessibilityText(dAccessibilityText);
 
-    const dSelected = typeof pModel.selected === 'boolean' ? pModel.selected : buttonSelected;
+    const dSelected = parseBoolean(pModel.selected);
     setButtonSelected(dSelected);
 
     const dBackgroundColor = pModel.buttonColor || '';
@@ -138,7 +139,7 @@ const NavigationButton: React.FC<any> = (props) => {
       sSelected = currentStateSnapshot[`stage.${id}.selected`];
     }
     if (sSelected !== undefined) {
-      setButtonSelected(sSelected);
+      setButtonSelected(parseBoolean(sSelected));
     }
 
     const sBackgroundColor = currentStateSnapshot[`stage.${id}.buttonColor`];
@@ -229,7 +230,7 @@ const NavigationButton: React.FC<any> = (props) => {
                 sSelected = changes[`stage.${id}.selected`];
               }
               if (sSelected !== undefined) {
-                setButtonSelected(sSelected);
+                setButtonSelected(parseBoolean(sSelected));
               }
 
               const sVisible = changes[`stage.${id}.visible`];

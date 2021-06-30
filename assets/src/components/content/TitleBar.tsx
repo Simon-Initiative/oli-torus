@@ -17,19 +17,18 @@ export const TitleBar = (props: TitleBarProps) => {
   const { editMode, className, title, onTitleEdit, children } = props;
 
   return (
-    <div className={classNames([
-      'TitleBar',
-      'd-flex flex-row align-items-baseline mb-2',
-      className,
-    ])}>
-      <div className="flex-grow-1 mr-2">
+    <div
+      className={classNames(['TitleBar', 'd-flex flex-row align-items-baseline my-2', className])}
+    >
+      <div className="d-flex align-items-center flex-grow-1 mr-2">
         <TextEditor
           onEdit={onTitleEdit}
           model={title}
           showAffordances={true}
           size="large"
           allowEmptyContents={false}
-          editMode={editMode}/>
+          editMode={editMode}
+        />
       </div>
       {children}
     </div>

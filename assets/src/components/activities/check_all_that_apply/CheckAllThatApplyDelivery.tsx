@@ -1,113 +1,76 @@
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
-import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { ResetButton } from 'components/activities/common/delivery/ResetButton';
-import { Evaluation } from 'components/activities/common/Evaluation';
-import { GradedPoints } from 'components/activities/common/GradedPoints';
-import { HintsDelivery } from 'components/activities/common/hints/HintsDelivery';
 import { Checkbox } from 'components/activities/common/icons/Checkbox';
-import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { SubmitButton } from 'components/activities/common/SubmitButton';
-import { HasChoices, HasStem, Manifest } from 'components/activities/types';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { Manifest } from 'components/activities/types';
+import { isCorrect } from 'data/content/activities/activityUtils';
 import {
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
-  requestHint,
-  reset,
   selectChoice,
   slice,
-  submit,
 } from 'data/content/activities/DeliveryState';
-import { defaultWriterContext } from 'data/content/writers/context';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  DeliveryElementProvider,
+  useDeliveryElementContext,
+} from '../DeliveryElement';
+import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
+import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 
 export const store = configureStore({}, slice.reducer);
 
-export const CheckAllThatApplyComponent = (
-  props: DeliveryElementProps<CheckAllThatApplyModelSchema>,
-) => {
-  const state = useSelector(
-    (state: ActivityDeliveryState & { model: HasStem & HasChoices }) => state,
-  );
+export const CheckAllThatApplyComponent: React.FC = () => {
+  const {
+    model,
+    state: activityState,
+    onSaveActivity,
+  } = useDeliveryElementContext<CheckAllThatApplyModelSchema>();
+  const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(props.model, props.state));
+    dispatch(initializeState(model, activityState));
   }, []);
 
   // First render initializes state
-  if (!state.model) {
+  if (!uiState.selectedChoices) {
     return null;
   }
 
-  const {
-    attemptState,
-    model: { stem, choices },
-    selectedChoices,
-    hints,
-    hasMoreHints,
-  } = state;
-
-  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
-
-  const isCorrect = attemptState.score !== 0;
+  const evaluated = isEvaluated(uiState);
 
   return (
-    <div className={`activity cata-activity ${isEvaluated(state) ? 'evaluated' : ''}`}>
+    <div className={`activity cata-activity ${evaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <StemDelivery stem={stem} context={writerContext} />
-        <GradedPoints
-          shouldShow={props.graded && props.review}
-          icon={isCorrect ? <IconCorrect /> : <IconIncorrect />}
-          attemptState={attemptState}
-        />
-        <ChoicesDelivery
-          unselectedIcon={<Checkbox.Unchecked />}
+        <StemDeliveryConnected />
+        <GradedPointsConnected />
+        <ChoicesDeliveryConnected
+          unselectedIcon={<Checkbox.Unchecked disabled={evaluated} />}
           selectedIcon={
-            !isEvaluated(state) ? (
+            !evaluated ? (
               <Checkbox.Checked />
-            ) : isCorrect ? (
+            ) : isCorrect(uiState.attemptState) ? (
               <Checkbox.Correct />
             ) : (
               <Checkbox.Incorrect />
             )
           }
-          choices={choices}
-          selected={selectedChoices}
-          onSelect={(id) => dispatch(selectChoice(id, props.onSaveActivity))}
-          isEvaluated={isEvaluated(state)}
-          context={writerContext}
+          onSelect={(id) => dispatch(selectChoice(id, onSaveActivity, 'multiple'))}
         />
-        <ResetButton
-          shouldShow={isEvaluated(state) && !props.graded}
-          disabled={!attemptState.hasMoreAttempts}
-          onClick={() => dispatch(reset(props.onResetActivity))}
-        />
-        <SubmitButton
-          shouldShow={!isEvaluated(state) && !props.graded}
-          disabled={selectedChoices.length === 0}
-          onClick={() => dispatch(submit(props.onSubmitActivity))}
-        />
-        <HintsDelivery
-          shouldShow={!isEvaluated(state) && !props.graded}
-          key="hints"
-          onClick={() => dispatch(requestHint(props.onRequestHint))}
-          hints={hints}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated(state)}
-          context={writerContext}
-        />
-        <Evaluation
-          shouldShow={isEvaluated(state) && (!props.graded || props.review)}
-          key="evaluation"
-          attemptState={attemptState}
-          context={writerContext}
-        />
+        <ResetButtonConnected />
+        <SubmitButtonConnected />
+        <HintsDeliveryConnected />
+        <EvaluationConnected />
       </div>
     </div>
   );
@@ -118,7 +81,9 @@ export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApply
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <CheckAllThatApplyComponent {...props} />
+        <DeliveryElementProvider {...props}>
+          <CheckAllThatApplyComponent />
+        </DeliveryElementProvider>
       </Provider>,
       mountPoint,
     );
