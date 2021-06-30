@@ -12,7 +12,6 @@ import { MCActions as Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import produce from 'immer';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
 import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
@@ -41,9 +40,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         <TabbedNavigation.Tab label="Question">
           <StemAuthoring
             stem={props.model.stem}
-            onEdit={(content) => {
-              produce(StemActions.editStemAndPreviewText(content));
-            }}
+            onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
           />
 
           <ChoicesAuthoringConnected
@@ -71,34 +68,10 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
             incorrectResponse={getIncorrectResponse(props.model)}
             update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
           />
-
-          {/* {isTargetedCATA(props.model) && (
-            <TargetedFeedback
-              choices={props.model.choices}
-              targetedMappings={getTargetedResponseMappings(props.model)}
-              toggleChoice={(choiceId, mapping) => {
-                dispatch(
-                  Actions.editTargetedFeedbackChoices(
-                    mapping.response.id,
-                    mapping.choiceIds.includes(choiceId)
-                      ? mapping.choiceIds.filter((id) => id !== choiceId)
-                      : mapping.choiceIds.concat(choiceId),
-                  ),
-                );
-              }}
-              updateResponse={(id, content) =>
-                dispatch(ResponseActions.editResponseFeedback(id, content))
-              }
-              addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
-              unselectedIcon={<Radio.Unchecked />}
-              selectedIcon={<Radio.Checked />}
-              onRemove={(id) => dispatch(Actions.removeTargetedFeedback(id))}
-            />
-          )} */}
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected />
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
       </TabbedNavigation.Tabs>

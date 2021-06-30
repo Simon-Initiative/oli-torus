@@ -64,23 +64,19 @@ export const ShuffleChoicesOption: React.FC<ShuffleChoicesOptionProps> = ({
   </div>
 );
 
-export function addOrRemove<T>(item: T, list: T[]): T[] {
-  return Maybe.maybe(list.find((x) => x === item)).caseOf({
-    just: (item) => remove(item, list),
-    nothing: () => list.concat(item),
-  });
-}
-
-export function remove<T>(item: T, list: T[]): T[] {
-  const index = list.indexOf(item);
-  if (index > -1) {
-    return list.splice(index, 1);
+export function addOrRemove<T>(item: T, list: T[]) {
+  if (list.find((x) => x === item)) {
+    return remove(item, list);
   }
-  return list;
+  return list.push(item);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const noop = () => {};
+export function remove<T>(item: T, list: T[]) {
+  const index = list.findIndex((x) => x === item);
+  if (index > -1) {
+    list.splice(index, 1);
+  }
+}
 
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
   return subtractedFrom.filter((x) => !toSubtract.includes(x));

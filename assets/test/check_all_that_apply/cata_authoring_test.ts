@@ -1,7 +1,10 @@
 import { CATAActions } from 'components/activities/check_all_that_apply/actions';
 import * as ContentModel from 'data/content/model';
 import produce from 'immer';
-import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
+import {
+  CheckAllThatApplyModelSchema,
+  TargetedCATA,
+} from 'components/activities/check_all_that_apply/schema';
 import {
   defaultCATAModel,
   getChoiceIds,
@@ -12,7 +15,7 @@ import {
 } from 'components/activities/check_all_that_apply/utils';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { makeChoice, makeHint } from 'components/activities/types';
+import { makeChoice, makeFeedback, makeHint, makeStem } from 'components/activities/types';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
 import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
@@ -25,33 +28,8 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 
 const applyAction = (model: CheckAllThatApplyModelSchema, action: any) => {
-  return produce(model, (draftState) => action(draftState));
+  return produce(model, (state) => action(state, () => undefined));
 };
-
-function testFromText(text: string) {
-  return {
-    id: Math.random() + '',
-    content: {
-      model: [
-        ContentModel.create<ContentModel.Paragraph>({
-          type: 'p',
-          children: [{ text }],
-          id: Math.random() + '',
-        }),
-      ],
-      selection: null,
-    },
-  };
-}
-
-function testResponse(text: string, rule: string, score = 0) {
-  return {
-    id: Math.random() + '',
-    feedback: testFromText(text),
-    rule,
-    score,
-  };
-}
 
 const testDefaultModel = defaultCATAModel;
 
@@ -60,7 +38,7 @@ describe('check all that apply question functionality', () => {
 
   it('can switch from simple to targeted feedback mode', () => {
     expect(model.type).toBe('SimpleCATA');
-    const toggled = applyAction(model, CATAActions.toggleType());
+    const toggled: TargetedCATA = applyAction(model, CATAActions.toggleType()) as any;
     expect(toggled).toMatchObject({ type: 'TargetedCATA' });
     expect(toggled.authoring.targeted).toBeInstanceOf(Array);
     expect(toggled.authoring.targeted).toHaveLength(0);
@@ -78,7 +56,7 @@ describe('check all that apply question functionality', () => {
   });
 
   it('can edit stem', () => {
-    const newStemContent = testFromText('new content').content;
+    const newStemContent = makeStem('new content').content;
     expect(applyAction(model, StemActions.editStem(newStemContent)).stem).toMatchObject({
       content: newStemContent,
     });
@@ -110,7 +88,7 @@ describe('check all that apply question functionality', () => {
   });
 
   it('can edit a choice', () => {
-    const newChoiceContent = testFromText('new content').content;
+    const newChoiceContent = makeChoice('new content').content;
     const firstChoice = model.choices[0];
     expect(
       applyAction(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent))
@@ -129,7 +107,10 @@ describe('check all that apply question functionality', () => {
   it('can remove a choice from targeted CATA responses', () => {
     const firstChoice = model.choices[0];
     const toggled = applyAction(model, CATAActions.toggleType());
-    const newModel = applyAction(toggled, CATAActions.removeChoice(firstChoice.id));
+    const newModel: TargetedCATA = applyAction(
+      toggled,
+      CATAActions.removeChoice(firstChoice.id),
+    ) as any;
     newModel.authoring.targeted.forEach((assoc: any) => {
       expect(getChoiceIds(assoc)).not.toContain(firstChoice.id);
     });
@@ -144,7 +125,7 @@ describe('check all that apply question functionality', () => {
   });
 
   it('can edit feedback', () => {
-    const newFeedbackContent = testFromText('new content').content;
+    const newFeedbackContent = makeFeedback('new content').content;
     const firstResponse = model.authoring.parts[0].responses[0];
     expect(
       applyAction(model, ResponseActions.editResponseFeedback(firstResponse.id, newFeedbackContent))
@@ -155,7 +136,10 @@ describe('check all that apply question functionality', () => {
   it('can add a targeted feedback in targeted mode', () => {
     expect(applyAction(model, CATAActions.addTargetedFeedback())).toEqual(model);
     const toggled = applyAction(model, CATAActions.toggleType());
-    const withNewResponse = applyAction(toggled, CATAActions.addTargetedFeedback());
+    const withNewResponse: TargetedCATA = applyAction(
+      toggled,
+      CATAActions.addTargetedFeedback(),
+    ) as any;
     expect(getResponses(withNewResponse).length).toBeGreaterThan(getResponses(model).length);
     expect(withNewResponse.authoring.targeted.length).toBe(1);
     expect(getChoiceIds(withNewResponse.authoring.targeted[0])).toHaveLength(0);
@@ -164,11 +148,14 @@ describe('check all that apply question functionality', () => {
   it('can remove a targeted feedback in targeted mode', () => {
     expect(applyAction(model, CATAActions.removeTargetedFeedback('id'))).toEqual(model);
     const toggled = applyAction(model, CATAActions.toggleType());
-    const withNewResponse = applyAction(toggled, CATAActions.addTargetedFeedback());
-    const removed = applyAction(
+    const withNewResponse: TargetedCATA = applyAction(
+      toggled,
+      CATAActions.addTargetedFeedback(),
+    ) as any;
+    const removed: TargetedCATA = applyAction(
       withNewResponse,
       CATAActions.removeTargetedFeedback(getResponseId(withNewResponse.authoring.targeted[0])),
-    );
+    ) as any;
     expect(getResponses(removed)).toHaveLength(2);
     expect(getTargetedResponses(removed)).toHaveLength(0);
   });
@@ -206,7 +193,7 @@ describe('check all that apply question functionality', () => {
   });
 
   it('can edit a hint', () => {
-    const newHintContent = testFromText('new content').content;
+    const newHintContent = makeHint('new content').content;
     const firstHint = getHints(model)[0];
     expect(
       getHints(applyAction(model, HintActions.editHint(firstHint.id, newHintContent)))[0],
@@ -215,6 +202,10 @@ describe('check all that apply question functionality', () => {
 
   it('can remove a hint', () => {
     const firstHint = getHints(model)[0];
-    expect(getHints(applyAction(model, HintActions.removeHint(firstHint.id)))).toHaveLength(2);
+    expect(
+      getHints(
+        applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints')),
+      ),
+    ).toHaveLength(2);
   });
 });

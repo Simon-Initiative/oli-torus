@@ -12,7 +12,6 @@ import { CATAActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import produce from 'immer';
 import {
   getCorrectChoiceIds,
   getCorrectResponse,
@@ -98,7 +97,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected />
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <CATASettingsConnected />
       </TabbedNavigation.Tabs>

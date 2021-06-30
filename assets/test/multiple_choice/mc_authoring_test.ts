@@ -85,8 +85,7 @@ describe('multiple choice question', () => {
     expect(model.choices.length).toBeGreaterThan(0);
   });
 
-  // Creating guids causes failures
-  xit('can add a choice', () => {
+  it('can add a choice', () => {
     expect(applyAction(model, MCActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
       model.choices.length,
     );
@@ -143,7 +142,8 @@ describe('multiple choice question', () => {
   it('can remove a hint', () => {
     const firstHint = model.authoring.parts[0].hints[0];
     expect(
-      applyAction(model, HintActions.removeHint(firstHint.id)).authoring.parts[0].hints,
+      applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints'))
+        .authoring.parts[0].hints,
     ).toHaveLength(2);
   });
 });

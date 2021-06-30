@@ -18,12 +18,13 @@ const ENTER_KEYCODE = 13;
 
 export const LabelledTextEditor = (props: LabelledTextEditorProps) => {
   return (
-    <div>{props.label}: <TextEditor {...props}/></div>
+    <div>
+      {props.label}: <TextEditor {...props} />
+    </div>
   );
 };
 
 export const TextEditor = (props: TextEditorProps) => {
-
   const { model, showAffordances, onEdit, editMode } = props;
   const allowEmpty = props.allowEmptyContents === undefined ? true : props.allowEmptyContents;
   const [current, setCurrent] = useState(model);
@@ -34,7 +35,7 @@ export const TextEditor = (props: TextEditorProps) => {
     setCurrent(model);
   }, [model]);
 
-  const isValid = (value : string) => value.trim() !== '';
+  const isValid = (value: string) => value.trim() !== '';
 
   const onTitleEdit = (e: any) => {
     setIsEditing(false);
@@ -82,25 +83,29 @@ export const TextEditor = (props: TextEditorProps) => {
 
     return (
       <div data-slate-editor className="d-flex">
-        <input type="text"
+        <input
+          type="text"
           className={inputClass}
           onKeyUp={onKeyUp}
           onChange={onTextChange}
           value={value}
-          style={style} />
+          style={style}
+        />
         <button
           key="save"
           onClick={onSave}
           type="button"
           disabled={!allowEmpty && !isValid(value)}
-          className="btn btn-primary btn-sm my-2 ml-2">
+          className="btn btn-primary btn-sm my-2 ml-2"
+        >
           Save
         </button>
         <button
           key="cancel"
           onClick={onCancel}
           type="button"
-          className="btn btn-outline-secondary btn-sm my-2 ml-2">
+          className="btn btn-outline-secondary btn-sm my-2 ml-2"
+        >
           Cancel
         </button>
       </div>
@@ -118,21 +123,21 @@ export const TextEditor = (props: TextEditorProps) => {
 
     return (
       <React.Fragment>
-        <span style={linkStyle}>
-          {current}
-        </span>
-        {showAffordances ? <button
-          key="edit"
-          onClick={onBeginEdit}
-          type="button"
-          disabled={!editMode}
-          className="btn btn-link btn-sm">
-          Edit
-        </button> : null}
+        <span style={linkStyle}>{current}</span>
+        {showAffordances && (
+          <button
+            key="edit"
+            onClick={onBeginEdit}
+            type="button"
+            disabled={!editMode}
+            className="btn btn-link btn-sm"
+          >
+            Edit Title
+          </button>
+        )}
       </React.Fragment>
     );
   };
 
   return isEditing ? editingUI() : readOnlyUI();
-
 };
