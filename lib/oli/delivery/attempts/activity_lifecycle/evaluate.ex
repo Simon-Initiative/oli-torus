@@ -26,104 +26,136 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
 
     if is_list(rules) do
-      evaluate_from_rules(section_slug, resource_attempt, activity_attempt_guid, part_inputs, rules)
+      evaluate_from_rules(
+        section_slug,
+        resource_attempt,
+        activity_attempt_guid,
+        part_inputs,
+        rules
+      )
     else
       evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
     end
   end
 
-  def evaluate_from_rules(section_slug, resource_attempt, activity_attempt_guid, part_inputs, rules) do
-    # need to get all of the extrinsic (resource_attempt state)
-    extrinsic_state = resource_attempt.state
+  def evaluate_from_rules(
+        section_slug,
+        resource_attempt,
+        activity_attempt_guid,
+        part_inputs,
+        rules
+      ) do
+    state = assemble_full_adaptive_state(resource_attempt, part_inputs)
 
-    # need to get *all* of the activity attempts state (part responses saved thus far)
-    attempt_hierarchy = Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
+    case NodeJS.call({"rules", :check}, [state, rules]) do
+      {:ok, check_results} ->
+        results = Map.get(check_results, "results")
 
-    response_state = Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
-      part_responses = Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
-        case pa.response do
-          "" -> acc
-          nil -> acc
-          _ ->
-            part_values = Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
-              case pv do
-                nil -> acc1
-                "" -> acc1
-                _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
-              end
-            end)
-            Map.merge(acc, part_values)
+        client_evaluations =
+          determine_score(check_results)
+          |> to_client_results(part_inputs)
+
+        case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+          {:ok, _} -> {:ok, results}
+          e -> e
         end
-      end)
-      Map.merge(m, part_responses)
-    end)
 
-    # need to combine with part_inputs as latest
-    input_state = Enum.reduce(part_inputs, %{}, fn pi, acc ->
-      case pi.input.input do
-        "" -> acc
-        nil -> acc
-        _ ->
-          inputs = Enum.reduce(Map.values(pi.input.input), %{}, fn input, acc1 ->
-            case input do
-              nil -> acc1
-              "" -> acc1
-              _ ->
-                path = Map.get(input, "path")
-                local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
-                value = Map.get(input, "value")
-                Map.put(acc1, local_path, value)
-            end
-          end)
-          Map.merge(acc, inputs)
-      end
-    end)
-
-    attempt_state = Map.merge(response_state, extrinsic_state)
-    state = Map.merge(input_state, attempt_state)
-
-    # Logger.debug("***************************PART INPUTS #{Jason.encode!(part_inputs)}")
-
-    # Logger.debug("eval rules: #{Jason.encode!(rules)}")
-    # Logger.debug("eval state #{Jason.encode!(state)}")
-
-    # nodejs then evaluates that and returns actions
-    checkResults = case NodeJS.call({"rules", :check}, [state, rules]) do
-      {:ok, results} -> results
-      _ -> nil # FIXME return early from function with error?
+      e ->
+        e
     end
+  end
 
-    isCorrect = Map.get(checkResults, "correct", false)
-    results = Map.get(checkResults, "results")
+  defp to_client_results(score, part_inputs) do
+    Enum.map(part_inputs, fn part_input ->
+      %{
+        attempt_guid: part_input.attempt_guid,
+        client_evaluation: %ClientEvaluation{
+          input: part_input.input,
+          score: score,
+          out_of: 1,
+          feedback: nil
+        }
+      }
+    end)
+  end
 
-    score = if isCorrect do
+  defp determine_score(check_results) do
+    if Map.get(check_results, "correct", false) do
       1
     else
       0
     end
+  end
 
-    # generate client_evaluations based on result correctness (score 1 or 0)
-    client_evaluations =
-      Enum.map(part_inputs, fn pi ->
-        %{
-          attempt_guid: pi.attempt_guid,
-          client_evaluation: %ClientEvaluation{
-            input: pi.input,
-            score: score,
-            out_of: 1,
-            feedback: nil
-          }
-        }
+  defp assemble_full_adaptive_state(resource_attempt, part_inputs) do
+    extrinsic_state = resource_attempt.state
+
+    # need to get *all* of the activity attempts state (part responses saved thus far)
+    attempt_hierarchy =
+      Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
+
+    response_state =
+      Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
+        part_responses =
+          Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
+            case pa.response do
+              "" ->
+                acc
+
+              nil ->
+                acc
+
+              _ ->
+                part_values =
+                  Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
+                    case pv do
+                      nil -> acc1
+                      "" -> acc1
+                      _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+                    end
+                  end)
+
+                Map.merge(acc, part_values)
+            end
+          end)
+
+        Map.merge(m, part_responses)
       end)
 
-    Logger.debug("EVAL *************************************************\n #{Jason.encode!(client_evaluations)}")
+    # need to combine with part_inputs as latest
+    input_state =
+      Enum.reduce(part_inputs, %{}, fn pi, acc ->
+        case pi.input.input do
+          "" ->
+            acc
 
-    case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-      {:ok, _} -> Logger.debug("EVAL WAS SUCCESSFUL!*********************")
-      {:error, msg} -> Logger.debug("EVAL UNSUCCESSFUL :( ************************************\nMSG: #{msg}")
-    end
+          nil ->
+            acc
 
-    {:ok, results}
+          _ ->
+            inputs =
+              Enum.reduce(Map.values(pi.input.input), %{}, fn input, acc1 ->
+                case input do
+                  nil ->
+                    acc1
+
+                  "" ->
+                    acc1
+
+                  _ ->
+                    path = Map.get(input, "path")
+                    local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                    value = Map.get(input, "value")
+                    Map.put(acc1, local_path, value)
+                end
+              end)
+
+            Map.merge(acc, inputs)
+        end
+      end)
+
+    attempt_state = Map.merge(response_state, extrinsic_state)
+    Map.merge(input_state, attempt_state)
   end
 
   @doc """
@@ -243,6 +275,84 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       end
     else
       Repo.rollback({:not_all_answered})
+    end
+  end
+
+  @doc """
+  Processes a set of client evaluations for some number of parts for the given
+  activity attempt guid.  If this collection of evaluations completes the activity
+  the results of the part evalutions (including ones already having been evaluated)
+  will be rolled up to the activity attempt record.
+
+  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
+  map instance contains the result of one of the evaluations in the form:
+
+  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
+
+  On failure returns `{:error, error}`
+  """
+  @spec apply_client_evaluation(String.t(), String.t(), [map()]) ::
+          {:ok, [map()]} | {:error, any}
+  def apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+    # verify this activity type allows client evaluation
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+    activity_registration_slug = activity_attempt.revision.activity_type.slug
+
+    part_inputs =
+      Enum.map(client_evaluations, fn %{
+                                        attempt_guid: attempt_guid,
+                                        client_evaluation: %ClientEvaluation{input: input}
+                                      } ->
+        %{attempt_guid: attempt_guid, input: input}
+      end)
+
+    case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
+      %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
+        Repo.transaction(fn ->
+          roll_up = fn result ->
+            rollup_part_attempt_evaluations(activity_attempt_guid)
+            result
+          end
+
+          no_roll_up = fn result -> result end
+
+          {roll_up_fn, client_evaluations} =
+            case filter_already_submitted(client_evaluations, part_attempts) do
+              {true, client_evaluations} -> {roll_up, client_evaluations}
+              {false, client_evaluations} -> {no_roll_up, client_evaluations}
+            end
+
+          case client_evaluations
+               |> Enum.map(fn %{
+                                attempt_guid: attempt_guid,
+                                client_evaluation: %ClientEvaluation{
+                                  score: score,
+                                  out_of: out_of,
+                                  feedback: feedback
+                                }
+                              } ->
+                 {:ok,
+                  %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
+                    type: "FeedbackActionResult",
+                    attempt_guid: attempt_guid,
+                    feedback: feedback,
+                    score: score,
+                    out_of: out_of
+                  }}
+               end)
+               |> (fn evaluations -> {:ok, evaluations} end).()
+               |> persist_evaluations(part_inputs, roll_up_fn) do
+            {:ok, results} -> results
+            {:error, error} -> Repo.rollback(error)
+            _ -> Repo.rollback("unknown error")
+          end
+        end)
+        |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+
+      _ ->
+        {:error, "Activity type does not allow client evaluation"}
     end
   end
 
