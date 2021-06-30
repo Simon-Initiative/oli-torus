@@ -21,7 +21,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const [pusher, setPusher] = useState(new EventEmitter());
 
-  const attemptState = props.state;
+  const [attemptState, setAttemptState] = useState(props.state);
 
   const parts = partsLayout || [];
 
@@ -46,6 +46,18 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         // because of the init promise is already resolved with the state snapshot it had the first time
         // the layer rendered, the parts can't simply call init again or they will not get the latest changes
         // still we just currently push notifications straight through, CONTEXT_CHANGED should have the latest snapshot
+
+        if (notificationType === NotificationType.CHECK_COMPLETE) {
+          // if the attempt was incorrect, then this will result in a new attempt record being generated
+          // if that is the case then the activity and all its parts need to update their guid references
+          const attempt = e.attempt;
+          if (attempt && attempt.attemptGuid !== attemptState.attemptGuid) {
+            /* console.log(
+              `ATTEMPT CHANGING from ${attemptState.attemptGuid} to ${attempt.attemptGuid}`,
+            ); */
+            setAttemptState(attempt);
+          }
+        }
 
         pusher.emit(notificationType.toString(), e);
       };
@@ -158,30 +170,33 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return true;
   };
 
-  const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
-    /* console.log('onPartSave', { id, responses }); */
-    if (!responses || !responses.length) {
-      // TODO: throw? no reason to save something with no response
-      return;
-    }
-    // part attempt guid should be located in attemptState.parts matched to id (i think)
-    const partAttempt = attemptState.parts.find((p) => p.partId === id);
-    if (!partAttempt) {
-      // throw err? if this happens we can't proceed...
-      console.error(`part attempt guid for ${id} not found!`);
-      return;
-    }
-    const response: ActivityTypes.StudentResponse = {
-      input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
-    };
-    const result = await props.onSavePart(
-      attemptState.attemptGuid,
-      partAttempt?.attemptGuid,
-      response,
-    );
-    // BS: this is the result from the layout pushed down, need to push down to part here?
-    return result;
-  };
+  const handlePartSave = useCallback(
+    async ({ id, responses }: { id: string | number; responses: any[] }) => {
+      /* console.log('onPartSave', { id, responses }); */
+      if (!responses || !responses.length) {
+        // TODO: throw? no reason to save something with no response
+        return;
+      }
+      // part attempt guid should be located in attemptState.parts matched to id (i think)
+      const partAttempt = attemptState.parts.find((p) => p.partId === id);
+      if (!partAttempt) {
+        // throw err? if this happens we can't proceed...
+        console.error(`part attempt guid for ${id} not found!`);
+        return;
+      }
+      const response: ActivityTypes.StudentResponse = {
+        input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
+      };
+      const result = await props.onSavePart(
+        attemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        response,
+      );
+      // BS: this is the result from the layout pushed down, need to push down to part here?
+      return result;
+    },
+    [attemptState],
+  );
 
   const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSubmit', { id, responses }); */

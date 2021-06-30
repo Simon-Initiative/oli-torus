@@ -16,7 +16,6 @@ import {
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   selectInitPhaseComplete,
@@ -25,6 +24,7 @@ import {
   selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
+import { selectActivtyAttemptState } from '../store/features/attempt/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
@@ -252,6 +252,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
+  const latestAttempt = useSelector((state) =>
+    selectActivtyAttemptState(state as any, activity.resourceId),
+  );
 
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
@@ -263,10 +266,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   useEffect(() => {
     if (checkInProgress && lastCheckResults) {
-      ref.current.notify(NotificationType.CHECK_COMPLETE, { results: lastCheckResults });
+      /* console.log('AR CHECK COMPLETE') */
+      ref.current.notify(NotificationType.CHECK_COMPLETE, {
+        attempt: latestAttempt,
+        results: lastCheckResults,
+      });
       setCheckInProgress(false);
     }
-  }, [checkInProgress, lastCheckResults]);
+  }, [checkInProgress, lastCheckResults, latestAttempt]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.

@@ -39,6 +39,21 @@ const slice: Slice<AttemptState> = createSlice({
       adapter.setAll(state, action.payload.attempts);
     },
     upsertActivityAttemptState(state, action: PayloadAction<{ attempt: ActivityState }>) {
+      // we only want to keep the latest attempt record for any activityId
+      const existing = adapter
+        .getSelectors()
+        .selectAll(state)
+        .filter(
+          (attempt) =>
+            attempt.activityId === action.payload.attempt.activityId &&
+            attempt.attemptGuid !== action.payload.attempt.attemptGuid,
+        );
+      if (existing.length) {
+        adapter.removeMany(
+          state,
+          existing.map((e) => e.attemptGuid),
+        );
+      }
       adapter.upsertOne(state, action.payload.attempt);
     },
   },

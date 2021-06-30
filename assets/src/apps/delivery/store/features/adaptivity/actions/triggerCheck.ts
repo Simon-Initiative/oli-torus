@@ -168,6 +168,7 @@ export const triggerCheck = createAsyncThunk(
     }
 
     if (!isCorrect) {
+      console.log('Incorrect, time for new attempt');
       await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );

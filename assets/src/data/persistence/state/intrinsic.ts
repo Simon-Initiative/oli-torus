@@ -80,14 +80,32 @@ export const writePartAttemptState = async (
 export const createNewActivityAttempt = async (
   sectionSlug: string,
   attemptGuid: string,
+  seedResponsesWithPrevious = false,
 ): Promise<any> => {
+  // type ActivityState ? this is in components currently
   const method = 'POST';
   const url = `/state/course/${sectionSlug}/activity_attempt/${attemptGuid}`;
   const result = await makeRequest({
     url,
     method,
   });
-  return result;
+  const newAttempt: any = result;
+  // BS: this should likely be moved to back end to save a trip
+  if (seedResponsesWithPrevious) {
+    const [previousAttempt] = await getBulkAttemptState(sectionSlug, [attemptGuid]);
+    previousAttempt.parts.forEach((prevPart: any) => {
+      const newPart = newAttempt.parts.find((p: any) => p.partId === prevPart.partId);
+      if (newPart) {
+        newPart.response = prevPart.response;
+      }
+    });
+    const partInputs = (newAttempt.parts as any[]).map(({ attemptGuid, response }) => ({
+      attemptGuid,
+      response,
+    }));
+    await writeActivityAttemptState(sectionSlug, newAttempt.attemptGuid, partInputs);
+  }
+  return newAttempt;
 };
 
 export const evalActivityAttempt = async (
