@@ -4,7 +4,7 @@ import { classNames } from 'utils/classNames';
 import { IconCorrect } from 'components/misc/Icons';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import './Settings.scss';
+import './ActivitySettings.scss';
 
 interface SettingProps {
   isEnabled: boolean;
@@ -45,7 +45,17 @@ const Menu: React.FC<MenuProps> = ({ children }) => {
   );
 };
 
-export const Settings = {
-  Menu,
-  Setting,
+export type Setting = { isEnabled: boolean; onToggle: () => void; label: string };
+export const ActivitySettings: React.FC<{
+  settings: Setting[];
+}> = ({ settings }) => {
+  return (
+    <Menu>
+      {settings.map(({ isEnabled, onToggle, label }, i) => (
+        <Setting key={i} isEnabled={isEnabled} onToggle={onToggle}>
+          {label}
+        </Setting>
+      ))}
+    </Menu>
+  );
 };

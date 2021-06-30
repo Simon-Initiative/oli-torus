@@ -109,7 +109,6 @@ export class InlineActivityEditor extends React.Component<
       <div className="col-12">
         <div className="activity-editor">
           <TitleBar
-            className="mb-4"
             title={this.props.title}
             onTitleEdit={onTitleEdit}
             editMode={this.props.editMode}
