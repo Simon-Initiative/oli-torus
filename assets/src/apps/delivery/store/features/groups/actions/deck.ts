@@ -264,9 +264,30 @@ export const navigateToPrevActivity = createAsyncThunk(
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = 1;
+    const currentActivityId = selectCurrentActivityId(rootState);
+    const currentIndex = sequence.findIndex(
+      (entry) => entry.custom.sequenceId === currentActivityId,
+    );
+    let previousEntry: SequenceEntry<SequenceEntryType> | null = null;
+    let navError = '';
+    if (currentIndex >= 0) {
+      const nextIndex = currentIndex - 1;
+      previousEntry = sequence[nextIndex];
+      while (previousEntry && previousEntry?.custom?.isLayer) {
+        const layerIndex = sequence.findIndex(
+          (entry) => entry.custom.sequenceId === previousEntry?.custom?.sequenceId,
+        );
+        console.log({ currentIndex, layerIndex });
 
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
+        previousEntry = sequence[layerIndex - 1];
+      }
+    } else {
+      navError = `Current Activity ${currentActivityId} not found in sequence`;
+    }
+    if (navError) {
+      throw new Error(navError);
+    }
+    thunkApi.dispatch(setCurrentActivityId({ activityId: previousEntry?.custom.sequenceId }));
   },
 );
 
