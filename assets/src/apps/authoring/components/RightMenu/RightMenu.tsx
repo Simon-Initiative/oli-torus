@@ -33,14 +33,14 @@ const RightMenu: React.FC<any> = (props) => {
         <PropertyEditor
           schema={lessonSchema}
           value={currentLesson}
-          onChangeHandler={props.onChangeHandler}
+          onChangeHandler={props.lessonPropsChangeHandler}
         />
       </Tab>
       <Tab eventKey="screen" title="Screen">
         <PropertyEditor
           schema={screenSchema}
           value={currentActivity?.model.custom}
-          onChangeHandler={props.onChangeHandler}
+          onChangeHandler={props.screenPropsChangeHandler}
         />
       </Tab>
       <Tab eventKey="component" title="Component" disabled={!currentComponent}>
@@ -48,7 +48,7 @@ const RightMenu: React.FC<any> = (props) => {
           <PropertyEditor
             schema={componentSchema}
             value={currentComponent}
-            onChangeHandler={props.onChangeHandler}
+            onChangeHandler={props.componentPropsChangeHandler}
           />
         )}
       </Tab>
