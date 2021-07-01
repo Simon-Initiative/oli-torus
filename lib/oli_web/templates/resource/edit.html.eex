@@ -1,4 +1,3 @@
-<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/shared.js") %>"></script>
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/resourceeditor.js") %>"></script>
 
 <%= for script <- @scripts do %>

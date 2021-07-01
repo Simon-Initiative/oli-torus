@@ -5,12 +5,10 @@ import { Maybe, maybe } from 'tsmonad';
 import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
 import ResourceEditor from 'components/resource/resourceEditor/ResourceEditor';
-import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 
 export const registry = {
   Editor,
   ResourceEditor,
-  CreateAccountPopup,
 } as any;
 
 export type ComponentName = keyof typeof registry;
