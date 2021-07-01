@@ -94,8 +94,7 @@ defmodule Oli.BrandingTest do
       section =
         section_fixture(%{
           context_id: "some-context-id",
-          project_id: project.id,
-          publication_id: publication.id,
+          base_project_id: project.id,
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id
         })
@@ -103,8 +102,7 @@ defmodule Oli.BrandingTest do
       oaf_section =
         section_fixture(%{
           context_id: UUID.uuid4(),
-          project_id: project.id,
-          publication_id: publication.id,
+          base_project_id: project.id,
           open_and_free: true,
           registration_open: true
         })

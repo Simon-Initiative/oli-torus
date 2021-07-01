@@ -18,7 +18,7 @@ defmodule Oli.Delivery.Sections.SectionsProjectsPublications do
   @doc false
   def changeset(user_section, attrs \\ %{}) do
     user_section
-    |> cast(attrs, [:author_id, :section_id])
-    |> validate_required([:author_id, :section_id])
+    |> cast(attrs, [:section_id, :project_id, :publication_id])
+    |> validate_required([:section_id, :project_id, :publication_id])
   end
 end

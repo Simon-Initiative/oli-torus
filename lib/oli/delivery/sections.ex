@@ -11,6 +11,8 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.DataProviders.EctoProvider
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
   alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing.Publication
 
   @doc """
   Enrolls a user in a course section
@@ -282,6 +284,7 @@ defmodule Oli.Delivery.Sections do
       iex> get_sections_by_publication("456")
       ** (Ecto.NoResultsError)
   """
+  # TODO: update query
   def get_sections_by_publication(publication) do
     from(s in Section, where: s.publication_id == ^publication.id and s.status != :deleted)
     |> Repo.all()
@@ -349,5 +352,140 @@ defmodule Oli.Delivery.Sections do
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
     Section.changeset(section, attrs)
+  end
+
+  @doc """
+  Create all section resources from the given section and publication using the
+  root resource's revision tree. Returns the root section resource record.
+  """
+  def create_section_resources(
+        %Section{} = section,
+        %Publication{root_resource: root_resource} = publication
+      ) do
+    revisions_by_id =
+      Oli.Publishing.get_published_revisions(publication)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+
+    numberings = %{}
+    level = 0
+
+    {root_section_resource_id, _numberings} =
+      create_section_resource(
+        section,
+        publication,
+        revisions_by_id,
+        Map.get(revisions_by_id, root_resource.id),
+        level,
+        numberings
+      )
+
+    update_section(section, %{root_section_resource_id: root_section_resource_id})
+    |> case do
+      {:ok, section} ->
+        {:ok, Repo.preload(section, [:root_section_resource])}
+
+      e ->
+        e
+    end
+  end
+
+  # This function constructs a section resource record by recursively calling itself on all the
+  # children for the revision, then inserting the resulting struct into the database and returning its id.
+  # This may not be the most efficient way of doing this but it seems to be the only way to create the records
+  # in one go, otherwise section record creation then constructing relationships by updating the children
+  # for each record would have to be two separate traversals
+  defp create_section_resource(
+         section,
+         publication,
+         revisions_by_id,
+         revision,
+         level,
+         numberings
+       ) do
+    {numberings, numbering_index} = increment_count(numberings, level)
+
+    {children, numberings} =
+      Enum.reduce(
+        revision.children,
+        {[], numberings},
+        fn resource_id, {children_ids, numberings} ->
+          {id, numberings} =
+            create_section_resource(
+              section,
+              publication,
+              revisions_by_id,
+              Map.get(revisions_by_id, resource_id),
+              level + 1,
+              numberings
+            )
+
+          {children_ids ++ [id], numberings}
+        end
+      )
+
+    %SectionResource{id: section_resource_id} =
+      Oli.Repo.insert!(%SectionResource{
+        numbering_index: numbering_index,
+        numbering_level: level,
+        children: children,
+        slug: revision.slug,
+        resource_id: revision.resource_id,
+        project_id: publication.project_id,
+        section_id: section.id
+      })
+
+    {section_resource_id, numberings}
+  end
+
+  defp increment_count(numberings, level) do
+    count = count_at_level(numberings, level) + 1
+
+    {Map.put(numberings, level, count), count}
+  end
+
+  defp count_at_level(numberings, level) do
+    case Map.get(numberings, level) do
+      nil ->
+        0
+
+      count ->
+        count
+    end
+  end
+
+  @doc """
+  Reconstructs the section resource hierarchy for a section
+  """
+  def get_section_resource_hierarchy(%Section{
+        id: section_id,
+        root_section_resource: root_section_resource
+      }) do
+    section_resources_by_id =
+      all_section_resources(section_id)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    section_resource_with_children(root_section_resource, section_resources_by_id)
+  end
+
+  defp all_section_resources(section_id) do
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id,
+      select: sr
+    )
+    |> Repo.all()
+  end
+
+  defp section_resource_with_children(
+         %SectionResource{children: children_ids} = section_resource,
+         section_resources_by_id
+       ) do
+    Map.put(
+      section_resource,
+      :children,
+      Enum.map(children_ids, fn c_id ->
+        Map.get(section_resources_by_id, c_id)
+        |> section_resource_with_children(section_resources_by_id)
+      end)
+    )
   end
 end

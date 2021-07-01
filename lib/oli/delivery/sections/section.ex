@@ -8,7 +8,9 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Institutions.Institution
   alias Oli.Publishing.Publication
   alias Oli.Branding.Brand
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.DeliveryPolicy
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   schema "sections" do
     field :registration_open, :boolean, default: false
@@ -21,7 +23,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :open_and_free, :boolean, default: false
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
     field :invite_token, :string
-    field :passcode_hash, :string
+    field :passcode, :string
 
     field :grade_passback_enabled, :boolean, default: false
     field :line_items_service_url, :string
@@ -32,8 +34,6 @@ defmodule Oli.Delivery.Sections.Section do
       foreign_key: :lti_1p3_deployment_id
 
     belongs_to :institution, Institution
-    belongs_to :project, Project
-    belongs_to :publication, Publication
     belongs_to :brand, Brand
 
     has_many :enrollments, Enrollment
@@ -48,12 +48,12 @@ defmodule Oli.Delivery.Sections.Section do
     has_many :section_resources, SectionResource
 
     # section delivery policy
-    belongs_to :policy, DeliveryPolicy
+    belongs_to :delivery_policy, DeliveryPolicy
 
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
-    many_to_many :projects, Project, join_through: SectionProjectPublication
-    many_to_many :publications, Publication, join_through: SectionProjectPublication
+    many_to_many :projects, Project, join_through: SectionsProjectsPublications
+    many_to_many :publications, Publication, join_through: SectionsProjectsPublications
 
     timestamps(type: :utc_datetime)
   end
@@ -71,20 +71,25 @@ defmodule Oli.Delivery.Sections.Section do
       :slug,
       :open_and_free,
       :status,
+      :invite_token,
+      :passcode,
       :grade_passback_enabled,
       :line_items_service_url,
       :nrps_enabled,
       :nrps_context_memberships_url,
       :lti_1p3_deployment_id,
       :institution_id,
-      :project_id,
-      :publication_id,
-      :brand_id,
       :base_project_id,
-      :root_section_resource_id,
-      :policy_id
+      :brand_id,
+      :delivery_policy_id,
+      :root_section_resource_id
     ])
-    |> validate_required([:title, :timezone, :registration_open, :project_id, :publication_id])
+    |> validate_required([
+      :title,
+      :timezone,
+      :registration_open,
+      :base_project_id
+    ])
     |> Slug.update_never("sections")
   end
 end

@@ -217,8 +217,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section_fixture(%{
         institution_id: institution.id,
         lti_1p3_deployment_id: deployment.id,
-        project_id: project.id,
-        publication_id: publication.id
+        base_project_id: project.id
       })
 
     user = user_fixture()

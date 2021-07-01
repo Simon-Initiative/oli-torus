@@ -2,8 +2,7 @@ defmodule Oli.Delivery.DeliveryPolicy do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Sections.UserGroup
+  alias Oli.Delivery.Sections.Section
 
   schema "delivery_policies" do
     field :assessment_scoring_model, Ecto.Enum,
@@ -24,11 +23,7 @@ defmodule Oli.Delivery.DeliveryPolicy do
     # (-2) = recommended, (-1) = unlimited, 0+ = specific number
     field :assessment_num_attempts, :integer
 
-    belongs_to :section_resource, SectionResource
-    belongs_to :section, SectionResource
-
-    # may belong to a particular student group
-    belongs_to :user_group, UserGroup
+    belongs_to :section, Section
 
     timestamps(type: :utc_datetime)
   end
@@ -44,7 +39,6 @@ defmodule Oli.Delivery.DeliveryPolicy do
       :assessment_feedback_mode,
       :assessment_review_answers_policy,
       :assessment_num_attempts,
-      :section_resource_id,
       :section_id,
       :user_group_id
     ])

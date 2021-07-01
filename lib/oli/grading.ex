@@ -233,6 +233,7 @@ defmodule Oli.Grading do
   def fetch_graded_pages(section_slug) do
     resource_type_id = ResourceType.get_id_by_type("page")
 
+    # TODO: update query
     Repo.all(
       from(s in Section,
         join: p in Publication,

@@ -628,8 +628,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     section =
       section_fixture(%{
         context_id: "some-context-id",
-        project_id: map.project.id,
-        publication_id: map.publication.id,
+        base_project_id: map.project.id,
         institution_id: map.institution.id,
         open_and_free: false
       })
@@ -668,8 +667,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     section =
       section_fixture(%{
         institution_id: institution.id,
-        project_id: project.id,
-        publication_id: publication.id,
+        base_project_id: project.id,
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true

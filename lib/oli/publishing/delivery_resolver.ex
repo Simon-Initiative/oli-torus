@@ -12,6 +12,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   @behaviour Resolver
 
   @impl Resolver
+  # TODO: update query
   def from_resource_id(section_slug, resource_ids) when is_list(resource_ids) do
     fn ->
       revisions =
@@ -34,6 +35,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  # TODO: update query
   def from_resource_id(section_slug, resource_id) do
     fn ->
       from(s in Section,
@@ -73,6 +75,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  # TODO: update query
   def publication(section_slug) do
     fn ->
       Repo.one(
@@ -88,6 +91,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  # TODO: update query
   def root_container(section_slug) do
     fn ->
       from(s in Section,
@@ -109,6 +113,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  # TODO: update query
   def all_revisions_in_hierarchy(section_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -157,6 +162,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
+  # TODO: update query
   defp published_publication(section_slug) do
     from(s in Section,
       where: s.slug == ^section_slug,

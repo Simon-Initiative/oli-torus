@@ -49,6 +49,7 @@ defmodule Oli.Delivery.Attempts.Core do
 
   `[%ResourceAccess{}, ...]`
   """
+  # TODO: update query
   def get_graded_resource_access_for_context(section_slug) do
     Repo.all(
       from(a in ResourceAccess,
@@ -69,6 +70,7 @@ defmodule Oli.Delivery.Attempts.Core do
 
   `[%ResourceAccess{}, ...]`
   """
+  # TODO: update query
   def get_resource_access_for_page(section_slug, resource_id) do
     Repo.all(
       from(a in ResourceAccess,
@@ -91,6 +93,7 @@ defmodule Oli.Delivery.Attempts.Core do
 
   `[%ResourceAccess{}, ...]`
   """
+  # TODO: update query
   def get_user_resource_accesses_for_context(section_slug, user_id) do
     Repo.all(
       from(a in ResourceAccess,

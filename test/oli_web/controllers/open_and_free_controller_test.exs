@@ -2,19 +2,19 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   use OliWeb.ConnCase
 
   @create_attrs %{
-    end_date: ~D[2010-04-17],
+    end_date: ~U[2010-04-17 00:00:00.000000Z],
     open_and_free: true,
     registration_open: true,
-    start_date: ~D[2010-04-17],
+    start_date: ~U[2010-04-17 00:00:00.000000Z],
     timezone: "some timezone",
     title: "some title",
     context_id: "some context_id"
   }
   @update_attrs %{
-    end_date: ~D[2011-05-18],
+    end_date: ~U[2010-05-18 00:00:00.000000Z],
     open_and_free: true,
     registration_open: false,
-    start_date: ~D[2011-05-18],
+    start_date: ~U[2010-05-18 00:00:00.000000Z],
     timezone: "some updated timezone",
     title: "some updated title",
     context_id: "some updated context_id"
@@ -107,8 +107,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     section =
       section_fixture(%{
         institution_id: institution.id,
-        project_id: project.id,
-        publication_id: publication.id,
+        base_project_id: project.id,
         context_id: UUID.uuid4(),
         open_and_free: true
       })

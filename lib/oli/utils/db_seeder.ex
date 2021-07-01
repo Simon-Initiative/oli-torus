@@ -257,15 +257,14 @@ defmodule Oli.Seeder do
 
   def create_section(map) do
     params = %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: false,
       registration_open: true,
-      start_date: ~D[2010-04-17],
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
       timezone: "some timezone",
       title: "some title",
       context_id: "context_id",
-      project_id: map.project.id,
-      publication_id: map.publication.id,
+      base_project_id: map.project.id,
       institution_id: map.institution.id
     }
 

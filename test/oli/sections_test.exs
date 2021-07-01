@@ -9,10 +9,10 @@ defmodule Oli.SectionsTest do
 
   describe "enrollments" do
     @valid_attrs %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: true,
       registration_open: true,
-      start_date: ~D[2010-04-17],
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
       timezone: "some timezone",
       title: "some title",
       context_id: "context_id"
@@ -102,19 +102,19 @@ defmodule Oli.SectionsTest do
 
   describe "sections" do
     @valid_attrs %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: true,
       registration_open: true,
-      start_date: ~D[2010-04-17],
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
       timezone: "some timezone",
       title: "some title",
       context_id: "some context_id"
     }
     @update_attrs %{
-      end_date: ~D[2011-05-18],
+      end_date: ~U[2011-05-18 00:00:00.000000Z],
       open_and_free: false,
       registration_open: false,
-      start_date: ~D[2011-05-18],
+      start_date: ~U[2011-05-18 00:00:00.000000Z],
       timezone: "some updated timezone",
       title: "some updated title",
       context_id: "some updated context_id"
@@ -149,9 +149,9 @@ defmodule Oli.SectionsTest do
 
     test "create_section/1 with valid data creates a section", %{valid_attrs: valid_attrs} do
       assert {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
-      assert section.end_date == ~D[2010-04-17]
+      assert section.end_date == ~U[2010-04-17 00:00:00.000000Z]
       assert section.registration_open == true
-      assert section.start_date == ~D[2010-04-17]
+      assert section.start_date == ~U[2010-04-17 00:00:00.000000Z]
       assert section.timezone == "some timezone"
       assert section.title == "some title"
     end
@@ -197,9 +197,9 @@ defmodule Oli.SectionsTest do
 
     test "update_section/2 with valid data updates the section", %{section: section} do
       assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
-      assert section.end_date == ~D[2011-05-18]
+      assert section.end_date == ~U[2011-05-18 00:00:00.000000Z]
       assert section.registration_open == false
-      assert section.start_date == ~D[2011-05-18]
+      assert section.start_date == ~U[2011-05-18 00:00:00.000000Z]
       assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
@@ -216,6 +216,55 @@ defmodule Oli.SectionsTest do
 
     test "change_section/1 returns a section changeset", %{section: section} do
       assert %Ecto.Changeset{} = Sections.change_section(section)
+    end
+  end
+
+  describe "section resources" do
+    setup do
+      map = Seeder.base_project_with_resource3()
+
+      institution = Map.get(map, :institution)
+      project = Map.get(map, :project)
+
+      valid_attrs =
+        Map.put(@valid_attrs, :institution_id, institution.id)
+        |> Map.put(:base_project_id, project.id)
+
+      {:ok, section} = valid_attrs |> Sections.create_section()
+
+      {:ok, Map.merge(map, %{section: section})}
+    end
+
+    test "build_section_resources/1 creates a hierarchy of section resources", %{
+      section: section,
+      publication: publication
+    } do
+      publication = Oli.Repo.preload(publication, [:root_resource])
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      section_resource_hierarchy = Sections.get_section_resource_hierarchy(section)
+
+      assert section_resource_hierarchy.numbering_index == 1
+      assert section_resource_hierarchy.numbering_level == 0
+      assert Enum.count(section_resource_hierarchy.children) == 3
+      assert section_resource_hierarchy.children |> Enum.at(0) |> Map.get(:numbering_index) == 1
+      assert section_resource_hierarchy.children |> Enum.at(0) |> Map.get(:numbering_level) == 1
+
+      assert section_resource_hierarchy.children |> Enum.at(1) |> Map.get(:numbering_index) == 2
+      assert section_resource_hierarchy.children |> Enum.at(2) |> Map.get(:numbering_index) == 3
+
+      assert section_resource_hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_index) == 1
+
+      assert section_resource_hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_level) == 2
     end
   end
 end
