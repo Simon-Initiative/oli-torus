@@ -6,6 +6,7 @@ import {
   ResetActivityResponse,
 } from 'components/activities/DeliveryElement';
 import { MultipleChoiceModelSchema } from 'components/activities/multiple_choice/schema';
+import { OrderingModelSchema } from 'components/activities/ordering/schema';
 import {
   ActivityState,
   ChoiceId,
@@ -30,7 +31,7 @@ export interface ActivityDeliveryState {
   hasMoreHints: boolean;
 }
 export const slice = createSlice({
-  name: 'CATADelivery',
+  name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
   reducers: {
     activitySubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
@@ -143,6 +144,15 @@ export const initializeState =
               .reduce((ids, id) => ids.concat([id]), [] as ChoiceId[]),
       ),
     );
+  };
+
+export const initializeStateOrdering =
+  (model: OrderingModelSchema, state: ActivityState): AppThunk =>
+  async (dispatch, getState) => {
+    dispatch(slice.actions.setHints(state.parts[0].hints));
+    dispatch(slice.actions.setAttemptState(state));
+    dispatch(slice.actions.setHasMoreHints(state.parts[0].hasMoreHints));
+    dispatch(slice.actions.setSelectedChoices(model.choices.map((choice) => choice.id)));
   };
 
 export const selectChoice =
