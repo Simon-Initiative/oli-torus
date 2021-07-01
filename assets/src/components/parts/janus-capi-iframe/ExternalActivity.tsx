@@ -295,7 +295,7 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -435,8 +435,6 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
-              console.log({ finalCurrentStateSnapshot });
-
               processInitStateVariable(finalCurrentStateSnapshot);
               setSimIsInitStatePassedOnce(false);
             }
