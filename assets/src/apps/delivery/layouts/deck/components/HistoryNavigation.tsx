@@ -29,40 +29,32 @@ const HistoryNavigation: React.FC = () => {
   // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
     .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
-    ?.map((entry) => entry.split('|')[0]);
+    ?.reverse()
+    .map((entry) => entry.split('|')[0]);
 
   // Get the activity names and ids to be displaeyd in histroy panel
-  const historyItems =
-    sequences
-      ?.filter((sequence) => globalSnapshot.includes(sequence.custom?.sequenceId))
-      .map((entry: any) => {
-        return {
-          id: entry.custom?.sequenceId,
-          // TODO: pull all ensembles in sequence and get their names?
-          // maybe need a history state to track this instead!
-          name: entry.custom?.sequenceName || entry.id,
-        };
-      }) || [];
-  /*   // Get the activity names and ids to be displaeyd in histroy panel
   const historyItems = globalSnapshot?.map((activityId) => {
     const foundSequence = sequences.filter(
       (sequence) => sequence.custom?.sequenceId === activityId,
     )[0];
+
     return {
       id: foundSequence.custom?.sequenceId,
       name: foundSequence.custom?.sequenceName || foundSequence.id,
+      timestamp: snapshot[`${foundSequence.custom?.sequenceId}|visitTimestamp`],
     };
-  }); */
+  });
+
   const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
-  const isFirst = currentEnsembleIndex === 0;
-  const isLast = currentEnsembleIndex === historyItems.length - 1;
+  const isFirst = currentEnsembleIndex === historyItems.length - 1;
+  const isLast = currentEnsembleIndex === 0;
   const nextHandler = () => {
-    const prevActivity = historyItems[currentEnsembleIndex + 1];
+    const prevActivity = historyItems[currentEnsembleIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
   };
 
   const prevHandler = () => {
-    const prevActivity = historyItems[currentEnsembleIndex - 1];
+    const prevActivity = historyItems[currentEnsembleIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
   };
   return (
@@ -113,13 +105,14 @@ const HistoryNavigation: React.FC = () => {
                 onRestart={restartHandler}
               />
             </Fragment>
-          ) : null}
-          <button onClick={restartHandler} className="theme-no-history-restart">
-            <span>
-              <div className="theme-no-history-restart__icon" />
-              <span className="theme-no-history-restart__label">Restart Lesson</span>
-            </span>
-          </button>
+          ) : (
+            <button onClick={restartHandler} className="theme-no-history-restart">
+              <span>
+                <div className="theme-no-history-restart__icon" />
+                <span className="theme-no-history-restart__label">Restart Lesson</span>
+              </span>
+            </button>
+          )}
         </aside>
       </div>
     </Fragment>

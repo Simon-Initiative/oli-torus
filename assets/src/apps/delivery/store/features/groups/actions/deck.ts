@@ -96,11 +96,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
-    const targetVisitTimeStampOp: ApplyStateOperation = {
-      target: `${currentSequenceId}|visitTimestamp`,
-      operator: '=',
-      value: Date.now(),
-    };
+
     const sessionOps = [
       visitOperation,
       timeStartOp,
@@ -108,11 +104,23 @@ export const initializeActivity = createAsyncThunk(
       timeExceededOp,
       attemptNumberOp,
       targettedAttemptNumberOp,
-      targetVisitTimeStampOp,
       tutorialScoreOp,
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
+
+    const globalSnapshot = getEnvState(defaultGlobalEnv);
+    const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
+
+    if (!isActivityAlreadyVisited) {
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: `${currentSequenceId}|visitTimestamp`,
+        operator: '=',
+        value: Date.now(),
+      };
+      sessionOps.push(targetVisitTimeStampOp);
+    }
+
     //Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
@@ -124,9 +132,13 @@ export const initializeActivity = createAsyncThunk(
         [currentActivityId],
         defaultGlobalEnv,
       );
+
       const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
         .map((key: string) => {
-          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
+          if (
+            (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) &&
+            key.indexOf('visitTimestamp') === -1
+          ) {
             return key;
           }
         })
