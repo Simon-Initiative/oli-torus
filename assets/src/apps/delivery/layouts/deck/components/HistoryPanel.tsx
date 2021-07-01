@@ -1,8 +1,4 @@
-import {
-  selectCurrentActivityId,
-  selectCurrentActivityContent,
-} from '../../../store/features/activities/slice';
-import { selectPageContent } from '../../../store/features/page/slice';
+import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
@@ -23,10 +19,7 @@ interface HistoryPanelProps {
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestart }) => {
   const dispatch = useDispatch();
-
-  const currentPage = useSelector(selectPageContent);
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const currentActivity = useSelector(selectCurrentActivityContent);
 
   const itemClickHandler = (item: HistoryEntry) => {
     dispatch(navigateToActivity(item.id));

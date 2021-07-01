@@ -96,6 +96,11 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: `${currentSequenceId}|visitTimestamp`,
+      operator: '=',
+      value: Date.now(),
+    };
     const sessionOps = [
       visitOperation,
       timeStartOp,
@@ -103,6 +108,7 @@ export const initializeActivity = createAsyncThunk(
       timeExceededOp,
       attemptNumberOp,
       targettedAttemptNumberOp,
+      targetVisitTimeStampOp,
       tutorialScoreOp,
       // must come *after* the tutorial score op
       currentScoreOp,

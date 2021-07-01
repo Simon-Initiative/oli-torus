@@ -5,29 +5,23 @@ import { useDispatch, useSelector } from 'react-redux';
 import HistoryPanel from './HistoryPanel';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { selectEnableHistory } from '../../../store/features/page/slice';
+import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import {
+  navigateToActivity,
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
+
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const isHistoryModeOn = true; //useSelector(selectEnableHistory);
   const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
-
   const dispatch = useDispatch();
 
   const restartHandler = () => {
     dispatch(setRestartLesson({ restartLesson: true }));
-  };
-
-  const nextHandler = () => {
-    dispatch(navigateToNextActivity());
-  };
-
-  const prevHandler = () => {
-    dispatch(navigateToPrevActivity());
   };
 
   const minimizeHandler = () => {
@@ -36,14 +30,20 @@ const HistoryNavigation: React.FC = () => {
 
   // TODO this is actually driven by the student's history IF you are a student
   //and the toc otherwise
+
+  const snapshot = getEnvState(defaultGlobalEnv);
+  console.log({ snapshot });
+
+  const globalSnapshot = Object.keys(snapshot)
+    .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
+    ?.map((entry) => entry.split('|')[0]);
+
   const historyItems =
     sequences
-      ?.filter((sequence) => !sequence?.custom?.isLayer)
+      ?.filter((sequence) => globalSnapshot.includes(sequence.custom?.sequenceId))
       .map((entry: any) => {
         return {
           id: entry.custom?.sequenceId,
-          // TODO: pull all ensembles in sequence and get their names?
-          // maybe need a history state to track this instead!
           name: entry.custom?.sequenceName || entry.id,
         };
       }) || [];
@@ -51,7 +51,15 @@ const HistoryNavigation: React.FC = () => {
   const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
   const isFirst = currentEnsembleIndex === 0;
   const isLast = currentEnsembleIndex === historyItems.length - 1;
+  const nextHandler = () => {
+    const prevActivity = historyItems[currentEnsembleIndex + 1];
+    dispatch(navigateToActivity(prevActivity.id));
+  };
 
+  const prevHandler = () => {
+    const prevActivity = historyItems[currentEnsembleIndex - 1];
+    dispatch(navigateToActivity(prevActivity.id));
+  };
   return (
     <Fragment>
       {isHistoryModeOn ? (
