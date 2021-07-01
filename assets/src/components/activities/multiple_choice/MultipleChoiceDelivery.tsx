@@ -17,7 +17,7 @@ import {
   slice,
   isEvaluated,
 } from 'data/content/activities/DeliveryState';
-import { Radio } from 'components/activities/common/icons/Radio';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';

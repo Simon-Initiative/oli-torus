@@ -1,5 +1,5 @@
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
-import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { Manifest } from 'components/activities/types';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import {

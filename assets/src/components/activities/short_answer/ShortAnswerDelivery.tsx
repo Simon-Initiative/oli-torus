@@ -14,8 +14,9 @@ import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/delivery/evaluation/Evaluation';
 import { valueOr } from 'utils/common';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { defaultWriterContext } from 'data/content/writers/context';
+import { Cross } from 'components/misc/icons/Cross';
+import { Checkmark } from 'components/misc/icons/Checkmark';
 
 type Evaluation = {
   score: number;
@@ -156,7 +157,7 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
 
   const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
 
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
+  const correctnessIcon = attemptState.score === 0 ? <Cross /> : <Checkmark />;
 
   const gradedPoints =
     props.graded && props.review

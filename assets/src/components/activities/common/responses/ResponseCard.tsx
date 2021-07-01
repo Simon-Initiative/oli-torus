@@ -6,7 +6,7 @@ import { Choice, ChoiceId, Response, RichText } from 'components/activities/type
 import { Tooltip } from 'components/misc/Tooltip';
 import { Card } from 'components/misc/Card';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 
 export const ResponseCard: React.FC<{
   title: React.ReactNode;

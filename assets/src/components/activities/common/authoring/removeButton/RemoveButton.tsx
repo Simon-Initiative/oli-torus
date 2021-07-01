@@ -1,6 +1,7 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButton } from 'components/activities/common/authoring/AuthoringButton';
 import React, { MouseEventHandler } from 'react';
+import './RemoveButton.scss';
 
 type Props = {
   onClick: MouseEventHandler<HTMLButtonElement>;
@@ -10,16 +11,12 @@ type Props = {
 };
 
 export const RemoveButton: React.FC<Props> = (props) => (
-  <AuthoringButton editMode={props.editMode} onClick={props.onClick} className="RemoveButton p-0">
-    <i
-      style={{
-        cursor: 'default',
-        pointerEvents: 'none',
-        display: 'block',
-        ...props.style,
-      }}
-      className="material-icons-outlined"
-    >
+  <AuthoringButton
+    editMode={props.editMode}
+    onClick={props.onClick}
+    className="removeButton__button"
+  >
+    <i style={props.style} className="removeButton__icon material-icons-outlined">
       close
     </i>
   </AuthoringButton>

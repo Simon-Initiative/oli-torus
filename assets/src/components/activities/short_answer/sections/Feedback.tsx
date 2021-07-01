@@ -4,10 +4,11 @@ import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText, Response } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { Checkmark } from 'components/misc/icons/Checkmark';
 import { parseInputFromRule } from '../utils';
 import { ProjectSlug } from 'data/types';
 import { CloseButton } from 'components/misc/CloseButton';
+import { Cross } from 'components/misc/icons/Cross';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;
@@ -40,7 +41,7 @@ export const Item = (props: ItemProps) => {
     return (
       <div className="my-3" key={response.id}>
         <Description>
-          <IconCorrect /> Feedback for Correct Answer:
+          <Checkmark /> Feedback for Correct Answer:
           <input
             type={props.model.inputType === 'numeric' ? 'number' : 'text'}
             className="form-control my-2"
@@ -62,7 +63,7 @@ export const Item = (props: ItemProps) => {
     return (
       <div className="my-3" key={response.id}>
         <Description>
-          <IconIncorrect /> Feedback for any other Incorrect Answer
+          <Cross /> Feedback for any other Incorrect Answer
         </Description>
         <RichTextEditor
           projectSlug={props.projectSlug}
@@ -78,7 +79,7 @@ export const Item = (props: ItemProps) => {
     <div className="my-3 d-flex mb-3" key={response.id}>
       <div className="d-flex flex-column flex-grow-1">
         <Description>
-          <IconIncorrect /> Feedback for Incorrect Answer:
+          <Cross /> Feedback for Incorrect Answer:
           <input
             type={props.model.inputType === 'numeric' ? 'number' : 'text'}
             className="form-control"

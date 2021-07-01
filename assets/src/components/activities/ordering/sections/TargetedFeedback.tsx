@@ -2,7 +2,7 @@ import React from 'react';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ChoiceIdsToResponseId, ModelEditorProps, TargetedOrdering } from '../schema';
 import { Description } from 'components/misc/Description';
-import { IconIncorrect } from 'components/misc/Icons';
+import { Cross } from 'components/misc/icons/Cross';
 import { ProjectSlug } from 'data/types';
 import { getChoiceIds, getResponse, getResponseId } from '../utils';
 import { Typeahead } from 'react-bootstrap-typeahead';
@@ -57,7 +57,7 @@ export const TargetedFeedback = (props: Props) => {
         return (
           <div className="mb-3" key={response.id}>
             <Description>
-              <IconIncorrect /> Feedback for Incorrect Answer
+              <Cross /> Feedback for Incorrect Answer
               <Typeahead
                 isInvalid={selected[response.id].length < allChoiceOptions.length}
                 id={response.id}
