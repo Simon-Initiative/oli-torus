@@ -295,7 +295,7 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -316,6 +316,56 @@ const ExternalActivity: React.FC<any> = (props) => {
       // eslint-disable-next-line
       console.log(`%c Capi(${id}) - ${msg}`, colorStyle, ...args);
     }
+  };
+
+  const getInterestedVars = (vars: any) => {
+    const interested = Object.keys(vars).filter((ms: any) => {
+      const isMine = ms.indexOf(`stage.${id}.`) === 0;
+      if (!isMine) {
+        return false;
+      }
+      const internalValue = externalActivityMap.get(ms);
+      let mineValue = vars[ms];
+      let internalVal: any = internalValue?.value;
+
+      if (ms.type === CapiVariableTypes.BOOLEAN && typeof internalVal === 'string') {
+        mineValue = JSON.stringify(mineValue);
+      }
+      if (ms.type === CapiVariableTypes.NUMBER && typeof internalVal === 'string') {
+        mineValue = JSON.stringify(mineValue);
+      }
+      if (
+        typeof vars[ms] === 'object' &&
+        Array.isArray(vars[ms]) &&
+        typeof internalVal === 'string'
+      ) {
+        internalVal = new CapiVariable({
+          key: ms.key,
+          type: ms.type,
+          value: internalVal,
+        });
+        if (Array.isArray(internalVal.value) && Array.isArray(mineValue)) {
+          return JSON.stringify(internalVal.value) !== JSON.stringify(mineValue);
+        }
+      }
+      if (
+        typeof vars[ms] === 'object' &&
+        Array.isArray(vars[ms]) &&
+        typeof internalVal === 'object' &&
+        Array.isArray(internalVal)
+      ) {
+        return JSON.stringify(internalVal) !== JSON.stringify(mineValue);
+      }
+      if (mineValue == '' && internalVal == null) return false;
+      return !internalValue || internalVal != mineValue;
+    });
+    if (interested.length) {
+      return interested.reduce((collect: any, key: string) => {
+        collect[key] = vars[key];
+        return collect;
+      }, {});
+    }
+    return {};
   };
 
   useEffect(() => {
@@ -368,6 +418,10 @@ const ExternalActivity: React.FC<any> = (props) => {
                 payload,
               });
               const currentMutateStateSnapshot = payload.mutateChanges;
+              //udpate the local key-value pair when variables changed by mutation i.e. from outside
+              Object.keys(currentMutateStateSnapshot).forEach((key) => {
+                externalActivityMap.set(key, currentMutateStateSnapshot[key]);
+              });
               processInitStateVariable(currentMutateStateSnapshot);
               setSimIsInitStatePassedOnce(false);
             }
@@ -379,7 +433,11 @@ const ExternalActivity: React.FC<any> = (props) => {
                 payload,
               });
               const currentStateSnapshot = payload.snapshot;
-              processInitStateVariable(currentStateSnapshot);
+              //send only those variables whose values are changes
+              const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
+              console.log({ finalCurrentStateSnapshot });
+
+              processInitStateVariable(finalCurrentStateSnapshot);
               setSimIsInitStatePassedOnce(false);
             }
             break;
