@@ -29,10 +29,21 @@ const HistoryNavigation: React.FC = () => {
   // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
     .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
-    ?.map((entry) => entry.split('|')[0])
-    .reverse();
+    ?.map((entry) => entry.split('|')[0]);
 
   // Get the activity names and ids to be displaeyd in histroy panel
+  const historyItems =
+    sequences
+      ?.filter((sequence) => globalSnapshot.includes(sequence.custom?.sequenceId))
+      .map((entry: any) => {
+        return {
+          id: entry.custom?.sequenceId,
+          // TODO: pull all ensembles in sequence and get their names?
+          // maybe need a history state to track this instead!
+          name: entry.custom?.sequenceName || entry.id,
+        };
+      }) || [];
+  /*   // Get the activity names and ids to be displaeyd in histroy panel
   const historyItems = globalSnapshot?.map((activityId) => {
     const foundSequence = sequences.filter(
       (sequence) => sequence.custom?.sequenceId === activityId,
@@ -41,8 +52,7 @@ const HistoryNavigation: React.FC = () => {
       id: foundSequence.custom?.sequenceId,
       name: foundSequence.custom?.sequenceName || foundSequence.id,
     };
-  });
-
+  }); */
   const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
   const isFirst = currentEnsembleIndex === 0;
   const isLast = currentEnsembleIndex === historyItems.length - 1;
