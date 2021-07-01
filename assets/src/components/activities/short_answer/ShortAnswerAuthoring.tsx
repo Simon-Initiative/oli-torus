@@ -19,6 +19,8 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { defaultWriterContext } from 'data/content/writers/context';
 
 const store = configureStore();
 
@@ -40,7 +42,6 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
 
   return (
     <div className="mb-3">
-      <label htmlFor="question-type">Input Type</label>
       <select
         style={{ width: '200px' }}
         disabled={!editMode}
@@ -61,7 +62,7 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
 };
 
 const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
-  const { dispatch } = useAuthoringElementContext();
+  const { dispatch, model } = useAuthoringElementContext();
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -70,21 +71,28 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
             stem={props.model.stem}
             onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
           />
-          <InputTypeDropdown
-            editMode={props.editMode}
-            inputType={props.model.inputType}
-            onChange={(inputType) => dispatch(ShortAnswerActions.setInputType(inputType))}
-          />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          {/* <AnswerKeyAuthoring
-            stem={props.model.stem}
-            choices={props.model.choices}
-            selectedChoiceIds={getCorrectChoiceIds(props.model)}
-            selectedIcon={<Checkbox.Correct />}
-            unselectedIcon={<Checkbox.Unchecked />}
-            onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
-          /> */}
+          <div className="d-flex">
+            <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+            <InputTypeDropdown
+              editMode={props.editMode}
+              inputType={props.model.inputType}
+              onChange={(inputType) => dispatch(ShortAnswerActions.setInputType(inputType))}
+            />
+          </div>
+          {props.model.inputType === 'numeric'
+            ? <input
+            type={props.model.inputType === 'numeric' ? 'number' : 'text'}
+            className="form-control"
+            onChange={(e: any) => ShortAnswerActions.editRule(e.target.value)}
+            value={value}
+          />
+          : props.model.inputType === 'text'
+          ?
+        : props.model.inputType === 'textarea'
+        ?
+      : null}
           {/* <SimpleFeedback
             correctResponse={getCorrectResponse(props.model)}
             incorrectResponse={getIncorrectResponse(props.model)}
