@@ -558,11 +558,16 @@ defmodule OliWeb.Api.AttemptController do
        responses: %{
          200 => {"New Attempt Response", "application/json", NewActivityAttemptResponse}
        }
-  def new_activity(conn, %{
-        "section_slug" => section_slug,
-        "activity_attempt_guid" => activity_attempt_guid
-      }) do
-    case Activity.reset_activity(section_slug, activity_attempt_guid) do
+  def new_activity(
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "activity_attempt_guid" => activity_attempt_guid
+        } = params
+      ) do
+    seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+
+    case Activity.reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 

@@ -16,7 +16,7 @@ defmodule Oli.Activities.Model.ConditionalOutcome do
      }}
   end
 
-  def parse([]), do: []
+  def parse([]), do: {:ok, []}
 
   def parse(outcomes) when is_list(outcomes) do
     Enum.map(outcomes, &parse/1)
