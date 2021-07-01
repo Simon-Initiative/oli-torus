@@ -13,7 +13,7 @@ import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
-import { Evaluation } from '../common/Evaluation';
+import { Evaluation } from '../common/delivery/evaluation/Evaluation';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 

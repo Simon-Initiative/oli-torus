@@ -1,6 +1,5 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
-import { defaultState } from 'components/resource/TestModeHandler';
 import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { CheckAllThatApplyComponent } from 'components/activities/check_all_that_apply/CheckAllThatApplyDelivery';
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
@@ -9,22 +8,30 @@ import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
 import { slice } from 'data/content/activities/DeliveryState';
 import { Provider } from 'react-redux';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
+import { defaultState } from 'phoenix/activity_bridge';
+import { makeHint } from 'components/activities/types';
 
 describe('check all that apply delivery', () => {
   it('renders ungraded correctly', async () => {
     const model = defaultCATAModel();
+    model.authoring.parts[0].hints.push(makeHint('Hint 1'));
+    const defaultActivityState = defaultState(model);;
     const props = {
       model,
       activitySlug: 'activity-slug',
-      state: defaultState(model),
+      state: Object.assign(defaultActivityState, { hasMoreHints: false }),
       graded: false,
+      preview: false,
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
     const store = configureStore({}, slice.reducer);
 
     render(
       <Provider store={store}>
-        <CheckAllThatApplyComponent {...props} {...defaultDeliveryElementProps} preview={false} />
+        <DeliveryElementProvider {...defaultDeliveryElementProps} {...props}>
+          <CheckAllThatApplyComponent />
+        </DeliveryElementProvider>
       </Provider>,
     );
 
@@ -32,17 +39,22 @@ describe('check all that apply delivery', () => {
     const choices = screen.queryAllByLabelText(/choice [0-9]/);
     expect(choices).toHaveLength(2);
 
+    // expect submit button
+    const submitButton = screen.getByLabelText('submit');
+    expect(submitButton).toBeTruthy();
+
     // expect clicking a choice to save the activity
     act(() => {
       fireEvent.click(choices[0]);
     });
     expect(onSaveActivity).toHaveBeenCalledTimes(1);
-    expect(onSaveActivity).toHaveBeenCalledWith('guid', [
+    expect(onSaveActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
       {
-        attemptGuid: 'guid',
+        attemptGuid: '1',
         response: { input: model.choices.map((choice) => choice.id)[0] },
       },
     ]);
+    expect(submitButton).toBeEnabled();
 
     // expect no hints displayed
     expect(screen.queryAllByLabelText(/hint [0-9]/)).toHaveLength(0);
@@ -57,18 +69,14 @@ describe('check all that apply delivery', () => {
     });
     expect(await screen.findAllByLabelText(/hint [0-9]/)).toHaveLength(1);
 
-    // expect submit button
-    const submitButton = screen.getByLabelText('submit');
-    expect(submitButton).toBeTruthy();
-
     // expect clicking the submit button to submit
     act(() => {
       fireEvent.click(submitButton);
     });
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
-    expect(onSubmitActivity).toHaveBeenCalledWith('guid', [
+    expect(onSubmitActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
       {
-        attemptGuid: 'guid',
+        attemptGuid: '1',
         response: { input: model.choices.map((choice) => choice.id)[0] },
       },
     ]);

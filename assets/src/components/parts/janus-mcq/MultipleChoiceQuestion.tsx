@@ -329,6 +329,16 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                 const updatedValues = sSelectedChoices.map((item) =>
                   !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
                 );
+                props.onSave({
+                  id: `${id}`,
+                  responses: [
+                    {
+                      key: 'numberOfSelectedChoices',
+                      type: CapiVariableTypes.NUMBER,
+                      value: updatedValues?.length,
+                    },
+                  ],
+                });
                 setSelectedChoices(updatedValues);
               }
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];

@@ -4,7 +4,7 @@ import {
   TargetedCATA,
   SimpleCATA,
 } from './schema';
-import { ID, Identifiable } from 'data/content/model';
+import { ID } from 'data/content/model';
 import {
   ChoiceId,
   makeChoice,
@@ -16,11 +16,12 @@ import {
   Response,
   ScoringStrategy,
 } from 'components/activities/types';
-
-// Helper. Assumes a correct ID is given
-export function getByIdUnsafe<T extends Identifiable>(slice: T[], id: string): T {
-  return slice.find((c) => c.id === id) || slice[0];
-}
+import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
+import {
+  createRuleForIds,
+  getResponse,
+  invertRule,
+} from 'components/activities/common/responses/authoring/responseUtils';
 
 // Types
 export function isSimpleCATA(model: CATA): model is SimpleCATA {
@@ -31,7 +32,6 @@ export function isTargetedCATA(model: CATA): model is TargetedCATA {
 }
 
 // Choices
-export const getChoice = (model: CATA, id: string) => getByIdUnsafe(model.choices, id);
 export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
 export const getCorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.correct);
 export const getIncorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.incorrect);
@@ -41,8 +41,6 @@ export const isCorrectChoice = (model: CATA, choiceId: ChoiceId) =>
   getCorrectChoiceIds(model).includes(choiceId);
 
 // Responses
-export const getResponses = (model: CATA) => model.authoring.parts[0].responses;
-export const getResponse = (model: CATA, id: string) => getByIdUnsafe(getResponses(model), id);
 export const getResponseId = ([, responseId]: ChoiceIdsToResponseId) => responseId;
 export const getCorrectResponse = (model: CATA) =>
   getResponse(model, getResponseId(model.authoring.correct));
@@ -60,29 +58,6 @@ export const getTargetedResponseMappings = (model: TargetedCATA): ResponseMappin
     response: getResponse(model, getResponseId(assoc)),
     choiceIds: getChoiceIds(assoc),
   }));
-
-// Hints
-export const getHints = (model: CATA) => model.authoring.parts[0].hints;
-export const getHint = (model: CATA, id: ID) => getByIdUnsafe(getHints(model), id);
-export const getDeerInHeadlightsHint = (model: CATA) => getHints(model)[0];
-export const getCognitiveHints = (model: CATA) =>
-  getHints(model).slice(1, getHints(model).length - 1);
-export const getBottomOutHint = (model: CATA) => getHints(model)[getHints(model).length - 1];
-
-// Rules
-export const createRuleForIds = (toMatch: ID[], notToMatch: ID[]) =>
-  unionRules(
-    toMatch.map(createMatchRule).concat(notToMatch.map((id) => invertRule(createMatchRule(id)))),
-  );
-export const createMatchRule = (id: string) => `input like {${id}}`;
-export const invertRule = (rule: string) => `(!(${rule}))`;
-export const unionTwoRules = (rule1: string, rule2: string) => `${rule2} && (${rule1})`;
-export const unionRules = (rules: string[]) => rules.reduce(unionTwoRules);
-
-// Other
-export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
-  return subtractedFrom.filter((x) => !toSubtract.includes(x));
-}
 
 // Model creation
 export const defaultCATAModel: () => CATA = () => {
