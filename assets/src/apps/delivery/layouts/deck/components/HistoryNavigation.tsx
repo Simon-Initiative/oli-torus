@@ -28,16 +28,14 @@ const HistoryNavigation: React.FC = () => {
     setMinimized(!minimized);
   };
 
-  // TODO this is actually driven by the student's history IF you are a student
-  //and the toc otherwise
-
   const snapshot = getEnvState(defaultGlobalEnv);
-  console.log({ snapshot });
 
+  // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
     .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
     ?.map((entry) => entry.split('|')[0]);
 
+  // Get the activity names and ids to be displaeyd in histroy panel
   const historyItems =
     sequences
       ?.filter((sequence) => globalSnapshot.includes(sequence.custom?.sequenceId))
