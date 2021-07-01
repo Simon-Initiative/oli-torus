@@ -97,7 +97,7 @@ const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSc
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected />
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <CATASettingsConnected />
       </TabbedNavigation.Tabs>

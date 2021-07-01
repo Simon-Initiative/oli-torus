@@ -71,7 +71,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected />
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
       </TabbedNavigation.Tabs>

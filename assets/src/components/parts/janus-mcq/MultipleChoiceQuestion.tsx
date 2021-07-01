@@ -76,8 +76,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
       mcqItemStyles.position = `absolute`;
 
-      if(index !== 0)
-        mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
+      if (index !== 0) mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
     }
     mcqItemStyles.display = `inline-block`;
   }
@@ -95,23 +94,22 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 
   return (
     <React.Fragment>
-    <div style={mcqItemStyles}>
-      <input
-        name={groupId}
-        id={itemId}
-        type={multipleSelection ? 'checkbox' : 'radio'}
-        value={val}
-        disabled={disabled}
-        className="input_30cc60b8-382a-470c-8cd9-908348c58ebe"
-        checked={selected}
-        onChange={handleChanged}
-      />
-      <label htmlFor={itemId}>
-        <MCQItemContent nodes={nodes} state={state} />
-      </label>
-    </div>
-    {layoutType !== 'horizontalLayout' &&
-    <br style={{padding:'0px;'}}/>}
+      <div style={mcqItemStyles}>
+        <input
+          name={groupId}
+          id={itemId}
+          type={multipleSelection ? 'checkbox' : 'radio'}
+          value={val}
+          disabled={disabled}
+          className="input_30cc60b8-382a-470c-8cd9-908348c58ebe"
+          checked={selected}
+          onChange={handleChanged}
+        />
+        <label htmlFor={itemId}>
+          <MCQItemContent nodes={nodes} state={state} />
+        </label>
+      </div>
+      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px;' }} />}
     </React.Fragment>
   );
 };
@@ -331,6 +329,16 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                 const updatedValues = sSelectedChoices.map((item) =>
                   !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
                 );
+                props.onSave({
+                  id: `${id}`,
+                  responses: [
+                    {
+                      key: 'numberOfSelectedChoices',
+                      type: CapiVariableTypes.NUMBER,
+                      value: updatedValues?.length,
+                    },
+                  ],
+                });
                 setSelectedChoices(updatedValues);
               }
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
