@@ -5,7 +5,7 @@ import { selectCurrentActivity } from '../../../delivery/store/features/activiti
 import { selectState as selectPageState } from '../../store/page/slice';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema from '../PropertyEditor/schemas/lesson';
-import screenSchema from '../PropertyEditor/schemas/screen';
+import screenSchema, {getScreenData, screenUiSchema} from '../PropertyEditor/schemas/screen';
 import { JSONSchema7 } from 'json-schema';
 
 const RightMenu: React.FC<any> = (props) => {
@@ -18,7 +18,7 @@ const RightMenu: React.FC<any> = (props) => {
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
-
+  const screenData = getScreenData(currentActivity?.model.custom);
   const handleSelectTab = (key: string) => {
     // TODO: any other saving or whatever
     setSelectedTab(key);
@@ -32,6 +32,7 @@ const RightMenu: React.FC<any> = (props) => {
       <Tab eventKey="lesson" title="Lesson">
         <PropertyEditor
           schema={lessonSchema}
+          uiSchema={{}}
           value={currentLesson}
           onChangeHandler={props.lessonPropsChangeHandler}
         />
@@ -39,7 +40,8 @@ const RightMenu: React.FC<any> = (props) => {
       <Tab eventKey="screen" title="Screen">
         <PropertyEditor
           schema={screenSchema}
-          value={currentActivity?.model.custom}
+          uiSchema={screenUiSchema}
+          value={screenData}
           onChangeHandler={props.screenPropsChangeHandler}
         />
       </Tab>
@@ -47,6 +49,7 @@ const RightMenu: React.FC<any> = (props) => {
         {currentComponent && (
           <PropertyEditor
             schema={componentSchema}
+            uiSchema={{}}
             value={currentComponent}
             onChangeHandler={props.componentPropsChangeHandler}
           />

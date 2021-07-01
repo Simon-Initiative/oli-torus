@@ -51,10 +51,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     console.log(properties);
   };
   const lessonPropertyChangeHandler = (properties:any) => {
-    console.log(properties);
+    //console.log(properties);
   };
   const componentPropertyChangeHandler = (properties:any) => {
-    console.log(properties);
+    //console.log(properties);
   };
   const handlePanelStateChange = ({
     top,
