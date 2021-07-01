@@ -6,11 +6,7 @@ import HistoryPanel from './HistoryPanel';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
-import {
-  navigateToActivity,
-  navigateToNextActivity,
-  navigateToPrevActivity,
-} from '../../../store/features/groups/actions/deck';
+import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 
 const HistoryNavigation: React.FC = () => {
@@ -33,18 +29,19 @@ const HistoryNavigation: React.FC = () => {
   // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
     .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
-    ?.map((entry) => entry.split('|')[0]);
+    ?.map((entry) => entry.split('|')[0])
+    .reverse();
 
   // Get the activity names and ids to be displaeyd in histroy panel
-  const historyItems =
-    sequences
-      ?.filter((sequence) => globalSnapshot.includes(sequence.custom?.sequenceId))
-      .map((entry: any) => {
-        return {
-          id: entry.custom?.sequenceId,
-          name: entry.custom?.sequenceName || entry.id,
-        };
-      }) || [];
+  const historyItems = globalSnapshot?.map((activityId) => {
+    const foundSequence = sequences.filter(
+      (sequence) => sequence.custom?.sequenceId === activityId,
+    )[0];
+    return {
+      id: foundSequence.custom?.sequenceId,
+      name: foundSequence.custom?.sequenceName || foundSequence.id,
+    };
+  });
 
   const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
   const isFirst = currentEnsembleIndex === 0;
