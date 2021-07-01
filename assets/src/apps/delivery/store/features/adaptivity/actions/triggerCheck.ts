@@ -145,7 +145,7 @@ export const triggerCheck = createAsyncThunk(
         stateSnapshot,
       }); */
     } else {
-      console.log('CHECKING', { sectionSlug, currentActivityTreeAttempts });
+      /* console.log('CHECKING', { sectionSlug, currentActivityTreeAttempts }); */
 
       if (!currentActivityAttemptGuid) {
         console.error('not current attempt, cannot eval', { currentActivityTreeAttempts });
@@ -153,8 +153,10 @@ export const triggerCheck = createAsyncThunk(
       }
 
       const partResponses: PartResponse[] =
-        currentAttempt?.parts.map((p) => {
-          return { attemptGuid: p.attemptGuid, response: { input: p.response || null } };
+        currentAttempt?.parts.map(({attemptGuid, response}) => {
+          // response should be wrapped in input, but only once
+          const input_response = response?.input ? response : { input: response };
+          return { attemptGuid, response: input_response };
         }) || [];
 
       const evalResult = await evalActivityAttempt(
@@ -162,13 +164,13 @@ export const triggerCheck = createAsyncThunk(
         currentActivityAttemptGuid,
         partResponses,
       );
-      console.log('EVAL RESULT', { evalResult });
+      /* console.log('EVAL RESULT', { evalResult }); */
       checkResult = (evalResult.result as any).actions;
       isCorrect = checkResult.every((action: any) => action.params.correct);
     }
 
     if (!isCorrect) {
-      console.log('Incorrect, time for new attempt');
+      /* console.log('Incorrect, time for new attempt'); */
       await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );

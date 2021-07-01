@@ -88,24 +88,10 @@ export const createNewActivityAttempt = async (
   const result = await makeRequest({
     url,
     method,
+    body: JSON.stringify({ seedResponsesWithPrevious }),
   });
-  const newAttempt: any = result;
-  // BS: this should likely be moved to back end to save a trip
-  if (seedResponsesWithPrevious) {
-    const [previousAttempt] = await getBulkAttemptState(sectionSlug, [attemptGuid]);
-    previousAttempt.parts.forEach((prevPart: any) => {
-      const newPart = newAttempt.parts.find((p: any) => p.partId === prevPart.partId);
-      if (newPart) {
-        newPart.response = prevPart.response;
-      }
-    });
-    const partInputs = (newAttempt.parts as any[]).map(({ attemptGuid, response }) => ({
-      attemptGuid,
-      response,
-    }));
-    await writeActivityAttemptState(sectionSlug, newAttempt.attemptGuid, partInputs);
-  }
-  return newAttempt;
+  console.log('new attempt', result);
+  return result;
 };
 
 export const evalActivityAttempt = async (

@@ -70,7 +70,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       %{
         attempt_guid: part_input.attempt_guid,
         client_evaluation: %ClientEvaluation{
-          input: part_input.input,
+          input: part_input.input.input,
           score: score,
           out_of: 1,
           feedback: nil
@@ -143,10 +143,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                     acc1
 
                   _ ->
-                    path = Map.get(input, "path")
-                    local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
-                    value = Map.get(input, "value")
-                    Map.put(acc1, local_path, value)
+                    if (!Map.has_key?(input, "path")) do
+                      acc1
+                    else
+                      path = Map.get(input, "path")
+                      local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                      value = Map.get(input, "value")
+                      Map.put(acc1, local_path, value)
+                    end
                 end
               end)
 
