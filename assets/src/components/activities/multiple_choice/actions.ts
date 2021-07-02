@@ -3,11 +3,9 @@ import { Choice, makeResponse } from '../types';
 import { PostUndoable } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { getCorrectResponse } from 'components/activities/multiple_choice/utils';
-import {
-  createMatchRule,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
+import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 
 export const MCActions = {
   addChoice(choice: Choice) {
@@ -25,7 +23,7 @@ export const MCActions = {
       ChoiceActions.removeChoice(id)(model, post);
 
       model.authoring.parts[0].responses = getResponses(model).filter(
-        (r) => r.rule !== createMatchRule(id),
+        (r) => r.rule !== matchRule(id),
       );
 
       post({
@@ -44,7 +42,7 @@ export const MCActions = {
 
   toggleChoiceCorrectness(id: string) {
     return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
-      getCorrectResponse(model).rule = createMatchRule(id);
+      getCorrectResponse(model).rule = matchRule(id);
     };
   },
 };

@@ -20,12 +20,12 @@ import { ResponseActions } from 'components/activities/common/responses/response
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
 import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
 import {
-  createMatchRule,
+  andRules,
   createRuleForIds,
-  getResponses,
   invertRule,
-  unionRules,
-} from 'components/activities/common/responses/authoring/responseUtils';
+  matchRule,
+} from 'components/activities/common/responses/authoring/rules';
+import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 
 const applyAction = (model: CheckAllThatApplyModelSchema, action: any) => {
   return produce(model, (state) => action(state, () => undefined));
@@ -161,15 +161,15 @@ describe('check all that apply question functionality', () => {
   });
 
   it('can create a match rule', () => {
-    expect(createMatchRule('id')).toBe('input like {id}');
+    expect(matchRule('id')).toBe('input like {id}');
   });
 
   it('can invert rules', () => {
-    expect(invertRule(createMatchRule('id'))).toBe('(!(input like {id}))');
+    expect(invertRule(matchRule('id'))).toBe('(!(input like {id}))');
   });
 
   it('can union rules', () => {
-    expect(unionRules([createMatchRule('id1'), invertRule(createMatchRule('id2'))])).toBe(
+    expect(andRules(...[matchRule('id1'), invertRule(matchRule('id2'))])).toBe(
       '(!(input like {id2})) && (input like {id1})',
     );
   });

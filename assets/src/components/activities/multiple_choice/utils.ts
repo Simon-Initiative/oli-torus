@@ -12,10 +12,8 @@ import {
 } from '../types';
 import { Maybe } from 'tsmonad';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import {
-  createMatchRule,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 
 export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
@@ -62,5 +60,5 @@ export const getCorrectChoice = (model: MultipleChoiceModelSchema) => {
 };
 
 export const getResponseByChoice = (model: MultipleChoiceModelSchema, id: ChoiceId) => {
-  return getResponses(model).filter((r) => r.rule === createMatchRule(id))[0];
+  return getResponses(model).filter((r) => r.rule === matchRule(id))[0];
 };

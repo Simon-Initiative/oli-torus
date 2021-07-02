@@ -7,6 +7,10 @@ import {
 } from './schema';
 import { RichText, Operation, ScoringStrategy, ChoiceId, Choice } from '../types';
 import { create, ID, Identifiable, Paragraph } from 'data/content/model';
+import {
+  createRuleForIds,
+  invertRule,
+} from 'components/activities/common/responses/authoring/rules';
 
 // Helper. Assumes a correct ID is given
 export function getByIdUnsafe<T extends Identifiable>(slice: T[], id: string): T {
@@ -78,13 +82,6 @@ export const getTargetedResponses = (model: TargetedOrdering) =>
 export const getHints = (model: Ordering) => model.authoring.parts[0].hints;
 export const getHint = (model: Ordering, id: ID) => getByIdUnsafe(getHints(model), id);
 
-// Rules
-export const createMatchRule = (id: ID) => `input like {${id}}`;
-export const createRuleForIds = (orderedIds: ID[]) => `input like {${orderedIds.join(' ')}}`;
-export const invertRule = (rule: string) => `(!(${rule}))`;
-export const unionTwoRules = (rule1: string, rule2: string) => `${rule2} && (${rule1})`;
-export const unionRules = (rules: string[]) => rules.reduce(unionTwoRules);
-
 // Other
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
   return subtractedFrom.filter((x) => !toSubtract.includes(x));
@@ -95,7 +92,7 @@ export const defaultOrderingModel: () => Ordering = () => {
   const choice1: Choice = fromText('Choice 1');
   const choice2: Choice = fromText('Choice 2');
 
-  const correctResponse = makeResponse(createRuleForIds([choice1.id, choice2.id]), 1, '');
+  const correctResponse = makeResponse(createRuleForIds([choice1.id, choice2.id], []), 1, '');
   const incorrectResponse = makeResponse(invertRule(correctResponse.rule), 0, '');
 
   return {

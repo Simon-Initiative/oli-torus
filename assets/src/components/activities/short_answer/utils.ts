@@ -1,32 +1,20 @@
-import { ShortAnswerModelSchema } from './schema';
+import { InputType, ShortAnswerModelSchema } from './schema';
 import { makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
+import {
+  parseNumericInputFromRule,
+  parseTextInputFromRule,
+} from 'components/activities/common/responses/authoring/rules';
 
-export const parseInputFromRule = (rule: string) => {
-  return rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
-};
-
-export const parseOperatorFromRule = (rule: string): operator => {
-  switch (true) {
-    case rule.includes('>') && rule.includes('='):
-      return 'gte';
-    case rule.includes('>'):
-      return 'gt';
-    case rule.includes('<') && rule.includes('='):
-      return 'lte';
-    case rule.includes('<'):
-      return 'lt';
-    case rule.includes('='):
-      return 'eq';
-    default:
-      throw new Error('Operator could not be found in rule ' + rule);
+export const parseInputFromRule = (rule: string, inputType: InputType) => {
+  switch (inputType) {
+    case 'numeric':
+      return parseNumericInputFromRule(rule);
+    case 'text':
+      return parseTextInputFromRule(rule);
+    case 'textarea':
+      return parseTextInputFromRule(rule);
   }
 };
-export type operator = 'gt' | 'gte' | 'eq' | 'lt' | 'lte';
-export function isOperator(s: string): s is operator {
-  return ['gt', 'gte', 'eq', 'lt', 'lte'].includes(s);
-}
-
-export const isCatchAllRule = (input: string) => input === '.*';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {

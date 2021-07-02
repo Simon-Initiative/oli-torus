@@ -84,6 +84,16 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("length(input) > {2}", "Apple")
   end
 
+  test "evaluating string contains" do
+    assert eval("input contains {cat}", "the cat in the hat")
+    assert eval("input contains {cat}", "the CaT in the hat")
+    assert eval("input contains {CaT}", "the cat in the hat")
+    refute eval("input contains {cat}", "the bat in the hat")
+
+    assert eval("!(input contains {cat})", "the bat in the hat")
+    refute eval("!(input contains {cat})", "the cat in the hat")
+  end
+
   test "evaluating strings with a numeric operator results in error" do
     {:error, _} = eval("input < {3}", "*50")
     {:error, _} = eval("input < {3}", "cat")

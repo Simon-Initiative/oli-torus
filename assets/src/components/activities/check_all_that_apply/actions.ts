@@ -12,13 +12,15 @@ import { ChoiceId, Choice, ResponseId, makeResponse, PostUndoable } from '../typ
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { addOrRemove, remove, setDifference } from 'components/activities/common/utils';
 import {
+  andRules,
   createRuleForIds,
+  invertRule,
+} from 'components/activities/common/responses/authoring/rules';
+import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
+import {
   getResponse,
   getResponses,
-  invertRule,
-  unionRules,
 } from 'components/activities/common/responses/authoring/responseUtils';
-import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 
 export class CATAActions {
   static toggleType() {
@@ -176,8 +178,8 @@ const updateResponseRules = (model: CATA) => {
         targetedRules.push(targetedRule);
         getResponse(model, getResponseId(assoc)).rule = targetedRule;
       });
-      getIncorrectResponse(model).rule = unionRules(
-        targetedRules.map(invertRule).concat([invertRule(getCorrectResponse(model).rule)]),
+      getIncorrectResponse(model).rule = andRules(
+        ...targetedRules.map(invertRule).concat([invertRule(getCorrectResponse(model).rule)]),
       );
       break;
   }

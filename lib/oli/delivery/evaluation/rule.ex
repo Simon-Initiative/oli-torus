@@ -48,6 +48,13 @@ defmodule Oli.Delivery.Evaluation.Rule do
     String.match?(eval(lhs, context), regex)
   end
 
+  defp eval({:contains, lhs, rhs}, context) do
+    String.contains?(
+      String.downcase(eval(lhs, context)),
+      String.downcase(rhs)
+    )
+  end
+
   defp eval(:attempt_number, context), do: context.activity_attempt_number |> Integer.to_string()
   defp eval(:input, context), do: context.input
   defp eval(:input_length, context), do: String.length(context.input) |> Integer.to_string()

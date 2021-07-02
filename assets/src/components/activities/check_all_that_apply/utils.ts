@@ -19,9 +19,9 @@ import {
 import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
 import {
   createRuleForIds,
-  getResponse,
   invertRule,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'components/activities/common/responses/authoring/rules';
+import { getResponse } from 'components/activities/common/responses/authoring/responseUtils';
 
 // Types
 export function isSimpleCATA(model: CATA): model is SimpleCATA {
