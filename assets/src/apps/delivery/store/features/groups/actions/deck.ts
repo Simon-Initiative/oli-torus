@@ -111,7 +111,7 @@ export const initializeActivity = createAsyncThunk(
 
     const globalSnapshot = getEnvState(defaultGlobalEnv);
     const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
-
+    // don't update the time if student is revisiting that page
     if (!isActivityAlreadyVisited) {
       //looks like SS captures the date when we leave the page but it should show in the history as soon as we visit but it does not show the timestamp
       // so we will capture the time on trigger check
