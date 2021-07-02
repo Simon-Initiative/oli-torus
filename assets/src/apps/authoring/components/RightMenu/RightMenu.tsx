@@ -12,8 +12,6 @@ const RightMenu: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
 
-  console.log('CURRENT', { currentActivity, currentLesson });
-
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: Schema = { type: 'object' };
   const currentComponent = null;

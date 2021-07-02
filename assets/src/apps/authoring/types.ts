@@ -1,3 +1,5 @@
+import { ResourceId } from 'data/types';
+
 export interface PageContent {
   [key: string]: any;
   advancedAuthoring?: boolean;
@@ -19,5 +21,6 @@ export interface PageContext {
   editorMap?: any;
   projectSlug?: string;
   resourceSlug?: string;
+  resource_id?: ResourceId;
   activities?: any;
 }

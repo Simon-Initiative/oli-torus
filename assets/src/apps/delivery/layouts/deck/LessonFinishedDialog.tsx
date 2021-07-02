@@ -1,4 +1,6 @@
 import React, { Fragment, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { selectPreviewMode, selectResourceAttemptGuid } from '../../store/features/page/slice';
 
 interface LessonFinishedDialogProps {
   imageUrl?: string;
@@ -13,9 +15,18 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   message: string;
 }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const isPreviewMode = useSelector(selectPreviewMode);
+  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
 
   const handleCloseModalClick = () => {
     setIsOpen(false);
+    if (isPreviewMode) {
+      window.location.reload();
+    } else {
+      // TODO: check if graded first?
+      const currentUrl = window.location.href;
+      window.location.href = `${currentUrl}/attempt/${resourceAttemptGuid}`;
+    }
   };
 
   function HTMLMessage() {

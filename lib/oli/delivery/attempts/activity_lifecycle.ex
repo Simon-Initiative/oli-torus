@@ -85,7 +85,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   `{:error, {:not_found}}`
   """
-  def reset_activity(section_slug, activity_attempt_guid) do
+  def reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous \\ false) do
     Repo.transaction(fn ->
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
@@ -110,7 +110,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
              activity_attempt.revision.max_attempts <= attempt_count do
           Repo.rollback({:no_more_attempts})
         else
-          activity_attempt = activity_attempt |> Repo.preload([:part_attempts])
+          part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
           # Resolve the revision to pick up the latest
           revision = DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
@@ -131,12 +131,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             new_activity_attempt = Map.put(new_activity_attempt, :revision, revision)
 
             new_part_attempts =
-              case Enum.reduce_while(activity_attempt.part_attempts, {:ok, []}, fn p,
-                                                                                   {:ok, acc} ->
+              case Enum.reduce_while(part_attempts, {:ok, []}, fn p, {:ok, acc} ->
+                     response =
+                       if seed_state_from_previous do
+                         p.response
+                       else
+                         nil
+                       end
+
                      case create_part_attempt(%{
                             attempt_guid: UUID.uuid4(),
                             attempt_number: 1,
                             part_id: p.part_id,
+                            response: response,
                             activity_attempt_id: new_activity_attempt.id
                           }) do
                        {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}

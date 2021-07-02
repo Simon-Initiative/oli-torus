@@ -5,6 +5,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :authorEmail,
     :projectSlug,
     :resourceSlug,
+    :resource_id,
     :title,
     :content,
     :objectives,

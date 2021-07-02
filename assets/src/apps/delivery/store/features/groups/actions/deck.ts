@@ -406,6 +406,7 @@ export const loadActivities = createAsyncThunk(
         authoring: result.authoring || null,
         activityType,
         title: result.title,
+        attemptGuid: attemptEntry?.attemptGuid || '',
       };
       const attemptState: ActivityState = {
         attemptGuid: attemptEntry?.attemptGuid || '',
