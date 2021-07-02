@@ -129,7 +129,7 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify check has completed
 
-    const isCorrect = lastCheckResults.results.every((r) => r.params.correct);
+    const isCorrect = lastCheckResults.results.every((r: any) => r.params.correct);
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity.custom.combineFeedback;

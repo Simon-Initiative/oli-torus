@@ -187,7 +187,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }
       const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       // part attempt guid should be located in currentAttemptState.parts matched to id
-      const partAttempt = currentAttemptState.parts.find((p) => p.partId === id);
+      const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
       if (!partAttempt) {
         // throw err? if this happens we can't proceed...
         console.error(`part attempt guid for ${id} not found!`, {currentAttemptState});
@@ -209,7 +209,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     /* console.log('onPartSubmit', { id, responses }); */
     const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
     // part attempt guid should be located in currentAttemptState.parts matched to id
-    const partAttempt = currentAttemptState.parts.find((p) => p.partId === id);
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
       // throw err? if this happens we can't proceed...
       console.error(`part attempt guid for ${id} not found!`);
