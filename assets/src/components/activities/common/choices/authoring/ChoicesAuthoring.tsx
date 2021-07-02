@@ -1,7 +1,7 @@
 import React from 'react';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { Choice, RichText } from 'components/activities/types';
-import { ChoiceAuthoringConnected } from 'components/activities/common/choices/ChoiceAuthoring';
+import { ChoiceAuthoringConnected } from 'components/activities/common/choices/authoring/ChoiceAuthoring';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 
 interface Props {

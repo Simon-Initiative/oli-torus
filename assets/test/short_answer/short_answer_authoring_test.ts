@@ -135,10 +135,10 @@ describe('short answer question', () => {
         updated.authoring.parts[0].responses[1].id)).authoring.parts[0].responses).toHaveLength(2);
   });
 
-  // Creating guids causes failures
-  xit('can add a cognitive hint before the end of the array', () => {
-    expect(applyAction(model, ShortAnswerActions.addHint()).authoring.parts[0].hints.length)
-      .toBeGreaterThan(model.authoring.parts[0].hints.length);
+  it('can add a cognitive hint before the end of the array', () => {
+    expect(
+      applyAction(model, ShortAnswerActions.addHint()).authoring.parts[0].hints.length,
+    ).toBeGreaterThan(model.authoring.parts[0].hints.length);
   });
 
   it('can edit a hint', () => {
