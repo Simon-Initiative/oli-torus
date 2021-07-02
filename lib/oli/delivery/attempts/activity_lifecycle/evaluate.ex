@@ -147,6 +147,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                       acc1
                     else
                       path = Map.get(input, "path")
+                      # part_inputs are assumed to be from the current activity only
+                      # so we strip out the sequence id from the path to get our "local"
+                      # values for the rules
                       local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
                       value = Map.get(input, "value")
                       Map.put(acc1, local_path, value)

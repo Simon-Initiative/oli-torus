@@ -90,7 +90,6 @@ export const createNewActivityAttempt = async (
     method,
     body: JSON.stringify({ seedResponsesWithPrevious }),
   });
-  console.log('new attempt', result);
   return result;
 };
 

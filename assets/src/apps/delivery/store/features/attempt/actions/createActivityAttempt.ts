@@ -26,7 +26,7 @@ export const createActivityAttempt = createAsyncThunk(
     } else {
       const seedResponses = true; // parameterize at function level?
       const new_attempt_result = await createNewActivityAttempt(sectionSlug, attemptGuid, seedResponses);
-      console.log({ new_attempt_result });
+      /* console.log({ new_attempt_result }); */
       attempt = new_attempt_result.attemptState as ActivityState;
       // this should be for the same resource id, which doesn't come back from the server
       // because it's already based on the previous attemptGuid
@@ -34,5 +34,7 @@ export const createActivityAttempt = createAsyncThunk(
     }
 
     await dispatch(upsertActivityAttemptState({ attempt }));
+
+    return attempt;
   },
 );

@@ -7,13 +7,13 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  getEnvState,
+  getEnvState
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
-  selectCurrentActivityTreeAttemptState,
+  selectCurrentActivityTreeAttemptState
 } from '../../groups/selectors/deck';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
@@ -27,6 +27,8 @@ export const triggerCheck = createAsyncThunk(
     const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
     const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
     const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
+
+    /* console.log('TRIGGER CHECK', {currentAttempt}); */
 
     const currentActivityTree = selectCurrentActivityTree(rootState);
     if (!currentActivityTree || !currentActivityTree.length) {
@@ -74,7 +76,8 @@ export const triggerCheck = createAsyncThunk(
     bulkApplyState(updateScripting, defaultGlobalEnv);
 
     //update the store with the latest changes
-    await dispatch(setLastCheckTriggered({ timestamp: Date.now() }));
+    const currentTriggerStamp = Date.now();
+    await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
 
     // this needs to be the attempt state
     // at the very least needs the "local" version `stage.foo.whatevr` vs `q:1234|stage.foo.whatever`
@@ -152,6 +155,9 @@ export const triggerCheck = createAsyncThunk(
         return;
       }
 
+      // we have to send all the current activity attempt state to the server
+      // because the server doesn't know the current sequence id and will strip out
+      // all sequence ids from the path for these only
       const partResponses: PartResponse[] =
         currentAttempt?.parts.map(({attemptGuid, response}) => {
           // response should be wrapped in input, but only once
@@ -169,13 +175,15 @@ export const triggerCheck = createAsyncThunk(
       isCorrect = checkResult.every((action: any) => action.params.correct);
     }
 
+    let attempt: any = currentAttempt;
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
-      await dispatch(
+      const {payload: newAttempt} = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
+      attempt = newAttempt;
     }
 
-    await dispatch(setLastCheckResults({ results: checkResult }));
+    await dispatch(setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }));
   },
 );
