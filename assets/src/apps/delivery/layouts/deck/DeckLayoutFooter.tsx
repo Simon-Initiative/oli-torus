@@ -386,7 +386,6 @@ const DeckLayoutFooter: React.FC = () => {
   }, [currentActivity]);
 
   const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
@@ -431,7 +430,7 @@ const DeckLayoutFooter: React.FC = () => {
               </button>
             </div>
             <style type="text/css" aria-hidden="true" />
-            <div className="content">
+            <div className="content" style={{overflow:'hidden auto !important'}}>
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}
