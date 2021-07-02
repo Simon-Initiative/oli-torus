@@ -27,7 +27,7 @@ const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
   }
 
   const [time, setTime] = useState('');
-  const MillisToMinutesAndSeconds = (millis: any) => {
+  const MillisToDaysHoursMinutesAndSeconds = (millis: any) => {
     const minutes = Math.floor(millis / 60000);
     const hours = Math.floor((millis / (1000 * 60 * 60)) % 24);
     const days = Math.floor(millis / (1000 * 60 * 60 * 24));
@@ -35,17 +35,17 @@ const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
       if (days === 1) {
         return 'a day ago';
       }
-      return days + ' days ago';
+      return `${days}  days ago`;
     } else if (hours > 0) {
       if (hours === 1) {
         return 'an hour ago';
       }
-      return hours + ' hours and ' + minutes + ' minutes ago';
+      return `${hours} hours and ${minutes} minutes ago`;
     } else if (minutes > 0) {
       if (minutes === 1) {
         return 'a minute ago';
       }
-      return minutes + ' minutes ago';
+      return `${minutes}  minutes ago`;
     } else {
       return 'a few seconds ago';
     }
@@ -53,7 +53,7 @@ const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
   const tick = () => {
     const currentDate = Date.now();
     const screenVisitedTime = currentDate - timeStamp;
-    const timeTickerText = MillisToMinutesAndSeconds(screenVisitedTime);
+    const timeTickerText = MillisToDaysHoursMinutesAndSeconds(screenVisitedTime);
     setTime(timeTickerText);
   };
 
