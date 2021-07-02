@@ -11,7 +11,9 @@ import { selectSequence } from '../../../store/features/groups/selectors/deck';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const isHistoryModeOn = true; //useSelector(selectEnableHistory);
+  //const isHistoryModeOn = useSelector(selectEnableHistory);
+  // uncomment it for testing in preview mode
+  const isHistoryModeOn = true;
   const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
@@ -37,14 +39,12 @@ const HistoryNavigation: React.FC = () => {
     const foundSequence = sequences.filter(
       (sequence) => sequence.custom?.sequenceId === activityId,
     )[0];
-
     return {
       id: foundSequence.custom?.sequenceId,
       name: foundSequence.custom?.sequenceName || foundSequence.id,
       timestamp: snapshot[`${foundSequence.custom?.sequenceId}|visitTimestamp`],
     };
   });
-
   const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
   const isFirst = currentEnsembleIndex === historyItems.length - 1;
   const isLast = currentEnsembleIndex === 0;

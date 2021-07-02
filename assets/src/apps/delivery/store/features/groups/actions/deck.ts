@@ -113,10 +113,12 @@ export const initializeActivity = createAsyncThunk(
     const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
 
     if (!isActivityAlreadyVisited) {
+      //looks like SS captures the date when we leave the page but it should show in the history as soon as we visit but it does not show the timestamp
+      // so we will capture the time on trigger check
       const targetVisitTimeStampOp: ApplyStateOperation = {
         target: `${currentSequenceId}|visitTimestamp`,
         operator: '=',
-        value: Date.now(),
+        value: '',
       };
       sessionOps.push(targetVisitTimeStampOp);
     }

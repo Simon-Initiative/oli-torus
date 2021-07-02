@@ -2,6 +2,7 @@ import { selectCurrentActivityId } from '../../../store/features/activities/slic
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
+import { useState, useEffect } from 'react';
 
 interface HistoryEntry {
   id: string;
@@ -16,6 +17,53 @@ interface HistoryPanelProps {
   onMinimize: any; // function?
   onRestart: any; // function
 }
+
+interface TimeAgoProps {
+  timeStamp: any;
+}
+const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
+  if (!timeStamp) {
+    return <span></span>;
+  }
+
+  const [time, setTime] = useState('');
+  const MillisToMinutesAndSeconds = (millis: any) => {
+    const minutes = Math.floor(millis / 60000);
+    const hours = Math.floor((millis / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(millis / (1000 * 60 * 60 * 24));
+    if (days > 0) {
+      if (days === 1) {
+        return 'a day ago';
+      }
+      return days + ' days ago';
+    } else if (hours > 0) {
+      if (hours === 1) {
+        return 'an hour ago';
+      }
+      return hours + ' hours and ' + minutes + ' minutes ago';
+    } else if (minutes > 0) {
+      if (minutes === 1) {
+        return 'a minute ago';
+      }
+      return minutes + ' minutes ago';
+    } else {
+      return 'a few seconds ago';
+    }
+  };
+  const tick = () => {
+    const currentDate = Date.now();
+    const screenVisitedTime = currentDate - timeStamp;
+    const timeTickerText = MillisToMinutesAndSeconds(screenVisitedTime);
+    setTime(timeTickerText);
+  };
+
+  useEffect(() => {
+    setInterval(() => {
+      tick();
+    }, 1000);
+  }, [timeStamp]);
+  return <span>{time}</span>;
+};
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestart }) => {
   const dispatch = useDispatch();
@@ -67,7 +115,9 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
             onClick={() => itemClickHandler(item)}
           >
             <div className="history-element__screenName">{item.name}</div>
-            <div className="history-element__timestamp">{item.timestamp}</div>
+            <div className="history-element__timestamp">
+              {<TimeAgo timeStamp={item.timestamp} />}
+            </div>
           </button>
         ))}
       </nav>
