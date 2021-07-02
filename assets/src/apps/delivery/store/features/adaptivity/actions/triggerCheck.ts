@@ -62,7 +62,7 @@ export const triggerCheck = createAsyncThunk(
     ];
     let globalSnapshot = getEnvState(defaultGlobalEnv);
     const isActivityAlreadyVisited = globalSnapshot[`${currentActivity.id}|visitTimestamp`];
-
+    // don't update the time if student is revisiting that page
     if (!isActivityAlreadyVisited) {
       //looks like SS captures the date when we leave the page so we will capture the time here for tracking history
       // update the scripting
