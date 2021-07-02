@@ -65,12 +65,15 @@ export const triggerCheck = createAsyncThunk(
 
     if (!isActivityAlreadyVisited) {
       //looks like SS captures the date when we leave the page so we will capture the time here for tracking history
+      // update the scripting
       const targetVisitTimeStampOp: ApplyStateOperation = {
         target: `${currentActivity.id}|visitTimestamp`,
         operator: '=',
         value: Date.now(),
       };
       updateScripting.push(targetVisitTimeStampOp);
+      // update the store
+      modifiedExtrinsicState[`${currentActivity.id}|visitTimestamp`] = Date.now();
     }
     bulkApplyState(updateScripting, defaultGlobalEnv);
 
