@@ -68,7 +68,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
 
   defp eval({:eq, lhs, rhs}, context) do
     left = eval(lhs, context)
-    right = eval(lhs, context)
+    right = eval(rhs, context)
 
     if is_float?(left) or is_float?(right) do
       {left, _} = Float.parse(left)

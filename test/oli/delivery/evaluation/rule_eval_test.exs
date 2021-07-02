@@ -13,12 +13,17 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     }
 
     {:ok, tree} = Rule.parse(rule)
-    {:ok, result} = Rule.evaluate(tree, context)
-    result
+    case Rule.evaluate(tree, context) do
+      {:ok, result} -> result
+      {:error, e} -> {:error, e}
+    end
   end
 
   test "evaluating integers" do
     assert eval("attemptNumber = {1} && input = {3}", "3")
+    refute eval("attemptNumber = {1} && input = {3}", "4")
+    refute eval("attemptNumber = {1} && input = {3}", "33")
+    refute eval("attemptNumber = {1} && input = {3}", "3.3")
     assert eval("attemptNumber = {1} && input > {2}", "3")
     assert eval("attemptNumber = {1} && input < {4}", "3")
     refute eval("attemptNumber = {1} && input > {3}", "3")
@@ -27,6 +32,9 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
   test "evaluating floats" do
     assert eval("attemptNumber = {1} && input = {3.1}", "3.1")
+    refute eval("attemptNumber = {1} && input = {3.1}", "3.2")
+    refute eval("attemptNumber = {1} && input = {3.1}", "4")
+    refute eval("attemptNumber = {1} && input = {3.1}", "31")
     assert eval("attemptNumber = {1} && input > {2}", "3.2")
     assert eval("attemptNumber = {1} && input < {4}", "3.1")
     refute eval("attemptNumber = {1} && input > {3}", "3.0")
@@ -35,11 +43,25 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
 
   test "evaluating like" do
     assert eval("input like {cat}", "cat")
+    refute eval("input like {cat}", "caaat")
+    refute eval("input like {cat}", "ct")
     assert eval("input like {c.*?t}", "construct")
     refute eval("input like {c.*?t}", "apple")
   end
 
-  test "evaluating groupings" do
+  test "evaluating numeric groupings" do
+    assert eval("input = {1} || input > {1}", "1.5")
+    assert eval("input = {1} || input > {1}", "1")
+    refute eval("input = {1} || input > {1}", "0.1")
+    refute eval("input = {11} || input > {11}", "1")
+
+    assert eval("input = {1} || input < {1}", "0")
+    assert eval("input = {1} || input < {1}", "1")
+    refute eval("input = {1} || input < {1}", "1.5")
+    refute eval("input = {1} || input < {1}", "1.1")
+  end
+
+  test "evaluating string groupings" do
     assert eval("attemptNumber = {1} && (input like {cat} || input like {dog})", "cat")
     assert eval("attemptNumber = {1} && (input like {cat} || input like {dog})", "dog")
   end
@@ -63,14 +85,8 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   end
 
   test "evaluating strings with a numeric operator results in error" do
-    context = %EvaluationContext{
-      resource_attempt_number: 1,
-      activity_attempt_number: 1,
-      part_attempt_number: 1,
-      input: "apple"
-    }
-
-    {:ok, tree} = Rule.parse("input = {apple}")
-    assert {:error, %ArgumentError{message: "errors were found at the given arguments:\n\n  * 1st argument: not a textual representation of an integer\n"}} == Rule.evaluate(tree, context)
+    {:error, _} = eval("input < {3}", "*50")
+    {:error, _} = eval("input < {3}", "cat")
+    {:error, _} = eval("input = {apple}", "apple")
   end
 end
