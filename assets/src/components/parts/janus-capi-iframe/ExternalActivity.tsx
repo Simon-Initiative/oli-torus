@@ -318,6 +318,62 @@ const ExternalActivity: React.FC<any> = (props) => {
     }
   };
 
+  const getInterestedVars = (vars: any) => {
+    const interested = Object.keys(vars).filter((ms: any) => {
+      const isMine = ms.indexOf(`stage.${id}.`) === 0;
+      if (!isMine) {
+        return false;
+      }
+      const internalValue = externalActivityMap.get(ms);
+      // mineValue is the value that was passed on to this part component
+      // internalVal is the value that is stored locally in key-value pair for value changes comparions
+      let mineValue = vars[ms];
+      let internalVal = internalValue?.value;
+      const typeOfMS = typeof vars[ms];
+      const typeofInternalVal = typeof internalVal;
+
+      //handle case where internalVal = 'true' and mineValue =true
+      if (ms.type === CapiVariableTypes.BOOLEAN && typeofInternalVal === 'string') {
+        mineValue = JSON.stringify(mineValue);
+      }
+      if (ms.type === CapiVariableTypes.NUMBER && typeofInternalVal === 'string') {
+        mineValue = JSON.stringify(mineValue);
+      }
+      // there are cases where mineValue is an array [38] and InternalVal is also array but it is a string array i.e. "[38]"
+      // if this is the case then convert it and check if the values are matching and we are done for this key
+      if (typeOfMS === 'object' && Array.isArray(vars[ms]) && typeofInternalVal === 'string') {
+        internalVal = new CapiVariable({
+          key: ms.key,
+          type: ms.type,
+          value: internalVal,
+        });
+        if (Array.isArray(internalVal.value) && Array.isArray(mineValue)) {
+          return JSON.stringify(internalVal.value) !== JSON.stringify(mineValue);
+        }
+      }
+
+      // if it reaches here then check if both mineValue and InternalVal are arrays. If Yes then compare and return;
+      if (
+        typeOfMS === 'object' &&
+        Array.isArray(vars[ms]) &&
+        typeofInternalVal === 'object' &&
+        Array.isArray(internalVal)
+      ) {
+        return JSON.stringify(internalVal) !== JSON.stringify(mineValue);
+      }
+      // finally make sure that the values are not blank & null as some time SIM may return null value and it gets saved as blank ('') but in external map it is null
+      if (mineValue == '' && internalVal == null) return false;
+
+      return !internalValue || internalVal != mineValue;
+    });
+
+    // Now we have filtered list of variables that have changed and  will return the collection
+    return interested?.reduce((collect: any, key: string) => {
+      collect[key] = vars[key];
+      return collect;
+    }, {});
+  };
+
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -368,6 +424,10 @@ const ExternalActivity: React.FC<any> = (props) => {
                 payload,
               });
               const currentMutateStateSnapshot = payload.mutateChanges;
+              //udpate the local key-value pair when variables changed by mutation i.e. from outside
+              Object.keys(currentMutateStateSnapshot).forEach((key) => {
+                externalActivityMap.set(key, currentMutateStateSnapshot[key]);
+              });
               processInitStateVariable(currentMutateStateSnapshot);
               setSimIsInitStatePassedOnce(false);
             }
@@ -379,7 +439,9 @@ const ExternalActivity: React.FC<any> = (props) => {
                 payload,
               });
               const currentStateSnapshot = payload.snapshot;
-              processInitStateVariable(currentStateSnapshot);
+              //send only those variables whose values are changes
+              const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
+              processInitStateVariable(finalCurrentStateSnapshot);
               setSimIsInitStatePassedOnce(false);
             }
             break;
