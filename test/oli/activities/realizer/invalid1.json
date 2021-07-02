@@ -1,0 +1,7 @@
+{
+  "conditions": {
+    "fact": "tags",
+    "operator": "fuzzyEquals",
+    "value": [1]
+  }
+}
