@@ -325,20 +325,23 @@ const ExternalActivity: React.FC<any> = (props) => {
         return false;
       }
       const internalValue = externalActivityMap.get(ms);
+      // mineValue is the value that was passed on to this part component
+      // internalVal is the value that is stored locally in key-value pair for value changes comparions
       let mineValue = vars[ms];
-      let internalVal: any = internalValue?.value;
+      let internalVal = internalValue?.value;
+      const typeOfMS = typeof vars[ms];
+      const typeofInternalVal = typeof internalVal;
 
-      if (ms.type === CapiVariableTypes.BOOLEAN && typeof internalVal === 'string') {
+      //handle case where internalVal = 'true' and mineValue =true
+      if (ms.type === CapiVariableTypes.BOOLEAN && typeofInternalVal === 'string') {
         mineValue = JSON.stringify(mineValue);
       }
-      if (ms.type === CapiVariableTypes.NUMBER && typeof internalVal === 'string') {
+      if (ms.type === CapiVariableTypes.NUMBER && typeofInternalVal === 'string') {
         mineValue = JSON.stringify(mineValue);
       }
-      if (
-        typeof vars[ms] === 'object' &&
-        Array.isArray(vars[ms]) &&
-        typeof internalVal === 'string'
-      ) {
+      // there are cases where mineValue is an array [38] and InternalVal is also array but it is a string array i.e. "[38]"
+      // if this is the case then convert it and check if the values are matching and we are done for this key
+      if (typeOfMS === 'object' && Array.isArray(vars[ms]) && typeofInternalVal === 'string') {
         internalVal = new CapiVariable({
           key: ms.key,
           type: ms.type,
@@ -348,24 +351,27 @@ const ExternalActivity: React.FC<any> = (props) => {
           return JSON.stringify(internalVal.value) !== JSON.stringify(mineValue);
         }
       }
+
+      // if it reaches here then check if both mineValue and InternalVal are arrays. If Yes then compare and return;
       if (
-        typeof vars[ms] === 'object' &&
+        typeOfMS === 'object' &&
         Array.isArray(vars[ms]) &&
-        typeof internalVal === 'object' &&
+        typeofInternalVal === 'object' &&
         Array.isArray(internalVal)
       ) {
         return JSON.stringify(internalVal) !== JSON.stringify(mineValue);
       }
+      // finally make sure that the values are not blank & null as some time SIM may return null value and it gets saved as blank ('') but in external map it is null
       if (mineValue == '' && internalVal == null) return false;
+
       return !internalValue || internalVal != mineValue;
     });
-    if (interested.length) {
-      return interested.reduce((collect: any, key: string) => {
-        collect[key] = vars[key];
-        return collect;
-      }, {});
-    }
-    return {};
+
+    // Now we have filtered list of variables that have changed and  will return the collection
+    return interested?.reduce((collect: any, key: string) => {
+      collect[key] = vars[key];
+      return collect;
+    }, {});
   };
 
   useEffect(() => {
