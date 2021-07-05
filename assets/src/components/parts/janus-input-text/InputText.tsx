@@ -6,6 +6,7 @@ import {
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { parseBool } from 'utils/common';
 
 const InputText: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -58,7 +59,7 @@ const InputText: React.FC<any> = (props) => {
     const currentStateSnapshot = initResult.snapshot;
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
-      setEnabled(sEnabled);
+      setEnabled(parseBool(sEnabled));
     }
     const sText = currentStateSnapshot[`stage.${id}.text`];
     if (sText !== undefined) {
@@ -100,7 +101,7 @@ const InputText: React.FC<any> = (props) => {
               const { mutateChanges: changes } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
-                setEnabled(sEnabled);
+                setEnabled(parseBool(sEnabled));
               }
               const sText = changes[`stage.${id}.text`];
               if (sText !== undefined) {
