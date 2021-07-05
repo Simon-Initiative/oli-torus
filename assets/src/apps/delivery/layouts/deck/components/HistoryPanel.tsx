@@ -58,9 +58,10 @@ const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
   };
 
   useEffect(() => {
-    setInterval(() => {
+    const interval = setInterval(() => {
       tick();
     }, 1000);
+    return () => clearInterval(interval);
   }, [timeStamp]);
   return <span>{time}</span>;
 };

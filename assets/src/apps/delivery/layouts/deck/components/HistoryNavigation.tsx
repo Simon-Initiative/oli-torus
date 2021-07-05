@@ -4,7 +4,7 @@ import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import HistoryPanel from './HistoryPanel';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
-import { selectEnableHistory, selectPreviewMode } from '../../../store/features/page/slice';
+import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
@@ -12,7 +12,6 @@ import { selectSequence } from '../../../store/features/groups/selectors/deck';
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const isHistoryModeOn = useSelector(selectEnableHistory);
-  const previewMode = useSelector(selectPreviewMode);
   //comment the above line and uncomment this line for testing in preview mode
   //const isHistoryModeOn = true;
   //const previewMode = false;
@@ -62,7 +61,7 @@ const HistoryNavigation: React.FC = () => {
   };
   return (
     <Fragment>
-      {isHistoryModeOn && !previewMode ? (
+      {isHistoryModeOn ? (
         <div className="historyStepView pullLeftInCheckContainer">
           <div className="historyStepContainer">
             <button
