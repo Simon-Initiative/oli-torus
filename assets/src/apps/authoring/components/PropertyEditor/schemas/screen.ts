@@ -7,40 +7,32 @@ const screenSchema: JSONSchema7 = {
       type: "object",
       title: "Dimensions",
       properties: {
-          width: {type:'number'},
-          height: {type:'number'}
-        }
+        width: { type: 'number' },
+        height: { type: 'number' }
+      }
     },
     Position: {
       type: "object",
       title: "Position",
       properties: {
-          x: {type:'number'},
-          y: {type:'number'},
-          z: {type:'number'},
-          customCssClass: {
-            title: 'Custom CSS Class',
-            type: 'string',
-          },
-        }
+        x: { type: 'number' },
+        y: { type: 'number' },
+        z: { type: 'number' }
+      }
     },
     palette: {
-      type:'object',
-      properties:{
-        backgroundColor: {type:'string'},
-        borderColor: {type:'string'},
-        borderRadius: {type:'string'},
-        borderStyle: {type:'string'},
-        borderWidth: {type:'string'},
-        fillAlpha: {type:'number'},
-        fillColor: {type:'number'},
-        lineAlpha: {type:'number'},
-        lineColor: {type:'number'},
-        lineStyle: {type:'number'},
-        lineThickness: {type:'number'},
-        useHtmlProps: {type:'boolean',
-        format: 'checkbox',},
+      type: 'object',
+      properties: {
+        useHtmlProps: {
+          type: 'boolean',
+          format: 'checkbox',
+          title: 'Use HTML Properties'
+        },
       }
+    },
+    customCssClass: {
+      title: 'Custom CSS Class',
+      type: 'string',
     },
     combineFeedback: {
       title: 'Combine Feedback',
@@ -62,8 +54,8 @@ const screenSchema: JSONSchema7 = {
         },
       }
     },
-    max : {
-      type:'object',
+    max: {
+      type: 'object',
       properties: {
         maxAttempt: {
           title: 'Max Attempts',
@@ -101,68 +93,66 @@ export const screenUiSchema = {
   Size: {
     'ui:ObjectFieldTemplate': customFieldTemplate,
     'ui:title': 'Dimensions',
-    width:{
+    width: {
       classNames: 'col-6'
     },
-    height:{
+    height: {
       classNames: 'col-6'
     }
   },
   Position: {
     'ui:ObjectFieldTemplate': customFieldTemplate,
     'ui:title': 'Position',
-    x:{
+    x: {
       classNames: 'col-4 pr-1'
     },
-    y:{
+    y: {
       classNames: 'col-4 px-2'
     },
-    z:{
+    z: {
       classNames: 'col-4 pl-1'
-    },
-    customCssClass: {
-      classNames: 'col-12'
     }
   },
   max: {
     'ui:ObjectFieldTemplate': customFieldTemplate,
-    maxAttempt:{
+    maxAttempt: {
       classNames: 'col-6'
     },
-    maxScore:{
+    maxScore: {
       classNames: 'col-6'
     }
   },
   checkButton: {
     'ui:ObjectFieldTemplate': customFieldTemplate,
-    showCheckBtn:{
+    showCheckBtn: {
       classNames: 'col-12'
     },
-    checkButtonLabel:{
+    checkButtonLabel: {
       classNames: 'col-12'
     }
   },
   palette: {
     'ui:ObjectFieldTemplate': customFieldTemplate,
     'ui:title': 'Palette',
-    borderStyle: {classNames: 'col-6'},
-    borderWidth: {classNames: 'col-6'},
-    fillAlpha: {classNames: 'col-6'},
-    fillColor: {classNames: 'col-6'},
-    lineAlpha: {classNames: 'col-6'},
-    lineColor: {classNames: 'col-6'},
-    lineStyle: {classNames: 'col-6'},
-    lineThickness: {classNames: 'col-6'},
+    borderStyle: { classNames: 'col-6' },
+    borderWidth: { classNames: 'col-6' },
+    fillAlpha: { classNames: 'col-6' },
+    fillColor: { classNames: 'col-6' },
+    lineAlpha: { classNames: 'col-6' },
+    lineColor: { classNames: 'col-6' },
+    lineStyle: { classNames: 'col-6' },
+    lineThickness: { classNames: 'col-6' },
   }
 };
 
-export const getScreenData = (data: any) =>{
-  if(data){
-    return {...data,
-      Size: {width:data.width, height: data.height },
-      Position: {x: data.x, y: data.y, z: data.z},
-      checkButton: {showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel},
-      max: {maxAttempt: data.maxAttempt, maxScore:data.maxScore}
+export const getScreenData = (data: any) => {
+  if (data) {
+    return {
+      ...data,
+      Size: { width: data.width, height: data.height },
+      Position: { x: data.x, y: data.y, z: data.z },
+      checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
+      max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore }
     };
   }
 }

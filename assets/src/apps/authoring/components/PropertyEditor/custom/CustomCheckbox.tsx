@@ -1,5 +1,10 @@
 import React from 'react';
-const CustomCheckbox = (props: any) => {
+interface CustomCheckboxProps {
+  label: string;
+  id: any;
+  value: boolean;
+}
+const CustomCheckbox: React.FC<CustomCheckboxProps> = (props: any) => {
   return (
     <div className="d-flex justify-content-between" >
       <span className="form-label">{props.label}</span>

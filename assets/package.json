@@ -17,6 +17,8 @@
   "dependencies": {
     "@reduxjs/toolkit": "^1.5.1",
     "@restart/hooks": "^0.3.26",
+    "@rjsf/bootstrap-4": "^3.0.0",
+    "@rjsf/core": "^2.5.1",
     "@types/jsonpath": "^0.2.0",
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
@@ -27,6 +29,7 @@
     "janus-script": "^1.6.1",
     "jquery": "^3.5.0",
     "json-rules-engine": "^6.0.1",
+    "json-schema": "^0.3.0",
     "jsonpath": "^1.1.1",
     "node-sass-glob-importer": "^5.3.2",
     "nprogress": "^0.2.0",
@@ -57,9 +60,7 @@
     "typescript": "^3.7.5",
     "uuid": "^8.3.2",
     "vm-browserify": "^1.1.2",
-    "whatwg-fetch": "^3.0.0",
-    "@rjsf/core":"^2.5.1",
-    "@rjsf/bootstrap-4": "^3.0.0"
+    "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.13.15",
