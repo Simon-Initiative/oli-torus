@@ -8,7 +8,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { JanusCarouselModes } from './types';
-
+import './Carousel.css';
 const Carousel: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});

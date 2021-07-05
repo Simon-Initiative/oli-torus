@@ -7,7 +7,7 @@ import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { CapiVariable } from '../types/parts';
-
+import './InputNumber.scss';
 const InputNumber: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
