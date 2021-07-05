@@ -11,9 +11,9 @@ import { selectSequence } from '../../../store/features/groups/selectors/deck';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  //const isHistoryModeOn = useSelector(selectEnableHistory);
+  const isHistoryModeOn = useSelector(selectEnableHistory);
   //comment the above line and uncomment this line for testing in preview mode
-  const isHistoryModeOn = true;
+  //const isHistoryModeOn = true;
 
   const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
