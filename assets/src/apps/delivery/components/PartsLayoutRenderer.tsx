@@ -27,9 +27,13 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   onPartSave = defaultHandler,
   onPartSubmit = defaultHandler,
 }) => {
+  const popups = parts.filter((part) => part.type === 'janus-popup');
+  const partsWithoutPopups = parts.filter((part) => part.type !== 'janus-popup');
+
+  const updatedParts = [...partsWithoutPopups, ...popups];
   return (
     <React.Fragment>
-      {parts.map((partDefinition: PartComponentDefinition) => {
+      {updatedParts.map((partDefinition: PartComponentDefinition) => {
         const partProps = {
           id: partDefinition.id,
           type: partDefinition.type,

@@ -1,5 +1,6 @@
 {
   "id": "oli_adaptive",
+  "allowClientEvaluation": true,
   "friendlyName": "Adaptive Activity",
   "description": "Adaptive Activity",
   "delivery": {
@@ -12,8 +13,6 @@
   },
   "schemaPruning": {
     "type": "keys",
-    "keys": [
-      "feedback"
-    ]
+    "keys": ["feedback"]
   }
 }

@@ -5,7 +5,7 @@ import {
   containsOperator,
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
-  notContainsOperator,
+  notContainsOperator
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -13,13 +13,13 @@ import {
   isEqual,
   isNaNOperator,
   notEqual,
-  notIsAnyOfOperator,
+  notIsAnyOfOperator
 } from 'adaptivity/operators/equality';
 import {
   hasSameTermsMathOperator,
   isEquivalentOfMathOperator,
   isExactlyMathOperator,
-  notExactlyMathOperator,
+  notExactlyMathOperator
 } from 'adaptivity/operators/math';
 import { inRangeOperator, notInRangeOperator } from 'adaptivity/operators/range';
 import { check } from 'adaptivity/rules-engine';
@@ -27,29 +27,32 @@ import {
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   disabledCorrectRule,
-  mockState,
+  mockState
 } from './rules_mocks';
 
 describe('Rules Engine', () => {
   it('should not break if empty state is passed', async () => {
-    const successEvents = await check({}, []);
+    const { results: successEvents } = await check({}, []);
     expect(successEvents).toEqual([]);
   });
 
   it('should return successful events of rules with no conditions', async () => {
-    const events = await check(mockState, [defaultCorrectRule]);
+    const { results: events } = await check(mockState, [defaultCorrectRule]);
     expect(events.length).toEqual(1);
     expect(events[0]).toEqual(defaultCorrectRule.event);
   });
 
   it('should evaluate complex conditions', async () => {
-    const events = await check(mockState, [complexRuleWithMultipleActions, defaultCorrectRule]);
+    const { results: events } = await check(mockState, [
+      complexRuleWithMultipleActions,
+      defaultCorrectRule,
+    ]);
     expect(events.length).toEqual(1);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
   it('should not process disabled rules', async () => {
-    const events = await check(mockState, [disabledCorrectRule]);
+    const { results: events } = await check(mockState, [disabledCorrectRule]);
     expect(events.length).toEqual(0);
   });
 });
