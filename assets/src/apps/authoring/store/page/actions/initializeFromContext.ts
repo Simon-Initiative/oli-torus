@@ -15,11 +15,13 @@ export const initializeFromContext = createAsyncThunk(
     const { dispatch, getState } = thunkApi;
 
     // load the page state properties
-    const pageState: PageState = {
+    const pageState: Partial<PageState> = {
       graded: params.graded,
       authorEmail: params.authorEmail,
       objectives: params.objectives,
       title: params.title,
+      revisionSlug: params.resourceSlug,
+      resourceId: params.resourceId,
     };
     dispatch(loadPage(pageState));
 

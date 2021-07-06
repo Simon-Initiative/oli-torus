@@ -90,13 +90,14 @@ const Markup: React.FC<any> = ({
     // seems that SS does not apply backgroundColor if the values is transparent
     renderStyles.backgroundColor = '';
   }
-  let processedText = templatizeText(text.replace(/ \s/g, '\u00a0 '), state);
+  let processedText = templatizeText(text, state);
 
   // eslint-disable-next-line
-  if (!children.length && !processedText) {
+  if (!children.length && !processedText.trim()) {
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
-    processedText = '\u00a0';
+
+    processedText = processedText.length < 2 ? '\u00a0' : processedText.replace(/ \s/g, '\u00a0 ');
   }
 
   // this is to support "legacy" SmartSparrow lessons

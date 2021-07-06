@@ -1,15 +1,21 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
+import { PartResponse } from 'components/activities/types';
+import { evalActivityAttempt } from 'data/persistence/state/intrinsic';
 import { check } from '../../../../../../adaptivity/rules-engine';
 import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  getEnvState,
+  getEnvState
 } from '../../../../../../adaptivity/scripting';
+import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
-import { selectCurrentActivityTree } from '../../groups/selectors/deck';
-import { selectPreviewMode } from '../../page/slice';
+import {
+  selectCurrentActivityTree,
+  selectCurrentActivityTreeAttemptState
+} from '../../groups/selectors/deck';
+import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
 export const triggerCheck = createAsyncThunk(
@@ -17,6 +23,12 @@ export const triggerCheck = createAsyncThunk(
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
+    const sectionSlug = selectSectionSlug(rootState);
+    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
+    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
+
+    /* console.log('TRIGGER CHECK', {currentAttempt}); */
 
     const currentActivityTree = selectCurrentActivityTree(rootState);
     if (!currentActivityTree || !currentActivityTree.length) {
@@ -64,7 +76,8 @@ export const triggerCheck = createAsyncThunk(
     bulkApplyState(updateScripting, defaultGlobalEnv);
 
     //update the store with the latest changes
-    await dispatch(setLastCheckTriggered({ timestamp: Date.now() }));
+    const currentTriggerStamp = Date.now();
+    await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
 
     // this needs to be the attempt state
     // at the very least needs the "local" version `stage.foo.whatevr` vs `q:1234|stage.foo.whatever`
@@ -75,7 +88,15 @@ export const triggerCheck = createAsyncThunk(
       attempt.parts.forEach((part: any) => {
         if (part.response) {
           Object.keys(part.response).forEach((key) => {
-            collect[part.response[key].path] = part.response[key].value;
+            const input_response = part.response[key];
+            if (!input_response) {
+              return;
+            }
+            const { path, value } = input_response;
+            if (!path) {
+              return;
+            }
+            collect[path] = value;
           });
         }
       });
@@ -108,6 +129,7 @@ export const triggerCheck = createAsyncThunk(
     };
 
     let checkResult;
+    let isCorrect = false;
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
@@ -116,7 +138,9 @@ export const triggerCheck = createAsyncThunk(
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
-      checkResult = await check(stateSnapshot, rulesToCheck);
+      const check_call_result = await check(stateSnapshot, rulesToCheck);
+      checkResult = check_call_result.results;
+      isCorrect = check_call_result.correct;
       /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
@@ -124,19 +148,42 @@ export const triggerCheck = createAsyncThunk(
         stateSnapshot,
       }); */
     } else {
-      // server mode (delivery) TODO
-      checkResult = [
-        {
-          type: 'correct',
-          params: {
-            actions: [{ params: { target: 'next' }, type: 'navigation' }],
-            order: 1,
-            correct: true,
-          },
-        },
-      ];
+      /* console.log('CHECKING', { sectionSlug, currentActivityTreeAttempts }); */
+
+      if (!currentActivityAttemptGuid) {
+        console.error('not current attempt, cannot eval', { currentActivityTreeAttempts });
+        return;
+      }
+
+      // we have to send all the current activity attempt state to the server
+      // because the server doesn't know the current sequence id and will strip out
+      // all sequence ids from the path for these only
+      const partResponses: PartResponse[] =
+        currentAttempt?.parts.map(({attemptGuid, response}) => {
+          // response should be wrapped in input, but only once
+          const input_response = response?.input ? response : { input: response };
+          return { attemptGuid, response: input_response };
+        }) || [];
+
+      const evalResult = await evalActivityAttempt(
+        sectionSlug,
+        currentActivityAttemptGuid,
+        partResponses,
+      );
+      /* console.log('EVAL RESULT', { evalResult }); */
+      checkResult = (evalResult.result as any).actions;
+      isCorrect = checkResult.every((action: any) => action.params.correct);
     }
 
-    await dispatch(setLastCheckResults({ results: checkResult }));
+    let attempt: any = currentAttempt;
+    if (!isCorrect) {
+      /* console.log('Incorrect, time for new attempt'); */
+      const {payload: newAttempt} = await dispatch(
+        createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
+      );
+      attempt = newAttempt;
+    }
+
+    await dispatch(setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }));
   },
 );
