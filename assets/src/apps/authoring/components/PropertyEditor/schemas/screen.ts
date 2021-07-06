@@ -19,10 +19,15 @@ const screenSchema = {
         z: { type: 'number' }
       }
     },
-    useHtmlProps: {
-      type: 'boolean',
-      format: 'checkbox',
-      title: 'Use HTML Properties'
+    palette: {
+      type:'object',
+      properties:{
+        backgroundColor: {type:'string'},
+        borderColor: {type:'string'},
+        borderRadius: {type:'string'},
+        borderStyle: {type:'string'},
+        borderWidth: {type:'string'}
+      }
     },
     customCssClass: {
       title: 'Custom CSS Class',
@@ -115,6 +120,12 @@ export const screenUiSchema = {
     maxScore: {
       classNames: 'col-6'
     }
+  },
+  palette: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Palette',
+    borderStyle: {classNames: 'col-6'},
+    borderWidth: {classNames: 'col-6'}
   },
   checkButton: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
