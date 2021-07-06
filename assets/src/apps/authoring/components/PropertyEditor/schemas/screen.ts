@@ -1,6 +1,5 @@
-import { JSONSchema7 } from 'json-schema';
-import customFieldTemplate from '../custom/CustomFieldTemplate';
-const screenSchema: JSONSchema7 = {
+import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+const screenSchema = {
   type: 'object',
   properties: {
     Size: {
@@ -20,15 +19,10 @@ const screenSchema: JSONSchema7 = {
         z: { type: 'number' }
       }
     },
-    palette: {
-      type: 'object',
-      properties: {
-        useHtmlProps: {
-          type: 'boolean',
-          format: 'checkbox',
-          title: 'Use HTML Properties'
-        },
-      }
+    useHtmlProps: {
+      type: 'boolean',
+      format: 'checkbox',
+      title: 'Use HTML Properties'
     },
     customCssClass: {
       title: 'Custom CSS Class',
@@ -91,7 +85,7 @@ const screenSchema: JSONSchema7 = {
 
 export const screenUiSchema = {
   Size: {
-    'ui:ObjectFieldTemplate': customFieldTemplate,
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
     width: {
       classNames: 'col-6'
@@ -101,7 +95,7 @@ export const screenUiSchema = {
     }
   },
   Position: {
-    'ui:ObjectFieldTemplate': customFieldTemplate,
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Position',
     x: {
       classNames: 'col-4 pr-1'
@@ -114,7 +108,7 @@ export const screenUiSchema = {
     }
   },
   max: {
-    'ui:ObjectFieldTemplate': customFieldTemplate,
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
     maxAttempt: {
       classNames: 'col-6'
     },
@@ -123,25 +117,13 @@ export const screenUiSchema = {
     }
   },
   checkButton: {
-    'ui:ObjectFieldTemplate': customFieldTemplate,
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
     showCheckBtn: {
       classNames: 'col-12'
     },
     checkButtonLabel: {
       classNames: 'col-12'
     }
-  },
-  palette: {
-    'ui:ObjectFieldTemplate': customFieldTemplate,
-    'ui:title': 'Palette',
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
-    fillAlpha: { classNames: 'col-6' },
-    fillColor: { classNames: 'col-6' },
-    lineAlpha: { classNames: 'col-6' },
-    lineColor: { classNames: 'col-6' },
-    lineStyle: { classNames: 'col-6' },
-    lineThickness: { classNames: 'col-6' },
   }
 };
 
@@ -149,6 +131,7 @@ export const getScreenData = (data: any) => {
   if (data) {
     return {
       ...data,
+      useHtmlProps: data.palette.useHtmlProps,
       Size: { width: data.width, height: data.height },
       Position: { x: data.x, y: data.y, z: data.z },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },

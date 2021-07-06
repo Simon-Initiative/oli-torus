@@ -5,7 +5,7 @@ import { JSONSchema7 } from 'json-schema';
 import CustomCheckbox from './custom/CustomCheckbox';
 
 interface PropertyEditorProps {
-  schema: JSONSchema7;
+  schema: any;
   uiSchema: any;
   onChangeHandler: any;
   value: any;
