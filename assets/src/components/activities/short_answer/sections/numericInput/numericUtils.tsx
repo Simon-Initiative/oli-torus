@@ -1,6 +1,6 @@
-import { NumericOperator } from 'components/activities/common/responses/authoring/rules';
+import { RuleOperator } from 'components/activities/common/responses/authoring/rules';
 
-export const numericOptions: { value: NumericOperator; displayValue: string }[] = [
+export const numericOptions: { value: RuleOperator; displayValue: string }[] = [
   { value: 'gt', displayValue: 'Greater than' },
   { value: 'gte', displayValue: 'Greater than or equal to' },
   { value: 'lt', displayValue: 'Less than' },

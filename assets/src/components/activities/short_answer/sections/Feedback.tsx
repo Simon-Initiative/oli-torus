@@ -5,9 +5,9 @@ import { ModelEditorProps } from '../schema';
 import { RichText, Response } from '../../types';
 import { Description } from 'components/misc/Description';
 import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
-import { parseInputFromRule } from '../utils';
 import { ProjectSlug } from 'data/types';
 import { CloseButton } from 'components/misc/CloseButton';
+import { parseInputFromRule } from 'components/activities/common/responses/authoring/rules';
 
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (id: string, content: RichText) => void;

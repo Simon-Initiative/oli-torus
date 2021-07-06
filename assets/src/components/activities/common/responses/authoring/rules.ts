@@ -1,12 +1,8 @@
-import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
-import { HasParts } from 'components/activities/types';
 import { ID } from 'data/content/model';
+import { Maybe } from 'tsmonad';
 
-// Rules
 export const createRuleForIds = (toMatch: ID[], notToMatch: ID[]) =>
   andRules(...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))));
-
-export const matchRule = (id: string) => `input like {${id}}`;
 
 export const invertRule = (rule: string) => `(!(${rule}))`;
 
@@ -18,22 +14,67 @@ export const orRules = (...rules: string[]) => rules.reduce(orTwoRules);
 
 export const isCatchAllRule = (input: string) => input === '.*';
 
-export type NumericOperator = 'gt' | 'gte' | 'eq' | 'lt' | 'lte' | 'neq' | 'btw' | 'nbtw';
-export function isOperator(s: string): s is NumericOperator {
-  return ['gt', 'gte', 'eq', 'lt', 'lte', 'neq', 'btw', 'nbtw'].includes(s);
+export type RuleOperator =
+  // text
+  | 'contains'
+  | 'notcontains'
+  | 'regex'
+  // numeric
+  | 'gt'
+  | 'gte'
+  | 'eq'
+  | 'lt'
+  | 'lte'
+  | 'neq'
+  | 'btw'
+  | 'nbtw';
+
+export function isOperator(s: string): s is RuleOperator {
+  return [
+    'contains',
+    'notcontains',
+    'regex',
+    'gt',
+    'gte',
+    'eq',
+    'lt',
+    'lte',
+    'neq',
+    'btw',
+    'nbtw',
+  ].includes(s);
 }
 
+// text
+export const matchRule = (input: string) => `input like {${input}}`;
+export const containsRule = (input: string) => `input contains {${input}}`;
+export const notContainsRule = (input: string) => invertRule(containsRule(input));
+
+// numeric
 export const eqRule = (input: string) => `input = {${input}}`;
 export const neqRule = (input: string) => invertRule(eqRule(input));
 export const ltRule = (input: string) => `input < {${input}}`;
 export const lteRule = (input: string) => orRules(ltRule(input), eqRule(input));
 export const gtRule = (input: string) => `input > {${input}}`;
 export const gteRule = (input: string) => orRules(gtRule(input), eqRule(input));
-export const btwRule = (left: string, right: string) =>
-  orRules(gtRule(left), eqRule(left), ltRule(right), eqRule(right));
+
+const makeBtwRule = (lesser: string, greater: string) =>
+  andRules(orRules(gtRule(lesser), eqRule(lesser)), orRules(ltRule(greater), eqRule(greater)));
+
+export const btwRule = (left: string, right: string) => {
+  const parsedLeft = parseFloat(left);
+  const parsedRight = parseFloat(right);
+  if (Number.isNaN(parsedLeft) || Number.isNaN(parsedRight)) {
+    return makeBtwRule('0', '0');
+  }
+
+  const lesser = parsedLeft < parsedRight ? left : right;
+  const greater = lesser === left ? right : left;
+  return makeBtwRule(lesser, greater);
+};
 export const nbtwRule = (left: string, right: string) => invertRule(btwRule(left, right));
 
-export const makeNumericRule = (operator: NumericOperator, input: string | [string, string]) => {
+export const makeRule = (operator: RuleOperator, input: string | [string, string]) => {
   if (typeof input === 'string') {
     switch (operator) {
       case 'gt':
@@ -48,6 +89,12 @@ export const makeNumericRule = (operator: NumericOperator, input: string | [stri
         return eqRule(input);
       case 'neq':
         return neqRule(input);
+      case 'contains':
+        return containsRule(input);
+      case 'notcontains':
+        return notContainsRule(input);
+      case 'regex':
+        return matchRule(input);
     }
   }
   switch (operator) {
@@ -59,20 +106,28 @@ export const makeNumericRule = (operator: NumericOperator, input: string | [stri
   throw new Error('Could not make numeric rule for operator ' + operator + ' and input ' + input);
 };
 
-export const parseTextInputFromRule = (rule: string) =>
+// Look for two equality matches, something like `input = {123} || input = {234}`
+const matchBetweenRule = (rule: string) => rule.match(/= {(\d+)}.* = {(\d+)}/);
+export const parseInputFromRule = (rule: string) =>
+  Maybe.maybe(matchBetweenRule(rule)).caseOf<string | [string, string]>({
+    just: (betweenMatch) => [betweenMatch[1], betweenMatch[2]],
+    nothing: () => parseSingleInput(rule),
+  });
+
+export const parseSingleInput = (rule: string) =>
   rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
 
-export const parseNumericInputFromRule = (rule: string): string | [string, string] => {
-  const btwMatch = rule.match(/= {(\d+)}.* = {(\d+)}/);
-
-  if (btwMatch) {
-    return [btwMatch[1], btwMatch[2]];
-  }
-  return parseTextInputFromRule(rule);
-};
-
-export const parseOperatorFromRule = (rule: string): NumericOperator => {
+export const parseOperatorFromRule = (rule: string): RuleOperator => {
   switch (true) {
+    // text
+    case rule.includes('!') && rule.includes('contains'):
+      return 'notcontains';
+    case rule.includes('contains'):
+      return 'contains';
+    case rule.includes('like'):
+      return 'regex';
+
+    // numeric
     case rule.includes('!') && rule.includes('>') && rule.includes('<') && rule.includes('='):
       return 'nbtw';
     case rule.includes('>') && rule.includes('<') && rule.includes('='):

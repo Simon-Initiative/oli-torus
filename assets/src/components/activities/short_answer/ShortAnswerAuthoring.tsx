@@ -20,7 +20,13 @@ import { HintsAuthoringConnected } from 'components/activities/common/hints/auth
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { NumericInput } from 'components/activities/short_answer/sections/numericInput/NumericInput';
-import { parseInputFromRule } from 'components/activities/short_answer/utils';
+import {
+  makeRule,
+  parseInputFromRule,
+  parseOperatorFromRule,
+  RuleOperator,
+} from 'components/activities/common/responses/authoring/rules';
+import { TextInput } from 'components/activities/short_answer/sections/TextInput';
 
 const store = configureStore();
 
@@ -45,7 +51,7 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
 
   return (
     <select
-      style={{ width: '150px', height: 61 }}
+      style={{ height: 61 }}
       disabled={!editMode}
       className="ml-2 form-control"
       value={inputType}
@@ -62,48 +68,6 @@ export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDr
   );
 };
 
-// const Tester = ({ model }: { model: ShortAnswerModelSchema }) => {
-//   const [input, setInput] = useState('');
-//   const [correctness, setCorrectness] = useState<undefined | 'correct' | 'incorrect'>(undefined);
-//   return (
-//     <>
-//       <div className="input-group">
-//         <span
-//           className="input-group-text"
-//           style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
-//           id={`testInputPrepend-${1}`}
-//         >
-//           Test answer
-//         </span>
-//         <input
-//           aria-describedby={`testInputPrepend-${1}`}
-//           className={`form-control ${
-//             correctness === 'correct' ? 'is-valid' : correctness === 'incorrect' ? 'is-invalid' : ''
-//           }`}
-//           onChange={(e) => setInput(e.target.value)}
-//         />
-//       </div>
-
-//       <AuthoringButtonConnected
-//         onClick={(e) => {
-//           Persistence.evaluate(model, [{ attemptGuid: '1', response: { input } }]).then(
-//             (result: Persistence.Evaluated) => {
-//               console.log('is correct', result.evaluations[0].result.score === 1);
-//               if (result.evaluations[0].result.score === 1) {
-//                 setCorrectness('correct');
-//               } else {
-//                 setCorrectness('incorrect');
-//               }
-//             },
-//           );
-//         }}
-//       >
-//         Test input
-//       </AuthoringButtonConnected>
-//     </>
-//   );
-// };
-
 interface InputProps {
   inputType: InputType;
   response: ActivityTypes.Response;
@@ -113,38 +77,33 @@ interface InputProps {
 const Input: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }) => {
   const { editMode } = useAuthoringElementContext();
 
-  const [value, setValue] = useState(parseInputFromRule(response.rule, inputType));
+  type Input = string | [string, string];
+  const [{ operator, input }, setState] = useState({
+    input: parseInputFromRule(response.rule),
+    operator: parseOperatorFromRule(response.rule),
+  });
 
-  const onEditRule = (input: string) => {
+  const onEditRule = (inputState: { input: Input; operator: RuleOperator }) => {
     if (input !== '.*') {
-      setValue(input);
-
-      const rule = inputType === 'numeric' ? `input = {${input}}` : `input like {${input}}`;
-      console.log('rule', rule);
-
-      onEditResponseRule(response.id, rule);
+      setState(inputState);
+      onEditResponseRule(response.id, makeRule(inputState.operator, inputState.input));
     }
   };
-  if (value === '.*') {
+  if (input === '.*') {
     return null;
   }
 
+  const shared = {
+    state: { operator, input },
+    setState: onEditRule,
+  };
+
   if (inputType === 'numeric') {
-    return <NumericInput response={response} onEditResponseRule={onEditRule} />;
+    return <NumericInput {...shared} />;
   }
 
   if (inputType === 'text') {
-    return (
-      <>
-        <input
-          disabled={!editMode}
-          type="text"
-          className="form-control"
-          onChange={(e) => onEditRule(e.target.value)}
-          value={value}
-        />
-      </>
-    );
+    return <TextInput {...shared} />;
   }
 
   if (inputType === 'textarea') {
@@ -152,8 +111,8 @@ const Input: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }
       <textarea
         disabled={!editMode}
         className="form-control"
-        onChange={(e) => onEditRule(e.target.value)}
-        value={value}
+        onChange={(e) => onEditRule({ operator: operator, input: e.target.value })}
+        value={input}
       />
     );
   }
@@ -166,37 +125,38 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <div className="d-flex">
-            <StemAuthoring
-              stem={props.model.stem}
-              onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
-            />
-            <InputTypeDropdown
-              editMode={props.editMode}
-              inputType={props.model.inputType}
-              onChange={(inputType) => dispatch(ShortAnswerActions.setInputType(inputType))}
-            />
+          <div className="row mb-2">
+            <div className="col-md-8">
+              <StemAuthoring
+                stem={props.model.stem}
+                onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
+              />
+            </div>
+            <div className="col-md-4">
+              <InputTypeDropdown
+                editMode={props.editMode}
+                inputType={props.model.inputType}
+                onChange={(inputType) => dispatch(ShortAnswerActions.setInputType(inputType))}
+              />
+            </div>
           </div>
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          <div className="d-flex flex-column">
+          <div className="d-flex flex-column mb-2">
             <StemDelivery stem={model.stem} context={defaultWriterContext()} />
             {props.model.authoring.parts[0].responses.map(
               (response: ActivityTypes.Response, index) => {
                 // Handle catchall rule so it doesnt throw
                 return (
-                  parseInputFromRule(response.rule, props.model.inputType) !== '.*' && (
-                    <>
-                      <Input
-                        key={response.id}
-                        inputType={props.model.inputType}
-                        response={response}
-                        onEditResponseRule={(id, rule) =>
-                          dispatch(ShortAnswerActions.editRule(id, rule))
-                        }
-                      />
-                      {/* <Tester model={props.model} /> */}
-                    </>
+                  parseInputFromRule(response.rule) !== '.*' && (
+                    <Input
+                      key={response.id}
+                      inputType={props.model.inputType}
+                      response={response}
+                      onEditResponseRule={(id, rule) =>
+                        dispatch(ShortAnswerActions.editRule(id, rule))
+                      }
+                    />
                   )
                 );
               },

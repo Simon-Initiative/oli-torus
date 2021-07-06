@@ -1,47 +1,104 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { Response } from 'components/activities/types';
-import { useState } from 'react';
 import React from 'react';
-import {
-  isOperator,
-  makeNumericRule,
-  NumericOperator,
-  parseNumericInputFromRule,
-  parseOperatorFromRule,
-} from 'components/activities/common/responses/authoring/rules';
+import { isOperator, RuleOperator } from 'components/activities/common/responses/authoring/rules';
 import { numericOptions } from 'components/activities/short_answer/sections/numericInput/numericUtils';
 
-interface InputProps {
-  response: Response;
-  onEditResponseRule: (rule: string) => void;
-}
-export const NumericInput: React.FC<InputProps> = ({ response, onEditResponseRule }) => {
+const SimpleNumericInput: React.FC<InputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
 
-  const [value, setValue] = useState(parseNumericInputFromRule(response.rule));
-  const [operator, setOperator] = useState(parseOperatorFromRule(response.rule) || 'eq');
+  if (isRangeOperator(state.operator) || typeof state.input !== 'string') {
+    return null;
+  }
 
-  const setNumericRule = (operator: NumericOperator, input: string | [string, string]) => {
-    console.log('operator', operator, 'input', input);
+  return (
+    <input
+      disabled={!editMode}
+      type="number"
+      className="form-control"
+      onChange={(e) => {
+        setState({ input: e.target.value, operator: state.operator });
+      }}
+      value={state.input}
+    />
+  );
+};
 
-    console.log('new rule', makeNumericRule(operator, input));
-    onEditResponseRule(makeNumericRule(operator, input));
+const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
+  const { editMode } = useAuthoringElementContext();
+
+  if (!isRangeOperator(state.operator) || typeof state.input === 'string') {
+    return null;
+  }
+
+  return (
+    <>
+      <input
+        disabled={!editMode}
+        type="number"
+        className="form-control"
+        onChange={(e) => {
+          const newValue = [e.target.value, state.input[1]] as [string, string];
+          setState({ input: newValue, operator: state.operator });
+        }}
+        value={state.input[0]}
+      />
+      <input
+        placeholder="Correct answer"
+        disabled={!editMode}
+        type="number"
+        className="form-control"
+        onChange={(e) => {
+          const newValue = [state.input[0], e.target.value] as [string, string];
+          setState({ input: newValue, operator: state.operator });
+        }}
+        value={state.input[1]}
+      />
+    </>
+  );
+};
+
+interface State {
+  operator: RuleOperator;
+  input: string | [string, string];
+}
+interface InputProps {
+  setState: (s: State) => void;
+  state: State;
+}
+const isRangeOperator = (op: RuleOperator) => op === 'btw' || op === 'nbtw';
+
+export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
+  const { editMode } = useAuthoringElementContext();
+
+  const shared = {
+    state,
+    setState,
   };
+
   return (
     <div className="d-flex">
       <select
         disabled={!editMode}
         className="form-control"
-        value={operator}
+        value={state.operator}
         onChange={(e) => {
-          if (!isOperator(e.target.value)) {
+          const nextOp = e.target.value;
+          if (!isOperator(nextOp)) {
             return;
           }
-          setOperator(e.target.value);
-          setNumericRule(e.target.value, value);
+
+          let nextValue;
+          if (isRangeOperator(nextOp) && !isRangeOperator(state.operator)) {
+            nextValue = [state.input, state.input] as [string, string];
+          } else if (isRangeOperator(state.operator) && !isRangeOperator(nextOp)) {
+            nextValue = state.input[0];
+          } else {
+            nextValue = state.input;
+          }
+
+          setState({ operator: nextOp, input: nextValue });
         }}
         name="question-type"
-        id="question-type"
       >
         {numericOptions.map((option) => (
           <option key={option.value} value={option.value}>
@@ -49,35 +106,8 @@ export const NumericInput: React.FC<InputProps> = ({ response, onEditResponseRul
           </option>
         ))}
       </select>
-      <input
-        disabled={!editMode}
-        type="number"
-        className="form-control"
-        onChange={(e) => {
-          const newValue =
-            operator === 'btw' || operator === 'nbtw'
-              ? ([e.target.value, value[1]] as [string, string])
-              : e.target.value;
-          setValue(newValue);
-          console.log('new rule', makeNumericRule(operator, newValue));
-          onEditResponseRule(makeNumericRule(operator, newValue));
-        }}
-        value={value}
-      />
-      {(operator === 'btw' || operator === 'nbtw') && (
-        <input
-          disabled={!editMode}
-          type="number"
-          className="form-control"
-          onChange={(e) => {
-            const newValue = [value[0], e.target.value] as [string, string];
-            setValue(newValue);
-            console.log('new rule', makeNumericRule(operator, newValue));
-            onEditResponseRule(makeNumericRule(operator, newValue));
-          }}
-          value={value}
-        />
-      )}
+      <RangeNumericInput {...shared} />
+      <SimpleNumericInput {...shared} />
     </div>
   );
 };

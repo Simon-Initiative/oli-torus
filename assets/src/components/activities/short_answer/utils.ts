@@ -1,20 +1,5 @@
-import { InputType, ShortAnswerModelSchema } from './schema';
+import { ShortAnswerModelSchema } from './schema';
 import { makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
-import {
-  parseNumericInputFromRule,
-  parseTextInputFromRule,
-} from 'components/activities/common/responses/authoring/rules';
-
-export const parseInputFromRule = (rule: string, inputType: InputType) => {
-  switch (inputType) {
-    case 'numeric':
-      return parseNumericInputFromRule(rule);
-    case 'text':
-      return parseTextInputFromRule(rule);
-    case 'textarea':
-      return parseTextInputFromRule(rule);
-  }
-};
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {
