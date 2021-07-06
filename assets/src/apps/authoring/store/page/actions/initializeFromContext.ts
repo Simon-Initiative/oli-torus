@@ -21,7 +21,7 @@ export const initializeFromContext = createAsyncThunk(
       objectives: params.objectives,
       title: params.title,
       revisionSlug: params.resourceSlug,
-      resourceId: params.resource_id,
+      resourceId: params.resourceId,
     };
     dispatch(loadPage(pageState));
 
