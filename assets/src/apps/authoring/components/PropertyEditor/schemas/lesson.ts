@@ -10,12 +10,6 @@ const lessonSchema = {
         height: { type: 'number' }
       }
     },
-    defaultTextStyle: {
-      type: 'string',
-      title: 'Text Style',
-      enum: ['title', 'heading', 'sub-heading','body-text','small-text','caption','code'],
-      enumNames: ['Title', 'Heading', 'Sub-heading', 'Body Text', 'Small Text', 'Caption', 'Code']
-    },
     Appearance: {
       type: 'object',
       title: 'Lesson Appearance',
@@ -30,28 +24,6 @@ const lessonSchema = {
         customCssUrl: {
           type:'string',
           title: 'Custom CSS URL'
-        },
-        headingStyleType: {
-          type:'string',
-          title: 'Lesson Title Style',
-          enum: ['Title', 'Heading', 'Sub-heading']
-        },
-        renderAccessibleOrderedList: {
-          type:'boolean',
-          title: 'User accessible ordered lists'
-        },
-        showOptionsMenu: {
-          type:'boolean',
-          title: 'Show learner options menu'
-        },
-        enableLearningApps: {
-          type:'boolean',
-          title: 'Enable Learning Apps'
-        },
-        globalNumberFormat: {
-          type:'string',
-          title: 'Number Format',
-          enum: ['Rounded Financial Format', 'none']
         }
       }
     },
@@ -61,10 +33,6 @@ const lessonSchema = {
         enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
         lessonMax: { type: 'number', title:'Lesson Max' }
       }
-    },
-    advancedAuthoring: {
-      type:'boolean',
-      title: 'Advanced Authoring'
     },
     title: {
       type: 'string',
@@ -106,12 +74,10 @@ export const getLessonData = (data: any) => {
     return {
       ...lessonData,
       Size: { width: lessonData.defaultScreenWidth, height: lessonData.defaultScreenHeight },
-      Appearance: { customCssUrl: lessonData.customCssUrl, headingStyleType: lessonData.headingStyleType,
-        renderAccessibleOrderedList: lessonData.renderAccessibleOrderedList,
-        showOptionsMenu: !lessonData.hideOptionsMenu,
-        globalNumberFormat: lessonData.globalNumberFormat},
+      Appearance: { customCssUrl: lessonData.customCssUrl,
       customCSS: data.content.customCss,
       title: data.title
+      }
     };
   }
 }
