@@ -17,6 +17,7 @@ export interface DeliveryProps {
   resourceId: number;
   sectionSlug: string;
   userId: number;
+  userName: string;
   pageTitle: string;
   pageSlug: string;
   content: any;
@@ -30,6 +31,7 @@ export interface DeliveryProps {
 
 const Delivery: React.FC<DeliveryProps> = ({
   userId,
+  userName,
   resourceId,
   sectionSlug,
   pageTitle = '',
@@ -58,6 +60,7 @@ const Delivery: React.FC<DeliveryProps> = ({
     dispatch(
       loadInitialPageState({
         userId,
+        userName,
         resourceId,
         sectionSlug,
         pageTitle,
