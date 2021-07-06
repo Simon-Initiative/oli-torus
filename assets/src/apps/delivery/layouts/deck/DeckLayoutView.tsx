@@ -333,7 +333,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           savePartStateToTree({
             attemptGuid,
             partAttemptGuid,
-            responseMap,
+            response: responseMap,
             activityTree: currentActivityTree,
           }),
         );
