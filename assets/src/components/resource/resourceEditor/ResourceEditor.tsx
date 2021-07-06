@@ -266,7 +266,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
     const activityContexts = this.state.activityContexts.set(key, merged);
-    console.log(this.props.resourceId);
+
     this.setState({ activityContexts }, () => {
       const saveFn = (releaseLock: boolean) =>
         ActivityPersistence.edit(
