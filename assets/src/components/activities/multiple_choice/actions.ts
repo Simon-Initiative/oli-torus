@@ -4,14 +4,17 @@ import { PostUndoable } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
-import { getCorrectResponse, getResponses } from 'components/activities/common/responses/authoring/responseUtils';
+import {
+  getCorrectResponse,
+  getResponses,
+} from 'components/activities/common/responses/authoring/responseUtils';
 
 export const MCActions = {
   addChoice(choice: Choice) {
     return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
       ChoiceActions.addChoice(choice)(model, post);
 
-      model.authoring.parts[0].responses.push(makeResponse(`input like {${choice.id}}`, 0, ''));
+      model.authoring.parts[0].responses.push(makeResponse(matchRule(choice.id), 0, ''));
     };
   },
 

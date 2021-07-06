@@ -41,7 +41,7 @@ export const TargetedFeedback: React.FC<Props> = ({
           onRemove={onRemove}
         />
       ))}
-      <AuthoringButtonConnected className="btn btn-link pl-0" onClick={() => addTargetedResponse()}>
+      <AuthoringButtonConnected className="btn btn-link pl-0" action={addTargetedResponse}>
         Add targeted feedback
       </AuthoringButtonConnected>
     </>

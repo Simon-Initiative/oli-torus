@@ -4,14 +4,17 @@ import { ActivityDeliveryState, isEvaluated, submit } from 'data/content/activit
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-export const SubmitButtonConnected: React.FC = () => {
+interface Props {
+  disabled?: boolean;
+}
+export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   const { graded, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   return (
     <SubmitButton
       shouldShow={!isEvaluated(uiState) && !graded}
-      disabled={uiState.selectedChoices.length === 0}
+      disabled={disabled === undefined ? uiState.selection.length === 0 : disabled}
       onClick={() => dispatch(submit(onSubmitActivity))}
     />
   );

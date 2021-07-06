@@ -6,7 +6,6 @@ import {
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
-  ChoiceId,
   FeedbackAction,
   Hint,
   PartResponse,
@@ -23,7 +22,7 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 
 export interface ActivityDeliveryState {
   attemptState: ActivityState;
-  selectedChoices: ChoiceId[];
+  selection: string[];
   hints: Hint[];
   hasMoreHints: boolean;
 }
@@ -42,22 +41,19 @@ export const activityDeliverySlice = createSlice({
         };
       }
     },
-    setSelectedChoices(state, action: PayloadAction<ChoiceId[]>) {
-      state.selectedChoices = action.payload;
-    },
-    clearSelectedChoices(state) {
-      state.selectedChoices = [];
+    setSelection(state, action: PayloadAction<string[]>) {
+      state.selection = action.payload;
     },
     setAttemptState(state, action: PayloadAction<ActivityState>) {
       state.attemptState = action.payload;
     },
     updateChoiceSelectionMultiple(state, action: PayloadAction<string>) {
-      state.selectedChoices.find((choiceId) => choiceId === action.payload)
-        ? (state.selectedChoices = state.selectedChoices.filter((id) => id !== action.payload))
-        : state.selectedChoices.push(action.payload);
+      state.selection.find((choiceId) => choiceId === action.payload)
+        ? (state.selection = state.selection.filter((id) => id !== action.payload))
+        : state.selection.push(action.payload);
     },
     updateChoiceSelectionSingle(state, action: PayloadAction<string>) {
-      state.selectedChoices = [action.payload];
+      state.selection = [action.payload];
     },
     setHints(state, action: PayloadAction<Hint[]>) {
       state.hints = action.payload;
@@ -88,17 +84,19 @@ export const requestHint =
     dispatch(slice.actions.setHasMoreHints(response.hasMoreHints));
   };
 
-export const selectedChoicesToInput = (state: ActivityDeliveryState) =>
-  state.selectedChoices.join(' ');
+export const selectedChoicesToInput = (state: ActivityDeliveryState) => state.selection.join(' ');
 export const selectAttemptState = (state: ActivityDeliveryState) => state.attemptState;
 export const isEvaluated = (state: ActivityDeliveryState) =>
   selectAttemptState(state).score !== null;
 
 export const resetAction =
-  (onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>): AppThunk =>
+  (
+    onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+    selection: string[],
+  ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
-    dispatch(slice.actions.clearSelectedChoices());
+    dispatch(slice.actions.setSelection(selection));
     dispatch(slice.actions.clearHints());
     dispatch(slice.actions.setAttemptState(response.attemptState));
     dispatch(slice.actions.setHasMoreHints(getState().attemptState.parts[0].hasMoreHints));
@@ -121,16 +119,16 @@ export const submit =
     dispatch(slice.actions.activitySubmissionReceived(response));
   };
 
-// TODO in follow-up activities - make generic
 export const initializeState =
-  (state: ActivityState): AppThunk =>
+  (state: ActivityState, initialSelection: string[]): AppThunk =>
   async (dispatch, getState) => {
     dispatch(slice.actions.setHints(state.parts[0].hints));
     dispatch(slice.actions.setAttemptState(state));
     dispatch(slice.actions.setHasMoreHints(state.parts[0].hasMoreHints));
+    dispatch(slice.actions.setSelection(initialSelection));
   };
 
-export const selectChoice =
+export const setSelection =
   (
     id: string,
     onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>,

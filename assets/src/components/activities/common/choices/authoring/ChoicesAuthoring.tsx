@@ -76,7 +76,7 @@ const AddChoiceButton: React.FC<AddChoiceButtonProps> = ({ icon, addOne }) => {
   return (
     <div className="choicesAuthoring__addChoiceContainer">
       <div className="choicesAuthoring__choiceIcon">{icon}</div>
-      <AuthoringButtonConnected className="choicesAuthoring__addChoiceButton" onClick={addOne}>
+      <AuthoringButtonConnected className="choicesAuthoring__addChoiceButton" action={addOne}>
         Add choice
       </AuthoringButtonConnected>
     </div>

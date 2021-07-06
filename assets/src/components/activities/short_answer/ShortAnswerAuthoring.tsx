@@ -113,7 +113,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
             ))}
             <AuthoringButtonConnected
               className="align-self-start btn btn-link"
-              onClick={() => dispatch(ShortAnswerActions.addResponse())}
+              action={() => dispatch(ShortAnswerActions.addResponse())}
             >
               Add targeted feedback
             </AuthoringButtonConnected>

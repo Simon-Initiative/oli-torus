@@ -1,3 +1,4 @@
+import { Response } from 'components/activities/types';
 import { ID } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
@@ -12,7 +13,7 @@ export const andRules = (...rules: string[]) => rules.reduce(andTwoRules);
 const orTwoRules = (rule1: string, rule2: string) => `${rule2} || (${rule1})`;
 export const orRules = (...rules: string[]) => rules.reduce(orTwoRules);
 
-export const isCatchAllRule = (input: string) => input === '.*';
+export const isCatchAllResponse = (response: Response) => response.rule === '.*';
 
 export type RuleOperator =
   // text
@@ -128,9 +129,9 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
       return 'regex';
 
     // numeric
-    case rule.includes('!') && rule.includes('>') && rule.includes('<') && rule.includes('='):
+    case ['!', '>', '<', '='].every((op) => rule.includes(op)):
       return 'nbtw';
-    case rule.includes('>') && rule.includes('<') && rule.includes('='):
+    case ['>', '<', '='].every((op) => rule.includes(op)):
       return 'btw';
     case rule.includes('>') && rule.includes('='):
       return 'gte';

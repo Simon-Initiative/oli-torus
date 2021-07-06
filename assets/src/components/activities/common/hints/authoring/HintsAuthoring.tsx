@@ -85,7 +85,7 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
         </div>
       ))}
       <AuthoringButtonConnected
-        onClick={addOne}
+        action={addOne}
         style={{ marginLeft: '22px' }}
         className="btn btn-sm btn-link"
       >

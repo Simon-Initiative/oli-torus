@@ -6,25 +6,33 @@ import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { defaultModel } from 'components/activities/short_answer/utils';
 import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
+import { makeHint } from 'components/activities/types';
+import { configureStore } from 'state/store';
+import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { Provider } from 'react-redux';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 
 describe('multiple choice delivery', () => {
   it('renders ungraded activities correctly', async () => {
-
     const model = defaultModel();
+    model.authoring.parts[0].hints.push(makeHint('Hint 1'));
+    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',
-      state: defaultState(model),
+      state: Object.assign(defaultActivityState, { hasMoreHints: false }),
       graded: false,
+      preview: false,
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
+    const store = configureStore({}, activityDeliverySlice.reducer);
 
     render(
-      <ShortAnswerComponent
-        {...props}
-        {...defaultDeliveryElementProps}
-        preview={false}
-      />,
+      <Provider store={store}>
+        <DeliveryElementProvider {...defaultDeliveryElementProps} {...props}>
+          <ShortAnswerComponent />
+        </DeliveryElementProvider>
+      </Provider>,
     );
 
     // expect no hints displayed
@@ -42,7 +50,9 @@ describe('multiple choice delivery', () => {
 
     // enter an input, expect it to save
     act(() => {
-      fireEvent.change(screen.getByLabelText('answer submission textbox'), { target: { value: 'answer' } });
+      fireEvent.change(screen.getByLabelText('answer submission textbox'), {
+        target: { value: 'answer' },
+      });
     });
 
     expect(onSaveActivity).toHaveBeenCalledTimes(1);
@@ -57,11 +67,12 @@ describe('multiple choice delivery', () => {
     });
 
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
-    expect(onSubmitActivity).toHaveBeenCalledWith('guid',
-      [{
+    expect(onSubmitActivity).toHaveBeenCalledWith('guid', [
+      {
         attemptGuid: 'guid',
         response: { input: 'answer' },
-      }]);
+      },
+    ]);
 
     // expect results to be displayed after submission
     expect(await screen.findAllByLabelText('result')).toHaveLength(1);

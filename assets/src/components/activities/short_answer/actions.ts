@@ -23,9 +23,11 @@ export class ShortAnswerActions {
     };
   }
 
-  static setInputType(inputType: InputType, input: string | [string, string]) {
+  static setInputType(inputType: InputType, input: string | [string, string] = '') {
     return (draftState: ShortAnswerModelSchema) => {
+      // Numeric inputs can have two inputs to support the "between" rule
       const firstInput = typeof input === 'string' ? input : input[1];
+      console.log('first input', firstInput);
       if (draftState.inputType === 'numeric' && inputType !== 'numeric') {
         draftState.authoring.parts[0].responses = [
           makeResponse(containsRule(firstInput), 1, ''),
@@ -33,7 +35,7 @@ export class ShortAnswerActions {
         ];
       } else if (draftState.inputType !== 'numeric' && inputType === 'numeric') {
         draftState.authoring.parts[0].responses = [
-          makeResponse(containsRule(firstInput), 1, ''),
+          makeResponse(eqRule('1'), 1, ''),
           makeResponse(matchRule('.*'), 0, ''),
         ];
       }

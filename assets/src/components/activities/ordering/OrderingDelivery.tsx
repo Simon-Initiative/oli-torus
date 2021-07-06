@@ -12,10 +12,9 @@ import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import {
   ActivityDeliveryState,
-  AppThunk,
   initializeState,
-  isEvaluated,
-  slice,
+  activityDeliverySlice,
+  resetAction,
 } from 'data/content/activities/DeliveryState';
 import './OrderingDelivery.scss';
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
@@ -27,40 +26,55 @@ import { getChoice } from 'components/activities/common/choices/authoring/choice
 import { OrderingChoices } from 'components/activities/ordering/sections/OrderingChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 
-export const store = configureStore({}, slice.reducer);
-const initialize =
-  (model: OrderingModelSchema, state: ActivityTypes.ActivityState): AppThunk =>
-  async (dispatch, getState) => {
-    dispatch(initializeState(state));
-    dispatch(slice.actions.setSelectedChoices(model.choices.map((choice) => choice.id)));
-  };
+export const store = configureStore({}, activityDeliverySlice.reducer);
 
 export const OrderingComponent: React.FC = () => {
-  const { model, state: activityState } = useDeliveryElementContext<OrderingModelSchema>();
+  const {
+    model,
+    state: activityState,
+    onResetActivity,
+  } = useDeliveryElementContext<OrderingModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initialize(model, activityState));
+    dispatch(
+      initializeState(
+        activityState,
+        model.choices.map((choice) => choice.id),
+      ),
+    );
   }, []);
 
   // First render initializes state
-  if (!uiState.selectedChoices) {
+  if (!uiState.selection) {
     return null;
   }
 
   return (
-    <div className={`activity ordering-activity ${isEvaluated(uiState) ? 'evaluated' : ''}`}>
+    <div className="activity ordering-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <OrderingChoices
-          choices={uiState.selectedChoices.map((id) => getChoice(model, id))}
+          choices={uiState.selection.map((id) => getChoice(model, id))}
           setChoices={(choices) =>
-            dispatch(slice.actions.setSelectedChoices(choices.map((c) => c.id)))
+            dispatch(activityDeliverySlice.actions.setSelection(choices.map((c) => c.id)))
           }
         />
-        <ResetButtonConnected />
+        <ResetButtonConnected
+          onReset={() => {
+            dispatch(
+              resetAction(
+                onResetActivity,
+                model.choices.map((choice) => choice.id),
+              ),
+            );
+            dispatch(
+              activityDeliverySlice.actions.setSelection(model.choices.map((choice) => choice.id)),
+            );
+          }}
+        />
         <SubmitButtonConnected />
         <HintsDeliveryConnected />
         <EvaluationConnected />

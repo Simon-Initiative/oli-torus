@@ -1,5 +1,4 @@
 import { CATAActions } from 'components/activities/check_all_that_apply/actions';
-import * as ContentModel from 'data/content/model';
 import produce from 'immer';
 import {
   CheckAllThatApplyModelSchema,
@@ -13,18 +12,8 @@ import {
   getResponseId,
   getTargetedResponses,
 } from 'components/activities/check_all_that_apply/utils';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { makeChoice, makeFeedback, makeHint, makeStem } from 'components/activities/types';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
+import { makeChoice } from 'components/activities/types';
 import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
-import {
-  andRules,
-  createRuleForIds,
-  invertRule,
-  matchRule,
-} from 'components/activities/common/responses/authoring/rules';
 import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 
 const applyAction = (model: CheckAllThatApplyModelSchema, action: any) => {
@@ -55,13 +44,6 @@ describe('check all that apply question functionality', () => {
     expect(model).toHaveProperty('stem');
   });
 
-  it('can edit stem', () => {
-    const newStemContent = makeStem('new content').content;
-    expect(applyAction(model, StemActions.editStem(newStemContent)).stem).toMatchObject({
-      content: newStemContent,
-    });
-  });
-
   it('has at least one choice', () => {
     expect(model).toHaveProperty('choices');
     expect(model.choices.length).toBeGreaterThan(0);
@@ -87,15 +69,6 @@ describe('check all that apply question functionality', () => {
     expect(getChoiceIds(modelWithFirstChoiceToggled.authoring.incorrect)).toContain(firstChoice.id);
   });
 
-  it('can edit a choice', () => {
-    const newChoiceContent = makeChoice('new content').content;
-    const firstChoice = model.choices[0];
-    expect(
-      applyAction(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent))
-        .choices[0],
-    ).toHaveProperty('content', newChoiceContent);
-  });
-
   it('can remove a choice from simple CATA', () => {
     const firstChoice = model.choices[0];
     const newModel = applyAction(model, CATAActions.removeChoice(firstChoice.id));
@@ -107,13 +80,10 @@ describe('check all that apply question functionality', () => {
   it('can remove a choice from targeted CATA responses', () => {
     const firstChoice = model.choices[0];
     const toggled = applyAction(model, CATAActions.toggleType());
-    const newModel: TargetedCATA = applyAction(
-      toggled,
-      CATAActions.removeChoice(firstChoice.id),
-    ) as any;
-    newModel.authoring.targeted.forEach((assoc: any) => {
-      expect(getChoiceIds(assoc)).not.toContain(firstChoice.id);
-    });
+    const newModel: TargetedCATA = applyAction(toggled, CATAActions.removeChoice(firstChoice.id));
+    newModel.authoring.targeted.forEach((assoc) =>
+      expect(getChoiceIds(assoc)).not.toContain(firstChoice.id),
+    );
   });
 
   it('has one correct response', () => {
@@ -122,15 +92,6 @@ describe('check all that apply question functionality', () => {
 
   it('has one incorrect response', () => {
     expect(getIncorrectResponse(model)).toBeTruthy();
-  });
-
-  it('can edit feedback', () => {
-    const newFeedbackContent = makeFeedback('new content').content;
-    const firstResponse = model.authoring.parts[0].responses[0];
-    expect(
-      applyAction(model, ResponseActions.editResponseFeedback(firstResponse.id, newFeedbackContent))
-        .authoring.parts[0].responses[0].feedback,
-    ).toHaveProperty('content', newFeedbackContent);
   });
 
   it('can add a targeted feedback in targeted mode', () => {
@@ -160,52 +121,7 @@ describe('check all that apply question functionality', () => {
     expect(getTargetedResponses(removed)).toHaveLength(0);
   });
 
-  it('can create a match rule', () => {
-    expect(matchRule('id')).toBe('input like {id}');
-  });
-
-  it('can invert rules', () => {
-    expect(invertRule(matchRule('id'))).toBe('(!(input like {id}))');
-  });
-
-  it('can union rules', () => {
-    expect(andRules(...[matchRule('id1'), invertRule(matchRule('id2'))])).toBe(
-      '(!(input like {id2})) && (input like {id1})',
-    );
-  });
-
-  it('can create rules to match certain ids and not match others', () => {
-    const toMatch = ['id1', 'id2'];
-    const notToMatch = ['id3'];
-    expect(createRuleForIds(toMatch, notToMatch)).toEqual(
-      '(!(input like {id3})) && (input like {id2} && (input like {id1}))',
-    );
-  });
-
   it('has at least 3 hints', () => {
     expect(getHints(model).length).toBeGreaterThanOrEqual(3);
-  });
-
-  it('can add a cognitive hint before the end of the array', () => {
-    expect(getHints(applyAction(model, HintActions.addHint(makeHint('')))).length).toBeGreaterThan(
-      getHints(model).length,
-    );
-  });
-
-  it('can edit a hint', () => {
-    const newHintContent = makeHint('new content').content;
-    const firstHint = getHints(model)[0];
-    expect(
-      getHints(applyAction(model, HintActions.editHint(firstHint.id, newHintContent)))[0],
-    ).toHaveProperty('content', newHintContent);
-  });
-
-  it('can remove a hint', () => {
-    const firstHint = getHints(model)[0];
-    expect(
-      getHints(
-        applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints')),
-      ),
-    ).toHaveLength(2);
   });
 });

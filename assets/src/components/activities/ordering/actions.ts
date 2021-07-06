@@ -1,6 +1,5 @@
 import { OrderingModelSchema as Ordering } from './schema';
 import {
-  createRuleForIds,
   fromText,
   getChoice,
   getCorrectResponse,
@@ -10,8 +9,6 @@ import {
   getCorrectOrdering,
   getIncorrectResponse,
   getResponseId,
-  invertRule,
-  unionRules,
   getResponses,
   makeResponse,
   isSimpleOrdering,
@@ -24,6 +21,11 @@ import {
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import {
+  andRules,
+  createRuleForIds,
+  invertRule,
+} from 'components/activities/common/responses/authoring/rules';
 
 export class Actions {
   static toggleType() {
@@ -123,7 +125,14 @@ export class Actions {
           return;
         case 'TargetedOrdering':
           // eslint-disable-next-line
-          const response = makeResponse(createRuleForIds([]), 0, '');
+          const response = makeResponse(
+            createRuleForIds(
+              model.choices.map((c) => c.id),
+              [],
+            ),
+            0,
+            '',
+          );
 
           getResponses(model).push(response);
           model.authoring.targeted.push([[], response.id]);
@@ -199,7 +208,7 @@ function removeFromList<T>(item: T, list: T[]) {
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
 const updateResponseRules = (model: Ordering) => {
-  getCorrectResponse(model).rule = createRuleForIds(getCorrectOrdering(model));
+  getCorrectResponse(model).rule = createRuleForIds(getCorrectOrdering(model), []);
 
   switch (model.type) {
     case 'SimpleOrdering':
@@ -209,12 +218,12 @@ const updateResponseRules = (model: Ordering) => {
       // eslint-disable-next-line
       const targetedRules: string[] = [];
       model.authoring.targeted.forEach((assoc) => {
-        const targetedRule = createRuleForIds(getChoiceIds(assoc));
+        const targetedRule = createRuleForIds(getChoiceIds(assoc), []);
         targetedRules.push(targetedRule);
         getResponse(model, getResponseId(assoc)).rule = targetedRule;
       });
-      getIncorrectResponse(model).rule = unionRules(
-        targetedRules.map(invertRule).concat([invertRule(getCorrectResponse(model).rule)]),
+      getIncorrectResponse(model).rule = andRules(
+        ...targetedRules.map(invertRule).concat([invertRule(getCorrectResponse(model).rule)]),
       );
       return;
   }

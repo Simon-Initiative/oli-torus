@@ -1,14 +1,14 @@
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
-import { ActivityState, ChoiceId, Manifest } from 'components/activities/types';
+import { ChoiceId, Manifest } from 'components/activities/types';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import {
   ActivityDeliveryState,
-  AppThunk,
   initializeState,
   isEvaluated,
-  selectChoice,
+  setSelection,
   activityDeliverySlice,
+  resetAction,
 } from 'data/content/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -27,38 +27,35 @@ import { EvaluationConnected } from 'components/activities/common/delivery/evalu
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { valueOr } from 'utils/common';
 
 export const store = configureStore({}, activityDeliverySlice.reducer);
-const initialize =
-  (model: CheckAllThatApplyModelSchema, state: ActivityState): AppThunk =>
-  async (dispatch, getState) => {
-    dispatch(initializeState(state));
-    dispatch(
-      slice.actions.setSelectedChoices(
-        state.parts[0].response === null
-          ? []
-          : (state.parts[0].response.input as string)
-              .split(' ')
-              .reduce((ids, id) => ids.concat([id]), [] as ChoiceId[]),
-      ),
-    );
-  };
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
-    model,
     state: activityState,
+    onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<CheckAllThatApplyModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initialize(model, activityState));
+    dispatch(
+      initializeState(
+        activityState,
+        valueOr(
+          activityState.parts[0]?.response?.input
+            ?.split(' ')
+            .reduce((ids: string[], id: string) => ids.concat([id]), [] as ChoiceId[]),
+          [],
+        ),
+      ),
+    );
   }, []);
 
   // First render initializes state
-  if (!uiState.selectedChoices) {
+  if (!uiState.selection) {
     return null;
   }
 
@@ -78,9 +75,9 @@ export const CheckAllThatApplyComponent: React.FC = () => {
               <Checkbox.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(selectChoice(id, onSaveActivity, 'multiple'))}
+          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'multiple'))}
         />
-        <ResetButtonConnected />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
         <SubmitButtonConnected />
         <HintsDeliveryConnected />
         <EvaluationConnected />
