@@ -22,8 +22,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const [pusher, setPusher] = useState(new EventEmitter());
 
-  const [attemptState, setAttemptState] = useState(props.state);
-
   const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
@@ -53,8 +51,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           // if that is the case then the activity and all its parts need to update their guid references
           const attempt = e.attempt;
           const currentAttempt = sharedAttemptStateMap.get(props.model.id);
-          /* console.log('CHECK COMPLETE: ', {attempt, currentAttempt, attemptState}); */
-          if (attempt && attempt.activityId === currentAttempt.activityId && attempt.attemptGuid !== currentAttempt.attemptGuid) {
+          /* console.log('AD CHECK COMPLETE: ', {attempt, currentAttempt, props}); */
+          if (
+            attempt &&
+            currentAttempt &&
+            attempt.activityId === currentAttempt.activityId &&
+            attempt.attemptGuid !== currentAttempt.attemptGuid
+          ) {
             /* console.log(
               `ATTEMPT CHANGING from ${currentAttempt.attemptGuid} to ${attempt.attemptGuid}`,
             ); */
@@ -86,7 +89,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
     if (!parts.length) {
       if (props.onReady) {
-        props.onReady(attemptState.attemptGuid);
+        props.onReady(props.state.attemptGuid);
       }
       setInit(true);
       return;
@@ -108,7 +111,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         }
         console.error('[AllPartsInitialized] failed to resolve within time limit', {
           timeout,
-          attemptState,
+          attemptState: props.state,
           parts,
         });
       }, 2000);
@@ -123,7 +126,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
-    sharedAttemptStateMap.set(props.model.id, attemptState);
+    /* console.log('INIT AD', { props }); */
+    sharedAttemptStateMap.set(props.model.id, props.state);
 
     setInit(true);
 
@@ -178,32 +182,31 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return true;
   };
 
-  const handlePartSave =
-    async ({ id, responses }: { id: string | number; responses: any[] }) => {
-      /* console.log('onPartSave', { id, responses }); */
-      if (!responses || !responses.length) {
-        // TODO: throw? no reason to save something with no response
-        return;
-      }
-      const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
-      // part attempt guid should be located in currentAttemptState.parts matched to id
-      const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
-      if (!partAttempt) {
-        // throw err? if this happens we can't proceed...
-        console.error(`part attempt guid for ${id} not found!`, {currentAttemptState});
-        return;
-      }
-      const response: ActivityTypes.StudentResponse = {
-        input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
-      };
-      const result = await props.onSavePart(
-        currentAttemptState.attemptGuid,
-        partAttempt?.attemptGuid,
-        response,
-      );
-      // BS: this is the result from the layout pushed down, need to push down to part here?
-      return result;
+  const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
+    /* console.log('onPartSave', { id, responses }); */
+    if (!responses || !responses.length) {
+      // TODO: throw? no reason to save something with no response
+      return;
+    }
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${id} not found!`, { currentAttemptState });
+      return;
+    }
+    const response: ActivityTypes.StudentResponse = {
+      input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
+    const result = await props.onSavePart(
+      currentAttemptState.attemptGuid,
+      partAttempt?.attemptGuid,
+      response,
+    );
+    // BS: this is the result from the layout pushed down, need to push down to part here?
+    return result;
+  };
 
   const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSubmit', { id, responses }); */
