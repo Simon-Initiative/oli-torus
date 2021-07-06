@@ -21,6 +21,6 @@ export interface PageContext {
   editorMap?: any;
   projectSlug?: string;
   resourceSlug?: string;
-  resource_id?: ResourceId;
+  resourceId?: ResourceId;
   activities?: any;
 }
