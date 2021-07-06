@@ -17,7 +17,6 @@ const RightMenu: React.FC<any> = (props) => {
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
   const screenData = getScreenData(currentActivity?.model.custom);
-  const lessonData = getLessonData(props.content);
   const handleSelectTab = (key: string) => {
     // TODO: any other saving or whatever
     setSelectedTab(key);
@@ -42,7 +41,7 @@ const RightMenu: React.FC<any> = (props) => {
         <PropertyEditor
           schema={lessonSchema}
           uiSchema={lessonUiSchema}
-          value={lessonData}
+          value={currentLesson}
           onChangeHandler={lessonPropertyChangeHandler}
         />
       </Tab>

@@ -68,18 +68,5 @@ export const lessonUiSchema = {
   }
 };
 
-export const getLessonData = (data: any) => {
-  if (data) {
-    const lessonData = data.content.custom;
-    return {
-      ...lessonData,
-      Size: { width: lessonData.defaultScreenWidth, height: lessonData.defaultScreenHeight },
-      Appearance: { customCssUrl: lessonData.customCssUrl,
-      customCSS: data.content.customCss,
-      title: data.title
-      }
-    };
-  }
-}
 
 export default lessonSchema;
