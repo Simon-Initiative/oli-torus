@@ -13,7 +13,10 @@ import {
 import { Maybe } from 'tsmonad';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
-import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
+import {
+  getCorrectResponse,
+  getResponses,
+} from 'components/activities/common/responses/authoring/responseUtils';
 
 export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
@@ -38,17 +41,6 @@ export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
       previewText: '',
     },
   };
-};
-
-export const getCorrectResponse = (model: MultipleChoiceModelSchema) => {
-  return Maybe.maybe(getResponses(model).find((r) => r.score === 1)).valueOrThrow(
-    new Error('Could not find correct response'),
-  );
-};
-export const getIncorrectResponse = (model: MultipleChoiceModelSchema) => {
-  return Maybe.maybe(getResponses(model).find((r) => r.score === 0)).valueOrThrow(
-    new Error('Could not find incorrect response'),
-  );
 };
 
 export const getCorrectChoice = (model: MultipleChoiceModelSchema) => {

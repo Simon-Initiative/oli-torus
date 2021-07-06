@@ -13,22 +13,21 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
 import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Radio } from 'components/activities/common/icons/Radio';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { AnswerKeyAuthoring } from 'components/activities/common/authoring/answerKey/AnswerKeyAuthoring';
-import {
-  getCorrectChoice,
-  getCorrectResponse,
-  getIncorrectResponse,
-} from 'components/activities/multiple_choice/utils';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import {
+  getCorrectResponse,
+  getIncorrectResponse,
+} from 'components/activities/common/responses/authoring/responseUtils';
 
 const store = configureStore();
 
@@ -38,10 +37,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <StemAuthoring
-            stem={props.model.stem}
-            onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
-          />
+          <StemAuthoringConnected />
 
           <ChoicesAuthoringConnected
             icon={<Radio.Unchecked />}

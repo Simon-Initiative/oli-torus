@@ -1,88 +1,104 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  AuthoringElementProvider,
+  useAuthoringElementContext,
+} from '../AuthoringElement';
 import { OrderingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/Stem';
-import { Choices } from './sections/Choices';
-import { Feedback } from './sections/Feedback';
-import { Hints } from '../common/Hints';
 import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import produce from 'immer';
-import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
-import { canMoveChoice, getHints, isTargetedOrdering } from 'components/activities/ordering/utils';
-import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { CATASettingsConnected } from 'components/activities/check_all_that_apply/Settings';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { OrderingChoices } from 'components/activities/ordering/sections/OrderingChoices';
 
 const store = configureStore();
 
-const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
-  const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, (draftState) => action(draftState)));
-
-  const sharedProps = {
-    model: props.model,
-    editMode: props.editMode,
-    projectSlug: props.projectSlug,
-  };
-
+export const Ordering: React.FC<AuthoringElementProps<OrderingModelSchema>> = (props) => {
+  const { dispatch } = useAuthoringElementContext();
+  // const [activeTab, setActiveTab] = useState()
   return (
-    <React.Fragment>
-      <Stem
-        {...sharedProps}
-        stem={props.model.stem}
-        onEditStem={(content) => dispatch(Actions.editStem(content))}
-      />
-
-      <Choices
-        {...sharedProps}
-        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
-        onAddChoice={() => dispatch(Actions.addChoice())}
-        onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
-        canMoveChoiceUp={(id) => canMoveChoice(props.model, id, 'up')}
-        canMoveChoiceDown={(id) => canMoveChoice(props.model, id, 'down')}
-        onMoveChoiceUp={(id) => dispatch(Actions.moveChoice('up', id))}
-        onMoveChoiceDown={(id) => dispatch(Actions.moveChoice('down', id))}
-      />
-
-      <Feedback
-        {...sharedProps}
-        onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
-        onEditResponseFeedback={(responseId, feedbackContent) =>
-          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
-        }
-      >
-        {isTargetedOrdering(props.model) ? (
-          <TargetedFeedback
-            {...sharedProps}
-            model={props.model}
-            onEditResponseFeedback={(responseId, feedbackContent) =>
-              dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
+    <>
+      <TabbedNavigation.Tabs>
+        <TabbedNavigation.Tab label="Question">
+          <StemAuthoringConnected />
+          <ChoicesAuthoringConnected
+            icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
+            choices={props.model.choices}
+            addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
+            setAll={(choices: ActivityTypes.Choice[]) =>
+              dispatch(ChoiceActions.setAllChoices(choices))
             }
-            onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
-            onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
-              dispatch(Actions.removeTargetedFeedback(responseId))
-            }
-            onEditTargetedFeedbackChoices={(
-              responseId: ActivityTypes.ResponseId,
-              choiceIds: ActivityTypes.ChoiceId[],
-            ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
+            onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
+            onRemove={(id) => dispatch(Actions.removeChoice(id))}
           />
-        ) : null}
-      </Feedback>
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Answer Key">
+          <OrderingChoices
+            choices={props.model.choices}
+            setChoices={(choices) => dispatch(ChoiceActions.setAllChoices(choices))}
+          />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Hints">
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
+        </TabbedNavigation.Tab>
+      </TabbedNavigation.Tabs>
 
-      <Hints
-        projectSlug={props.projectSlug}
-        hints={getHints(props.model)}
-        editMode={props.editMode}
-        onAddHint={() => dispatch(Actions.addHint())}
-        onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
-      />
-    </React.Fragment>
+      {/* <Nav.Link href="/question" label="Question"> */}
+
+      {/* </TabbedNavigation.Tab> */}
+      {/* <TabbedNavigation.Tab label="Answer Key"> */}
+      {/* <AnswerKeyAuthoring
+            stem={props.model.stem}
+            choices={props.model.choices}
+            selectedChoiceIds={getCorrectChoiceIds(props.model)}
+            selectedIcon={<Checkbox.Correct />}
+            unselectedIcon={<Checkbox.Unchecked />}
+            onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
+          /> */}
+      {/* <SimpleFeedback
+            correctResponse={getCorrectResponse(props.model)}
+            incorrectResponse={getIncorrectResponse(props.model)}
+            update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
+          /> */}
+
+      {/* {isTargetedCATA(props.model) && (
+            <TargetedFeedback
+              targetedMappings={getTargetedResponseMappings(props.model)}
+              toggleChoice={(choiceId, mapping) => {
+                dispatch(
+                  Actions.editTargetedFeedbackChoices(
+                    mapping.response.id,
+                    mapping.choiceIds.includes(choiceId)
+                      ? mapping.choiceIds.filter((id) => id !== choiceId)
+                      : mapping.choiceIds.concat(choiceId),
+                  ),
+                );
+              }}
+              updateResponse={(id, content) =>
+                dispatch(ResponseActions.editResponseFeedback(id, content))
+              }
+              addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
+              unselectedIcon={<Checkbox.Unchecked />}
+              selectedIcon={<Checkbox.Checked />}
+              onRemove={(id) => dispatch(Actions.removeTargetedFeedback(id))}
+            />
+          )} */}
+      {/* </TabbedNavigation.Tab> */}
+
+      {/* <TabbedNavigation.Tab label="Hints"> */}
+      {/* </TabbedNavigation.Tab> */}
+      {/* <CATASettingsConnected /> */}
+      {/* </TabbedNavigation.Tabs> */}
+    </>
   );
 };
 
@@ -90,9 +106,12 @@ export class OrderingAuthoring extends AuthoringElement<OrderingModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <Ordering {...props} />
+        <AuthoringElementProvider {...props}>
+          <Ordering {...props} />
+        </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,
+
       mountPoint,
     );
   }

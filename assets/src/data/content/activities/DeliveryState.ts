@@ -1,11 +1,9 @@
 import { AnyAction, createSlice, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
-import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
 import {
   EvaluationResponse,
   RequestHintResponse,
   ResetActivityResponse,
 } from 'components/activities/DeliveryElement';
-import { MultipleChoiceModelSchema } from 'components/activities/multiple_choice/schema';
 import {
   ActivityState,
   ChoiceId,
@@ -29,8 +27,8 @@ export interface ActivityDeliveryState {
   hints: Hint[];
   hasMoreHints: boolean;
 }
-export const slice = createSlice({
-  name: 'CATADelivery',
+export const activityDeliverySlice = createSlice({
+  name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
   reducers: {
     activitySubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
@@ -75,6 +73,7 @@ export const slice = createSlice({
     },
   },
 });
+const slice = activityDeliverySlice;
 
 export const requestHint =
   (
@@ -85,9 +84,7 @@ export const requestHint =
       getState().attemptState.attemptGuid,
       getState().attemptState.parts[0].attemptGuid,
     );
-    Maybe.maybe(response.hint).lift((hint) => {
-      dispatch(slice.actions.addHint(hint));
-    });
+    Maybe.maybe(response.hint).lift((hint) => dispatch(slice.actions.addHint(hint)));
     dispatch(slice.actions.setHasMoreHints(response.hasMoreHints));
   };
 
@@ -97,7 +94,7 @@ export const selectAttemptState = (state: ActivityDeliveryState) => state.attemp
 export const isEvaluated = (state: ActivityDeliveryState) =>
   selectAttemptState(state).score !== null;
 
-export const reset =
+export const resetAction =
   (onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
@@ -126,23 +123,11 @@ export const submit =
 
 // TODO in follow-up activities - make generic
 export const initializeState =
-  (
-    model: CheckAllThatApplyModelSchema | MultipleChoiceModelSchema,
-    state: ActivityState,
-  ): AppThunk =>
+  (state: ActivityState): AppThunk =>
   async (dispatch, getState) => {
     dispatch(slice.actions.setHints(state.parts[0].hints));
     dispatch(slice.actions.setAttemptState(state));
     dispatch(slice.actions.setHasMoreHints(state.parts[0].hasMoreHints));
-    dispatch(
-      slice.actions.setSelectedChoices(
-        state.parts[0].response === null
-          ? []
-          : (state.parts[0].response.input as string)
-              .split(' ')
-              .reduce((ids, id) => ids.concat([id]), [] as ChoiceId[]),
-      ),
-    );
   };
 
 export const selectChoice =

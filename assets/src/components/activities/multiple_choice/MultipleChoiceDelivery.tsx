@@ -14,10 +14,10 @@ import {
   ActivityDeliveryState,
   initializeState,
   selectChoice,
-  slice,
+  activtyDeliverySlice,
   isEvaluated,
 } from 'data/content/activities/DeliveryState';
-import { Radio } from 'components/activities/common/icons/Radio';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
@@ -27,7 +27,7 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 
-export const store = configureStore({}, slice.reducer);
+export const store = configureStore({}, activtyDeliverySlice.reducer);
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
 import {
   AuthoringElement,
@@ -6,137 +6,63 @@ import {
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { ShortAnswerModelSchema, InputType, isInputType } from './schema';
+import { ShortAnswerModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Feedback } from './sections/Feedback';
 import { ShortAnswerActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
-import { NumericInput } from 'components/activities/short_answer/sections/numericInput/NumericInput';
+import { parseInputFromRule } from 'components/activities/common/responses/authoring/rules';
+import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import {
-  makeRule,
-  parseInputFromRule,
-  parseOperatorFromRule,
-  RuleOperator,
-} from 'components/activities/common/responses/authoring/rules';
-import { TextInput } from 'components/activities/short_answer/sections/TextInput';
+  getCorrectResponse,
+  getIncorrectResponse,
+  getResponses,
+} from 'components/activities/common/responses/authoring/responseUtils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
+import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { InputTypeDropdown } from 'components/activities/short_answer/sections/InputTypeDropdown';
+import { Card } from 'components/misc/Card';
+import { Tooltip } from 'components/misc/Tooltip';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import {
+  saGetIncorrectResponse,
+  saGetTargetedResponses,
+} from 'components/activities/short_answer/utils';
 
 const store = configureStore();
 
-const inputs: { value: string; displayValue: string }[] = [
-  { value: 'numeric', displayValue: 'Number' },
-  { value: 'text', displayValue: 'Short Answer' },
-  { value: 'textarea', displayValue: 'Paragraph' },
-];
-
-type InputTypeDropdownProps = {
-  editMode: boolean;
-  onChange: (inputType: InputType) => void;
-  inputType: InputType;
-};
-export const InputTypeDropdown = ({ onChange, editMode, inputType }: InputTypeDropdownProps) => {
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!isInputType(e.target.value)) {
-      return;
-    }
-    onChange(e.target.value);
-  };
-
-  return (
-    <select
-      style={{ height: 61 }}
-      disabled={!editMode}
-      className="ml-2 form-control"
-      value={inputType}
-      onChange={handleChange}
-      name="question-type"
-      id="question-type"
-    >
-      {inputs.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.displayValue}
-        </option>
-      ))}
-    </select>
-  );
-};
-
-interface InputProps {
-  inputType: InputType;
-  response: ActivityTypes.Response;
-  onEditResponseRule: (id: string, rule: string) => void;
-}
-
-const Input: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }) => {
-  const { editMode } = useAuthoringElementContext();
-
-  type Input = string | [string, string];
-  const [{ operator, input }, setState] = useState({
-    input: parseInputFromRule(response.rule),
-    operator: parseOperatorFromRule(response.rule),
-  });
-
-  const onEditRule = (inputState: { input: Input; operator: RuleOperator }) => {
-    if (input !== '.*') {
-      setState(inputState);
-      onEditResponseRule(response.id, makeRule(inputState.operator, inputState.input));
-    }
-  };
-  if (input === '.*') {
-    return null;
-  }
-
-  const shared = {
-    state: { operator, input },
-    setState: onEditRule,
-  };
-
-  if (inputType === 'numeric') {
-    return <NumericInput {...shared} />;
-  }
-
-  if (inputType === 'text') {
-    return <TextInput {...shared} />;
-  }
-
-  if (inputType === 'textarea') {
-    return (
-      <textarea
-        disabled={!editMode}
-        className="form-control"
-        onChange={(e) => onEditRule({ operator: operator, input: e.target.value })}
-        value={input}
-      />
-    );
-  }
-  return null;
-};
-
 const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
-  const { dispatch, model } = useAuthoringElementContext();
+  const { dispatch, model } = useAuthoringElementContext<ShortAnswerModelSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <div className="row mb-2">
             <div className="col-md-8">
-              <StemAuthoring
-                stem={props.model.stem}
-                onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
-              />
+              <StemAuthoringConnected />
             </div>
             <div className="col-md-4">
               <InputTypeDropdown
                 editMode={props.editMode}
                 inputType={props.model.inputType}
-                onChange={(inputType) => dispatch(ShortAnswerActions.setInputType(inputType))}
+                onChange={(inputType) =>
+                  dispatch(
+                    ShortAnswerActions.setInputType(
+                      inputType,
+                      parseInputFromRule(getCorrectResponse(props.model).rule),
+                    ),
+                  )
+                }
               />
             </div>
           </div>
@@ -144,79 +70,62 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         <TabbedNavigation.Tab label="Answer Key">
           <div className="d-flex flex-column mb-2">
             <StemDelivery stem={model.stem} context={defaultWriterContext()} />
-            {props.model.authoring.parts[0].responses.map(
-              (response: ActivityTypes.Response, index) => {
-                // Handle catchall rule so it doesnt throw
-                return (
-                  parseInputFromRule(response.rule) !== '.*' && (
-                    <Input
-                      key={response.id}
-                      inputType={props.model.inputType}
-                      response={response}
-                      onEditResponseRule={(id, rule) =>
-                        dispatch(ShortAnswerActions.editRule(id, rule))
-                      }
-                    />
-                  )
-                );
-              },
-            )}
-          </div>
-
-          {/* <SimpleFeedback
-            correctResponse={getCorrectResponse(props.model)}
-            incorrectResponse={getIncorrectResponse(props.model)}
-            update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
-          /> */}
-
-          {/* {isTargetedCATA(props.model) && (
-            <TargetedFeedback
-              choices={props.model.choices}
-              targetedMappings={getTargetedResponseMappings(props.model)}
-              toggleChoice={(choiceId, mapping) => {
-                dispatch(
-                  CATAActions.editTargetedFeedbackChoices(
-                    mapping.response.id,
-                    mapping.choiceIds.includes(choiceId)
-                      ? mapping.choiceIds.filter((id) => id !== choiceId)
-                      : mapping.choiceIds.concat(choiceId),
-                  ),
-                );
-              }}
-              updateResponse={(id, content) =>
-                dispatch(ResponseActions.editResponseFeedback(id, content))
-              }
-              addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
-              unselectedIcon={<Checkbox.Unchecked />}
-              selectedIcon={<Checkbox.Checked />}
-              onRemove={(id) => dispatch(CATAActions.removeTargetedFeedback(id))}
+            <InputEntry
+              key={getCorrectResponse(props.model).id}
+              inputType={props.model.inputType}
+              response={getCorrectResponse(props.model)}
+              onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
             />
-          )} */}
+            <SimpleFeedback
+              correctResponse={getCorrectResponse(props.model)}
+              incorrectResponse={saGetIncorrectResponse(props.model)}
+              update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
+            />
+            {console.log(getResponses(props.model))}
+            {saGetTargetedResponses(props.model).map((response: ActivityTypes.Response) => (
+              <Card.Card key={response.id}>
+                <Card.Title>
+                  <>
+                    Targeted Feedback
+                    <Tooltip title={'Shown only when a student response matches this answer'} />
+                    <RemoveButtonConnected
+                      onClick={() => dispatch(ResponseActions.removeResponse(response.id))}
+                    />
+                  </>
+                </Card.Title>
+                <Card.Content>
+                  <InputEntry
+                    key={response.id}
+                    inputType={props.model.inputType}
+                    response={response}
+                    onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+                  />
+                  <RichTextEditorConnected
+                    style={{ backgroundColor: 'white' }}
+                    placeholder="Enter feedback"
+                    text={response.feedback.content}
+                    onEdit={(content) =>
+                      dispatch(ResponseActions.editResponseFeedback(response.id, content))
+                    }
+                  />
+                </Card.Content>
+              </Card.Card>
+            ))}
+            <AuthoringButtonConnected
+              className="align-self-start btn btn-link"
+              onClick={() => dispatch(ShortAnswerActions.addResponse())}
+            >
+              Add targeted feedback
+            </AuthoringButtonConnected>
+          </div>
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
           <HintsAuthoringConnected hintsPath="" />
         </TabbedNavigation.Tab>
+        <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>
-  );
-
-  const sharedProps = {
-    model: props.model,
-    editMode: props.editMode,
-  };
-
-  return (
-    <div>
-      <Feedback
-        {...sharedProps}
-        projectSlug={props.projectSlug}
-        onAddResponse={() => dispatch(ShortAnswerActions.addResponse())}
-        onRemoveResponse={(id) => dispatch(ShortAnswerActions.removeReponse(id))}
-        onEditResponseRule={(id, rule) => dispatch(ShortAnswerActions.editRule(id, rule))}
-        onEditResponse={(id, content) => dispatch(ShortAnswerActions.editFeedback(id, content))}
-      />
-    </div>
   );
 };
 

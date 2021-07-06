@@ -2,10 +2,9 @@ import { MultipleChoiceModelSchema } from './schema';
 import { Choice, makeResponse } from '../types';
 import { PostUndoable } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { getCorrectResponse } from 'components/activities/multiple_choice/utils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
-import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse, getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 
 export const MCActions = {
   addChoice(choice: Choice) {

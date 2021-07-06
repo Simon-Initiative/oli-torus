@@ -2,7 +2,6 @@ import * as ContentModel from 'data/content/model';
 import { Operation, RichText, Transformation } from '../types';
 import guid from 'utils/guid';
 import React from 'react';
-import { Maybe } from 'tsmonad';
 
 export function fromText(text: string): { id: string; content: RichText } {
   return {

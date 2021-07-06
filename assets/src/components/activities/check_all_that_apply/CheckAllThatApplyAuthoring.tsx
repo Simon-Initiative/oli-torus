@@ -19,31 +19,28 @@ import {
   getTargetedResponseMappings,
   isTargetedCATA,
 } from 'components/activities/check_all_that_apply/utils';
-import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
+import { StemAuthoring } from 'components/activities/common/stem/authoring/StemAuthoring';
 import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { AnswerKeyAuthoring } from 'components/activities/common/authoring/answerKey/AnswerKeyAuthoring';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { CATASettingsConnected } from 'components/activities/check_all_that_apply/Settings';
+import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 
 const store = configureStore();
 
 const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-  const { dispatch } = useAuthoringElementContext();
+  const { dispatch } = useAuthoringElementContext<CheckAllThatApplyModelSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <StemAuthoring
-            stem={props.model.stem}
-            onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
-          />
+          <StemAuthoringConnected />
 
           <ChoicesAuthoringConnected
             icon={<Checkbox.Unchecked />}

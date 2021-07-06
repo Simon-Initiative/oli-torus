@@ -1,7 +1,6 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import React from 'react';
 import { isOperator, RuleOperator } from 'components/activities/common/responses/authoring/rules';
-import { numericOptions } from 'components/activities/short_answer/sections/numericInput/numericUtils';
 
 const SimpleNumericInput: React.FC<InputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
@@ -111,3 +110,14 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
     </div>
   );
 };
+
+export const numericOptions: { value: RuleOperator; displayValue: string }[] = [
+  { value: 'gt', displayValue: 'Greater than' },
+  { value: 'gte', displayValue: 'Greater than or equal to' },
+  { value: 'lt', displayValue: 'Less than' },
+  { value: 'lte', displayValue: 'Less than or equal to' },
+  { value: 'eq', displayValue: 'Equal to' },
+  { value: 'neq', displayValue: 'Not equal to' },
+  { value: 'btw', displayValue: 'Between' },
+  { value: 'nbtw', displayValue: 'Not between' },
+];

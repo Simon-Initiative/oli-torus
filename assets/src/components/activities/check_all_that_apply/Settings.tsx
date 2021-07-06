@@ -7,7 +7,7 @@ import { shuffleAnswerChoiceSetting } from 'components/activities/common/authori
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 
 export const CATASettingsConnected: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext();
+  const { dispatch, model } = useAuthoringElementContext<CheckAllThatApplyModelSchema>();
   return (
     <ActivitySettings
       settings={[

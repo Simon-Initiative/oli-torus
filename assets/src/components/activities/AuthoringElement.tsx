@@ -70,15 +70,19 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   }
 }
 
-export interface AuthoringElementState {
+export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
-  dispatch: (action: (model: any, post: PostUndoable) => any) => void;
-  model: any;
+  dispatch: (action: (model: T, post: PostUndoable) => any) => void;
+  model: T;
 }
-const AuthoringElementContext = React.createContext<AuthoringElementState | undefined>(undefined);
-export function useAuthoringElementContext() {
-  return Maybe.maybe(useContext(AuthoringElementContext)).valueOrThrow(
+const AuthoringElementContext = React.createContext<AuthoringElementState<any> | undefined>(
+  undefined,
+);
+export function useAuthoringElementContext<T>() {
+  return Maybe.maybe(
+    useContext<AuthoringElementState<T> | undefined>(AuthoringElementContext),
+  ).valueOrThrow(
     new Error('useAuthoringElementContext must be used within an AuthoringElementProvider'),
   );
 }
@@ -90,7 +94,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   onPostUndoable,
   onEdit,
 }) => {
-  const dispatch: AuthoringElementState['dispatch'] = (action) =>
+  const dispatch: AuthoringElementState<any>['dispatch'] = (action) =>
     onEdit(produce(model, (draftState) => action(draftState, onPostUndoable)));
   return (
     <AuthoringElementContext.Provider value={{ projectSlug, editMode, dispatch, model }}>

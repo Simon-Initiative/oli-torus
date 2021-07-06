@@ -23,6 +23,7 @@ import {
 } from './utils';
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 
 export class Actions {
   static toggleType() {
@@ -46,12 +47,10 @@ export class Actions {
     };
   }
 
-  static addChoice() {
+  static addChoice(choice: Choice) {
     return (model: Ordering) => {
-      const newChoice: Choice = fromText('');
-
-      model.choices.push(newChoice);
-      getChoiceIds(model.authoring.correct).push(newChoice.id);
+      ChoiceActions.addChoice(choice)(model);
+      getChoiceIds(model.authoring.correct).push(choice.id);
       updateResponseRules(model);
     };
   }

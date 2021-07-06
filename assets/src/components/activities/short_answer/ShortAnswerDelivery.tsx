@@ -1,27 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
   DeliveryElement,
   DeliveryElementProps,
-  EvaluationResponse,
-  RequestHintResponse,
+  DeliveryElementProvider,
   ResetActivityResponse,
+  useDeliveryElementContext,
 } from '../DeliveryElement';
 import { InputType, ShortAnswerModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/DisplayedStem';
-import { Hints } from '../common/DisplayedHints';
-import { Reset } from '../common/Reset';
-import { Evaluation } from '../common/delivery/evaluation/Evaluation';
 import { valueOr } from 'utils/common';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
-import { defaultWriterContext } from 'data/content/writers/context';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import {
+  ActivityDeliveryState,
+  initializeState,
+  isEvaluated,
+  activityDeliverySlice,
+} from 'data/content/activities/DeliveryState';
+import { configureStore } from 'state/store';
 
-type Evaluation = {
-  score: number;
-  outOf: number;
-  feedback: ActivityTypes.RichText;
-};
+export const store = configureStore({}, activityDeliverySlice.reducer);
 
 type InputProps = {
   input: any;
@@ -70,17 +74,26 @@ const Input = (props: InputProps) => {
   );
 };
 
-export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerModelSchema>) => {
-  const [model, setModel] = useState(props.model);
-  const [attemptState, setAttemptState] = useState(props.state);
-  const [hints, setHints] = useState(props.state.parts[0].hints);
-  const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
+export const ShortAnswerComponent: React.FC = () => {
+  const {
+    model,
+    state: activityState,
+    onSaveActivity,
+  } = useDeliveryElementContext<ShortAnswerModelSchema>();
+  const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeState(model, activityState));
+  }, []);
   const [input, setInput] = useState(valueOr(attemptState.parts[0].response, ''));
-  const { stem } = model;
 
-  const isEvaluated = attemptState.score !== null;
+  // First render initializes state
+  if (!uiState.selectedChoices) {
+    return null;
+  }
 
-  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+  const evaluated = isEvaluated(uiState);
 
   const onInputChange = (input: string) => {
     setInput(input);
@@ -88,34 +101,6 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
     props.onSaveActivity(attemptState.attemptGuid, [
       { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
     ]);
-  };
-
-  const onSubmit = () => {
-    props
-      .onSubmitActivity(attemptState.attemptGuid, [
-        { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
-      ])
-      .then((response: EvaluationResponse) => {
-        if (response.actions.length > 0) {
-          const action: ActivityTypes.FeedbackAction = response
-            .actions[0] as ActivityTypes.FeedbackAction;
-          const { score, out_of, feedback, error } = action;
-          const parts = [Object.assign({}, attemptState.parts[0], { feedback, error })];
-          const updated = Object.assign({}, attemptState, { score, outOf: out_of, parts });
-          setAttemptState(updated);
-        }
-      });
-  };
-
-  const onRequestHint = () => {
-    props
-      .onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
-      .then((state: RequestHintResponse) => {
-        if (state.hint !== undefined) {
-          setHints([...hints, state.hint] as any);
-        }
-        setHasMoreHints(state.hasMoreHints);
-      });
   };
 
   const onReset = () => {
@@ -128,85 +113,123 @@ export const ShortAnswerComponent = (props: DeliveryElementProps<ShortAnswerMode
     });
   };
 
-  const evaluationSummary = isEvaluated ? (
-    <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
-  ) : null;
-
-  const reset =
-    isEvaluated && !props.graded ? (
-      <div className="d-flex">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-      </div>
-    ) : null;
-
-  const ungradedDetails = props.graded
-    ? null
-    : [
-        evaluationSummary,
-        <Hints
-          key="hints"
-          onClick={onRequestHint}
-          hints={hints}
-          context={writerContext}
-          hasMoreHints={hasMoreHints}
-          isEvaluated={isEvaluated}
-        />,
-      ];
-
-  const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
-
-  const correctnessIcon = attemptState.score === 0 ? <IconIncorrect /> : <IconCorrect />;
-
-  const gradedPoints =
-    props.graded && props.review
-      ? [
-          <div key="correct" className="text-info font-italic">
-            {correctnessIcon}
-            <span>Points: </span>
-            <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
-          </div>,
-        ]
-      : null;
-
-  const maybeSubmitButton = props.graded ? null : (
-    <button
-      aria-label="submit"
-      className="btn btn-primary mt-2 float-right"
-      disabled={isEvaluated}
-      onClick={onSubmit}
-    >
-      Submit
-    </button>
-  );
-
   return (
-    <div className="activity short-answer-activity">
+    <div className={`activity cata-activity ${evaluated ? 'evaluated' : ''}`}>
       <div className="activity-content">
-        <Stem stem={stem} context={writerContext} />
-        {gradedPoints}
-        <div className="">
-          <Input
-            inputType={model.inputType}
-            input={input}
-            isEvaluated={isEvaluated}
-            onChange={onInputChange}
-          />
-          {maybeSubmitButton}
-        </div>
+        <StemDeliveryConnected />
+        <GradedPointsConnected />
 
-        {ungradedDetails}
-        {gradedDetails}
+        <Input
+          inputType={model.inputType}
+          input={input}
+          isEvaluated={evaluated}
+          onChange={onInputChange}
+        />
+
+        <ResetButtonConnected />
+        <SubmitButtonConnected />
+        <HintsDeliveryConnected />
+        <EvaluationConnected />
       </div>
-      {reset}
     </div>
   );
+
+  // const [model, setModel] = useState(props.model);
+  // const [attemptState, setAttemptState] = useState(props.state);
+  // const [hints, setHints] = useState(props.state.parts[0].hints);
+  // const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
+  // const { stem } = model;
+
+  // const isEvaluated = attemptState.score !== null;
+
+  // const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+
+  // const evaluationSummary = isEvaluated ? (
+  //   <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
+  // ) : null;
+
+  // const reset =
+  //   isEvaluated && !props.graded ? (
+  //     <div className="d-flex">
+  //       <div className="flex-fill"></div>
+  //       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+  //     </div>
+  //   ) : null;
+
+  // const ungradedDetails = props.graded
+  //   ? null
+  //   : [
+  //       evaluationSummary,
+  //       <Hints
+  //         key="hints"
+  //         onClick={onRequestHint}
+  //         hints={hints}
+  //         context={writerContext}
+  //         hasMoreHints={hasMoreHints}
+  //         isEvaluated={isEvaluated}
+  //       />,
+  //     ];
+
+  // const gradedDetails = props.graded && props.review ? [evaluationSummary] : null;
+
+  // const correctnessIcon = attemptState.score === 0 ? <Cross /> : <Checkmark />;
+
+  // const gradedPoints =
+  //   props.graded && props.review
+  //     ? [
+  //         <div key="correct" className="text-info font-italic">
+  //           {correctnessIcon}
+  //           <span>Points: </span>
+  //           <span>{attemptState.score + ' out of ' + attemptState.outOf}</span>
+  //         </div>,
+  //       ]
+  //     : null;
+
+  // const maybeSubmitButton = props.graded ? null : (
+  //   <button
+  //     aria-label="submit"
+  //     className="btn btn-primary mt-2 float-right"
+  //     disabled={isEvaluated}
+  //     onClick={onSubmit}
+  //   >
+  //     Submit
+  //   </button>
+  // );
+
+  // return (
+  //   <div className="activity short-answer-activity">
+  //     <div className="activity-content">
+  //       <Stem stem={stem} context={writerContext} />
+  //       {gradedPoints}
+  //       <div className="">
+  //         <Input
+  //           inputType={model.inputType}
+  //           input={input}
+  //           isEvaluated={isEvaluated}
+  //           onChange={onInputChange}
+  //         />
+  //         {maybeSubmitButton}
+  //       </div>
+
+  //       {ungradedDetails}
+  //       {gradedDetails}
+  //     </div>
+  //     {reset}
+  //   </div>
+  // );
 };
 
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
-    ReactDOM.render(<ShortAnswerComponent {...props} />, mountPoint);
+    ReactDOM.render(
+      <Provider store={store}>
+        <DeliveryElementProvider {...props}>
+          <ShortAnswerComponent />
+        </DeliveryElementProvider>
+      </Provider>,
+      mountPoint,
+    );
   }
 }
 

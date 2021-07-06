@@ -1,13 +1,14 @@
 import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
-import { Checkbox } from 'components/activities/common/icons/Checkbox';
-import { Manifest } from 'components/activities/types';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
+import { ActivityState, ChoiceId, Manifest } from 'components/activities/types';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import {
   ActivityDeliveryState,
+  AppThunk,
   initializeState,
   isEvaluated,
   selectChoice,
-  slice,
+  activityDeliverySlice,
 } from 'data/content/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -27,7 +28,21 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 
-export const store = configureStore({}, slice.reducer);
+export const store = configureStore({}, activityDeliverySlice.reducer);
+const initialize =
+  (model: CheckAllThatApplyModelSchema, state: ActivityState): AppThunk =>
+  async (dispatch, getState) => {
+    dispatch(initializeState(state));
+    dispatch(
+      slice.actions.setSelectedChoices(
+        state.parts[0].response === null
+          ? []
+          : (state.parts[0].response.input as string)
+              .split(' ')
+              .reduce((ids, id) => ids.concat([id]), [] as ChoiceId[]),
+      ),
+    );
+  };
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -39,7 +54,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(model, activityState));
+    dispatch(initialize(model, activityState));
   }, []);
 
   // First render initializes state
@@ -47,17 +62,15 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     return null;
   }
 
-  const evaluated = isEvaluated(uiState);
-
   return (
-    <div className={`activity cata-activity ${evaluated ? 'evaluated' : ''}`}>
+    <div className={`activity cata-activity ${isEvaluated(uiState) ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          unselectedIcon={<Checkbox.Unchecked disabled={evaluated} />}
+          unselectedIcon={<Checkbox.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
-            !evaluated ? (
+            !isEvaluated(uiState) ? (
               <Checkbox.Checked />
             ) : isCorrect(uiState.attemptState) ? (
               <Checkbox.Correct />

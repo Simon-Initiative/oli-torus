@@ -4,10 +4,11 @@ import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { ResponseId, RichText } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
 import { ProjectSlug } from 'data/types';
 import { classNames } from 'utils/classNames';
 import { getCorrectResponse, getIncorrectResponse } from '../utils';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 
 interface FeedbackProps extends ModelEditorProps {
   onToggleFeedbackMode: () => void;
@@ -41,7 +42,7 @@ export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
       </div>
       <div className="mb-3" key={'correct feedback'}>
         <Description>
-          <IconCorrect /> Feedback for Correct Answer
+          <Checkmark /> Feedback for Correct Answer
         </Description>
         <RichTextEditor
           projectSlug={projectSlug}
@@ -53,7 +54,7 @@ export const Feedback = (props: PropsWithChildren<FeedbackProps>) => {
       {props.children}
       <div className="mb-3" key={'incorrect feedback'}>
         <Description>
-          <IconIncorrect /> Catch-all Feedback for Incorrect Answers
+          <Cross /> Catch-all Feedback for Incorrect Answers
         </Description>
         <RichTextEditor
           projectSlug={projectSlug}
