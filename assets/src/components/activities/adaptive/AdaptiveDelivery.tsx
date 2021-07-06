@@ -22,8 +22,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const [pusher, setPusher] = useState(new EventEmitter());
 
-  const [attemptState, setAttemptState] = useState(props.state);
-
   const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
@@ -53,8 +51,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           // if that is the case then the activity and all its parts need to update their guid references
           const attempt = e.attempt;
           const currentAttempt = sharedAttemptStateMap.get(props.model.id);
-          /* console.log('CHECK COMPLETE: ', {attempt, currentAttempt, attemptState}); */
-          if (attempt && attempt.activityId === currentAttempt.activityId && attempt.attemptGuid !== currentAttempt.attemptGuid) {
+          /* console.log('AD CHECK COMPLETE: ', {attempt, currentAttempt, props}); */
+          if (attempt && currentAttempt && attempt.activityId === currentAttempt.activityId && attempt.attemptGuid !== currentAttempt.attemptGuid) {
             /* console.log(
               `ATTEMPT CHANGING from ${currentAttempt.attemptGuid} to ${attempt.attemptGuid}`,
             ); */
@@ -86,7 +84,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
     if (!parts.length) {
       if (props.onReady) {
-        props.onReady(attemptState.attemptGuid);
+        props.onReady(props.state.attemptGuid);
       }
       setInit(true);
       return;
@@ -108,7 +106,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         }
         console.error('[AllPartsInitialized] failed to resolve within time limit', {
           timeout,
-          attemptState,
+          attemptState: props.state,
           parts,
         });
       }, 2000);
@@ -123,7 +121,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
-    sharedAttemptStateMap.set(props.model.id, attemptState);
+    /* console.log('INIT AD', { props }); */
+    sharedAttemptStateMap.set(props.model.id, props.state);
 
     setInit(true);
 
