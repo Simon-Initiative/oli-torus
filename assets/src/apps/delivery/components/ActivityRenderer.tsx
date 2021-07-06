@@ -3,7 +3,7 @@ import {
   EvaluationResponse,
   PartActivityResponse,
   RequestHintResponse,
-  ResetActivityResponse,
+  ResetActivityResponse
 } from 'components/activities/DeliveryElement';
 import {
   ActivityModelSchema,
@@ -12,18 +12,16 @@ import {
   PartResponse,
   PartState,
   StudentResponse,
-  Success,
+  Success
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { defaultGlobalEnv, getEnvState } from '../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
-  selectInitPhaseComplete,
-  selectLastCheckResults,
+  selectInitPhaseComplete, selectLastCheckResults,
   selectLastCheckTriggered,
   selectLastMutateChanges,
-  selectLastMutateTriggered,
+  selectLastMutateTriggered
 } from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
@@ -47,6 +45,9 @@ const defaultHandler = async () => {
   /* console.log('DEFAULT HANDLER AR'); */
   return true;
 };
+
+// because of events and function references, we need to store state outside of the function
+const sharedAttemptStateMap = new Map();
 
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
@@ -210,7 +211,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const wcEventHandler = async (e: CustomEvent) => {
       const { continuation, attemptGuid, partAttemptGuid, payload } = e.detail;
       let isForMe = false;
-      if (attemptGuid === attempt.attemptGuid) {
+
+      const currentAttempt = sharedAttemptStateMap.get(activity.id);
+      if (attemptGuid === currentAttempt.attemptGuid) {
         /* console.log('EVENT FOR ME', { e, activity, attempt }); */
         isForMe = true;
       }
@@ -234,6 +237,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     /* const envSnapshot = getEnvState(defaultGlobalEnv);
     const fullState = { ...attempt, snapshot: envSnapshot }; */
     setState(JSON.stringify(attempt));
+    sharedAttemptStateMap.set(activity.id, attempt);
 
     setModel(JSON.stringify(activity));
 
@@ -244,6 +248,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         document.removeEventListener(eventName, wcEventHandler);
       });
       setIsReady(false);
+      sharedAttemptStateMap.delete(activity.id);
     };
   }, []);
 
@@ -262,11 +267,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   }, [lastCheckTriggered]);
 
   useEffect(() => {
-    if (checkInProgress && lastCheckResults) {
-      ref.current.notify(NotificationType.CHECK_COMPLETE, { results: lastCheckResults });
+    if (checkInProgress && lastCheckResults && lastCheckResults.timestamp === lastCheckTriggered) {
+      /* console.log('AR Check Effect', { lastCheckTriggered, lastCheckResults }); */
+      const currentAttempt = sharedAttemptStateMap.get(activity.id);
+      if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
+        sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
+      }
+      ref.current.notify(NotificationType.CHECK_COMPLETE, lastCheckResults);
       setCheckInProgress(false);
     }
-  }, [checkInProgress, lastCheckResults]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.

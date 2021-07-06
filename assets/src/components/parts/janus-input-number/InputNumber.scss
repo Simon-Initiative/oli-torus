@@ -1,0 +1,15 @@
+html,
+body {
+  height: 100%;
+  /* Chrome, Safari, Edge, Opera */
+  input[type='number'].hideIncrementArrows::-webkit-inner-spin-button,
+  input[type='number'].hideIncrementArrows::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Firefox */
+  input[type='number'].hideIncrementArrows {
+    -moz-appearance: textfield !important;
+  }
+}

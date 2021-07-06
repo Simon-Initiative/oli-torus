@@ -1,7 +1,7 @@
 import { makeRequest, ServerError } from './common';
 import { ProjectSlug, ResourceSlug } from '../types';
 
-export type LockResult = Acquired | NotAcquired | ServerError;
+export type LockResult = Acquired | Released | NotAcquired | ServerError;
 
 export type Acquired = {
   type: 'acquired',
@@ -10,6 +10,10 @@ export type Acquired = {
 export type NotAcquired = {
   type: 'not_acquired',
   user: string,
+};
+
+export type Released = {
+  type: 'released',
 };
 
 export function releaseLock(

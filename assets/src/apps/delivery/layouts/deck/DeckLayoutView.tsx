@@ -11,7 +11,7 @@ import {
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import { setInitPhaseComplete } from '../../store/features/adaptivity/slice';
-import { savePartState } from '../../store/features/attempt/actions/savePart';
+import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
   selectCurrentActivityTree,
@@ -280,7 +280,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partResponses: PartResponse[],
   ) => {
     /* console.log('DECK HANDLE SAVE', { activityId, attemptGuid, partResponses }); */
-
+    // TODO: currently not used.
     return true;
   };
 
@@ -290,6 +290,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partResponses: PartResponse[],
   ) => {
     /* console.log('DECK HANDLE SUBMIT', { activityId, attemptGuid, partResponses }); */
+    // TODO: currently not used.
     return true;
   };
 
@@ -316,10 +317,31 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     );
 
     const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+    if (!currentActivityTree || !currentActivityTree.length) {
+      // throw instead?
+      return { result: 'error' };
+    }
     if (response?.input?.length) {
-      const result = await dispatch(
-        savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-      );
+      let result;
+      // in addition to the current part attempt, need to lookup in the tree
+      // if this part is an inherited part and also write to the child attempt records
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      if (currentActivity.id !== activityId) {
+        // this means that the part is inherted (we are a layer or parent screen)
+        // so we need to update all children in the tree with this part response as well
+        result = await dispatch(
+          savePartStateToTree({
+            attemptGuid,
+            partAttemptGuid,
+            response,
+            activityTree: currentActivityTree,
+          }),
+        );
+      } else {
+        result = await dispatch(
+          savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+        );
+      }
       return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
     } else {
       return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
@@ -332,6 +354,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
+    // save before submitting
     const { result, snapshot } = await handleActivitySavePart(
       activityId,
       attemptGuid,
