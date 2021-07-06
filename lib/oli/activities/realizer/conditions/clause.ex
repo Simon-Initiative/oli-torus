@@ -1,10 +1,10 @@
-defmodule Oli.Activities.Realizer.Criteria.Clause do
+defmodule Oli.Activities.Realizer.Conditions.Clause do
   @derive Jason.Encoder
   @enforce_keys [:operator, :children]
   defstruct [:operator, :children]
 
-  alias Oli.Activities.Realizer.Criteria.Expression
-  alias Oli.Activities.Realizer.Criteria.Clause
+  alias Oli.Activities.Realizer.Conditions.Expression
+  alias Oli.Activities.Realizer.Conditions.Clause
 
   @type t() :: %__MODULE__{
           operator: :all | :any,

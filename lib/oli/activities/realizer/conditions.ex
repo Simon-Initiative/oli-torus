@@ -49,8 +49,8 @@ defmodule Oli.Activities.Realizer.Conditions do
 
   """
 
-  alias Oli.Activities.Realizer.Criteria.Expression
-  alias Oli.Activities.Realizer.Criteria.Clause
+  alias Oli.Activities.Realizer.Conditions.Expression
+  alias Oli.Activities.Realizer.Conditions.Clause
 
   def parse(%{"conditions" => conditions}) do
     result =
