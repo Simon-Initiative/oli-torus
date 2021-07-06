@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { selectState as selectPageState } from '../../store/page/slice';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
-import lessonSchema, {getLessonData, lessonUiSchema} from '../PropertyEditor/schemas/lesson';
+import lessonSchema, {lessonUiSchema} from '../PropertyEditor/schemas/lesson';
 import screenSchema, {getScreenData, screenUiSchema} from '../PropertyEditor/schemas/screen';
 import { JSONSchema7 } from 'json-schema';
 
