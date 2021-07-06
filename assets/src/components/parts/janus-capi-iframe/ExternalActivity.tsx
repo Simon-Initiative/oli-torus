@@ -137,7 +137,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   const processInitStateVariable = (currentStateSnapshot: any) => {
     const sVisible = currentStateSnapshot[`stage.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
-      setFrameVisible(sVisible);
+      setFrameVisible(parseBool(sVisible));
     }
 
     const sX = currentStateSnapshot[`stage.${id}.IFRAME_frameX`];
