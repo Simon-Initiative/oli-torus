@@ -46,7 +46,10 @@ const pageSlice = createSlice({
       state.pageTitle = action.payload.pageTitle;
       state.sectionSlug = action.payload.sectionSlug;
       state.content = action.payload.content;
-      state.enableHistory = action.payload?.content?.custom?.enableHistory || false;
+      state.enableHistory =
+        action.payload?.content?.custom?.allowNavigation ||
+        action.payload?.content?.custom?.enableHistory ||
+        false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;

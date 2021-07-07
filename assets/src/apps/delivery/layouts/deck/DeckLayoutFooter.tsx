@@ -249,7 +249,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.allownavigation) {
+      if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.enableHistory) {
         dispatch(triggerCheck({ activityId: currentActivity.id }));
       } else if (
         !isGoodFeedback &&

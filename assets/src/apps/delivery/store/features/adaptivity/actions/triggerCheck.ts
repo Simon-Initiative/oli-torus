@@ -73,7 +73,21 @@ export const triggerCheck = createAsyncThunk(
         value: currentAttemptNumber + 1,
       },
     ];
-
+    let globalSnapshot = getEnvState(defaultGlobalEnv);
+    const isActivityAlreadyVisited = globalSnapshot[`${currentActivity.id}|visitTimestamp`];
+    // don't update the time if student is revisiting that page
+    if (!isActivityAlreadyVisited) {
+      //looks like SS captures the date when we leave the page so we will capture the time here for tracking history
+      // update the scripting
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: `${currentActivity.id}|visitTimestamp`,
+        operator: '=',
+        value: Date.now(),
+      };
+      updateScripting.push(targetVisitTimeStampOp);
+      // update the store
+      modifiedExtrinsicState[`${currentActivity.id}|visitTimestamp`] = Date.now();
+    }
     bulkApplyState(updateScripting, defaultGlobalEnv);
 
     //update the store with the latest changes
@@ -115,7 +129,7 @@ export const triggerCheck = createAsyncThunk(
     });
 
     const snapshot = getEnvState(defaultGlobalEnv);
-    const globalSnapshot = Object.keys(snapshot).reduce((collect: any, key: string) => {
+    globalSnapshot = Object.keys(snapshot).reduce((collect: any, key: string) => {
       if (key.indexOf('app.') === 0 || key.indexOf('variables.') === 0) {
         collect[key] = snapshot[key];
       }
