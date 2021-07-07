@@ -185,6 +185,10 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
+  const handleItemClick = (entry: SequenceEntry<SequenceEntryChild>) => {
+    dispatch(setCurrentActivityId({ activityId: entry.activitySlug }));
+  };
+
   return (
     <Accordion className="aa-sequence-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">

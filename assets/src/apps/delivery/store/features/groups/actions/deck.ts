@@ -60,7 +60,7 @@ export const initializeActivity = createAsyncThunk(
     const resumeTarget: ApplyStateOperation = {
       target: `session.resume`,
       operator: '=',
-      value: currentSequenceId
+      value: currentSequenceId,
     };
     const visitOperation: ApplyStateOperation = {
       target: `session.visits.${currentSequenceId}`,
@@ -103,6 +103,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: 0,
     };
+
     const sessionOps = [
       resumeTarget,
       visitOperation,
@@ -115,7 +116,22 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
-    // Need to clear out snapshot for the current activity before we send the init trap state.
+
+    const globalSnapshot = getEnvState(defaultGlobalEnv);
+    const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
+    // don't update the time if student is revisiting that page
+    if (!isActivityAlreadyVisited) {
+      //looks like SS captures the date when we leave the page but it should show in the history as soon as we visit but it does not show the timestamp
+      // so we will capture the time on trigger check
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: `${currentSequenceId}|visitTimestamp`,
+        operator: '=',
+        value: '',
+      };
+      sessionOps.push(targetVisitTimeStampOp);
+    }
+
+    //Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
     // Don't do anything id isHistoryModeOn is ON
@@ -126,9 +142,13 @@ export const initializeActivity = createAsyncThunk(
         [currentActivityId],
         defaultGlobalEnv,
       );
+
       const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
         .map((key: string) => {
-          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
+          if (
+            (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) &&
+            key.indexOf('visitTimestamp') === -1
+          ) {
             return key;
           }
         })
@@ -272,9 +292,30 @@ export const navigateToPrevActivity = createAsyncThunk(
   async (_, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const sequence = selectSequence(rootState);
-    const nextActivityId = 1;
+    const currentActivityId = selectCurrentActivityId(rootState);
+    const currentIndex = sequence.findIndex(
+      (entry) => entry.custom.sequenceId === currentActivityId,
+    );
+    let previousEntry: SequenceEntry<SequenceEntryType> | null = null;
+    let navError = '';
+    if (currentIndex >= 0) {
+      const nextIndex = currentIndex - 1;
+      previousEntry = sequence[nextIndex];
+      while (previousEntry && previousEntry?.custom?.isLayer) {
+        const layerIndex = sequence.findIndex(
+          (entry) => entry.custom.sequenceId === previousEntry?.custom?.sequenceId,
+        );
+        console.log({ currentIndex, layerIndex });
 
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
+        previousEntry = sequence[layerIndex - 1];
+      }
+    } else {
+      navError = `Current Activity ${currentActivityId} not found in sequence`;
+    }
+    if (navError) {
+      throw new Error(navError);
+    }
+    thunkApi.dispatch(setCurrentActivityId({ activityId: previousEntry?.custom.sequenceId }));
   },
 );
 
