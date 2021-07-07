@@ -1,22 +1,86 @@
 defmodule Oli.Activities.Realizer.QueryBuilder do
+  alias Oli.Resources.ResourceType
   alias Oli.Activities.Realizer.Conditions
   alias Oli.Activities.Realizer.Conditions.Expression
   alias Oli.Activities.Realizer.Conditions.Clause
+  alias Oli.Activities.Realizer.Paging
 
-  def build(%Conditions{conditions: conditions}, publication_id) do
-    {fragments, params} = build_where(conditions, [])
-    as_string = IO.iodata_to_binary(fragments)
+  def build_for_paging(
+        %Conditions{conditions: conditions},
+        publication_id,
+        %Paging{} = paging_options
+      ) do
+    {sql, params} = build(conditions, publication_id, [])
+
+    {"#{sql} #{paging(paging_options)}", params}
+  end
+
+  def build_for_selection(
+        %Conditions{} = conditions,
+        publication_id,
+        count,
+        blacklisted_activity_ids
+      ) do
+    {sql, params} = build(conditions, publication_id, blacklisted_activity_ids)
+
+    {"#{sql} #{random_selection(count)}", params}
+  end
+
+  def build(%Conditions{conditions: conditions}, publication_id, blacklisted_activity_ids) do
+    peripherals = %{params: [], exact_objectives: false}
+
+    {fragments, peripherals} = build_where(conditions, peripherals)
+    selection_clauses = IO.iodata_to_binary(fragments)
 
     select =
       "SELECT revisons.* FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id"
 
-    {"#{select} WHERE (published_resources.publication_id = #{publication_id}) AND (#{as_string})",
-     params}
+    objectives_count_join =
+      if peripherals.exact_objectives do
+        """
+        JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
+        from revisions, jsonb_each(revisions.objectives) group by id
+        ) AS count ON count.id = revisions.id
+        """
+      else
+        ""
+      end
+
+    activity_type_id = ResourceType.get_id_by_type("activity")
+
+    blacklisted =
+      case blacklisted_activity_ids do
+        [] -> ""
+        items -> "(NOT (revisions.resource_id IN (#{Enum.join(items, ",")}))) AND "
+      end
+
+    published_activities =
+      "#{blacklisted}(revisions.resource_type_id = #{activity_type_id}) AND (published_resources.publication_id = #{publication_id})"
+
+    sql =
+      normalize_whitespace(
+        "#{select} #{objectives_count_join} WHERE #{published_activities} AND (#{selection_clauses})"
+      )
+
+    {sql, peripherals.params}
   end
 
-  defp build_where(%Clause{operator: operator, children: children}, params) do
-    {fragments, params} =
-      Enum.reduce(children, {[], params}, fn e, {f, p} ->
+  defp paging(%Paging{limit: limit, offset: offset}) do
+    "LIMIT #{limit} OFFSET #{offset}"
+  end
+
+  defp random_selection(count) do
+    "ORDER BY RANDOM() LIMIT #{count}"
+  end
+
+  def normalize_whitespace(sql) do
+    String.replace(sql, ~r/\s+/, " ")
+    |> String.trim()
+  end
+
+  defp build_where(%Clause{operator: operator, children: children}, peripherals) do
+    {fragments, peripherals} =
+      Enum.reduce(children, {[], peripherals}, fn e, {f, p} ->
         {inner_fragments, inner_params} = build_where(e, p)
         {f ++ inner_fragments, inner_params}
       end)
@@ -27,10 +91,10 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
         :all -> " AND "
       end
 
-    {[["(", Enum.intersperse(fragments, joiner), ")"]], params}
+    {[["(", Enum.intersperse(fragments, joiner), ")"]], peripherals}
   end
 
-  defp build_where(%Expression{fact: :tags, operator: operator, value: value}, params) do
+  defp build_where(%Expression{fact: :tags, operator: operator, value: value}, peripherals) do
     fragment =
       case operator do
         :contains -> ["tags @> ARRAY[" <> Enum.join(value, ",") <> "]"]
@@ -39,26 +103,44 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
         :does_not_equal -> ["(NOT tags = ARRAY[" <> Enum.join(value, ",") <> "])"]
       end
 
-    {fragment, params}
+    {fragment, peripherals}
   end
 
-  defp build_where(%Expression{fact: :objectives, operator: operator, value: value}, params) do
+  defp build_where(%Expression{fact: :objectives, operator: operator, value: value}, peripherals) do
     fragment =
       case operator do
-        :contains -> [build_objectives_disjunction(value)]
-        :does_not_contain -> ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
-        :equals -> [build_objectives_conjunction(value)]
-        :does_not_equal -> ["(NOT (" <> build_objectives_conjunction(value) <> "))"]
+        :contains ->
+          [build_objectives_disjunction(value)]
+
+        :does_not_contain ->
+          ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
+
+        :equals ->
+          ["(objectives_count = #{length(value)} AND (#{build_objectives_conjunction(value)})"]
+
+        :does_not_equal ->
+          [
+            "(NOT ((objectives_count = #{length(value)} AND (#{build_objectives_conjunction(value)})))"
+          ]
       end
 
-    {fragment, params}
+    peripherals =
+      if operator == :equals or operator == :does_not_equal do
+        Map.put(peripherals, :exact_objectives, true)
+      else
+        peripherals
+      end
+
+    {fragment, peripherals}
   end
 
-  defp build_where(%Expression{fact: :text, operator: _, value: value}, params) do
-    {["(to_tsvector(content) @@ to_tsquery($1))"], params ++ [value]}
+  defp build_where(%Expression{fact: :text, operator: _, value: value}, peripherals) do
+    peripherals = Map.put(peripherals, :params, peripherals.params ++ [value])
+
+    {["(to_tsvector(content) @@ to_tsquery($1))"], peripherals}
   end
 
-  defp build_where(%Expression{fact: :type, operator: operator, value: value}, params) do
+  defp build_where(%Expression{fact: :type, operator: operator, value: value}, peripherals) do
     fragment =
       case operator do
         :contains -> ["activity_type_id in (" <> Enum.join(value, ",") <> ")"]
@@ -67,7 +149,7 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
         :does_not_equal -> ["activity_type_id != #{value}"]
       end
 
-    {fragment, params}
+    {fragment, peripherals}
   end
 
   defp build_objectives_disjunction(objective_ids) do

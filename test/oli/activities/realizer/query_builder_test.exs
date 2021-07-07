@@ -9,29 +9,41 @@ defmodule Oli.Activities.QueryBuilderTest do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid1.json")
 
     assert {:ok, conditions} = Conditions.parse(contents)
-    {test, []} = QueryBuilder.build(conditions, 1)
+    {test, []} = QueryBuilder.build(conditions, 1, [])
 
     assert test ==
-             "SELECT revisons.* FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id WHERE (published_resources.publication_id = 1) AND (tags @> ARRAY[1])"
+             QueryBuilder.normalize_whitespace("""
+             SELECT revisons.* FROM published_resources
+             LEFT JOIN revisions ON revisions.id = published_resources.revision_id
+             WHERE (revisions.resource_type_id = 3) AND (published_resources.publication_id = 1)
+             AND (tags @> ARRAY[1])
+             """)
   end
 
   test "query with expressions within a conjunction clause" do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid2.json")
 
     assert {:ok, conditions} = Conditions.parse(contents)
-    {test, ["test"]} = QueryBuilder.build(conditions, 1)
+    {test, ["test"]} = QueryBuilder.build(conditions, 1, [])
 
-    assert String.contains?(
-             test,
-             "((NOT (tags @> ARRAY[1])) AND (jsonb_path_match(objectives, 'exists($.** ? (@ == 2))')') AND activity_type_id != 3 AND (to_tsvector(content) @@ to_tsquery($1)))"
-           )
+    assert test ==
+             QueryBuilder.normalize_whitespace("""
+             SELECT revisons.* FROM published_resources
+             LEFT JOIN revisions ON revisions.id = published_resources.revision_id
+             JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
+             from revisions, jsonb_each(revisions.objectives) group by id ) AS count ON count.id = revisions.id
+             WHERE (revisions.resource_type_id = 3) AND (published_resources.publication_id = 1)
+             AND (((NOT (tags @> ARRAY[1])) AND (objectives_count = 1
+             AND ((jsonb_path_match(objectives, 'exists($.** ? (@ == 2))')'))
+             AND activity_type_id != 3 AND (to_tsvector(content) @@ to_tsquery($1))))
+             """)
   end
 
   test "nested clauses" do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid3.json")
 
     assert {:ok, conditions} = Conditions.parse(contents)
-    {test, ["test1", "test2"]} = QueryBuilder.build(conditions, 1)
+    {test, ["test1", "test2"]} = QueryBuilder.build(conditions, 1, [])
 
     assert String.contains?(
              test,
