@@ -1,5 +1,5 @@
 import * as Persistence from 'data/persistence/activity';
-import { PartResponse, ActivityModelSchema, FeedbackAction } from 'components/activities/types';
+import { PartResponse, ActivityModelSchema, FeedbackAction, ClientEvaluation } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
 import guid from 'utils/guid';
@@ -283,5 +283,27 @@ export const initPreviewActivityBridge = (elementId: string) => {
       continuation(response, undefined);
     },
     false,
+  );
+
+  div.addEventListener(
+    'submitEvaluations',
+    (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const continuation: Continuation = e.detail.continuation;
+      const clientEvaluations: ClientEvaluation[] = e.detail.payload;
+      const evaluatedParts = clientEvaluations
+        .map((clientEval: any) => {
+          return {
+            type: 'EvaluatedPart',
+            out_of: clientEval.out_of,
+            score: clientEval.score,
+            feedback: clientEval.feedback,
+          };
+        });
+
+      continuation({ type: 'success', actions: evaluatedParts }, undefined);
+    }
   );
 };

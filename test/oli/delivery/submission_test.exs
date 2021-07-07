@@ -566,6 +566,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert attempt_state.score == nil
       assert attempt_state.outOf == nil
       assert length(attempt_state.parts) == 1
+      assert hd(attempt_state.parts).response == nil
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset when there are no more attempts
@@ -587,6 +588,24 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert snapshot.activity_id == updated_attempt.resource_id
       assert snapshot.resource_id == page_revision.resource_id
       assert snapshot.revision_id == activity_revision.id
+    end
+
+    test "handling reset attempts that request preservation of last attempt state", %{
+      ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
+      section: section,
+      ungraded_page_user1_activity_attempt1: activity_attempt
+    } do
+      # submit activity with a known state for the part attempt
+      part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      {:ok, _} =
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+
+      # now reset the activity, requesting seed_state_from_previous to be true
+      {:ok, {%{parts: [part_attempt]}, _}} =
+        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid, true)
+
+      assert part_attempt.response == %{"input" => "a"}
     end
 
     # This test case ensures that the following scenario works correctly:

@@ -8,7 +8,11 @@ import {
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
-import { loadActivities, navigateToFirstActivity } from '../../groups/actions/deck';
+import {
+  loadActivities,
+  navigateToActivity,
+  navigateToFirstActivity,
+} from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import { loadPageState, PageSlice, PageState, selectResourceAttemptGuid } from '../slice';
@@ -47,6 +51,10 @@ export const loadInitialPageState = createAsyncThunk(
       sessionState['session.attemptNumber'] = 0;
       sessionState['session.timeOnQuestion'] = 0;
 
+      if (params.resourceAttemptState) {
+        Object.assign(sessionState, params.resourceAttemptState);
+      }
+
       // update scripting env with session state
       const assignScript = getAssignScript(sessionState);
       const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
@@ -72,8 +80,35 @@ export const loadInitialPageState = createAsyncThunk(
           },
         );
       }
-      dispatch(loadActivities(activityAttemptMapping));
-      dispatch(navigateToFirstActivity());
+      const {
+        payload: { attempts },
+      }: any = await dispatch(loadActivities(activityAttemptMapping));
+
+      const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
+      if (shouldResume) {
+        let resumeSequenceId = sequence[0].custom.sequenceId;
+        if (params.resourceAttemptState && params.resourceAttemptState['session.resume']) {
+          // resume from a previous attempt
+          resumeSequenceId = params.resourceAttemptState['session.resume'];
+        } else {
+          // find the spot in the sequence that we should start from
+          const resumeTarget = sequence.reduce((target, entry, index) => {
+            const sequenceAttempt = attempts.find(
+              (attempt: any) => attempt.activityId === entry.activity_id,
+            );
+            if (sequenceAttempt?.dateEvaluated !== null) {
+              // this actually isn't reliable because of pathed sequences
+              // so hopefully we had a session.resume from above
+              target = index + 1; // +1 because we are starting from the next item after the last completed one
+            }
+            return target;
+          }, 0);
+          resumeSequenceId = sequence[resumeTarget].custom.sequenceId;
+        }
+        dispatch(navigateToActivity(resumeSequenceId));
+      } else {
+        dispatch(navigateToFirstActivity());
+      }
     }
   },
 );

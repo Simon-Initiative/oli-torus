@@ -23,6 +23,8 @@ export const initializeFromContext = createAsyncThunk(
       authorEmail: params.authorEmail,
       objectives: params.objectives,
       title: params.title,
+      revisionSlug: params.resourceSlug,
+      resourceId: params.resourceId,
     };
     dispatch(loadPage(pageState));
 

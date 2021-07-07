@@ -21,7 +21,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
   // TODO: other handlers for parts, "advanced" things like tracking part responses within feedback??
 
   return (
-    <div className="feedback-item">
+    <div className="feedback-item" style={{ overflow: 'hidden auto' }}>
       <PartsLayoutRenderer parts={combinedParts} onPartInit={handlePartInit} />
     </div>
   );
