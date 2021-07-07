@@ -212,9 +212,9 @@ $panel-section-title-bar-color: #e8ebed;
     justify-content: space-between;
     align-items: center;
     padding: 0 16px;
-    position: sticky;
-    top: 0;
-    z-index: 3;
+    // position: sticky;
+    // top: 0;
+    // z-index: 3;
 
     i {
       font-size: 1rem;
@@ -289,13 +289,76 @@ $panel-section-title-bar-color: #e8ebed;
     }
     .aa-sequence-item,
     .aa-rules-list-item {
-      padding: 6px 16px;
+      padding: 4px 16px;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: unset;
 
+      .aa-context-menu-trigger {
+        visibility: hidden;
+
+        &:hover,
+        &:focus {
+          border: 1px solid $ui-border-color;
+          visibility: visible;
+        }
+      }
       &.active {
         background-color: $primary;
+
+        &:hover,
+        &:focus {
+          background-color: $primary;
+          cursor: default;
+        }
+        .aa-context-menu-trigger {
+          color: $white;
+
+          &:hover,
+          &:focus {
+            border: 1px solid darken($color: $primary, $amount: 8);
+            visibility: visible;
+          }
+        }
+      }
+      &:hover,
+      &:focus {
+        background-color: $panel-section-title-bar-color;
+        cursor: pointer;
+
+        .aa-context-menu-trigger {
+          visibility: visible;
+        }
+      }
+      &:focus-within {
+        .aa-context-menu-trigger {
+          visibility: visible;
+        }
+      }
+    }
+
+    .dropdown-toggle:after {
+      display: none;
+    }
+    .dropdown-menu {
+      font-size: 13px;
+      font-family: $font-family-sans-serif;
+
+      i {
+        font-size: 1rem;
+      }
+    }
+    .dropdown-item {
+      padding: 4px 16px;
+      color: $panel-font-color-light;
+
+      &:hover,
+      &:focus {
+        background-color: $panel-section-title-bar-color;
       }
     }
   }
