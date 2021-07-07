@@ -13,7 +13,7 @@ defmodule Oli.Activities.QueryBuilderTest do
 
     assert test ==
              QueryBuilder.normalize_whitespace("""
-             SELECT revisons.* FROM published_resources
+             FROM published_resources
              LEFT JOIN revisions ON revisions.id = published_resources.revision_id
              WHERE (revisions.resource_type_id = 3) AND (published_resources.publication_id = 1)
              AND (tags @> ARRAY[1])
@@ -28,13 +28,13 @@ defmodule Oli.Activities.QueryBuilderTest do
 
     assert test ==
              QueryBuilder.normalize_whitespace("""
-             SELECT revisons.* FROM published_resources
+             FROM published_resources
              LEFT JOIN revisions ON revisions.id = published_resources.revision_id
              JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
              from revisions, jsonb_each(revisions.objectives) group by id ) AS count ON count.id = revisions.id
              WHERE (revisions.resource_type_id = 3) AND (published_resources.publication_id = 1)
              AND (((NOT (tags @> ARRAY[1])) AND (objectives_count = 1
-             AND ((jsonb_path_match(objectives, 'exists($.** ? (@ == 2))')'))
+             AND (jsonb_path_match(objectives, 'exists($.** ? (@ == 2))')))
              AND activity_type_id != 3 AND (to_tsvector(content) @@ to_tsquery($1))))
              """)
   end

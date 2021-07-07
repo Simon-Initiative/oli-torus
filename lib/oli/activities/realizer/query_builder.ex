@@ -6,13 +6,13 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
   alias Oli.Activities.Realizer.Paging
 
   def build_for_paging(
-        %Conditions{conditions: conditions},
+        %Conditions{} = conditions,
         publication_id,
         %Paging{} = paging_options
       ) do
     {sql, params} = build(conditions, publication_id, [])
 
-    {"#{sql} #{paging(paging_options)}", params}
+    {"SELECT revisions.*, count(*) OVER() as full_count #{sql} #{paging(paging_options)}", params}
   end
 
   def build_for_selection(
@@ -23,7 +23,7 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
       ) do
     {sql, params} = build(conditions, publication_id, blacklisted_activity_ids)
 
-    {"#{sql} #{random_selection(count)}", params}
+    {"SELECT revisions.* #{sql} #{random_selection(count)}", params}
   end
 
   def build(%Conditions{conditions: conditions}, publication_id, blacklisted_activity_ids) do
@@ -32,8 +32,8 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
     {fragments, peripherals} = build_where(conditions, peripherals)
     selection_clauses = IO.iodata_to_binary(fragments)
 
-    select =
-      "SELECT revisons.* FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id"
+    from =
+      "FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id"
 
     objectives_count_join =
       if peripherals.exact_objectives do
@@ -59,7 +59,7 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
 
     sql =
       normalize_whitespace(
-        "#{select} #{objectives_count_join} WHERE #{published_activities} AND (#{selection_clauses})"
+        "#{from} #{objectives_count_join} WHERE #{published_activities} AND (#{selection_clauses})"
       )
 
     {sql, peripherals.params}
@@ -116,7 +116,7 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
           ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
 
         :equals ->
-          ["(objectives_count = #{length(value)} AND (#{build_objectives_conjunction(value)})"]
+          ["(objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"]
 
         :does_not_equal ->
           [
@@ -157,7 +157,7 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
       Enum.map(objective_ids, fn id -> "@ == #{id}" end)
       |> Enum.join(" || ")
 
-    "jsonb_path_match(objectives, 'exists($.** ? (#{id_filter}))')'"
+    "jsonb_path_match(objectives, 'exists($.** ? (#{id_filter}))')"
   end
 
   defp build_objectives_conjunction(objective_ids) do
