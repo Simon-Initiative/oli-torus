@@ -1,18 +1,31 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setPanelState, setVisible } from '../../store/app/slice';
 import FabricCanvas from './FabricCanvas';
 
 const EditingCanvas: React.FC<any> = (props) => {
   const dispatch = useDispatch();
   const bottomPanelState = useSelector(selectBottomPanel);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+
+  console.log('EC: ', { currentActivityTree });
+  const currentActivity = (currentActivityTree || []).slice(-1);
+
+  // TODO: pull from currentActivity with these defaults? (or lesson defaults)
+  const width = 500;
+  const height = 500;
 
   return (
     <React.Fragment>
       <section className="aa-stage">
         <div
           className="aa-stage-inner"
-          style={{ marginBottom: bottomPanelState ? 'calc(40vh + 64px)' : 'calc(64px + 39px)' }}
+          style={{
+            width,
+            height,
+            marginBottom: bottomPanelState ? 'calc(40vh + 64px)' : 'calc(64px + 39px)',
+          }}
         >
           <div className="aa-canvas-header">
             <h2 style={{ display: 'inline-block' }}>Active Screen Title</h2>
@@ -58,7 +71,7 @@ const EditingCanvas: React.FC<any> = (props) => {
               </button>
             </div>
           </div>
-          <FabricCanvas items={[]} />
+          <FabricCanvas items={[]} width={width} height={height} />
         </div>
       </section>
     </React.Fragment>
