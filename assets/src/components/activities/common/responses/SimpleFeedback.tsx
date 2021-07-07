@@ -1,4 +1,4 @@
-import { FeedbackCard } from 'components/activities/common/feedback/FeedbackCard';
+import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
 import { Response, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
 import { ID } from 'data/content/model';

@@ -29,7 +29,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
         <div
           key={choice.id}
           aria-label={`choice ${index + 1}`}
-          onClick={isEvaluated ? undefined : () => onSelect(choice.id)}
+          onClick={() => (isEvaluated ? undefined : onSelect(choice.id))}
           className={`choices__choice-row ${isSelected(choice.id) ? 'selected' : ''}`}
         >
           <div className="choices__choice-wrapper">

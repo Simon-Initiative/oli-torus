@@ -1,12 +1,17 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
 
+interface CheckResults {
+  timestamp: number;
+  results?: any;
+  attempt?: any;
+};
 export interface AdaptivityState {
   isGoodFeedback: boolean;
   currentFeedbacks: any[];
   nextActivityId: string;
   lastCheckTriggered: any; // timestamp
-  lastCheckResults: any[];
+  lastCheckResults: CheckResults;
   restartLesson: boolean;
   lessonEnded?: boolean;
   lastMutateTriggered: any; // timestamp
@@ -19,7 +24,7 @@ const initialState: AdaptivityState = {
   currentFeedbacks: [],
   nextActivityId: '',
   lastCheckTriggered: null,
-  lastCheckResults: [],
+  lastCheckResults: {timestamp: -1, results: [], attempt: null},
   restartLesson: false,
   lessonEnded: false,
   lastMutateTriggered: null,
@@ -43,8 +48,9 @@ const slice: Slice<AdaptivityState> = createSlice({
     setLastCheckTriggered: (state, action: PayloadAction<{ timestamp: any }>) => {
       state.lastCheckTriggered = action.payload.timestamp;
     },
-    setLastCheckResults: (state, action: PayloadAction<{ results: any[] }>) => {
-      state.lastCheckResults = action.payload.results;
+    setLastCheckResults: (state, action: PayloadAction<CheckResults>) => {
+      const {results, attempt, timestamp} = action.payload;
+      state.lastCheckResults = {results, attempt, timestamp};
     },
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;

@@ -3,17 +3,29 @@ import './Checkbox.scss';
 
 interface Props {
   className?: string;
+  disabled?: boolean;
 }
 
-const Checked = ({ className }: Props) => (
-  <input className={`oli-checkbox ${className}`} type="checkbox" checked readOnly />
+const Checked = ({ className, disabled }: Props) => (
+  <input
+    className={`oli-checkbox ${className || ''}`}
+    type="checkbox"
+    checked
+    disabled={disabled || false}
+    readOnly
+  />
 );
 
-const Unchecked = ({ className }: Props) => (
-  <input className={`oli-checkbox ${className}`} type="checkbox" readOnly />
+const Unchecked = ({ className, disabled }: Props) => (
+  <input
+    className={`oli-checkbox ${className || ''}`}
+    type="checkbox"
+    disabled={disabled || false}
+    readOnly
+  />
 );
 const Correct = () => <Checked className="correct" />;
-const Incorrect = () => <Checked className="incorrect" />;
+const Incorrect = () => <Checked className="incorrect" disabled />;
 
 export const Checkbox = {
   Checked,

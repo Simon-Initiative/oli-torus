@@ -416,6 +416,7 @@ defmodule OliWeb.Api.ActivityController do
       {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
       {:error, {:not_found}} -> error(conn, 404, "not found")
       {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      {:error, {:lock_not_acquired}} -> error(conn, 400, "lock not acquired")
       _ -> error(conn, 500, "server error")
     end
   end

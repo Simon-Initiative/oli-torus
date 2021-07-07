@@ -1,18 +1,17 @@
 /* eslint-disable react/prop-types */
-import {
-  NotificationType,
-  subscribeToNotification,
-} from '../../../apps/delivery/components/NotificationContext';
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification
+} from '../../../apps/delivery/components/NotificationContext';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import { CapiVariable } from '../types/parts';
 import {
   JanusMultipleChoiceQuestionItemProperties,
-  JanusMultipleChoiceQuestionProperties,
+  JanusMultipleChoiceQuestionProperties
 } from './MultipleChoiceQuestionType';
 
 // SS assumes the unstyled "text" of the label is the text value
@@ -200,7 +199,30 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
-
+    const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
+    if (sRandomize !== undefined) {
+      setRandomized(sRandomize);
+    }
+    const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoices(sSelectedChoices);
+    }
+    const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoicesText(sSelectedChoicesText);
+    }
+    const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
+    if (sSelectedChoiceText !== undefined) {
+      setSelectedChoiceText(sSelectedChoiceText);
+    }
+    const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
+    if (sSelectedChoice !== undefined) {
+      setSelectedChoice(sSelectedChoice);
+    }
+    const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
+    if (sNumberOfSelectedChoices !== undefined) {
+      setNumberOfSelectedChoices(sNumberOfSelectedChoices);
+    }
     setReady(true);
   }, []);
 
@@ -329,6 +351,16 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                 const updatedValues = sSelectedChoices.map((item) =>
                   !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
                 );
+                props.onSave({
+                  id: `${id}`,
+                  responses: [
+                    {
+                      key: 'numberOfSelectedChoices',
+                      type: CapiVariableTypes.NUMBER,
+                      value: updatedValues?.length,
+                    },
+                  ],
+                });
                 setSelectedChoices(updatedValues);
               }
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
@@ -397,11 +429,12 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     // watch for a new choice then
     // trigger item selection handler
     if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0) {
+      /* console.log('handling MCQ single select'); */
       handleItemSelection({
         value: selectedChoice,
         textValue: selectedChoiceText,
         checked: true,
-      });
+      }, false);
     }
   }, [selectedChoice]);
 
@@ -417,12 +450,13 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
+      /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
         handleItemSelection({
           value: option.value,
           textValue: option.textValue,
           checked: selectedChoices.includes(option.value),
-        });
+        }, false);
       });
     }
   }, [selectedChoices]);
@@ -435,7 +469,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     value: number;
     textValue: string;
     checked: boolean;
-  }) => {
+  }, shouldSave = true) => {
+   /*  console.log('mcq handle select'); */
     // TODO: non-number values?? - pb: I suspect not, since there's no SS ability to specify a value for an item
     const newChoice = parseInt(value.toString(), 10);
     let newCount = 1;
@@ -469,23 +504,25 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       setSelectedChoices(newSelectedChoices);
       setSelectedChoicesText(updatedSelections);
     }
-    saveState({
-      numberOfSelectedChoices: newCount,
-      selectedChoice:
-        multipleSelection && newSelectedChoices?.length
-          ? newSelectedChoices[newSelectedChoices.length - 1]
-          : checked
-          ? newChoice
-          : 0,
-      selectedChoiceText:
-        multipleSelection && updatedChoicesText?.length
-          ? updatedChoicesText[updatedChoicesText.length - 1]
-          : checked
-          ? textValue
-          : '',
-      selectedChoices: newSelectedChoices,
-      selectedChoicesText: updatedChoicesText,
-    });
+    if (shouldSave) {
+      saveState({
+        numberOfSelectedChoices: newCount,
+        selectedChoice:
+          multipleSelection && newSelectedChoices?.length
+            ? newSelectedChoices[newSelectedChoices.length - 1]
+            : checked
+            ? newChoice
+            : 0,
+        selectedChoiceText:
+          multipleSelection && updatedChoicesText?.length
+            ? updatedChoicesText[updatedChoicesText.length - 1]
+            : checked
+            ? textValue
+            : '',
+        selectedChoices: newSelectedChoices,
+        selectedChoicesText: updatedChoicesText,
+      });
+    }
   };
 
   const saveState = ({

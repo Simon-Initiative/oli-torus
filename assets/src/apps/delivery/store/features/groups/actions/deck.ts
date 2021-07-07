@@ -12,6 +12,8 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  evalScript,
+  getAssignScript,
   getEnvState,
   getLocalizedStateSnapshot,
   removeStateValues,
@@ -55,6 +57,11 @@ export const initializeActivity = createAsyncThunk(
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
 
+    const resumeTarget: ApplyStateOperation = {
+      target: `session.resume`,
+      operator: '=',
+      value: currentSequenceId
+    };
     const visitOperation: ApplyStateOperation = {
       target: `session.visits.${currentSequenceId}`,
       operator: '+',
@@ -98,6 +105,7 @@ export const initializeActivity = createAsyncThunk(
     };
 
     const sessionOps = [
+      resumeTarget,
       visitOperation,
       timeStartOp,
       timeOnQuestion,
@@ -108,6 +116,7 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
+<<<<<<< HEAD
 
     const globalSnapshot = getEnvState(defaultGlobalEnv);
     const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
@@ -124,6 +133,9 @@ export const initializeActivity = createAsyncThunk(
     }
 
     //Need to clear out snapshot for the current activity before we send the init trap state.
+=======
+    // Need to clear out snapshot for the current activity before we send the init trap state.
+>>>>>>> master
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
     // Don't do anything id isHistoryModeOn is ON
@@ -447,6 +459,7 @@ export const loadActivities = createAsyncThunk(
         authoring: result.authoring || null,
         activityType,
         title: result.title,
+        attemptGuid: attemptEntry?.attemptGuid || '',
       };
       const attemptState: ActivityState = {
         attemptGuid: attemptEntry?.attemptGuid || '',
@@ -463,9 +476,38 @@ export const loadActivities = createAsyncThunk(
     });
 
     const models = activities.map((a) => a?.model);
-    const states = activities.map((a) => a?.state);
+    const states: ActivityState[] = activities
+      .map((a) => a?.state)
+      .filter((s) => s !== undefined) as ActivityState[];
 
     thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
     thunkApi.dispatch(setActivities({ activities: models }));
+
+    // update the scripting environment with the latest activity state
+    states.forEach((state) => {
+      const hasResponse = state.parts.some((p) => p.response);
+      /* console.log({ state, hasResponse }); */
+      if (hasResponse) {
+        // update globalEnv with the latest activity state
+        const updateValues = state.parts.reduce((acc: any, p) => {
+          if (!p.response) {
+            return acc;
+          }
+          const inputs = Object.keys(p.response).reduce((acc2: any, key) => {
+            acc2[p.response[key].path] = p.response[key].value;
+            return acc2;
+          }, {});
+          return { ...acc, ...inputs };
+        }, {});
+        const assignScript = getAssignScript(updateValues);
+        const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+        if (scriptResult !== null) {
+          console.warn('Error in state restore script', { state, scriptResult });
+        }
+        /* console.log('STATE RESTORE', { scriptResult }); */
+      }
+    });
+
+    return { attempts: states, activities: models };
   },
 );

@@ -4,6 +4,7 @@ import { RootState } from '../../rootReducer';
 
 export interface PageState {
   userId: number;
+  userName: string;
   resourceId: number;
   sectionSlug: string;
   pageSlug: string;
@@ -19,6 +20,7 @@ export interface PageState {
 
 const initialState: PageState = {
   userId: -1,
+  userName: 'Guest',
   resourceId: -1,
   sectionSlug: '',
   pageSlug: '',
@@ -38,6 +40,7 @@ const pageSlice = createSlice({
   reducers: {
     loadPageState: (state, action: PayloadAction<PageState>) => {
       state.userId = action.payload.userId;
+      state.userName = action.payload.userName || 'Guest';
       state.resourceId = action.payload.resourceId;
       state.pageSlug = action.payload.pageSlug;
       state.pageTitle = action.payload.pageTitle;
@@ -84,5 +87,7 @@ export const selectActivityGuidMapping = createSelector(
   selectState,
   (state: PageState) => state.activityGuidMapping,
 );
+
+export const selectUserName = createSelector(selectState, (state) => state.userName);
 
 export default pageSlice.reducer;

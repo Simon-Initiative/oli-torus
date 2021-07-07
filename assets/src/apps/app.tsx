@@ -1,10 +1,11 @@
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
-import { Maybe } from 'tsmonad';
-import { configureStore } from 'state/store';
 import { State } from 'state/index';
+import { configureStore } from 'state/store';
+import { Maybe } from 'tsmonad';
+import { b64DecodeUnicode } from 'utils/decode';
 
 export function defineApplication<T extends State>(Component: React.FunctionComponent<any>) {
   // TODO, allow a customized, per app state (both initial state and collection of reducers)
@@ -14,23 +15,23 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
   (window as any).oliMountApplication = (mountPoint: any, params: any) => {
     let parsedContent: any = {};
     try {
-      parsedContent = JSON.parse(atob(params.content));
+      parsedContent = JSON.parse(b64DecodeUnicode(params.content));
     } catch (err) {
       // should have been json, error handling
     }
     let parsedActivityTypes: any = [];
     try {
-      parsedActivityTypes = JSON.parse(atob(params.activityTypes));
+      parsedActivityTypes = JSON.parse(b64DecodeUnicode(params.activityTypes));
     } catch (err) {
       // should have been json, error handling
     }
     const props = {
       ...params,
       content: parsedContent,
-      activityTypes: parsedActivityTypes
+      activityTypes: parsedActivityTypes,
     };
 
-    console.log('MOUNT UP', props);
+    /* console.log('MOUNT UP', props); */
 
     ReactDOM.render(
       <Provider store={store}>

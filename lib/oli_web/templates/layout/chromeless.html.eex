@@ -34,8 +34,9 @@
     <% end %>
 
     <!-- Janus Part Component (Slider & Carousel) external CSS File -->
+    <link rel="stylesheet" href="/css/janus_input_number_delivery.css"/>
     <link rel="stylesheet" href="/css/janus_slider_delivery.css"/>
-    <link rel="stylesheet" href="/css/janus_carousel_delivery.css"/>
+    <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css"/>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js"></script>
 

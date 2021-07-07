@@ -9,6 +9,8 @@ defmodule OliWeb.Api.AttemptController do
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
   alias OpenApiSpex.Schema
 
+  require Logger
+
   @moduledoc tags: ["User State Service: Intrinsic State"]
 
   defmodule UserStateUpdateResponse do
@@ -493,11 +495,12 @@ defmodule OliWeb.Api.AttemptController do
         %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
       end)
 
-    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
-      {:error, _} ->
+      {:error, message} ->
+        Logger.error("Error when processing submit_activity #{inspect(message)}")
         error(conn, 500, "server error")
     end
   end
@@ -555,11 +558,16 @@ defmodule OliWeb.Api.AttemptController do
        responses: %{
          200 => {"New Attempt Response", "application/json", NewActivityAttemptResponse}
        }
-  def new_activity(conn, %{
-        "section_slug" => section_slug,
-        "activity_attempt_guid" => activity_attempt_guid
-      }) do
-    case Activity.reset_activity(section_slug, activity_attempt_guid) do
+  def new_activity(
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "activity_attempt_guid" => activity_attempt_guid
+        } = params
+      ) do
+    seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+
+    case Activity.reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 

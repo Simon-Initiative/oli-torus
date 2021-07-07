@@ -1,14 +1,19 @@
 import { MCActions } from 'components/activities/multiple_choice/actions';
 import * as ContentModel from 'data/content/model';
 import { MultipleChoiceModelSchema } from 'components/activities/multiple_choice/schema';
-import { Choice, ScoringStrategy } from 'components/activities/types';
+import { Choice, makeChoice, makeHint, ScoringStrategy } from 'components/activities/types';
 import produce from 'immer';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 
-const applyAction = (
-  model: MultipleChoiceModelSchema,
-  action: any) => {
-
-  return produce(model, draftState => action(draftState, () => { return; }));
+const applyAction = (model: MultipleChoiceModelSchema, action: any) => {
+  return produce(model, (draftState) =>
+    action(draftState, () => {
+      return;
+    }),
+  );
 };
 
 function testFromText(text: string) {
@@ -45,21 +50,14 @@ function testDefaultModel(): MultipleChoiceModelSchema {
 
   return {
     stem: testFromText(''),
-    choices: [
-      choiceA,
-      choiceB,
-    ],
+    choices: [choiceA, choiceB],
     authoring: {
       parts: [
         {
           id: Math.random() + '',
           scoringStrategy: ScoringStrategy.average,
           responses: [responseA, responseB],
-          hints: [
-            testFromText(''),
-            testFromText(''),
-            testFromText(''),
-          ],
+          hints: [testFromText(''), testFromText(''), testFromText('')],
         },
       ],
       transformations: [],
@@ -77,7 +75,7 @@ describe('multiple choice question', () => {
 
   it('can edit stem', () => {
     const newStemContent = testFromText('new content').content;
-    expect(applyAction(model, MCActions.editStem(newStemContent)).stem).toMatchObject({
+    expect(applyAction(model, StemActions.editStem(newStemContent)).stem).toMatchObject({
       content: newStemContent,
     });
   });
@@ -87,17 +85,19 @@ describe('multiple choice question', () => {
     expect(model.choices.length).toBeGreaterThan(0);
   });
 
-  // Creating guids causes failures
-  xit('can add a choice', () => {
-    expect(applyAction(model, MCActions.addChoice()).choices.length)
-      .toBeGreaterThan(model.choices.length);
+  it('can add a choice', () => {
+    expect(applyAction(model, MCActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
+      model.choices.length,
+    );
   });
 
   it('can edit a choice', () => {
     const newChoiceContent = testFromText('new content').content;
     const firstChoice = model.choices[0];
-    expect(applyAction(model, MCActions.editChoice(firstChoice.id, newChoiceContent)).choices[0])
-    .toHaveProperty('content', newChoiceContent);
+    expect(
+      applyAction(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent))
+        .choices[0],
+    ).toHaveProperty('content', newChoiceContent);
   });
 
   it('can remove a choice', () => {
@@ -114,9 +114,10 @@ describe('multiple choice question', () => {
   it('can edit feedback', () => {
     const newFeedbackContent = testFromText('new content').content;
     const firstFeedback = model.authoring.parts[0].responses[0];
-    expect(applyAction(model, MCActions.editFeedback(firstFeedback.id, newFeedbackContent))
-      .authoring.parts[0].responses[0].feedback)
-      .toHaveProperty('content', newFeedbackContent);
+    expect(
+      applyAction(model, ResponseActions.editResponseFeedback(firstFeedback.id, newFeedbackContent))
+        .authoring.parts[0].responses[0].feedback,
+    ).toHaveProperty('content', newFeedbackContent);
   });
 
   it('has at least 3 hints', () => {
@@ -124,21 +125,25 @@ describe('multiple choice question', () => {
   });
 
   it('can add a cognitive hint before the end of the array', () => {
-    expect(applyAction(model, MCActions.addHint()).authoring.parts[0].hints.length)
-      .toBeGreaterThan(model.authoring.parts[0].hints.length);
+    expect(
+      applyAction(model, HintActions.addHint(makeHint(''))).authoring.parts[0].hints.length,
+    ).toBeGreaterThan(model.authoring.parts[0].hints.length);
   });
 
   it('can edit a hint', () => {
     const newHintContent = testFromText('new content').content;
     const firstHint = model.authoring.parts[0].hints[0];
-    expect(applyAction(model,
-      MCActions.editHint(firstHint.id, newHintContent)).authoring.parts[0].hints[0])
-    .toHaveProperty('content', newHintContent);
+    expect(
+      applyAction(model, HintActions.editHint(firstHint.id, newHintContent)).authoring.parts[0]
+        .hints[0],
+    ).toHaveProperty('content', newHintContent);
   });
 
   it('can remove a hint', () => {
     const firstHint = model.authoring.parts[0].hints[0];
-    expect(applyAction(model,
-      MCActions.removeHint(firstHint.id)).authoring.parts[0].hints).toHaveLength(2);
+    expect(
+      applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints'))
+        .authoring.parts[0].hints,
+    ).toHaveLength(2);
   });
 });

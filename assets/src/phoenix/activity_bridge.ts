@@ -1,5 +1,5 @@
 import * as Persistence from 'data/persistence/activity';
-import { PartResponse, ActivityModelSchema } from 'components/activities/types';
+import { PartResponse, ActivityModelSchema, FeedbackAction, ClientEvaluation } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
 import guid from 'utils/guid';
@@ -16,7 +16,7 @@ export const defaultState = (model: ActivityModelSchema) => {
     response: null,
     feedback: null,
     hints: [],
-    hasMoreHints: p.hints.length > 0,
+    hasMoreHints: removeEmpty(p.hints).length > 0,
     hasMoreAttempts: true,
     partId: p.id,
   }));
@@ -188,7 +188,7 @@ export const initPreviewActivityBridge = (elementId: string) => {
     const partInputs: PartResponse[] = e.detail.payload;
 
     Persistence.evaluate(props.model, partInputs).then((result: Persistence.Evaluated) => {
-      const actions = result.evaluations.map((e: any) => {
+      const actions: FeedbackAction[] = result.evaluations.map((e: any) => {
         return {
           type: 'FeedbackAction',
           error: e.error,
@@ -283,5 +283,27 @@ export const initPreviewActivityBridge = (elementId: string) => {
       continuation(response, undefined);
     },
     false,
+  );
+
+  div.addEventListener(
+    'submitEvaluations',
+    (e: any) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const continuation: Continuation = e.detail.continuation;
+      const clientEvaluations: ClientEvaluation[] = e.detail.payload;
+      const evaluatedParts = clientEvaluations
+        .map((clientEval: any) => {
+          return {
+            type: 'EvaluatedPart',
+            out_of: clientEval.out_of,
+            score: clientEval.score,
+            feedback: clientEval.feedback,
+          };
+        });
+
+      continuation({ type: 'success', actions: evaluatedParts }, undefined);
+    }
   );
 };
