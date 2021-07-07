@@ -133,7 +133,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           onToggle={() => handlePanelStateChange({ right: !panelState.right })}
         >
-          <RightMenu content={props.content}/>
+          <RightMenu />
         </SidePanel>
       </div>
     </>
