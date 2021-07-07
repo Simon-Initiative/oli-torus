@@ -1,21 +1,21 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
-import { evalActivityAttempt } from 'data/persistence/state/intrinsic';
+import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
 import { check } from '../../../../../../adaptivity/rules-engine';
 import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  getEnvState
+  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
-  selectCurrentActivityTreeAttemptState
+  selectCurrentActivityTreeAttemptState,
 } from '../../groups/selectors/deck';
-import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
+import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
 export const triggerCheck = createAsyncThunk(
@@ -24,6 +24,7 @@ export const triggerCheck = createAsyncThunk(
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
     const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
     const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
@@ -121,6 +122,15 @@ export const triggerCheck = createAsyncThunk(
       return collect;
     }, {});
 
+    if (!isPreviewMode) {
+      // update the server with the latest changes
+      console.log('trigger check last min extrinsic state', {
+        sectionSlug,
+        resourceAttemptGuid,
+        modifiedExtrinsicState,
+      });
+      await writePageAttemptState(sectionSlug, resourceAttemptGuid, modifiedExtrinsicState);
+    }
     await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
     const stateSnapshot = {
       ...allResponseState,
@@ -159,7 +169,7 @@ export const triggerCheck = createAsyncThunk(
       // because the server doesn't know the current sequence id and will strip out
       // all sequence ids from the path for these only
       const partResponses: PartResponse[] =
-        currentAttempt?.parts.map(({attemptGuid, response}) => {
+        currentAttempt?.parts.map(({ attemptGuid, response }) => {
           // response should be wrapped in input, but only once
           const input_response = response?.input ? response : { input: response };
           return { attemptGuid, response: input_response };
@@ -178,12 +188,14 @@ export const triggerCheck = createAsyncThunk(
     let attempt: any = currentAttempt;
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
-      const {payload: newAttempt} = await dispatch(
+      const { payload: newAttempt } = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
     }
 
-    await dispatch(setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }));
+    await dispatch(
+      setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }),
+    );
   },
 );
