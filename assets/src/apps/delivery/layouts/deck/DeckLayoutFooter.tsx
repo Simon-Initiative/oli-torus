@@ -298,7 +298,6 @@ const DeckLayoutFooter: React.FC = () => {
 
   useEffect(() => {
     if (checkInProgress && lastCheckResults) {
-      setIsLoading(false);
       setCheckInProgress(false);
     }
   }, [checkInProgress, lastCheckResults]);
@@ -328,32 +327,6 @@ const DeckLayoutFooter: React.FC = () => {
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
 
   const containerClasses = ['checkContainer', 'rowRestriction', 'columnRestriction'];
-
-  /*   useEffect(() => {
-    const checkRequestInitiated = (data) => {
-      setIsLoading(true);
-    };
-    const listener = (arg) => {
-      checkRequestInitiated(arg.data);
-    };
-    componentEventService.on('checkRequestStart', listener);
-    return () => {
-      componentEventService.off('checkRequestStart', listener);
-    };
-  }, []);
-
-  useEffect(() => {
-    const checkRequestCompleted = (data) => {
-      setIsLoading(false);
-    };
-    const listener = (arg) => {
-      checkRequestCompleted(arg.data);
-    };
-    componentEventService.on('checkRequestCompleted', listener);
-    return () => {
-      componentEventService.off('checkRequestCompleted', listener);
-    };
-  }, []); */
 
   // effects
   useEffect(() => {
