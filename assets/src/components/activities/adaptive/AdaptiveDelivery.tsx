@@ -182,13 +182,34 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return true;
   };
 
+  const getCurrentActivityAttemptFromSharedList = (id: any, currentAttemptState: string) => {
+    //DT- In case of shared activity when a part exists on the layer, props.model.id always gives the layer id and not the current activity Id
+    // since the part component exists in all the attempts, we need to find if the part which exists in the most recent attempt.
+    // Once found, get the activity attempt and part attempt from there.
+
+    const CurrentActivityIds = Array.from(sharedAttemptStateMap.keys())
+      .reverse()
+      .filter((attempt) => {
+        const activity = sharedAttemptStateMap.get(attempt);
+        const foundTheSharedActiviity = activity.parts.find((p: any) => p.partId === id);
+        if (foundTheSharedActiviity) {
+          return foundTheSharedActiviity;
+        }
+      });
+    if (CurrentActivityIds?.length) {
+      return sharedAttemptStateMap.get(CurrentActivityIds[0]);
+    }
+    return currentAttemptState;
+  };
+
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSave', { id, responses }); */
     if (!responses || !responses.length) {
       // TODO: throw? no reason to save something with no response
       return;
     }
-    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    let currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    currentAttemptState = getCurrentActivityAttemptFromSharedList(id, currentAttemptState);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
