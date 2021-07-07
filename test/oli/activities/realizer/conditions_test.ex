@@ -1,4 +1,4 @@
-defmodule Oli.Activities.ParseTest do
+defmodule Oli.Activities.ConditionsTest do
   use ExUnit.Case, async: true
 
   alias Oli.Activities.Realizer.Conditions

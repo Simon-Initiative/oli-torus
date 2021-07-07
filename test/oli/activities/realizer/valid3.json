@@ -9,9 +9,9 @@
           "value": [1]
         },
         {
-          "fact": "objectives",
-          "operator": "equals",
-          "value": [2]
+          "fact": "text",
+          "operator": "contains",
+          "value": "test1"
         }]},
       {
         "operator": "any",
@@ -24,7 +24,7 @@
           {
             "fact": "text",
             "operator": "contains",
-            "value": "test"
+            "value": "test2"
           }
         ]
       }
