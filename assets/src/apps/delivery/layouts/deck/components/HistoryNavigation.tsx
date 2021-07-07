@@ -46,16 +46,18 @@ const HistoryNavigation: React.FC = () => {
       timestamp: snapshot[`${foundSequence.custom?.sequenceId}|visitTimestamp`],
     };
   });
-  const currentEnsembleIndex = historyItems.findIndex((item: any) => item.id === currentActivityId);
-  const isFirst = currentEnsembleIndex === historyItems.length - 1;
-  const isLast = currentEnsembleIndex === 0;
+  const currentHistoryActivityIndex = historyItems.findIndex(
+    (item: any) => item.id === currentActivityId,
+  );
+  const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
+  const isLast = currentHistoryActivityIndex === 0;
   const nextHandler = () => {
-    const prevActivity = historyItems[currentEnsembleIndex - 1];
+    const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
   };
 
   const prevHandler = () => {
-    const prevActivity = historyItems[currentEnsembleIndex + 1];
+    const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
   };
   return (

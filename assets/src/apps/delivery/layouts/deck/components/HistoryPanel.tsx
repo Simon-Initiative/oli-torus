@@ -70,7 +70,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
           >
             <div className="history-element__screenName">{item.name}</div>
             <div className="history-element__timestamp">
-              {<TimeAgo timeStamp={item.timestamp} />}
+              {<TimeAgo timeStamp={item.timestamp} liveUpdate={true} />}
             </div>
           </button>
         ))}

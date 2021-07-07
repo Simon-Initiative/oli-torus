@@ -24,7 +24,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode?: boolean;
-  allowNavigation?: boolean;
+  enableHistory?: boolean;
   activityTypes?: any[];
 }
 
@@ -40,7 +40,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   activityGuidMapping,
   activityTypes = [],
   previewMode = false,
-  allowNavigation = false,
+  enableHistory = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -68,7 +68,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityGuidMapping,
         previewMode: !!previewMode,
         activityTypes,
-        allowNavigation,
+        enableHistory,
       }),
     );
   };

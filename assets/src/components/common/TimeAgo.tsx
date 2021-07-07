@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 
 interface TimeAgoProps {
   timeStamp: number;
+  liveUpdate: boolean;
 }
-const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
+const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp, liveUpdate }) => {
   if (!timeStamp) {
     return <span></span>;
   }
@@ -35,17 +36,21 @@ const TimeAgo: React.FC<TimeAgoProps> = ({ timeStamp }) => {
   };
   const tick = () => {
     const currentDate = Date.now();
-    const screenVisitedTime = currentDate - timeStamp;
-    const timeTickerText = MillisToDaysHoursMinutesAndSeconds(screenVisitedTime);
+    const timeSince = currentDate - timeStamp;
+    const timeTickerText = MillisToDaysHoursMinutesAndSeconds(timeSince);
     setTime(timeTickerText);
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (liveUpdate) {
+      const interval = setInterval(() => {
+        tick();
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
       tick();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [timeStamp]);
+    }
+  }, [timeStamp, liveUpdate]);
   return <span>{time}</span>;
 };
 

@@ -13,7 +13,7 @@ export interface PageState {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode: boolean;
-  allowNavigation: boolean;
+  enableHistory: boolean;
   activityTypes: any[];
 }
 
@@ -28,7 +28,7 @@ const initialState: PageState = {
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
-  allowNavigation: false,
+  enableHistory: false,
   activityTypes: [],
 };
 
@@ -43,7 +43,10 @@ const pageSlice = createSlice({
       state.pageTitle = action.payload.pageTitle;
       state.sectionSlug = action.payload.sectionSlug;
       state.content = action.payload.content;
-      state.allowNavigation = action.payload?.content?.custom?.allowNavigation || false;
+      state.enableHistory =
+        action.payload?.content?.custom?.allowNavigation ||
+        action.payload?.content?.custom?.enableHistory ||
+        false;
       state.resourceAttemptGuid = action.payload.resourceAttemptGuid;
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
@@ -67,7 +70,7 @@ export const selectPageTitle = createSelector(selectState, (state) => state.page
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
-export const selectEnableHistory = createSelector(selectState, (state) => state.allowNavigation);
+export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
