@@ -186,7 +186,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     //DT- In case of shared activity when a part exists on the layer, props.model.id always gives the layer id and not the current activity Id
     // since the part component exists in all the attempts, we need to find if the part which exists in the most recent attempt.
     // Once found, get the activity attempt and part attempt from there.
-
+    // if we don't do this then the parts which are on layered activity, will always update old attempt state i.e. attempt of the layered activity on which they reside
     const CurrentActivityIds = Array.from(sharedAttemptStateMap.keys())
       .reverse()
       .filter((attempt) => {
