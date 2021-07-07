@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- Fix an issue with image coding activity in preview
+
 ### Enhancements
 
 - Add ability to generate and download a course digest from existing course projects
