@@ -31,6 +31,7 @@
     resourceId: <%= @resource_id %>,
     sectionSlug: "<%= @section_slug %>",
     userId: <%= @user_id %>,
+    userName: "<%= @current_user.name %>",
     pageTitle: "<%= @title %>",
     pageSlug: "<%= @slug %>",
     content: "<%= Base.encode64(@content) %>",

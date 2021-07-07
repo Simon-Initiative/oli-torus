@@ -17,6 +17,7 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
+import { selectUserName } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -49,6 +50,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
+  const currentUserName = useSelector(selectUserName);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -457,7 +459,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
         pageName={pageTitle}
-        userName="TODO: (User Name)"
+        userName={currentUserName}
         activityName="TODO: (Activity Name)"
         scoreValue={0}
         showScore={true}
