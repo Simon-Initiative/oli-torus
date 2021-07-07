@@ -60,7 +60,7 @@ export const initializeActivity = createAsyncThunk(
     const resumeTarget: ApplyStateOperation = {
       target: `session.resume`,
       operator: '=',
-      value: currentSequenceId
+      value: currentSequenceId,
     };
     const visitOperation: ApplyStateOperation = {
       target: `session.visits.${currentSequenceId}`,
@@ -116,7 +116,6 @@ export const initializeActivity = createAsyncThunk(
       // must come *after* the tutorial score op
       currentScoreOp,
     ];
-<<<<<<< HEAD
 
     const globalSnapshot = getEnvState(defaultGlobalEnv);
     const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
@@ -133,9 +132,6 @@ export const initializeActivity = createAsyncThunk(
     }
 
     //Need to clear out snapshot for the current activity before we send the init trap state.
-=======
-    // Need to clear out snapshot for the current activity before we send the init trap state.
->>>>>>> master
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
     // Don't do anything id isHistoryModeOn is ON
