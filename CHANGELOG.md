@@ -12,6 +12,7 @@
 - Add ability to generate and download a course digest from existing course projects
 - Redesign check all that apply, multiple choice activities
 - Merge activity editing into the page editor
+- Clearly separate the hierarchy navigation and page editing links in curriculum editor
 
 ## 0.11.1 (2021-6-16)
 
