@@ -33,13 +33,13 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
   };
 };
 
-export const saGetTargetedResponses = (model: ShortAnswerModelSchema) =>
+export const getTargetedResponses = (model: ShortAnswerModelSchema) =>
   getResponses(model).filter(
     (response) =>
-      response !== getCorrectResponse(model) && response !== saGetIncorrectResponse(model),
+      response !== getCorrectResponse(model) && response !== getIncorrectResponse(model),
   );
 
-export const saGetIncorrectResponse = (model: ShortAnswerModelSchema) =>
+export const getIncorrectResponse = (model: ShortAnswerModelSchema) =>
   Maybe.maybe(
     getResponses(model).find((response) => parseInputFromRule(response.rule) === '.*'),
   ).valueOrThrow(new Error('Could not find incorrect response for short answer'));

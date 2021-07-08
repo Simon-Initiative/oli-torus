@@ -29,7 +29,6 @@ import { StemDeliveryConnected } from 'components/activities/common/stem/deliver
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { valueOr } from 'utils/common';
 
-export const store = configureStore({}, activityDeliverySlice.reducer);
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -39,6 +38,8 @@ export const MultipleChoiceComponent: React.FC = () => {
   } = useDeliveryElementContext<MultipleChoiceModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
+
+  console.log('activityState', activityState);
 
   useEffect(() => {
     dispatch(initializeState(activityState, valueOr(activityState?.parts[0]?.response?.input, [])));
@@ -79,6 +80,7 @@ export const MultipleChoiceComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

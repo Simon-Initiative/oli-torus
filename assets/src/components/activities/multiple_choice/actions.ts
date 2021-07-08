@@ -1,5 +1,4 @@
 import { MultipleChoiceModelSchema } from './schema';
-import { Choice, makeResponse } from '../types';
 import { PostUndoable } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
@@ -10,14 +9,6 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 
 export const MCActions = {
-  addChoice(choice: Choice) {
-    return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
-      ChoiceActions.addChoice(choice)(model, post);
-
-      model.authoring.parts[0].responses.push(makeResponse(matchRule(choice.id), 0, ''));
-    };
-  },
-
   removeChoice(id: string) {
     return (model: MultipleChoiceModelSchema, post: PostUndoable) => {
       const choice = getChoice(model, id);

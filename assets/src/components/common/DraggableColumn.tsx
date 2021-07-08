@@ -1,6 +1,4 @@
-import { Choice } from 'components/activities/types';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { Identifiable } from 'data/content/model';
 import React from 'react';
 import {
   DragDropContext,
@@ -10,32 +8,14 @@ import {
   Droppable,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
-interface Props {
-  setChoices: (choices: Choice[]) => void;
-  choices: Choice[];
-}
-export const OrderingChoices: React.FC<Props> = ({ choices, setChoices }) => {
-  const getStyle = (
-    style: DraggingStyle | NotDraggingStyle | undefined,
-    snapshot: DraggableStateSnapshot,
-  ) => {
-    const snapshotStyle = snapshot.draggingOver ? { 'pointer-events': 'none' } : {};
-    if (style?.transform) {
-      const axisLockY = `translate(0px, ${style.transform.split(',').pop()}`;
-      return {
-        ...style,
-        ...snapshotStyle,
-        minHeight: 41,
-        transform: axisLockY,
-      };
-    }
-    return {
-      ...style,
-      ...snapshotStyle,
-      minHeight: 41,
-    };
-  };
+import guid from 'utils/guid';
+import './DraggableColumn.scss';
 
+interface Props {
+  setItems: (items: Identifiable[]) => void;
+  items: Identifiable[];
+}
+export const DraggableColumn: React.FC<Props> = ({ items, setItems, children }) => {
   return (
     <DragDropContext
       onDragEnd={({ destination, source }) => {
@@ -46,19 +26,19 @@ export const OrderingChoices: React.FC<Props> = ({ choices, setChoices }) => {
           return;
         }
 
-        const choice = choices[source.index];
-        const newChoices = Array.from(choices);
-        newChoices.splice(source.index, 1);
-        newChoices.splice(destination.index, 0, choice);
+        const item = items[source.index];
+        const newItems = Array.from(items);
+        newItems.splice(source.index, 1);
+        newItems.splice(destination.index, 0, item);
 
-        setChoices(newChoices);
+        setItems(newItems);
       }}
     >
-      <Droppable droppableId={'choices'}>
+      <Droppable droppableId={'items-' + guid()}>
         {(provided) => (
           <div {...provided.droppableProps} className="mt-3" ref={provided.innerRef}>
-            {choices.map((choice, index) => (
-              <Draggable draggableId={choice.id} key={choice.id} index={index}>
+            {items.map((item, index) => (
+              <Draggable draggableId={item.id} key={item.id} index={index}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
@@ -66,22 +46,22 @@ export const OrderingChoices: React.FC<Props> = ({ choices, setChoices }) => {
                     {...provided.dragHandleProps}
                     className="d-flex mb-3 align-items-center ordering-choice-card"
                     style={getStyle(provided.draggableProps.style, snapshot)}
-                    aria-label={'Choice ' + index}
+                    aria-label={'Item ' + index}
                     onKeyDown={(e) => {
-                      const newChoices = choices.slice();
-                      newChoices.splice(index, 1);
+                      const newItems = items.slice();
+                      newItems.splice(index, 1);
                       if (e.key === 'ArrowUp' && e.getModifierState('Shift') && index > 0) {
-                        newChoices.splice(index - 1, 0, choice);
-                        setChoices(newChoices);
+                        newItems.splice(index - 1, 0, item);
+                        setItems(newItems);
                         e.stopPropagation();
                       }
                       if (
                         e.key === 'ArrowDown' &&
                         e.getModifierState('Shift') &&
-                        index < choices.length - 1
+                        index < items.length - 1
                       ) {
-                        newChoices.splice(index + 1, 0, choice);
-                        setChoices(newChoices);
+                        newItems.splice(index + 1, 0, item);
+                        setItems(newItems);
                         e.stopPropagation();
                       }
                     }}
@@ -96,11 +76,7 @@ export const OrderingChoices: React.FC<Props> = ({ choices, setChoices }) => {
                     >
                       drag_indicator
                     </div>
-                    <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>
-                    <HtmlContentModelRenderer
-                      text={choice.content}
-                      context={defaultWriterContext()}
-                    />
+                    {children}
                   </div>
                 )}
               </Draggable>
@@ -111,4 +87,25 @@ export const OrderingChoices: React.FC<Props> = ({ choices, setChoices }) => {
       </Droppable>
     </DragDropContext>
   );
+};
+
+const getStyle = (
+  style: DraggingStyle | NotDraggingStyle | undefined,
+  snapshot: DraggableStateSnapshot,
+) => {
+  const snapshotStyle = snapshot.draggingOver ? { 'pointer-events': 'none' } : {};
+  if (style?.transform) {
+    const axisLockY = `translate(0px, ${style.transform.split(',').pop()}`;
+    return {
+      ...style,
+      ...snapshotStyle,
+      minHeight: 41,
+      transform: axisLockY,
+    };
+  }
+  return {
+    ...style,
+    ...snapshotStyle,
+    minHeight: 41,
+  };
 };

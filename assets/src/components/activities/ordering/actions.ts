@@ -1,23 +1,4 @@
 import { OrderingModelSchema as Ordering } from './schema';
-import {
-  fromText,
-  getChoice,
-  getCorrectResponse,
-  getHint,
-  getResponse,
-  getChoiceIds,
-  getCorrectOrdering,
-  getIncorrectResponse,
-  getResponseId,
-  getResponses,
-  makeResponse,
-  isSimpleOrdering,
-  getHints,
-  getChoiceIndex,
-  ChoiceMoveDirection,
-  canMoveChoiceUp,
-  canMoveChoiceDown,
-} from './utils';
 import { RichText, Hint as HintType, ChoiceId, Choice, ResponseId } from '../types';
 import { toSimpleText } from 'data/content/text';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
@@ -26,6 +7,9 @@ import {
   createRuleForIds,
   invertRule,
 } from 'components/activities/common/responses/authoring/rules';
+import {  isSimpleOrdering  } from 'components/activities/ordering/utils';
+import {  getChoiceIds  } from 'components/activities/check_all_that_apply/utils';
+import {  getChoice  } from 'components/activities/common/choices/authoring/choiceUtils';
 
 export class Actions {
   static toggleType() {
@@ -41,25 +25,12 @@ export class Actions {
     };
   }
 
-  static editStem(content: RichText) {
-    return (model: Ordering) => {
-      model.stem.content = content;
-      const previewText = toSimpleText({ children: content.model } as any);
-      model.authoring.previewText = previewText;
-    };
-  }
-
   static addChoice(choice: Choice) {
-    return (model: Ordering) => {
-      ChoiceActions.addChoice(choice)(model);
-      getChoiceIds(model.authoring.correct).push(choice.id);
-      updateResponseRules(model);
-    };
-  }
+    return (model: CATA, post: PostUndoable) => {
+      ChoiceActions.addChoice(choice)(model, post);
 
-  static editChoiceContent(id: string, content: RichText) {
-    return (model: Ordering) => {
-      getChoice(model, id).content = content;
+      getChoiceIds(model.authoring.incorrect).push(choice.id);
+      updateResponseRules(model);
     };
   }
 
@@ -88,33 +59,6 @@ export class Actions {
       }
 
       updateResponseRules(model);
-    };
-  }
-
-  static moveChoice(direction: ChoiceMoveDirection, id: ChoiceId) {
-    return (model: Ordering) => {
-      const thisChoiceIndex = getChoiceIndex(model, id);
-
-      const swap = (index1: number, index2: number) => {
-        const temp = model.choices[index1];
-        model.choices[index1] = model.choices[index2];
-        model.choices[index2] = temp;
-      };
-      const moveUp = () => swap(thisChoiceIndex, thisChoiceIndex - 1);
-      const moveDown = () => swap(thisChoiceIndex, thisChoiceIndex + 1);
-
-      switch (direction) {
-        case 'up':
-          return canMoveChoiceUp(model, id) ? moveUp() : model;
-        case 'down':
-          return canMoveChoiceDown(model, id) ? moveDown() : model;
-      }
-    };
-  }
-
-  static editResponseFeedback(responseId: ResponseId, content: RichText) {
-    return (model: Ordering) => {
-      getResponse(model, responseId).feedback.content = content;
     };
   }
 
@@ -172,36 +116,6 @@ export class Actions {
       }
       updateResponseRules(model);
     };
-  }
-
-  static addHint() {
-    return (model: Ordering) => {
-      const newHint: HintType = fromText('');
-      // new hints are always cognitive hints. they should be inserted
-      // right before the bottomOut hint at the end of the list
-      const bottomOutIndex = getHints(model).length - 1;
-      getHints(model).splice(bottomOutIndex, 0, newHint);
-    };
-  }
-
-  static editHint(id: string, content: RichText) {
-    return (model: Ordering) => {
-      getHint(model, id).content = content;
-    };
-  }
-
-  static removeHint(id: string) {
-    return (model: Ordering) => {
-      model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
-    };
-  }
-}
-
-// mutable
-function removeFromList<T>(item: T, list: T[]) {
-  const index = list.findIndex((x) => x === item);
-  if (index > -1) {
-    list.splice(index, 1);
   }
 }
 

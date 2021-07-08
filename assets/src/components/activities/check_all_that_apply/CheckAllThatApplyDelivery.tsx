@@ -29,8 +29,6 @@ import { StemDeliveryConnected } from 'components/activities/common/stem/deliver
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { valueOr } from 'utils/common';
 
-export const store = configureStore({}, activityDeliverySlice.reducer);
-
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
     state: activityState,
@@ -89,6 +87,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

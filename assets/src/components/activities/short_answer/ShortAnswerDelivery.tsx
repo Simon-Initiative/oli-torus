@@ -25,8 +25,6 @@ import {
 } from 'data/content/activities/DeliveryState';
 import { configureStore } from 'state/store';
 
-export const store = configureStore({}, activityDeliverySlice.reducer);
-
 type InputProps = {
   input: string;
   onChange: (input: any) => void;
@@ -127,6 +125,7 @@ export const ShortAnswerComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ShortAnswerModelSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

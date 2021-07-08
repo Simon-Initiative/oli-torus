@@ -1,8 +1,10 @@
 import { ResponseMapping } from 'components/activities/check_all_that_apply/utils';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { Choice, ChoiceId, RichText } from 'components/activities/types';
 import { ID } from 'data/content/model';
+import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
 interface Props {
@@ -32,14 +34,19 @@ export const TargetedFeedback: React.FC<Props> = ({
           key={mapping.response.id}
           title="Targeted feedback"
           response={mapping.response}
-          choices={choices}
-          correctChoiceIds={mapping.choiceIds}
-          toggleChoice={(id) => toggleChoice(id, mapping)}
           updateFeedback={(id, content) => updateResponse(mapping.response.id, content)}
-          selectedIcon={selectedIcon}
-          unselectedIcon={unselectedIcon}
           onRemove={onRemove}
-        />
+        >
+          <ChoicesDelivery
+            unselectedIcon={unselectedIcon}
+            selectedIcon={selectedIcon}
+            choices={choices}
+            selected={mapping.choiceIds}
+            onSelect={(id) => toggleChoice(id, mapping)}
+            isEvaluated={false}
+            context={defaultWriterContext()}
+          />
+        </ResponseCard>
       ))}
       <AuthoringButtonConnected className="btn btn-link pl-0" action={addTargetedResponse}>
         Add targeted feedback

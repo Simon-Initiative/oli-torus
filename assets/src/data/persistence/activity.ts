@@ -1,5 +1,10 @@
 import { ProjectSlug, ActivityTypeSlug, ResourceId } from 'data/types';
-import { ActivityModelSchema, PartResponse } from 'components/activities/types';
+import {
+  ActivityModelSchema,
+  Feedback,
+  FeedbackAction,
+  PartResponse,
+} from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
 
@@ -28,7 +33,10 @@ export type Transformed = {
 
 export type Evaluated = {
   result: 'success';
-  evaluations: any;
+  evaluations: (
+    | { feedback: Feedback; part_id: string; result: { out_of: number; score: number } }
+    | { error: string; part_id: string }
+  )[];
 };
 
 export type Retrieved = {

@@ -10,6 +10,7 @@ interface Props {
 export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   const { graded, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  console.log('selection', uiState.selection);
   const dispatch = useDispatch();
   return (
     <SubmitButton

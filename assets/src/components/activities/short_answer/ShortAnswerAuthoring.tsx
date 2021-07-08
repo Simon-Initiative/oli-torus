@@ -19,25 +19,18 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { parseInputFromRule } from 'components/activities/common/responses/authoring/rules';
 import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
-import {
-  getCorrectResponse,
-  getIncorrectResponse,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { InputTypeDropdown } from 'components/activities/short_answer/sections/InputTypeDropdown';
-import { Card } from 'components/misc/Card';
-import { Tooltip } from 'components/misc/Tooltip';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import {
-  saGetIncorrectResponse,
-  saGetTargetedResponses,
+  getIncorrectResponse,
+  getTargetedResponses,
 } from 'components/activities/short_answer/utils';
+import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 
 const store = configureStore();
 
@@ -47,24 +40,20 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <div className="row mb-2">
-            <div className="col-md-8">
-              <StemAuthoringConnected />
-            </div>
-            <div className="col-md-4">
-              <InputTypeDropdown
-                editMode={props.editMode}
-                inputType={props.model.inputType}
-                onChange={(inputType) =>
-                  dispatch(
-                    ShortAnswerActions.setInputType(
-                      inputType,
-                      parseInputFromRule(getCorrectResponse(props.model).rule),
-                    ),
-                  )
-                }
-              />
-            </div>
+          <div className="d-flex flex-column flex-md-row mb-2">
+            <StemAuthoringConnected />
+            <InputTypeDropdown
+              editMode={props.editMode}
+              inputType={props.model.inputType}
+              onChange={(inputType) =>
+                dispatch(
+                  ShortAnswerActions.setInputType(
+                    inputType,
+                    parseInputFromRule(getCorrectResponse(props.model).rule),
+                  ),
+                )
+              }
+            />
           </div>
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
@@ -78,38 +67,26 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
             />
             <SimpleFeedback
               correctResponse={getCorrectResponse(props.model)}
-              incorrectResponse={saGetIncorrectResponse(props.model)}
+              incorrectResponse={getIncorrectResponse(props.model)}
               update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
             />
-            {console.log(getResponses(props.model))}
-            {saGetTargetedResponses(props.model).map((response: ActivityTypes.Response) => (
-              <Card.Card key={response.id}>
-                <Card.Title>
-                  <>
-                    Targeted Feedback
-                    <Tooltip title={'Shown only when a student response matches this answer'} />
-                    <RemoveButtonConnected
-                      onClick={() => dispatch(ResponseActions.removeResponse(response.id))}
-                    />
-                  </>
-                </Card.Title>
-                <Card.Content>
-                  <InputEntry
-                    key={response.id}
-                    inputType={props.model.inputType}
-                    response={response}
-                    onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
-                  />
-                  <RichTextEditorConnected
-                    style={{ backgroundColor: 'white' }}
-                    placeholder="Enter feedback"
-                    text={response.feedback.content}
-                    onEdit={(content) =>
-                      dispatch(ResponseActions.editResponseFeedback(response.id, content))
-                    }
-                  />
-                </Card.Content>
-              </Card.Card>
+            {getTargetedResponses(props.model).map((response: ActivityTypes.Response) => (
+              <ResponseCard
+                title="Targeted feedback"
+                response={response}
+                updateFeedback={(id, content) =>
+                  dispatch(ResponseActions.editResponseFeedback(response.id, content))
+                }
+                onRemove={(id) => dispatch(ResponseActions.removeResponse(id))}
+                key={response.id}
+              >
+                <InputEntry
+                  key={response.id}
+                  inputType={props.model.inputType}
+                  response={response}
+                  onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
+                />
+              </ResponseCard>
             ))}
             <AuthoringButtonConnected
               className="align-self-start btn btn-link"
@@ -121,7 +98,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected hintsPath="" />
+          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
       </TabbedNavigation.Tabs>

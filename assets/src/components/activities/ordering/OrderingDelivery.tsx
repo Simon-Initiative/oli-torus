@@ -26,8 +26,6 @@ import { getChoice } from 'components/activities/common/choices/authoring/choice
 import { OrderingChoices } from 'components/activities/ordering/sections/OrderingChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 
-export const store = configureStore({}, activityDeliverySlice.reducer);
-
 export const OrderingComponent: React.FC = () => {
   const {
     model,
@@ -86,6 +84,7 @@ export const OrderingComponent: React.FC = () => {
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingModelSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

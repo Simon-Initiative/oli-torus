@@ -30,7 +30,7 @@ const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
   }
 
   return (
-    <>
+    <div className="d-flex flex-column d-md-flex flex-md-row align-items-center">
       <input
         disabled={!editMode}
         type="number"
@@ -41,6 +41,7 @@ const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
         }}
         value={state.input[0]}
       />
+      <div className="mx-1">and</div>
       <input
         placeholder="Correct answer"
         disabled={!editMode}
@@ -52,7 +53,7 @@ const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
         }}
         value={state.input[1]}
       />
-    </>
+    </div>
   );
 };
 
@@ -75,10 +76,10 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
   };
 
   return (
-    <div className="d-flex">
+    <div className="d-flex flex-column flex-md-row mb-2">
       <select
         disabled={!editMode}
-        className="form-control"
+        className="form-control mr-1"
         value={state.operator}
         onChange={(e) => {
           const nextOp = e.target.value;

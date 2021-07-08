@@ -4,7 +4,6 @@ import {
   TargetedCATA,
   SimpleCATA,
 } from './schema';
-import { ID } from 'data/content/model';
 import {
   ChoiceId,
   makeChoice,
@@ -16,12 +15,12 @@ import {
   Response,
   ScoringStrategy,
 } from 'components/activities/types';
-import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
 import {
   createRuleForIds,
   invertRule,
 } from 'components/activities/common/responses/authoring/rules';
 import { getResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { TargetedOrdering } from 'components/activities/ordering/schema';
 
 // Types
 export function isSimpleCATA(model: CATA): model is SimpleCATA {
@@ -35,7 +34,7 @@ export function isTargetedCATA(model: CATA): model is TargetedCATA {
 export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
 export const getCorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.correct);
 export const getIncorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.incorrect);
-export const getTargetedChoiceIds = (model: TargetedCATA) =>
+export const getTargetedChoiceIds = (model: TargetedCATA | TargetedOrdering) =>
   model.authoring.targeted.map(getChoiceIds);
 export const isCorrectChoice = (model: CATA, choiceId: ChoiceId) =>
   getCorrectChoiceIds(model).includes(choiceId);
@@ -46,21 +45,23 @@ export const getCorrectResponse = (model: CATA) =>
   getResponse(model, getResponseId(model.authoring.correct));
 export const getIncorrectResponse = (model: CATA) =>
   getResponse(model, getResponseId(model.authoring.incorrect));
-export const getTargetedResponses = (model: TargetedCATA) =>
+export const getTargetedResponses = (model: TargetedCATA | TargetedOrdering) =>
   model.authoring.targeted.map((assoc) => getResponse(model, getResponseId(assoc)));
 
 export interface ResponseMapping {
   response: Response;
   choiceIds: ChoiceId[];
 }
-export const getTargetedResponseMappings = (model: TargetedCATA): ResponseMapping[] =>
+export const getTargetedResponseMappings = (
+  model: TargetedCATA | TargetedOrdering,
+): ResponseMapping[] =>
   model.authoring.targeted.map((assoc) => ({
     response: getResponse(model, getResponseId(assoc)),
     choiceIds: getChoiceIds(assoc),
   }));
 
 // Model creation
-export const defaultCATAModel: () => CATA = () => {
+export const defaultCATAModel = (): CATA => {
   const correctChoice = makeChoice('Choice 1');
   const incorrectChoice = makeChoice('Choice 2');
 

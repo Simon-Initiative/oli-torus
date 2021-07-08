@@ -235,7 +235,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           input: input.input
         }
 
-        Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
+        IO.inspect(Oli.Delivery.Evaluation.Evaluator.evaluate(part, context))
       end)
       |> Enum.map(fn e ->
         case e do

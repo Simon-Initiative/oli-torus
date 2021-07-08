@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   evaluation, returns the feedback and a scoring result.
   """
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
+    IO.inspect(part.responses)
     case Enum.reduce(part.responses, {context, nil, -1, -1}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
         {:ok, {feedback, %Result{score: score, out_of: out_of}}}
@@ -30,7 +31,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
       end
 
     matches =
-      case Rule.parse_and_evaluate(rule, context) do
+      case IO.inspect(Rule.parse_and_evaluate(rule, context)) do
         {:ok, result} -> result
         {:error, _} -> false
       end
