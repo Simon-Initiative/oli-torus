@@ -9,8 +9,16 @@ import {
 } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
 
+export interface ActivityContent {
+  custom?: any;
+  partsLayout: any[];
+}
 export interface IActivity {
-  // TODO
+  id: string;
+  resourceId?: number;
+  authoring?: any;
+  content?: ActivityContent;
+  activityType?: any;
   [key: string]: any;
 }
 
