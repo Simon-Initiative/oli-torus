@@ -5,6 +5,7 @@
 ### Bug fixes
 
 - Fix an issue with image coding activity in preview
+- Persist student code in image coding activity
 
 ### Enhancements
 
