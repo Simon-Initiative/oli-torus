@@ -104,7 +104,7 @@ describe('multiple choice question', () => {
     const firstChoice = model.choices[0];
     const newModel = applyAction(model, MCActions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
-    expect(newModel.authoring.parts[0].responses).toHaveLength(1);
+    expect(newModel.authoring.parts[0].responses).toHaveLength(2);
   });
 
   it('has the same number of responses as choices', () => {
