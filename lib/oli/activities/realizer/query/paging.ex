@@ -1,4 +1,4 @@
-defmodule Oli.Activities.Realizer.Paging do
+defmodule Oli.Activities.Realizer.Query.Paging do
   @derive Jason.Encoder
   @enforce_keys [:limit, :offset]
   defstruct [:limit, :offset]
@@ -9,6 +9,6 @@ defmodule Oli.Activities.Realizer.Paging do
         }
 
   def parse(%{"limit" => limit, "offset" => offset}) do
-    {:ok, %Oli.Activities.Realizer.Paging{limit: limit, offset: offset}}
+    {:ok, %Oli.Activities.Realizer.Query.Paging{limit: limit, offset: offset}}
   end
 end

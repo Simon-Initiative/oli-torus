@@ -1,13 +1,13 @@
 defmodule Oli.Activities.ConditionsTest do
   use ExUnit.Case, async: true
 
-  alias Oli.Activities.Realizer.Conditions
+  alias Oli.Activities.Realizer.Logic
   alias Oli.TestHelpers
 
   test "parsing conditions with just an expression" do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid1.json")
 
-    assert {:ok, parsed} = Conditions.parse(contents)
+    assert {:ok, parsed} = Logic.parse(contents)
 
     assert parsed.conditions.fact == :tags
     assert parsed.conditions.operator == :contains
@@ -17,7 +17,7 @@ defmodule Oli.Activities.ConditionsTest do
   test "parsing conditions with a clause and two children expressions" do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid2.json")
 
-    assert {:ok, parsed} = Conditions.parse(contents)
+    assert {:ok, parsed} = Logic.parse(contents)
 
     assert parsed.conditions.operator == :all
 
@@ -41,7 +41,7 @@ defmodule Oli.Activities.ConditionsTest do
   test "parsing conditions nested clauses" do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/valid3.json")
 
-    assert {:ok, parsed} = Conditions.parse(contents)
+    assert {:ok, parsed} = Logic.parse(contents)
 
     assert parsed.conditions.operator == :all
     assert Enum.at(parsed.conditions.children, 0).operator == :any
@@ -50,7 +50,7 @@ defmodule Oli.Activities.ConditionsTest do
 
   test "parsing fails when encountering bad combination of " do
     {:ok, contents} = TestHelpers.read_json_file("./test/oli/activities/realizer/invalid1.json")
-    assert {:error, e} = Conditions.parse(contents)
+    assert {:error, e} = Logic.parse(contents)
     assert e == "invalid expression"
   end
 end

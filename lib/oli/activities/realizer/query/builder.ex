@@ -1,51 +1,66 @@
-defmodule Oli.Activities.Realizer.QueryBuilder do
+defmodule Oli.Activities.Realizer.Query.Builder do
   alias Oli.Resources.ResourceType
-  alias Oli.Activities.Realizer.Conditions
-  alias Oli.Activities.Realizer.Conditions.Expression
-  alias Oli.Activities.Realizer.Conditions.Clause
-  alias Oli.Activities.Realizer.Paging
+  alias Oli.Activities.Realizer.Logic
+  alias Oli.Activities.Realizer.Logic.Expression
+  alias Oli.Activities.Realizer.Logic.Clause
+  alias Oli.Activities.Realizer.Query.Paging
+  alias Oli.Activities.Realizer.Query.Source
 
-  def build_for_paging(
-        %Conditions{} = conditions,
-        publication_id,
-        %Paging{} = paging_options
-      ) do
-    {sql, params} = build(conditions, publication_id, [])
+  def build(%Logic{} = logic, %Source{} = source, %Paging{} = paging, view_type) do
+    context = %{params: [], exact_objectives: false}
 
-    {"SELECT revisions.*, count(*) OVER() as full_count #{sql} #{paging(paging_options)}", params}
+    %{params: params, sql: sql} =
+      select(context, view_type)
+      |> from()
+      |> where(logic)
+      |> lateral_join()
+      |> source(source)
+      |> limit_offset(paging, view_type)
+      |> assemble()
+
+    {sql, params}
   end
 
-  def build_for_selection(
-        %Conditions{} = conditions,
-        publication_id,
-        count,
-        blacklisted_activity_ids
-      ) do
-    {sql, params} = build(conditions, publication_id, blacklisted_activity_ids)
-
-    {"SELECT revisions.* #{sql} #{random_selection(count)}", params}
+  def assemble(context) do
+    Map.put(
+      context,
+      :sql,
+      normalize_whitespace("""
+      #{context.select}
+      #{context.from}
+      #{context.lateral_join}
+      WHERE #{context.source} AND (#{context.logic})
+      #{context.limit_offset}
+      """)
+    )
   end
 
-  def build(%Conditions{conditions: conditions}, publication_id, blacklisted_activity_ids) do
-    peripherals = %{params: [], exact_objectives: false}
-
-    {fragments, peripherals} = build_where(conditions, peripherals)
-    selection_clauses = IO.iodata_to_binary(fragments)
-
-    from =
-      "FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id"
-
-    objectives_count_join =
-      if peripherals.exact_objectives do
-        """
-        JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
-        from revisions, jsonb_each(revisions.objectives) group by id
-        ) AS count ON count.id = revisions.id
-        """
-      else
-        ""
+  def limit_offset(context, %Paging{limit: limit, offset: offset}, view_type) do
+    Map.put(
+      context,
+      :limit_offset,
+      case view_type do
+        :random -> "ORDER BY RANDOM() LIMIT #{limit}"
+        :paged -> "LIMIT #{limit} OFFSET #{offset}"
       end
+    )
+  end
 
+  def select(context, view_type) do
+    Map.put(
+      context,
+      :select,
+      case view_type do
+        :random -> "SELECT revisions.* "
+        :paged -> "SELECT revisions.*, count(*) OVER() as full_count "
+      end
+    )
+  end
+
+  def source(context, %Source{
+        publication_id: publication_id,
+        blacklisted_activity_ids: blacklisted_activity_ids
+      }) do
     activity_type_id = ResourceType.get_id_by_type("activity")
 
     blacklisted =
@@ -54,23 +69,40 @@ defmodule Oli.Activities.Realizer.QueryBuilder do
         items -> "(NOT (revisions.resource_id IN (#{Enum.join(items, ",")}))) AND "
       end
 
-    published_activities =
+    Map.put(
+      context,
+      :source,
       "#{blacklisted}(revisions.resource_type_id = #{activity_type_id}) AND (published_resources.publication_id = #{publication_id})"
-
-    sql =
-      normalize_whitespace(
-        "#{from} #{objectives_count_join} WHERE #{published_activities} AND (#{selection_clauses})"
-      )
-
-    {sql, peripherals.params}
+    )
   end
 
-  defp paging(%Paging{limit: limit, offset: offset}) do
-    "LIMIT #{limit} OFFSET #{offset}"
+  def from(context) do
+    Map.put(
+      context,
+      :from,
+      "FROM published_resources LEFT JOIN revisions ON revisions.id = published_resources.revision_id"
+    )
   end
 
-  defp random_selection(count) do
-    "ORDER BY RANDOM() LIMIT #{count}"
+  def where(context, %Logic{conditions: conditions}) do
+    {fragments, context} = build_where(conditions, context)
+    Map.put(context, :logic, IO.iodata_to_binary(fragments))
+  end
+
+  def lateral_join(context) do
+    Map.put(
+      context,
+      :lateral_join,
+      if context.exact_objectives do
+        """
+        JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
+        from revisions, jsonb_each(revisions.objectives) group by id
+        ) AS count ON count.id = revisions.id
+        """
+      else
+        ""
+      end
+    )
   end
 
   def normalize_whitespace(sql) do

@@ -1,4 +1,4 @@
-defmodule Oli.Activities.Realizer.Conditions.Expression do
+defmodule Oli.Activities.Realizer.Logic.Expression do
   @derive Jason.Encoder
   @enforce_keys [:fact, :operator, :value]
   defstruct [:fact, :operator, :value]
@@ -13,7 +13,7 @@ defmodule Oli.Activities.Realizer.Conditions.Expression do
           value: [integer()] | String.t()
         }
 
-  alias Oli.Activities.Realizer.Conditions.Expression
+  alias Oli.Activities.Realizer.Logic.Expression
 
   def parse(%{"fact" => fact, "operator" => operator, "value" => value}) when is_list(value) do
     case {fact, operator} do

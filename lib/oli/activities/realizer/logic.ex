@@ -1,14 +1,14 @@
-defmodule Oli.Activities.Realizer.Conditions do
+defmodule Oli.Activities.Realizer.Logic do
   @derive Jason.Encoder
   @enforce_keys [:conditions]
   defstruct [:conditions]
 
   @moduledoc """
-  Implements a structured representation of a user specified conditions
+  Implements a structured representation of a user specified logic
   for realizing (aka selecting) activities from the activity bank.
 
   At an abstract level, the grammar implemented here is:
-  <<Conditions>> := <<Clause>> || <<Expression>>
+  <<Logic>> := <<Clause>> || <<Expression>>
   <<Clause>> := [<<Clause>>] || [<<Expression>>]
   <<Expression>> :: Fact Operator Value
 
@@ -49,8 +49,8 @@ defmodule Oli.Activities.Realizer.Conditions do
 
   """
 
-  alias Oli.Activities.Realizer.Conditions.Expression
-  alias Oli.Activities.Realizer.Conditions.Clause
+  alias Oli.Activities.Realizer.Logic.Expression
+  alias Oli.Activities.Realizer.Logic.Clause
 
   def parse(%{"conditions" => conditions}) do
     result =
@@ -61,7 +61,7 @@ defmodule Oli.Activities.Realizer.Conditions do
       end
 
     case result do
-      {:ok, r} -> {:ok, %Oli.Activities.Realizer.Conditions{conditions: r}}
+      {:ok, r} -> {:ok, %Oli.Activities.Realizer.Logic{conditions: r}}
       e -> e
     end
   end
