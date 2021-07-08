@@ -175,6 +175,12 @@ $panel-section-title-bar-color: #e8ebed;
     .form-control {
       font-size: 12px;
     }
+    .rjsf {
+      .container-fluid>.row  {
+        border-bottom: 1px solid $ui-border-color !important;
+
+      }
+    }
   }
   .aa-stage {
     position: fixed;

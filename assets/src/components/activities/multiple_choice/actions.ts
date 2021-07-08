@@ -1,12 +1,9 @@
 import { MultipleChoiceModelSchema } from './schema';
 import { PostUndoable } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
-import {
-  getCorrectResponse,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import {matchRule} from 'components/activities/common/responses/authoring/rules';
+import {getCorrectResponse} from 'components/activities/common/responses/authoring/responseUtils';
 
 export const MCActions = {
   removeChoice(id: string) {
@@ -15,9 +12,11 @@ export const MCActions = {
       const index = getChoices(model).findIndex((c) => c.id === id);
       ChoiceActions.removeChoice(id)(model, post);
 
-      model.authoring.parts[0].responses = getResponses(model).filter(
-        (r) => r.rule !== matchRule(id),
-      );
+      // if the choice being removed is the correct choice, a new correct choice
+      // must be set
+      if (getCorrectResponse(model).rule === matchRule(id)) {
+        MCActions.toggleChoiceCorrectness(model.choices[0].id)(model, post);
+      }
 
       post({
         description: 'Removed a choice',

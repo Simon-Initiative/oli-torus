@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug fixes
+
+- Fix an issue with image coding activity in preview
+
 ### Enhancements
 
 - Add ability to generate and download a course digest from existing course projects
@@ -15,6 +19,7 @@
 - Fix an issue preventing deletion of projects whose names contain special characters
 - Fix an issue related to persisting sessions across server restarts
 - Fix an issue where modals and rearrange were broken in curriculum view
+- Fix an issue where toggling multiple choice answer correctness could cause submission failures
 
 ## 0.11.0 (2021-6-15)
 

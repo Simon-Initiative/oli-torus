@@ -199,7 +199,30 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
-
+    const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
+    if (sRandomize !== undefined) {
+      setRandomized(sRandomize);
+    }
+    const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoices(sSelectedChoices);
+    }
+    const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoicesText(sSelectedChoicesText);
+    }
+    const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
+    if (sSelectedChoiceText !== undefined) {
+      setSelectedChoiceText(sSelectedChoiceText);
+    }
+    const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
+    if (sSelectedChoice !== undefined) {
+      setSelectedChoice(sSelectedChoice);
+    }
+    const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
+    if (sNumberOfSelectedChoices !== undefined) {
+      setNumberOfSelectedChoices(sNumberOfSelectedChoices);
+    }
     setReady(true);
   }, []);
 

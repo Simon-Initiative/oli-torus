@@ -2,8 +2,7 @@ import { MCActions } from 'components/activities/multiple_choice/actions';
 import { makeChoice } from 'components/activities/types';
 import { defaultMCModel } from 'components/activities/multiple_choice/utils';
 import { applyTestAction } from 'utils/test_utils';
-import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 
 describe('multiple choice question', () => {
   const model = defaultMCModel();
@@ -18,19 +17,25 @@ describe('multiple choice question', () => {
   });
 
   it('can add a choice', () => {
-    const newChoice = makeChoice('');
-    expect(applyTestAction(model, MCActions.addChoice(newChoice)).choices.length).toBeGreaterThan(
-      model.choices.length,
-    );
-    expect(getResponses(model).find((r) => r.rule === matchRule(newChoice.id))).toBeTruthy();
+    expect(
+      applyTestAction(model, ChoiceActions.addChoice(makeChoice(''))).choices.length,
+    ).toBeGreaterThan(model.choices.length);
+  });
+
+  it('can edit a choice', () => {
+    const newChoiceContent = makeChoice('new content').content;
+    const firstChoice = model.choices[0];
+    expect(
+      applyTestAction(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent))
+        .choices[0],
+    ).toHaveProperty('content', newChoiceContent);
   });
 
   it('can remove a choice', () => {
     const firstChoice = model.choices[0];
     const newModel = applyTestAction(model, MCActions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
-    expect(newModel.authoring.parts[0].responses).toHaveLength(1);
-    expect(getResponses(model).find((r) => r.rule === matchRule(firstChoice.id))).toBeFalsy();
+    expect(newModel.authoring.parts[0].responses).toHaveLength(2);
   });
 
   it('has the same number of responses as choices', () => {
