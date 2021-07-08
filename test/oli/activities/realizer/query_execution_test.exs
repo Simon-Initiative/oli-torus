@@ -15,6 +15,7 @@ defmodule Oli.Activities.Query.ExecutorTest do
 
       Seeder.create_activity(
         %{
+          scope: :banked,
           objectives: %{"1" => [1]},
           title: "1",
           content: %{model: %{stem: "this is the question"}}
@@ -25,7 +26,24 @@ defmodule Oli.Activities.Query.ExecutorTest do
       )
 
       Seeder.create_activity(
-        %{objectives: %{"1" => [1, 2]}, title: "2", content: %{model: %{stem: "and another"}}},
+        %{
+          scope: :banked,
+          objectives: %{"1" => [1, 2]},
+          title: "2",
+          content: %{model: %{stem: "and another"}}
+        },
+        map.publication,
+        map.project,
+        map.author
+      )
+
+      Seeder.create_activity(
+        %{
+          scope: :embedded,
+          objectives: %{"1" => [1, 2]},
+          title: "2",
+          content: %{model: %{stem: "and another"}}
+        },
         map.publication,
         map.project,
         map.author

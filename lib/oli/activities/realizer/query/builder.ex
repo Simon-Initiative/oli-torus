@@ -1,4 +1,10 @@
 defmodule Oli.Activities.Realizer.Query.Builder do
+  @moduledoc """
+  Given logic constraints, a source and view and paging options, this
+  module assembles the raw SQL that when executed will select activities
+  from a course project activity bank.
+  """
+
   alias Oli.Resources.ResourceType
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Logic.Expression
@@ -21,7 +27,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     {sql, params}
   end
 
-  def assemble(context) do
+  defp assemble(context) do
     Map.put(
       context,
       :sql,
@@ -35,7 +41,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     )
   end
 
-  def limit_offset(context, %Paging{limit: limit, offset: offset}, view_type) do
+  defp limit_offset(context, %Paging{limit: limit, offset: offset}, view_type) do
     Map.put(
       context,
       :limit_offset,
@@ -46,7 +52,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     )
   end
 
-  def select(context, view_type) do
+  defp select(context, view_type) do
     Map.put(
       context,
       :select,
@@ -57,10 +63,10 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     )
   end
 
-  def source(context, %Source{
-        publication_id: publication_id,
-        blacklisted_activity_ids: blacklisted_activity_ids
-      }) do
+  defp source(context, %Source{
+         publication_id: publication_id,
+         blacklisted_activity_ids: blacklisted_activity_ids
+       }) do
     activity_type_id = ResourceType.get_id_by_type("activity")
 
     blacklisted =
@@ -72,11 +78,15 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     Map.put(
       context,
       :source,
-      "#{blacklisted}(revisions.resource_type_id = #{activity_type_id}) AND (published_resources.publication_id = #{publication_id})"
+      """
+      #{blacklisted}(revisions.resource_type_id = #{activity_type_id})
+      AND (published_resources.publication_id = #{publication_id})
+      AND (revisions.scope = 'banked')
+      """
     )
   end
 
-  def from(context) do
+  defp from(context) do
     Map.put(
       context,
       :from,
@@ -84,12 +94,12 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     )
   end
 
-  def where(context, %Logic{conditions: conditions}) do
+  defp where(context, %Logic{conditions: conditions}) do
     {fragments, context} = build_where(conditions, context)
     Map.put(context, :logic, IO.iodata_to_binary(fragments))
   end
 
-  def lateral_join(context) do
+  defp lateral_join(context) do
     Map.put(
       context,
       :lateral_join,

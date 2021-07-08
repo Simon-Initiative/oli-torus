@@ -1,4 +1,8 @@
 defmodule Oli.Activities.Realizer.Query.Executor do
+  @moduledoc """
+  Executes the queries built by `Oli.Activities.Realizer.Query.Builder`.
+  """
+
   alias Oli.Activities.Realizer.Query.Result
 
   def execute({sql, params}) do

@@ -1,4 +1,8 @@
 defmodule Oli.Activities.Realizer.Query.Paging do
+  @moduledoc """
+  Paging options for activity viewing and querying.
+  """
+
   @derive Jason.Encoder
   @enforce_keys [:limit, :offset]
   defstruct [:limit, :offset]

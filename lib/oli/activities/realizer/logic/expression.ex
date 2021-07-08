@@ -1,4 +1,35 @@
 defmodule Oli.Activities.Realizer.Logic.Expression do
+  @moduledoc """
+  Represents a logical expression of the general form:
+
+  <<fact>> <<operator>> <<value>>
+
+  The supported facts are attached objectives, attached tags, activity type
+  and full text.
+
+  Four supported operators exist in two pairs: "equals", "doesNotEqual" and
+  "contains", "doesNotContain".
+
+  These operators work slightly differently depending on which fact they are applied to:
+
+  For tags and objectives, the value must be a list for all four operators.
+  Operator "contains" checks to see if the collection represented by the fact "contains"
+  the list represented by the "value", even as a subset.  For instance: this expression
+  "tags contains [1, 2]" would evaluate to true if "tags" was equal to [1, 2] or [1, 2, 3], but
+  not if "tags" equals [1].  To represent the logic of "find activities that have either
+  tag 1 or tag 2", one would use a disjunctive clause of two separate expressions.
+  The "equals" operator seeks an exact match of both the value and the fact collections.
+
+  For activity type, the "contains" operator acts like the "IN" operator from SQL, as
+  it evaluates to true if the scalar value of the activity type exists within the value
+  collection. The "equals" operator takes a scalar value and seeks exact equality with the
+  activity type.
+
+  The "text" fact only supports the "contains" operator which takes a scalar value and performs
+  a full text search over the model of the activity.
+
+  """
+
   @derive Jason.Encoder
   @enforce_keys [:fact, :operator, :value]
   defstruct [:fact, :operator, :value]

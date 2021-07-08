@@ -1,4 +1,8 @@
 defmodule Oli.Activities.Realizer.Logic.Clause do
+  @moduledoc """
+  Represents either a conjuctive or disjunctive logic clause.
+  """
+
   @derive Jason.Encoder
   @enforce_keys [:operator, :children]
   defstruct [:operator, :children]
@@ -27,7 +31,7 @@ defmodule Oli.Activities.Realizer.Logic.Clause do
   end
 
   def is_clause?(candidate) do
-    Map.has_key?(candidate, "children")
+    Map.has_key?(candidate, "children") and Map.has_key?(candidate, "operator")
   end
 
   defp parse_with_operator(operator, children) do
