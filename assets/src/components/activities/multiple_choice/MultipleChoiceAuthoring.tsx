@@ -46,7 +46,7 @@ const MultipleChoice = (props: AuthoringElementProps<MultipleChoiceModelSchema>)
           <ChoicesAuthoringConnected
             icon={<Radio.Unchecked />}
             choices={props.model.choices}
-            addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
+            addOne={() => dispatch(ChoiceActions.addChoice(ActivityTypes.makeChoice('')))}
             setAll={(choices: ActivityTypes.Choice[]) =>
               dispatch(ChoiceActions.setAllChoices(choices))
             }

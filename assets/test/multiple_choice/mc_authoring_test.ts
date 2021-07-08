@@ -86,9 +86,9 @@ describe('multiple choice question', () => {
   });
 
   it('can add a choice', () => {
-    expect(applyAction(model, MCActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
-      model.choices.length,
-    );
+    expect(
+      applyAction(model, ChoiceActions.addChoice(makeChoice(''))).choices.length,
+    ).toBeGreaterThan(model.choices.length);
   });
 
   it('can edit a choice', () => {
