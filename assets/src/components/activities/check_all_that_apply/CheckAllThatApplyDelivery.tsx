@@ -1,4 +1,3 @@
-import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { ChoiceId, Manifest } from 'components/activities/types';
 import { isCorrect } from 'data/content/activities/activityUtils';
@@ -28,13 +27,14 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { valueOr } from 'utils/common';
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
     state: activityState,
     onResetActivity,
     onSaveActivity,
-  } = useDeliveryElementContext<CheckAllThatApplyModelSchema>();
+  } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
@@ -85,8 +85,8 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
+export class CheckAllThatApplyDelivery extends DeliveryElement<CATASchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CATASchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>

@@ -1,9 +1,11 @@
+import { createRuleForIdsCATA } from 'components/activities/check_all_that_apply/utils';
 import {
   andRules,
   btwRule,
   containsRule,
-  createRuleForIds,
   eqRule,
+  gteRule,
+  gtRule,
   invertRule,
   lteRule,
   ltRule,
@@ -13,6 +15,7 @@ import {
   notContainsRule,
   orRules,
 } from 'components/activities/common/responses/authoring/rules';
+import { createRuleForIdsOrdering } from 'components/activities/ordering/utils';
 
 describe('rules', () => {
   it('match rule', () => {
@@ -24,7 +27,7 @@ describe('rules', () => {
   });
 
   it('not contains rule', () => {
-    expect(notContainsRule('id')).toBe('!(input like {id})');
+    expect(notContainsRule('id')).toBe('(!(input contains {id}))');
   });
 
   it('equals rule', () => {
@@ -32,7 +35,7 @@ describe('rules', () => {
   });
 
   it('not equals rule', () => {
-    expect(neqRule('id')).toBe('!(input = {id})');
+    expect(neqRule('id')).toBe('(!(input = {id}))');
   });
 
   it('less than rule', () => {
@@ -44,19 +47,23 @@ describe('rules', () => {
   });
 
   it('greater than rule', () => {
-    expect(ltRule('id')).toBe('input > {id}');
+    expect(gtRule('id')).toBe('input > {id}');
   });
 
   it('greater than or equal rule', () => {
-    expect(lteRule('id')).toBe('input = {id} || (input > {id})');
+    expect(gteRule('id')).toBe('input = {id} || (input > {id})');
   });
 
   it('between two numbers rule', () => {
-    expect(btwRule('1', '2')).toBe('input = {2} || (input < {2})');
+    expect(btwRule('1', '2')).toBe(
+      'input = {2} || (input < {2}) && (input = {1} || (input > {1}))',
+    );
   });
 
   it('not between two numbers', () => {
-    expect(nbtwRule('1', '2')).toBe('input = {2} || (input < {2})');
+    expect(nbtwRule('1', '2')).toBe(
+      '(!(input = {2} || (input < {2}) && (input = {1} || (input > {1}))))',
+    );
   });
 
   it('invert rule', () => {
@@ -75,17 +82,17 @@ describe('rules', () => {
     );
   });
 
-  it('can create rules to to match choice ids', () => {
+  it('can create rules to match ordering questions', () => {
     const ordering1 = ['id1', 'id2', 'id3'];
     const ordering2 = ['id3', 'id2', 'id1'];
-    expect(createRuleForIds(ordering1, [])).toEqual('input like {id1 id2 id3}');
-    expect(createRuleForIds(ordering2, [])).toEqual('input like {id3 id2 id1}');
+    expect(createRuleForIdsOrdering(ordering1)).toEqual('input like {id1 id2 id3}');
+    expect(createRuleForIdsOrdering(ordering2)).toEqual('input like {id3 id2 id1}');
   });
 
   it('can create rules to match certain ids and not match others', () => {
     const toMatch = ['id1', 'id2'];
-    const notToMatch = ['id3'];
-    expect(createRuleForIds(toMatch, notToMatch)).toEqual(
+    const allChoiceIds = [...toMatch, 'id3'];
+    expect(createRuleForIdsCATA(allChoiceIds, toMatch)).toEqual(
       '(!(input like {id3})) && (input like {id2} && (input like {id1}))',
     );
   });

@@ -2,9 +2,6 @@ import { Response } from 'components/activities/types';
 import { ID } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
-export const createRuleForIds = (toMatch: ID[], notToMatch: ID[]) =>
-  andRules(...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))));
-
 export const invertRule = (rule: string) => `(!(${rule}))`;
 
 const andTwoRules = (rule1: string, rule2: string) => `${rule2} && (${rule1})`;

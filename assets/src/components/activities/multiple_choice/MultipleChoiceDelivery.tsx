@@ -6,7 +6,7 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { MultipleChoiceModelSchema } from './schema';
+import { MCSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -35,7 +35,7 @@ export const MultipleChoiceComponent: React.FC = () => {
     state: activityState,
     onSaveActivity,
     onResetActivity,
-  } = useDeliveryElementContext<MultipleChoiceModelSchema>();
+  } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
@@ -78,8 +78,8 @@ export const MultipleChoiceComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
+export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>

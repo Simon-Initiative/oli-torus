@@ -1,7 +1,7 @@
 import { MCActions } from 'components/activities/multiple_choice/actions';
 import { makeChoice } from 'components/activities/types';
 import { defaultMCModel } from 'components/activities/multiple_choice/utils';
-import { applyTestAction } from 'utils/test_utils';
+import { dispatch } from 'utils/test_utils';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 
 describe('multiple choice question', () => {
@@ -17,23 +17,22 @@ describe('multiple choice question', () => {
   });
 
   it('can add a choice', () => {
-    expect(
-      applyTestAction(model, ChoiceActions.addChoice(makeChoice(''))).choices.length,
-    ).toBeGreaterThan(model.choices.length);
+    expect(dispatch(model, ChoiceActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
+      model.choices.length,
+    );
   });
 
   it('can edit a choice', () => {
     const newChoiceContent = makeChoice('new content').content;
     const firstChoice = model.choices[0];
     expect(
-      applyTestAction(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent))
-        .choices[0],
+      dispatch(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent)).choices[0],
     ).toHaveProperty('content', newChoiceContent);
   });
 
   it('can remove a choice', () => {
     const firstChoice = model.choices[0];
-    const newModel = applyTestAction(model, MCActions.removeChoice(firstChoice.id));
+    const newModel = dispatch(model, MCActions.removeChoice(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
     expect(newModel.authoring.parts[0].responses).toHaveLength(2);
   });

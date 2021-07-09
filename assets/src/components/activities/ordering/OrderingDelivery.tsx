@@ -6,7 +6,7 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { OrderingModelSchema } from './schema';
+import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -16,14 +16,13 @@ import {
   activityDeliverySlice,
   resetAction,
 } from 'data/content/activities/DeliveryState';
-import './OrderingDelivery.scss';
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { OrderingChoices } from 'components/activities/ordering/sections/OrderingChoices';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 
 export const OrderingComponent: React.FC = () => {
@@ -31,7 +30,7 @@ export const OrderingComponent: React.FC = () => {
     model,
     state: activityState,
     onResetActivity,
-  } = useDeliveryElementContext<OrderingModelSchema>();
+  } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
@@ -54,7 +53,7 @@ export const OrderingComponent: React.FC = () => {
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
-        <OrderingChoices
+        <ResponseChoices
           choices={uiState.selection.map((id) => getChoice(model, id))}
           setChoices={(choices) =>
             dispatch(activityDeliverySlice.actions.setSelection(choices.map((c) => c.id)))
@@ -82,8 +81,8 @@ export const OrderingComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class OrderingDelivery extends DeliveryElement<OrderingModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingModelSchema>) {
+export class OrderingDelivery extends DeliveryElement<OrderingSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>

@@ -1,15 +1,11 @@
 import { ShortAnswerModelSchema } from './schema';
-import { makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
-import {
-  containsRule,
-  matchRule,
-  parseInputFromRule,
-} from 'components/activities/common/responses/authoring/rules';
+import { HasParts, makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
+import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
 import {
   getCorrectResponse,
+  getIncorrectResponse,
   getResponses,
 } from 'components/activities/common/responses/authoring/responseUtils';
-import { Maybe } from 'tsmonad';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {
@@ -33,13 +29,8 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
   };
 };
 
-export const getTargetedResponses = (model: ShortAnswerModelSchema) =>
+export const getTargetedResponses = (model: HasParts) =>
   getResponses(model).filter(
     (response) =>
       response !== getCorrectResponse(model) && response !== getIncorrectResponse(model),
   );
-
-export const getIncorrectResponse = (model: ShortAnswerModelSchema) =>
-  Maybe.maybe(
-    getResponses(model).find((response) => parseInputFromRule(response.rule) === '.*'),
-  ).valueOrThrow(new Error('Could not find incorrect response for short answer'));

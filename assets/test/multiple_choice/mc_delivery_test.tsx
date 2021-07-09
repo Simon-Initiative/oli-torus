@@ -17,7 +17,7 @@ describe('multiple choice delivery', () => {
     const model = defaultMCModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
 
-    const defaultActivityState = defaultState(model);;;;
+    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',

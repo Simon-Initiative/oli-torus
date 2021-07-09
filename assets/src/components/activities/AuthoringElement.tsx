@@ -1,6 +1,6 @@
 import { ActivityModelSchema, PostUndoable, Undoable } from './types';
 import { ProjectSlug } from 'data/types';
-import React, { useCallback, useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
 import produce from 'immer';
 
@@ -31,7 +31,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
 
   props(): AuthoringElementProps<T> {
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
-    const model = getProp('model');
+    const model = this.transformModel(getProp('model'));
     const editMode: boolean = getProp('editMode');
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
@@ -49,6 +49,10 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       editMode,
       projectSlug,
     };
+  }
+
+  transformModel(model: any): T {
+    return model as T;
   }
 
   abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>): void;

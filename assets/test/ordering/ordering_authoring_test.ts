@@ -1,18 +1,18 @@
-import { Actions } from 'components/activities/ordering/actions';
-import { TargetedOrdering } from 'components/activities/ordering/schema';
+import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
 import {
-  defaultOrderingModel,
   getChoiceIds,
+  getCorrectChoiceIds,
   getCorrectResponse,
-  getHints,
-  getTargetedChoiceIds,
   getIncorrectResponse,
   getResponseId,
   getResponses,
+  getTargetedChoiceIds,
   getTargetedResponses,
-  getCorrectOrdering,
-} from 'components/activities/ordering/utils';
-import { applyTestAction } from 'utils/test_utils';
+} from 'components/activities/common/responses/authoring/responseUtils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { Actions } from 'components/activities/ordering/actions';
+import { defaultOrderingModel } from 'components/activities/ordering/utils';
+import { dispatch } from 'utils/test_utils';
 
 const testDefaultModel = defaultOrderingModel;
 
@@ -20,24 +20,8 @@ describe('ordering question', () => {
   const model = testDefaultModel();
 
   it('has correct feedback that correspond to all choices', () => {
-    expect(getCorrectOrdering(model)).toHaveLength(model.choices.length);
-    const toggled: TargetedOrdering = applyTestAction(model as any, Actions.toggleType());
-    expect(getTargetedChoiceIds(toggled)).toHaveLength(0);
-  });
-
-  it('can switch from simple to targeted feedback mode', () => {
-    expect(model.type).toBe('SimpleOrdering');
-    const toggled: TargetedOrdering = applyTestAction(model as any, Actions.toggleType());
-    expect(toggled.type).toBe('TargetedOrdering');
-    expect(toggled.authoring.targeted).toBeInstanceOf(Array);
-    expect(toggled.authoring.targeted).toHaveLength(0);
-  });
-
-  it('can switch from targeted to simple feedback mode', () => {
-    const toggled = applyTestAction(model, Actions.toggleType());
-    const toggledBack = applyTestAction(toggled, Actions.toggleType());
-    expect(toggledBack).toMatchObject({ type: 'SimpleOrdering' });
-    expect(toggledBack.authoring).not.toHaveProperty('targeted');
+    expect(getCorrectChoiceIds(model)).toHaveLength(model.choices.length);
+    expect(getTargetedChoiceIds(model)).toHaveLength(0);
   });
 
   it('has a stem', () => {
@@ -49,20 +33,16 @@ describe('ordering question', () => {
     expect(model.choices.length).toBeGreaterThan(0);
   });
 
-  it('can remove a choice from simple Ordering', () => {
+  it('can remove a choice', () => {
     const firstChoice = model.choices[0];
-    const newModel = applyTestAction(model, Actions.removeChoice(firstChoice.id));
+    const newModel = dispatch(model, Actions.removeChoiceAndUpdateRules(firstChoice.id));
     expect(newModel.choices).toHaveLength(1);
     expect(getChoiceIds(newModel.authoring.correct)).not.toContain(firstChoice);
   });
 
-  it('can remove a choice from targeted Ordering responses', () => {
+  it('can remove a choice', () => {
     const firstChoice = model.choices[0];
-    const toggled = applyTestAction(model, Actions.toggleType());
-    const newModel: TargetedOrdering = applyTestAction(
-      toggled as any,
-      Actions.removeChoice(firstChoice.id),
-    );
+    const newModel = dispatch(model, Actions.removeChoiceAndUpdateRules(firstChoice.id));
     newModel.authoring.targeted.forEach((assoc) =>
       expect(getChoiceIds(assoc)).not.toContain(firstChoice.id),
     );
@@ -76,22 +56,18 @@ describe('ordering question', () => {
     expect(getIncorrectResponse(model)).toBeTruthy();
   });
 
-  it('can add a targeted feedback in targeted mode', () => {
-    expect(applyTestAction(model, Actions.addTargetedFeedback())).toEqual(model);
-    const toggled: TargetedOrdering = applyTestAction(model as any, Actions.toggleType());
-    const withNewResponse = applyTestAction(toggled, Actions.addTargetedFeedback());
+  it('can add a targeted feedback', () => {
+    const withNewResponse = dispatch(model, Actions.addTargetedFeedback());
     expect(getResponses(withNewResponse).length).toBeGreaterThan(getResponses(model).length);
     expect(withNewResponse.authoring.targeted.length).toBe(1);
-    expect(getChoiceIds(withNewResponse.authoring.targeted[0])).toHaveLength(0);
+    expect(getChoiceIds(withNewResponse.authoring.targeted[0])).toHaveLength(2);
   });
 
-  it('can remove a targeted feedback in targeted mode', () => {
-    expect(applyTestAction(model, Actions.removeTargetedFeedback('id'))).toEqual(model);
-    const toggled: TargetedOrdering = applyTestAction(model as any, Actions.toggleType());
-    const withNewResponse = applyTestAction(toggled, Actions.addTargetedFeedback());
-    const removed = applyTestAction(
+  it('can remove a targeted feedback', () => {
+    const withNewResponse = dispatch(model, Actions.addTargetedFeedback());
+    const removed = dispatch(
       withNewResponse,
-      Actions.removeTargetedFeedback(getResponseId(withNewResponse.authoring.targeted[0])),
+      ResponseActions.removeTargetedFeedback(getResponseId(withNewResponse.authoring.targeted[0])),
     );
     expect(getResponses(removed)).toHaveLength(2);
     expect(getTargetedResponses(removed)).toHaveLength(0);

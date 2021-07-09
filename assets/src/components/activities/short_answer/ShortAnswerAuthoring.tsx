@@ -13,11 +13,11 @@ import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { parseInputFromRule } from 'components/activities/common/responses/authoring/rules';
-import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
@@ -26,10 +26,7 @@ import { shuffleAnswerChoiceSetting } from 'components/activities/common/authori
 import { InputTypeDropdown } from 'components/activities/short_answer/sections/InputTypeDropdown';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
-import {
-  getIncorrectResponse,
-  getTargetedResponses,
-} from 'components/activities/short_answer/utils';
+import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 
 const store = configureStore();
@@ -41,7 +38,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <div className="d-flex flex-column flex-md-row mb-2">
-            <StemAuthoringConnected />
+            <Stem />
             <InputTypeDropdown
               editMode={props.editMode}
               inputType={props.model.inputType}
@@ -65,11 +62,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
               response={getCorrectResponse(props.model)}
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
             />
-            <SimpleFeedback
-              correctResponse={getCorrectResponse(props.model)}
-              incorrectResponse={getIncorrectResponse(props.model)}
-              update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
-            />
+            <SimpleFeedback />
             {getTargetedResponses(props.model).map((response: ActivityTypes.Response) => (
               <ResponseCard
                 title="Targeted feedback"
@@ -98,7 +91,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
+          <Hints hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
       </TabbedNavigation.Tabs>

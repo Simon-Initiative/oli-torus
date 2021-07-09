@@ -1,32 +1,41 @@
-import { ResponseMapping } from 'components/activities/check_all_that_apply/utils';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import {
+  getTargetedResponseMappings,
+  ResponseMapping,
+} from 'components/activities/common/responses/authoring/responseUtils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
-import { Choice, ChoiceId, RichText } from 'components/activities/types';
+import {
+  ChoiceId,
+  ChoiceIdsToResponseId,
+  HasChoices,
+  HasParts,
+  RichText,
+} from 'components/activities/types';
 import { ID } from 'data/content/model';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
 interface Props {
-  choices: Choice[];
-  targetedMappings: ResponseMapping[];
   toggleChoice: (id: ChoiceId, mapping: ResponseMapping) => void;
-  updateResponse: (id: ID, content: RichText) => void;
   addTargetedResponse: () => void;
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
-  onRemove: (responseId: ID) => void;
 }
 export const TargetedFeedback: React.FC<Props> = ({
-  choices,
-  targetedMappings,
   toggleChoice,
-  updateResponse,
   addTargetedResponse,
   selectedIcon,
   unselectedIcon,
-  onRemove,
 }) => {
+  const { model, dispatch } = useAuthoringElementContext<
+    HasChoices & HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } }
+  >();
+  const choices = model.choices;
+  const targetedMappings = getTargetedResponseMappings(model);
+
   return (
     <>
       {targetedMappings.map((mapping) => (
@@ -34,8 +43,10 @@ export const TargetedFeedback: React.FC<Props> = ({
           key={mapping.response.id}
           title="Targeted feedback"
           response={mapping.response}
-          updateFeedback={(id, content) => updateResponse(mapping.response.id, content)}
-          onRemove={onRemove}
+          updateFeedback={(id, content) =>
+            dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
+          }
+          onRemove={(id) => dispatch(ResponseActions.removeResponse(id))}
         >
           <ChoicesDelivery
             unselectedIcon={unselectedIcon}

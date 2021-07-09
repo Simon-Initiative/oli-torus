@@ -67,9 +67,9 @@ describe('multiple choice delivery', () => {
     });
 
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
-    expect(onSubmitActivity).toHaveBeenCalledWith('guid', [
+    expect(onSubmitActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
       {
-        attemptGuid: 'guid',
+        attemptGuid: '1',
         response: { input: 'answer' },
       },
     ]);

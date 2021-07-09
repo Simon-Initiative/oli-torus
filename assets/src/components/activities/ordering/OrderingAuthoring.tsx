@@ -6,41 +6,36 @@ import {
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { OrderingModelSchema } from './schema';
+import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { StemAuthoringConnected } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { OrderingChoices } from 'components/activities/ordering/sections/OrderingChoices';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { isTargetedOrdering } from 'components/activities/ordering/utils';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
-import {
-  getCorrectResponse,
-  getIncorrectResponse,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
-import { getTargetedResponseMappings } from 'components/activities/check_all_that_apply/utils';
+import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
+import { Maybe } from 'tsmonad';
+import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
+import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
 
 const store = configureStore();
 
 export const Ordering: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext<OrderingModelSchema>();
+  const { dispatch, model } = useAuthoringElementContext<OrderingSchema>();
   return (
     <TabbedNavigation.Tabs>
       <TabbedNavigation.Tab label="Question">
-        <StemAuthoringConnected />
-        <ChoicesAuthoringConnected
+        <Stem />
+        <Choices
           icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
           choices={model.choices}
           addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
@@ -48,69 +43,37 @@ export const Ordering: React.FC = () => {
             dispatch(ChoiceActions.setAllChoices(choices))
           }
           onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
-          onRemove={(id) => dispatch(Actions.removeChoice(id))}
+          onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
         />
       </TabbedNavigation.Tab>
+
       <TabbedNavigation.Tab label="Answer Key">
-        <OrderingChoices
-          choices={model.choices}
-          setChoices={(choices) => dispatch(ChoiceActions.setAllChoices(choices))}
+        <ResponseChoices
+          choices={getCorrectChoiceIds(model).map((id) => getChoice(model, id))}
+          setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
-        <SimpleFeedback
-          correctResponse={getCorrectResponse(model)}
-          incorrectResponse={getIncorrectResponse(model)}
-          update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
-        />
-        {isTargetedOrdering(model) &&
-          getTargetedResponseMappings(model).map((mapping) => (
-            <ResponseCard
-              title="Targeted feedback"
-              response={mapping.response}
-              updateFeedback={(id, content) =>
-                dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
-              }
-              onRemove={(id) => dispatch(ResponseActions.removeResponse(id))}
-              key={mapping.response.id}
-            >
-              <OrderingChoices
-                choices={mapping.choiceIds.map((id) => getChoice(model, id))}
-                setChoices={(choices) =>
-                  dispatch(
-                    Actions.editTargetedFeedbackChoices(
-                      mapping.response.id,
-                      choices.map((c) => c.id),
-                    ),
-                  )
-                }
-              />
-            </ResponseCard>
-          ))}
-        <AuthoringButtonConnected
-          className="align-self-start btn btn-link"
-          action={() => dispatch(Actions.addTargetedFeedback())}
-        >
-          Add targeted feedback
-        </AuthoringButtonConnected>
+        <SimpleFeedback />
+        <TargetedFeedback />
       </TabbedNavigation.Tab>
+
       <TabbedNavigation.Tab label="Hints">
-        <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
+        <Hints hintsPath="$.authoring.parts[0].hints" />
       </TabbedNavigation.Tab>
-      <ActivitySettings
-        settings={[
-          shuffleAnswerChoiceSetting(model, dispatch),
-          {
-            isEnabled: isTargetedOrdering(model),
-            label: 'Targeted feedback',
-            onToggle: () => dispatch(Actions.toggleType()),
-          },
-        ]}
-      />
+
+      <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
     </TabbedNavigation.Tabs>
   );
 };
 
-export class OrderingAuthoring extends AuthoringElement<OrderingModelSchema> {
-  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingModelSchema>) {
+export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
+  transformModel(model: any) {
+    return Maybe.maybe(model.authoring.version).caseOf({
+      just: (v2) => model,
+      nothing: () => orderingV1toV2(model),
+    });
+  }
+
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingSchema>) {
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
@@ -118,7 +81,6 @@ export class OrderingAuthoring extends AuthoringElement<OrderingModelSchema> {
         </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,
-
       mountPoint,
     );
   }

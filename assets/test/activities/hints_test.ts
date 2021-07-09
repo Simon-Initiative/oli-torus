@@ -1,11 +1,7 @@
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
 import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
-import { HasParts, makeHint, ScoringStrategy } from 'components/activities/types';
-import produce from 'immer';
-
-const applyAction = (model: HasParts, action: any) => {
-  return produce(model, (state) => action(state, () => undefined));
-};
+import { makeHint, ScoringStrategy } from 'components/activities/types';
+import { dispatch } from 'utils/test_utils';
 
 describe('authoring hints', () => {
   const model = {
@@ -22,7 +18,7 @@ describe('authoring hints', () => {
   };
 
   it('can add a cognitive hint before the end of the array', () => {
-    expect(getHints(applyAction(model, HintActions.addHint(makeHint('')))).length).toBeGreaterThan(
+    expect(getHints(dispatch(model, HintActions.addHint(makeHint('')))).length).toBeGreaterThan(
       getHints(model).length,
     );
   });
@@ -31,16 +27,14 @@ describe('authoring hints', () => {
     const newHintContent = makeHint('new content').content;
     const firstHint = getHints(model)[0];
     expect(
-      getHints(applyAction(model, HintActions.editHint(firstHint.id, newHintContent)))[0],
+      getHints(dispatch(model, HintActions.editHint(firstHint.id, newHintContent)))[0],
     ).toHaveProperty('content', newHintContent);
   });
 
   it('can remove a hint', () => {
     const firstHint = getHints(model)[0];
     expect(
-      getHints(
-        applyAction(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints')),
-      ),
+      getHints(dispatch(model, HintActions.removeHint(firstHint.id, '$.authoring.parts[0].hints'))),
     ).toHaveLength(2);
   });
 });

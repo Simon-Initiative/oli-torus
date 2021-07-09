@@ -1,5 +1,3 @@
-import guid from 'utils/guid';
-import { MultipleChoiceModelSchema } from './schema';
 import {
   Operation,
   ScoringStrategy,
@@ -8,17 +6,15 @@ import {
   makeChoice,
   makeStem,
   makeResponse,
-  ChoiceId,
+  makeTransformation,
 } from '../types';
 import { Maybe } from 'tsmonad';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
-import {
-  getCorrectResponse,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { MCSchema } from 'components/activities/multiple_choice/schema';
 
-export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
+export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
   const choiceB: Choice = makeChoice('Choice B');
 
@@ -26,6 +22,7 @@ export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
     stem: makeStem(''),
     choices: [choiceA, choiceB],
     authoring: {
+      version: 2,
       parts: [
         {
           id: '1', // an MCQ only has one part, so it is safe to hardcode the id
@@ -37,20 +34,17 @@ export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
-      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
+      targeted: [],
+      transformations: [makeTransformation('choices', Operation.shuffle)],
       previewText: '',
     },
   };
 };
 
-export const getCorrectChoice = (model: MultipleChoiceModelSchema) => {
+export const getCorrectChoice = (model: MCSchema) => {
   const responseIdMatch = Maybe.maybe(getCorrectResponse(model).rule.match(/{(.*)}/)).valueOrThrow(
     new Error('Could not find choice id in correct response'),
   );
 
   return getChoice(model, responseIdMatch[1]);
-};
-
-export const getResponseByChoice = (model: MultipleChoiceModelSchema, id: ChoiceId) => {
-  return getResponses(model).filter((r) => r.rule === matchRule(id))[0];
 };

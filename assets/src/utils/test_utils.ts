@@ -1,5 +1,5 @@
 import produce from 'immer';
 
-export const applyTestAction = <Model>(model: Model, action: any) => {
-  return produce(model, action);
+export const dispatch = <Model>(model: Model, action: any): Model => {
+  return produce(model, (draftState) => action(draftState, () => undefined));
 };
