@@ -9,11 +9,18 @@ const EditingCanvas: React.FC<any> = (props) => {
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
-  const currentActivity = (currentActivityTree || []).slice(-1);
+  const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)
-  const width = 500;
-  const height = 500;
+  const width = currentActivity?.content.custom.width || 800;
+  const height = currentActivity?.content.custom.height || 600;
+
+  const items = currentActivityTree?.reduce((acc, activity) => {
+    // TODO: map these items to a new object that has a few more things
+    // such as layer items should be readonly
+    acc.push(...activity.content.partsLayout);
+    return acc;
+  }, []) || [];
 
   return (
     <React.Fragment>
@@ -70,7 +77,7 @@ const EditingCanvas: React.FC<any> = (props) => {
               </button>
             </div>
           </div>
-          <FabricCanvas items={[]} width={width} height={height} />
+          <FabricCanvas items={items} width={width} height={height} />
         </div>
       </section>
     </React.Fragment>
