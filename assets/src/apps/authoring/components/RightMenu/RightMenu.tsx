@@ -1,9 +1,10 @@
 import { JSONSchema7 } from 'json-schema';
 import React, { useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
+import { Accordion, Tab, Tabs } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { selectState as selectPageState } from '../../store/page/slice';
+import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
@@ -49,12 +50,33 @@ const RightMenu: React.FC<any> = (props) => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey="lesson" title="Lesson">
-        <PropertyEditor
-          schema={lessonSchema}
-          uiSchema={lessonUiSchema}
-          value={lessonData}
-          onChangeHandler={lessonPropertyChangeHandler}
-        />
+        <Accordion className="aa-lesson-properties-editor" defaultActiveKey="0">
+          <div className="aa-panel-section-title-bar">
+            <div className="d-flex align-items-center">
+              <ContextAwareToggle eventKey="0" />
+              <span className="title">Properties</span>
+            </div>
+          </div>
+          <Accordion.Collapse eventKey="0">
+            <PropertyEditor
+              schema={lessonSchema}
+              uiSchema={lessonUiSchema}
+              value={lessonData}
+              onChangeHandler={lessonPropertyChangeHandler}
+            />
+          </Accordion.Collapse>
+        </Accordion>
+        <Accordion className="aa-lesson-script-editor" defaultActiveKey="0">
+          <div className="aa-panel-section-title-bar">
+            <div className="d-flex align-items-center">
+              <ContextAwareToggle eventKey="0" />
+              <span className="title">Custom Logic</span>
+            </div>
+          </div>
+          <Accordion.Collapse eventKey="0">
+            <p>Property Editor for Variables and Custom Scripting</p>
+          </Accordion.Collapse>
+        </Accordion>
       </Tab>
       <Tab eventKey="screen" title="Screen">
         <PropertyEditor
