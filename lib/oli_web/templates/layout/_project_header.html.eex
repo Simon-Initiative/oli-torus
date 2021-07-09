@@ -1,6 +1,17 @@
 <div class="workspace-header">
+
+  <div class="d-flex justify-content-between">
+    <h2><%= hd(Enum.reverse(@breadcrumbs)).short_title %></h2>
+    <div>
+      <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
+      <%= account_link @conn %>
+    </div>
+
+  </div>
+
   <%= live_render(@conn, BreadcrumbTrailLive, session: %{
-     "container_slug" => container_slug(@conn.assigns),
-     "project_slug" => @project.slug,
-     "breadcrumbs" => @breadcrumbs }) %>
+    "container_slug" => container_slug(@conn.assigns),
+    "project_slug" => @project.slug,
+    "breadcrumbs" => @breadcrumbs }) %>
+
 </div>
