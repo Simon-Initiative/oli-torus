@@ -1,9 +1,6 @@
 <div class="workspace-sidebar">
-  <div class="container">
-    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
-  </div>
+
   <div class="user">
-    <%= account_link @conn %>
     <%= sidebar_link @conn, "Projects", :projects, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>
   </div>
 

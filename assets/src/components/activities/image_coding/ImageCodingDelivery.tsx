@@ -55,7 +55,9 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const [attemptState, setAttemptState] = useState(props.state);
   const [hints, setHints] = useState(props.state.parts[0].hints);
   const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
-  const [input, setInput] = useState(valueOr(model.starterCode, ''));
+  const [input, setInput] = useState(
+    attemptState.parts[0].response ? attemptState.parts[0].response.input : model.starterCode,
+  );
   const { stem, resourceURLs } = model;
   // runtime evaluation state:
   const [output, setOutput] = useState('');

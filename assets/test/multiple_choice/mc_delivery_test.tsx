@@ -7,7 +7,7 @@ import { defaultMCModel } from 'components/activities/multiple_choice/utils';
 import { MultipleChoiceComponent } from 'components/activities/multiple_choice/MultipleChoiceDelivery';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import { slice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 import { defaultState } from 'phoenix/activity_bridge';
 import { makeHint } from 'components/activities/types';
@@ -17,7 +17,7 @@ describe('multiple choice delivery', () => {
     const model = defaultMCModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
 
-    const defaultActivityState = defaultState(model);;;;
+    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',
@@ -26,7 +26,7 @@ describe('multiple choice delivery', () => {
       preview: false,
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
-    const store = configureStore({}, slice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer);
 
     render(
       <Provider store={store}>

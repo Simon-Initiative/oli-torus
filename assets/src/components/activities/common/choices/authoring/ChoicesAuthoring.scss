@@ -1,0 +1,42 @@
+@import 'bootstrap';
+
+.choicesAuthoring__choicesContainer {
+  @extend .mt-3;
+}
+
+.choicesAuthoring__choiceContainer {
+  @extend .d-flex;
+  @extend .mb-3;
+  @extend .align-items-center;
+}
+
+.choicesAuthoring__dragHandle {
+  cursor: 'move';
+  width: 24px;
+  color: rgba(0, 0, 0, 0.26);
+}
+
+.choicesAuthoring__choiceIcon {
+  width: 30px;
+  line-height: 1;
+  pointer-events: none;
+  cursor: default;
+}
+
+.choicesAuthoring__removeButtonContainer {
+  @extend .d-flex;
+  @extend .justify-content-center;
+  width: 48px;
+}
+
+.choicesAuthoring__addChoiceContainer {
+  @extend .d-flex;
+  @extend .align-items-center;
+  margin-left: 40px;
+}
+
+.choicesAuthoring__addChoiceButton {
+  @extend .btn;
+  @extend .btn-link;
+  @extend .pl-0;
+}

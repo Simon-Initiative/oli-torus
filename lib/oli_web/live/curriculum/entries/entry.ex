@@ -9,6 +9,7 @@ defmodule OliWeb.Curriculum.EntryLive do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, DetailsLive, LearningSummaryLive}
+  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
 
   def render(assigns) do
@@ -29,12 +30,28 @@ defmodule OliWeb.Curriculum.EntryLive do
       <div class="flex-grow-1 d-flex flex-column align-self-center">
         <div class="flex-1">
           <%= icon(assigns) %>
-          <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+          <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
+            <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+          <% else %>
+            <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
+
+            <%= link(
+                class: "entry-title ml-3",
+                to: Routes.resource_path(
+                  OliWeb.Endpoint,
+                  :edit,
+                  @project.slug,
+                  @child.slug
+                )) do %>
+                <i class="las la-edit"></i> Edit
+            <% end %>
+          <% end %>
           <%= if @editor do %>
             <span class="badge">
               <%= Map.get(@editor, :name) || "Someone" %> is editing this
             </span>
           <% end %>
+
         </div>
         <div>
           <%= case @view do

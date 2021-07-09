@@ -1,73 +1,63 @@
 import React from 'react';
-import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import { Choice, RichText } from 'components/activities/types';
-import { ChoiceAuthoringConnected } from 'components/activities/common/choices/authoring/ChoiceAuthoring';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import './ChoicesAuthoring.scss';
+import { Draggable } from 'components/common/DraggableColumn';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 
 interface Props {
-  icon: React.ReactNode;
+  icon: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
   choices: Choice[];
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
   onEdit: (id: string, content: RichText) => void;
   onRemove: (id: string) => void;
 }
-export const ChoicesAuthoringConnected: React.FC<Props> = ({
-  icon,
-  choices,
-  addOne,
-  setAll,
-  onEdit,
-  onRemove,
-}) => {
+export const Choices: React.FC<Props> = ({ icon, choices, addOne, setAll, onEdit, onRemove }) => {
   return (
     <>
-      <DragDropContext
-        onDragEnd={({ destination, source }) => {
-          if (
-            !destination ||
-            (destination.droppableId === source.droppableId && destination.index === source.index)
-          ) {
-            return;
-          }
-
-          const choice = choices[source.index];
-          const newChoices = Array.from(choices);
-          newChoices.splice(source.index, 1);
-          newChoices.splice(destination.index, 0, choice);
-
-          setAll(newChoices);
-        }}
-      >
-        <Droppable droppableId={'choices'}>
-          {(provided) => (
-            <div {...provided.droppableProps} className="mt-3" ref={provided.innerRef}>
-              {choices.map((choice, index) => (
-                <ChoiceAuthoringConnected
-                  icon={icon}
-                  key={index + 'choice'}
-                  index={index}
-                  choice={choice}
-                  canRemove={choices.length > 1}
-                  onEdit={onEdit}
-                  onRemove={onRemove}
+      <Draggable.Column items={choices} setItems={setAll}>
+        {choices.map((choice) => (
+          <Draggable.Item key={choice.id} id={choice.id} item={choice}>
+            {(_choice, index) => (
+              <>
+                <Draggable.DragIndicator />
+                <div className="choicesAuthoring__choiceIcon">
+                  {typeof icon === 'function' ? icon(choice, index) : icon}
+                </div>
+                <RichTextEditorConnected
+                  style={{ flexGrow: 1, cursor: 'text' }}
+                  placeholder="Answer choice"
+                  text={choice.content}
+                  onEdit={(content) => onEdit(choice.id, content)}
                 />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-      <div className="d-flex align-items-center" style={{ marginLeft: '24px' }}>
-        <>
-          <div style={{ width: 30, lineHeight: 1, pointerEvents: 'none', cursor: 'default' }}>
-            {icon}
-          </div>
-          <AuthoringButtonConnected className="btn btn-link pl-0" onClick={addOne}>
-            Add choice
-          </AuthoringButtonConnected>
-        </>
-      </div>
+                {choices.length > 1 && (
+                  <div className="choicesAuthoring__removeButtonContainer">
+                    <RemoveButtonConnected onClick={() => onRemove(choice.id)} />
+                  </div>
+                )}
+              </>
+            )}
+          </Draggable.Item>
+        ))}
+      </Draggable.Column>
+      <AddChoiceButton icon={icon} addOne={addOne} />
     </>
+  );
+};
+
+interface AddChoiceButtonProps {
+  icon: Props['icon'];
+  addOne: Props['addOne'];
+}
+const AddChoiceButton: React.FC<AddChoiceButtonProps> = ({ icon, addOne }) => {
+  return (
+    <div className="choicesAuthoring__addChoiceContainer">
+      <div className="choicesAuthoring__choiceIcon">{icon}</div>
+      <AuthoringButtonConnected className="choicesAuthoring__addChoiceButton" action={addOne}>
+        Add choice
+      </AuthoringButtonConnected>
+    </div>
   );
 };

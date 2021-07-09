@@ -3,9 +3,9 @@ import React from 'react';
 interface Props {
   shouldShow?: boolean;
   disabled?: boolean;
-  onClick: () => void;
+  action: () => void;
 }
-export const ResetButton: React.FC<Props> = ({ disabled = false, shouldShow = true, onClick }) => {
+export const ResetButton: React.FC<Props> = ({ disabled = false, shouldShow = true, action }) => {
   if (!shouldShow) {
     return null;
   }
@@ -15,7 +15,8 @@ export const ResetButton: React.FC<Props> = ({ disabled = false, shouldShow = tr
       aria-label="reset"
       className="btn btn-primary align-self-start mt-3 mb-3"
       disabled={disabled}
-      onClick={onClick}
+      onClick={() => action()}
+      onKeyPress={(e) => (e.key === 'Enter' ? action() : null)}
     >
       Reset
     </button>

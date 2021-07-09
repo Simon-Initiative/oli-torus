@@ -1,35 +1,17 @@
 import { ID } from 'data/content/model';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { Choice, ChoiceId, Response, RichText } from 'components/activities/types';
+import { Response, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
 import { Card } from 'components/misc/Card';
-import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 
 export const ResponseCard: React.FC<{
   title: React.ReactNode;
   response: Response;
-  choices: Choice[];
-  correctChoiceIds: ChoiceId[];
-  toggleChoice: (id: ChoiceId) => void;
   updateFeedback: (id: ID, content: RichText) => void;
-  unselectedIcon: React.ReactNode;
-  selectedIcon: React.ReactNode;
   onRemove: (responseId: ID) => void;
-}> = ({
-  title,
-  response,
-  choices,
-  toggleChoice,
-  updateFeedback,
-  correctChoiceIds,
-  unselectedIcon,
-  selectedIcon,
-  onRemove,
-}) => {
-  const context = useMemo(defaultWriterContext, []);
+}> = ({ title, response, updateFeedback, onRemove, children }) => {
   return (
     <Card.Card>
       <Card.Title>
@@ -42,15 +24,7 @@ export const ResponseCard: React.FC<{
         </>
       </Card.Title>
       <Card.Content>
-        <ChoicesDelivery
-          unselectedIcon={unselectedIcon}
-          selectedIcon={selectedIcon}
-          choices={choices}
-          selected={correctChoiceIds}
-          onSelect={toggleChoice}
-          isEvaluated={false}
-          context={context}
-        />
+        {children}
         <RichTextEditorConnected
           style={{ backgroundColor: 'white' }}
           placeholder="Enter feedback"

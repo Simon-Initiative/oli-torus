@@ -39,7 +39,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
         </span>
       </div>
       <HtmlContentModelRenderer
-        text={error ? errorText : feedback ? feedback : makeFeedback('')}
+        text={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
         context={context}
       />
     </div>
