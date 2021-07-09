@@ -54,8 +54,9 @@ export const savePage = createAsyncThunk(
       throw new Error(saveResult.message);
     }
 
-    const newSlug = (saveResult as Edited).revisionSlug;
+    const newSlug = (saveResult as Edited).revision_slug;
     if (newSlug !== revisionSlug) {
+      /* console.log('updating slug??', { saveResult, newSlug, revisionSlug }); */
       dispatch(setRevisionSlug({ revisionSlug: newSlug }));
     }
   },

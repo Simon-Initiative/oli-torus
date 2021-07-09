@@ -1,18 +1,22 @@
 import { JSONSchema7 } from 'json-schema';
-import React, { useState } from 'react';
+import { debounce } from 'lodash';
+import React, { useCallback, useState } from 'react';
 import { Accordion, Tab, Tabs } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
-import { selectState as selectPageState } from '../../store/page/slice';
+import { savePage } from '../../store/page/actions/savePage';
+import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
+  transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
 import screenSchema, { getScreenData, screenUiSchema } from '../PropertyEditor/schemas/screen';
 
 const RightMenu: React.FC<any> = (props) => {
+  const dispatch = useDispatch();
   const [selectedTab, setSelectedTab] = useState<string>('lesson');
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
@@ -35,8 +39,40 @@ const RightMenu: React.FC<any> = (props) => {
     console.log('SCREEN PROP CHANGED', { properties });
   };
 
+  const debounceSavePage = useCallback(
+    debounce(
+      (changes) => {
+        console.log('SAVING PAGE', { changes });
+        // update server
+        dispatch(savePage(changes));
+        // update redux
+        // TODO: check if revision slug changes?
+        dispatch(updatePage(changes));
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
+
   const lessonPropertyChangeHandler = (properties: any) => {
-    console.log('LESSON PROP CHANGED', { properties });
+    const modelChanges = transformLessonSchema(properties);
+
+    // special consideration for legacy stylesheets
+    if (modelChanges.additionalStylesheets[0] === null) {
+      modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
+    }
+
+    const lessonChanges = {
+      ...currentLesson,
+      ...modelChanges,
+      custom: { ...currentLesson.custom, ...modelChanges.custom },
+    };
+    console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
+
+    // need to put a healthy debounce in here, this fires every keystroke
+    // save the page
+    debounceSavePage(lessonChanges);
   };
 
   const componentPropertyChangeHandler = (properties: any) => {

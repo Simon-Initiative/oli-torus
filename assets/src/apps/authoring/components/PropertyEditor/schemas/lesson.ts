@@ -29,7 +29,7 @@ const lessonSchema = {
             'Material Responsive',
             'Light',
             'Dark',
-            'LEGACY'
+            'LEGACY',
           ],
         },
         customCssUrl: {
@@ -75,18 +75,47 @@ export const lessonUiSchema = {
   },
 };
 
-export const transformModelToSchema = (model: any) => ({
-  Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
-  Appearance: {
-    theme: model.custom.themeUrl || 'LEGACY',
-    customCssUrl: model.custom.customCssUrl,
-  },
-  ScoreOverview: {
-    enableLessonMax: model.custom.enableLessonMax,
-    lessonMax: model.custom.lessonMax,
-  },
-  title: model.title,
-  customCSS: model.customCss,
-});
+// we don't have the actual theme urls yet,
+// they will likely come from somehwere else
+const themeMap: { [key: string]: string } = {
+  'url to new theme': 'Light Responsive',
+};
+
+export const transformModelToSchema = (model: any) => {
+  const [themeUrl, customCssUrl] = model.additionalStylesheets;
+  const theme = themeMap[themeUrl] || 'LEGACY';
+
+  return {
+    Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
+    Appearance: {
+      theme,
+      customCssUrl,
+    },
+    ScoreOverview: {
+      enableLessonMax: model.custom.enableLessonMax,
+      lessonMax: model.custom.lessonMax,
+    },
+    title: model.title,
+    customCSS: model.customCss,
+  };
+};
+
+export const transformSchemaToModel = (schema: any) => {
+  const themeUrl = Object.keys(themeMap).find(key => themeMap[key] === schema.Appearance.theme) || null;
+
+  const additionalStylesheets = [themeUrl, schema.Appearance.customCssUrl];
+
+  return {
+    custom: {
+      defaultScreenWidth: schema.Size.width,
+      defaultScreenHeight: schema.Size.height,
+      enableLessonMax: schema.ScoreOverview.enableLessonMax,
+      lessonMax: schema.ScoreOverview.lessonMax,
+    },
+    additionalStylesheets,
+    title: schema.title,
+    customCss: schema.customCSS,
+  };
+};
 
 export default lessonSchema;

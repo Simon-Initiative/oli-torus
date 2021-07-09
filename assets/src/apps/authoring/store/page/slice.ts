@@ -51,6 +51,32 @@ const slice: Slice<PageState> = createSlice({
       state.customCss = action.payload.customCss || initialState.customCss;
       state.custom = action.payload.custom || initialState.custom;
     },
+    updatePage(state, action: PayloadAction<Partial<PageState>>) {
+      if (action.payload.graded !== undefined) {
+        state.graded = action.payload.graded;
+      }
+      if (action.payload.authorEmail !== undefined) {
+        state.authorEmail = action.payload.authorEmail;
+      }
+      if (action.payload.title !== undefined) {
+        state.title = action.payload.title;
+      }
+      if (action.payload.objectives !== undefined) {
+        state.objectives = action.payload.objectives;
+      }
+      if (action.payload.custom !== undefined) {
+        state.custom = action.payload.custom;
+      }
+      if (action.payload.customCss !== undefined) {
+        state.customCss = action.payload.customCss;
+      }
+      if (action.payload.additionalStylesheets !== undefined) {
+        state.additionalStylesheets = action.payload.additionalStylesheets;
+      }
+      /* if (action.payload.revisionSlug !== undefined) {
+        state.revisionSlug = action.payload.revisionSlug;
+      } */
+    },
     setIsGraded(state, action: PayloadAction<{ graded: boolean }>) {
       state.graded = action.payload.graded;
     },
@@ -68,7 +94,8 @@ const slice: Slice<PageState> = createSlice({
 
 export const PageSlice = slice.name;
 
-export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug } = slice.actions;
+export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug, updatePage } =
+  slice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice] as PageState;
 export const selectIsGraded = createSelector(selectState, (state: PageState) => state.graded);
