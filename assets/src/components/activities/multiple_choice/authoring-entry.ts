@@ -20,13 +20,13 @@ export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
 // Registers the creation function:
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
-import { MultipleChoiceModelSchema } from './schema';
+import { MCSchema } from './schema';
 import { defaultMCModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<MultipleChoiceModelSchema> {
+function createFn(content: CreationContext): Promise<MCSchema> {
   return Promise.resolve(Object.assign({}, defaultMCModel()));
 }
 

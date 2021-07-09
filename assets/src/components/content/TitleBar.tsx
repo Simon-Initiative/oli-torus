@@ -18,7 +18,11 @@ export const TitleBar = (props: TitleBarProps) => {
 
   return (
     <div
-      className={classNames(['TitleBar', 'd-flex flex-row align-items-baseline my-2', className])}
+      className={classNames([
+        'TitleBar',
+        'd-flex flex-column flex-md-row align-items-baseline my-2',
+        className,
+      ])}
     >
       <div className="d-flex align-items-center flex-grow-1 mr-2">
         <TextEditor

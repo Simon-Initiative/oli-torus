@@ -1,36 +1,32 @@
 import React, { useMemo } from 'react';
 import { defaultWriterContext } from 'data/content/writers/context';
-import { Choice, ChoiceId, Stem } from 'components/activities/types';
+import { ChoiceId, HasChoices, HasStem } from 'components/activities/types';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 
 interface Props {
-  stem: Stem;
-  choices: Choice[];
   selectedChoiceIds: ChoiceId[];
   onSelectChoiceId: (id: ChoiceId) => void;
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
 }
-export const AnswerKeyAuthoring: React.FC<Props> = ({
-  stem,
-  choices,
+export const AnswerKey: React.FC<Props> = ({
   selectedChoiceIds,
   onSelectChoiceId,
   selectedIcon,
   unselectedIcon,
 }) => {
   const context = useMemo(defaultWriterContext, []);
+  const { model } = useAuthoringElementContext<HasChoices & HasStem>();
   return (
     <>
-      <div className="d-flex">
-        <StemDelivery stem={stem} context={context} />
-      </div>
+      <StemDelivery stem={model.stem} context={context} />
 
       <ChoicesDelivery
         unselectedIcon={unselectedIcon}
         selectedIcon={selectedIcon}
-        choices={choices}
+        choices={model.choices}
         selected={selectedChoiceIds}
         onSelect={onSelectChoiceId}
         isEvaluated={false}

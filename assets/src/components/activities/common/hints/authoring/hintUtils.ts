@@ -1,4 +1,4 @@
-import { getByIdUnsafe } from 'components/activities/ordering/utils';
+import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
 import { HasHints } from 'components/activities/types';
 import { ID } from 'data/content/model';
 

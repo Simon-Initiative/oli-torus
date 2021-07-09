@@ -1,20 +1,22 @@
+import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import {
+  getCorrectResponse,
+  getIncorrectResponse,
+} from 'components/activities/common/responses/authoring/responseUtils';
 import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
-import { Response, RichText } from 'components/activities/types';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { HasParts, RichText } from 'components/activities/types';
 import { Tooltip } from 'components/misc/Tooltip';
-import { ID } from 'data/content/model';
 import React from 'react';
 
-interface Props {
-  correctResponse: Response;
-  incorrectResponse: Response;
-  update: (responseId: ID, content: RichText) => void;
-}
-export const SimpleFeedback: React.FC<Props> = ({
-  correctResponse,
-  incorrectResponse,
-  update,
-  children,
-}) => {
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface Props {}
+export const SimpleFeedback: React.FC<Props> = ({ children }) => {
+  const { model, dispatch } = useAuthoringElementContext<HasParts>();
+  const correctResponse = getCorrectResponse(model);
+  const incorrectResponse = getIncorrectResponse(model);
+  const update = (id: string, content: RichText) =>
+    dispatch(ResponseActions.editResponseFeedback(id, content));
   return (
     <>
       <FeedbackCard
