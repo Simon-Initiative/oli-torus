@@ -1,5 +1,3 @@
-import guid from 'utils/guid';
-import { MultipleChoiceModelSchema } from './schema';
 import {
   Operation,
   ScoringStrategy,
@@ -8,16 +6,15 @@ import {
   makeChoice,
   makeStem,
   makeResponse,
-  ChoiceId,
+  makeTransformation,
 } from '../types';
 import { Maybe } from 'tsmonad';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import {
-  createMatchRule,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { MCSchema } from 'components/activities/multiple_choice/schema';
 
-export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
+export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
   const choiceB: Choice = makeChoice('Choice B');
 
@@ -25,42 +22,29 @@ export const defaultMCModel: () => MultipleChoiceModelSchema = () => {
     stem: makeStem(''),
     choices: [choiceA, choiceB],
     authoring: {
+      version: 2,
       parts: [
         {
           id: '1', // an MCQ only has one part, so it is safe to hardcode the id
           scoringStrategy: ScoringStrategy.average,
           responses: [
-            makeResponse(`input like {${choiceA.id}}`, 1, ''),
-            makeResponse(`input like {${choiceB.id}}`, 0, ''),
+            makeResponse(matchRule(choiceA.id), 1, ''),
+            makeResponse(matchRule('.*'), 0, ''),
           ],
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
-      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
+      targeted: [],
+      transformations: [makeTransformation('choices', Operation.shuffle)],
       previewText: '',
     },
   };
 };
 
-export const getCorrectResponse = (model: MultipleChoiceModelSchema) => {
-  return Maybe.maybe(getResponses(model).find((r) => r.score === 1)).valueOrThrow(
-    new Error('Could not find correct response'),
-  );
-};
-export const getIncorrectResponse = (model: MultipleChoiceModelSchema) => {
-  return Maybe.maybe(getResponses(model).find((r) => r.score === 0)).valueOrThrow(
-    new Error('Could not find incorrect response'),
-  );
-};
-
-export const getCorrectChoice = (model: MultipleChoiceModelSchema) => {
+export const getCorrectChoice = (model: MCSchema) => {
   const responseIdMatch = Maybe.maybe(getCorrectResponse(model).rule.match(/{(.*)}/)).valueOrThrow(
     new Error('Could not find choice id in correct response'),
   );
 
   return getChoice(model, responseIdMatch[1]);
-};
-
-export const getResponseByChoice = (model: MultipleChoiceModelSchema, id: ChoiceId) => {
-  return getResponses(model).filter((r) => r.rule === createMatchRule(id))[0];
 };

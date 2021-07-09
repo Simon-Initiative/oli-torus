@@ -20,13 +20,13 @@ export { CheckAllThatApplyAuthoring } from './CheckAllThatApplyAuthoring';
 // Registers the creation function:
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
-import { CheckAllThatApplyModelSchema } from './schema';
 import { defaultCATAModel } from './utils';
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<CheckAllThatApplyModelSchema> {
+function createFn(content: CreationContext): Promise<CATASchema> {
   return Promise.resolve(Object.assign({}, defaultCATAModel()));
 }
 

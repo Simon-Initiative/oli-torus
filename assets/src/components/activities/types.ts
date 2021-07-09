@@ -253,3 +253,5 @@ export interface HasPreviewText {
   };
 }
 export const makePreviewText = () => '';
+
+export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];

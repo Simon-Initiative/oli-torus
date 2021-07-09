@@ -6,7 +6,7 @@ import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
-import { slice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 import { defaultState } from 'phoenix/activity_bridge';
@@ -25,7 +25,7 @@ describe('check all that apply delivery', () => {
       preview: false,
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
-    const store = configureStore({}, slice.reducer);
+    const store = configureStore({}, activityDeliverySlice.reducer);
 
     render(
       <Provider store={store}>
