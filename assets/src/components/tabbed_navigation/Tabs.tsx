@@ -1,14 +1,14 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 
 interface TabProps {
   label: React.ReactNode;
   index?: number;
   children: ReactNode;
+  activeTab?: number;
 }
-const TabComponent: React.FunctionComponent<TabProps> = ({ index, children }) => (
+const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, activeTab }) => (
   <div
-    className={'tab-pane' + (index === 0 ? ' show active' : '')}
-    id={'tab-' + index}
+    className={'tab-pane' + (index === activeTab ? ' show active' : '')}
     role="tabpanel"
     aria-labelledby={'tab-' + index}
   >
@@ -17,8 +17,9 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children }) =>
 );
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface TabsProps {}
-const TabsComponent: React.FunctionComponent<TabsProps> = ({ children }) => {
+interface TabsComponentProps {}
+const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
+  const [activeTab, setActiveTab] = useState(0);
   return (
     <>
       <ul className="nav nav-tabs mb-4" id="activity-authoring-tabs" role="tablist">
@@ -27,10 +28,10 @@ const TabsComponent: React.FunctionComponent<TabsProps> = ({ children }) => {
             return (
               <li key={'tab-' + index} className="nav-item" role="presentation">
                 <a
+                  onClick={(e) => setActiveTab(index)}
                   className={'nav-link' + (index === 0 ? ' active' : '')}
-                  id={'link-tab-' + index}
                   data-toggle="tab"
-                  href={'#tab-' + index}
+                  href="#"
                   role="tab"
                   aria-controls={'tab-' + index}
                   aria-selected="true"
@@ -49,7 +50,7 @@ const TabsComponent: React.FunctionComponent<TabsProps> = ({ children }) => {
           (child, index) =>
             React.isValidElement(child) &&
             isValidChild(child, TabbedNavigation) &&
-            React.cloneElement(child, { index, key: 'tab-content-' + index }),
+            React.cloneElement(child, { index, key: 'tab-content-' + index, activeTab }),
         )}
       </div>
     </>

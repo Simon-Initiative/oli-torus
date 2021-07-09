@@ -6,111 +6,94 @@ import {
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { CheckAllThatApplyModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { CATAActions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import {
-  getCorrectChoiceIds,
-  getCorrectResponse,
-  getIncorrectResponse,
-  getTargetedResponseMappings,
-  isTargetedCATA,
-} from 'components/activities/check_all_that_apply/utils';
-import { StemAuthoring } from 'components/activities/common/stem/StemAuthoring';
-import { ChoicesAuthoringConnected } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Checkbox } from 'components/activities/common/icons/Checkbox';
+import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { AnswerKeyAuthoring } from 'components/activities/common/authoring/answerKey/AnswerKeyAuthoring';
+import { AnswerKey } from 'components/activities/common/authoring/answerKey/AnswerKey';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { HintsAuthoringConnected } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { CATASettingsConnected } from 'components/activities/check_all_that_apply/Settings';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
+import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
+import { Maybe } from 'tsmonad';
+import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 
 const store = configureStore();
 
-const CheckAllThatApply = (props: AuthoringElementProps<CheckAllThatApplyModelSchema>) => {
-  const { dispatch } = useAuthoringElementContext();
+const CheckAllThatApply = () => {
+  const { dispatch, model } = useAuthoringElementContext<CATASchema>();
   return (
-    <>
-      <TabbedNavigation.Tabs>
-        <TabbedNavigation.Tab label="Question">
-          <StemAuthoring
-            stem={props.model.stem}
-            onEdit={(content) => dispatch(StemActions.editStemAndPreviewText(content))}
-          />
+    <TabbedNavigation.Tabs>
+      <TabbedNavigation.Tab label="Question">
+        <Stem />
+        <Choices
+          icon={<Checkbox.Unchecked />}
+          choices={model.choices}
+          addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
+          setAll={(choices: ActivityTypes.Choice[]) =>
+            dispatch(ChoiceActions.setAllChoices(choices))
+          }
+          onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
+          onRemove={(id) => dispatch(CATAActions.removeChoiceAndUpdateRules(id))}
+        />
+      </TabbedNavigation.Tab>
 
-          <ChoicesAuthoringConnected
-            icon={<Checkbox.Unchecked />}
-            choices={props.model.choices}
-            addOne={() => dispatch(CATAActions.addChoice(ActivityTypes.makeChoice('')))}
-            setAll={(choices: ActivityTypes.Choice[]) =>
-              dispatch(ChoiceActions.setAllChoices(choices))
-            }
-            onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
-            onRemove={(id) => dispatch(CATAActions.removeChoice(id))}
-          />
-        </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label="Answer Key">
-          <AnswerKeyAuthoring
-            stem={props.model.stem}
-            choices={props.model.choices}
-            selectedChoiceIds={getCorrectChoiceIds(props.model)}
-            selectedIcon={<Checkbox.Correct />}
-            unselectedIcon={<Checkbox.Unchecked />}
-            onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
-          />
-          <SimpleFeedback
-            correctResponse={getCorrectResponse(props.model)}
-            incorrectResponse={getIncorrectResponse(props.model)}
-            update={(id, content) => dispatch(ResponseActions.editResponseFeedback(id, content))}
-          />
+      <TabbedNavigation.Tab label="Answer Key">
+        <AnswerKey
+          selectedChoiceIds={getCorrectChoiceIds(model)}
+          selectedIcon={<Checkbox.Correct />}
+          unselectedIcon={<Checkbox.Unchecked />}
+          onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
+        />
+        <SimpleFeedback />
+        <TargetedFeedback
+          toggleChoice={(choiceId, mapping) => {
+            dispatch(
+              CATAActions.editTargetedFeedbackChoices(
+                mapping.response.id,
+                mapping.choiceIds.includes(choiceId)
+                  ? mapping.choiceIds.filter((id) => id !== choiceId)
+                  : mapping.choiceIds.concat(choiceId),
+              ),
+            );
+          }}
+          addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
+          unselectedIcon={<Checkbox.Unchecked />}
+          selectedIcon={<Checkbox.Checked />}
+        />
+      </TabbedNavigation.Tab>
 
-          {isTargetedCATA(props.model) && (
-            <TargetedFeedback
-              choices={props.model.choices}
-              targetedMappings={getTargetedResponseMappings(props.model)}
-              toggleChoice={(choiceId, mapping) => {
-                dispatch(
-                  CATAActions.editTargetedFeedbackChoices(
-                    mapping.response.id,
-                    mapping.choiceIds.includes(choiceId)
-                      ? mapping.choiceIds.filter((id) => id !== choiceId)
-                      : mapping.choiceIds.concat(choiceId),
-                  ),
-                );
-              }}
-              updateResponse={(id, content) =>
-                dispatch(ResponseActions.editResponseFeedback(id, content))
-              }
-              addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
-              unselectedIcon={<Checkbox.Unchecked />}
-              selectedIcon={<Checkbox.Checked />}
-              onRemove={(id) => dispatch(CATAActions.removeTargetedFeedback(id))}
-            />
-          )}
-        </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label="Hints">
+        <Hints hintsPath="$.authoring.parts[0].hints" />
+      </TabbedNavigation.Tab>
 
-        <TabbedNavigation.Tab label="Hints">
-          <HintsAuthoringConnected hintsPath="$.authoring.parts[0].hints" />
-        </TabbedNavigation.Tab>
-        <CATASettingsConnected />
-      </TabbedNavigation.Tabs>
-    </>
+      <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
+    </TabbedNavigation.Tabs>
   );
 };
 
-export class CheckAllThatApplyAuthoring extends AuthoringElement<CheckAllThatApplyModelSchema> {
-  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<CheckAllThatApplyModelSchema>) {
+export class CheckAllThatApplyAuthoring extends AuthoringElement<CATASchema> {
+  migrateModelVersion(model: any): CATASchema {
+    return Maybe.maybe(model.authoring.version).caseOf({
+      just: (v2) => model,
+      nothing: () => cataV1toV2(model),
+    });
+  }
+
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<CATASchema>) {
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <CheckAllThatApply {...props} />
+          <CheckAllThatApply />
         </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,

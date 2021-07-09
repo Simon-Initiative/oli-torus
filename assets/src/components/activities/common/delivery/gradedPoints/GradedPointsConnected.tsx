@@ -1,6 +1,7 @@
 import { GradedPoints } from 'components/activities/common/delivery/gradedPoints/GradedPoints';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import { ActivityDeliveryState } from 'data/content/activities/DeliveryState';
 import React from 'react';
@@ -12,7 +13,7 @@ export const GradedPointsConnected: React.FC = () => {
   return (
     <GradedPoints
       shouldShow={graded && review}
-      icon={isCorrect(uiState.attemptState) ? <IconCorrect /> : <IconIncorrect />}
+      icon={isCorrect(uiState.attemptState) ? <Checkmark /> : <Cross />}
       attemptState={uiState.attemptState}
     />
   );

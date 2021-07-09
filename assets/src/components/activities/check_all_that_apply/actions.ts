@@ -1,60 +1,42 @@
-import { CheckAllThatApplyModelSchema as CATA } from './schema';
+import { CATASchema as CATA } from './schema';
+import { ChoiceId, Choice, ResponseId, PostUndoable, makeResponse } from '../types';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { addOrRemove, remove } from 'components/activities/common/utils';
 import {
-  getCorrectResponse,
   getChoiceIds,
   getCorrectChoiceIds,
-  getIncorrectChoiceIds,
-  getIncorrectResponse,
-  getResponseId,
-  isSimpleCATA,
-} from './utils';
-import { ChoiceId, Choice, ResponseId, makeResponse, PostUndoable } from '../types';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { addOrRemove, remove, setDifference } from 'components/activities/common/utils';
-import {
-  createRuleForIds,
+  getCorrectResponse,
   getResponse,
+  getResponseId,
   getResponses,
-  invertRule,
-  unionRules,
 } from 'components/activities/common/responses/authoring/responseUtils';
+import { createRuleForIdsCATA } from 'components/activities/check_all_that_apply/utils';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 
 export class CATAActions {
-  static toggleType() {
-    return (model: CATA) => {
-      if (isSimpleCATA(model)) {
-        (model as any).type = 'TargetedCATA';
-        (model as any).authoring.targeted = [];
-        return;
-      }
-
-      (model as any).type = 'SimpleCATA';
-      delete (model as any).authoring.targeted;
-    };
-  }
-
   static addChoice(choice: Choice) {
     return (model: CATA, post: PostUndoable) => {
       ChoiceActions.addChoice(choice)(model, post);
 
-      getChoiceIds(model.authoring.incorrect).push(choice.id);
       updateResponseRules(model);
     };
   }
 
-  static removeChoice(id: string) {
+  static toggleChoiceCorrectness(choiceId: ChoiceId) {
+    return (model: CATA) => {
+      addOrRemove(choiceId, getChoiceIds(model.authoring.correct));
+      updateResponseRules(model);
+    };
+  }
+
+  static removeChoiceAndUpdateRules(id: string) {
     return (model: CATA, post: PostUndoable) => {
       const choice = getChoice(model, id);
       const index = getChoices(model).findIndex((c) => c.id === id);
       ChoiceActions.removeChoice(id)(model, post);
 
       remove(id, getChoiceIds(model.authoring.correct));
-      remove(id, getChoiceIds(model.authoring.incorrect));
-
-      if (model.type === 'TargetedCATA') {
-        model.authoring.targeted.forEach((assoc) => remove(id, getChoiceIds(assoc)));
-      }
+      model.authoring.targeted.forEach((assoc) => remove(id, getChoiceIds(assoc)));
 
       updateResponseRules(model);
 
@@ -72,80 +54,24 @@ export class CATAActions {
     };
   }
 
-  static toggleChoiceCorrectness(choiceId: ChoiceId) {
-    return (model: CATA) => {
-      addOrRemove(choiceId, getChoiceIds(model.authoring.correct));
-      addOrRemove(choiceId, getChoiceIds(model.authoring.incorrect));
-      updateResponseRules(model);
-    };
-  }
-
   static addTargetedFeedback() {
     return (model: CATA) => {
-      switch (model.type) {
-        case 'SimpleCATA':
-          return;
-        case 'TargetedCATA':
-          // eslint-disable-next-line
-          const response = makeResponse(
-            createRuleForIds(
-              [],
-              model.choices.map(({ id }) => id),
-            ),
-            0,
-            '',
-          );
+      const choiceIds = model.choices.map((c) => c.id);
+      const response = makeResponse(createRuleForIdsCATA(choiceIds, []), 0, '');
 
-          getResponses(model).push(response);
-          model.authoring.targeted.push([[], response.id]);
-          return;
-      }
-    };
-  }
-
-  static removeTargetedFeedback(responseId: ResponseId) {
-    return (model: CATA, post: PostUndoable) => {
-      switch (model.type) {
-        case 'SimpleCATA':
-          return;
-        case 'TargetedCATA':
-          const response = getResponse(model, responseId);
-          const index = getResponses(model).findIndex((r) => r.id === responseId);
-
-          remove(response, getResponses(model));
-          remove(
-            model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
-            model.authoring.targeted,
-          );
-          post({
-            description: 'Removed a targeted feedback',
-            operations: [
-              {
-                path: '$.authoring.parts[0].responses',
-                index,
-                item: JSON.parse(JSON.stringify(response)),
-              },
-            ],
-            type: 'Undoable',
-          });
-      }
+      // Insert new targeted response before the last response, which is the
+      // catch-all incorrect response. Response rules are evaluated in-order,
+      // so the catch-all should be the last response.
+      getResponses(model).splice(getResponses(model).length - 1, 0, response);
+      model.authoring.targeted.push([[], response.id]);
     };
   }
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: CATA) => {
-      switch (model.type) {
-        case 'SimpleCATA':
-          break;
-        case 'TargetedCATA':
-          // eslint-disable-next-line
-          const assoc = model.authoring.targeted.find(
-            (assoc) => getResponseId(assoc) === responseId,
-          );
-          if (!assoc) break;
-          assoc[0] = choiceIds;
-          break;
-      }
+      const assoc = model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId);
+      if (!assoc) return;
+      assoc[0] = choiceIds;
       updateResponseRules(model);
     };
   }
@@ -154,31 +80,15 @@ export class CATAActions {
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
 const updateResponseRules = (model: CATA) => {
-  getCorrectResponse(model).rule = createRuleForIds(
+  getCorrectResponse(model).rule = createRuleForIdsCATA(
+    model.choices.map((c) => c.id),
     getCorrectChoiceIds(model),
-    getIncorrectChoiceIds(model),
   );
 
-  switch (model.type) {
-    case 'SimpleCATA':
-      getIncorrectResponse(model).rule = invertRule(getCorrectResponse(model).rule);
-      break;
-    case 'TargetedCATA':
-      // eslint-disable-next-line
-      const targetedRules: string[] = [];
-      // eslint-disable-next-line
-      const allChoiceIds = model.choices.map((choice) => choice.id);
-      model.authoring.targeted.forEach((assoc) => {
-        const targetedRule = createRuleForIds(
-          getChoiceIds(assoc),
-          setDifference(allChoiceIds, getChoiceIds(assoc)),
-        );
-        targetedRules.push(targetedRule);
-        getResponse(model, getResponseId(assoc)).rule = targetedRule;
-      });
-      getIncorrectResponse(model).rule = unionRules(
-        targetedRules.map(invertRule).concat([invertRule(getCorrectResponse(model).rule)]),
-      );
-      break;
-  }
+  model.authoring.targeted.forEach((assoc) => {
+    getResponse(model, getResponseId(assoc)).rule = createRuleForIdsCATA(
+      model.choices.map((c) => c.id),
+      getChoiceIds(assoc),
+    );
+  });
 };
