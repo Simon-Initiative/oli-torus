@@ -21,6 +21,16 @@ Oli.Activities.Model.StateUpdateAction.html
 Oli.Activities.Model.Transformation.html
 Oli.Activities.Model.html
 Oli.Activities.ParseUtils.html
+Oli.Activities.Realizer.Logic.Clause.html
+Oli.Activities.Realizer.Logic.Expression.html
+Oli.Activities.Realizer.Logic.html
+Oli.Activities.Realizer.Query.Builder.html
+Oli.Activities.Realizer.Query.Executor.html
+Oli.Activities.Realizer.Query.Paging.html
+Oli.Activities.Realizer.Query.Result.html
+Oli.Activities.Realizer.Query.Source.html
+Oli.Activities.Realizer.Query.html
+Oli.Activities.Realizer.Selection.html
 Oli.Activities.Realizer.html
 Oli.Activities.State.ActivityState.html
 Oli.Activities.State.PartState.html
@@ -426,8 +436,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-6106cc558e.js
-dist/sidebar_items-d6dffeef1e.js
+dist/search_items-3aaa82b1c0.js
+dist/sidebar_items-ec225e9ba4.js
 index.html
 license.html
 readme.html
