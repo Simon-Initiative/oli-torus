@@ -27,12 +27,6 @@ export const getTargetedResponseMappings = (
     authoring: { targeted: ChoiceIdsToResponseId[] };
   },
 ): ResponseMapping[] =>
-  console.log(
-    'targeted',
-    model.authoring.targeted,
-    'responses',
-    getResponses(model).map((r) => r.id),
-  ) ||
   model.authoring.targeted.map((assoc) => ({
     response: getResponse(model, getResponseId(assoc)),
     choiceIds: getChoiceIds(assoc),
