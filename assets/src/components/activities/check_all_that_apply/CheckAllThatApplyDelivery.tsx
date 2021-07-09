@@ -28,6 +28,8 @@ import { StemDeliveryConnected } from 'components/activities/common/stem/deliver
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { valueOr } from 'utils/common';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { Maybe } from 'tsmonad';
+import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -86,6 +88,13 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class CheckAllThatApplyDelivery extends DeliveryElement<CATASchema> {
+  migrateModelVersion(model: any): CATASchema {
+    return Maybe.maybe(model.authoring.version).caseOf({
+      just: (v2) => model,
+      nothing: () => cataV1toV2(model),
+    });
+  }
+
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CATASchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(

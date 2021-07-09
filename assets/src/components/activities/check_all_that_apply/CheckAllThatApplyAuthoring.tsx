@@ -82,7 +82,7 @@ const CheckAllThatApply = () => {
 };
 
 export class CheckAllThatApplyAuthoring extends AuthoringElement<CATASchema> {
-  transformModel(model: any): CATASchema {
+  migrateModelVersion(model: any): CATASchema {
     return Maybe.maybe(model.authoring.version).caseOf({
       just: (v2) => model,
       nothing: () => cataV1toV2(model),

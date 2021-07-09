@@ -66,7 +66,7 @@ export const Ordering: React.FC = () => {
 };
 
 export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
-  transformModel(model: any) {
+  migrateModelVersion(model: any) {
     return Maybe.maybe(model.authoring.version).caseOf({
       just: (v2) => model,
       nothing: () => orderingV1toV2(model),

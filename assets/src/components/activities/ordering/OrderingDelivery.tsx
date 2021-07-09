@@ -24,6 +24,8 @@ import { StemDeliveryConnected } from 'components/activities/common/stem/deliver
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { Maybe } from 'tsmonad';
+import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -82,6 +84,13 @@ export const OrderingComponent: React.FC = () => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingSchema> {
+  migrateModelVersion(model: any): OrderingSchema {
+    return Maybe.maybe(model.authoring.version).caseOf({
+      just: (v2) => model,
+      nothing: () => orderingV1toV2(model),
+    });
+  }
+
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(

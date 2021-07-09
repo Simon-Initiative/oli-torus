@@ -31,7 +31,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
 
   props(): AuthoringElementProps<T> {
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
-    const model = this.transformModel(getProp('model'));
+    const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = getProp('editMode');
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
@@ -51,7 +51,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     };
   }
 
-  transformModel(model: any): T {
+  migrateModelVersion(model: any): T {
     return model as T;
   }
 

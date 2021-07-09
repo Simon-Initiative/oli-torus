@@ -76,7 +76,7 @@ const MultipleChoice: React.FC = () => {
 };
 
 export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
-  transformModel(model: any): MCSchema {
+  migrateModelVersion(model: any): MCSchema {
     return Maybe.maybe(model.authoring.version).caseOf({
       just: (v2) => model,
       nothing: () => mcV1toV2(model),
