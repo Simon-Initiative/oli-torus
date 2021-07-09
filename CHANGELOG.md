@@ -14,6 +14,7 @@
 - Merge activity editing into the page editor
 - Redesign the workspace header to include view title, help and user icons
 - Clearly separate the hierarchy navigation and page editing links in curriculum editor
+- Implement smaller sized left hand navigation pane
 
 ## 0.11.1 (2021-6-16)
 
