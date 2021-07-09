@@ -7,14 +7,7 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
-import {
-  ChoiceId,
-  ChoiceIdsToResponseId,
-  HasChoices,
-  HasParts,
-  RichText,
-} from 'components/activities/types';
-import { ID } from 'data/content/model';
+import { ChoiceId, ChoiceIdsToResponseId, HasChoices, HasParts } from 'components/activities/types';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
@@ -46,7 +39,7 @@ export const TargetedFeedback: React.FC<Props> = ({
           updateFeedback={(id, content) =>
             dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
           }
-          onRemove={(id) => dispatch(ResponseActions.removeResponse(id))}
+          onRemove={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
         >
           <ChoicesDelivery
             unselectedIcon={unselectedIcon}
