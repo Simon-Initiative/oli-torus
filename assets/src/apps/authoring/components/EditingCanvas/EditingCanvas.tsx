@@ -9,7 +9,6 @@ const EditingCanvas: React.FC<any> = (props) => {
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
-  console.log('EC: ', { currentActivityTree });
   const currentActivity = (currentActivityTree || []).slice(-1);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)

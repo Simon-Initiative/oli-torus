@@ -17,6 +17,7 @@ export const selectSequence = createSelector(selectState, (state: GroupsState) =
 export const selectCurrentSequenceId = createSelector(
   [selectSequence, selectCurrentActivityId],
   (sequence, currentActivityId) => {
+    /* console.log('SELECT CURRENT SEQUENCE ID', { sequence, currentActivityId }); */
     return sequence.find((entry) => {
       // temp hack for authoring
       // TODO: rewire delivery to use resourceId instead of sequenceId
@@ -45,6 +46,7 @@ export const selectCurrentActivityTree = createSelector(
     const tree = lineage.map((entry) =>
       (activities as any[]).find((a) => a.resourceId === entry.resourceId),
     );
+    /*  console.log('TREE', { lineage, activities }); */
     // filtering out undefined, however TODO make sure they are loaded ahead of time!
     return tree.filter((t) => t);
   },

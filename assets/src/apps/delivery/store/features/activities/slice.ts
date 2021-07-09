@@ -3,6 +3,7 @@ import {
   createSelector,
   createSlice,
   EntityAdapter,
+  EntityId,
   EntityState,
   PayloadAction,
   Slice,
@@ -15,7 +16,7 @@ export interface ActivityContent {
   [key: string]: any;
 }
 export interface IActivity {
-  id: string | number;
+  id: EntityId;
   resourceId?: number;
   authoring?: any;
   content?: ActivityContent;
@@ -24,7 +25,7 @@ export interface IActivity {
 }
 
 export interface ActivitiesState extends EntityState<IActivity> {
-  currentActivityId: string;
+  currentActivityId: EntityId;
 }
 
 const adapter: EntityAdapter<IActivity> = createEntityAdapter<IActivity>();
@@ -32,7 +33,7 @@ const adapter: EntityAdapter<IActivity> = createEntityAdapter<IActivity>();
 const slice: Slice<ActivitiesState> = createSlice({
   name: 'activities',
   initialState: adapter.getInitialState({
-    currentActivityId: '',
+    currentActivityId: '' as EntityId,
   }),
   reducers: {
     setActivities(state, action: PayloadAction<{ activities: IActivity[] }>) {
@@ -50,7 +51,7 @@ const slice: Slice<ActivitiesState> = createSlice({
     deleteActivities(state, action: PayloadAction<{ ids: string[] }>) {
       adapter.removeMany(state, action.payload.ids);
     },
-    setCurrentActivityId(state, action: PayloadAction<{ activityId: string }>) {
+    setCurrentActivityId(state, action: PayloadAction<{ activityId: EntityId }>) {
       state.currentActivityId = action.payload.activityId;
     },
   },
@@ -74,14 +75,14 @@ export const selectCurrentActivityId = createSelector(
   selectState,
   (state) => state.currentActivityId,
 );
-const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);
+const { selectAll, selectById, selectTotal, selectEntities } = adapter.getSelectors(selectState);
 export const selectAllActivities = selectAll;
 export const selectActivityById = selectById;
 export const selectTotalActivities = selectTotal;
 
 export const selectCurrentActivity = createSelector(
-  (state: RootState) => [state, selectCurrentActivityId(state)],
-  ([state, currentActivityId]: [RootState, string]) => selectActivityById(state, currentActivityId),
+  [selectEntities, selectCurrentActivityId],
+  (activities, currentActivityId) => activities[currentActivityId],
 );
 
 export const selectCurrentActivityContent = createSelector(

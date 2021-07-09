@@ -18,7 +18,7 @@ const RightMenu: React.FC<any> = (props) => {
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
-  const screenData = getScreenData(currentActivity?.custom);
+  const screenData = getScreenData(currentActivity?.content?.custom);
   const handleSelectTab = (key: string) => {
     // TODO: any other saving or whatever
     setSelectedTab(key);

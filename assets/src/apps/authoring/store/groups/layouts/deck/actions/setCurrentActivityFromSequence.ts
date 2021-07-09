@@ -10,12 +10,15 @@ export const setCurrentActivityFromSequence = createAsyncThunk(
     const state: any = getState();
     const sequence = selectSequence(state);
     if (!sequence) {
+      console.error('Sequence not found');
       throw new Error('Sequence not found');
     }
     const entry = findInSequence(sequence, sequenceId);
     if (!entry) {
+      console.error('Entry not found');
       throw new Error('Entry not found');
     }
-    return dispatch(setCurrentActivityId(entry.resourceId));
+    /* console.log('setCurrentActivityFromSequence', { sequenceId, entry }); */
+    return dispatch(setCurrentActivityId({ activityId: entry.resourceId }));
   },
 );
