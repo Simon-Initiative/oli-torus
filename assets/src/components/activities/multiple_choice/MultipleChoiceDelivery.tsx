@@ -39,8 +39,6 @@ export const MultipleChoiceComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
-  console.log('activityState', activityState);
-
   useEffect(() => {
     dispatch(initializeState(activityState, valueOr(activityState?.parts[0]?.response?.input, [])));
   }, []);

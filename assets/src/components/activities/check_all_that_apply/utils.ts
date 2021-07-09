@@ -55,7 +55,6 @@ export const defaultCATAModel = (): CATA => {
 
 export const createRuleForIdsCATA = (allChoiceIds: ID[], toMatch: ID[]) => {
   const notToMatch = setDifference(allChoiceIds, toMatch);
-  console.log('not to match', notToMatch);
   return andRules(
     ...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))),
   );
