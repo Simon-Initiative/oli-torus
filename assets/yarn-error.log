@@ -14,7 +14,7 @@ Platform:
   darwin arm64
 
 Trace: 
-  Error: EACCES: permission denied, unlink '/Users/zacharybluedorn/workspace/oli-torus/assets/node_modules/webpack/lib/esm/ModuleChunkFormatPlugin.js'
+  Error: EACCES: permission denied, unlink '/Users/zacharybluedorn/workspace/oli-torus/assets/node_modules/webpack/lib/esm/ModuleChunkLoadingRuntimeModule.js'
 
 npm manifest: 
   {
@@ -36,6 +36,8 @@ npm manifest:
     "dependencies": {
       "@reduxjs/toolkit": "^1.5.1",
       "@restart/hooks": "^0.3.26",
+      "@rjsf/bootstrap-4": "^3.0.0",
+      "@rjsf/core": "^2.5.1",
       "@types/jsonpath": "^0.2.0",
       "bootstrap": "^4.5.0",
       "chroma-js": "^2.1.1",
@@ -46,6 +48,7 @@ npm manifest:
       "janus-script": "^1.6.1",
       "jquery": "^3.5.0",
       "json-rules-engine": "^6.0.1",
+      "json-schema": "^0.3.0",
       "jsonpath": "^1.1.1",
       "node-sass-glob-importer": "^5.3.2",
       "nprogress": "^0.2.0",
@@ -55,7 +58,6 @@ npm manifest:
       "react": "^17.0.2",
       "react-ace": "^9.4.0",
       "react-beautiful-dnd": "^13.1.0",
-      "react-bootstrap": "^1.6.1",
       "react-bootstrap-typeahead": "^5.1.4",
       "react-dom": "^17.0.2",
       "react-popper": "^2.2.5",
