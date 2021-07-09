@@ -15,6 +15,7 @@ import {
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { addSequenceItem } from '../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
+import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
 const SequenceEditor: React.FC<any> = (props) => {
@@ -31,12 +32,18 @@ const SequenceEditor: React.FC<any> = (props) => {
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
   ) => {
-    const { payload: newActivity } = await dispatch<any>(createNewActivity({}));
     let layerRef: string | undefined;
-
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
+    const newTitle = `New ${layerRef ? 'Child' : ''}${isLayer ? 'Layer' : 'Screen'}`;
+
+    const { payload: newActivity } = await dispatch<any>(
+      createNewActivity({
+        title: newTitle,
+      }),
+    );
+
     const newSequenceEntry = {
       type: 'activity-reference',
       resourceId: newActivity.resourceId,
@@ -45,12 +52,21 @@ const SequenceEditor: React.FC<any> = (props) => {
         isLayer,
         layerRef,
         sequenceId: `${newActivity.activitySlug}_${guid()}`,
-        sequenceName: `New ${layerRef ? 'Child' : ''}${isLayer ? 'Layer' : 'Screen'}`,
+        sequenceName: newTitle,
       },
     };
-    // the id for the redux store is the sequenceId to match the delivery side
-    newActivity.id = newSequenceEntry.custom.sequenceId;
-    await dispatch(upsertActivity({ activity: newActivity }));
+
+    // maybe should set in the create?
+    const reduxActivity = {
+      id: newActivity.resourceId,
+      resourceId: newActivity.resourceId,
+      activitySlug: newActivity.activitySlug,
+      activityType: newActivity.activityType,
+      content: { ...newActivity.model, authoring: undefined },
+      authoring: newActivity.model.authoring,
+    };
+
+    await dispatch(upsertActivity({ activity: reduxActivity }));
 
     await dispatch(
       addSequenceItem({
@@ -59,6 +75,9 @@ const SequenceEditor: React.FC<any> = (props) => {
         group: currentGroup,
       }),
     );
+
+    // will write the current groups
+    await dispatch(savePage());
   };
 
   const SequenceItemContextMenu = (props: any) => {

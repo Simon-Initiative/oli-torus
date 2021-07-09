@@ -9,6 +9,7 @@ import { ActivityModelSchema } from 'components/activities/types';
 
 export type PageContent = {
   model: ResourceContent[],
+  [key: string]: any,
 };
 
 export type AttachedObjectives = {
@@ -17,7 +18,7 @@ export type AttachedObjectives = {
 
 // The types of things that can be present as top level
 // entries in a resource content array
-export type ResourceContent = StructuredContent | ActivityReference;
+export type ResourceContent = GroupContent | StructuredContent | ActivityReference;
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
@@ -85,6 +86,12 @@ export interface ActivityReference {
   activitySlug: ActivitySlug;
   purpose: string;
   children: [];
+}
+
+export interface GroupContent {
+  type: 'group';
+  layout: string; // TODO define layout types
+  children: ResourceContent[];
 }
 
 export interface Activity {

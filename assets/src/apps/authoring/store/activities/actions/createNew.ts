@@ -11,14 +11,19 @@ export const createNew = createAsyncThunk(
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     // how to choose activity type? for now hard code to oli_adaptive?
-    const { activityTypeSlug = 'oli_adaptive' } = payload;
+    const {
+      activityTypeSlug = 'oli_adaptive',
+      title = 'New Activity',
+      dimensions = { width: 800, height: 600 },
+      facts = [],
+    } = payload;
 
     // should populate with a template
     // TODO: type as creation model
     const activity: any = {
       type: 'activity',
       typeSlug: activityTypeSlug,
-      title: 'New Activity',
+      title,
       objectives: { attached: [] }, // should populate with some from page?
       model: {
         authoring: {
@@ -31,8 +36,7 @@ export const createNew = createAsyncThunk(
           checkButtonLabel: 'Next',
           combineFeedback: false,
           customCssClass: '',
-          facts: [],
-          height: 600,
+          facts,
           lockCanvasSize: false,
           mainBtnLabel: '',
           maxAttempt: 0,
@@ -49,7 +53,8 @@ export const createNew = createAsyncThunk(
           panelTitleColor: 0,
           showCheckBtn: true,
           trapStateScoreScheme: false,
-          width: 800,
+          width: dimensions.width,
+          height: dimensions.height,
           x: 0,
           y: 0,
           z: 0,
@@ -58,9 +63,13 @@ export const createNew = createAsyncThunk(
       },
     };
 
-    const defaultCorrect = await dispatch(createCorrectRule({ isDefault: true }));
+    activity.model.authoring.parts = activity.model.partsLayout.map((part: any) => ({
+      id: part.id,
+    }));
 
-    const defaultIncorrect = await dispatch(createIncorrectRule({ isDefault: true }));
+    const { payload: defaultCorrect } = await dispatch(createCorrectRule({ isDefault: true }));
+
+    const { payload: defaultIncorrect } = await dispatch(createIncorrectRule({ isDefault: true }));
 
     activity.model.authoring.rules.push(defaultCorrect, defaultIncorrect);
 

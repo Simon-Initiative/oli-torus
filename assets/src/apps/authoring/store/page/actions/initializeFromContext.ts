@@ -11,6 +11,7 @@ import { createNew as createNewActivity } from '../../activities/actions/createN
 import { createNew as createNewGroup } from '../../groups/layouts/deck/actions/createNew';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
 import { loadPage, PageSlice, PageState } from '../slice';
+import { savePage } from './savePage';
 
 export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,
@@ -58,6 +59,8 @@ export const initializeFromContext = createAsyncThunk(
       const { payload: newGroup } = await dispatch(createNewGroup({ children: newSequence }));
 
       // write model to server now or else the above created activity will be orphaned
+      await dispatch(savePage());
+
       pageModel = [newGroup];
     }
 

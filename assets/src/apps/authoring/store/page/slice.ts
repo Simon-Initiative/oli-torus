@@ -46,7 +46,8 @@ const slice: Slice<PageState> = createSlice({
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
 
       // for now don't need to set advancedAuthoring or advancedDelivery or displayApplicationChrome
-      state.additionalStylesheets = action.payload.additionalStylesheets || initialState.additionalStylesheets;
+      state.additionalStylesheets =
+        action.payload.additionalStylesheets || initialState.additionalStylesheets;
       state.customCss = action.payload.customCss || initialState.customCss;
       state.custom = action.payload.custom || initialState.custom;
     },
@@ -59,12 +60,15 @@ const slice: Slice<PageState> = createSlice({
     setObjectives(state, action: PayloadAction<{ objectives: any }>) {
       state.objectives = action.payload.objectives;
     },
+    setRevisionSlug(state, action: PayloadAction<{ revisionSlug: string }>) {
+      state.revisionSlug = action.payload.revisionSlug;
+    },
   },
 });
 
 export const PageSlice = slice.name;
 
-export const { loadPage, setIsGraded, setTitle, setObjectives } = slice.actions;
+export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug } = slice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice] as PageState;
 export const selectIsGraded = createSelector(selectState, (state: PageState) => state.graded);
