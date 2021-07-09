@@ -89,6 +89,7 @@ export interface ActivityReference {
 }
 
 export interface GroupContent {
+  id: number | string;
   type: 'group';
   layout: string; // TODO define layout types
   children: ResourceContent[];
