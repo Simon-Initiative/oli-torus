@@ -12,9 +12,10 @@ import { RootState } from '../../rootReducer';
 export interface ActivityContent {
   custom?: any;
   partsLayout: any[];
+  [key: string]: any;
 }
 export interface IActivity {
-  id: string;
+  id: string | number;
   resourceId?: number;
   authoring?: any;
   content?: ActivityContent;

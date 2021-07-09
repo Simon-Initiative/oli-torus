@@ -2,35 +2,36 @@ import React from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
-import {
-  selectCurrentActivityId,
-  setCurrentActivityId,
-} from '../../../delivery/store/features/activities/slice';
+import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
+import { upsertActivity } from '../../../delivery/store/features/activities/slice';
 import {
   SequenceEntry,
   SequenceEntryChild,
 } from '../../../delivery/store/features/groups/actions/sequence';
-import { selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
+import {
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
-import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import { addSequenceItem } from '../../store/groups/layouts/deck/actions/addSequenceItem';
+import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
+import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
 const SequenceEditor: React.FC<any> = (props) => {
   const dispatch = useDispatch();
-  const currentActivityId = useSelector(selectCurrentActivityId);
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
 
   const handleItemClick = (entry: SequenceEntry<SequenceEntryChild>) => {
-    dispatch(setCurrentActivityId({ activityId: entry.activitySlug }));
+    dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
   };
 
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
   ) => {
-    const { payload: newActivity } = await dispatch<any>(createNewActivity());
+    const { payload: newActivity } = await dispatch<any>(createNewActivity({}));
     let layerRef: string | undefined;
 
     if (parentItem) {
@@ -38,14 +39,19 @@ const SequenceEditor: React.FC<any> = (props) => {
     }
     const newSequenceEntry = {
       type: 'activity-reference',
-      activitySlug: newActivity.id,
+      resourceId: newActivity.resourceId,
+      activitySlug: newActivity.activitySlug,
       custom: {
         isLayer,
         layerRef,
-        sequenceId: `${newActivity.id}_${guid()}`,
+        sequenceId: `${newActivity.activitySlug}_${guid()}`,
         sequenceName: `New ${layerRef ? 'Child' : ''}${isLayer ? 'Layer' : 'Screen'}`,
       },
     };
+    // the id for the redux store is the sequenceId to match the delivery side
+    newActivity.id = newSequenceEntry.custom.sequenceId;
+    await dispatch(upsertActivity({ activity: newActivity }));
+
     await dispatch(
       addSequenceItem({
         sequence: sequence,
@@ -185,10 +191,6 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
-  const handleItemClick = (entry: SequenceEntry<SequenceEntryChild>) => {
-    dispatch(setCurrentActivityId({ activityId: entry.activitySlug }));
-  };
-
   return (
     <Accordion className="aa-sequence-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
@@ -248,7 +250,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               as="li"
               className="aa-sequence-item"
               key={entry.custom.sequenceId}
-              active={entry.activitySlug === currentActivityId}
+              active={entry.custom.sequenceId === currentSequenceId}
               onClick={() => handleItemClick(entry)}
               tabIndex={0}
             >

@@ -1,16 +1,12 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
-import {
-  ActivitiesSlice,
-  selectActivityById,
-  upsertActivity,
-} from '../../../../delivery/store/features/activities/slice';
+import { ActivitiesSlice } from '../../../../delivery/store/features/activities/slice';
 import { createFeedback } from './createFeedback';
 
 export const createCorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createCorrectRule`,
-  async (payload: any, { dispatch, getState }) => {
-    const { ruleId = `r:${guid()}`, isDefault = false, activityId } = payload;
+  async (payload: any) => {
+    const { ruleId = `r:${guid()}`, isDefault = false } = payload;
 
     const rule = {
       id: `${ruleId}.correct`,
@@ -34,21 +30,14 @@ export const createCorrectRule = createAsyncThunk(
       },
     };
 
-    // when creating a rule it should always be for use in an activity
-    const activity = selectActivityById(getState() as any, activityId);
-    const modifiedActivity = JSON.parse(JSON.stringify(activity));
-    // need to ensure this path exists?
-    modifiedActivity.model.authoring.rules.push(rule);
-    await dispatch(upsertActivity({ activity: modifiedActivity }));
-
     return rule;
   },
 );
 
 export const createIncorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createIncorrectRule`,
-  async (payload: any, { dispatch, getState }) => {
-    const { ruleId = `r:${guid()}`, isDefault = false, activityId } = payload;
+  async (payload: any, { dispatch }) => {
+    const { ruleId = `r:${guid()}`, isDefault = false } = payload;
 
     const { payload: feedbackAction } = await dispatch(createFeedback({}));
 
@@ -70,13 +59,6 @@ export const createIncorrectRule = createAsyncThunk(
         },
       },
     };
-
-    // when creating a rule it should always be for use in an activity
-    const activity = selectActivityById(getState() as any, activityId);
-    const modifiedActivity = JSON.parse(JSON.stringify(activity));
-    // need to ensure this path exists?
-    modifiedActivity.model.authoring.rules.push(rule);
-    await dispatch(upsertActivity({ activity: modifiedActivity }));
 
     return rule;
   },

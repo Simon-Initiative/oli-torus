@@ -28,41 +28,48 @@ export const initializeFromContext = createAsyncThunk(
     };
     dispatch(loadPage(pageState));
 
-    // load initial activities
-    const activities = Object.keys(params.activities).map((id) => {
-      return { ...params.activities[id], id };
-    });
-    await dispatch(setActivities({ activities }));
-
+    const children: any[] = Object.keys(params.activities).map((id) => ({ ...params.activities[id] }));;
     let pageModel = params.content.model;
     if (!pageModel.length) {
       // this should be a "new" lesson, at no point should we allow the model
       // to be empty while controlled by the authoring tool
-      let children = [];
-      if (activities.length) {
-        children = activities;
-      }
+      // if there are any activities defined that are not in a group they will be
+      // assimilated into a new group
       if (!children.length) {
-        const { payload: newActivity } = await dispatch(createNewActivity());
+        const { payload: newActivity } = await dispatch(createNewActivity({}));
         children.push(newActivity);
       }
       // create sequence map of activities which is the group children
       const newSequence = children.map((childActivity) => {
         const entry = {
           type: 'activity-reference',
-          activitySlug: childActivity.id,
+          resourceId: childActivity.activityId,
+          activitySlug: childActivity.activitySlug,
           custom: {
-            sequenceId: `${childActivity.id}_${guid()}`,
-            sequenceName: childActivity.title || childActivity.id,
+            sequenceId: `aa_${guid()}`,
+            sequenceName: childActivity.title || childActivity.activitySlug,
           },
         };
         return entry;
       });
       const { payload: newGroup } = await dispatch(createNewGroup({ children: newSequence }));
 
-      // write model to server now?
+      // write model to server now or else the above created activity will be orphaned
       pageModel = [newGroup];
     }
+
+    // set the activities
+    const activities = children.map((activity) => {
+      return {
+        id: activity.activity_id,
+        resourceId: activity.activity_id,
+        activitySlug: activity.activitySlug,
+        activityType: activity.activityType,
+        content: { ...activity.model, authoring: undefined },
+        authoring: activity.model.authoring,
+      };
+    });
+    await dispatch(setActivities({ activities }));
 
     // populate the group
     // TODO: can this be recursively nested?
@@ -73,6 +80,19 @@ export const initializeFromContext = createAsyncThunk(
     if (otherTypes.length) {
       groups.push({ type: 'group', layout: 'deck', children: [...otherTypes] });
     }
+
+    // need resourceId in the group to be able to match it with the activity
+    groups.forEach((group) => {
+      group.children.forEach((child: any) => {
+        if (child.type === 'activity-reference' && !child.resourceId) {
+          const matchingActivity = activities.find((activity) => activity.activitySlug === child.activitySlug);
+          if (matchingActivity) {
+            child.resourceId = matchingActivity.resourceId;
+          }
+        }
+      });
+    });
+
     // here we should do any "layout processing" where for example we go and make sure all the parts
     // are referenced including inherited from layers or parent screens when in "deck" view
     // afterwards update that group record with a processing timestamp? so that we don't need to do every time?
@@ -83,8 +103,10 @@ export const initializeFromContext = createAsyncThunk(
 
     await dispatch(setGroups({ groups }));
 
+    console.log('INIT:', { params, children, groups, activities });
+
     // TODO: some initial creation if blank
     const sequence = selectSequence(getState() as any);
-    await dispatch(setCurrentActivityId({ activityId: sequence[0]?.activitySlug }));
+    await dispatch(setCurrentActivityId({ activityId: sequence[0]?.resourceId }));
   },
 );
