@@ -59,6 +59,16 @@ defmodule OliWeb.LayoutView do
     end
   end
 
+  def badge(badge) do
+    case badge do
+      nil ->
+        ""
+
+      badge ->
+        content_tag(:span, badge, class: "badge badge-pill badge-primary ml-2")
+    end
+  end
+
   def sidebar_link(%{:assigns => assigns} = _conn, text, path, opts) do
     route = Keyword.get(opts, :to)
     badge = Keyword.get(opts, :badge)

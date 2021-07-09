@@ -50,18 +50,13 @@
     }
   }
 
-  .workspace-min-sidebar {
+  .workspace-sidebar {
     flex: 1;
-    width: 70px;
+    width: 60px;
     padding: 2px;
     background-color: $workspace-sidebar-bg;
     box-shadow: 0px 0px 4px 0px rgba(50, 50, 50, 0.15);
     z-index: 1;
-
-    .dropright:hover .dropdown-menu {
-      display: block;
-      margin-top: 0; // remove the gap so it doesn't close
-    }
 
     .dropdown-menu {
       padding-top: 0px;
@@ -82,15 +77,18 @@
     }
 
     .btn-group {
-      width: 70px;
+      width: 60px;
       padding: 0px;
       background-color: transparent;
       border-color: transparent;
     }
 
     .btn {
+      width: 60px;
       background-color: transparent;
       border-color: transparent;
+      padding: 0px;
+      padding-top: 8px;
     }
 
     .btn:hover {
@@ -98,10 +96,12 @@
     }
 
     .btn-group:focus {
-      outline: none;
+      outline: none !important;
+      box-shadow: none;
     }
     .btn:focus {
-      outline: none;
+      outline: none !important;
+      box-shadow: none;
     }
 
     .label {
@@ -115,51 +115,6 @@
       flex-direction: columns;
       margin: 10px 0;
       color: $workspace-sidebar-link-color;
-    }
-
-    .account-link {
-      height: 48px;
-      display: inline-block;
-      margin: 0;
-      margin: 0;
-      width: 100%;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-  }
-
-  .workspace-sidebar {
-    flex: 1;
-    width: 200px;
-    padding: 24px;
-    background-color: $workspace-sidebar-bg;
-    box-shadow: 0px 0px 4px 0px rgba(50, 50, 50, 0.15);
-    z-index: 1;
-
-    a {
-      display: flex;
-      flex-direction: columns;
-      margin: 10px 0;
-      color: $workspace-sidebar-link-color;
-    }
-
-    .user {
-      margin-bottom: 40px;
-    }
-
-    .category {
-      padding: 0;
-      font-size: 18px;
-      color: $gray-500;
-      user-select: none;
-      margin-top: 36px;
-      margin-bottom: 0px;
-    }
-
-    .active {
-      font-weight: bold;
-      color: $link-color;
     }
 
     .account-link {

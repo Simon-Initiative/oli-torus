@@ -6,7 +6,7 @@
     <div class="workspace-left">
       <%= render OliWeb.LayoutView,
         "_#{cond do
-          @conn.params["project_id"] -> "project_min" #_project_sidebar.html.eex   (template)
+          @conn.params["project_id"] -> "project" #_project_sidebar.html.eex   (template)
           true -> "workspace"                     #_workspace_sidebar.html.eex (template)
         end}_sidebar.html", assigns %>
     </div>
