@@ -1,0 +1,36 @@
+<div class="workspace-min-sidebar">
+
+  <div class="btn-group dropright">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-lightbulb la" style="font-size: 32px;"></i>
+      <div class="label">Create</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a>
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>">Objectives</a>
+      <a class="dropdown-item" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a>
+    </div>
+  </div>
+
+  <div class="btn-group dropright">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-plane-departure la" style="font-size: 32px;"></i>
+      <div class="label">Publish</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :publish, @project) %>">Publish</a>
+    </div>
+  </div>
+
+  <div class="btn-group dropright">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-chart-bar la" style="font-size: 32px;"></i>
+      <div class="label">Improve</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a>
+    </div>
+  </div>
+
+</div>

@@ -50,6 +50,85 @@
     }
   }
 
+  .workspace-min-sidebar {
+    flex: 1;
+    width: 70px;
+    padding: 2px;
+    background-color: $workspace-sidebar-bg;
+    box-shadow: 0px 0px 4px 0px rgba(50, 50, 50, 0.15);
+    z-index: 1;
+
+    .dropright:hover .dropdown-menu {
+      display: block;
+      margin-top: 0; // remove the gap so it doesn't close
+    }
+
+    .dropdown-menu {
+      padding-top: 0px;
+      padding-bottom: 0px;
+      margin-right: 2px;
+      margin-left: 0px;
+    }
+
+    .dropdown-item {
+      padding-top: 1px;
+      padding-bottom: 1px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+
+    .dropdown-menu > a:hover {
+      background-color: $gray-500;
+    }
+
+    .btn-group {
+      width: 70px;
+      padding: 0px;
+      background-color: transparent;
+      border-color: transparent;
+    }
+
+    .btn {
+      background-color: transparent;
+      border-color: transparent;
+    }
+
+    .btn:hover {
+      background-color: $gray-500;
+    }
+
+    .btn-group:focus {
+      outline: none;
+    }
+    .btn:focus {
+      outline: none;
+    }
+
+    .label {
+      font-size: 0.65em;
+      max-width: 50px;
+      text-align: center;
+    }
+
+    a {
+      display: flex;
+      flex-direction: columns;
+      margin: 10px 0;
+      color: $workspace-sidebar-link-color;
+    }
+
+    .account-link {
+      height: 48px;
+      display: inline-block;
+      margin: 0;
+      margin: 0;
+      width: 100%;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+  }
+
   .workspace-sidebar {
     flex: 1;
     width: 200px;
