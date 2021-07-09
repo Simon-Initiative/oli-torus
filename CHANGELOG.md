@@ -12,6 +12,7 @@
 - Add ability to generate and download a course digest from existing course projects
 - Redesign check all that apply, multiple choice activities
 - Merge activity editing into the page editor
+- Redesign the workspace header to include view title, help and user icons
 
 ## 0.11.1 (2021-6-16)
 
