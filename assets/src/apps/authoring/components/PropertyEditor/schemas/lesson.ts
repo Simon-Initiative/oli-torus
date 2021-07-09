@@ -3,6 +3,10 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const lessonSchema = {
   type: 'object',
   properties: {
+    title: {
+      type: 'string',
+      title: 'Title',
+    },
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -25,6 +29,7 @@ const lessonSchema = {
             'Material Responsive',
             'Light',
             'Dark',
+            'LEGACY'
           ],
         },
         customCssUrl: {
@@ -39,10 +44,6 @@ const lessonSchema = {
         enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
         lessonMax: { type: 'number', title: 'Lesson Max' },
       },
-    },
-    title: {
-      type: 'string',
-      title: 'Title',
     },
     customCSS: {
       title: 'Custom CSS',
@@ -73,5 +74,19 @@ export const lessonUiSchema = {
     'ui:title': 'Score Overview',
   },
 };
+
+export const transformModelToSchema = (model: any) => ({
+  Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
+  Appearance: {
+    theme: model.custom.themeUrl || 'LEGACY',
+    customCssUrl: model.custom.customCssUrl,
+  },
+  ScoreOverview: {
+    enableLessonMax: model.custom.enableLessonMax,
+    lessonMax: model.custom.lessonMax,
+  },
+  title: model.title,
+  customCSS: model.customCss,
+});
 
 export default lessonSchema;

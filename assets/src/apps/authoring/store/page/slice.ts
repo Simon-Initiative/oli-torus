@@ -9,6 +9,13 @@ export interface PageState {
   title: string;
   revisionSlug: string;
   resourceId: ResourceId;
+  // below here go into "content" when writing to server
+  advancedAuthoring?: boolean;
+  advancedDelivery?: boolean;
+  displayApplicationChrome?: boolean;
+  additionalStylesheets?: string[];
+  customCss?: string;
+  custom?: any;
 }
 
 const initialState: PageState = {
@@ -18,6 +25,12 @@ const initialState: PageState = {
   title: 'New Adaptive Page',
   revisionSlug: '',
   resourceId: -1,
+  advancedAuthoring: true,
+  advancedDelivery: true,
+  displayApplicationChrome: false,
+  additionalStylesheets: [],
+  customCss: '',
+  custom: {},
 };
 
 const slice: Slice<PageState> = createSlice({
@@ -31,6 +44,11 @@ const slice: Slice<PageState> = createSlice({
       state.objectives = action.payload.objectives || initialState.objectives;
       state.resourceId = action.payload.resourceId || initialState.resourceId;
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
+
+      // for now don't need to set advancedAuthoring or advancedDelivery or displayApplicationChrome
+      state.additionalStylesheets = action.payload.additionalStylesheets || initialState.additionalStylesheets;
+      state.customCss = action.payload.customCss || initialState.customCss;
+      state.custom = action.payload.custom || initialState.custom;
     },
     setIsGraded(state, action: PayloadAction<{ graded: boolean }>) {
       state.graded = action.payload.graded;

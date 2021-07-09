@@ -25,6 +25,9 @@ export const initializeFromContext = createAsyncThunk(
       title: params.title,
       revisionSlug: params.resourceSlug,
       resourceId: params.resourceId,
+      additionalStylesheets: params.content.additionalStylesheets,
+      customCss: params.content.customCss,
+      custom: params.content.custom,
     };
     dispatch(loadPage(pageState));
 
