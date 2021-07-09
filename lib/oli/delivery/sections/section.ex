@@ -52,14 +52,16 @@ defmodule Oli.Delivery.Sections.Section do
 
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
-    many_to_many :projects, Project, join_through: SectionsProjectsPublications
-    many_to_many :publications, Publication, join_through: SectionsProjectsPublications
+    has_many :section_project_publications, SectionsProjectsPublications, on_replace: :delete
+
+    # TODO: REMOVE
+    # many_to_many :projects, Project, join_through: SectionsProjectsPublications
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
-  def changeset(section, attrs) do
+  def changeset(section, attrs \\ %{}) do
     section
     |> cast(attrs, [
       :title,

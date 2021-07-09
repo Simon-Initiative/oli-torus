@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       |> Seeder.create_section()
       |> Seeder.add_activity(%{title: "Activity with with no attempts"}, :activity_no_attempts)
       |> Seeder.add_objective("not used in any seeds", :obj_not_used)
+      |> Seeder.create_section_resources()
       |> SnapshotSeeder.setup_csv(context.path)
 
     Oli.Publishing.publish_project(seeds.project)

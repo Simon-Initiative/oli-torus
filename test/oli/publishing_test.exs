@@ -193,7 +193,7 @@ defmodule Oli.PublishingTest do
       assert unpublished_publication.id == published_publication.id
 
       # the unpublished publication for the project should now be a new different publication
-      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      new_unpublished_publication = Publishing.working_project_publication(project.slug)
       assert new_unpublished_publication.id != unpublished_publication.id
 
       # mappings should be retained in the original published publication
@@ -239,7 +239,7 @@ defmodule Oli.PublishingTest do
       {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
 
       # publication should succeed even if a resource is "locked"
-      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      new_unpublished_publication = Publishing.working_project_publication(project.slug)
       assert new_unpublished_publication.id != original_unpublished_publication.id
 
       # further edits to locked resources should occur in newly created revisions. The locks should not
@@ -285,6 +285,7 @@ defmodule Oli.PublishingTest do
       assert project.slug == project_slug
     end
 
+    # TODO: REMOVE/REPLACE
     test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
          %{project: project} do
       institution = institution_fixture()
@@ -297,9 +298,10 @@ defmodule Oli.PublishingTest do
           title: "title",
           context_id: "some-context-id",
           institution_id: institution.id,
-          project_id: project.id,
-          publication_id: original_publication.id
+          base_project_id: project.id
         })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(original_publication)
 
       assert [%Section{id: ^section_id}] =
                Sections.get_sections_by_publication(original_publication)
@@ -307,7 +309,7 @@ defmodule Oli.PublishingTest do
       {:ok, original_publication} = Publishing.publish_project(project)
 
       # update all sections to use the new publication
-      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      new_publication = Publishing.working_project_publication(project.slug)
       Publishing.update_all_section_publications(project, new_publication)
 
       # section associated with new publication...
@@ -367,7 +369,7 @@ defmodule Oli.PublishingTest do
           author_id: author.id
         })
 
-      p2 = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      p2 = Publishing.working_project_publication(project.slug)
       Publishing.upsert_published_resource(p2, r4_revision)
 
       # delete a resource

@@ -12,7 +12,7 @@ defmodule Oli.Analytics.ByObjective do
       from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
-        on: section.project_id == project.id,
+        on: section.base_project_id == project.id,
         join: snapshot in Snapshot,
         on: snapshot.section_id == section.id,
         group_by: [snapshot.activity_id, snapshot.objective_id],

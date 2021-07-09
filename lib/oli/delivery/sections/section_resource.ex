@@ -43,9 +43,6 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :delivery_policy_id
     ])
     |> validate_required([
-      :numbering_index,
-      :numbering_level,
-      :children,
       :slug,
       :resource_id,
       :project_id,

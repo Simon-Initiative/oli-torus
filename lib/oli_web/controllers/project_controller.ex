@@ -42,7 +42,7 @@ defmodule OliWeb.ProjectController do
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug!(project.slug)
 
-    active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    active_publication = Publishing.working_project_publication(project.slug)
 
     # publish
     {has_changes, active_publication_changes, parent_pages} =
@@ -69,7 +69,7 @@ defmodule OliWeb.ProjectController do
               end)
               |> Enum.map(fn r -> r.resource_id end)
               |> Oli.Publishing.determine_parent_pages(
-                Oli.Publishing.AuthoringResolver.publication(project.slug).id
+                Oli.Publishing.working_project_publication(project.slug).id
               )
             else
               %{}

@@ -63,6 +63,7 @@ defmodule Oli.Delivery.AttemptsTest do
       }
 
       Seeder.add_page(map, attrs, :p1)
+      |> Seeder.create_section_resources()
     end
 
     test "create the attempt tree", %{p1: p1, user1: user, section: section, a1: a1, a2: a2} do

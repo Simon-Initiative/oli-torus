@@ -416,6 +416,7 @@ defmodule Oli.DatashopTest do
         |> Seeder.add_objective("objective two", :o2)
         |> Seeder.add_objective("objective three", :o3)
         |> Seeder.create_section()
+        |> Seeder.create_section_resources()
         |> Seeder.add_users_to_section(:section, [:user1, :user2, :user3])
 
       map =

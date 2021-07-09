@@ -32,7 +32,7 @@ defmodule Oli.Authoring.Clone do
                project_id: cloned_project.id,
                root_resource_id: base_root_container.resource_id
              }),
-           base_publication <- AuthoringResolver.publication(base_project.slug),
+           base_publication <- Publishing.working_project_publication(base_project.slug),
            _ <- Locks.release_all(base_publication.id),
            _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
            _ <- clone_all_project_resources(base_project.id, cloned_project.id),

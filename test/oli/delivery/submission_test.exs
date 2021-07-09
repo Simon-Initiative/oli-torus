@@ -75,8 +75,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
           graded: true
         },
+        :container,
         :graded_page
       )
+      |> Seeder.create_section_resources()
     end
 
     test "graded page : determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not",
@@ -92,7 +94,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # Open the graded page as user 1 to get the prologue
       user1_page_context = PageContext.create_for_visit(section.slug, revision.slug, user1)
       assert user1_page_context.progress_state == :not_started
-      assert Enum.count(user1_page_context.resource_attempts) == 0
+      assert Enum.empty?(user1_page_context.resource_attempts)
 
       # Start the attempt and go into the assessment
       activity_provider = &Oli.Delivery.ActivityProvider.provide/2
@@ -263,6 +265,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         },
         :graded_page
       )
+      |> Seeder.create_section_resources()
 
       # Ungraded page ("page1" / :page1) attempts
       |> Seeder.create_resource_attempt(
@@ -677,6 +680,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       }
 
       Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,
@@ -843,6 +847,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       }
 
       Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,

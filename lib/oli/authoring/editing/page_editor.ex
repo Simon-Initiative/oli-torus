@@ -58,7 +58,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.working_project_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
            {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
@@ -134,7 +134,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.working_project_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       case Locks.acquire(project.slug, publication.id, resource.id, author.id) do
         # If we reacquired the lock, we must first create a new revision
@@ -173,7 +173,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.working_project_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       case Locks.release(project.slug, publication.id, resource.id, author.id) do
         {:error} -> {:error, {:error}}
@@ -192,7 +192,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug)
+           Publishing.working_project_publication(project_slug)
            |> Repo.preload(:project)
            |> trap_nil(),
          {:ok, %{content: content} = revision} <-
@@ -237,7 +237,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   def render_page_html(project_slug, revision_slug, author, options \\ []) do
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.working_project_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <-
            get_latest_revision(publication, resource) |> trap_nil(),

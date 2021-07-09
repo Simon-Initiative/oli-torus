@@ -41,8 +41,7 @@ defmodule OliWeb.OpenAndFreeController do
            Publishing.get_latest_published_publication_by_slug!(project_slug) do
       section_params =
         section_params
-        |> Map.put("project_id", project_id)
-        |> Map.put("publication_id", publication_id)
+        |> Map.put("base_project_id", project_id)
         |> Map.put("open_and_free", true)
         |> Map.put("context_id", UUID.uuid4())
 

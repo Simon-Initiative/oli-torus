@@ -10,7 +10,7 @@ defmodule Oli.Interop.Export do
   Generates a course digest for an existing course project.
   """
   def export(project) do
-    publication = AuthoringResolver.publication(project.slug)
+    publication = Publishing.working_project_publication(project.slug)
     resources = fetch_all_resources(publication)
 
     ([

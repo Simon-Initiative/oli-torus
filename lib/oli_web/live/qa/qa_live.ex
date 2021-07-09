@@ -43,7 +43,7 @@ defmodule OliWeb.Qa.QaLive do
       end)
       |> Enum.map(fn r -> r.resource_id end)
       |> Oli.Publishing.determine_parent_pages(
-        Oli.Publishing.AuthoringResolver.publication(project.slug).id
+        Oli.Publishing.working_project_publication(project.slug).id
       )
 
     {warnings, parent_pages, qa_reviews}

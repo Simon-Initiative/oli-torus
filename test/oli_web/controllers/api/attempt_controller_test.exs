@@ -53,6 +53,7 @@ defmodule OliWeb.AttemptControllerTest do
       |> Seeder.add_user(%{}, :user1)
       |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
       |> Seeder.add_page(%{graded: true}, :graded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,

@@ -3,8 +3,6 @@ defmodule Oli.SectionsTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Publication
   alias Lti_1p3.Tool.ContextRoles
 
   describe "enrollments" do
@@ -23,12 +21,10 @@ defmodule Oli.SectionsTest do
 
       institution = Map.get(map, :institution)
       project = Map.get(map, :project)
-      publication = Map.get(map, :publication)
 
       valid_attrs =
         Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:project_id, project.id)
-        |> Map.put(:publication_id, publication.id)
+        |> Map.put(:base_project_id, project.id)
 
       user1 = user_fixture()
       user2 = user_fixture()
@@ -138,10 +134,11 @@ defmodule Oli.SectionsTest do
 
       valid_attrs =
         Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:project_id, project.id)
-        |> Map.put(:publication_id, publication.id)
+        |> Map.put(:base_project_id, project.id)
 
       {:ok, section} = valid_attrs |> Sections.create_section()
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
 
       {:ok,
        Map.merge(map, %{section: section, institution: institution, valid_attrs: valid_attrs})}
@@ -149,19 +146,19 @@ defmodule Oli.SectionsTest do
 
     test "create_section/1 with valid data creates a section", %{valid_attrs: valid_attrs} do
       assert {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
-      assert section.end_date == ~U[2010-04-17 00:00:00.000000Z]
+      assert section.end_date == ~U[2010-04-17 00:00:00Z]
       assert section.registration_open == true
-      assert section.start_date == ~U[2010-04-17 00:00:00.000000Z]
+      assert section.start_date == ~U[2010-04-17 00:00:00Z]
       assert section.timezone == "some timezone"
       assert section.title == "some title"
     end
 
     test "list_sections/0 returns all sections", %{section: section} do
-      assert Sections.list_sections() == [section]
+      assert Enum.map(Sections.list_sections(), & &1.id) == [section.id]
     end
 
     test "get_section!/1 returns the section with given id", %{section: section} do
-      assert Sections.get_section!(section.id) == section
+      assert Sections.get_section!(section.id).id == section.id
     end
 
     test "get_section_by!/1 returns the section and preloaded associations using the criteria", %{
@@ -169,8 +166,15 @@ defmodule Oli.SectionsTest do
     } do
       found_section = Sections.get_section_by(slug: section.slug)
       assert found_section.id == section.id
-      {%Project{} = _project} = {found_section.project}
-      {%Publication{} = _publication} = {found_section.publication}
+    end
+
+    test "get_sections_by_publication/1 returns the sections which use the specified publication",
+         %{
+           section: section,
+           publication: publication
+         } do
+      assert [section.id] ==
+               Sections.get_sections_by_publication(publication) |> Enum.map(& &1.id)
     end
 
     test "get_section_from_lti_params/1 returns the section from the given lti params", %{
@@ -188,7 +192,7 @@ defmodule Oli.SectionsTest do
         |> put_in(["aud"], registration.client_id)
         |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-      assert Sections.get_section_from_lti_params(lti_params) == section
+      assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
     test "create_section/1 with invalid data returns error changeset" do
@@ -197,16 +201,16 @@ defmodule Oli.SectionsTest do
 
     test "update_section/2 with valid data updates the section", %{section: section} do
       assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
-      assert section.end_date == ~U[2011-05-18 00:00:00.000000Z]
+      assert section.end_date == ~U[2011-05-18 00:00:00Z]
       assert section.registration_open == false
-      assert section.start_date == ~U[2011-05-18 00:00:00.000000Z]
+      assert section.start_date == ~U[2011-05-18 00:00:00Z]
       assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
 
     test "update_section/2 with invalid data returns error changeset", %{section: section} do
       assert {:error, %Ecto.Changeset{}} = Sections.update_section(section, @invalid_attrs)
-      assert section == Sections.get_section!(section.id)
+      assert section.id == Sections.get_section!(section.id).id
     end
 
     test "soft_delete_section/1 marks the section as deleted", %{section: section} do
@@ -239,8 +243,6 @@ defmodule Oli.SectionsTest do
       section: section,
       publication: publication
     } do
-      publication = Oli.Repo.preload(publication, [:root_resource])
-
       {:ok, section} = Sections.create_section_resources(section, publication)
 
       section_resource_hierarchy = Sections.get_section_resource_hierarchy(section)

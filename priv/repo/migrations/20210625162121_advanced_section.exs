@@ -28,6 +28,8 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       timestamps()
     end
 
+    create unique_index(:section_resources, [:resource_id, :section_id])
+
     create table(:user_groups) do
       add(:name, :string)
       add(:section_id, references(:sections))
@@ -40,11 +42,15 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       add(:section_id, references(:sections))
       add(:project_id, references(:projects))
       add(:publication_id, references(:publications))
+
+      timestamps()
     end
 
     create table(:user_group_users, primary_key: false) do
       add(:user_group_id, references(:user_groups))
       add(:user_id, references(:users))
+
+      timestamps()
     end
 
     # TODO: Migrate all start_date and end_date from date to timestamp

@@ -25,7 +25,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       Repo.transaction(fn ->
         with {:ok, %{resource: resource, revision: revision}} <-
                Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             publication <- Publishing.working_project_publication(project.slug),
              {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
              {:ok, container} <-
                maybe_append_to_container(
@@ -73,7 +73,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       Repo.transaction(fn ->
         with {:ok, %{resource: resource, revision: revision}} <-
                Oli.Authoring.Course.create_and_attach_resource(project, attrs),
-             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             publication <- Publishing.working_project_publication(project.slug),
              {:ok, mapping} <- Publishing.upsert_published_resource(publication, revision),
              {:ok, container_resource} <- Resources.get_resource_from_slug(slug) |> trap_nil(),
              {:ok, container_revision} <-
@@ -123,7 +123,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     result =
       Repo.transaction(fn ->
         with {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-             publication <- Publishing.get_unpublished_publication_by_slug!(project.slug),
+             publication <- Publishing.working_project_publication(project.slug),
              {:ok, revision} <-
                Publishing.get_published_revision(publication.id, resource.id) |> trap_nil(),
              {:ok, new_revision} <- Resources.create_revision_from_previous(revision, attrs),
@@ -295,7 +295,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           parent_pages: map()
         }
   def preview_objective_detatchment(resource_id, %Project{} = project) do
-    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    publication = Publishing.working_project_publication(project.slug)
 
     # find all attachments
     case Publishing.find_objective_attachments(resource_id, publication.id) do
@@ -412,7 +412,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
   end
 
   def fetch_objective_mappings(project) do
-    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    publication = Publishing.working_project_publication(project.slug)
     Publishing.get_objective_mappings_by_publication(publication.id)
   end
 end

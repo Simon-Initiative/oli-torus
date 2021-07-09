@@ -3,13 +3,16 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
+  # alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   def analytics_by_activity(project_slug) do
     activity_num_attempts_rel_difficulty =
       from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
-        on: section.project_id == project.id,
+        on: section.base_project_id == project.id,
+        # join: spp in SectionsProjectsPublications,
+        # on: spp.project_id = project.id,
         join: snapshot in Snapshot,
         on: snapshot.section_id == section.id,
         group_by: [snapshot.activity_id],
@@ -30,7 +33,7 @@ defmodule Oli.Analytics.Common do
       from(project in Project,
         where: project.slug == ^project_slug,
         join: section in Section,
-        on: section.project_id == project.id,
+        on: section.base_project_id == project.id,
         join: snapshot in Snapshot,
         on: snapshot.section_id == section.id,
         group_by: [snapshot.activity_id, snapshot.user_id],

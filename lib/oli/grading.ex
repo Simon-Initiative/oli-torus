@@ -14,11 +14,11 @@ defmodule Oli.Grading do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
-  alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -233,15 +233,14 @@ defmodule Oli.Grading do
   def fetch_graded_pages(section_slug) do
     resource_type_id = ResourceType.get_id_by_type("page")
 
-    # TODO: update query
     Repo.all(
       from(s in Section,
-        join: p in Publication,
-        on: p.id == s.publication_id,
-        join: m in PublishedResource,
-        on: m.publication_id == p.id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: rev in Revision,
-        on: rev.id == m.revision_id,
+        on: rev.id == pr.revision_id,
         where:
           rev.deleted == false and
             rev.graded == true and

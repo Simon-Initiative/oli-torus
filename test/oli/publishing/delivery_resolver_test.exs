@@ -23,7 +23,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       {:ok, pub1} = Publishing.publish_project(map.project)
 
       # Track a series of changes for both resources:
-      pub = Publishing.get_unpublished_publication_by_slug!(map.project.slug)
+      pub = Publishing.working_project_publication(map.project.slug)
 
       latest1 =
         Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
@@ -54,7 +54,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       {:ok, pub2} = Publishing.publish_project(map.project)
 
       # Create a fourth page that is completely unpublished
-      pub = Publishing.get_unpublished_publication_by_slug!(map.project.slug)
+      pub = Publishing.working_project_publication(map.project.slug)
       %{revision: latest4} = Seeder.create_page("Unpublished", pub, map.project, map.author)
 
       third_map = Seeder.add_objective(Map.merge(map, %{publication: pub}), "child6", :child6)
@@ -68,27 +68,29 @@ defmodule Oli.Publishing.DeliveryResolverTest do
         )
 
       # Create a course section, one for each publication
-      {:ok, _} =
+      {:ok, section_1} =
         Sections.create_section(%{
           title: "1",
           timezone: "1",
           registration_open: true,
           context_id: "1",
           institution_id: map.institution.id,
-          project_id: map.project.id,
-          publication_id: pub1.id
+          base_project_id: map.project.id
         })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(pub1)
 
-      {:ok, _} =
+      {:ok, section_2} =
         Sections.create_section(%{
           title: "2",
           timezone: "1",
           registration_open: true,
           context_id: "2",
           institution_id: map.institution.id,
-          project_id: map.project.id,
-          publication_id: pub2.id
+          base_project_id: map.project.id
         })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(pub2)
 
       Map.put(map, :latest1, latest1)
       |> Map.put(:latest2, latest2)
@@ -100,6 +102,8 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       |> Map.put(:parent3, Map.get(second_map, :parent3))
       |> Map.put(:child6, Map.get(third_map, :child6))
       |> Map.put(:parent4, Map.get(third_map, :parent4))
+      |> Map.put(:section_1, section_1)
+      |> Map.put(:section_2, section_2)
     end
 
     test "find_parent_objectives/2 returns parents", %{
@@ -189,18 +193,32 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       latest2: latest2,
       revision2: revision2,
       revision1: revision1,
-      latest4: latest4
+      latest4: latest4,
+      section_1: section_1,
+      section_2: section_2
     } do
-      assert DeliveryResolver.from_resource_id("1", [revision1.resource_id, revision2.resource_id]) ==
+      assert DeliveryResolver.from_resource_id(section_1.slug, [
+               revision1.resource_id,
+               revision2.resource_id
+             ]) ==
                [revision1, revision2]
 
-      assert DeliveryResolver.from_resource_id("2", [revision1.resource_id, revision2.resource_id]) ==
+      assert DeliveryResolver.from_resource_id(section_2.slug, [
+               revision1.resource_id,
+               revision2.resource_id
+             ]) ==
                [latest1, latest2]
 
-      assert DeliveryResolver.from_resource_id("1", [latest4.resource_id, revision2.resource_id]) ==
+      assert DeliveryResolver.from_resource_id(section_1.slug, [
+               latest4.resource_id,
+               revision2.resource_id
+             ]) ==
                [nil, revision2]
 
-      assert DeliveryResolver.from_resource_id("2", [latest4.resource_id, revision2.resource_id]) ==
+      assert DeliveryResolver.from_resource_id(section_2.slug, [
+               latest4.resource_id,
+               revision2.resource_id
+             ]) ==
                [nil, latest2]
 
       # verifies we return nil on a made up id
@@ -227,12 +245,9 @@ defmodule Oli.Publishing.DeliveryResolverTest do
                [latest2, nil]
     end
 
-    test "publication/1 doesn't retrieve the already published publication", %{
-      pub1: pub1,
-      pub2: pub2
-    } do
-      assert DeliveryResolver.publication("1") == pub1
-      assert DeliveryResolver.publication("2") == pub2
+    test "all_revisions/1 resolves the all nodes", %{} do
+      nodes = DeliveryResolver.all_revisions("1")
+      assert length(nodes) == 9
     end
 
     test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{} do

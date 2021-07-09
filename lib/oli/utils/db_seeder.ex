@@ -1,9 +1,11 @@
 defmodule Oli.Seeder do
+  import Ecto.Query, warn: false
+  import Oli.Delivery.Attempts.Core
+
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Author}
   alias Oli.Institutions.Institution
-  import Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Activities
   alias Oli.Activities.Model.Part
@@ -13,6 +15,8 @@ defmodule Oli.Seeder do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
@@ -271,6 +275,38 @@ defmodule Oli.Seeder do
     {:ok, section} =
       Section.changeset(%Section{}, params)
       |> Repo.insert()
+
+    Map.put(map, :section, section)
+  end
+
+  def create_section_resources(%{section: section, publication: publication} = map) do
+    {:ok, section} =
+      section
+      |> Sections.create_section_resources(publication)
+
+    Map.put(map, :section, section)
+  end
+
+  def rebuild_section_resources(
+        %{section: %Section{id: section_id} = section, publication: publication} = map
+      ) do
+    section
+    |> Section.changeset(%{root_section_resource_id: nil})
+    |> Repo.update!()
+
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    {:ok, section} =
+      section
+      |> Sections.create_section_resources(publication)
 
     Map.put(map, :section, section)
   end

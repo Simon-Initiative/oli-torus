@@ -6,14 +6,14 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
 
   def query_unpublished_revisions_by_type(project_slug, type) do
-    publication_id = get_unpublished_publication_by_slug!(project_slug).id
+    publication_id = working_project_publication(project_slug).id
     resource_type_id = ResourceType.get_id_by_type(type)
 
     from rev in Revision,
@@ -188,13 +188,13 @@ defmodule Oli.Publishing do
   Get unpublished publication for a project from slug. This assumes there is only one unpublished publication per project.
    ## Examples
 
-      iex> get_unpublished_publication_by_slug!("my-project-slug")
+      iex> working_project_publication("my-project-slug")
       %Publication{}
 
-      iex> get_unpublished_publication_by_slug!("invalid-slug")
+      iex> working_project_publication("invalid-slug")
       ** (Ecto.NoResultsError)
   """
-  def get_unpublished_publication_by_slug!(project_slug) do
+  def working_project_publication(project_slug) do
     Repo.one(
       from pub in Publication,
         join: proj in Project,
@@ -482,7 +482,7 @@ defmodule Oli.Publishing do
   @spec publish_project(%Project{}) :: {:error, String.t()} | {:ok, %Publication{}}
   def publish_project(project) do
     Repo.transaction(fn ->
-      with active_publication <- get_unpublished_publication_by_slug!(project.slug),
+      with active_publication <- working_project_publication(project.slug),
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
              create_publication(%{
@@ -524,10 +524,16 @@ defmodule Oli.Publishing do
     )
   end
 
-  # Uses dangerous `update!` to fail the transaction as soon as any update fails
-  def update_all_section_publications(project, publication) do
-    Sections.get_sections_by_project(project)
-    |> Enum.map(&Repo.update!(Sections.change_section(&1, %{publication_id: publication.id})))
+  @doc """
+  Updates all sections to use the latest publication for a given project
+  """
+  def update_all_section_publications(%Project{id: project_id}, %Publication{
+        id: publication_id
+      }) do
+    from(spp in SectionsProjectsPublications,
+      where: spp.project_id == ^project_id
+    )
+    |> Repo.update_all(set: [publication_id: publication_id])
   end
 
   def diff_publications(p1, p2) do
@@ -621,13 +627,9 @@ defmodule Oli.Publishing do
       FROM published_resources
        WHERE publication_id = #{publication_id})
        AND (
-         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
          OR
-         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
        )
     """
 

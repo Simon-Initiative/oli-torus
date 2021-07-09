@@ -92,7 +92,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok} <- authorize_user(author, project),
          {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.working_project_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil(),
          {:ok, revision} <- get_latest_revision(publication.id, activity.id) |> trap_nil() do
       if secondary_id == revision.resource_type_id do
@@ -150,7 +150,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            {:ok, _} <-
              AuthoringResolver.from_resource_id(project_slug, activity_id) |> trap_nil(),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.working_project_publication(project_slug) |> trap_nil(),
            {:ok, secondary_revision} <-
              create_secondary_revision(activity_id, author.id, validated_update),
            {:ok, _} <-
@@ -220,7 +220,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            {:ok} <- authorize_user(author, project),
            {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.working_project_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil() do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
@@ -423,7 +423,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.working_project_publication(project_slug) |> trap_nil(),
            {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
            {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
@@ -485,7 +485,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   """
   def create_context(project_slug, revision_slug, activity_slug, author) do
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.working_project_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),

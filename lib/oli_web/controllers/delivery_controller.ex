@@ -295,16 +295,17 @@ defmodule OliWeb.DeliveryController do
 
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, %Section{id: section_id}} =
+    {:ok, section} =
       Sections.create_section(%{
         timezone: institution.timezone,
         title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
         context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
         institution_id: institution.id,
-        project_id: publication.project_id,
-        publication_id: publication_id,
+        base_project_id: publication.project_id,
         lti_1p3_deployment_id: deployment.id
       })
+
+    {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
 
     # Enroll this user with their proper roles (instructor)
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]

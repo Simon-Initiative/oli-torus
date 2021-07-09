@@ -26,7 +26,7 @@ defmodule OliWeb.Insights do
   end
 
   defp parent_pages(resource_ids, project_slug) do
-    publication = Oli.Publishing.AuthoringResolver.publication(project_slug)
+    publication = Oli.Publishing.working_project_publication(project_slug)
     Oli.Publishing.determine_parent_pages(resource_ids, publication.id)
   end
 

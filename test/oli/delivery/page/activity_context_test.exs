@@ -27,6 +27,7 @@ defmodule Oli.Delivery.Page.ActivityContextTest do
       |> Seeder.add_activity(%{content: content}, :publication, :project, :author, :a1)
       |> Seeder.add_activity(%{content: %{"stem" => "2"}}, :publication, :project, :author, :a2)
       |> Seeder.add_activity(%{content: %{"stem" => "3"}}, :publication, :project, :author, :a3)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,

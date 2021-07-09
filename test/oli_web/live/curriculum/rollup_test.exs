@@ -62,6 +62,7 @@ defmodule OliWeb.Curriculum.RollupTest do
       }
 
       Seeder.add_page(map, attrs, :page)
+      |> Seeder.create_section_resources()
     end
 
     test "creating, then updating a rollup", %{project: project, page: %{revision: page}} = map do

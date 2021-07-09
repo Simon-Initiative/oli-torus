@@ -98,7 +98,6 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_user_params(cache_keys.instructor_no_section)
         |> post(
           Routes.delivery_path(conn, :create_section, %{
-            project_id: project.id,
             publication_id: publication.id
           })
         )

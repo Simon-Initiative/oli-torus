@@ -21,7 +21,7 @@ defmodule Oli.Publishing.ChangeTracker do
   end
 
   defp process_change(project_slug, revision, processor, changes) do
-    publication = AuthoringResolver.publication(project_slug)
+    publication = Publishing.working_project_publication(project_slug)
 
     {:ok, resultant_revision} =
       case changes do

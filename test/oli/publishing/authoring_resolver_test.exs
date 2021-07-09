@@ -22,7 +22,7 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       Publishing.publish_project(map.project)
 
       # Track a series of changes for both resources:
-      pub = Publishing.get_unpublished_publication_by_slug!(map.project.slug)
+      pub = Publishing.working_project_publication(map.project.slug)
 
       latest1 =
         Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
@@ -153,12 +153,9 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert Enum.at(r, 1) == nil
     end
 
-    test "publication/1 doesn't retrieve the already published publication", %{
-      publication: publication,
-      project: project
-    } do
-      refute AuthoringResolver.publication(project.slug) == publication
-      assert AuthoringResolver.publication("invalid") == nil
+    test "all_revisions/1 resolves the all nodes", %{project: project} do
+      nodes = AuthoringResolver.all_revisions(project.slug)
+      assert length(nodes) == 9
     end
 
     test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{project: project} do

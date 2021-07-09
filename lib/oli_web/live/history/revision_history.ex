@@ -217,7 +217,7 @@ defmodule OliWeb.RevisionHistory do
     # First clear any lock that might be present on this resource.  Clearing the lock
     # is necessary to prevent an active editing session from stomping on what is about
     # to be restored
-    publication = AuthoringResolver.publication(project_slug)
+    publication = Publishing.working_project_publication(project_slug)
 
     Publishing.get_published_resource!(publication.id, resource_id)
     |> Publishing.update_published_resource(%{lock_updated_at: nil, locked_by_id: nil})
