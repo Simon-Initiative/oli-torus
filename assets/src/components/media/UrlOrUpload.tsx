@@ -26,8 +26,6 @@ export const UrlOrUpload = (props: Props) => {
     setSource(value === 'upload' ? 'upload' : 'url');
   };
 
-  console.log(source);
-
   return (
     <>
       <div className="mb-2">

@@ -1,0 +1,11 @@
+@import 'bootstrap';
+
+.removeButton__button {
+  @extend .p-0;
+}
+.removeButton__icon {
+  cursor: default;
+  pointer-events: none;
+  display: block;
+  color: rgb(95, 99, 104);
+}

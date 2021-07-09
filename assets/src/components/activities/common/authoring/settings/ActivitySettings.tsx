@@ -1,7 +1,7 @@
 import { Popover } from 'react-tiny-popover';
 import React, { useState } from 'react';
 import { classNames } from 'utils/classNames';
-import { IconCorrect } from 'components/misc/Icons';
+import { Checkmark } from 'components/misc/icons/Checkmark';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import './ActivitySettings.scss';
@@ -13,7 +13,7 @@ interface SettingProps {
 const Setting: React.FC<SettingProps> = ({ isEnabled, onToggle, children }) => {
   return (
     <button className="settings__setting-button" onClick={onToggle}>
-      <div className="settings__is-enabled">{isEnabled && <IconCorrect />}</div>
+      <div className="settings__is-enabled">{isEnabled && <Checkmark />}</div>
       <div className="settings__label">{children}</div>
     </button>
   );
@@ -29,7 +29,7 @@ const Menu: React.FC<MenuProps> = ({ children }) => {
   return (
     <AuthoringButtonConnected
       className={classNames(['settings__open-button', editMode ? '' : 'disabled'])}
-      onClick={() => setIsPopoverOpen((isOpen) => !isOpen)}
+      action={() => setIsPopoverOpen((isOpen) => !isOpen)}
     >
       <Popover
         containerClassName="add-resource-popover"

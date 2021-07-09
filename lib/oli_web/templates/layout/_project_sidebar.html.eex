@@ -1,6 +1,6 @@
 <div class="workspace-sidebar">
 
-  <img src="/images/torus-icon.png" class="mb-3 ml-1" height="50px" width="50px"/>
+  <img src="/images/torus-icon.png" class="mb-3 ml-1 mt-2" height="50px" width="50px"/>
 
   <button type="button" class="btn btn-light" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
     <i class="icon las la-project-diagram la" style="font-size: 32px;"></i>

@@ -29,8 +29,6 @@
     position: relative;
     background-color: $workspace-header-bg;
 
-    display: flex;
-
     .page-title {
       font-weight: bold;
     }
@@ -47,6 +45,20 @@
       padding: 0px;
       flex-wrap: none;
       margin-bottom: 8px;
+    }
+
+    .user-initials-icon {
+      background-color: $workspace-sidebar-bg;
+      border: 2px solid rgb(213, 207, 207);
+      vertical-align: middle;
+      text-align: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-block;
+      padding-top: 2px;
+      font-size: 0.9em;
+      font-weight: 600;
     }
   }
 

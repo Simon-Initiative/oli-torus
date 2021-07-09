@@ -1,96 +1,84 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
-import { OrderingModelSchema } from './schema';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  AuthoringElementProvider,
+  useAuthoringElementContext,
+} from '../AuthoringElement';
+import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/Stem';
-import { Choices } from './sections/Choices';
-import { Feedback } from './sections/Feedback';
-import { Hints } from '../common/Hints';
 import { Actions } from './actions';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import produce from 'immer';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
+import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
+import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
+import { Maybe } from 'tsmonad';
+import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
-import { canMoveChoice, getHints, isTargetedOrdering } from 'components/activities/ordering/utils';
-import { toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
 
 const store = configureStore();
 
-const Ordering = (props: AuthoringElementProps<OrderingModelSchema>) => {
-  const dispatch = (action: any) =>
-    props.onEdit(produce(props.model, (draftState) => action(draftState)));
-
-  const sharedProps = {
-    model: props.model,
-    editMode: props.editMode,
-    projectSlug: props.projectSlug,
-  };
-
+export const Ordering: React.FC = () => {
+  const { dispatch, model } = useAuthoringElementContext<OrderingSchema>();
   return (
-    <React.Fragment>
-      <Stem
-        {...sharedProps}
-        stem={props.model.stem}
-        onEditStem={(content) => dispatch(Actions.editStem(content))}
-      />
+    <TabbedNavigation.Tabs>
+      <TabbedNavigation.Tab label="Question">
+        <Stem />
+        <Choices
+          icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
+          choices={model.choices}
+          addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
+          setAll={(choices: ActivityTypes.Choice[]) =>
+            dispatch(ChoiceActions.setAllChoices(choices))
+          }
+          onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
+          onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
+        />
+      </TabbedNavigation.Tab>
 
-      <Choices
-        {...sharedProps}
-        onShuffle={() => dispatch(toggleAnswerChoiceShuffling())}
-        onAddChoice={() => dispatch(Actions.addChoice())}
-        onEditChoiceContent={(id, content) => dispatch(Actions.editChoiceContent(id, content))}
-        onRemoveChoice={(id) => dispatch(Actions.removeChoice(id))}
-        canMoveChoiceUp={(id) => canMoveChoice(props.model, id, 'up')}
-        canMoveChoiceDown={(id) => canMoveChoice(props.model, id, 'down')}
-        onMoveChoiceUp={(id) => dispatch(Actions.moveChoice('up', id))}
-        onMoveChoiceDown={(id) => dispatch(Actions.moveChoice('down', id))}
-      />
+      <TabbedNavigation.Tab label="Answer Key">
+        <ResponseChoices
+          choices={getCorrectChoiceIds(model).map((id) => getChoice(model, id))}
+          setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
+        />
+        <SimpleFeedback />
+        <TargetedFeedback />
+      </TabbedNavigation.Tab>
 
-      <Feedback
-        {...sharedProps}
-        onToggleFeedbackMode={() => dispatch(Actions.toggleType())}
-        onEditResponseFeedback={(responseId, feedbackContent) =>
-          dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
-        }
-      >
-        {isTargetedOrdering(props.model) ? (
-          <TargetedFeedback
-            {...sharedProps}
-            model={props.model}
-            onEditResponseFeedback={(responseId, feedbackContent) =>
-              dispatch(Actions.editResponseFeedback(responseId, feedbackContent))
-            }
-            onAddTargetedFeedback={() => dispatch(Actions.addTargetedFeedback())}
-            onRemoveTargetedFeedback={(responseId: ActivityTypes.ResponseId) =>
-              dispatch(Actions.removeTargetedFeedback(responseId))
-            }
-            onEditTargetedFeedbackChoices={(
-              responseId: ActivityTypes.ResponseId,
-              choiceIds: ActivityTypes.ChoiceId[],
-            ) => dispatch(Actions.editTargetedFeedbackChoices(responseId, choiceIds))}
-          />
-        ) : null}
-      </Feedback>
+      <TabbedNavigation.Tab label="Hints">
+        <Hints hintsPath="$.authoring.parts[0].hints" />
+      </TabbedNavigation.Tab>
 
-      <Hints
-        projectSlug={props.projectSlug}
-        hints={getHints(props.model)}
-        editMode={props.editMode}
-        onAddHint={() => dispatch(Actions.addHint())}
-        onEditHint={(id, content) => dispatch(Actions.editHint(id, content))}
-        onRemoveHint={(id) => dispatch(Actions.removeHint(id))}
-      />
-    </React.Fragment>
+      <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
+    </TabbedNavigation.Tabs>
   );
 };
 
-export class OrderingAuthoring extends AuthoringElement<OrderingModelSchema> {
-  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingModelSchema>) {
+export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
+  migrateModelVersion(model: any) {
+    return Maybe.maybe(model.authoring.version).caseOf({
+      just: (v2) => model,
+      nothing: () => orderingV1toV2(model),
+    });
+  }
+
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <Ordering {...props} />
+        <AuthoringElementProvider {...props}>
+          <Ordering />
+        </AuthoringElementProvider>
         <ModalDisplay />
       </Provider>,
       mountPoint,

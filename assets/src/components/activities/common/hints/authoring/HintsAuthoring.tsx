@@ -3,7 +3,7 @@ import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { ID } from 'data/content/model';
 import { Hint, RichText } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { Card } from 'components/misc/Card';
 import { Tooltip } from 'components/misc/Tooltip';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
@@ -85,7 +85,7 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
         </div>
       ))}
       <AuthoringButtonConnected
-        onClick={addOne}
+        action={addOne}
         style={{ marginLeft: '22px' }}
         className="btn btn-sm btn-link"
       >
@@ -103,7 +103,7 @@ const BottomOutHint: React.FC<HintProps> = ({ hint, updateOne }) => (
         <Tooltip title={'Explain the answer for students who are still lost'} />
       </>
     }
-    placeholder="Explain how to solve the problem"
+    placeholder="Explain the answer"
     hint={hint}
     updateOne={updateOne}
   />
