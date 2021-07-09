@@ -20,9 +20,12 @@ services:
     depends_on:
       - postgres
     env_file: ./oli.env
-    command: ["mix", "ecto.setup", "&&", "mix", "phx.server"]
+    command: bash -c "
+      mix ecto.setup
+      && mix phx.server"
     ports:
       - 80:80
+      - 443:443
     networks:
       - default
 
