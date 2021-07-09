@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { ResourceContent } from 'data/content/resource';
 import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
 import { acquireEditingLock, releaseEditingLock } from '../../app/actions/locking';
@@ -33,7 +34,7 @@ export const savePage = createAsyncThunk(
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
       content: {
-        model,
+        model: (model as ResourceContent[]),
         advancedAuthoring,
         advancedDelivery,
         displayApplicationChrome,
