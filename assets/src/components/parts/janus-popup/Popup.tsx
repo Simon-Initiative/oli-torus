@@ -46,7 +46,7 @@ const Popup: React.FC<any> = (props) => {
     /* console.log('POPUP INIT', initResult); */
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
-    const isOpen = currentStateSnapshot[`stage.${id}.isOpen`];
+    const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
     if (isOpen !== undefined) {
       setShowPopup(isOpen);
     }

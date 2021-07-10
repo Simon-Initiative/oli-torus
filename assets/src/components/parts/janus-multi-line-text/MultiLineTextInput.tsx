@@ -4,10 +4,8 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import debounce from 'lodash/debounce';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { parseBool } from 'utils/common';
+import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { CapiVariable } from '../types/parts';
 
 const MultiLineTextInput: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -15,7 +13,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
-  const characterCounterRef = useRef<any>(null);
+  const characterCounterRef = useRef<HTMLSpanElement>(null);
   const [text, setText] = useState<string>('');
   const [enabled, setEnabled] = useState(true);
   const [cssClass, setCssClass] = useState('');
@@ -224,9 +222,9 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     });
   };
 
-  const handleOnChange = (event: any) => {
+  const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const val = event.target.value;
-    characterCounterRef.current.innerText = val.length;
+    if (characterCounterRef.current) characterCounterRef.current.innerText = val.length.toString();
     setText(val);
     // Wait until user has stopped typing to save the new value
     debounceInputText(val);

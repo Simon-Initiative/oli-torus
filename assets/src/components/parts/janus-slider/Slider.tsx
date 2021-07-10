@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -13,8 +13,8 @@ const Slider: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
 
   const id: string = props.id;
-  const [inputInnerWidth, setInputInnerWidth] = useState<any>(0);
-  const [spanInnerWidth, setSpanInnerWidth] = useState<any>(0);
+  const [inputInnerWidth, setInputInnerWidth] = useState<number>(0);
+  const [spanInnerWidth, setSpanInnerWidth] = useState<number>(0);
 
   const [sliderValue, setSliderValue] = useState(0);
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
@@ -166,8 +166,6 @@ const Slider: React.FC<any> = (props) => {
     z,
     width,
     height,
-    src,
-    alt,
     customCssClass,
     label,
     maximum,
@@ -175,11 +173,8 @@ const Slider: React.FC<any> = (props) => {
     snapInterval,
     showDataTip,
     showValueLabels,
-    showThumbByDefault,
     showLabel,
-    showTicks,
     invertScale,
-    value,
   } = model;
 
   const styles: CSSProperties = {
@@ -203,9 +198,9 @@ const Slider: React.FC<any> = (props) => {
     flexDirection: 'row',
   };
 
-  const inputWidth: any = inputInnerWidth;
-  const thumbWidth: any = spanInnerWidth;
-  const thumbHalfWidth: any = thumbWidth / 2;
+  const inputWidth = inputInnerWidth;
+  const thumbWidth = spanInnerWidth;
+  const thumbHalfWidth = thumbWidth / 2;
   const thumbPosition =
     ((Number(sliderValue) - minimum) / (maximum - minimum)) *
     (inputWidth - thumbWidth + thumbHalfWidth);
@@ -229,9 +224,10 @@ const Slider: React.FC<any> = (props) => {
     });
   };
 
-  const handleSliderChange = (e: any) => {
-    setSliderValue(e.target.value);
-    saveState({ sliderVal: e.target.value, userModified: true });
+  const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const sliderVal = parseInt(e.target.value, 10);
+    setSliderValue(sliderVal);
+    saveState({ sliderVal, userModified: true });
   };
   const inputTargetRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
