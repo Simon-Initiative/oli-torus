@@ -1,30 +1,5 @@
-import * as ContentModel from 'data/content/model';
-import { Operation, RichText, Transformation } from '../types';
-import guid from 'utils/guid';
+import { makeTransformation, Operation, Transformation } from '../types';
 import React from 'react';
-import { Maybe } from 'tsmonad';
-
-export function fromText(text: string): { id: string; content: RichText } {
-  return {
-    id: guid() + '',
-    content: {
-      model: [
-        ContentModel.create<ContentModel.Paragraph>({
-          type: 'p',
-          children: [{ text }],
-          id: guid() + '',
-        }),
-      ],
-      selection: null,
-    },
-  };
-}
-
-export const makeTransformation = (path: string, operation: Operation): Transformation => ({
-  id: guid(),
-  path,
-  operation,
-});
 
 export const isShuffled = (transformations: Transformation[]): boolean =>
   !!transformations.find((xform) => xform.operation === Operation.shuffle);

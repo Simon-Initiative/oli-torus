@@ -176,6 +176,15 @@ $workspace-sidebar-link-color: $white;
 $workspace-bg: $gray-900;
 /** Theme-specific custom styles for authoring **/
 
+.workspace-sidebar {
+  .label {
+    color: white;
+  }
+  .icon {
+    color: white;
+  }
+}
+
 .resource-block-editor {
   .resource-content-frame {
     &.card {
@@ -317,4 +326,4 @@ $workspace-bg: $gray-900;
 // IMPORTANT: DO NOT MODIFY BELOW
 // This import is required and must always be the last item in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
-@import "authoring.scss";
+@import 'authoring.scss';

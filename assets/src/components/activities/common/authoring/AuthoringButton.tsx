@@ -1,9 +1,9 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import React, { MouseEventHandler } from 'react';
+import React from 'react';
 import { classNames } from 'utils/classNames';
 
 export type Props = {
-  onClick: MouseEventHandler<HTMLButtonElement>;
+  action: () => void;
   style?: React.CSSProperties;
   className?: string;
   children?: React.ReactNode;
@@ -18,7 +18,8 @@ export const AuthoringButton: React.FC<Props> = (props: Props) => {
       className={classNames(['btn', props.className])}
       disabled={props.disabled || !props.editMode}
       type="button"
-      onClick={props.onClick}
+      onClick={() => props.action()}
+      onKeyPress={(e) => (e.key === 'Enter' ? props.action() : null)}
     >
       {props.children}
     </button>

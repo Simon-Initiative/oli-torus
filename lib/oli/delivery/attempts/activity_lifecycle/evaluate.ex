@@ -23,18 +23,21 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
 
-    {:ok, %Model{rules: rules}} = Model.parse(transformed_model)
+    case Model.parse(transformed_model) do
+      {:ok, %Model{rules: []}} ->
+        evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
-    if is_list(rules) do
-      evaluate_from_rules(
-        section_slug,
-        resource_attempt,
-        activity_attempt_guid,
-        part_inputs,
-        rules
-      )
-    else
-      evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
+      {:ok, %Model{rules: rules}} ->
+        evaluate_from_rules(
+          section_slug,
+          resource_attempt,
+          activity_attempt_guid,
+          part_inputs,
+          rules
+        )
+
+      e ->
+        e
     end
   end
 
@@ -143,7 +146,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                     acc1
 
                   _ ->
-                    if (!Map.has_key?(input, "path")) do
+                    if !Map.has_key?(input, "path") do
                       acc1
                     else
                       path = Map.get(input, "path")

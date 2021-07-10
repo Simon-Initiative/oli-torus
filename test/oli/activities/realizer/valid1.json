@@ -1,0 +1,7 @@
+{
+  "conditions": {
+    "fact": "tags",
+    "operator": "contains",
+    "value": [1]
+  }
+}

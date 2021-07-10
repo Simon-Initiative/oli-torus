@@ -1,81 +1,42 @@
 import {
-  CheckAllThatApplyModelSchema as CATA,
-  ChoiceIdsToResponseId,
-  TargetedCATA,
-  SimpleCATA,
-} from './schema';
-import { ID } from 'data/content/model';
-import {
-  ChoiceId,
   makeChoice,
   makeHint,
   makeResponse,
   makeStem,
   makeTransformation,
   Operation,
-  Response,
   ScoringStrategy,
 } from 'components/activities/types';
-import { getByIdUnsafe } from 'components/activities/common/authoring/utils';
 import {
-  createRuleForIds,
-  getResponse,
+  andRules,
   invertRule,
-} from 'components/activities/common/responses/authoring/responseUtils';
+  matchRule,
+} from 'components/activities/common/responses/authoring/rules';
+import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
+import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
+import { ID } from 'data/content/model';
+import { setDifference } from 'components/activities/common/utils';
 
-// Types
-export function isSimpleCATA(model: CATA): model is SimpleCATA {
-  return model.type === 'SimpleCATA';
-}
-export function isTargetedCATA(model: CATA): model is TargetedCATA {
-  return model.type === 'TargetedCATA';
-}
-
-// Choices
-export const getChoiceIds = ([choiceIds]: ChoiceIdsToResponseId) => choiceIds;
-export const getCorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.correct);
-export const getIncorrectChoiceIds = (model: CATA) => getChoiceIds(model.authoring.incorrect);
-export const getTargetedChoiceIds = (model: TargetedCATA) =>
-  model.authoring.targeted.map(getChoiceIds);
-export const isCorrectChoice = (model: CATA, choiceId: ChoiceId) =>
-  getCorrectChoiceIds(model).includes(choiceId);
-
-// Responses
-export const getResponseId = ([, responseId]: ChoiceIdsToResponseId) => responseId;
-export const getCorrectResponse = (model: CATA) =>
-  getResponse(model, getResponseId(model.authoring.correct));
-export const getIncorrectResponse = (model: CATA) =>
-  getResponse(model, getResponseId(model.authoring.incorrect));
-export const getTargetedResponses = (model: TargetedCATA) =>
-  model.authoring.targeted.map((assoc) => getResponse(model, getResponseId(assoc)));
-
-export interface ResponseMapping {
-  response: Response;
-  choiceIds: ChoiceId[];
-}
-export const getTargetedResponseMappings = (model: TargetedCATA): ResponseMapping[] =>
-  model.authoring.targeted.map((assoc) => ({
-    response: getResponse(model, getResponseId(assoc)),
-    choiceIds: getChoiceIds(assoc),
-  }));
+export const incorrectChoiceIds = (model: CATA) =>
+  model.choices.map((c) => c.id).filter((id) => !getCorrectChoiceIds(model).includes(id));
 
 // Model creation
-export const defaultCATAModel: () => CATA = () => {
+export const defaultCATAModel = (): CATA => {
   const correctChoice = makeChoice('Choice 1');
   const incorrectChoice = makeChoice('Choice 2');
 
   const correctResponse = makeResponse(
-    createRuleForIds([correctChoice.id], [incorrectChoice.id]),
+    createRuleForIdsCATA([correctChoice.id, incorrectChoice.id], [correctChoice.id]),
     1,
     '',
   );
-  const incorrectResponse = makeResponse(invertRule(correctResponse.rule), 0, '');
+  const incorrectResponse = makeResponse(matchRule('.*'), 0, '');
 
   return {
-    type: 'SimpleCATA',
     stem: makeStem(''),
     choices: [correctChoice, incorrectChoice],
     authoring: {
+      version: 2,
       parts: [
         {
           id: '1', // a only has one part, so it is safe to hardcode the id
@@ -85,9 +46,16 @@ export const defaultCATAModel: () => CATA = () => {
         },
       ],
       correct: [[correctChoice.id], correctResponse.id],
-      incorrect: [[incorrectChoice.id], incorrectResponse.id],
+      targeted: [],
       transformations: [makeTransformation('choices', Operation.shuffle)],
       previewText: '',
     },
   };
+};
+
+export const createRuleForIdsCATA = (allChoiceIds: ID[], toMatch: ID[]) => {
+  const notToMatch = setDifference(allChoiceIds, toMatch);
+  return andRules(
+    ...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))),
+  );
 };

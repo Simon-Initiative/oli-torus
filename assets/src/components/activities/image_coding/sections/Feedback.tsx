@@ -4,7 +4,8 @@ import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
 import { RichText, Feedback as FeedbackItem } from '../../types';
 import { Description } from 'components/misc/Description';
-import { IconCorrect, IconIncorrect } from 'components/misc/Icons';
+import { Checkmark } from 'components/misc/icons/Checkmark';
+import { Cross } from 'components/misc/icons/Cross';
 import { ProjectSlug } from 'data/types';
 
 interface FeedbackProps extends ModelEditorProps {
@@ -23,7 +24,7 @@ export const Item = (props: ItemProps) => {
   return (
     <div className="my-3" key={feedback.id}>
       <Description>
-        {score === 1 ? <IconCorrect /> : <IconIncorrect />}
+        {score === 1 ? <Checkmark /> : <Cross />}
         Feedback for {score === 1 ? 'Correct' : 'Incorrect'} Answer:
       </Description>
       <RichTextEditor

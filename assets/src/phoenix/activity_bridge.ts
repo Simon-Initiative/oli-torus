@@ -1,5 +1,10 @@
 import * as Persistence from 'data/persistence/activity';
-import { PartResponse, ActivityModelSchema, FeedbackAction, ClientEvaluation } from 'components/activities/types';
+import {
+  PartResponse,
+  ActivityModelSchema,
+  FeedbackAction,
+  ClientEvaluation,
+} from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
 import guid from 'utils/guid';
@@ -188,16 +193,22 @@ export const initPreviewActivityBridge = (elementId: string) => {
     const partInputs: PartResponse[] = e.detail.payload;
 
     Persistence.evaluate(props.model, partInputs).then((result: Persistence.Evaluated) => {
-      const actions: FeedbackAction[] = result.evaluations.map((e: any) => {
-        return {
-          type: 'FeedbackAction',
-          error: e.error,
-          attempt_guid: e.part_id,
-          out_of: e.result.out_of,
-          score: e.result.score,
-          feedback: e.feedback,
-        };
-      });
+      const actions: (FeedbackAction | { part_id: string; error: string })[] =
+        result.evaluations.map((e) => {
+          if ('error' in e) {
+            return {
+              part_id: e.part_id,
+              error: e.error,
+            };
+          }
+          return {
+            type: 'FeedbackAction',
+            attempt_guid: e.part_id,
+            out_of: e.result?.out_of,
+            score: e.result?.score,
+            feedback: e.feedback,
+          };
+        });
 
       continuation({ type: 'success', actions }, undefined);
     });
@@ -285,25 +296,21 @@ export const initPreviewActivityBridge = (elementId: string) => {
     false,
   );
 
-  div.addEventListener(
-    'submitEvaluations',
-    (e: any) => {
-      e.preventDefault();
-      e.stopPropagation();
+  div.addEventListener('submitEvaluations', (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-      const continuation: Continuation = e.detail.continuation;
-      const clientEvaluations: ClientEvaluation[] = e.detail.payload;
-      const evaluatedParts = clientEvaluations
-        .map((clientEval: any) => {
-          return {
-            type: 'EvaluatedPart',
-            out_of: clientEval.out_of,
-            score: clientEval.score,
-            feedback: clientEval.feedback,
-          };
-        });
+    const continuation: Continuation = e.detail.continuation;
+    const clientEvaluations: ClientEvaluation[] = e.detail.payload;
+    const evaluatedParts = clientEvaluations.map((clientEval: any) => {
+      return {
+        type: 'EvaluatedPart',
+        out_of: clientEval.out_of,
+        score: clientEval.score,
+        feedback: clientEval.feedback,
+      };
+    });
 
-      continuation({ type: 'success', actions: evaluatedParts }, undefined);
-    }
-  );
+    continuation({ type: 'success', actions: evaluatedParts }, undefined);
+  });
 };

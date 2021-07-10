@@ -13,66 +13,11 @@ import * as Persistence from 'data/persistence/activity';
 import guid from 'utils/guid';
 import { Popover } from 'react-tiny-popover';
 import { ActivityEditContext } from 'data/content/activity';
-import { modalActions } from 'actions/modal';
 import * as Immutable from 'immutable';
 
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
-
 import { classNames } from 'utils/classNames';
-import { ObjectiveSelection } from 'components/resource/ObjectiveSelection';
-import ModalSelection from 'components/modal/ModalSelection';
 
 type AddCallback = (content: ResourceContent, index: number, a?: ActivityEditContext) => void;
-
-const promptForObjectiveSelection = (
-  objectives: Immutable.List<Objective>,
-  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>,
-  onRegisterNewObjective: (title: string) => Promise<Objective>,
-) => {
-  return new Promise((resolve, reject) => {
-    const onRegister = (title: string): Promise<Objective> => {
-      return new Promise((inner, reject) => {
-        onRegisterNewObjective(title).then((objective) => {
-          dismiss();
-
-          resolve(
-            Immutable.List<ResourceId>([objective.id]),
-          );
-        });
-      });
-    };
-
-    const onUseSelected = (selected: Immutable.List<ResourceId>) => {
-      dismiss();
-      resolve(selected);
-    };
-
-    display(
-      <ModalSelection
-        title="Target learning objectives with this activity"
-        hideOkButton={true}
-        hideDialogCloseButton={true}
-        cancelLabel="Skip this step"
-        onInsert={() => {
-          dismiss();
-          resolve([]);
-        }}
-        onCancel={() => {
-          dismiss();
-          resolve([]);
-        }}
-      >
-        <ObjectiveSelection
-          objectives={objectives}
-          childrenObjectives={childrenObjectives}
-          onUseSelected={onUseSelected}
-          onRegisterNewObjective={onRegister}
-        />
-      </ModalSelection>,
-    );
-  });
-};
 
 // Component that presents a drop down to use to add structure
 // content or the any of the registered activities
@@ -94,15 +39,11 @@ export const AddResourceContent = ({
   editorMap,
   resourceContext,
   isLast,
-  objectives,
-  onRegisterNewObjective,
-  childrenObjectives,
 }: AddResourceContentProps) => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const handleAdd = (editorDesc: EditorDesc) => {
     let model: ActivityModelSchema;
-    let selectedObjectives: ResourceId[];
 
     invokeCreationFunc(editorDesc.slug, resourceContext)
       .then((createdModel) => {

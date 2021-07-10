@@ -117,7 +117,6 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
         <script>
           $('#section_registration_open').change(function() {
-            console.log(this)
             $('label[for="section_registration_open"]').text(this.checked ? 'Open' : 'Closed');
           });
         </script>

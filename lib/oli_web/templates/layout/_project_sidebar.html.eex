@@ -1,25 +1,57 @@
 <div class="workspace-sidebar">
-  <div class="container">
-    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
-  </div>
-  <div class="user">
-    <%= account_link @conn %>
-    <%= sidebar_link @conn, "Projects", :projects, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>
-  </div>
-  <p class="category">Create</p>
-  <%= sidebar_link @conn, "Overview", :overview, to: Routes.project_path(@conn, :overview, @project) %>
-  <%= sidebar_link @conn, "Objectives", :objectives, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>
-  <%= sidebar_link @conn, "Curriculum", :curriculum, to: Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>
 
-  <p class="category">Publish<p>
-  <%= sidebar_link @conn, "Review", :review, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>
-  <%= sidebar_link @conn, "Publish", :publish, to: Routes.project_path(@conn, :publish, @project) %>
+  <img src="/images/torus-icon.png" class="mb-3 ml-1 mt-2" height="50px" width="50px"/>
 
-  <p class="category">Improve</p>
-  <%= sidebar_link @conn, "Insights", :insights, to: Routes.project_path(@conn, :insights, @project) %>
+  <button type="button" class="btn btn-light" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
+    <i class="icon las la-project-diagram la" style="font-size: 32px;"></i>
+    <div class="label">Projects</div>
+  </button>
+
+  <div class="btn-group dropright hoverdriven">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-lightbulb la" style="font-size: 32px;"></i>
+      <div class="label">Create</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a>
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>">Objectives</a>
+      <a class="dropdown-item" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a>
+    </div>
+  </div>
+
+  <div class="btn-group dropright hoverdriven">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-plane-departure la" style="font-size: 32px;"></i>
+      <div class="label">Publish</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :publish, @project) %>">Publish</a>
+    </div>
+  </div>
+
+  <div class="btn-group dropright hoverdriven">
+    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <i class="icon las la-chart-bar la" style="font-size: 32px;"></i>
+      <div class="label">Improve</div>
+    </button>
+    <div class="dropdown-menu">
+      <a class="dropdown-item" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a>
+    </div>
+  </div>
 
   <%= if is_admin?(@conn) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
   <% end %>
 
 </div>
+
+<script>
+// Allows hovering to trigger a click, this is preferred over a CSS solution leveraging :hover
+// as that gets interferred with when a user clicks
+$(function() {
+  $('.hoverdriven').hover(function(e){
+    $(e.target, this).trigger('click');
+  });
+});
+</script>
