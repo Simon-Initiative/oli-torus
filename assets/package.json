@@ -11,7 +11,7 @@
     "build": "npm run clean && npm run lint && npm run test && npm run deploy",
     "clean": "del --force coverage/** ../priv/static",
     "lint": "eslint --quiet \"src/**/*.ts*\"",
-    "test": "jest",
+    "test": "jest && type-coverage",
     "test:watch": "jest --watch -o"
   },
   "dependencies": {
@@ -109,7 +109,13 @@
     "sass-loader": "^11.1.1",
     "ts-jest": "^26.5.4",
     "ts-loader": "^9.2.1",
+    "type-coverage": "^2.18.0",
     "webpack": "^5.36.0",
     "webpack-cli": "^4.7.0"
+  },
+  "typeCoverage": {
+    "atLeast": 84.5,
+    "detail": true,
+    "strict": true
   }
 }
