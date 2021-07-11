@@ -16,20 +16,20 @@ const classesForSeverity = {
 };
 // eslint-disable-next-line
 export class Message extends React.PureComponent<MessageProps, {}> {
-  nav: any;
+  nav: HTMLDivElement | null;
 
   constructor(props: MessageProps) {
     super(props);
   }
 
-  onDismiss(e: any) {
+  onDismiss(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
 
     this.props.dismissMessage(this.props.message);
   }
 
   componentDidMount() {
-    this.nav.scrollIntoView(true);
+    this.nav?.scrollIntoView(true);
   }
 
   renderMessageAction(message: Messages.Message, action: Messages.MessageAction) {

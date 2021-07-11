@@ -4,8 +4,6 @@ import { ProjectSlug } from 'data/types';
 import * as persistence from 'data/persistence/media';
 import { Maybe } from 'tsmonad';
 import { MediaItem, MediaRef } from 'types/media';
-// import * as messageActions from 'actions/messages';
-// import * as Messages from 'data/messages/messages';
 import guid from 'utils/guid';
 
 const MEDIA_PAGE_SIZE = 60;
@@ -138,7 +136,7 @@ export const fetchCourseMedia = (
         const items = List<MediaItem>(response.results);
 
         // check if the response is for the latest request
-        if ((getState() as any).media.lastReqId === reqId) {
+        if (getState().media.lastReqId === reqId) {
           // request is latest, update state
           dispatch(receiveMediaPage(courseId, items, response.totalResults));
           // dispatch(fetchMediaReferences(courseId) as any);
@@ -148,7 +146,7 @@ export const fetchCourseMedia = (
       }
       return Maybe.nothing<List<MediaItem>>();
     })
-    .catch((err) => {
+    .catch(() => {
       return Maybe.nothing<List<MediaItem>>();
     });
 };
@@ -161,10 +159,10 @@ export const fetchCourseMediaNextPage = (
   order?: string,
 ) => (dispatch: Dispatch, getState: () => State): Promise<Maybe<List<MediaItem>>> => {
   const limit = MEDIA_PAGE_SIZE;
-  const offset = (getState() as any).media.items.size || 0;
+  const offset = getState().media.items.size || 0;
 
   return dispatch(
-    fetchCourseMedia(courseId, offset, limit, mimeFilter, searchText, orderBy, order) as any,
+    fetchCourseMedia(courseId, offset, limit, mimeFilter, searchText, orderBy, order),
   );
 };
 
