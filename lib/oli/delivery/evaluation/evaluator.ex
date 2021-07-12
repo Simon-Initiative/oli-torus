@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.{EvaluationContext, Result}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
+  alias Oli.Activities.ParseUtils
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful
@@ -10,10 +11,12 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
     case Enum.reduce(part.responses, {context, nil, -1, -1}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
+        IO.inspect(feedback, label: "Feedback")
         {:ok, {feedback, %Result{score: score, out_of: out_of}}}
 
-      {_, nil, _, _} ->
-        {:error, "no matching response found"}
+      # No matching response found - mark incorrect
+      {_, nil, _, out_of} ->
+        {:ok, {ParseUtils.default_content_item("Incorrect"), %Result{score: 0, out_of: out_of}}}
     end
   end
 
