@@ -78,13 +78,6 @@ export const MultipleChoiceComponent: React.FC = () => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
-  migrateModelVersion(model: any): MCSchema {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
-      nothing: () => mcV1toV2(model),
-    });
-  }
-
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
