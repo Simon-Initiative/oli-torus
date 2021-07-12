@@ -6,6 +6,7 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
+  evalScript,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentActivityContent,
@@ -152,6 +153,8 @@ const DeckLayoutFooter: React.FC = () => {
       });
     });
 
+    console.log('PROCESS ACTIONS', actionsByType);
+
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
@@ -172,11 +175,17 @@ const DeckLayoutFooter: React.FC = () => {
           target: scopedTarget,
           operator: op.params.operator,
           value: op.params.value,
+          targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
       });
 
-      bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
+      console.log(
+        'SCORE IMMEDIATE AFTER',
+        evalScript('[{session.currentQuestionScore},{session.tutorialScore}]', defaultGlobalEnv),
+      );
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
