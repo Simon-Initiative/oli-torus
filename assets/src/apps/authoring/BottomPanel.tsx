@@ -27,7 +27,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       >
         <div className="aa-panel-inner">
           <div className="aa-panel-section-title-bar">
-            <div className="aa-panel-section-title">
+            <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
               <span className="ruleName">Correct</span>
             </div>

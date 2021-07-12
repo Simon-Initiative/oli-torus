@@ -94,12 +94,14 @@ const RightMenu: React.FC<any> = (props) => {
             </div>
           </div>
           <Accordion.Collapse eventKey="0">
-            <PropertyEditor
-              schema={lessonSchema}
-              uiSchema={lessonUiSchema}
-              value={lessonData}
-              onChangeHandler={lessonPropertyChangeHandler}
-            />
+            <div className="p-3">
+              <PropertyEditor
+                schema={lessonSchema}
+                uiSchema={lessonUiSchema}
+                value={lessonData}
+                onChangeHandler={lessonPropertyChangeHandler}
+              />
+            </div>
           </Accordion.Collapse>
         </Accordion>
         <Accordion className="aa-lesson-script-editor" defaultActiveKey="0">
@@ -110,26 +112,32 @@ const RightMenu: React.FC<any> = (props) => {
             </div>
           </div>
           <Accordion.Collapse eventKey="0">
-            <p>Property Editor for Variables and Custom Scripting</p>
+            <div className="p-3">
+              <p>Property Editor for Variables and Custom Scripting</p>
+            </div>
           </Accordion.Collapse>
         </Accordion>
       </Tab>
       <Tab eventKey="screen" title="Screen">
-        <PropertyEditor
-          schema={screenSchema}
-          uiSchema={screenUiSchema}
-          value={screenData}
-          onChangeHandler={screenPropertyChangeHandler}
-        />
+        <div className="p-3">
+          <PropertyEditor
+            schema={screenSchema}
+            uiSchema={screenUiSchema}
+            value={screenData}
+            onChangeHandler={screenPropertyChangeHandler}
+          />
+        </div>
       </Tab>
       <Tab eventKey="component" title="Component" disabled={!currentComponent}>
         {currentComponent && (
-          <PropertyEditor
-            schema={componentSchema}
-            uiSchema={{}}
-            value={currentComponent}
-            onChangeHandler={componentPropertyChangeHandler}
-          />
+          <div className="p-3">
+            <PropertyEditor
+              schema={componentSchema}
+              uiSchema={{}}
+              value={currentComponent}
+              onChangeHandler={componentPropertyChangeHandler}
+            />
+          </div>
         )}
       </Tab>
     </Tabs>
