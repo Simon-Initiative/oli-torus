@@ -176,9 +176,8 @@ $panel-section-title-bar-color: #e8ebed;
       font-size: 12px;
     }
     .rjsf {
-      .container-fluid>.row  {
+      .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color !important;
-
       }
     }
   }
@@ -217,7 +216,7 @@ $panel-section-title-bar-color: #e8ebed;
     height: $panel-section-title-bar-height;
     justify-content: space-between;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 16px 0 4px;
     // position: sticky;
     // top: 0;
     // z-index: 3;
@@ -292,20 +291,44 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-rules-list {
       border-radius: inherit;
       padding: 4px 0;
+      width: 100%;
+
+      .nested {
+        margin: 0;
+        padding: 0;
+
+        .aa-sequence-details-wrapper {
+          padding-left: 36px;
+        }
+      }
     }
     .aa-sequence-item,
     .aa-rules-list-item {
-      padding: 4px 16px;
+      padding: 0;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: baseline;
       z-index: unset;
 
+      &.is-parent {
+        flex-wrap: wrap;
+      }
+      .details {
+        flex-grow: 1;
+        flex: 1;
+      }
+      .title:hover {
+        cursor: pointer;
+      }
+      .collapse.show {
+        width: 100%;
+      }
       .aa-context-menu-trigger {
         visibility: hidden;
+        margin: 0 11px 0 16px;
 
         &:hover,
         &:focus {
@@ -313,40 +336,42 @@ $panel-section-title-bar-color: #e8ebed;
           visibility: visible;
         }
       }
-      &.active {
-        background-color: $primary;
+      .aa-sequence-details-wrapper {
+        display: flex;
+        flex-grow: 1;
+        padding: 2px 0;
+        padding-left: 27px;
+        align-items: center;
 
         &:hover,
         &:focus {
-          background-color: $primary;
-          cursor: default;
-        }
-        .aa-context-menu-trigger {
-          color: $white;
+          background-color: $panel-section-title-bar-color;
 
-          &:hover,
-          &:focus {
-            border: 1px solid darken($color: $primary, $amount: 8);
+          .aa-context-menu-trigger {
             visibility: visible;
           }
         }
       }
-      &:hover,
-      &:focus {
-        background-color: $panel-section-title-bar-color;
-        cursor: pointer;
+      &.active {
+        color: inherit;
 
-        .aa-context-menu-trigger {
-          visibility: visible;
+        & > .aa-sequence-details-wrapper {
+          color: $white;
+          background-color: $primary;
+
+          .aa-sequence-item-toggle {
+            color: $white;
+          }
+          .aa-context-menu-trigger {
+            color: $white;
+          }
         }
       }
-      &:focus-within {
-        .aa-context-menu-trigger {
-          visibility: visible;
-        }
+      .aa-sequence-item-toggle {
+        vertical-align: baseline;
+        margin-left: -22px;
       }
     }
-
     .dropdown-toggle:after {
       display: none;
     }
