@@ -8,13 +8,16 @@ import { GroupsSlice, upsertGroup } from '../../../../../../delivery/store/featu
 
 export const addSequenceItem = createAsyncThunk(
   `${GroupsSlice}/addSequenceItem`,
-  async (payload: {
-      sequence?: SequenceEntry<SequenceEntryChild>[],
-      group?: any,
-      item?: SequenceHierarchyItem<SequenceEntryChild>,
-      parentId?: string,
-      siblingId?: string,
-    }, { dispatch }) => {
+  async (
+    payload: {
+      sequence?: any[];
+      group?: any;
+      item?: any;
+      parentId?: number | string;
+      siblingId?: number | string;
+    },
+    { dispatch },
+  ) => {
     const {
       sequence = [],
       group = {},
