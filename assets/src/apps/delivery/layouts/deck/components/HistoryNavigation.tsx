@@ -8,6 +8,7 @@ import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
+import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
@@ -53,11 +54,21 @@ const HistoryNavigation: React.FC = () => {
   const isLast = currentHistoryActivityIndex === 0;
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyNavigationActivityId: prevActivity.id,
+      }),
+    );
     dispatch(navigateToActivity(prevActivity.id));
   };
 
   const prevHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyNavigationActivityId: prevActivity.id,
+      }),
+    );
     dispatch(navigateToActivity(prevActivity.id));
   };
   return (

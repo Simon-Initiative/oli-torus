@@ -35,6 +35,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
+      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (e: any) => {

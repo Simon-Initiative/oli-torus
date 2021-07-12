@@ -171,12 +171,16 @@ const Video: React.FC<any> = (props) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
+      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
         /* console.log(`${notificationType.toString()} notification handled [Video]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.HISTORY_NAVIGATION:
             // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
@@ -247,7 +251,8 @@ const Video: React.FC<any> = (props) => {
     zIndex: z,
   };
 
-  const youtubeRegex = /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch|v|embed)(?:\.php)?(?:\?.*v=|\/))([a-zA-Z0-9_-]+)/;
+  const youtubeRegex =
+    /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch|v|embed)(?:\.php)?(?:\?.*v=|\/))([a-zA-Z0-9_-]+)/;
 
   let finalSrc = src;
   let videoId = src;

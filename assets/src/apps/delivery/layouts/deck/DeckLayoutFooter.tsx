@@ -32,7 +32,7 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectPageContent } from '../../store/features/page/slice';
+import { selectEnableHistory, selectPageContent } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -105,7 +105,7 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-
+  const isHistoryModeOn = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
 
@@ -249,7 +249,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.enableHistory) {
+      if (currentPage.custom?.advancedAuthoring && !isHistoryModeOn) {
         dispatch(triggerCheck({ activityId: currentActivity.id }));
       } else if (
         !isGoodFeedback &&
@@ -403,7 +403,7 @@ const DeckLayoutFooter: React.FC = () => {
               </button>
             </div>
             <style type="text/css" aria-hidden="true" />
-            <div className="content" style={{overflow:'hidden auto !important'}}>
+            <div className="content" style={{ overflow: 'hidden auto !important' }}>
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}

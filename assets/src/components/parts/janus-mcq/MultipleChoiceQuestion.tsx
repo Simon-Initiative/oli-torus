@@ -6,12 +6,12 @@ import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
-  subscribeToNotification
+  subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import {
   JanusMultipleChoiceQuestionItemProperties,
-  JanusMultipleChoiceQuestionProperties
+  JanusMultipleChoiceQuestionProperties,
 } from './MultipleChoiceQuestionType';
 
 // SS assumes the unstyled "text" of the label is the text value
@@ -312,6 +312,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
+      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -322,6 +323,9 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
             break;
           case NotificationType.CHECK_COMPLETE:
             // if disabled above then re-enable now
+            break;
+          case NotificationType.HISTORY_NAVIGATION:
+            // nothing to do
             break;
           case NotificationType.STATE_CHANGED:
             {
@@ -430,11 +434,14 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     // trigger item selection handler
     if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0) {
       /* console.log('handling MCQ single select'); */
-      handleItemSelection({
-        value: selectedChoice,
-        textValue: selectedChoiceText,
-        checked: true,
-      }, false);
+      handleItemSelection(
+        {
+          value: selectedChoice,
+          textValue: selectedChoiceText,
+          checked: true,
+        },
+        false,
+      );
     }
   }, [selectedChoice]);
 
@@ -452,25 +459,31 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     ) {
       /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
-        handleItemSelection({
-          value: option.value,
-          textValue: option.textValue,
-          checked: selectedChoices.includes(option.value),
-        }, false);
+        handleItemSelection(
+          {
+            value: option.value,
+            textValue: option.textValue,
+            checked: selectedChoices.includes(option.value),
+          },
+          false,
+        );
       });
     }
   }, [selectedChoices]);
 
-  const handleItemSelection = ({
-    value,
-    textValue,
-    checked,
-  }: {
-    value: number;
-    textValue: string;
-    checked: boolean;
-  }, shouldSave = true) => {
-   /*  console.log('mcq handle select'); */
+  const handleItemSelection = (
+    {
+      value,
+      textValue,
+      checked,
+    }: {
+      value: number;
+      textValue: string;
+      checked: boolean;
+    },
+    shouldSave = true,
+  ) => {
+    /*  console.log('mcq handle select'); */
     // TODO: non-number values?? - pb: I suspect not, since there's no SS ability to specify a value for an item
     const newChoice = parseInt(value.toString(), 10);
     let newCount = 1;

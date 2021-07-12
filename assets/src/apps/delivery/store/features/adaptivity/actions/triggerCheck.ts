@@ -195,21 +195,20 @@ export const triggerCheck = createAsyncThunk(
       const partResponses: PartResponse[] =
         currentAttempt?.parts.map(({ partId, attemptGuid, response }) => {
           // doing in reverse so that the layer's choice is the last one
-          const combinedResponse = currentActivityTreeAttempts.reverse().reduce(
-            (collect: any, attempt: any) => {
+          const combinedResponse = currentActivityTreeAttempts
+            .reverse()
+            .reduce((collect: any, attempt: any) => {
               const part = attempt.parts.find((p: any) => p.partId === partId);
               if (part) {
                 /* if (partId === 'orrery') {
                   console.log('collecting parts:', { part, attempt, response, pr: part.response });
                 } */
                 if (part.response) {
-                  collect = {...collect, ...part.response};
+                  collect = { ...collect, ...part.response };
                 }
               }
               return collect;
-            },
-            {},
-          );
+            }, {});
           const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
           // response should be wrapped in input, but only once
           /* const input_response = response?.input ? response : { input: response }; */
@@ -225,6 +224,8 @@ export const triggerCheck = createAsyncThunk(
       );
       /* console.log('EVAL RESULT', { evalResult }); */
       checkResult = (evalResult.result as any).actions;
+      console.log({ result: checkResult });
+
       isCorrect = checkResult.every((action: any) => action.params.correct);
     }
 
