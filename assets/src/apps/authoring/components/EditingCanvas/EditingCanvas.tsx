@@ -18,8 +18,7 @@ const EditingCanvas: React.FC<any> = (props) => {
   const items = currentActivityTree?.reduce((acc, activity) => {
     // TODO: map these items to a new object that has a few more things
     // such as layer items should be readonly
-    acc.push(...activity.content.partsLayout);
-    return acc;
+    return acc.concat(...activity.content.partsLayout);;
   }, []) || [];
 
   return (
