@@ -6,6 +6,14 @@
 
 ### Enhancements
 
+## 0.12.1 (2021-07-12)
+
+### Bug Fixes
+
+- Fix an issue where activities do not render correctly in delivery mode
+
+### Enhancements
+
 ## 0.12.0 (2021-07-12)
 
 ### Bug fixes
