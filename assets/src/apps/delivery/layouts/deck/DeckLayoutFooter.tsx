@@ -6,7 +6,6 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
-  evalScript,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentActivityContent,
@@ -15,15 +14,15 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
-  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
+  selectLessonEnd,
   selectNextActivityId,
   setCurrentFeedbacks,
   setIsGoodFeedback,
-  setNextActivityId,
   setMutationTriggered,
+  setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -153,8 +152,6 @@ const DeckLayoutFooter: React.FC = () => {
       });
     });
 
-    console.log('PROCESS ACTIONS', actionsByType);
-
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
 
@@ -181,11 +178,8 @@ const DeckLayoutFooter: React.FC = () => {
       });
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      // should respond to scripting errors?
       console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
-      console.log(
-        'SCORE IMMEDIATE AFTER',
-        evalScript('[{session.currentQuestionScore},{session.tutorialScore}]', defaultGlobalEnv),
-      );
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
