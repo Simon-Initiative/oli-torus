@@ -1,12 +1,19 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-const Image: React.FC<any> = (props) => {
+import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+
+interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
+  src: string;
+  alt: string;
+}
+
+const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
@@ -107,8 +114,7 @@ const Image: React.FC<any> = (props) => {
 
   return ready ? (
     <img
-      // eslint-disable-next-line
-      data-janus-type={props.type}
+      data-janus-type={tagName}
       alt={alt}
       src={src}
       className={customCssClass}
@@ -118,7 +124,5 @@ const Image: React.FC<any> = (props) => {
 };
 
 export const tagName = 'janus-image';
-
-// TODO: redo web component
 
 export default Image;

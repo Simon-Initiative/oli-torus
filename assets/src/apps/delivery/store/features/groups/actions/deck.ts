@@ -159,7 +159,7 @@ export const initializeActivity = createAsyncThunk(
     }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
-    const initState = currentActivity?.content.custom?.facts || [];
+    const initState = currentActivity?.content?.custom?.facts || [];
     const globalizedInitState = initState.map((s: any) => {
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };

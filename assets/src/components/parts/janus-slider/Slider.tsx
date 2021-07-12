@@ -5,9 +5,25 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import {
+  JanusAbsolutePositioned,
+  JanusCustomCss,
+  PartComponentProps,
+} from '../types/parts';
 import './Slider.scss';
-// TODO: fix typing
-const Slider: React.FC<any> = (props) => {
+
+interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
+  label: string;
+  maximum: number;
+  minimum: number;
+  snapInterval: number;
+  showDataTip: boolean;
+  showValueLabels: boolean;
+  showLabel: boolean;
+  invertScale: boolean;
+}
+
+const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

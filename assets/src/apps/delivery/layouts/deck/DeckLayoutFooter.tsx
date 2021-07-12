@@ -132,7 +132,7 @@ const DeckLayoutFooter: React.FC = () => {
     const isCorrect = lastCheckResults.results.every((r: any) => r.params.correct);
 
     // depending on combineFeedback value is whether we should address more than one event
-    const combineFeedback = !!currentActivity.custom.combineFeedback;
+    const combineFeedback = !!currentActivity?.custom.combineFeedback;
 
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
@@ -250,7 +250,7 @@ const DeckLayoutFooter: React.FC = () => {
       displayFeedbackIcon
     ) {
       if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.enableHistory) {
-        dispatch(triggerCheck({ activityId: currentActivity.id }));
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&
         nextActivityId?.trim().length &&
@@ -281,7 +281,7 @@ const DeckLayoutFooter: React.FC = () => {
       );
       dispatch(setNextActivityId({ nextActivityId: '' }));
     } else {
-      dispatch(triggerCheck({ activityId: currentActivityId }));
+      dispatch(triggerCheck({ activityId: currentActivityId as string }));
     }
   };
 
@@ -403,7 +403,7 @@ const DeckLayoutFooter: React.FC = () => {
               </button>
             </div>
             <style type="text/css" aria-hidden="true" />
-            <div className="content" style={{overflow:'hidden auto !important'}}>
+            <div className="content" style={{ overflow: 'hidden auto !important' }}>
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}

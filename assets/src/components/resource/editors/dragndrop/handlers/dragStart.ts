@@ -34,6 +34,6 @@ export const dragStartHandler = (
   // ensure that all dom nodes that existed when the drag began still exist throughout
   // the entire event. This set timeout ensures this correct order of operations
   setTimeout(() => {
-    setActiveDragId(contentItem.id);
+    setActiveDragId(contentItem.id as string);
   });
 };

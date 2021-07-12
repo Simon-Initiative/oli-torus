@@ -2,7 +2,7 @@ export interface CustomProperties {
   $schema?: string;
   [key: string]: any;
 }
-export interface JanusCustomCssActivity extends CustomProperties {
+export interface JanusCustomCss extends CustomProperties {
   customCssClass?: string;
 }
 
@@ -19,4 +19,16 @@ export interface CapiVariable {
   key: string;
   type: number;
   value: any;
+}
+
+export interface PartComponentProps<T extends CustomProperties> {
+  id: string;
+  type: string;
+  model: T;
+  state: any;
+  notify?: any;
+  onInit: (payload: any) => Promise<any>;
+  onReady: (payload: any) => Promise<any>;
+  onSave: (payload: any) => Promise<any>;
+  onSubmit: (payload: any) => Promise<any>;
 }

@@ -1,20 +1,31 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import YouTube from 'react-youtube';
+import YouTube, { Options } from 'react-youtube';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-// TODO: fix typing
-const Video: React.FC<any> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+import { PartComponentProps, JanusAbsolutePositioned } from '../types/parts';
+
+interface VideoModel extends JanusAbsolutePositioned {
+  src: string;
+  triggerCheck: boolean;
+  autoPlay?: boolean;
+  startTime?: number;
+  endTime?: number;
+  enableReplay?: boolean;
+  subtitles?: string;
+}
+
+const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
+  const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
+  const [model, setModel] = useState<any>(typeof props.model === 'string' ? {} : props.model);
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
   const [videoIsPlayerStarted, setVideoIsPlayerStarted] = useState(false);
-  const [videoIsCompleted, setVideoIsCompleted] = useState(false);
+  const [_videoIsCompleted, setVideoIsCompleted] = useState(false);
   const [videoAutoPlay, setVideoAutoPlay] = useState(false);
   const [videoEnableReplay, setVideoEnableReplay] = useState(true);
   const [cssClass, setCssClass] = useState('');
@@ -228,8 +239,6 @@ const Video: React.FC<any> = (props) => {
     width,
     height,
     src,
-    alt,
-    customCssClass,
     triggerCheck,
     autoPlay = false,
     startTime,
@@ -247,17 +256,18 @@ const Video: React.FC<any> = (props) => {
     zIndex: z,
   };
 
-  const youtubeRegex = /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch|v|embed)(?:\.php)?(?:\?.*v=|\/))([a-zA-Z0-9_-]+)/;
+  const youtubeRegex =
+    /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch|v|embed)(?:\.php)?(?:\?.*v=|\/))([a-zA-Z0-9_-]+)/;
 
   let finalSrc = src;
   let videoId = src;
   let isYoutubeSrc = false;
 
-  const getYoutubeId = (url: any) => {
+  const getYoutubeId = (url: string) => {
     const match = url.match(youtubeRegex);
     return match && match[1].length == 11 ? match[1] : false;
   };
-  const youtubeOpts: any = {
+  const youtubeOpts: Options = {
     width: width?.toString(),
     height: height?.toString(),
     playerVars: {
@@ -332,19 +342,19 @@ const Video: React.FC<any> = (props) => {
   };
   const saveState = ({
     isVideoPlayerStarted,
-    currentTime,
-    duration,
+    currentTime = '0',
+    duration = '0',
     isVideoCompleted,
     videoState,
   }: {
     isVideoPlayerStarted: boolean;
-    currentTime: any;
-    duration: any;
+    currentTime: string;
+    duration: string;
     isVideoCompleted: boolean;
     videoState: string;
   }) => {
-    const currentVideoTime = parseFloat(currentTime || 0);
-    const videoDuration = parseFloat(duration || 0);
+    const currentVideoTime = parseFloat(currentTime);
+    const videoDuration = parseFloat(duration);
     const exposureInPercentage = (currentVideoTime / videoDuration) * 100;
     props.onSave({
       id: `${id}`,
@@ -438,7 +448,7 @@ const Video: React.FC<any> = (props) => {
       <source src={src} />
       {subtitles &&
         subtitles.length > 0 &&
-        subtitles.map((subtitle: any) => {
+        subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
           const defaults = subtitles.length === 1 ? true : subtitle.default;
           return (
             <track
