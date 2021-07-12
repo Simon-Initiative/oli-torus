@@ -240,7 +240,7 @@ const SequenceEditor: React.FC<any> = (props) => {
             <div
               id={`sequence-add-contextMenu`}
               className="dropdown-menu"
-              aria-labelledby={`sequence-add-contextMenu`}
+              aria-labelledby="sequence-add-contextMenu"
             >
               <button
                 className="dropdown-item"
