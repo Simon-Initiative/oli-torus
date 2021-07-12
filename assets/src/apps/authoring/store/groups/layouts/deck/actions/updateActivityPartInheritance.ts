@@ -25,7 +25,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
       /* console.log('LINEAGE: ', { lineage, child }); */
       const combinedParts = lineage.reduce((collect: any, sequenceEntry) => {
         // load the activity record
-        const activity = selectActivityById(rootState, sequenceEntry.resourceId as number);
+        const activity = selectActivityById(rootState, sequenceEntry.resourceId!);
         if (!activity) {
           // this is really an error
           return;
