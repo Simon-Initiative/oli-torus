@@ -455,13 +455,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     );
   }, [currentActivityTree]);
 
+  const score = evalScript('session.tutorialScore', defaultGlobalEnv).result || 0;
+
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
         pageName={pageTitle}
         userName={currentUserName}
-        activityName="TODO: (Activity Name)"
-        scoreValue={0}
+        activityName=""
+        scoreValue={score}
         showScore={true}
         themeId={pageContent?.custom?.themeId}
       />
