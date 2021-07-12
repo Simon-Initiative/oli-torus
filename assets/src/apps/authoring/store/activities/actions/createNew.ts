@@ -63,7 +63,7 @@ export const createNew = createAsyncThunk(
       },
     };
 
-    activity.model.authoring.parts = activity.model.partsLayout.map((part: any) => ({
+    activity.model.authoring.parts = activity.model.partsLayout.map((part: {id: string}) => ({
       id: part.id,
     }));
 
