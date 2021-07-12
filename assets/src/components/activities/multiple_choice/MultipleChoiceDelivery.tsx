@@ -47,8 +47,6 @@ export const MultipleChoiceComponent: React.FC = () => {
     return null;
   }
 
-  console.log('activityState', activityState);
-
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
