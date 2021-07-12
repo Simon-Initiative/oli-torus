@@ -82,6 +82,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       #{blacklisted}(revisions.resource_type_id = #{activity_type_id})
       AND (published_resources.publication_id = #{publication_id})
       AND (revisions.scope = 'banked')
+      AND (revisions.deleted = false)
       """
     )
   end
@@ -95,8 +96,14 @@ defmodule Oli.Activities.Realizer.Query.Builder do
   end
 
   defp where(context, %Logic{conditions: conditions}) do
-    {fragments, context} = build_where(conditions, context)
-    Map.put(context, :logic, IO.iodata_to_binary(fragments))
+    case conditions do
+      nil ->
+        Map.put(context, :logic, "1 = 1")
+
+      _ ->
+        {fragments, context} = build_where(conditions, context)
+        Map.put(context, :logic, IO.iodata_to_binary(fragments))
+    end
   end
 
   defp lateral_join(context) do
