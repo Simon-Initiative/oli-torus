@@ -238,7 +238,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               <i className="fa fa-plus" />
             </button>
             <div
-              id={`sequence-add-contextMenu`}
+              id="sequence-add-contextMenu"
               className="dropdown-menu"
               aria-labelledby="sequence-add-contextMenu"
             >

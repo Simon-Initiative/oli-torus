@@ -5,7 +5,7 @@ import { createSimpleText } from '../templates/simpleText';
 
 export const createFeedback = createAsyncThunk(
   `${ActivitiesSlice}/createFeedback`,
-  async (payload: any) => {
+  async (payload: { msg?: string }) => {
     const { msg = 'Incorrect, please try again.' } = payload;
 
     // feedback has a similar model to an activity but is *not* an activity

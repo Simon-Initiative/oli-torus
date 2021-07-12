@@ -8,7 +8,13 @@ import { GroupsSlice, upsertGroup } from '../../../../../../delivery/store/featu
 
 export const addSequenceItem = createAsyncThunk(
   `${GroupsSlice}/addSequenceItem`,
-  async (payload: any, { dispatch, getState }) => {
+  async (payload: {
+      sequence?: SequenceEntry<SequenceEntryChild>[],
+      group?: any,
+      item?: SequenceHierarchyItem<SequenceEntryChild>,
+      parentId?: string,
+      siblingId?: string,
+    }, { dispatch }) => {
     const {
       sequence = [],
       group = {},
@@ -38,7 +44,7 @@ export const addSequenceItem = createAsyncThunk(
             (entry) => entry.activity_id === siblingId,
           );
           if (siblingEntryIndex < 0) {
-            console.warn(`couldnt find sibling ${siblingId}, shouldn't be possible`);
+            console.warn(`couldn't find sibling ${siblingId}, shouldn't be possible`);
             // just push at the end then
             parentInHierarchy.children.push(item);
           } else {
@@ -54,7 +60,7 @@ export const addSequenceItem = createAsyncThunk(
       if (siblingId) {
         const siblingEntryIndex = sequenceItems.findIndex((entry) => entry.id === siblingId);
         if (siblingEntryIndex < 0) {
-          console.warn(`couldnt find sibling ${siblingId}, shouldn't be possible`);
+          console.warn(`couldn't find sibling ${siblingId}, shouldn't be possible`);
           // just push at the end then
           sequenceItems.push(item);
         } else {
