@@ -84,13 +84,6 @@ export const OrderingComponent: React.FC = () => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class OrderingDelivery extends DeliveryElement<OrderingSchema> {
-  migrateModelVersion(model: any): OrderingSchema {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
-      nothing: () => orderingV1toV2(model),
-    });
-  }
-
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OrderingSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(

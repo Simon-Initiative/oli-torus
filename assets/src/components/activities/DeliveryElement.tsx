@@ -173,7 +173,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   props(): DeliveryElementProps<T> {
-    const model = this.migrateModelVersion(JSON.parse(this.getAttribute('model') as any));
+    const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
@@ -202,10 +202,6 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       userId,
       notify: this._notify,
     };
-  }
-
-  migrateModelVersion(model: any): T {
-    return model as T;
   }
 
   details(
