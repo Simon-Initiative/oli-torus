@@ -38,6 +38,10 @@ const lessonSchema = {
         },
       },
     },
+    enableHistory: {
+      title: 'Enable History',
+      type: 'boolean'
+    },
     ScoreOverview: {
       type: 'object',
       properties: {
@@ -97,6 +101,10 @@ export const transformModelToSchema = (model: any) => {
     },
     title: model.title,
     customCSS: model.customCss,
+    enableHistory:
+      model.custom.allowNavigation ||
+      model.custom.enableHistory ||
+      false
   };
 };
 
@@ -111,6 +119,7 @@ export const transformSchemaToModel = (schema: any) => {
       defaultScreenHeight: schema.Size.height,
       enableLessonMax: schema.ScoreOverview.enableLessonMax,
       lessonMax: schema.ScoreOverview.lessonMax,
+      enableHistory: schema.enableHistory
     },
     additionalStylesheets,
     title: schema.title,
