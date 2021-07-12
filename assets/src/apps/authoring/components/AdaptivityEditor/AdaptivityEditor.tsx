@@ -1,5 +1,5 @@
 import React from 'react';
-import { Accordion, Card, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
@@ -7,7 +7,7 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 const AdaptivityEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   /* console.log('CA', { currentActivity }); */
-  const rules = currentActivity?.model.authoring.rules || [];
+  const rules = currentActivity?.authoring.rules || [];
 
   return (
     <Accordion className="aa-adaptivity-rules" defaultActiveKey="0">

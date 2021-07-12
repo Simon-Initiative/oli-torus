@@ -1,6 +1,6 @@
-import { JanusAbsolutePositioned, JanusCustomCssActivity } from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export interface JanusImageProperties extends JanusCustomCssActivity, JanusAbsolutePositioned {
+export interface JanusImageProperties extends JanusCustomCss, JanusAbsolutePositioned {
   src: string;
   alt?: string;
   scaleContent?: boolean;
@@ -11,7 +11,7 @@ export enum JanusCarouselModes {
   STUDENT = 'Student',
   CONFIG = 'Config',
 }
-export interface JanusCarouselProperties extends JanusCustomCssActivity, JanusAbsolutePositioned {
+export interface JanusCarouselProperties extends JanusCustomCss, JanusAbsolutePositioned {
   title?: string;
   id: string;
   cssClasses?: string;

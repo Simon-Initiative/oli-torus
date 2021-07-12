@@ -1,7 +1,7 @@
 // Factory for creating top level editors, for things like structured
 
 import React from 'react';
-import { ResourceContent, ResourceContext, ResourceType } from 'data/content/resource';
+import { ActivityReference, ResourceContent, ResourceContext, ResourceType } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { EditorDesc } from 'data/content/editors';
 import { ContentBlock } from './ContentBlock';
@@ -61,7 +61,7 @@ export const createEditor = (
     );
   }
 
-  const activity = activities.get(content.activitySlug);
+  const activity = activities.get((content as ActivityReference).activitySlug);
 
   if (activity !== undefined) {
     const previewText = activity.model.authoring?.previewText;
