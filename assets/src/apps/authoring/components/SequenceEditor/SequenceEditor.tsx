@@ -5,6 +5,7 @@ import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import { upsertActivity } from '../../../delivery/store/features/activities/slice';
 import {
+  getHierarchy,
   SequenceEntry,
   SequenceEntryChild,
 } from '../../../delivery/store/features/groups/actions/sequence';
@@ -24,7 +25,8 @@ const SequenceEditor: React.FC<any> = (props) => {
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
 
-  const handleItemClick = (entry: SequenceEntry<SequenceEntryChild>) => {
+  const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
+    e.stopPropagation();
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
   };
 
@@ -84,7 +86,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     const { id } = props;
 
     return (
-      <div className="dropdown">
+      <div className="dropdown aa-sequence-item-context-menu">
         <button
           className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
           type="button"
@@ -210,6 +212,41 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
+  const hierarchy = getHierarchy(sequence);
+  const getHierarchyList = (items: any) =>
+    items.map((item: any, index: number) => {
+      const title = item.custom?.sequenceName || item.id;
+      return (
+        <Accordion key={`${index}`}>
+          <ListGroup.Item
+            as="li"
+            className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
+            key={`${item.custom.sequenceId}`}
+            active={item.custom.sequenceId === currentSequenceId}
+            onClick={(e) => handleItemClick(e, item)}
+            tabIndex={0}
+          >
+            <div className="aa-sequence-details-wrapper">
+              <div className="details">
+                {item.children.length ? (
+                  <ContextAwareToggle eventKey={`${index}`} className={`aa-sequence-item-toggle`} />
+                ) : null}
+                <span className="title">{title}</span>
+              </div>
+              <SequenceItemContextMenu id={item.activitySlug} />
+            </div>
+            {item.children.length ? (
+              <Accordion.Collapse eventKey={`${index}`}>
+                <ListGroup as="ol" className="aa-sequence nested">
+                  {getHierarchyList(item.children)}
+                </ListGroup>
+              </Accordion.Collapse>
+            ) : null}
+          </ListGroup.Item>
+        </Accordion>
+      );
+    });
+
   return (
     <Accordion className="aa-sequence-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
@@ -264,19 +301,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup as="ol" className="aa-sequence">
-          {sequence.map((entry, index) => (
-            <ListGroup.Item
-              as="li"
-              className="aa-sequence-item"
-              key={entry.custom.sequenceId}
-              active={entry.custom.sequenceId === currentSequenceId}
-              onClick={() => handleItemClick(entry)}
-              tabIndex={0}
-            >
-              {entry.custom.sequenceName}
-              <SequenceItemContextMenu id={entry.activitySlug} />
-            </ListGroup.Item>
-          ))}
+          {getHierarchyList(hierarchy)}
         </ListGroup>
       </Accordion.Collapse>
     </Accordion>
