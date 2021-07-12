@@ -328,6 +328,29 @@ defmodule Oli.Accounts do
     end
   end
 
+  def can_access_via_slug?(author, project_slug) do
+    admin_role_id = SystemRole.role_id().admin
+
+    case author do
+      # Admin authors have access to every project
+      %{system_role_id: ^admin_role_id} ->
+        true
+
+      # querying join table rather than author's project associations list
+      # in case the author has many projects
+      _ ->
+        Repo.one(
+          from assoc in "authors_projects",
+            join: p in "projects",
+            on: assoc.project_id == p.id,
+            where:
+              assoc.author_id == ^author.id and
+                p.slug == ^project_slug,
+            select: count(assoc)
+        ) != 0
+    end
+  end
+
   def project_author_count(project) do
     Repo.one(
       from assoc in "authors_projects",
