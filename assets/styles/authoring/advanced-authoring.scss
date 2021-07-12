@@ -162,7 +162,6 @@ $panel-section-title-bar-color: #e8ebed;
     color: $panel-font-color-light;
 
     .tab-content {
-      padding: 16px;
       font-size: 12px;
     }
     .form-group {
@@ -248,7 +247,7 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-add-button {
       position: sticky;
       top: 55px;
-      height: fit-content;
+      height: max-content;
     }
     .aa-condition {
       &:first-of-type {
