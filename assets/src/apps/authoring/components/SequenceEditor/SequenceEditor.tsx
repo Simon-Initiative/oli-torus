@@ -230,7 +230,7 @@ const SequenceEditor: React.FC<any> = (props) => {
             <button
               className="dropdown-toggle btn btn-link p-0"
               type="button"
-              id={`sequence-add`}
+              id="sequence-add"
               data-toggle="dropdown"
               aria-haspopup="true"
               aria-expanded="false"
