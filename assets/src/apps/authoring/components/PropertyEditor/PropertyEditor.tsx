@@ -14,6 +14,7 @@ interface PropertyEditorProps {
 const widgets = {
   CheckboxWidget: CustomCheckbox,
 };
+
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
   schema,
   uiSchema,

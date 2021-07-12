@@ -21,8 +21,8 @@ export const getDragPayload = (
   if (contentItem.type === 'content') {
     return contentItem;
   }
-  if (activities.has(contentItem.activitySlug)) {
-    const activity = activities.get(contentItem.activitySlug);
+  if (activities.has((contentItem as ActivityReference).activitySlug)) {
+    const activity = activities.get((contentItem as ActivityReference).activitySlug);
     return {
       type: 'ActivityPayload',
       id: contentItem.id,

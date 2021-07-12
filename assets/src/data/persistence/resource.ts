@@ -9,7 +9,8 @@ export type ResourceUpdate = {
   releaseLock: boolean;
 };
 
-export type Edited = { type: 'success'; revisionSlug: string };
+// TODO: server responding with revision_slug instead of revisionSlug as expected
+export type Edited = { type: 'success'; revisionSlug: string; revision_slug?: string };
 
 export function edit(
   project: ProjectSlug,
