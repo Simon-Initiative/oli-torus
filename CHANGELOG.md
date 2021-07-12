@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+### Enhancements
+
+## 0.12.0 (2021-07-12)
+
 ### Bug fixes
 
 - Fix an issue with image coding activity in preview
@@ -14,6 +20,7 @@
 - Merge activity editing into the page editor
 - Redesign the workspace header to include view title, help and user icons
 - Clearly separate the hierarchy navigation and page editing links in curriculum editor
+- Implement smaller sized left hand navigation pane
 
 ## 0.11.1 (2021-6-16)
 
