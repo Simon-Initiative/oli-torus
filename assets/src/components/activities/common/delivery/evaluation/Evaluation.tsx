@@ -27,8 +27,6 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     resultClass = 'incorrect';
   }
 
-  console.log('evaluation', parts[0], error, feedback);
-
   return (
     <div aria-label="result" className={`evaluation feedback ${resultClass} my-1`}>
       <div className="result">
