@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+### Enhancements
+
+## 0.12.0 (2021-07-12)
+
 ### Bug fixes
 
 - Fix an issue with image coding activity in preview
