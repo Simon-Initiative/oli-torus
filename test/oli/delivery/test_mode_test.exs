@@ -108,7 +108,9 @@ defmodule Oli.Delivery.TestModeTest do
 
       assert {:ok,
               [
-                %{part_id: "1", error: "error in evaluation"},
+                # Finding no matching response marks the answer as incorrect
+                # with out_of being the highest of any response considered
+                %{part_id: "1", result: %{score: 0, out_of: 10}, feedback: _},
                 %{part_id: "2", result: _, feedback: _}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end

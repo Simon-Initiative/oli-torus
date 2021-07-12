@@ -11,12 +11,14 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
     case Enum.reduce(part.responses, {context, nil, -1, -1}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
-        IO.inspect(feedback, label: "Feedback")
         {:ok, {feedback, %Result{score: score, out_of: out_of}}}
 
       # No matching response found - mark incorrect
       {_, nil, _, out_of} ->
         {:ok, {ParseUtils.default_content_item("Incorrect"), %Result{score: 0, out_of: out_of}}}
+
+      _ ->
+        {:error, "Error in evaluation"}
     end
   end
 
