@@ -1,6 +1,6 @@
-import { JanusAbsolutePositioned, JanusCustomCssActivity } from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export interface JanusFillBlanksProperties extends JanusCustomCssActivity, JanusAbsolutePositioned {
+export interface JanusFillBlanksProperties extends JanusCustomCss, JanusAbsolutePositioned {
   customCss?: string;
   showOnAnswersReport?: boolean;
   requireManualGrading?: boolean;
