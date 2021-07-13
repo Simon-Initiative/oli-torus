@@ -52,7 +52,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     case NodeJS.call({"rules", :check}, [state, rules]) do
       {:ok, check_results} ->
+        # nodejs seems to have an encoding issue, instead of using the results as they come out
+        # to send back, use them to filter the original rules
         results = Map.get(check_results, "results")
+        |> Enum.map(fn result ->
+          # find the item in rules from the type property of the result matching the id of the rule
+          # they should always match by design convention in authoring and conversion
+          rule = Enum.find(rules, fn rule ->
+            rule.id == result["type"]
+          end)
+          rule.event
+        end)
 
         client_evaluations =
           determine_score(check_results)
