@@ -1,82 +1,112 @@
+import { JsxEmit } from 'typescript';
+import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const lessonSchema = {
   type: 'object',
   properties: {
-    title: {
-      type: 'string',
-      title: 'Title',
-    },
-    Size: {
+    Properties: {
       type: 'object',
-      title: 'Dimensions',
+      title:' Properties',
       properties: {
-        width: { type: 'number' },
-        height: { type: 'number' },
-      },
-    },
-    Appearance: {
-      type: 'object',
-      title: 'Lesson Appearance',
-      properties: {
-        theme: {
+        title: {
           type: 'string',
-          title: 'Lesson Theme',
-          enum: [
-            'Light Responsive',
-            'Blue Responsive',
-            'Dark Responsive',
-            'Material Responsive',
-            'Light',
-            'Dark',
-            'LEGACY',
-          ],
+          title: 'Title',
         },
-        customCssUrl: {
+        Size: {
+          type: 'object',
+          title: 'Dimensions',
+          properties: {
+            width: { type: 'number' },
+            height: { type: 'number' },
+          },
+        },
+        Appearance: {
+          type: 'object',
+          title: 'Lesson Appearance',
+          properties: {
+            theme: {
+              type: 'string',
+              title: 'Lesson Theme',
+              enum: [
+                'Light Responsive',
+                'Blue Responsive',
+                'Dark Responsive',
+                'Material Responsive',
+                'Light',
+                'Dark',
+                'LEGACY',
+              ],
+            },
+            customCssUrl: {
+              type: 'string',
+              title: 'Custom CSS URL',
+            },
+          },
+        },
+        enableHistory: {
+          title: 'Enable History',
+          type: 'boolean'
+        },
+        ScoreOverview: {
+          type: 'object',
+          properties: {
+            enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
+            lessonMax: { type: 'number', title: 'Lesson Max' },
+          },
+        },
+        customCSS: {
+          title: 'Custom CSS',
           type: 'string',
-          title: 'Custom CSS URL',
+          description: 'block of css code to be injected into style tag',
+          format: 'textarea',
         },
-      },
+      }
     },
-    enableHistory: {
-      title: 'Enable History',
-      type: 'boolean'
-    },
-    ScoreOverview: {
-      type: 'object',
+    CustomLogic: {
+      type:'object',
+      title: 'Custom Logic',
       properties: {
-        enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
-        lessonMax: { type: 'number', title: 'Lesson Max' },
-      },
-    },
-    customCSS: {
-      title: 'Custom CSS',
-      type: 'string',
-      description: 'block of css code to be injected into style tag',
-      format: 'textarea',
-    },
+        variables:{
+          type: 'string',
+          title: 'Variables',
+          format: 'textarea',
+        },
+        customScript:{
+          type: 'string',
+          title: 'Custom Script',
+          format: 'textarea',
+        }
+      }
+    }
   },
 };
 
 export const lessonUiSchema = {
-  Size: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    'ui:title': 'Screen Size',
-    width: {
-      classNames: 'col-6',
+  Properties: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    Size: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Screen Size',
+      width: {
+        classNames: 'col-6',
+      },
+      height: {
+        classNames: 'col-6',
+      },
     },
-    height: {
-      classNames: 'col-6',
+    Appearance: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Lesson Appearance',
+    },
+    ScoreOverview: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Score Overview',
     },
   },
-  Appearance: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    'ui:title': 'Lesson Appearance',
-  },
-  ScoreOverview: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    'ui:title': 'Score Overview',
-  },
+  CustomLogic: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+  }
 };
 
 // we don't have the actual theme urls yet,
@@ -90,21 +120,27 @@ export const transformModelToSchema = (model: any) => {
   const theme = themeMap[themeUrl] || 'LEGACY';
 
   return {
-    Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
-    Appearance: {
-      theme,
-      customCssUrl,
+    Properties:{
+      Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
+      Appearance: {
+        theme,
+        customCssUrl,
+      },
+      ScoreOverview: {
+        enableLessonMax: model.custom.enableLessonMax,
+        lessonMax: model.custom.lessonMax,
+      },
+      title: model.title,
+      customCSS: model.customCss,
+      enableHistory:
+        model.custom.allowNavigation ||
+        model.custom.enableHistory ||
+        false
     },
-    ScoreOverview: {
-      enableLessonMax: model.custom.enableLessonMax,
-      lessonMax: model.custom.lessonMax,
-    },
-    title: model.title,
-    customCSS: model.customCss,
-    enableHistory:
-      model.custom.allowNavigation ||
-      model.custom.enableHistory ||
-      false
+    CustomLogic: {
+      variables: JSON.stringify(model.custom.variables),
+      customScript: model.cssScript
+    }
   };
 };
 
@@ -115,15 +151,17 @@ export const transformSchemaToModel = (schema: any) => {
 
   return {
     custom: {
-      defaultScreenWidth: schema.Size.width,
-      defaultScreenHeight: schema.Size.height,
-      enableLessonMax: schema.ScoreOverview.enableLessonMax,
-      lessonMax: schema.ScoreOverview.lessonMax,
-      enableHistory: schema.enableHistory
+      defaultScreenWidth: schema.Properties.Size.width,
+      defaultScreenHeight: schema.Properties.Size.height,
+      enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
+      lessonMax: schema.Properties.ScoreOverview.lessonMax,
+      enableHistory: schema.Properties.enableHistory,
+      variables: JSON.parse(schema.CustomLogic.variables),
     },
     additionalStylesheets,
-    title: schema.title,
-    customCss: schema.customCSS,
+    title: schema.Properties.title,
+    customCss: schema.Properties.customCSS,
+    customScript: schema.CustomLogic.customScript
   };
 };
 

@@ -176,7 +176,36 @@ $panel-section-title-bar-color: #e8ebed;
     }
     .rjsf {
       .container-fluid > .row {
-        border-bottom: 1px solid $ui-border-color !important;
+        margin-right: 0px;
+        margin-left: 0px;
+        margin-bottom: 0px !important;
+
+        .col-12:not(.inner) > div{
+          padding-right: 15px;
+          padding-left: 15px;
+          border-bottom: 1px solid $ui-border-color !important;
+        }
+
+        >.col-12:not(.inner) > div{
+          border-bottom: 0px !important;
+        }
+      }
+      .container-fluid > .row > .col-12 {
+        margin-right: 0px;
+        margin-left: 0px;
+        padding-right: 0px;
+        padding-left: 0px;
+      }
+      .accordion {
+        margin: 0 -16px -16px -16px;
+        .collapse > .col-12{
+          padding-right: 0px;
+          padding-left: 0px;
+
+          >.form-group {
+            padding-bottom: 10px;
+          }
+        }
       }
     }
   }

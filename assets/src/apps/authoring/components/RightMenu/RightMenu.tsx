@@ -86,40 +86,17 @@ const RightMenu: React.FC<any> = (props) => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey="lesson" title="Lesson">
-        <Accordion className="aa-lesson-properties-editor" defaultActiveKey="0">
-          <div className="aa-panel-section-title-bar">
-            <div className="d-flex align-items-center">
-              <ContextAwareToggle eventKey="0" />
-              <span className="title">Properties</span>
-            </div>
-          </div>
-          <Accordion.Collapse eventKey="0">
-            <div className="p-3">
-              <PropertyEditor
-                schema={lessonSchema}
-                uiSchema={lessonUiSchema}
-                value={lessonData}
-                onChangeHandler={lessonPropertyChangeHandler}
-              />
-            </div>
-          </Accordion.Collapse>
-        </Accordion>
-        <Accordion className="aa-lesson-script-editor" defaultActiveKey="0">
-          <div className="aa-panel-section-title-bar">
-            <div className="d-flex align-items-center">
-              <ContextAwareToggle eventKey="0" />
-              <span className="title">Custom Logic</span>
-            </div>
-          </div>
-          <Accordion.Collapse eventKey="0">
-            <div className="p-3">
-              <p>Property Editor for Variables and Custom Scripting</p>
-            </div>
-          </Accordion.Collapse>
-        </Accordion>
+        <div >
+          <PropertyEditor
+            schema={lessonSchema}
+            uiSchema={lessonUiSchema}
+            value={lessonData}
+            onChangeHandler={lessonPropertyChangeHandler}
+          />
+        </div>
       </Tab>
       <Tab eventKey="screen" title="Screen">
-        <div className="p-3">
+        <div>
           <PropertyEditor
             schema={screenSchema}
             uiSchema={screenUiSchema}
