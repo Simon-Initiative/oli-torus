@@ -14,15 +14,15 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
-  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
+  selectLessonEnd,
   selectNextActivityId,
   setCurrentFeedbacks,
   setIsGoodFeedback,
-  setNextActivityId,
   setMutationTriggered,
+  setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -172,11 +172,14 @@ const DeckLayoutFooter: React.FC = () => {
           target: scopedTarget,
           operator: op.params.operator,
           value: op.params.value,
+          targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
       });
 
-      bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      // should respond to scripting errors?
+      console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),

@@ -4,6 +4,7 @@ import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
 import { check } from '../../../../../../adaptivity/rules-engine';
 import {
+  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
@@ -195,21 +196,20 @@ export const triggerCheck = createAsyncThunk(
       const partResponses: PartResponse[] =
         currentAttempt?.parts.map(({ partId, attemptGuid, response }) => {
           // doing in reverse so that the layer's choice is the last one
-          const combinedResponse = currentActivityTreeAttempts.reverse().reduce(
-            (collect: any, attempt: any) => {
+          const combinedResponse = currentActivityTreeAttempts
+            .reverse()
+            .reduce((collect: any, attempt: any) => {
               const part = attempt.parts.find((p: any) => p.partId === partId);
               if (part) {
                 /* if (partId === 'orrery') {
                   console.log('collecting parts:', { part, attempt, response, pr: part.response });
                 } */
                 if (part.response) {
-                  collect = {...collect, ...part.response};
+                  collect = { ...collect, ...part.response };
                 }
               }
               return collect;
-            },
-            {},
-          );
+            }, {});
           const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
           // response should be wrapped in input, but only once
           /* const input_response = response?.input ? response : { input: response }; */
@@ -238,6 +238,33 @@ export const triggerCheck = createAsyncThunk(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
+    }
+
+    // scoring is based on properties of the activity
+    if (!currentActivity.content.custom.trapStateScoreScheme) {
+      // the trap states are not in charge of the score, so use attempts & max
+      const maxScore = currentActivity.content.custom.maxScore || 0;
+      const maxAttempt = currentActivity.content.custom.maxAttempt || 0;
+      if (maxAttempt > 0) {
+        const scorePerAttempt = maxScore / maxAttempt;
+        const numberOfAttempts = attempt.attemptNumber;
+        const score = maxScore - scorePerAttempt * (numberOfAttempts - 1);
+
+        /* console.log('SCORING: ', {
+          score,
+          numberOfAttempts,
+          scorePerAttempt,
+          maxScore,
+          maxAttempt,
+          currentActivity,
+          attempt,
+        }); */
+        // only apply this to the scripting env since it should be calculated for real on the server
+        applyState(
+          { target: 'session.currentQuestionScore', operator: '=', value: score },
+          defaultGlobalEnv,
+        );
+      }
     }
 
     await dispatch(
