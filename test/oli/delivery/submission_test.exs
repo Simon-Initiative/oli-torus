@@ -768,10 +768,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     } do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
 
-      {:error, %{error: error}} =
+      # No matching response should mark the answer as incorrect with out_of
+      # being the highest score of any response considered.
+      {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10}]} =
         Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
-
-      assert error == "no matching response found"
     end
   end
 
