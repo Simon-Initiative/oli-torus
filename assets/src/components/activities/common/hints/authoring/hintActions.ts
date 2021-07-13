@@ -1,5 +1,6 @@
 import { getHint, getHints } from 'components/activities/common/hints/authoring/hintUtils';
-import { HasHints, Hint, PostUndoable, RichText } from 'components/activities/types';
+import { HasHints, Hint, PostUndoable, RichText, makeUndoable } from 'components/activities/types';
+import { clone } from 'utils/common';
 
 export const HintActions = {
   addHint(hint: Hint) {
@@ -22,17 +23,10 @@ export const HintActions = {
       const hint = getHint(model, id);
       const index = getHints(model).findIndex((h) => h.id === id);
       model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
-      post({
-        description: 'Removed a hint',
-        operations: [
-          {
-            path,
-            index,
-            item: JSON.parse(JSON.stringify(hint)),
-          },
-        ],
-        type: 'Undoable',
-      });
+
+      post(makeUndoable('Removed a hint',
+        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+
     };
   },
 };
