@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import { upsertActivity } from '../../../delivery/store/features/activities/slice';
 import {
+  findInHierarchy,
+  flattenHierarchy,
   getHierarchy,
   SequenceEntry,
   SequenceEntryChild,
+  SequenceEntryType,
+  SequenceHierarchyItem,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentSequenceId,
   selectSequence,
 } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
+import { selectCurrentGroup, upsertGroup } from '../../../delivery/store/features/groups/slice';
 import { addSequenceItem } from '../../store/groups/layouts/deck/actions/addSequenceItem';
 import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../store/page/actions/savePage';
@@ -24,6 +28,12 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
+  const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
+
+  useEffect(() => {
+    const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
+    return setHierarchy(newHierarchy);
+  }, [sequence]);
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
@@ -82,8 +92,134 @@ const SequenceEditor: React.FC<any> = (props) => {
     await dispatch(savePage());
   };
 
+  enum ReorderDirection {
+    UP = 0,
+    DOWN,
+    IN,
+    OUT,
+  }
+  const handleItemReorder = async (
+    event: any,
+    item: SequenceHierarchyItem<SequenceEntryType>,
+    direction: ReorderDirection,
+  ) => {
+    let hierarchyCopy = JSON.parse(JSON.stringify(hierarchy));
+    const parentId = item.custom.layerRef;
+    let itemIndex = -1;
+    let parent: any = null;
+    if (parentId) {
+      parent = findInHierarchy(hierarchyCopy, parentId);
+      if (!parent) {
+        console.error('parent not found?');
+        return;
+      }
+      itemIndex = parent.children.findIndex(
+        (child: SequenceHierarchyItem<SequenceEntryType>) =>
+          child.custom.sequenceId === item.custom.sequenceId,
+      );
+    } else {
+      itemIndex = hierarchyCopy.findIndex(
+        (child: SequenceHierarchyItem<SequenceEntryType>) =>
+          child.custom.sequenceId === item.custom.sequenceId,
+      );
+    }
+    const move = (from: number, to: number, arr: SequenceHierarchyItem<SequenceEntryType>[]) => {
+      arr.splice(to, 0, ...arr.splice(from, 1));
+    };
+
+    switch (direction) {
+      case ReorderDirection.UP:
+        {
+          if (parent) {
+            move(itemIndex, itemIndex - 1, parent.children);
+          } else {
+            // if there is no parent, move within hierarchy
+            move(itemIndex, itemIndex - 1, hierarchyCopy);
+          }
+        }
+        break;
+      case ReorderDirection.DOWN:
+        {
+          if (parent) {
+            move(itemIndex, itemIndex + 1, parent.children);
+          } else {
+            // if there is no parent, move within hierarchy
+            move(itemIndex, itemIndex + 1, hierarchyCopy);
+          }
+        }
+        break;
+      case ReorderDirection.IN:
+        {
+          let sibling;
+          if (parent) {
+            sibling = parent.children[itemIndex - 1];
+            parent.children = parent.children.filter(
+              (i: SequenceHierarchyItem<SequenceEntryType>) =>
+                i.custom.sequenceId !== item.custom.sequenceId,
+            );
+          } else {
+            sibling = hierarchyCopy[itemIndex - 1];
+            hierarchyCopy = hierarchyCopy.filter(
+              (i: SequenceHierarchyItem<SequenceEntryType>) =>
+                i.custom.sequenceId !== item.custom.sequenceId,
+            );
+          }
+          if (!sibling) {
+            console.error('no sibling above to move "in" to');
+            return;
+          }
+          const itemCopy = JSON.parse(JSON.stringify(item));
+          itemCopy.custom.layerRef = sibling.custom.sequenceId;
+          sibling.children.push(itemCopy);
+        }
+        break;
+      case ReorderDirection.OUT:
+        {
+          if (!parent) {
+            console.error('no parent to move out of');
+            return;
+          }
+          // we want to pull out and become a sibling to the parent
+          parent.children = parent.children.filter(
+            (i: SequenceHierarchyItem<SequenceEntryType>) =>
+              i.custom.sequenceId !== item.custom.sequenceId,
+          );
+          if (parent.custom.layerRef) {
+            const grandparent: any = findInHierarchy(hierarchyCopy, parent.custom.layerRef);
+            if (!grandparent) {
+              console.error('no grandparent found? ' + parent.custom.layerRef);
+              return;
+            }
+            const parentIndex = grandparent.children.findIndex(
+              (i: SequenceHierarchyItem<SequenceEntryType>) =>
+                i.custom.sequenceId === parent.custom.sequenceId,
+            );
+            const itemCopy = JSON.parse(JSON.stringify(item));
+            itemCopy.custom.layerRef = grandparent.custom.sequenceId;
+            grandparent.children.splice(parentIndex + 1, 0, itemCopy);
+          } else {
+            // the parent lives in the root
+            const parentIndex = hierarchyCopy.findIndex(
+              (i: SequenceHierarchyItem<SequenceEntryType>) =>
+                i.custom.sequenceId === parent.custom.sequenceId,
+            );
+            const itemCopy = JSON.parse(JSON.stringify(item));
+            itemCopy.custom.layerRef = '';
+            hierarchyCopy.splice(parentIndex + 1, 0, itemCopy);
+          }
+        }
+        break;
+      default:
+        throw new Error('Uknown reorder direction! ' + direction);
+    }
+    const newSequence = JSON.parse(JSON.stringify(flattenHierarchy(hierarchyCopy)));
+    const newGroup = { ...currentGroup, children: newSequence };
+    dispatch(upsertGroup({ group: newGroup }));
+    await dispatch(savePage());
+  };
+
   const SequenceItemContextMenu = (props: any) => {
-    const { id } = props;
+    const { id, item, index, arr } = props;
 
     return (
       <div className="dropdown aa-sequence-item-context-menu">
@@ -143,42 +279,54 @@ const SequenceEditor: React.FC<any> = (props) => {
             <i className="fas fa-trash mr-2" /> Delete
           </button>
           <div className="dropdown-divider"></div>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-arrow-up mr-2" /> Move Up
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-arrow-down mr-2" /> Move Down
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-arrow-right mr-2" /> Move Right
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-arrow-left mr-2" /> Move Left
-          </button>
+          {index > 0 && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemReorder(e, item, ReorderDirection.UP);
+              }}
+            >
+              <i className="fas fa-arrow-up mr-2" /> Move Up
+            </button>
+          )}
+          {index < arr.length - 1 && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemReorder(e, item, ReorderDirection.DOWN);
+              }}
+            >
+              <i className="fas fa-arrow-down mr-2" /> Move Down
+            </button>
+          )}
+          {item.custom.layerRef && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemReorder(e, item, ReorderDirection.OUT);
+              }}
+            >
+              <i className="fas fa-arrow-left mr-2" /> Move Out
+            </button>
+          )}
+          {index > 0 && arr.length > 1 && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemReorder(e, item, ReorderDirection.IN);
+              }}
+            >
+              <i className="fas fa-arrow-right mr-2" /> Move In
+            </button>
+          )}
           <div className="dropdown-divider"></div>
           <button
             className="dropdown-item"
@@ -212,40 +360,53 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
-  const hierarchy = getHierarchy(sequence);
   const getHierarchyList = (items: any) =>
-    items.map((item: any, index: number) => {
-      const title = item.custom?.sequenceName || item.id;
-      return (
-        <Accordion key={`${index}`}>
-          <ListGroup.Item
-            as="li"
-            className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
-            key={`${item.custom.sequenceId}`}
-            active={item.custom.sequenceId === currentSequenceId}
-            onClick={(e) => handleItemClick(e, item)}
-            tabIndex={0}
-          >
-            <div className="aa-sequence-details-wrapper">
-              <div className="details">
-                {item.children.length ? (
-                  <ContextAwareToggle eventKey={`${index}`} className={`aa-sequence-item-toggle`} />
-                ) : null}
-                <span className="title">{title}</span>
+    items.map(
+      (
+        item: SequenceHierarchyItem<SequenceEntryType>,
+        index: number,
+        arr: SequenceHierarchyItem<SequenceEntryType>,
+      ) => {
+        const title = item.custom?.sequenceName || item.activitySlug;
+        return (
+          <Accordion key={`${index}`}>
+            <ListGroup.Item
+              as="li"
+              className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
+              key={`${item.custom.sequenceId}`}
+              active={item.custom.sequenceId === currentSequenceId}
+              onClick={(e) => handleItemClick(e, item)}
+              tabIndex={0}
+            >
+              <div className="aa-sequence-details-wrapper">
+                <div className="details">
+                  {item.children.length ? (
+                    <ContextAwareToggle
+                      eventKey={`${index}`}
+                      className={`aa-sequence-item-toggle`}
+                    />
+                  ) : null}
+                  <span className="title">{title}</span>
+                </div>
+                <SequenceItemContextMenu
+                  id={item.activitySlug}
+                  item={item}
+                  index={index}
+                  arr={arr}
+                />
               </div>
-              <SequenceItemContextMenu id={item.activitySlug} />
-            </div>
-            {item.children.length ? (
-              <Accordion.Collapse eventKey={`${index}`}>
-                <ListGroup as="ol" className="aa-sequence nested">
-                  {getHierarchyList(item.children)}
-                </ListGroup>
-              </Accordion.Collapse>
-            ) : null}
-          </ListGroup.Item>
-        </Accordion>
-      );
-    });
+              {item.children.length ? (
+                <Accordion.Collapse eventKey={`${index}`}>
+                  <ListGroup as="ol" className="aa-sequence nested">
+                    {getHierarchyList(item.children)}
+                  </ListGroup>
+                </Accordion.Collapse>
+              ) : null}
+            </ListGroup.Item>
+          </Accordion>
+        );
+      },
+    );
 
   return (
     <Accordion className="aa-sequence-editor" defaultActiveKey="0">
