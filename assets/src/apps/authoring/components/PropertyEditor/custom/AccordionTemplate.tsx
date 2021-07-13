@@ -1,12 +1,12 @@
 import React, { Fragment } from 'react';
 import { Accordion } from 'react-bootstrap';
 import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
-interface AccordiondProps {
+interface AccordionProps {
   key: string,
   title: string,
   properties: boolean;
 }
-const AccordionTemplate: React.FC<AccordiondProps> = (props: any) => {
+const AccordionTemplate: React.FC<AccordionProps> = (props: any) => {
   return (
     <Accordion className="aa-lesson-properties-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
