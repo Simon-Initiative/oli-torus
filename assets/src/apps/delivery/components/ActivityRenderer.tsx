@@ -259,17 +259,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
-  const historyNavigationActivity = useSelector(selectHistoryNavigationActivity);
-
-  useEffect(() => {
-    if (!ref.current || !historyNavigationActivity) {
-      return;
-    }
-    ref.current.notify(NotificationType.HISTORY_NAVIGATION, {
-      activityId: historyNavigationActivity,
-    });
-  }, [historyNavigationActivity]);
-
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -307,6 +296,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
     });
   };
+  const historyNavigationActivity = useSelector(selectHistoryNavigationActivity);
+
+  useEffect(() => {
+    if (!ref.current || !contextChangedCompleted) {
+      return;
+    }
+
+    ref.current.notify(NotificationType.HISTORY_NAVIGATION, {
+      activityId: historyNavigationActivity,
+    });
+  }, [historyNavigationActivity]);
+
   useEffect(() => {
     if (!initPhaseComplete || !ref.current) {
       return;
