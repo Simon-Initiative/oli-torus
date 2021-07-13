@@ -95,7 +95,7 @@ const InputText: React.FC<any> = (props) => {
             // nothing to do... change color if wrong?
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+            setEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

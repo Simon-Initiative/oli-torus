@@ -88,7 +88,7 @@ const InputNumber: React.FC<any> = (props) => {
             // nothing to do
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+            setEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

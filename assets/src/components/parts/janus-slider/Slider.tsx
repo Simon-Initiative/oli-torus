@@ -130,7 +130,7 @@ const Slider: React.FC<any> = (props) => {
             // nothing to do
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+            setIsSliderEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

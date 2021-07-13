@@ -325,7 +325,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
             // if disabled above then re-enable now
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+
+            setEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

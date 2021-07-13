@@ -291,9 +291,7 @@ const Dropdown: React.FC<any> = (props) => {
             // nothing to do
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            {
-              console.log('NotificationType.HISTORY_NAVIGATION CALLED!!!');
-            }
+            setEnabled(false);
             break;
         }
       };

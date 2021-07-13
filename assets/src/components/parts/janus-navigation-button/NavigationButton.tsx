@@ -214,7 +214,7 @@ const NavigationButton: React.FC<any> = (props) => {
             // nothing to do
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+            setButtonEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

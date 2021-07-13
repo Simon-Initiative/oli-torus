@@ -139,7 +139,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
             // nothing to do
             break;
           case NotificationType.HISTORY_NAVIGATION:
-            // nothing to do
+            setEnabled(false);
             break;
           case NotificationType.CHECK_COMPLETE:
             // nothing to do

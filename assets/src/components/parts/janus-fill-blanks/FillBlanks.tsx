@@ -9,7 +9,11 @@ const quill = require('./Quill.css');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const select2Styles = require('react-select2-wrapper/css/select2.css');
 import { JanusFillBlanksProperties } from './FillBlanksType';
-
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -121,19 +125,18 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   }, [elementValues]);
 
   useEffect(() => {
-    /*  if (parseBool(attempted)) {
-            props.onSavePart({
-                activityId: `${id}`,
-                partResponses: [
-                    {
-                        id: `stage.${id}.attempted`,
-                        key: 'attempted',
-                        type: CapiVariableTypes.BOOLEAN,
-                        value: attempted,
-                    },
-                ],
-            });
-        } */
+    if (parseBool(attempted)) {
+      props.onSave({
+        activityId: `${id}`,
+        partResponses: [
+          {
+            key: 'attempted',
+            type: CapiVariableTypes.BOOLEAN,
+            value: attempted,
+          },
+        ],
+      });
+    }
   }, [attempted]);
 
   useEffect(() => {
@@ -142,6 +145,64 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       setElementValues([newElement, ...elementValues.filter((obj) => newElement.key !== obj?.key)]);
     }
   }, [newElement]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+      NotificationType.HISTORY_NAVIGATION,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.HISTORY_NAVIGATION:
+            setEnabled(false);
+            break;
+          case NotificationType.STATE_CHANGED:
+            const { mutateChanges: changes } = payload;
+            const sEnabled = changes[`stage.${id}.enabled`];
+            if (sEnabled) {
+              setEnabled(parseBool(sEnabled));
+            }
+            const sShowCorrect = changes[`stage.${id}.showCorrect`];
+            if (sShowCorrect) {
+              setShowCorrect(parseBool(sShowCorrect));
+            }
+            const sCustomCss = changes[`stage.${id}.customCss`];
+            if (sCustomCss) {
+              setCustomCss(sCustomCss);
+            }
+            const sCustomCssClass = changes[`stage.${id}.customCssClass`];
+            if (sCustomCssClass) {
+              setCustomCssClass(sCustomCssClass);
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
@@ -190,19 +251,55 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
 
       return [
         {
-          id: `stage.${id}.Input ${index + 1}.Value`,
           key: `Input ${index + 1}.Value`,
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.Input ${index + 1}.Correct`,
           key: `Input ${index + 1}.Correct`,
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isCorrect(val, el.correct, el.alternateCorrect),
         },
       ];
     });
+    // save to state
+    try {
+      const elementPartResponses = [].concat(...partResponses);
+
+      props.onSave({
+        id: `${id}`,
+        responses: [
+          ...elementPartResponses,
+          {
+            key: 'enabled',
+            type: CapiVariableTypes.BOOLEAN,
+            value: enabled,
+          },
+          {
+            key: 'showCorrect',
+            type: CapiVariableTypes.BOOLEAN,
+            value: showCorrect,
+          },
+          {
+            key: 'customCss',
+            type: CapiVariableTypes.STRING,
+            value: customCss,
+          },
+          {
+            key: 'customCssClass',
+            type: CapiVariableTypes.STRING,
+            value: customCssClass,
+          },
+          {
+            key: 'correct',
+            type: CapiVariableTypes.BOOLEAN,
+            value: allCorrect,
+          },
+        ],
+      });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const getStateSelections = () => {
