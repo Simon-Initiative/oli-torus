@@ -26,8 +26,9 @@ const store = configureStore();
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const dispatch = (action: any) => {
-    const nextModel = produce(props.model, (draftState) => action(draftState));
-    props.onEdit(nextModel);
+    const nextModel = produce(props.model, (draftState) =>
+      action(draftState, props.onPostUndoable),
+    );
   };
 
   const { projectSlug, model } = props;

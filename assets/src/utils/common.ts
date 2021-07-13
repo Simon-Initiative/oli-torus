@@ -12,6 +12,16 @@ export function assertNever(x: never): never {
   throw new Error('Unexpected object: ' + x);
 }
 
+/**
+ * Performs a deep copy, or clone, of an object.
+ *
+ * @param o the object to clone
+ * @returns the cloned object
+ */
+ export function clone(o : any) {
+  return JSON.parse(JSON.stringify(o));
+}
+
 // Matches server implementation in `lib/oli/activities/parse_utils.ex`
 export function removeEmpty(items: any[]) {
   return items.filter(hasContent);
