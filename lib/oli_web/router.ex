@@ -193,6 +193,7 @@ defmodule OliWeb.Router do
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
+    post("/jcourse/superactivity/server", LegacySuperactivityController, :process)
   end
 
   scope "/", OliWeb do
