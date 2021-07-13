@@ -218,6 +218,45 @@ const SequenceEditor: React.FC<any> = (props) => {
     await dispatch(savePage());
   };
 
+  const handleItemDelete = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    const flatten = (parent: SequenceHierarchyItem<SequenceEntryType>) => {
+      const list = [{ ...parent, children: undefined }];
+      parent.children.forEach((child) => {
+        list.push(...flatten(child));
+      });
+      return list;
+    };
+    const itemsToDelete = flatten(item);
+    const sequenceItems = [...sequence];
+    itemsToDelete.forEach((item: any) => {
+      const itemIndex = sequenceItems.findIndex(
+        (entry) => entry.custom.sequenceId === item.custom.sequenceId,
+      );
+      if (itemIndex < 0) {
+        console.warn('not found in sequence', item);
+        return;
+      }
+      sequenceItems.splice(itemIndex, 1);
+    });
+    const newGroup = { ...currentGroup, children: sequenceItems };
+    dispatch(upsertGroup({ group: newGroup }));
+    await dispatch(savePage());
+  };
+
+  const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    const hierarchyCopy = JSON.parse(JSON.stringify(hierarchy));
+    const itemInHierarchy = findInHierarchy(hierarchyCopy, item.custom.sequenceId);
+    if (itemInHierarchy === undefined) {
+      return console.warn('item not converted', item);
+    }
+    const isLayer = !!itemInHierarchy?.custom.isLayer || false;
+    itemInHierarchy.custom.isLayer = !isLayer;
+    const newSequence = flattenHierarchy(hierarchyCopy);
+    const newGroup = { ...currentGroup, children: newSequence };
+    dispatch(upsertGroup({ group: newGroup }));
+    await dispatch(savePage());
+  };
+
   const SequenceItemContextMenu = (props: any) => {
     const { id, item, index, arr } = props;
 
@@ -247,6 +286,7 @@ const SequenceEditor: React.FC<any> = (props) => {
             onClick={(e) => {
               e.stopPropagation();
               ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+              handleItemAdd(item);
             }}
           >
             <i className="fas fa-desktop mr-2" /> Add Subscreen
@@ -256,24 +296,40 @@ const SequenceEditor: React.FC<any> = (props) => {
             onClick={(e) => {
               e.stopPropagation();
               ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+              handleItemAdd(item, true);
             }}
           >
             <i className="fas fa-layer-group mr-2" /> Add Layer
           </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-            }}
-          >
-            <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
-          </button>
+          {item.custom.isLayer ? (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemConvert(item);
+              }}
+            >
+              <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
+            </button>
+          ) : (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                handleItemConvert(item);
+              }}
+            >
+              <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
+            </button>
+          )}
           <button
             className="dropdown-item text-danger"
             onClick={(e) => {
               e.stopPropagation();
               ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+              handleItemDelete(item);
             }}
           >
             <i className="fas fa-trash mr-2" /> Delete
@@ -327,7 +383,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               <i className="fas fa-arrow-right mr-2" /> Move In
             </button>
           )}
-          <div className="dropdown-divider"></div>
+          {/* <div className="dropdown-divider"></div>
           <button
             className="dropdown-item"
             onClick={(e) => {
@@ -354,7 +410,7 @@ const SequenceEditor: React.FC<any> = (props) => {
             }}
           >
             <i className="fas fa-paste mr-2" /> Paste as Sibling
-          </button>
+          </button> */}
         </div>
       </div>
     );
