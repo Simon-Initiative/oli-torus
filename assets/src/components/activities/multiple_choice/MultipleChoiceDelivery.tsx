@@ -28,8 +28,6 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { valueOr } from 'utils/common';
-import { Maybe } from 'tsmonad';
-import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
