@@ -1,4 +1,3 @@
-import { JsxEmit } from 'typescript';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
@@ -139,7 +138,7 @@ export const transformModelToSchema = (model: any) => {
     },
     CustomLogic: {
       variables: JSON.stringify(model.custom.variables),
-      customScript: model.cssScript
+      customScript: model.customScript
     }
   };
 };
