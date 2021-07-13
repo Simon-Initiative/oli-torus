@@ -299,7 +299,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const historyNavigationActivity = useSelector(selectHistoryNavigationActivity);
 
   useEffect(() => {
-    if (!ref.current || !contextChangedCompleted) {
+    if (!ref.current) {
       return;
     }
 
