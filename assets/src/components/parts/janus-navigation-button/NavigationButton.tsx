@@ -156,7 +156,8 @@ const NavigationButton: React.FC<any> = (props) => {
     if (sTransparent !== undefined) {
       setButtonTransparent(sTransparent);
     }
-    if (initResult.historyMode) {
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === 'REVIEW') {
       setButtonEnabled(false);
     }
     setReady(true);

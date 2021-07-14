@@ -125,8 +125,9 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       setCustomCssClass(sCustomCssClass);
     }
 
-    if (initResult.historyMode) {
-      //setEnabled(false);
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === 'REVIEW') {
+      setEnabled(false);
     }
     setReady(true);
   }, []);

@@ -91,7 +91,8 @@ const Dropdown: React.FC<any> = (props) => {
       setSelectedItem(sSelectedItem);
       setSelection(selectionIndex + 1);
     }
-    if (initResult.historyMode) {
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === 'REVIEW') {
       setEnabled(false);
     }
     setReady(true);

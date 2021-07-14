@@ -57,7 +57,7 @@ const HistoryNavigation: React.FC = () => {
     dispatch(navigateToActivity(prevActivity.id));
     dispatch(
       setHistoryNavigationTriggered({
-        historyNavigationActivityId: prevActivity.id,
+        historyNavigationActivityId: isLast ? '' : prevActivity.id,
       }),
     );
   };

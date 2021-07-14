@@ -10,7 +10,10 @@ import {
 } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import { setInitPhaseComplete } from '../../store/features/adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  setInitPhaseComplete,
+} from '../../store/features/adaptivity/slice';
 import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -51,7 +54,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
-
+  const historyMode = useSelector(selectHistoryNavigationActivity);
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
@@ -257,18 +260,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      /* const contexts = {
+      const contexts = {
         VIEWER: 'VIEWER',
         REVIEW: 'REVIEW',
         AUTHOR: 'AUTHOR',
         REPORT: 'REPORT',
-      }; */
+      };
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: 'VIEWER',
+          mode: historyMode?.length ? contexts.REVIEW : contexts.VIEWER,
         },
       });
       dispatch(setInitPhaseComplete(true));

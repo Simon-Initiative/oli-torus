@@ -37,7 +37,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
-
+  const [context, setContext] = useState<string>('VIEWER');
   const id: string = props.id;
 
   // model items, note that we use default values now because
@@ -130,7 +130,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
-
+    if (initResult.context.mode) {
+      setContext(initResult.context.mode);
+    }
     processInitStateVariable(currentStateSnapshot);
   }, []);
 
@@ -186,7 +188,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       {},
     );
     setInitState(interestedSnapshot);
-
     setInitStateReceived(true);
   };
 
@@ -531,7 +532,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       AUTHOR: 'AUTHOR',
       REPORT: 'REPORT',
     };
-    simLife.handshake.config = { context: contexts.VIEWER };
+    simLife.handshake.config = { context: context };
 
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);

@@ -224,7 +224,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     if (sNumberOfSelectedChoices !== undefined) {
       setNumberOfSelectedChoices(sNumberOfSelectedChoices);
     }
-    if (initResult.historyMode) {
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === 'REVIEW') {
       setEnabled(false);
     }
     setReady(true);

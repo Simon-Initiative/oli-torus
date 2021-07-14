@@ -69,7 +69,8 @@ const InputText: React.FC<any> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-    if (initResult.historyMode) {
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === 'REVIEW') {
       setEnabled(false);
     }
     setReady(true);
