@@ -5,6 +5,7 @@ defmodule Oli.Publishing.Resolver do
   """
 
   alias Oli.Resources.Revision
+  alias Oli.Publishing.HierarchyNode
 
   @doc """
   Resolves a revision from a list of resource ids and a given context slug.
@@ -39,6 +40,14 @@ defmodule Oli.Publishing.Resolver do
   Resolves the revisions of all containers and pages.
   """
   @callback all_revisions_in_hierarchy(String.t()) :: [%Revision{}]
+
+  @doc """
+  Reconstructs the resource hierarchy for a section or project
+  ## Examples
+      iex> full_hierarchy(section_or_project_slug)
+      %HierarchyNode{}
+  """
+  @callback full_hierarchy(String.t()) :: %HierarchyNode{}
 
   @doc """
   Finds the parent objectives for a list of objective resource ids that

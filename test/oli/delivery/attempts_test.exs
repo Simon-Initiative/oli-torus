@@ -221,6 +221,7 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.add_user(%{}, :user2)
       |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
       |> Seeder.add_page(%{graded: true}, :graded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,
@@ -363,8 +364,8 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       activity_attempt1: activity_attempt1
     } do
-      assert section ==
-               Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid)
+      assert section.id ==
+               Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid).id
     end
 
     test "resource attempt history", %{

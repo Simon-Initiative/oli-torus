@@ -1,7 +1,7 @@
 defmodule Oli.Delivery.Student.Summary do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Oli.Resources.Numbering
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
 
   defstruct [:title, :description, :access_map, :hierarchy]
@@ -13,9 +13,8 @@ defmodule Oli.Delivery.Student.Summary do
            |> Oli.Utils.trap_nil(),
          resource_accesses <-
            Attempts.get_user_resource_accesses_for_context(section.slug, user.id),
-         #  Numbering.full_hierarchy(Oli.Publishing.DeliveryResolver, section.slug) do
-         root_section_resource <-
-           Sections.get_section_resource_hierarchy(section) do
+         root_node <-
+           DeliveryResolver.full_hierarchy(section.slug) do
       access_map =
         Enum.reduce(resource_accesses, %{}, fn ra, acc ->
           Map.put_new(acc, ra.resource_id, ra)
@@ -26,7 +25,7 @@ defmodule Oli.Delivery.Student.Summary do
          title: section.title,
          description: section.base_project.description,
          access_map: access_map,
-         hierarchy: root_section_resource.children
+         hierarchy: node.children
        }}
     else
       _ -> {:error, :not_found}

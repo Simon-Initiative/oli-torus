@@ -1,7 +1,11 @@
-defmodule Oli.Utils.HierarchyNode do
-  defstruct revision: nil,
+defmodule Oli.Publishing.HierarchyNode do
+  alias Oli.Publishing.HierarchyNode
+
+  defstruct numbering_index: nil,
+            numbering_level: nil,
             children: [],
-            numbering: nil
+            revision: nil,
+            section_resource: nil
 
   @doc """
   From a constructed hierarchy root node, or a collection of hierarchy nodes, return
@@ -11,9 +15,9 @@ defmodule Oli.Utils.HierarchyNode do
     Enum.reduce(nodes, [], &flatten_pages(&1, &2))
   end
 
-  def flatten_pages(%Oli.Utils.HierarchyNode{} = node), do: flatten_pages(node, [])
+  def flatten_pages(%HierarchyNode{} = node), do: flatten_pages(node, [])
 
-  defp flatten_pages(%Oli.Utils.HierarchyNode{} = node, all) do
+  defp flatten_pages(%HierarchyNode{} = node, all) do
     if node.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") do
       [node.revision | all]
     else

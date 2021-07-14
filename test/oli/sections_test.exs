@@ -3,6 +3,7 @@ defmodule Oli.SectionsTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Tool.ContextRoles
 
   describe "enrollments" do
@@ -225,48 +226,71 @@ defmodule Oli.SectionsTest do
 
   describe "section resources" do
     setup do
-      map = Seeder.base_project_with_resource3()
-
-      institution = Map.get(map, :institution)
-      project = Map.get(map, :project)
-
-      valid_attrs =
-        Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:base_project_id, project.id)
-
-      {:ok, section} = valid_attrs |> Sections.create_section()
-
-      {:ok, Map.merge(map, %{section: section})}
+      Seeder.base_project_with_resource4()
     end
 
-    test "build_section_resources/1 creates a hierarchy of section resources", %{
-      section: section,
-      publication: publication
+    test "create_section_resources/1 creates a hierarchy of section resources", %{
+      section_1: section,
+      container: %{resource: root_resource},
+      unit1_container: %{resource: unit1_resource},
+      page1: page1,
+      page2: page2,
+      nested_page1: nested_page1,
+      nested_page2: nested_page2,
+      child1: %{resource: child1},
+      parent2: %{resource: parent2},
+      latest4: latest4,
+      parent4: %{resource: parent4}
     } do
-      {:ok, section} = Sections.create_section_resources(section, publication)
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
 
-      section_resource_hierarchy = Sections.get_section_resource_hierarchy(section)
+      assert Enum.count(section_resources) == 12
 
-      assert section_resource_hierarchy.numbering_index == 1
-      assert section_resource_hierarchy.numbering_level == 0
-      assert Enum.count(section_resource_hierarchy.children) == 3
-      assert section_resource_hierarchy.children |> Enum.at(0) |> Map.get(:numbering_index) == 1
-      assert section_resource_hierarchy.children |> Enum.at(0) |> Map.get(:numbering_level) == 1
+      root_sr = Enum.find(section_resources, &(&1.resource_id == root_resource.id))
+      assert root_sr.numbering_index == 1
+      assert root_sr.numbering_level == 0
 
-      assert section_resource_hierarchy.children |> Enum.at(1) |> Map.get(:numbering_index) == 2
-      assert section_resource_hierarchy.children |> Enum.at(2) |> Map.get(:numbering_index) == 3
+      page1_sr = Enum.find(section_resources, &(&1.resource_id == page1.id))
+      assert page1_sr.numbering_index == 1
+      assert page1_sr.numbering_level == 1
 
-      assert section_resource_hierarchy.children
-             |> Enum.at(2)
-             |> Map.get(:children)
-             |> Enum.at(0)
-             |> Map.get(:numbering_index) == 1
+      page2_sr = Enum.find(section_resources, &(&1.resource_id == page2.id))
+      assert page2_sr.numbering_index == 2
+      assert page2_sr.numbering_level == 1
 
-      assert section_resource_hierarchy.children
-             |> Enum.at(2)
-             |> Map.get(:children)
-             |> Enum.at(0)
-             |> Map.get(:numbering_level) == 2
+      unit1_resource_sr = Enum.find(section_resources, &(&1.resource_id == unit1_resource.id))
+      assert unit1_resource_sr.numbering_index == 3
+      assert unit1_resource_sr.numbering_level == 1
+
+      nested_page1_sr = Enum.find(section_resources, &(&1.resource_id == nested_page1.id))
+      assert nested_page1_sr.numbering_index == 1
+      assert nested_page1_sr.numbering_level == 2
+
+      nested_page2_sr = Enum.find(section_resources, &(&1.resource_id == nested_page2.id))
+      assert nested_page2_sr.numbering_index == 2
+      assert nested_page2_sr.numbering_level == 2
+
+      # objectives and other non-structural items are not numbered
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+      assert child1_sr.numbering_index == nil
+      assert child1_sr.numbering_level == nil
+
+      parent2_sr = Enum.find(section_resources, &(&1.resource_id == parent2.id))
+      assert parent2_sr.numbering_index == nil
+      assert parent2_sr.numbering_level == nil
+
+      # unpublished items do not have section resources created for them
+      assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
+      assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
   end
 end

@@ -670,6 +670,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
         registration_open: true
       })
 
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
     %{section: section, project: project, publication: publication}
   end
 end

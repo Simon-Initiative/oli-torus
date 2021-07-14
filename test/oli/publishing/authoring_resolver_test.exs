@@ -2,42 +2,10 @@ defmodule Oli.Publishing.AuthoringResolverTest do
   use Oli.DataCase
 
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Publishing
 
   describe "authoring resolution" do
     setup do
-      map =
-        Seeder.base_project_with_resource2()
-        |> Seeder.add_objective("child1", :child1)
-        |> Seeder.add_objective("child2", :child2)
-        |> Seeder.add_objective("child3", :child3)
-        |> Seeder.add_objective("child4", :child4)
-        |> Seeder.add_objective_with_children("parent1", [:child1, :child2, :child3], :parent1)
-        |> Seeder.add_objective_with_children("parent2", [:child4], :parent2)
-
-      # Create another project with resources and revisions
-      Seeder.another_project(map.author, map.institution)
-
-      # Publish the current state of our test project:
-      Publishing.publish_project(map.project)
-
-      # Track a series of changes for both resources:
-      pub = Publishing.working_project_publication(map.project.slug)
-
-      latest1 =
-        Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "2"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "3"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "4"}, pub, map.author.id)
-
-      latest2 =
-        Publishing.publish_new_revision(map.revision2, %{title: "A"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "B"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "C"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "D"}, pub, map.author.id)
-
-      Map.put(map, :latest1, latest1)
-      |> Map.put(:latest2, latest2)
+      Seeder.base_project_with_resource4()
     end
 
     test "find_parent_objectives/2 returns parents", %{
@@ -153,14 +121,16 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert Enum.at(r, 1) == nil
     end
 
-    test "all_revisions/1 resolves the all nodes", %{project: project} do
+    test "all_revisions/1 resolves the all revisions", %{project: project} do
       nodes = AuthoringResolver.all_revisions(project.slug)
-      assert length(nodes) == 9
+      assert length(nodes) == 18
     end
 
-    test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{project: project} do
+    test "all_revisions_in_hierarchy/1 resolves all revisions in the hierarchy", %{
+      project: project
+    } do
       nodes = AuthoringResolver.all_revisions_in_hierarchy(project.slug)
-      assert length(nodes) == 3
+      assert length(nodes) == 8
     end
 
     test "root_resource/1 resolves the root revision", %{
@@ -169,6 +139,33 @@ defmodule Oli.Publishing.AuthoringResolverTest do
     } do
       assert AuthoringResolver.root_container(project.slug) == container_revision
       assert AuthoringResolver.root_container("invalid") == nil
+    end
+
+    test "full_hierarchy/1 resolves and reconstructs the entire hierarchy", %{
+      project: project
+    } do
+      hierarchy = AuthoringResolver.full_hierarchy(project.slug)
+
+      assert hierarchy.numbering_index == 1
+      assert hierarchy.numbering_level == 0
+      assert Enum.count(hierarchy.children) == 3
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_index) == 1
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_level) == 1
+
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:numbering_index) == 2
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:numbering_index) == 3
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_index) == 1
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_level) == 2
     end
   end
 end

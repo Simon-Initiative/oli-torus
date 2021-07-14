@@ -1,13 +1,16 @@
 defmodule Oli.Publishing.AuthoringResolver do
+  import Oli.Timing
+  import Ecto.Query, warn: false
+
+  alias Oli.Repo
+  alias Oli.Publishing.Resolver
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Resolver
-  import Oli.Timing
-  import Ecto.Query, warn: false
-  alias Oli.Repo
+  alias Oli.Publishing.HierarchyNode
+  alias Oli.Resources.Numbering
 
   @behaviour Resolver
 
@@ -94,9 +97,6 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  @doc """
-
-  """
   def all_revisions(project_slug) do
     fn ->
       from(m in PublishedResource,
@@ -112,9 +112,6 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  @doc """
-
-  """
   def all_revisions_in_hierarchy(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -132,6 +129,15 @@ defmodule Oli.Publishing.AuthoringResolver do
     end
     |> run()
     |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
+  defp working_project_publication(project_slug) do
+    from(p in Publication,
+      join: c in Project,
+      on: p.project_id == c.id,
+      where: p.published == false and c.slug == ^project_slug,
+      select: p.id
+    )
   end
 
   @impl Resolver
@@ -161,12 +167,56 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
-  defp working_project_publication(project_slug) do
-    from(p in Publication,
-      join: c in Project,
-      on: p.project_id == c.id,
-      where: p.published == false and c.slug == ^project_slug,
-      select: p.id
-    )
+  @impl Resolver
+  def full_hierarchy(project_slug) do
+    revisions_by_resource_id =
+      all_revisions_in_hierarchy(project_slug)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+
+    root_revision = root_container(project_slug)
+    numberings = Numbering.init_numberings()
+    level = 0
+
+    {root_node, _numberings} =
+      hierarchy_node_with_children(root_revision, revisions_by_resource_id, numberings, level)
+
+    root_node
+  end
+
+  def hierarchy_node_with_children(revision, revisions_by_resource_id, numberings, level) do
+    {numberings, numbering_index} = Numbering.increment_count(numberings, level)
+
+    {children, numberings} =
+      Enum.reduce(
+        revision.children,
+        {[], numberings},
+        fn resource_id, {nodes, numberings} ->
+          {node, numberings} =
+            hierarchy_node_with_children(
+              revisions_by_resource_id[resource_id],
+              revisions_by_resource_id,
+              numberings,
+              level + 1
+            )
+
+          {[node | nodes], numberings}
+        end
+      )
+      # it's more efficient to append to list using [node | nodes] and
+      # then reverse than to concat on every reduce call using ++
+      |> then(fn {children, numberings} ->
+        {Enum.reverse(children), numberings}
+      end)
+
+    {
+      %HierarchyNode{
+        numbering_index: numbering_index,
+        numbering_level: level,
+        children: children,
+        revision: revision,
+        section_resource: nil
+      },
+      numberings
+    }
   end
 end

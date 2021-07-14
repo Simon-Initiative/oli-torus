@@ -30,7 +30,7 @@ defmodule OliWeb.PageDeliveryView do
   end
 
   def encode_pages(conn, section_slug, hierarchy) do
-    Oli.Utils.HierarchyNode.flatten_pages(hierarchy)
+    Oli.Publishing.HierarchyNode.flatten_pages(hierarchy)
     |> Enum.map(fn revision ->
       %{
         slug: revision.slug,

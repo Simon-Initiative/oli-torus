@@ -160,7 +160,7 @@ defmodule Oli.Delivery.Page.PageContext do
   end
 
   def determine_previous_next(hierarchy, revisions_by_resource_id, revision) do
-    flattened_hierarchy = flatten_hierarchy(hierarchy, revisions_by_resource_id)
+    flattened_hierarchy = flatten_hierarchy(hierarchy.children, revisions_by_resource_id)
 
     index =
       Enum.find_index(flattened_hierarchy, fn node ->

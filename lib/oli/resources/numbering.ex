@@ -2,7 +2,6 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
-  alias Oli.Utils.HierarchyNode
 
   defstruct level: 0,
             count: 0,
@@ -25,48 +24,6 @@ defmodule Oli.Resources.Numbering do
   @typep resource_id :: Number.t()
   @typep revision_id :: Number.t()
   @typep resolver :: Resolver.t()
-
-  @doc """
-  Returns a [%HierarchyNode{}] representing the course's hierarchy structure.
-
-  ## Parameters
-
-    - resolver
-    - project_or_section_slug: The project slug or the section slug.
-
-  """
-  @spec full_hierarchy(resolver, project_or_section_slug) :: [%HierarchyNode{}]
-  def full_hierarchy(resolver, project_or_section_slug) do
-    revisions_by_id =
-      resolver.all_revisions_in_hierarchy(project_or_section_slug)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
-
-    full_hierarchy_helper(
-      number_full_tree(resolver, project_or_section_slug),
-      revisions_by_id,
-      resolver.root_container(project_or_section_slug)
-    )
-  end
-
-  def full_hierarchy_helper(numberings, revisions_by_id, revision) do
-    [
-      %HierarchyNode{
-        revision: revision,
-        children:
-          Enum.flat_map(
-            revision.children,
-            fn resource_id ->
-              full_hierarchy_helper(
-                numberings,
-                revisions_by_id,
-                Map.get(revisions_by_id, resource_id)
-              )
-            end
-          ),
-        numbering: Map.get(numberings, revision.id)
-      }
-    ]
-  end
 
   @doc """
   Returns the path from a project's root container to a requested revision slug.
@@ -191,8 +148,17 @@ defmodule Oli.Resources.Numbering do
     end)
   end
 
-  defp increment_count(level_counts, level) do
-    count = Map.get(level_counts, level, 0) + 1
-    {Map.put(level_counts, level, count), count}
+  def increment_count(numberings, level) do
+    count = count_at_level(numberings, level) + 1
+
+    {Map.put(numberings, level, count), count}
+  end
+
+  defp count_at_level(numberings, level) do
+    Map.get(numberings, level, 0)
+  end
+
+  def init_numberings() do
+    %{}
   end
 end

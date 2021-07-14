@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Resources.Numbering
 
   @doc """
   Enrolls a user in a course section
@@ -207,14 +208,12 @@ defmodule Oli.Delivery.Sections do
   """
   def get_section_by_slug(slug) do
     from(s in Section,
-      left_join: proj in assoc(s, :project),
       left_join: b in assoc(s, :brand),
       left_join: d in assoc(s, :lti_1p3_deployment),
       left_join: r in assoc(d, :registration),
       left_join: rb in assoc(r, :brand),
       where: s.slug == ^slug,
       preload: [
-        project: proj,
         brand: b,
         lti_1p3_deployment: {d, registration: {r, brand: rb}}
       ]
@@ -376,7 +375,7 @@ defmodule Oli.Delivery.Sections do
       Oli.Publishing.get_published_revisions(publication)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
-    numberings = %{}
+    numberings = Numbering.init_numberings()
     level = 0
     processed_ids = []
 
@@ -441,7 +440,7 @@ defmodule Oli.Delivery.Sections do
          level,
          numberings
        ) do
-    {numberings, numbering_index} = increment_count(numberings, level)
+    {numberings, numbering_index} = Numbering.increment_count(numberings, level)
 
     {children, numberings, processed_ids} =
       Enum.reduce(
@@ -459,9 +458,14 @@ defmodule Oli.Delivery.Sections do
               numberings
             )
 
-          {children_ids ++ [id], numberings, [resource_id | processed_ids]}
+          {[id | children_ids], numberings, [resource_id | processed_ids]}
         end
       )
+      # it's more efficient to append to list using [id | children_ids] and
+      # then reverse than to concat on every reduce call using ++
+      |> then(fn {children, numberings, processed_ids} ->
+        {Enum.reverse(children), numberings, processed_ids}
+      end)
 
     %SectionResource{id: section_resource_id} =
       Oli.Repo.insert!(%SectionResource{
@@ -475,60 +479,5 @@ defmodule Oli.Delivery.Sections do
       })
 
     {section_resource_id, numberings, processed_ids}
-  end
-
-  defp increment_count(numberings, level) do
-    count = count_at_level(numberings, level) + 1
-
-    {Map.put(numberings, level, count), count}
-  end
-
-  defp count_at_level(numberings, level) do
-    case Map.get(numberings, level) do
-      nil ->
-        0
-
-      count ->
-        count
-    end
-  end
-
-  @doc """
-  Reconstructs the section resource hierarchy for a section
-  ## Examples
-      iex> get_section_resource_hierarchy(section)
-      %SectionResource{}
-  """
-  def get_section_resource_hierarchy(%Section{
-        id: section_id,
-        root_section_resource: root_section_resource
-      }) do
-    section_resources_by_id =
-      all_section_resources(section_id)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
-
-    section_resource_with_children(root_section_resource, section_resources_by_id)
-  end
-
-  defp all_section_resources(section_id) do
-    from(sr in SectionResource,
-      where: sr.section_id == ^section_id,
-      select: sr
-    )
-    |> Repo.all()
-  end
-
-  defp section_resource_with_children(
-         %SectionResource{children: children_ids} = section_resource,
-         section_resources_by_id
-       ) do
-    Map.put(
-      section_resource,
-      :children,
-      Enum.map(children_ids, fn c_id ->
-        Map.get(section_resources_by_id, c_id)
-        |> section_resource_with_children(section_resources_by_id)
-      end)
-    )
   end
 end

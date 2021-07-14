@@ -19,7 +19,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Page.PageContext
   alias Oli.Authoring.Editing.ActivityEditor
 
@@ -203,12 +202,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
            construct_parent_references(objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
+      revisions_by_resource_id =
+        AuthoringResolver.all_revisions_in_hierarchy(project_slug)
+        |> Enum.reduce(%{}, fn rev, acc -> Map.put(acc, rev.resource_id, rev) end)
 
-      [root_container_node] =
-        Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
+      hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
-      hierarchy = root_container_node.children
-      {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
+      {previous, next} =
+        PageContext.determine_previous_next(hierarchy, revisions_by_resource_id, revision)
 
       activity_ids = activities_from_content(revision.content)
 

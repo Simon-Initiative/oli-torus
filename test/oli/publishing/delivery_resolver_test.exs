@@ -2,108 +2,10 @@ defmodule Oli.Publishing.DeliveryResolverTest do
   use Oli.DataCase
 
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Publishing
-  alias Oli.Delivery.Sections
 
   describe "delivery resolution" do
     setup do
-      map =
-        Seeder.base_project_with_resource2()
-        |> Seeder.add_objective("child1", :child1)
-        |> Seeder.add_objective("child2", :child2)
-        |> Seeder.add_objective("child3", :child3)
-        |> Seeder.add_objective("child4", :child4)
-        |> Seeder.add_objective_with_children("parent1", [:child1, :child2, :child3], :parent1)
-        |> Seeder.add_objective_with_children("parent2", [:child4], :parent2)
-
-      # Create another project with resources and revisions
-      Seeder.another_project(map.author, map.institution)
-
-      # Publish the current state of our test project:
-      {:ok, pub1} = Publishing.publish_project(map.project)
-
-      # Track a series of changes for both resources:
-      pub = Publishing.working_project_publication(map.project.slug)
-
-      latest1 =
-        Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "2"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "3"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "4"}, pub, map.author.id)
-
-      latest2 =
-        Publishing.publish_new_revision(map.revision2, %{title: "A"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "B"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "C"}, pub, map.author.id)
-        |> Publishing.publish_new_revision(%{title: "D"}, pub, map.author.id)
-
-      # Create a new page that wasn't present during the first publication
-      %{revision: latest3} = Seeder.create_page("New To Pub2", pub, map.project, map.author)
-
-      second_map = Seeder.add_objective(Map.merge(map, %{publication: pub}), "child5", :child5)
-
-      second_map =
-        Seeder.add_objective_with_children(
-          Map.merge(second_map, %{publication: pub}),
-          "parent3",
-          [:child5],
-          :parent3
-        )
-
-      # Publish again
-      {:ok, pub2} = Publishing.publish_project(map.project)
-
-      # Create a fourth page that is completely unpublished
-      pub = Publishing.working_project_publication(map.project.slug)
-      %{revision: latest4} = Seeder.create_page("Unpublished", pub, map.project, map.author)
-
-      third_map = Seeder.add_objective(Map.merge(map, %{publication: pub}), "child6", :child6)
-
-      third_map =
-        Seeder.add_objective_with_children(
-          Map.merge(third_map, %{publication: pub}),
-          "parent4",
-          [:child6],
-          :parent4
-        )
-
-      # Create a course section, one for each publication
-      {:ok, section_1} =
-        Sections.create_section(%{
-          title: "1",
-          timezone: "1",
-          registration_open: true,
-          context_id: "1",
-          institution_id: map.institution.id,
-          base_project_id: map.project.id
-        })
-        |> then(fn {:ok, section} -> section end)
-        |> Sections.create_section_resources(pub1)
-
-      {:ok, section_2} =
-        Sections.create_section(%{
-          title: "2",
-          timezone: "1",
-          registration_open: true,
-          context_id: "2",
-          institution_id: map.institution.id,
-          base_project_id: map.project.id
-        })
-        |> then(fn {:ok, section} -> section end)
-        |> Sections.create_section_resources(pub2)
-
-      Map.put(map, :latest1, latest1)
-      |> Map.put(:latest2, latest2)
-      |> Map.put(:pub1, pub1)
-      |> Map.put(:pub2, pub2)
-      |> Map.put(:latest3, latest3)
-      |> Map.put(:latest4, latest4)
-      |> Map.put(:child5, Map.get(second_map, :child5))
-      |> Map.put(:parent3, Map.get(second_map, :parent3))
-      |> Map.put(:child6, Map.get(third_map, :child6))
-      |> Map.put(:parent4, Map.get(third_map, :parent4))
-      |> Map.put(:section_1, section_1)
-      |> Map.put(:section_2, section_2)
+      Seeder.base_project_with_resource4()
     end
 
     test "find_parent_objectives/2 returns parents", %{
@@ -245,12 +147,12 @@ defmodule Oli.Publishing.DeliveryResolverTest do
                [latest2, nil]
     end
 
-    test "all_revisions/1 resolves the all nodes", %{} do
+    test "all_revisions/1 resolves the all revisions", %{} do
       nodes = DeliveryResolver.all_revisions("1")
       assert length(nodes) == 9
     end
 
-    test "all_revisions_in_hierarchy/1 resolves the all hierarchy nodes", %{} do
+    test "all_revisions_in_hierarchy/1 resolves all revisions in the hierarchy", %{} do
       nodes = DeliveryResolver.all_revisions_in_hierarchy("1")
       assert length(nodes) == 3
     end
@@ -260,6 +162,33 @@ defmodule Oli.Publishing.DeliveryResolverTest do
     } do
       assert DeliveryResolver.root_container("1") == container_revision
       assert DeliveryResolver.root_container("2") == container_revision
+    end
+
+    test "full_hierarchy/1 resolves and reconstructs the entire hierarchy", %{
+      section_1: section
+    } do
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.numbering_index == 1
+      assert hierarchy.numbering_level == 0
+      assert Enum.count(hierarchy.children) == 3
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_index) == 1
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_level) == 1
+
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:numbering_index) == 2
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:numbering_index) == 3
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_index) == 1
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering_level) == 2
     end
   end
 end

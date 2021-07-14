@@ -28,8 +28,6 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       timestamps()
     end
 
-    create unique_index(:section_resources, [:resource_id, :section_id])
-
     create table(:user_groups) do
       add(:name, :string)
       add(:section_id, references(:sections))
