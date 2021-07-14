@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
 import { usePrevious } from '../../hooks/usePrevious';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -28,6 +28,9 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const id: string = props.id;
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : []);
+  const [localSnapshot, setLocalSnapshot] = useState<any>({});
+  const [stateChanged, setStateChanged] = useState<boolean>(false);
+  const [mutateState, setMutateState] = useState<any>({});
   const {
     x = 0,
     y = 0,
@@ -46,12 +49,28 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const [newElement, setNewElement] = useState<SelectOption>();
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
   const prevElementValues = usePrevious<any[]>(elementValues);
 
@@ -66,7 +85,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const [customCssClass, setCustomCssClass] = useState<string>(
     model?.customCss ? model.customCss : '',
   );
-
+  const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -77,38 +96,64 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     borderRadius: '5px',
     fontFamily: 'revert',
   };
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setLocalSnapshot(currentStateSnapshot);
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled) {
+      setEnabled(parseBool(sEnabled));
+    }
+
+    const sShowCorrect = currentStateSnapshot[`stage.${id}.showCorrect`];
+    if (sShowCorrect) {
+      setShowCorrect(parseBool(sShowCorrect));
+    }
+
+    const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
+    if (sCustomCss) {
+      setCustomCss(sCustomCss);
+    }
+
+    const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sEnabled) {
+      setCustomCssClass(sCustomCssClass);
+    }
+
+    if (initResult.historyMode) {
+      //setEnabled(false);
+    }
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   useEffect(() => {
     //if (elements?.length && state?.length) {
     if (elements?.length) {
-      getStateSelections();
+      getStateSelections(localSnapshot);
       setContentList(buildContentList);
     }
-  }, [elements, state]);
+  }, [elements, localSnapshot]);
 
   useEffect(() => {
-    props.onReady({ activityId: `${id}`, partResponses: [] });
-  }, []);
-
-  useEffect(() => {
-    //TODO implement once state support is added
-  }, [state]);
-
-  useEffect(() => {
-    // explicitly update properties from state
-    if (model.enabled) {
-      setEnabled(parseBool(model.enabled));
+    //if (elements?.length && state?.length) {
+    if (elements?.length && stateChanged) {
+      getStateSelections(mutateState);
+      setContentList(buildContentList);
+      setStateChanged(false);
     }
-    if (model.showCorrect) {
-      setShowCorrect(parseBool(model.showCorrect));
-    }
-    if (model.customCss) {
-      setCustomCss(model.customCss);
-    }
-    if (model.customCssClass) {
-      setCustomCssClass(model.customCssClass);
-    }
-  }, [model]);
+  }, [elements, stateChanged, mutateState]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -168,6 +213,8 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             const { mutateChanges: changes } = payload;
+            setStateChanged(true);
+            setMutateState(changes);
             const sEnabled = changes[`stage.${id}.enabled`];
             if (sEnabled) {
               setEnabled(parseBool(sEnabled));
@@ -298,26 +345,33 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     }
   };
 
-  const getStateSelections = () => {
-    if (!state?.length || !elements?.length || !Array.isArray(state)) return;
+  const getStateSelections = (snapshot: any) => {
+    if (!Object.keys(snapshot)?.length || !elements?.length) return;
 
     // check for state vars that match elements keys and
-    const interested = state.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const interested = Object.keys(snapshot).filter(
+      (stateVar) => stateVar.indexOf(`stage.${id}.`) === 0,
+    );
     const stateValues = interested.map((stateVar) => {
-      const sKey = stateVar?.key;
-      if (sKey?.startsWith('Input ') && sKey?.endsWith('.Value')) {
+      const sKey = stateVar;
+      if (sKey?.startsWith(`stage.${id}.Input `) && sKey?.endsWith('.Value')) {
+        const segments = sKey.split('.');
+        const finalsKey = segments.slice(-2).join('.');
         // extract index from stateVar key
-        const index: number = parseInt(sKey.replace(/[^0-9\\.]/g, ''), 10);
+        const index: number = parseInt(finalsKey.replace(/[^0-9\\.]/g, ''), 10);
         // get key from `elements` based on 'Input [index].Value'
         const el: any = elements[index - 1];
-        const val: string = stateVar?.value?.toString();
+        const val: string = snapshot[stateVar]?.toString();
         if (el?.key) return { key: el.key, value: val };
       } else {
         return false;
       }
     });
     // set new elementValues array
-    setElementValues([...stateValues]);
+    setElementValues([
+      ...stateValues,
+      ...elementValues.filter((obj) => !stateValues.includes(obj?.key)),
+    ]);
   };
 
   const buildContentList = content?.map(
