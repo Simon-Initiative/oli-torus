@@ -119,15 +119,17 @@ export const initializeActivity = createAsyncThunk(
     ];
 
     const globalSnapshot = getEnvState(defaultGlobalEnv);
-    const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
+    const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
+    const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
     // don't update the time if student is revisiting that page
     if (!isActivityAlreadyVisited) {
-      //looks like SS captures the date when we leave the page but it should show in the history as soon as we visit but it does not show the timestamp
+      // looks like SS captures the date when we leave the page but it should
+      // show in the history as soon as we visit but it does not show the timestamp
       // so we will capture the time on trigger check
       const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: `${currentSequenceId}|visitTimestamp`,
+        target: trackingStampKey,
         operator: '=',
-        value: '',
+        value: 0,
       };
       sessionOps.push(targetVisitTimeStampOp);
     }
@@ -146,10 +148,7 @@ export const initializeActivity = createAsyncThunk(
 
       const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
         .map((key: string) => {
-          if (
-            (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) &&
-            key.indexOf('visitTimestamp') === -1
-          ) {
+          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
             return key;
           }
         })
@@ -178,7 +177,7 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
+    console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] });
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
@@ -187,6 +186,10 @@ export const initializeActivity = createAsyncThunk(
       return collect;
     }, {});
 
+    console.log('about to update score [deck]', {
+      currentState,
+      score: sessionState['session.tutorialScore'],
+    });
     thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
 
     // optimistically write to redux

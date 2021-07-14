@@ -5,8 +5,8 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  evalScript,
   getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentActivityContent,
@@ -180,10 +180,11 @@ const DeckLayoutFooter: React.FC = () => {
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
       // should respond to scripting errors?
-      console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
-      dispatch(
-        setScore({ score: evalScript('session.tutorialScore', defaultGlobalEnv).result || 0 }),
-      );
+      console.log('MUTATE ACTIONS', {
+        mutateResults,
+        mutationsModified,
+        score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
+      });
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
@@ -200,6 +201,10 @@ const DeckLayoutFooter: React.FC = () => {
         }),
       );
     }
+
+    // after any mutations applied, and just in case
+    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
