@@ -114,7 +114,6 @@ const Audio: React.FC<any> = (props) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
-      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -176,8 +175,6 @@ const Audio: React.FC<any> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             // nothing to do
-            break;
-          case NotificationType.HISTORY_NAVIGATION:
             break;
         }
       };

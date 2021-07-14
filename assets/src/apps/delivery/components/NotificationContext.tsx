@@ -8,7 +8,6 @@ export enum NotificationType {
   CHECK_COMPLETE = 'checkComplete',
   STATE_CHANGED = 'stateChanged',
   CONTEXT_CHANGED = 'contextChanged',
-  HISTORY_NAVIGATION = 'historyNavigation',
 }
 
 type UnsubscribeFn = () => void;

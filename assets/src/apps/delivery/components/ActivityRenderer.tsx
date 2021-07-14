@@ -302,10 +302,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (!ref.current) {
       return;
     }
-
-    ref.current.notify(NotificationType.HISTORY_NAVIGATION, {
-      activityId: historyNavigationActivity,
-    });
   }, [historyNavigationActivity]);
 
   useEffect(() => {
