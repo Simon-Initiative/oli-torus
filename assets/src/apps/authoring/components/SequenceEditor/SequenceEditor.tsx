@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import { upsertActivity } from '../../../delivery/store/features/activities/slice';
+import { setRightPanelActiveTab } from '../../../authoring/store/app/slice';
 import {
   findInHierarchy,
   flattenHierarchy,
@@ -22,6 +23,7 @@ import { addSequenceItem } from '../../store/groups/layouts/deck/actions/addSequ
 import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const SequenceEditor: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -38,6 +40,7 @@ const SequenceEditor: React.FC<any> = (props) => {
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
   const handleItemAdd = async (
