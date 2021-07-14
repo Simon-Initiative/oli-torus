@@ -34,6 +34,7 @@ import {
   selectPreviewMode,
   selectResourceAttemptGuid,
   selectSectionSlug,
+  setScore,
 } from '../../page/slice';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
@@ -82,7 +83,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 0; // TODO: increment the server value
+    const currentAttempNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
@@ -185,6 +186,8 @@ export const initializeActivity = createAsyncThunk(
       }
       return collect;
     }, {});
+
+    thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
 
     // optimistically write to redux
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));

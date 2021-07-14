@@ -5,6 +5,7 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  evalScript,
   getLocalizedStateSnapshot,
 } from '../../../../adaptivity/scripting';
 import {
@@ -32,7 +33,7 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectPageContent } from '../../store/features/page/slice';
+import { selectPageContent, setScore } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -180,6 +181,9 @@ const DeckLayoutFooter: React.FC = () => {
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
       // should respond to scripting errors?
       console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
+      dispatch(
+        setScore({ score: evalScript('session.tutorialScore', defaultGlobalEnv).result || 0 }),
+      );
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),

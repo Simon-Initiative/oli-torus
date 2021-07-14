@@ -27,6 +27,10 @@ export const triggerCheck = createAsyncThunk(
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
 
+    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
+    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
+
     /* console.log('TRIGGER CHECK', {currentAttempt}); */
 
     const currentActivityTree = selectCurrentActivityTree(rootState);
@@ -49,11 +53,6 @@ export const triggerCheck = createAsyncThunk(
     const timeOnQuestion = Date.now() - timeStartQuestion;
     modifiedExtrinsicState['session.timeOnQuestion'] = timeOnQuestion;
 
-    const currentAttemptNumber = modifiedExtrinsicState['session.attemptNumber'];
-    modifiedExtrinsicState['session.attemptNumber'] = currentAttemptNumber + 1;
-    modifiedExtrinsicState[`${currentActivity.id}|session.attemptNumber`] =
-      currentAttemptNumber + 1;
-
     const updateScripting: ApplyStateOperation[] = [
       {
         target: 'session.timeOnQuestion',
@@ -63,12 +62,12 @@ export const triggerCheck = createAsyncThunk(
       {
         target: 'session.attemptNumber',
         operator: '=',
-        value: currentAttemptNumber + 1,
+        value: currentAttempt?.attemptNumber,
       },
       {
         target: `${currentActivity.id}|session.attemptNumber`,
         operator: '=',
-        value: currentAttemptNumber + 1,
+        value: currentAttempt?.attemptNumber,
       },
     ];
     let globalSnapshot = getEnvState(defaultGlobalEnv);
@@ -170,9 +169,6 @@ export const triggerCheck = createAsyncThunk(
         stateSnapshot,
       }); */
     } else {
-      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-      const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-      const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
       /* console.log('CHECKING', {
         sectionSlug,
         currentActivityTreeAttempts,
@@ -228,9 +224,6 @@ export const triggerCheck = createAsyncThunk(
       isCorrect = checkResult.every((action: any) => action.params.correct);
     }
 
-    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
     let attempt: any = currentAttempt;
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
@@ -238,6 +231,21 @@ export const triggerCheck = createAsyncThunk(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
+      const updateExtrinsicAttempt: ApplyStateOperation[] = [
+        {
+          target: 'session.attemptNumber',
+          operator: '=',
+          value: attempt.attemptNumber,
+        },
+        {
+          target: `${currentActivity.id}|session.attemptNumber`,
+          operator: '=',
+          value: attempt.attemptNumber,
+        },
+      ];
+      bulkApplyState(updateExtrinsicAttempt, defaultGlobalEnv);
+      // need to write attempt number to extrinsic state?
+      // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
 
     // scoring is based on properties of the activity
