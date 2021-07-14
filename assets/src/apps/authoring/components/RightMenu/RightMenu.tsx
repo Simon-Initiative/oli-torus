@@ -3,6 +3,7 @@ import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 import { selectCurrentActivity, upsertActivity } from '../../../delivery/store/features/activities/slice';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
@@ -13,8 +14,8 @@ import lessonSchema, {
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
 import screenSchema, {
-  transformScreenModeltoSchema as transformScreenModel,
-  transformScreenSchematoModel as transformScreenSchema, screenUiSchema
+  transformScreenModeltoSchema,
+  transformScreenSchematoModel, screenUiSchema
 } from '../PropertyEditor/schemas/screen';
 
 const RightMenu: React.FC<any> = (props) => {
@@ -28,7 +29,7 @@ const RightMenu: React.FC<any> = (props) => {
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
-  const screenData = transformScreenModel(currentActivity?.content?.custom);
+  const screenData = transformScreenModeltoSchema(currentActivity?.content?.custom);
   const lessonData = transformLessonModel(currentLesson);
 
   const handleSelectTab = (key: string) => {
@@ -37,16 +38,16 @@ const RightMenu: React.FC<any> = (props) => {
   };
 
   const screenPropertyChangeHandler = (properties: any) => {
-    const modelChanges = transformScreenSchema(properties);
+    const modelChanges = transformScreenSchematoModel(properties);
     console.log(modelChanges);
     const screenChanges = {
       ...currentActivity?.content?.custom,
       ...modelChanges
     };
     if(currentActivity){
-      const clone = JSON.parse(JSON.stringify(currentActivity));
-      clone.content.custom = screenChanges;
-      debounceSaveScreenSettings(clone);
+      const cloneActivity = clone(currentActivity);
+      cloneActivity.content.custom = screenChanges;
+      debounceSaveScreenSettings(cloneActivity);
     }
   };
 
