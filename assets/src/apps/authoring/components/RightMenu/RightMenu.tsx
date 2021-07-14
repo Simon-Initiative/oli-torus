@@ -1,12 +1,15 @@
+import {
+  selectRightPanelActiveTab,
+  setRightPanelActiveTab,
+} from '../../../authoring/store/app/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
-import React, { useCallback, useState } from 'react';
-import { Accordion, Tab, Tabs } from 'react-bootstrap';
+import React, { useCallback } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
@@ -15,9 +18,15 @@ import lessonSchema, {
 } from '../PropertyEditor/schemas/lesson';
 import screenSchema, { getScreenData, screenUiSchema } from '../PropertyEditor/schemas/screen';
 
+export enum RightPanelTabs {
+  LESSON = 'lesson',
+  SCREEN = 'screen',
+  COMPONENT = 'component',
+}
+
 const RightMenu: React.FC<any> = (props) => {
   const dispatch = useDispatch();
-  const [selectedTab, setSelectedTab] = useState<string>('lesson');
+  const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
 
@@ -30,9 +39,9 @@ const RightMenu: React.FC<any> = (props) => {
   const screenData = getScreenData(currentActivity?.content?.custom);
   const lessonData = transformLessonModel(currentLesson);
 
-  const handleSelectTab = (key: string) => {
+  const handleSelectTab = (key: RightPanelTabs) => {
     // TODO: any other saving or whatever
-    setSelectedTab(key);
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
 
   const screenPropertyChangeHandler = (properties: any) => {
@@ -85,8 +94,8 @@ const RightMenu: React.FC<any> = (props) => {
       activeKey={selectedTab}
       onSelect={handleSelectTab}
     >
-      <Tab eventKey="lesson" title="Lesson">
-        <div >
+      <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
+        <div>
           <PropertyEditor
             schema={lessonSchema}
             uiSchema={lessonUiSchema}
@@ -95,7 +104,7 @@ const RightMenu: React.FC<any> = (props) => {
           />
         </div>
       </Tab>
-      <Tab eventKey="screen" title="Screen">
+      <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div>
           <PropertyEditor
             schema={screenSchema}
@@ -105,7 +114,7 @@ const RightMenu: React.FC<any> = (props) => {
           />
         </div>
       </Tab>
-      <Tab eventKey="component" title="Component" disabled={!currentComponent}>
+      <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && (
           <div className="p-3">
             <PropertyEditor

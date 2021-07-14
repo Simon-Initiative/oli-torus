@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { clone } from 'utils/common';
 import {
   findInHierarchy,
   flattenHierarchy,
@@ -73,7 +74,7 @@ export const addSequenceItem = createAsyncThunk(
         sequenceItems.push(item);
       }
     }
-    const newGroup = JSON.parse(JSON.stringify(group));
+    const newGroup = clone(group);
     newGroup.children = sequenceItems;
     dispatch(upsertGroup({ group: newGroup }));
     // TODO: save it to a DB ?
