@@ -137,7 +137,7 @@ export const transformScreenSchematoModel = (schema: any) => {
     checkButtonLabel:schema.checkButton.checkButtonLabel,
     maxAttempt:schema.max.maxAttempt,
     maxScore:schema.max.maxScore,
-    palette: schema.palette,
+    palette: {...schema.palette,  useHtmlProps: true},
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
     screenButton: schema.screenButton
