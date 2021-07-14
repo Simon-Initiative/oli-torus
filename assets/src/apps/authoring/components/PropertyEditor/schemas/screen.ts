@@ -58,7 +58,7 @@ const screenSchema = {
         },
       },
     },
-    trapStateScoring: {
+    trapStateScoreScheme: {
       title: 'Trap State Scoring',
       type: 'boolean',
       format: 'checkbox',
@@ -116,16 +116,32 @@ export const screenUiSchema = {
   },
 };
 
-export const getScreenData = (data: any) => {
+export const transformScreenModeltoSchema = (data: any) => {
   if (data) {
     return {
       ...data,
-      useHtmlProps: data.palette.useHtmlProps,
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
     };
   }
+};
+
+export const transformScreenSchematoModel = (schema: any) => {
+  return {
+    width: schema.Size.width,
+    height: schema.Size.height,
+    customCssClass: schema.customCssClass,
+    combineFeedback: schema.combineFeedback,
+    showCheckBtn:schema.checkButton.showCheckBtn,
+    checkButtonLabel:schema.checkButton.checkButtonLabel,
+    maxAttempt:schema.max.maxAttempt,
+    maxScore:schema.max.maxScore,
+    palette: schema.palette,
+    trapStateScoreScheme: schema.trapStateScoreScheme,
+    negativeScoreAllowed: schema.negativeScoreAllowed,
+    screenButton: schema.screenButton
+  };
 };
 
 export default screenSchema;

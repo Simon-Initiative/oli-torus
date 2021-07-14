@@ -1,19 +1,21 @@
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useState } from 'react';
-import { Accordion, Tab, Tabs } from 'react-bootstrap';
+import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { selectCurrentActivity, upsertActivity } from '../../../delivery/store/features/activities/slice';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-import screenSchema, { getScreenData, screenUiSchema } from '../PropertyEditor/schemas/screen';
+import screenSchema, {
+  transformScreenModeltoSchema as transformScreenModel,
+  transformScreenSchematoModel as transformScreenSchema, screenUiSchema
+} from '../PropertyEditor/schemas/screen';
 
 const RightMenu: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -26,8 +28,7 @@ const RightMenu: React.FC<any> = (props) => {
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
-
-  const screenData = getScreenData(currentActivity?.content?.custom);
+  const screenData = transformScreenModel(currentActivity?.content?.custom);
   const lessonData = transformLessonModel(currentLesson);
 
   const handleSelectTab = (key: string) => {
@@ -36,8 +37,29 @@ const RightMenu: React.FC<any> = (props) => {
   };
 
   const screenPropertyChangeHandler = (properties: any) => {
-    console.log('SCREEN PROP CHANGED', { properties });
+    const modelChanges = transformScreenSchema(properties);
+    console.log(modelChanges);
+    const screenChanges = {
+      ...currentActivity?.content?.custom,
+      ...modelChanges
+    };
+    if(currentActivity){
+      const clone = JSON.parse(JSON.stringify(currentActivity));
+      clone.content.custom = screenChanges;
+      debounceSaveScreenSettings(clone);
+    }
   };
+
+  const debounceSaveScreenSettings = useCallback(
+    debounce(
+      (activity) => {
+        dispatch(upsertActivity({activity: activity}));
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    []
+  );
 
   const debounceSavePage = useCallback(
     debounce(
