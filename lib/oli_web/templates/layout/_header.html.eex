@@ -1,22 +1,27 @@
-<nav class="navbar navbar-expand">
+<div class="workspace-header">
 
-    <div class="container">
-        <a class="navbar-brand oli-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
-            <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
-        </a>
+  <div class="d-flex justify-content-between">
+    <h2><%= @title %> </h2>
+    <div>
+      <button id="button-new-project"
+        class="btn btn-sm btn-primary mr-3"
+        data-toggle="modal"
+        data-target="#modal-new-project">
+        <i class="fa fa-plus"></i> New Project
+      </button>
+      <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
+      <%= account_link @conn %>
 
-        <div class="nav-item my-2 my-lg-0 mr-2">
-            <a href="javascript:" onclick="showHelpModal();">Help</a>
-        </div>
-
-        <%= if user_signed_in?(@conn) do %>
-        <div>
-            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-outline-primary ml-2" %>
-        </div>
+      <%= if user_signed_in?(@conn) do %>
+        <%= account_link @conn %>
         <% else %>
         <%= if @conn.request_path == "/" do %>
         <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
+        <% end %>
       <% end %>
-    <% end %>
+
     </div>
-</nav>
+
+  </div>
+
+</div>

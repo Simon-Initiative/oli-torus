@@ -5,7 +5,7 @@
 </a>
 
 <div>
-  <%= render OliWeb.LayoutView, "_header.html", assigns %>
+  <%= render OliWeb.LayoutView, "workspace_header.html", assigns %>
 
   <main role="main" id="main-content">
 
