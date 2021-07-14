@@ -312,7 +312,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
-      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -323,10 +322,6 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
             break;
           case NotificationType.CHECK_COMPLETE:
             // if disabled above then re-enable now
-            break;
-          case NotificationType.HISTORY_NAVIGATION:
-
-            setEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

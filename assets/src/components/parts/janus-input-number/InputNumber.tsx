@@ -75,7 +75,6 @@ const InputNumber: React.FC<any> = (props) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
-      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -86,9 +85,6 @@ const InputNumber: React.FC<any> = (props) => {
             break;
           case NotificationType.CHECK_COMPLETE:
             // nothing to do
-            break;
-          case NotificationType.HISTORY_NAVIGATION:
-            setEnabled(false);
             break;
           case NotificationType.STATE_CHANGED:
             {

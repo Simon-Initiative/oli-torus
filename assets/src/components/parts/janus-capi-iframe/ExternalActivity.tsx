@@ -383,7 +383,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
-      NotificationType.HISTORY_NAVIGATION,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -444,14 +443,6 @@ const ExternalActivity: React.FC<any> = (props) => {
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
               processInitStateVariable(finalCurrentStateSnapshot);
               setSimIsInitStatePassedOnce(false);
-            }
-            break;
-          case NotificationType.HISTORY_NAVIGATION:
-            {
-              writeCapiLog('HISTORY_NAVIGATION!!!!', 3, {
-                simLife,
-                payload,
-              });
             }
             break;
         }
