@@ -33,7 +33,6 @@ const EditingCanvas: React.FC<any> = (props) => {
       <section
         className="aa-stage"
         onClick={(e) => {
-          e.stopPropagation();
           dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.LESSON }));
         }}
       >
