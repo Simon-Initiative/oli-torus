@@ -196,6 +196,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
@@ -222,6 +223,9 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
     if (sNumberOfSelectedChoices !== undefined) {
       setNumberOfSelectedChoices(sNumberOfSelectedChoices);
+    }
+    if (initResult.historyMode) {
+      setEnabled(false);
     }
     setReady(true);
   }, []);

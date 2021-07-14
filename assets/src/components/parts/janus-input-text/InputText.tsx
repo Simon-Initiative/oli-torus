@@ -69,7 +69,9 @@ const InputText: React.FC<any> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-
+    if (initResult.historyMode) {
+      setEnabled(false);
+    }
     setReady(true);
   }, []);
 

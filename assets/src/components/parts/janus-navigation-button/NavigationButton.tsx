@@ -156,7 +156,9 @@ const NavigationButton: React.FC<any> = (props) => {
     if (sTransparent !== undefined) {
       setButtonTransparent(sTransparent);
     }
-
+    if (initResult.historyMode) {
+      setButtonEnabled(false);
+    }
     setReady(true);
   }, []);
 

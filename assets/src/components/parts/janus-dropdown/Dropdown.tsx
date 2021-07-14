@@ -91,7 +91,9 @@ const Dropdown: React.FC<any> = (props) => {
       setSelectedItem(sSelectedItem);
       setSelection(selectionIndex + 1);
     }
-
+    if (initResult.historyMode) {
+      setEnabled(false);
+    }
     setReady(true);
   }, []);
 
