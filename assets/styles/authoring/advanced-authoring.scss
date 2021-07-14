@@ -180,13 +180,13 @@ $panel-section-title-bar-color: #e8ebed;
         margin-left: 0px;
         margin-bottom: 0px !important;
 
-        .col-12:not(.inner) > div{
+        .col-12:not(.inner) > div {
           padding-right: 15px;
           padding-left: 15px;
           border-bottom: 1px solid $ui-border-color !important;
         }
 
-        >.col-12:not(.inner) > div{
+        > .col-12:not(.inner) > div {
           border-bottom: 0px !important;
         }
       }
@@ -198,11 +198,11 @@ $panel-section-title-bar-color: #e8ebed;
       }
       .accordion {
         margin: 0 -16px -16px -16px;
-        .collapse > .col-12{
+        .collapse > .col-12 {
           padding-right: 0px;
           padding-left: 0px;
 
-          >.form-group {
+          > .form-group {
             padding-bottom: 10px;
           }
         }
@@ -325,8 +325,44 @@ $panel-section-title-bar-color: #e8ebed;
         margin: 0;
         padding: 0;
 
+        // TODO: find a cleaner way to manage nesting
         .aa-sequence-details-wrapper {
-          padding-left: 36px;
+          padding-left: 35px;
+        }
+        .nested {
+          .aa-sequence-details-wrapper {
+            padding-left: 45px;
+          }
+          .nested {
+            .aa-sequence-details-wrapper {
+              padding-left: 55px;
+            }
+            .nested {
+              .aa-sequence-details-wrapper {
+                padding-left: 65px;
+              }
+              .nested {
+                .aa-sequence-details-wrapper {
+                  padding-left: 75px;
+                }
+                .nested {
+                  .aa-sequence-details-wrapper {
+                    padding-left: 85px;
+                  }
+                  .nested {
+                    .aa-sequence-details-wrapper {
+                      padding-left: 95px;
+                    }
+                    .nested {
+                      .aa-sequence-details-wrapper {
+                        padding-left: 105px;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

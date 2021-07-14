@@ -1,4 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
 export interface AppState {
@@ -11,6 +12,7 @@ export interface AppState {
   topPanel: boolean;
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
+  rightPanelActiveTab: RightPanelTabs;
 }
 
 const initialState: AppState = {
@@ -23,6 +25,7 @@ const initialState: AppState = {
   topPanel: true,
   bottomPanel: true,
   visible: false,
+  rightPanelActiveTab: RightPanelTabs.LESSON,
 };
 
 export interface AppConfig {
@@ -62,12 +65,16 @@ const slice: Slice<AppState> = createSlice({
     setVisible(state, action: PayloadAction<{ visible: boolean }>) {
       state.visible = action.payload.visible;
     },
+    setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
+      state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
+    },
   },
 });
 
 export const AppSlice = slice.name;
 
-export const { setInitialConfig, setPanelState, setVisible } = slice.actions;
+export const { setInitialConfig, setPanelState, setVisible, setRightPanelActiveTab } =
+  slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
 export const selectPaths = createSelector(selectState, (state: AppState) => state.paths);
@@ -85,6 +92,10 @@ export const selectTopPanel = createSelector(selectState, (state: AppState) => s
 export const selectBottomPanel = createSelector(
   selectState,
   (state: AppState) => state.bottomPanel,
+);
+export const selectRightPanelActiveTab = createSelector(
+  selectState,
+  (state: AppState) => state.rightPanelActiveTab,
 );
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
