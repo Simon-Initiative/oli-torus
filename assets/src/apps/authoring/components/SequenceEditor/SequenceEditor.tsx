@@ -24,6 +24,7 @@ import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/
 import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
+import { clone } from 'utils/common';
 
 const SequenceEditor: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -106,7 +107,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     item: SequenceHierarchyItem<SequenceEntryType>,
     direction: ReorderDirection,
   ) => {
-    let hierarchyCopy = JSON.parse(JSON.stringify(hierarchy));
+    let hierarchyCopy = clone(hierarchy);
     const parentId = item.custom.layerRef;
     let itemIndex = -1;
     let parent: any = null;
@@ -171,7 +172,7 @@ const SequenceEditor: React.FC<any> = (props) => {
             console.error('no sibling above to move "in" to');
             return;
           }
-          const itemCopy = JSON.parse(JSON.stringify(item));
+          const itemCopy = clone(item);
           itemCopy.custom.layerRef = sibling.custom.sequenceId;
           sibling.children.push(itemCopy);
         }
@@ -197,7 +198,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               (i: SequenceHierarchyItem<SequenceEntryType>) =>
                 i.custom.sequenceId === parent.custom.sequenceId,
             );
-            const itemCopy = JSON.parse(JSON.stringify(item));
+            const itemCopy = clone(item);
             itemCopy.custom.layerRef = grandparent.custom.sequenceId;
             grandparent.children.splice(parentIndex + 1, 0, itemCopy);
           } else {
@@ -206,7 +207,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               (i: SequenceHierarchyItem<SequenceEntryType>) =>
                 i.custom.sequenceId === parent.custom.sequenceId,
             );
-            const itemCopy = JSON.parse(JSON.stringify(item));
+            const itemCopy = clone(item);
             itemCopy.custom.layerRef = '';
             hierarchyCopy.splice(parentIndex + 1, 0, itemCopy);
           }
@@ -215,7 +216,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       default:
         throw new Error('Uknown reorder direction! ' + direction);
     }
-    const newSequence = JSON.parse(JSON.stringify(flattenHierarchy(hierarchyCopy)));
+    const newSequence = clone(flattenHierarchy(hierarchyCopy));
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(savePage());
@@ -247,7 +248,7 @@ const SequenceEditor: React.FC<any> = (props) => {
   };
 
   const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
-    const hierarchyCopy = JSON.parse(JSON.stringify(hierarchy));
+    const hierarchyCopy = clone(hierarchy);
     const itemInHierarchy = findInHierarchy(hierarchyCopy, item.custom.sequenceId);
     if (itemInHierarchy === undefined) {
       return console.warn('item not converted', item);
