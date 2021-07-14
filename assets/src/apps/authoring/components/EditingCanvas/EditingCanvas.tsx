@@ -1,7 +1,13 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel, setPanelState, setVisible } from '../../store/app/slice';
+import {
+  selectBottomPanel,
+  setPanelState,
+  setRightPanelActiveTab,
+  setVisible,
+} from '../../store/app/slice';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 import FabricCanvas from './FabricCanvas';
 
 const EditingCanvas: React.FC<any> = (props) => {
@@ -15,21 +21,32 @@ const EditingCanvas: React.FC<any> = (props) => {
   const width = currentActivity?.content.custom.width || 800;
   const height = currentActivity?.content.custom.height || 600;
 
-  const items = currentActivityTree?.reduce((acc, activity) => {
-    // TODO: map these items to a new object that has a few more things
-    // such as layer items should be readonly
-    return acc.concat(...activity.content.partsLayout);;
-  }, []) || [];
+  const items =
+    currentActivityTree?.reduce((acc, activity) => {
+      // TODO: map these items to a new object that has a few more things
+      // such as layer items should be readonly
+      return acc.concat(...activity.content.partsLayout);
+    }, []) || [];
 
   return (
     <React.Fragment>
-      <section className="aa-stage">
+      <section
+        className="aa-stage"
+        onClick={(e) => {
+          e.stopPropagation();
+          dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.LESSON }));
+        }}
+      >
         <div
           className="aa-stage-inner"
           style={{
             width,
             height,
             marginBottom: bottomPanelState ? 'calc(40vh + 64px)' : 'calc(64px + 39px)',
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
           }}
         >
           <div className="aa-canvas-header">

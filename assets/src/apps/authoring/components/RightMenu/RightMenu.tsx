@@ -4,13 +4,12 @@ import {
 } from '../../../authoring/store/app/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
-import React, { useCallback, useState } from 'react';
-import { Accordion, Tab, Tabs } from 'react-bootstrap';
+import React, { useCallback } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
