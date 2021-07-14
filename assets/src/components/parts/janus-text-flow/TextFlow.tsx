@@ -175,7 +175,7 @@ const TextFlow: React.FC<any> = (props: any) => {
     };
   }, [props.notify]);
 
-  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
+  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize, height } = model;
 
   const styles: any = {
     position: 'absolute',
@@ -185,6 +185,9 @@ const TextFlow: React.FC<any> = (props: any) => {
     zIndex: z,
     wordWrap: 'break-word',
   };
+  if (height && height > 0) {
+    styles.height = height;
+  }
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }
