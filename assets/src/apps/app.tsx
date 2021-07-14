@@ -31,8 +31,6 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
       activityTypes: parsedActivityTypes,
     };
 
-    console.log('MOUNT UP', props);
-
     ReactDOM.render(
       <Provider store={store}>
         <Component {...props} />

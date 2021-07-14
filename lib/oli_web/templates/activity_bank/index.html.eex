@@ -1,0 +1,13 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/activitybank.js") %>"></script>
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
+<%= render OliWeb.SharedView, "_admin_edit_banner.html", %{is_admin?: @is_admin?, project_slug: @project_slug, revision_slug: @revision_slug} %>
+
+<div id="editor" class="container"/>
+
+<script>
+  window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
+</script>

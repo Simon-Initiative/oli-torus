@@ -247,6 +247,9 @@ defmodule OliWeb.Router do
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
 
+    # Activity Bank
+    get("/:project_id/bank", ActivityBankController, :index)
+
     # Objectives
     live("/:project_id/objectives", Objectives.Objectives,
       session: {__MODULE__, :with_session, []}
