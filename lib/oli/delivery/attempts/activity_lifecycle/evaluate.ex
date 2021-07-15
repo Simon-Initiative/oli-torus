@@ -59,7 +59,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         decodedResults = Poison.decode!(decoded)
 
         client_evaluations =
-          determine_score(%{"correct": decodedResults["correct"]})
+          determine_score(%{correct: decodedResults["correct"]})
           |> to_client_results(part_inputs)
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
