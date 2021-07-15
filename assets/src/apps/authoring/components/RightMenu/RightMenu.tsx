@@ -7,7 +7,8 @@ import { debounce } from 'lodash';
 import React, { useCallback } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { clone } from 'utils/common';
+import { selectCurrentActivity, upsertActivity } from '../../../delivery/store/features/activities/slice';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
@@ -16,7 +17,10 @@ import lessonSchema, {
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-import screenSchema, { getScreenData, screenUiSchema } from '../PropertyEditor/schemas/screen';
+import screenSchema, {
+  transformScreenModeltoSchema,
+  transformScreenSchematoModel, screenUiSchema
+} from '../PropertyEditor/schemas/screen';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -35,8 +39,7 @@ const RightMenu: React.FC<any> = (props) => {
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
-
-  const screenData = getScreenData(currentActivity?.content?.custom);
+  const screenData = transformScreenModeltoSchema(currentActivity?.content?.custom);
   const lessonData = transformLessonModel(currentLesson);
 
   const handleSelectTab = (key: RightPanelTabs) => {
@@ -45,8 +48,29 @@ const RightMenu: React.FC<any> = (props) => {
   };
 
   const screenPropertyChangeHandler = (properties: any) => {
-    console.log('SCREEN PROP CHANGED', { properties });
+    if(currentActivity){
+      const modelChanges = transformScreenSchematoModel(properties);
+      console.log(modelChanges);
+      const screenChanges = {
+        ...currentActivity?.content?.custom,
+        ...modelChanges
+      };
+      const cloneActivity = clone(currentActivity);
+      cloneActivity.content.custom = screenChanges;
+      debounceSaveScreenSettings(cloneActivity);
+    }
   };
+
+  const debounceSaveScreenSettings = useCallback(
+    debounce(
+      (activity) => {
+        dispatch(upsertActivity({activity: activity}));
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    []
+  );
 
   const debounceSavePage = useCallback(
     debounce(
@@ -95,7 +119,7 @@ const RightMenu: React.FC<any> = (props) => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
-        <div>
+        <div className='lesson-tab'>
           <PropertyEditor
             schema={lessonSchema}
             uiSchema={lessonUiSchema}
@@ -105,7 +129,7 @@ const RightMenu: React.FC<any> = (props) => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
-        <div>
+        <div className='screen-tab p-3'>
           <PropertyEditor
             schema={screenSchema}
             uiSchema={screenUiSchema}
@@ -116,7 +140,7 @@ const RightMenu: React.FC<any> = (props) => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && (
-          <div className="p-3">
+          <div className='commponent-tab'>
             <PropertyEditor
               schema={componentSchema}
               uiSchema={{}}

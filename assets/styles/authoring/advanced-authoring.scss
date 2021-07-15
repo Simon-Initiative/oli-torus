@@ -174,38 +174,29 @@ $panel-section-title-bar-color: #e8ebed;
     .form-control {
       font-size: 12px;
     }
-    .rjsf {
+    .lesson-tab {
       .container-fluid > .row {
-        margin-right: 0px;
-        margin-left: 0px;
         margin-bottom: 0px !important;
 
-        .col-12:not(.inner) > div {
-          padding-right: 15px;
+        > .col-12 > .form-group {
+          margin-bottom: 0 !important;
+        }
+      }
+      .collapse > .col-12{
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+
+        > .form-group {
           padding-left: 15px;
-          border-bottom: 1px solid $ui-border-color !important;
-        }
-
-        > .col-12:not(.inner) > div {
-          border-bottom: 0px !important;
+          padding-right: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid $ui-border-color;
         }
       }
-      .container-fluid > .row > .col-12 {
-        margin-right: 0px;
-        margin-left: 0px;
-        padding-right: 0px;
-        padding-left: 0px;
-      }
-      .accordion {
-        margin: 0 -16px -16px -16px;
-        .collapse > .col-12 {
-          padding-right: 0px;
-          padding-left: 0px;
-
-          > .form-group {
-            padding-bottom: 10px;
-          }
-        }
+    }
+    .screen-tab{
+      .container-fluid > .row {
+        border-bottom: 1px solid $ui-border-color;
       }
     }
   }
