@@ -50,26 +50,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       ) do
     state = assemble_full_adaptive_state(resource_attempt, part_inputs)
 
-    case NodeJS.call({"rules", :check}, [state, rules]) do
+    encodeResults = true
+    case NodeJS.call({"rules", :check}, [state, rules, encodeResults]) do
       {:ok, check_results} ->
-        # nodejs seems to have an encoding issue, instead of using the results as they come out
-        # to send back, use them to filter the original rules
-        results = Map.get(check_results, "results")
-        |> Enum.map(fn result ->
-          # find the item in rules from the type property of the result matching the id of the rule
-          # they should always match by design convention in authoring and conversion
-          rule = Enum.find(rules, fn rule ->
-            rule.id == result["type"]
-          end)
-          rule.event
-        end)
+        Logger.debug("Check RESULTS: #{check_results}")
+        {:ok, decoded} = Base.url_decode64(check_results)
+        Logger.debug("Decoded: #{decoded}")
+        decodedResults = Poison.decode!(decoded)
 
         client_evaluations =
-          determine_score(check_results)
+          determine_score(%{correct: decodedResults["correct"]})
           |> to_client_results(part_inputs)
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-          {:ok, _} -> {:ok, results}
+          {:ok, _} -> {:ok, decodedResults["results"]}
           e -> e
         end
 

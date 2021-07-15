@@ -10,6 +10,7 @@ import {
   RuleProperties,
   TopLevelCondition,
 } from 'json-rules-engine';
+import { b64EncodeUnicode } from 'utils/decode';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
@@ -99,10 +100,16 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
   });
 };
 
+export interface CheckResult {
+  correct: boolean;
+  results: Event[];
+}
+
 export const check = async (
-  state: Record<string, any>,
+  state: Record<string, unknown>,
   rules: JanusRuleProperties[],
-): Promise<{ correct: boolean; results: Event[] }> => {
+  encodeResults = false,
+): Promise<CheckResult | string> => {
   // load the std lib
   const { env } = evalScript(janus_std);
   // setup script env context
@@ -117,7 +124,7 @@ export const check = async (
 
   // finally run check
   const engine: Engine = rulesEngineFactory();
-  const facts: Record<string, any> = env.toObj();
+  const facts: Record<string, unknown> = env.toObj();
 
   enabledRules.forEach((rule) => {
     // $log.info('RULE: ', JSON.stringify(rule, null, 4));
@@ -151,5 +158,10 @@ export const check = async (
   }
   // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
-  return { correct: isCorrect, results: resultEvents };
+  const finalResults = { correct: isCorrect, results: resultEvents };
+  if (encodeResults) {
+    return b64EncodeUnicode(JSON.stringify(finalResults));
+  } else {
+    return finalResults;
+  }
 };
