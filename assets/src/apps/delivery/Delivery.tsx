@@ -71,6 +71,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         previewMode: !!previewMode,
         activityTypes,
         enableHistory,
+        score: 0,
       }),
     );
   };
