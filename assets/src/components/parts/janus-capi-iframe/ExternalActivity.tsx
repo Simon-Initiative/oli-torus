@@ -439,6 +439,7 @@ const ExternalActivity: React.FC<any> = (props) => {
                 simLife,
                 payload,
               });
+              simLife.handshake.config = { context: payload.mode };
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);

@@ -259,6 +259,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
+  const historyMode = useSelector(selectHistoryNavigationActivity);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -292,7 +293,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
-      mode: 'VIEWER', // TODO: based on isPreviewMOde
+      mode: historyMode?.length ? 'REVIEW' : 'VIEWER',
       snapshot,
     });
   };
