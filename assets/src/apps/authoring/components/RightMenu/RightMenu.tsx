@@ -33,7 +33,7 @@ export enum RightPanelTabs {
   COMPONENT = 'component',
 }
 
-const RightMenu: React.FC<void> = () => {
+const RightMenu: React.FC<any> = () => {
   const dispatch = useDispatch();
   const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivity = useSelector(selectCurrentActivity);
