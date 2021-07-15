@@ -55,9 +55,14 @@ const HistoryNavigation: React.FC = () => {
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
+
+    const nextHistoryActivityIndex = historyItems.findIndex(
+      (item: any) => item.id === prevActivity.id,
+    );
+
     dispatch(
       setHistoryNavigationTriggered({
-        historyNavigationActivityId: isLast ? '' : prevActivity.id,
+        historyNavigationActivityId: nextHistoryActivityIndex === 0 ? '' : prevActivity.id,
       }),
     );
   };
