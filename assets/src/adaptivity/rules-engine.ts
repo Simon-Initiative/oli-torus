@@ -10,6 +10,7 @@ import {
   RuleProperties,
   TopLevelCondition,
 } from 'json-rules-engine';
+import { b64EncodeUnicode } from 'utils/decode';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
@@ -102,7 +103,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
 export const check = async (
   state: Record<string, any>,
   rules: JanusRuleProperties[],
-): Promise<{ correct: boolean; results: Event[] }> => {
+  encodeResults = false,
+): Promise<{ correct: boolean; results: Event[] } | string> => {
   // load the std lib
   const { env } = evalScript(janus_std);
   // setup script env context
@@ -151,5 +153,10 @@ export const check = async (
   }
   // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
-  return { correct: isCorrect, results: resultEvents };
+  const finalResults = { correct: isCorrect, results: resultEvents };
+  if (encodeResults) {
+    return b64EncodeUnicode(JSON.stringify(finalResults));
+  } else {
+    return finalResults;
+  }
 };
