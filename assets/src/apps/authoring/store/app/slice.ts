@@ -13,6 +13,7 @@ export interface AppState {
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
   rightPanelActiveTab: RightPanelTabs;
+  currentRule: any;
 }
 
 const initialState: AppState = {
@@ -26,6 +27,7 @@ const initialState: AppState = {
   bottomPanel: true,
   visible: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
+  currentRule: undefined,
 };
 
 export interface AppConfig {
@@ -68,13 +70,21 @@ const slice: Slice<AppState> = createSlice({
     setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
+    setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
+      state.currentRule = action.payload.currentRule;
+    },
   },
 });
 
 export const AppSlice = slice.name;
 
-export const { setInitialConfig, setPanelState, setVisible, setRightPanelActiveTab } =
-  slice.actions;
+export const {
+  setInitialConfig,
+  setPanelState,
+  setVisible,
+  setRightPanelActiveTab,
+  setCurrentRule,
+} = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
 export const selectPaths = createSelector(selectState, (state: AppState) => state.paths);
@@ -96,6 +106,10 @@ export const selectBottomPanel = createSelector(
 export const selectRightPanelActiveTab = createSelector(
   selectState,
   (state: AppState) => state.rightPanelActiveTab,
+);
+export const selectCurrentRule = createSelector(
+  selectState,
+  (state: AppState) => state.currentRule,
 );
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);

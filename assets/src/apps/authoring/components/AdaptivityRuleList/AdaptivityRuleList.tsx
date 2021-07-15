@@ -1,13 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { selectCurrentRule, setCurrentRule } from '../../../authoring/store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
 const AdaptivityRuleList: React.FC<any> = (props) => {
+  const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
-  /* console.log('CA', { currentActivity }); */
+  const currentRule = useSelector(selectCurrentRule);
   const rules = currentActivity?.authoring.rules || [];
+
+  const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
+
+  useEffect(() => {
+    if (rules.length > 0) {
+      dispatch(setCurrentRule({ currentRule: rules[0] }));
+    }
+  }, [currentActivity]);
 
   return (
     <Accordion className="aa-adaptivity-rules" defaultActiveKey="0">
@@ -39,7 +49,8 @@ const AdaptivityRuleList: React.FC<any> = (props) => {
               className="aa-rules-list-item"
               as="li"
               key={rule.id}
-              active={index === 0}
+              active={rule.id === currentRule?.id}
+              onClick={() => handleSelectRule(rule)}
             >
               {rule.name}
             </ListGroup.Item>

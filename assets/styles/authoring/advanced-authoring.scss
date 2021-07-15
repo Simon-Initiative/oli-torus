@@ -366,8 +366,8 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
     }
-    .aa-sequence-item,
-    .aa-rules-list-item {
+    .aa-sequence-item {
+      // .aa-rules-list-item {
       padding: 0;
       background-color: inherit;
       border: none;

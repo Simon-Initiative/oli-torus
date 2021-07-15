@@ -1,5 +1,7 @@
 import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
+import { selectCurrentRule } from './store/app/slice';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -11,6 +13,7 @@ export interface BottomPanelProps {
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
   const { panelState, onToggle, children } = props;
   const PANEL_SIDE_WIDTH = '250px';
+  const currentRule = useSelector(selectCurrentRule);
 
   return (
     <>
@@ -29,7 +32,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              <span className="ruleName">Correct</span>
+              {currentRule !== undefined && <span className="ruleName">{currentRule.name}</span>}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
               <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
