@@ -107,7 +107,12 @@ defmodule Oli.BrandingTest do
           registration_open: true
         })
 
-      %{section: section, oaf_section: oaf_section, registration: registration}
+      %{
+        section: section,
+        oaf_section: oaf_section,
+        registration: registration,
+        publication: publication
+      }
     end
 
     @tag capture_log: true

@@ -345,6 +345,19 @@ defmodule Oli.Seeder do
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub2)
 
+    {:ok, oaf_section_1} =
+      Sections.create_section(%{
+        title: "3",
+        timezone: "1",
+        registration_open: true,
+        open_and_free: true,
+        context_id: "3",
+        institution_id: map.institution.id,
+        base_project_id: map.project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub2)
+
     Map.put(map, :latest1, latest1)
     |> Map.put(:latest2, latest2)
     |> Map.put(:pub1, pub1)
@@ -357,6 +370,7 @@ defmodule Oli.Seeder do
     |> Map.put(:parent4, Map.get(third_map, :parent4))
     |> Map.put(:section_1, section_1)
     |> Map.put(:section_2, section_2)
+    |> Map.put(:oaf_section_1, oaf_section_1)
   end
 
   def create_section(map) do

@@ -4,6 +4,9 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Oli.Accounts
   alias OliWeb.Common.LtiSession
   alias Oli.Publishing
+  alias Oli.Seeder
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
 
   describe "delivery_controller index" do
     setup [:setup_lti_session]
@@ -87,7 +90,6 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles instructor create section", %{
       conn: conn,
       cache_keys: cache_keys,
-      project: project,
       user: user,
       publication: publication
     } do
@@ -195,6 +197,29 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "open and free" do
+    setup [:setup_open_and_free_session]
+
+    test "shows enroll page if user is not enrolled", %{conn: conn, oaf_section_1: section} do
+      conn = get(conn, Routes.delivery_path(conn, :enroll, section.slug))
+
+      assert html_response(conn, 200) =~ "<h5 class=\"card-title\">#{section.title}</h5>"
+      assert html_response(conn, 200) =~ Routes.delivery_path(conn, :create_user, section.slug)
+    end
+
+    test "enroll redirects to _ if user is already enrolled", %{
+      conn: conn,
+      oaf_section_1: section,
+      user: user
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll, section.slug))
+
+      assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
+    end
+  end
+
   defp setup_lti_session(%{conn: conn}) do
     author =
       author_fixture(%{
@@ -202,8 +227,7 @@ defmodule OliWeb.DeliveryControllerTest do
         password_confirmation: "password123"
       })
 
-    %{project: project, institution: institution, publication: publication} =
-      Oli.Seeder.base_project_with_resource(author)
+    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
 
     tool_jwk = jwk_fixture()
 
@@ -377,5 +401,17 @@ defmodule OliWeb.DeliveryControllerTest do
      project: project,
      publication: publication,
      cache_keys: cache_keys}
+  end
+
+  defp setup_open_and_free_session(%{conn: conn}) do
+    user = user_fixture()
+
+    conn =
+      Plug.Test.init_test_session(conn, [])
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    map = Seeder.base_project_with_resource4()
+
+    Map.merge(%{conn: conn, user: user}, map)
   end
 end

@@ -338,7 +338,9 @@ defmodule OliWeb.DeliveryController do
   end
 
   def enroll(conn, _params) do
-    section = conn.assigns.section
+    section =
+      conn.assigns.section
+      |> Oli.Repo.preload([:base_project])
 
     # redirect to course index if user is already signed in and enrolled
     with {:ok, user} <- conn.assigns.current_user |> trap_nil,
