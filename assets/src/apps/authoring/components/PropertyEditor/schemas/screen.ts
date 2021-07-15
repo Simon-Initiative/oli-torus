@@ -1,4 +1,5 @@
 import chroma from 'chroma-js';
+import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const screenSchema = {
@@ -15,11 +16,11 @@ const screenSchema = {
     palette: {
       type: 'object',
       properties: {
-        backgroundColor: { type: 'string' },
-        borderColor: { type: 'string' },
-        borderRadius: { type: 'string' },
-        borderStyle: { type: 'string' },
-        borderWidth: { type: 'string' },
+        backgroundColor: { type: 'string', title: 'Background Color' },
+        borderColor: { type: 'string', title: 'Border Color' },
+        borderRadius: { type: 'string', title: 'Border Radius' },
+        borderStyle: { type: 'string', title: 'Border Style' },
+        borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
     customCssClass: {
@@ -103,6 +104,12 @@ export const screenUiSchema = {
   palette: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Palette',
+    backgroundColor: {
+      'ui:widget': ColorPickerWidget
+    },
+    borderColor: {
+      'ui:widget': ColorPickerWidget
+    },
     borderStyle: { classNames: 'col-6' },
     borderWidth: { classNames: 'col-6' },
   },
@@ -139,7 +146,7 @@ export const transformScreenModeltoSchema = (data: any) => {
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
-      palette: schemaPalette
+      palette: data.palette.useHtmlProps? data.palette : schemaPalette
     };
   }
 };

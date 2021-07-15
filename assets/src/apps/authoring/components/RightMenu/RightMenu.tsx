@@ -48,13 +48,13 @@ const RightMenu: React.FC<any> = (props) => {
   };
 
   const screenPropertyChangeHandler = (properties: any) => {
-    const modelChanges = transformScreenSchematoModel(properties);
-    console.log(modelChanges);
-    const screenChanges = {
-      ...currentActivity?.content?.custom,
-      ...modelChanges
-    };
     if(currentActivity){
+      const modelChanges = transformScreenSchematoModel(properties);
+      console.log(modelChanges);
+      const screenChanges = {
+        ...currentActivity?.content?.custom,
+        ...modelChanges
+      };
       const cloneActivity = clone(currentActivity);
       cloneActivity.content.custom = screenChanges;
       debounceSaveScreenSettings(cloneActivity);
