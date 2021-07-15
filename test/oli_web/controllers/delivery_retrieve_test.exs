@@ -112,19 +112,23 @@ defmodule OliWeb.DeliveryRetrieveTest do
       map.publication
     )
 
-    section =
-      section_fixture(%{
-        context_id: "some-context-id",
-        base_project_id: map.project.id,
-        institution_id: map.institution.id
-      })
+    map =
+      map
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
 
     Oli.Accounts.update_user(user, %{"sub" => "a73d59affc5b2c4cd493"})
-    Oli.Delivery.Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    Oli.Delivery.Sections.enroll(user.id, map.section.id, [
+      ContextRoles.get_role(:context_learner)
+    ])
 
     lti_params =
       Oli.Lti_1p3.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+      |> put_in(
+        ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+        map.section.context_id
+      )
 
     cache_lti_params("params-key", lti_params)
 
@@ -143,7 +147,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
      user: user,
      project: map.project,
      publication: map.publication,
-     section: section,
+     section: map.section,
      revision: map.revision1,
      page_revision1: map.new_page1.revision,
      page_revision2: map.new_page2.revision}

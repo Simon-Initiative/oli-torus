@@ -36,7 +36,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
-  alias Oli.Resources.ResourceType
+  alias Oli.Publishing.HierarchyNode
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -66,12 +66,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {:ok, summary} = Summary.get_summary(section_slug, user)
 
-    revisions_by_resource_id =
-      DeliveryResolver.all_revisions_in_hierarchy(section_slug)
-      |> Enum.reduce(%{}, fn rev, acc -> Map.put(acc, rev.resource_id, rev) end)
-
-    {previous, next} =
-      determine_previous_next(summary.hierarchy, revisions_by_resource_id, page_revision)
+    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
 
     %PageContext{
       review_mode: true,
@@ -101,10 +96,6 @@ defmodule Oli.Delivery.Page.PageContext do
   def create_for_visit(section_slug, page_slug, user) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
-
-    revisions_by_resource_id =
-      DeliveryResolver.all_revisions_in_hierarchy(section_slug)
-      |> Enum.reduce(%{}, fn rev, acc -> Map.put(acc, rev.resource_id, rev) end)
 
     Attempts.track_access(page_revision.resource_id, section_slug, user.id)
 
@@ -142,8 +133,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {:ok, summary} = Summary.get_summary(section_slug, user)
 
-    {previous, next} =
-      determine_previous_next(summary.hierarchy, revisions_by_resource_id, page_revision)
+    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
 
     %PageContext{
       review_mode: false,
@@ -159,13 +149,12 @@ defmodule Oli.Delivery.Page.PageContext do
     }
   end
 
-  def determine_previous_next(hierarchy, revisions_by_resource_id, revision) do
-    flattened_hierarchy = flatten_hierarchy(hierarchy.children, revisions_by_resource_id)
+  def determine_previous_next(hierarchy, revision) do
+    flattened_hierarchy = HierarchyNode.flatten_pages(hierarchy)
 
     index =
       Enum.find_index(flattened_hierarchy, fn node ->
-        node_rev = revisions_by_resource_id[node.resource_id]
-        node_rev.id == revision.id
+        node.revision.id == revision.id
       end)
 
     case {index, length(flattened_hierarchy) - 1} do
@@ -176,34 +165,19 @@ defmodule Oli.Delivery.Page.PageContext do
         {nil, nil}
 
       {0, _} ->
-        {nil, revision_at(flattened_hierarchy, revisions_by_resource_id, 1)}
+        {nil, revision_at(flattened_hierarchy, 1)}
 
       {a, a} ->
-        {revision_at(flattened_hierarchy, revisions_by_resource_id, a - 1), nil}
+        {revision_at(flattened_hierarchy, a - 1), nil}
 
       {a, _} ->
-        {revision_at(flattened_hierarchy, revisions_by_resource_id, a - 1),
-         revision_at(flattened_hierarchy, revisions_by_resource_id, a + 1)}
+        {revision_at(flattened_hierarchy, a - 1), revision_at(flattened_hierarchy, a + 1)}
     end
   end
 
-  defp revision_at(flattened_hierarchy, revisions_by_resource_id, index) do
-    section_resource = Enum.at(flattened_hierarchy, index)
-    revisions_by_resource_id[section_resource.resource_id]
-  end
-
-  def flatten_hierarchy([], _), do: []
-
-  def flatten_hierarchy([h | t], revisions_by_resource_id) do
-    revision = revisions_by_resource_id[h.resource_id]
-
-    if ResourceType.get_type_by_id(revision.resource_type_id) == "container" do
-      []
-    else
-      [h]
-    end ++
-      flatten_hierarchy(h.children, revisions_by_resource_id) ++
-      flatten_hierarchy(t, revisions_by_resource_id)
+  defp revision_at(flattened_hierarchy, index) do
+    node = Enum.at(flattened_hierarchy, index)
+    node.revision
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)

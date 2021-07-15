@@ -169,7 +169,7 @@ defmodule Oli.Grading do
     gradebook =
       Enum.map(students, fn %{id: user_id} = student ->
         scores =
-          Enum.reduce(Enum.reverse(graded_pages), [], fn revision, acc ->
+          Enum.reduce(graded_pages, [], fn revision, acc ->
             score =
               case resource_accesses[revision.resource_id] do
                 %{^user_id => student_resource_accesses} ->
@@ -196,8 +196,13 @@ defmodule Oli.Grading do
         %GradebookRow{user: student, scores: scores}
       end)
 
-    # return gradebook
-    column_labels = Enum.map(graded_pages, fn revision -> revision.title end)
+    # because our score reducer uses the more efficient item insertion [score | acc], scores will
+    # be in reverse order so we must reverse the column labels as well
+    column_labels =
+      graded_pages
+      |> Enum.map(fn revision -> revision.title end)
+      |> Enum.reverse()
+
     {gradebook, column_labels}
   end
 

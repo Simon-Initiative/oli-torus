@@ -149,12 +149,12 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
     test "all_revisions/1 resolves the all revisions", %{} do
       nodes = DeliveryResolver.all_revisions("1")
-      assert length(nodes) == 9
+      assert length(nodes) == 12
     end
 
     test "all_revisions_in_hierarchy/1 resolves all revisions in the hierarchy", %{} do
       nodes = DeliveryResolver.all_revisions_in_hierarchy("1")
-      assert length(nodes) == 3
+      assert length(nodes) == 6
     end
 
     test "root_resource/1 resolves the root revision", %{

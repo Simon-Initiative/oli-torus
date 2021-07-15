@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Student.Summary do
            |> Oli.Utils.trap_nil(),
          resource_accesses <-
            Attempts.get_user_resource_accesses_for_context(section.slug, user.id),
-         root_node <-
+         hierarchy <-
            DeliveryResolver.full_hierarchy(section.slug) do
       access_map =
         Enum.reduce(resource_accesses, %{}, fn ra, acc ->
@@ -25,7 +25,7 @@ defmodule Oli.Delivery.Student.Summary do
          title: section.title,
          description: section.base_project.description,
          access_map: access_map,
-         hierarchy: node.children
+         hierarchy: hierarchy
        }}
     else
       _ -> {:error, :not_found}

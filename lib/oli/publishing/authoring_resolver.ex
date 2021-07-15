@@ -213,6 +213,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         numbering_index: numbering_index,
         numbering_level: level,
         children: children,
+        resource_id: revision.resource_id,
         revision: revision,
         section_resource: nil
       },

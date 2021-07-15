@@ -188,6 +188,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           numbering_index: sr.numbering_index,
           numbering_level: sr.numbering_level,
           children: sr.children,
+          resource_id: rev.resource_id,
           revision: rev,
           section_resource: sr
         }
