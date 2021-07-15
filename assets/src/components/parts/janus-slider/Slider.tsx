@@ -24,8 +24,8 @@ interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
 }
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [state, setState] = useState<unknown>([]);
+  const [model, setModel] = useState<Partial<SliderModel>>({});
   const [ready, setReady] = useState<boolean>(false);
 
   const id: string = props.id;
@@ -184,8 +184,8 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     height,
     customCssClass,
     label,
-    maximum,
-    minimum,
+    maximum = 1,
+    minimum = 0,
     snapInterval,
     showDataTip,
     showValueLabels,

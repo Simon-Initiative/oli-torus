@@ -101,7 +101,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
 };
 
 export const check = async (
-  state: Record<string, any>,
+  state: Record<string, unknown>,
   rules: JanusRuleProperties[],
   encodeResults = false,
 ): Promise<{ correct: boolean; results: Event[] } | string> => {
@@ -119,7 +119,7 @@ export const check = async (
 
   // finally run check
   const engine: Engine = rulesEngineFactory();
-  const facts: Record<string, any> = env.toObj();
+  const facts: Record<string, unknown> = env.toObj();
 
   enabledRules.forEach((rule) => {
     // $log.info('RULE: ', JSON.stringify(rule, null, 4));
