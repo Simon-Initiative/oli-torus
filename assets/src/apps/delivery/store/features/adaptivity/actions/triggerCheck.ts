@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
-import { check } from '../../../../../../adaptivity/rules-engine';
+import { check, CheckResult } from '../../../../../../adaptivity/rules-engine';
 import {
   applyState,
   ApplyStateOperation,
@@ -39,11 +39,14 @@ export const triggerCheck = createAsyncThunk(
     const [currentActivity] = currentActivityTree.slice(-1);
 
     // update time on question
-    applyState({
-      target: 'session.timeOnQuestion',
-      operator: '=',
-      value: `${Date.now()} - {session.timeStartQuestion}`,
-    }, defaultGlobalEnv);
+    applyState(
+      {
+        target: 'session.timeOnQuestion',
+        operator: '=',
+        value: `${Date.now()} - {session.timeStartQuestion}`,
+      },
+      defaultGlobalEnv,
+    );
 
     // for history tracking
     const trackingStampKey = `session.visitTimestamps.${currentActivity.id}`;
@@ -101,16 +104,16 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
-      const check_call_result = await check(localizedSnapshot, rulesToCheck);
+      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
+      const check_call_result = (await check(localizedSnapshot, rulesToCheck)) as CheckResult;
       checkResult = check_call_result.results;
       isCorrect = check_call_result.correct;
-      console.log('CHECK RESULT', {
+      /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
         checkResult,
         localizedSnapshot,
-      });
+      }); */
     } else {
       /* console.log('CHECKING', {
         sectionSlug,
