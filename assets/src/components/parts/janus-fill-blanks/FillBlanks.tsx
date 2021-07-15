@@ -104,8 +104,6 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
 
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
-    console.log({ currentStateSnapshot });
-
     setLocalSnapshot(currentStateSnapshot);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled) {
