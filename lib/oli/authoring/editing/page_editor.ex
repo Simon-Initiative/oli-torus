@@ -337,15 +337,18 @@ defmodule Oli.Authoring.Editing.PageEditor do
                         activity_type_id: activity_type_id,
                         objectives: objectives,
                         slug: slug,
-                        content: content
+                        content: content,
+                        title: title
                       } ->
          %{
            type: "activity",
            typeSlug: Map.get(id_to_slug, activity_type_id),
            activitySlug: slug,
-           activity_id: activity_id,
+           resourceId: activity_id,
+           activity_id: activity_id, # TODO: remove once all the deps are updated
            model: content,
-           objectives: objectives
+           objectives: objectives,
+           title: title
          }
        end)
        |> Enum.reduce(%{}, fn e, m -> Map.put(m, Map.get(e, :activitySlug), e) end)}
