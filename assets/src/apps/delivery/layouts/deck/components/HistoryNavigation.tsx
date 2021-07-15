@@ -32,9 +32,9 @@ const HistoryNavigation: React.FC = () => {
 
   // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
-    .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
+    .filter((key: string) => key.indexOf('session.visitTimestamps') !== -1)
     ?.reverse()
-    .map((entry) => entry.split('|')[0]);
+    .map((entry) => entry.split('.')[2]);
 
   // Get the activity names and ids to be displaeyd in histroy panel
   const historyItems = globalSnapshot?.map((activityId) => {
@@ -44,7 +44,7 @@ const HistoryNavigation: React.FC = () => {
     return {
       id: foundSequence.custom?.sequenceId,
       name: foundSequence.custom?.sequenceName || foundSequence.id,
-      timestamp: snapshot[`${foundSequence.custom?.sequenceId}|visitTimestamp`],
+      timestamp: snapshot[`session.visitTimestamps.${foundSequence.custom?.sequenceId}`],
     };
   });
   const currentHistoryActivityIndex = historyItems.findIndex(

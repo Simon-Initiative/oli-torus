@@ -53,7 +53,10 @@ const slice: Slice<ActivitiesState> = createSlice({
       // until layouts are supported, 2 choices here
       const [rootContainer] = content.model;
       if (rootContainer.type === 'group') {
-        state.currentActivityId = rootContainer.children[0].custom.sequenceId;
+        const sequence = rootContainer.children?.filter(
+          (entry: any) => !entry.custom?.isLayer && !entry.custom?.isBank,
+        );
+        state.currentActivityId = sequence[0].custom.sequenceId;
       } else {
         state.currentActivityId = rootContainer.custom.sequenceId;
       }
