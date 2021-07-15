@@ -100,11 +100,16 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
   });
 };
 
+export interface CheckResult {
+  correct: boolean;
+  results: Event[];
+}
+
 export const check = async (
   state: Record<string, unknown>,
   rules: JanusRuleProperties[],
   encodeResults = false,
-): Promise<{ correct: boolean; results: Event[] } | string> => {
+): Promise<CheckResult | string> => {
   // load the std lib
   const { env } = evalScript(janus_std);
   // setup script env context
