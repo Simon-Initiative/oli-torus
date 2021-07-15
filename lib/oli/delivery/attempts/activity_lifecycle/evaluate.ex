@@ -55,15 +55,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:ok, check_results} ->
         Logger.debug("Check RESULTS: #{check_results}")
         {:ok, decoded} = Base.url_decode64(check_results)
-        {:ok, decodedResults} = Poison.decode!(decoded)
-        results = Map.get(decodedResults, "results")
+        Logger.debug("Decoded: #{decoded}")
+        decodedResults = Poison.decode!(decoded)
 
         client_evaluations =
-          determine_score(check_results)
+          determine_score(%{"correct": decodedResults["correct"]})
           |> to_client_results(part_inputs)
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-          {:ok, _} -> {:ok, results}
+          {:ok, _} -> {:ok, decodedResults["results"]}
           e -> e
         end
 
