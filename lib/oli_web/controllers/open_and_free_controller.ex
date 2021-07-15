@@ -37,8 +37,7 @@ defmodule OliWeb.OpenAndFreeController do
   def create(conn, %{"section" => section_params}) do
     with %{"project_slug" => project_slug} <- section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
-         %{id: publication_id} <-
-           Publishing.get_latest_published_publication_by_slug!(project_slug) do
+         publication <- Publishing.get_latest_published_publication_by_slug!(project_slug) do
       section_params =
         section_params
         |> Map.put("base_project_id", project_id)
@@ -47,6 +46,8 @@ defmodule OliWeb.OpenAndFreeController do
 
       case Sections.create_section(section_params) do
         {:ok, section} ->
+          {:ok, section} = Sections.create_section_resources(section, publication)
+
           conn
           |> put_flash(:info, "Open and free created successfully.")
           |> redirect(to: Routes.open_and_free_path(conn, :show, section))

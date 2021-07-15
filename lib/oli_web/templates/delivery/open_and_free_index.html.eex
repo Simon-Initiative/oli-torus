@@ -8,7 +8,7 @@
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4">
         <%= for section <- @sections do %>
           <div class="col my-1">
-            <a href="<%= Routes.page_delivery_path(@conn, :index, section.slug)%>" class="course-card-link card h-100">
+            <a href="<%= Routes.page_delivery_path(@conn, :index, section.slug) %>" class="course-card-link card h-100">
               <img src="<%= Routes.static_path(@conn, "/images/course_default.jpg") %>" class="card-img-top" alt="course image">
               <div class="card-body">
                 <h5 class="card-title"><%= section.title %></h5>

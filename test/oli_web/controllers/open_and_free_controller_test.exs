@@ -1,5 +1,7 @@
 defmodule OliWeb.OpenAndFreeControllerTest do
   use OliWeb.ConnCase
+  alias Oli.Delivery.Sections
+  alias Lti_1p3.Tool.ContextRoles
 
   @create_attrs %{
     end_date: ~U[2010-04-17 00:00:00.000000Z],
@@ -48,7 +50,13 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   describe "create open_and_free" do
     setup [:create_fixtures]
 
-    test "redirects to show when data is valid", %{conn: conn, admin: admin, project: project} do
+    test "redirects to show when data is valid", %{
+      conn: conn,
+      admin: admin,
+      project: project,
+      user: user,
+      revision1: revision1
+    } do
       conn =
         post(conn, Routes.open_and_free_path(conn, :create),
           section: Enum.into(@create_attrs, %{project_slug: project.slug})
@@ -61,6 +69,25 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       conn = get(conn, Routes.open_and_free_path(conn, :show, id))
       assert html_response(conn, 200) =~ "Open and free"
+
+      # can access open and free index and pages
+      section = Sections.get_section!(id)
+
+      conn =
+        conn
+        |> recycle()
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~ "/sections/#{section.slug}/enroll"
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> recycle_user_session(user)
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision1.slug))
+
+      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -98,9 +125,11 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   end
 
   defp create_fixtures(_) do
+    user = user_fixture()
     author = author_fixture()
 
-    %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
+    %{project: project, institution: institution, revision1: revision1} =
+      Oli.Seeder.base_project_with_resource(author)
 
     {:ok, publication} = Oli.Publishing.publish_project(project)
 
@@ -112,6 +141,12 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         open_and_free: true
       })
 
-    %{section: section, project: project, publication: publication}
+    %{
+      section: section,
+      project: project,
+      publication: publication,
+      user: user,
+      revision1: revision1
+    }
   end
 end
