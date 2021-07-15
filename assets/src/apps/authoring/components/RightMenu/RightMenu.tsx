@@ -119,7 +119,7 @@ const RightMenu: React.FC<any> = (props) => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
-        <div>
+        <div className='lesson-tab'>
           <PropertyEditor
             schema={lessonSchema}
             uiSchema={lessonUiSchema}
@@ -129,7 +129,7 @@ const RightMenu: React.FC<any> = (props) => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
-        <div>
+        <div className='screen-tab p-3'>
           <PropertyEditor
             schema={screenSchema}
             uiSchema={screenUiSchema}
@@ -140,7 +140,7 @@ const RightMenu: React.FC<any> = (props) => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && (
-          <div className="p-3">
+          <div className='commponent-tab'>
             <PropertyEditor
               schema={componentSchema}
               uiSchema={{}}

@@ -1,3 +1,4 @@
+import chroma from 'chroma-js';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const screenSchema = {
@@ -118,11 +119,27 @@ export const screenUiSchema = {
 
 export const transformScreenModeltoSchema = (data: any) => {
   if (data) {
+    const schemaPalette = {
+      ...data.palette,
+      borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'
+        }`,
+      borderRadius: '10px',
+      borderStyle: 'solid',
+      borderColor: `rgba(${data.palette.lineColor || data.palette.lineColor === 0
+        ? chroma(data.palette.lineColor).rgb().join(',')
+        : '255, 255, 255'
+        },${data.palette.lineAlpha})`,
+      backgroundColor: `rgba(${data.palette.fillColor || data.palette.fillColor === 0
+        ? chroma(data.palette.fillColor).rgb().join(',')
+        : '255, 255, 255'
+        },${data.palette.fillAlpha})`
+    }
     return {
       ...data,
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
+      palette: schemaPalette
     };
   }
 };
@@ -133,11 +150,11 @@ export const transformScreenSchematoModel = (schema: any) => {
     height: schema.Size.height,
     customCssClass: schema.customCssClass,
     combineFeedback: schema.combineFeedback,
-    showCheckBtn:schema.checkButton.showCheckBtn,
-    checkButtonLabel:schema.checkButton.checkButtonLabel,
-    maxAttempt:schema.max.maxAttempt,
-    maxScore:schema.max.maxScore,
-    palette: {...schema.palette,  useHtmlProps: true},
+    showCheckBtn: schema.checkButton.showCheckBtn,
+    checkButtonLabel: schema.checkButton.checkButtonLabel,
+    maxAttempt: schema.max.maxAttempt,
+    maxScore: schema.max.maxScore,
+    palette: { ...schema.palette, useHtmlProps: true },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
     screenButton: schema.screenButton
