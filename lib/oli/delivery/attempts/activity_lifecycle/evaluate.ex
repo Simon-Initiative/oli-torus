@@ -50,16 +50,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       ) do
     state = assemble_full_adaptive_state(resource_attempt, part_inputs)
 
-    case NodeJS.call({"rules", :check}, [state, rules]) do
+    encodeResults = true
+    case NodeJS.call({"rules", :check}, [state, rules, encodeResults]) do
       {:ok, check_results} ->
-        results = Map.get(check_results, "results")
+        Logger.debug("Check RESULTS: #{check_results}")
+        {:ok, decoded} = Base.url_decode64(check_results)
+        Logger.debug("Decoded: #{decoded}")
+        decodedResults = Poison.decode!(decoded)
 
         client_evaluations =
-          determine_score(check_results)
+          determine_score(%{correct: decodedResults["correct"]})
           |> to_client_results(part_inputs)
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-          {:ok, _} -> {:ok, results}
+          {:ok, _} -> {:ok, decodedResults["results"]}
           e -> e
         end
 

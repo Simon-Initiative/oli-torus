@@ -1,14 +1,22 @@
 /* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { CapiVariable } from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
 
-const Dropdown: React.FC<any> = (props) => {
+interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
+  showLabel: boolean;
+  label: string;
+  prompt: string;
+  optionLabels: any;
+  palette: any;
+}
+
+const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

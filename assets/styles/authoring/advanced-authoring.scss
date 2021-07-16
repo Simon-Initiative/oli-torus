@@ -162,7 +162,6 @@ $panel-section-title-bar-color: #e8ebed;
     color: $panel-font-color-light;
 
     .tab-content {
-      padding: 16px;
       font-size: 12px;
     }
     .form-group {
@@ -175,10 +174,29 @@ $panel-section-title-bar-color: #e8ebed;
     .form-control {
       font-size: 12px;
     }
-    .rjsf {
-      .container-fluid>.row  {
-        border-bottom: 1px solid $ui-border-color !important;
+    .lesson-tab {
+      .container-fluid > .row {
+        margin-bottom: 0px !important;
 
+        > .col-12 > .form-group {
+          margin-bottom: 0 !important;
+        }
+      }
+      .collapse > .col-12{
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+
+        > .form-group {
+          padding-left: 15px;
+          padding-right: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid $ui-border-color;
+        }
+      }
+    }
+    .screen-tab{
+      .container-fluid > .row {
+        border-bottom: 1px solid $ui-border-color;
       }
     }
   }
@@ -217,10 +235,10 @@ $panel-section-title-bar-color: #e8ebed;
     height: $panel-section-title-bar-height;
     justify-content: space-between;
     align-items: center;
-    padding: 0 16px;
-    position: sticky;
-    top: 0;
-    z-index: 3;
+    padding: 0 16px 0 4px;
+    // position: sticky;
+    // top: 0;
+    // z-index: 3;
 
     i {
       font-size: 1rem;
@@ -249,7 +267,7 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-add-button {
       position: sticky;
       top: 55px;
-      height: fit-content;
+      height: max-content;
     }
     .aa-condition {
       &:first-of-type {
@@ -292,16 +310,141 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-rules-list {
       border-radius: inherit;
       padding: 4px 0;
+      width: 100%;
+
+      .nested {
+        margin: 0;
+        padding: 0;
+
+        // TODO: find a cleaner way to manage nesting
+        .aa-sequence-details-wrapper {
+          padding-left: 35px;
+        }
+        .nested {
+          .aa-sequence-details-wrapper {
+            padding-left: 45px;
+          }
+          .nested {
+            .aa-sequence-details-wrapper {
+              padding-left: 55px;
+            }
+            .nested {
+              .aa-sequence-details-wrapper {
+                padding-left: 65px;
+              }
+              .nested {
+                .aa-sequence-details-wrapper {
+                  padding-left: 75px;
+                }
+                .nested {
+                  .aa-sequence-details-wrapper {
+                    padding-left: 85px;
+                  }
+                  .nested {
+                    .aa-sequence-details-wrapper {
+                      padding-left: 95px;
+                    }
+                    .nested {
+                      .aa-sequence-details-wrapper {
+                        padding-left: 105px;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
     .aa-sequence-item,
     .aa-rules-list-item {
-      padding: 6px 16px;
+      padding: 0;
       background-color: inherit;
       border: none;
       font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      z-index: unset;
 
+      &.is-parent {
+        flex-wrap: wrap;
+      }
+      .details {
+        flex-grow: 1;
+        flex: 1;
+      }
+      .title:hover {
+        cursor: pointer;
+      }
+      .collapse.show {
+        width: 100%;
+      }
+      .aa-context-menu-trigger {
+        visibility: hidden;
+        margin: 0 11px 0 16px;
+
+        &:hover,
+        &:focus {
+          border: 1px solid $ui-border-color;
+          visibility: visible;
+        }
+      }
+      .aa-sequence-details-wrapper {
+        display: flex;
+        flex-grow: 1;
+        padding: 2px 0;
+        padding-left: 27px;
+        align-items: center;
+
+        &:hover,
+        &:focus {
+          background-color: $panel-section-title-bar-color;
+
+          .aa-context-menu-trigger {
+            visibility: visible;
+          }
+        }
+      }
       &.active {
-        background-color: $primary;
+        color: inherit;
+
+        & > .aa-sequence-details-wrapper {
+          color: $white;
+          background-color: $primary;
+
+          .aa-sequence-item-toggle {
+            color: $white;
+          }
+          .aa-context-menu-trigger {
+            color: $white;
+          }
+        }
+      }
+      .aa-sequence-item-toggle {
+        vertical-align: baseline;
+        margin-left: -22px;
+      }
+    }
+    .dropdown-toggle:after {
+      display: none;
+    }
+    .dropdown-menu {
+      font-size: 13px;
+      font-family: $font-family-sans-serif;
+
+      i {
+        font-size: 1rem;
+      }
+    }
+    .dropdown-item {
+      padding: 4px 16px;
+      color: $panel-font-color-light;
+
+      &:hover,
+      &:focus {
+        background-color: $panel-section-title-bar-color;
       }
     }
   }

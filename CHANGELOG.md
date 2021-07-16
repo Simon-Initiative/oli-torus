@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Bug Fixes
+- Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
+
+### Enhancements
+
+## 0.12.1 (2021-07-12)
+
+### Bug Fixes
+
+- Fix an issue where activities do not render correctly in delivery mode
+
+### Enhancements
+
+## 0.12.0 (2021-07-12)
+
 ### Bug fixes
 
 - Fix an issue with image coding activity in preview

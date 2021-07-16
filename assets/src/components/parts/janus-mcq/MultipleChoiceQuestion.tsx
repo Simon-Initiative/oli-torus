@@ -59,6 +59,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   val,
   disabled,
   index,
+  overrideHeight,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -75,9 +76,14 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
       mcqItemStyles.position = `absolute`;
 
-      if (index !== 0) mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
+      if (index !== 0) {
+        mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
+      }
     }
     mcqItemStyles.display = `inline-block`;
+  }
+  if (layoutType === 'verticalLayout' && overrideHeight) {
+    mcqItemStyles.height = `calc(${100 / totalItems}%)`;
   }
 
   const textValue = getNodeText(nodes);
@@ -240,6 +246,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     mcqItems,
     customCssClass,
     layoutType,
+    height,
+    overrideHeight = false,
   } = model;
 
   useEffect(() => {
@@ -406,7 +414,10 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     width,
     zIndex: z,
   };
-
+  if (overrideHeight) {
+    styles.height = height;
+    styles.marginTop = '8px';
+  }
   if (layoutType === 'verticalLayout') {
     const hasImages = mcqItems.some((item: any) =>
       item.nodes.some((node: any) =>
@@ -617,6 +628,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
           {...item}
           x={0}
           y={0}
+          overrideHeight={overrideHeight}
           disabled={!enabled}
           multipleSelection={multipleSelection}
         />

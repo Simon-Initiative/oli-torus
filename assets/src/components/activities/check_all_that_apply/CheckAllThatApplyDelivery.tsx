@@ -88,13 +88,6 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class CheckAllThatApplyDelivery extends DeliveryElement<CATASchema> {
-  migrateModelVersion(model: any): CATASchema {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
-      nothing: () => cataV1toV2(model),
-    });
-  }
-
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CATASchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(

@@ -1,5 +1,5 @@
 import { OrderingSchema as Ordering } from './schema';
-import { Choice, ResponseId, PostUndoable, ChoiceId, makeResponse } from '../types';
+import { Choice, ResponseId, PostUndoable, makeUndoable, ChoiceId, makeResponse } from '../types';
 import { createRuleForIdsOrdering } from 'components/activities/ordering/utils';
 import {
   getChoiceIds,
@@ -12,6 +12,7 @@ import {
 import { remove } from 'components/activities/common/utils';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { clone } from 'utils/common';
 
 export class Actions {
   static addChoice(choice: Choice) {
@@ -19,7 +20,7 @@ export class Actions {
       model.choices.push(choice);
       getCorrectChoiceIds(model).push(choice.id);
 
-      model.authoring.targeted.forEach((assoc) => getChoiceIds(assoc).push(choice.id));
+      model.authoring.targeted.forEach((assoc: any) => getChoiceIds(assoc).push(choice.id));
       updateResponseRules(model);
     };
   }
@@ -38,27 +39,21 @@ export class Actions {
       ChoiceActions.removeChoice(id)(model, post);
 
       remove(id, getChoiceIds(model.authoring.correct));
-      model.authoring.targeted.forEach((assoc) => remove(id, getChoiceIds(assoc)));
+      model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));
 
       updateResponseRules(model);
 
-      post({
-        description: 'Removed a choice',
-        operations: [
-          {
-            path: '$.choices',
-            index,
-            item: JSON.parse(JSON.stringify(choice)),
-          },
-        ],
-        type: 'Undoable',
-      });
+      const undoable = makeUndoable('Removed a choice', [
+        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)},
+        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice)}
+      ])
+      post(undoable);
     };
   }
 
   static addTargetedFeedback() {
     return (model: Ordering) => {
-      const choiceIds = model.choices.map((c) => c.id);
+      const choiceIds = model.choices.map((c: any) => c.id);
       const response = makeResponse(createRuleForIdsOrdering(choiceIds), 0, '');
 
       // Insert new targeted response before the last response, which is the
@@ -71,7 +66,7 @@ export class Actions {
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: Ordering) => {
-      const assoc = model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId);
+      const assoc = model.authoring.targeted.find((assoc: any) => getResponseId(assoc) === responseId);
       if (!assoc) return;
       assoc[0] = choiceIds;
       updateResponseRules(model);
@@ -84,7 +79,7 @@ export class Actions {
 const updateResponseRules = (model: Ordering) => {
   getCorrectResponse(model).rule = createRuleForIdsOrdering(getCorrectChoiceIds(model));
 
-  model.authoring.targeted.forEach((assoc) => {
+  model.authoring.targeted.forEach((assoc: any) => {
     getResponse(model, getResponseId(assoc)).rule = createRuleForIdsOrdering(getChoiceIds(assoc));
   });
 };

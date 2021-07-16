@@ -175,16 +175,34 @@ const TextFlow: React.FC<any> = (props: any) => {
     };
   }, [props.notify]);
 
-  const { x = 0, y = 0, width, z = 0, customCssClass, nodes, palette, fontSize } = model;
+  const {
+    x = 0,
+    y = 0,
+    width,
+    z = 0,
+    customCssClass,
+    nodes,
+    palette,
+    fontSize,
+    height,
+    overrideWidth = true,
+    overrideHeight = false,
+  } = model;
 
   const styles: any = {
     position: 'absolute',
     top: y,
     left: x,
-    width,
     zIndex: z,
     wordWrap: 'break-word',
+    lineHeight: 'inherit',
   };
+  if (overrideWidth) {
+    styles.width = width;
+  }
+  if (overrideHeight) {
+    styles.height = height;
+  }
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }

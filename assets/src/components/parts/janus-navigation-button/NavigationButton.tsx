@@ -1,13 +1,24 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBoolean } from 'utils/common';
+import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
 
-const NavigationButton: React.FC<any> = (props) => {
+interface NavigationButtonModel extends JanusAbsolutePositioned, JanusCustomCss {
+  textColor?: string;
+  buttonColor?: string;
+  visible?: boolean;
+  enabled?: boolean;
+  ariaLabel?: string;
+  transparent?: boolean;
+  selected?: boolean;
+}
+
+const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

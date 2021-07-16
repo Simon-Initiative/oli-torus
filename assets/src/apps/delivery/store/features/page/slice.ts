@@ -16,6 +16,7 @@ export interface PageState {
   previewMode: boolean;
   enableHistory: boolean;
   activityTypes: any[];
+  score: number;
 }
 
 const initialState: PageState = {
@@ -32,6 +33,7 @@ const initialState: PageState = {
   previewMode: false,
   enableHistory: false,
   activityTypes: [],
+  score: 0,
 };
 
 const pageSlice = createSlice({
@@ -60,12 +62,15 @@ const pageSlice = createSlice({
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
     },
+    setScore(state, action: PayloadAction<{ score: number }>) {
+      state.score = action.payload.score;
+    },
   },
 });
 
 export const PageSlice = pageSlice.name;
 
-export const { loadPageState } = pageSlice.actions;
+export const { loadPageState, setScore } = pageSlice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
@@ -89,5 +94,7 @@ export const selectActivityGuidMapping = createSelector(
 );
 
 export const selectUserName = createSelector(selectState, (state) => state.userName);
+
+export const selectScore = createSelector(selectState, (state) => state.score);
 
 export default pageSlice.reducer;

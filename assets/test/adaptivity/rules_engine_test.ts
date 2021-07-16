@@ -5,7 +5,7 @@ import {
   containsOperator,
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
-  notContainsOperator
+  notContainsOperator,
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -13,47 +13,55 @@ import {
   isEqual,
   isNaNOperator,
   notEqual,
-  notIsAnyOfOperator
+  notIsAnyOfOperator,
 } from 'adaptivity/operators/equality';
 import {
   hasSameTermsMathOperator,
   isEquivalentOfMathOperator,
   isExactlyMathOperator,
-  notExactlyMathOperator
+  notExactlyMathOperator,
 } from 'adaptivity/operators/math';
 import { inRangeOperator, notInRangeOperator } from 'adaptivity/operators/range';
-import { check } from 'adaptivity/rules-engine';
+import { check, CheckResult } from 'adaptivity/rules-engine';
+import { b64EncodeUnicode } from 'utils/decode';
 import {
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   disabledCorrectRule,
-  mockState
+  mockState,
 } from './rules_mocks';
 
 describe('Rules Engine', () => {
   it('should not break if empty state is passed', async () => {
-    const { results: successEvents } = await check({}, []);
+    const { results: successEvents } = (await check({}, [])) as CheckResult;
     expect(successEvents).toEqual([]);
   });
 
   it('should return successful events of rules with no conditions', async () => {
-    const { results: events } = await check(mockState, [defaultCorrectRule]);
+    const { results: events } = (await check(mockState, [defaultCorrectRule])) as CheckResult;
     expect(events.length).toEqual(1);
     expect(events[0]).toEqual(defaultCorrectRule.event);
   });
 
   it('should evaluate complex conditions', async () => {
-    const { results: events } = await check(mockState, [
+    const { results: events } = (await check(mockState, [
       complexRuleWithMultipleActions,
       defaultCorrectRule,
-    ]);
+    ])) as CheckResult;
     expect(events.length).toEqual(1);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
   it('should not process disabled rules', async () => {
-    const { results: events } = await check(mockState, [disabledCorrectRule]);
+    const { results: events } = (await check(mockState, [disabledCorrectRule])) as CheckResult;
     expect(events.length).toEqual(0);
+  });
+
+  it('should return base64 encoded results if the flag is set', async () => {
+    const notEncoded = await check(mockState, [defaultCorrectRule], false);
+    const results = await check(mockState, [defaultCorrectRule], true);
+    expect(typeof results === 'string').toBeTruthy();
+    expect(results).toEqual(b64EncodeUnicode(JSON.stringify(notEncoded)));
   });
 });
 

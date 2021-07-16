@@ -14,20 +14,39 @@ export const selectSequence = createSelector(selectState, (state: GroupsState) =
   return currentGroup ? currentGroup.children : [];
 });
 
+export const selectCurrentSequenceId = createSelector(
+  [selectSequence, selectCurrentActivityId],
+  (sequence, currentActivityId) => {
+    /* console.log('SELECT CURRENT SEQUENCE ID', { sequence, currentActivityId }); */
+    return sequence.find((entry) => {
+      // temp hack for authoring
+      // TODO: rewire delivery to use resourceId instead of sequenceId
+      let testId = entry.custom.sequenceId;
+      if (typeof currentActivityId === 'number') {
+        testId = entry.resourceId;
+      }
+      return testId === currentActivityId;
+    })?.custom.sequenceId;
+  },
+);
+
 export const selectCurrentActivityTree = createSelector(
-  [selectSequence, selectAllActivities, selectCurrentActivityId],
-  (sequence, activities, currentActivityId) => {
+  [selectSequence, selectAllActivities, selectCurrentSequenceId],
+  (sequence, activities, currentSequenceId) => {
     const currentSequenceEntry = (sequence as any[]).find(
-      (entry) => entry.custom.sequenceId === currentActivityId,
+      (entry) => entry.custom.sequenceId === currentSequenceId,
     );
     if (!currentSequenceEntry) {
-      console.error(`Current Activity ${currentActivityId} not found in sequence!`);
+      // because this is a selector, might be undefined; stringify to display that
+      // TODO: Logging System that can be turned off in prod and/or instrumented
+      console.warn(`Current Activity ${JSON.stringify(currentSequenceId)} not found in sequence!`);
       return null;
     }
     const lineage = getSequenceLineage(sequence as any[], currentSequenceEntry.custom.sequenceId);
     const tree = lineage.map((entry) =>
-      (activities as any[]).find((a) => a.id === entry.custom.sequenceId),
+      (activities as any[]).find((a) => a.resourceId === entry.resourceId),
     );
+    /*  console.log('TREE', { lineage, activities }); */
     // filtering out undefined, however TODO make sure they are loaded ahead of time!
     return tree.filter((t) => t);
   },

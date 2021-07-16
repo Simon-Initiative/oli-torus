@@ -6,6 +6,7 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentActivityContent,
@@ -14,15 +15,15 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
-  selectLessonEnd,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
+  selectLessonEnd,
   selectNextActivityId,
   setCurrentFeedbacks,
   setIsGoodFeedback,
-  setNextActivityId,
   setMutationTriggered,
+  setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -32,7 +33,7 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectEnableHistory, selectPageContent } from '../../store/features/page/slice';
+import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -132,7 +133,7 @@ const DeckLayoutFooter: React.FC = () => {
     const isCorrect = lastCheckResults.results.every((r: any) => r.params.correct);
 
     // depending on combineFeedback value is whether we should address more than one event
-    const combineFeedback = !!currentActivity.custom.combineFeedback;
+    const combineFeedback = !!currentActivity?.custom.combineFeedback;
 
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
@@ -172,11 +173,18 @@ const DeckLayoutFooter: React.FC = () => {
           target: scopedTarget,
           operator: op.params.operator,
           value: op.params.value,
+          targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
       });
 
-      bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      // should respond to scripting errors?
+      console.log('MUTATE ACTIONS', {
+        mutateResults,
+        mutationsModified,
+        score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
+      });
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
@@ -193,6 +201,10 @@ const DeckLayoutFooter: React.FC = () => {
         }),
       );
     }
+
+    // after any mutations applied, and just in case
+    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
@@ -250,7 +262,7 @@ const DeckLayoutFooter: React.FC = () => {
       displayFeedbackIcon
     ) {
       if (currentPage.custom?.advancedAuthoring && !isHistoryModeOn) {
-        dispatch(triggerCheck({ activityId: currentActivity.id }));
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&
         nextActivityId?.trim().length &&
@@ -281,7 +293,7 @@ const DeckLayoutFooter: React.FC = () => {
       );
       dispatch(setNextActivityId({ nextActivityId: '' }));
     } else {
-      dispatch(triggerCheck({ activityId: currentActivityId }));
+      dispatch(triggerCheck({ activityId: currentActivityId as string }));
     }
   };
 

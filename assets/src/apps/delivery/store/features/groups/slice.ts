@@ -44,18 +44,29 @@ const slice: Slice<GroupsState> = createSlice({
       // groups aren't currently having resourceIds so we need to set id via index
       const groups = action.payload.groups.map((group, index) => {
         const id = group.id !== undefined ? group.id : index + 1;
-        return { ...group, id };
+        // careful, doesn't handle nested groups
+        const children = group.children.map((child) => {
+          if (child.type === 'activity-reference') {
+            const resourceId = child.activity_id || child.activityId || child.resourceId;
+            return { ...child, resourceId };
+          }
+          return child;
+        });
+        return { ...group, id, children };
       });
       adapter.setAll(state, groups);
       // for now just select first one (dont even have a multi group concept yet)
       state.currentGroupId = groups[0].id;
+    },
+    upsertGroup(state, action: PayloadAction<{ group: IGroup }>) {
+      adapter.upsertOne(state, action.payload.group);
     },
   },
 });
 
 export const GroupsSlice = slice.name;
 
-export const { setCurrentGroupId, setGroups } = slice.actions;
+export const { setCurrentGroupId, setGroups, upsertGroup } = slice.actions;
 
 export const selectState = (state: RootState): GroupsState => state[GroupsSlice] as GroupsState;
 export const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);

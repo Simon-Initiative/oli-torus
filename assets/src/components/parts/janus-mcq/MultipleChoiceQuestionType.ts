@@ -1,21 +1,21 @@
- import { JanusAbsolutePositioned, JanusCustomCssActivity } from "../types/parts";
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface JanusMultipleChoiceQuestionProperties
-    extends JanusCustomCssActivity,
-        JanusAbsolutePositioned {
-    title: string;
+  extends JanusCustomCss,
+    JanusAbsolutePositioned {
+  title: string;
 }
 
-export interface JanusMultipleChoiceQuestionItemProperties
-    extends JanusCustomCssActivity {
-    nodes: [];
-    multipleSelection: boolean;
-    itemId: string;
-    layoutType: string;
-    totalItems: number;
-    groupId: string;
-    selected: boolean;
-    val: number;
-    disabled?: boolean;
-    index:number;
+export interface JanusMultipleChoiceQuestionItemProperties extends JanusCustomCss {
+  nodes: [];
+  multipleSelection: boolean;
+  itemId: string;
+  layoutType: string;
+  totalItems: number;
+  groupId: string;
+  selected: boolean;
+  val: number;
+  disabled?: boolean;
+  index: number;
+  overrideHeight: boolean;
 }

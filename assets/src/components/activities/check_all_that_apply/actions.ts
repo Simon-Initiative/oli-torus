@@ -1,5 +1,5 @@
 import { CATASchema as CATA } from './schema';
-import { ChoiceId, Choice, ResponseId, PostUndoable, makeResponse } from '../types';
+import { ChoiceId, Choice, ResponseId, PostUndoable, makeResponse, makeUndoable } from '../types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { addOrRemove, remove } from 'components/activities/common/utils';
 import {
@@ -12,6 +12,7 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { createRuleForIdsCATA } from 'components/activities/check_all_that_apply/utils';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
+import { clone } from 'utils/common';
 
 export class CATAActions {
   static addChoice(choice: Choice) {
@@ -31,32 +32,27 @@ export class CATAActions {
 
   static removeChoiceAndUpdateRules(id: string) {
     return (model: CATA, post: PostUndoable) => {
+
+      post(makeUndoable('Removed choice',
+      [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+       { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
+      ]));
+
       const choice = getChoice(model, id);
       const index = getChoices(model).findIndex((c) => c.id === id);
       ChoiceActions.removeChoice(id)(model, post);
 
       remove(id, getChoiceIds(model.authoring.correct));
-      model.authoring.targeted.forEach((assoc) => remove(id, getChoiceIds(assoc)));
+      model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));
 
       updateResponseRules(model);
 
-      post({
-        description: 'Removed a choice',
-        operations: [
-          {
-            path: '$.choices',
-            index,
-            item: JSON.parse(JSON.stringify(choice)),
-          },
-        ],
-        type: 'Undoable',
-      });
     };
   }
 
   static addTargetedFeedback() {
     return (model: CATA) => {
-      const choiceIds = model.choices.map((c) => c.id);
+      const choiceIds = model.choices.map((c: any) => c.id);
       const response = makeResponse(createRuleForIdsCATA(choiceIds, []), 0, '');
 
       // Insert new targeted response before the last response, which is the
@@ -69,7 +65,7 @@ export class CATAActions {
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: CATA) => {
-      const assoc = model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId);
+      const assoc = model.authoring.targeted.find((assoc: any) => getResponseId(assoc) === responseId);
       if (!assoc) return;
       assoc[0] = choiceIds;
       updateResponseRules(model);
@@ -81,13 +77,13 @@ export class CATAActions {
 // are not yet reflected by the rules.
 const updateResponseRules = (model: CATA) => {
   getCorrectResponse(model).rule = createRuleForIdsCATA(
-    model.choices.map((c) => c.id),
+    model.choices.map((c: any) => c.id),
     getCorrectChoiceIds(model),
   );
 
-  model.authoring.targeted.forEach((assoc) => {
+  model.authoring.targeted.forEach((assoc: any) => {
     getResponse(model, getResponseId(assoc)).rule = createRuleForIdsCATA(
-      model.choices.map((c) => c.id),
+      model.choices.map((c: any) => c.id),
       getChoiceIds(assoc),
     );
   });

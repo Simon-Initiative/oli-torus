@@ -1,16 +1,23 @@
 /* eslint-disable react/prop-types */
+import debounce from 'lodash/debounce';
+import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import debounce from 'lodash/debounce';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { parseBool } from 'utils/common';
+import { JanusAbsolutePositioned, PartComponentProps } from '../types/parts';
 
-const InputText: React.FC<any> = (props) => {
+interface InputTextModel extends JanusAbsolutePositioned {
+  showLabel: boolean;
+  label: string;
+  prompt: string;
+}
+
+const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
@@ -201,8 +208,9 @@ const InputText: React.FC<any> = (props) => {
     });
   };
 
-  const handleOnChange = (event: any) => {
-    const val = event.target.value;
+  const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
+    const el = event.target as HTMLInputElement;
+    const val = el.value;
     // Update/set the value
     setText(val);
     // Wait until user has stopped typing to save the new value

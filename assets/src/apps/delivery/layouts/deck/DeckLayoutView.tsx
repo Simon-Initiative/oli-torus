@@ -4,14 +4,18 @@ import { ActivityState, PartResponse, StudentResponse } from 'components/activit
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
   defaultGlobalEnv,
   evalScript,
   getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectHistoryNavigationActivity,
+  selectLessonEnd,
   setInitPhaseComplete,
 } from '../../store/features/adaptivity/slice';
 import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
@@ -20,27 +24,15 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectUserName } from '../../store/features/page/slice';
+import { selectUserName, setScore } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
-  // TODO: change defaultCss to '' (or possibly new theme?) once all converted include it
-  // as legacy
-  const defaultCss = `
-  .content *  {text-decoration: none; padding: 0px; margin:0px;white-space: normal; font-family: Arial; font-size: 13px; font-style: normal;border: none; border-collapse: collapse; border-spacing: 0px;line-height: 1.4; color: black; font-weight:inherit;color: inherit; display: inline-block; -moz-binding: none; text-decoration: none; white-space: normal; border: 0px; max-width:none;}
-  .content sup  {vertical-align: middle; font-size:65%; font-style:inherit;}
-  .content sub  {vertical-align: middle; font-size:65%; font-style:inherit;}
-  .content em  {font-style:italic; display:inline; font-size:inherit;}
-  .content strong  {font-weight:bold; display:inline; font-size:inherit;}
-  .content label  {margin-right:2px; display:inline-block; cursor:auto;}
-  .content div  {display:inline-block; margin-top:1px}
-  .content input  {margin:0px;}
-  .content span  {display:inline; font-size:inherit;}
-  .content option {display:block;}
-  .content ul {display:block}
-  .content ol {display:block}`;
+  // migrated legacy include as customCss
+  // BS: do we need a default?
+  const defaultCss = '';
   const injected = props.css || defaultCss;
   return injected ? <style>{injected}</style> : null;
 };
@@ -55,6 +47,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
   const historyMode = useSelector(selectHistoryNavigationActivity);
+  const isEnd = useSelector(selectLessonEnd);
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
@@ -237,12 +230,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   const initCurrentActivity = useCallback(async () => {
     if (!currentActivityTree) {
+      console.error('[initCurrentActivity] no currentActivityTree');
       return;
     }
     const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
+      console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
     }
+    console.log('[initCurrentActivity]', { currentActivity });
     await dispatch(initializeActivity(currentActivity.resourceId));
   }, [currentActivityTree]);
 
@@ -252,12 +248,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
-    /* console.log('DECK HANDLE READY', {
+    console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    }); */
+    });
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
       const contexts = {
@@ -458,13 +454,32 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     );
   }, [currentActivityTree]);
 
+  useEffect(() => {
+    if (!isEnd) {
+      return;
+    }
+
+    const tutorialScoreOp: ApplyStateOperation = {
+      target: 'session.tutorialScore',
+      operator: '+',
+      value: '{session.currentQuestionScore}',
+    };
+    const currentScoreOp: ApplyStateOperation = {
+      target: 'session.currentQuestionScore',
+      operator: '=',
+      value: 0,
+    };
+    bulkApplyState([tutorialScoreOp, currentScoreOp], defaultGlobalEnv);
+    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    // we shouldn't have to send this to the server, it should already be calculated there
+  }, [isEnd]);
+
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
         pageName={pageTitle}
         userName={currentUserName}
-        activityName="TODO: (Activity Name)"
-        scoreValue={0}
+        activityName=""
         showScore={true}
         themeId={pageContent?.custom?.themeId}
       />
