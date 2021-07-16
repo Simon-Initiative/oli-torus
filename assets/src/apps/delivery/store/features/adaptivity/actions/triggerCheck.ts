@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
-import { check, CheckResult } from '../../../../../../adaptivity/rules-engine';
+import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
 import {
   applyState,
   ApplyStateOperation,
@@ -97,6 +97,17 @@ export const triggerCheck = createAsyncThunk(
 
     let checkResult;
     let isCorrect = false;
+    let score = 0;
+    let outOf = 0;
+
+    const scoringContext: ScoringContext = {
+      currentAttemptNumber: currentAttempt?.attemptNumber || 1,
+      maxAttempt: currentActivity.content.custom.maxAttempt || 0,
+      maxScore: currentActivity.content.custom.maxScore || 0,
+      trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
+      negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
+    };
+
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
@@ -105,9 +116,15 @@ export const triggerCheck = createAsyncThunk(
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
-      const check_call_result = (await check(localizedSnapshot, rulesToCheck)) as CheckResult;
+      const check_call_result = (await check(
+        localizedSnapshot,
+        rulesToCheck,
+        scoringContext,
+      )) as CheckResult;
       checkResult = check_call_result.results;
       isCorrect = check_call_result.correct;
+      score = check_call_result.score;
+      outOf = check_call_result.out_of;
       /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
@@ -161,9 +178,12 @@ export const triggerCheck = createAsyncThunk(
         currentActivityAttemptGuid,
         partResponses,
       );
-      /* console.log('EVAL RESULT', { evalResult }); */
-      checkResult = (evalResult.result as any).actions;
-      isCorrect = checkResult.every((action: any) => action.params.correct);
+      console.log('EVAL RESULT', { evalResult });
+      const resultData: CheckResult = (evalResult as any).result.actions;
+      checkResult = resultData.results;
+      isCorrect = resultData.correct;
+      score = resultData.score;
+      outOf = resultData.out_of;
     }
 
     let attempt: any = currentAttempt;
@@ -190,39 +210,21 @@ export const triggerCheck = createAsyncThunk(
       // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
 
-    // scoring is based on properties of the activity
-    if (!currentActivity.content.custom.trapStateScoreScheme) {
-      // the trap states are not in charge of the score, so use attempts & max
-      const maxScore = currentActivity.content.custom.maxScore || 0;
-      const maxAttempt = currentActivity.content.custom.maxAttempt || 0;
-      const negativeScoreAllowed = currentActivity.content.custom.negativeScoreAllowed || false;
-      if (maxAttempt > 0) {
-        const scorePerAttempt = maxScore / maxAttempt;
-        const numberOfAttempts = attempt.attemptNumber;
-        let score = maxScore - scorePerAttempt * (numberOfAttempts - 1);
-        if (!negativeScoreAllowed) {
-          score = Math.max(0, score);
-        }
-
-        /* console.log('SCORING: ', {
-          score,
-          numberOfAttempts,
-          scorePerAttempt,
-          maxScore,
-          maxAttempt,
-          currentActivity,
-          attempt,
-        }); */
-        // only apply this to the scripting env since it should be calculated for real on the server
-        applyState(
-          { target: 'session.currentQuestionScore', operator: '=', value: score },
-          defaultGlobalEnv,
-        );
-      }
-    }
+    // TODO: get score back from check result
+    applyState(
+      { target: 'session.currentQuestionScore', operator: '=', value: score },
+      defaultGlobalEnv,
+    );
 
     await dispatch(
-      setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }),
+      setLastCheckResults({
+        timestamp: currentTriggerStamp,
+        results: checkResult,
+        attempt,
+        correct: isCorrect,
+        score,
+        outOf,
+      }),
     );
   },
 );
