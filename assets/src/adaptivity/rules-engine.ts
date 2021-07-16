@@ -103,6 +103,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
 export interface CheckResult {
   correct: boolean;
   results: Event[];
+  score: number;
+  out_of: number;
 }
 
 export interface ScoringContext {

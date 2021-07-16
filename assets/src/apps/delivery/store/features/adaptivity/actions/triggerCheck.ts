@@ -97,6 +97,8 @@ export const triggerCheck = createAsyncThunk(
 
     let checkResult;
     let isCorrect = false;
+    let score = 0;
+    let outOf = 0;
 
     const scoringContext: ScoringContext = {
       currentAttemptNumber: currentAttempt?.attemptNumber || 1,
@@ -114,9 +116,15 @@ export const triggerCheck = createAsyncThunk(
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
       /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
-      const check_call_result = (await check(localizedSnapshot, rulesToCheck, scoringContext)) as CheckResult;
+      const check_call_result = (await check(
+        localizedSnapshot,
+        rulesToCheck,
+        scoringContext,
+      )) as CheckResult;
       checkResult = check_call_result.results;
       isCorrect = check_call_result.correct;
+      score = check_call_result.score;
+      outOf = check_call_result.out_of;
       /* console.log('CHECK RESULT', {
         currentActivity,
         currentRules,
@@ -170,9 +178,11 @@ export const triggerCheck = createAsyncThunk(
         currentActivityAttemptGuid,
         partResponses,
       );
-      /* console.log('EVAL RESULT', { evalResult }); */
+      console.log('EVAL RESULT', { evalResult });
       checkResult = (evalResult.result as any).actions;
       isCorrect = checkResult.every((action: any) => action.params.correct);
+      score = evalResult.result.score;
+      outOf = evalResult.result.out_of;
     }
 
     let attempt: any = currentAttempt;
@@ -200,13 +210,20 @@ export const triggerCheck = createAsyncThunk(
     }
 
     // TODO: get score back from check result
-    /* applyState(
+    applyState(
       { target: 'session.currentQuestionScore', operator: '=', value: score },
       defaultGlobalEnv,
-    ); */
+    );
 
     await dispatch(
-      setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }),
+      setLastCheckResults({
+        timestamp: currentTriggerStamp,
+        results: checkResult,
+        attempt,
+        correct: isCorrect,
+        score,
+        outOf,
+      }),
     );
   },
 );
