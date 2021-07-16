@@ -204,7 +204,7 @@ export const expressionScoringCorrectRule = {
             target: 'session.currentQuestionScore',
             targetType: 1,
             operator: '=',
-            value: '{variables.scoreFactor} * 50',
+            value: '50 * {variables.scoreFactor}',
           },
         },
       ],
