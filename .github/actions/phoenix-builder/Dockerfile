@@ -28,6 +28,7 @@ RUN mix archive.install hex phx_new 1.5.9
 RUN yum install -y gcc-c++ make
 RUN curl -sL https://rpm.nodesource.com/setup_15.x | bash -
 RUN yum install -y nodejs
+RUN npm install -g yarn
 
 # fix elixir encoding warning
 # https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
