@@ -1,4 +1,4 @@
-import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useRef, useState } from 'react';
 import { SketchPicker } from 'react-color';
 interface ColorPickerProps {
   value: any;
