@@ -17,6 +17,13 @@ export type UndoAction = {
   guid: string;
 };
 
+export type ActivityUndoAction = {
+  undoable: ActivityUndoable;
+  contentKey: string;
+  guid: string;
+};
+
+export type ActivityUndoables = Immutable.OrderedMap<string, ActivityUndoAction>;
 export type Undoables = Immutable.OrderedMap<string, UndoAction>;
 
 export function empty() {

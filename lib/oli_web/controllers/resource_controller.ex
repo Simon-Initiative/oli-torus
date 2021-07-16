@@ -110,7 +110,7 @@ defmodule OliWeb.ResourceController do
     |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
   end
 
-  defp render_not_found(conn, project_slug) do
+  def render_not_found(conn, project_slug) do
     conn
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",

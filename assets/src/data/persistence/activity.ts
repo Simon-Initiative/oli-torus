@@ -132,15 +132,26 @@ export function create(
   activityTypeSlug: ActivityTypeSlug,
   model: ActivityModelSchema,
   objectives: ResourceId[],
+  scope = "embedded"
 ) {
   const params = {
     method: 'POST',
-    body: JSON.stringify({ model, objectives }),
+    body: JSON.stringify({ model, objectives, scope }),
     url: `/project/${project}/activity/${activityTypeSlug}`,
   };
 
   return makeRequest<Created>(params);
 }
+
+export function createBanked(
+  project: ProjectSlug,
+  activityTypeSlug: ActivityTypeSlug,
+  model: ActivityModelSchema,
+  objectives: ResourceId[],
+) {
+  return create(project, activityTypeSlug, model, objectives, "banked");
+}
+
 
 export function edit(
   project: ProjectSlug,

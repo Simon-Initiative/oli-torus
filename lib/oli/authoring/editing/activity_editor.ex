@@ -418,7 +418,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives) do
+  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded") do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -434,6 +434,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                objectives: attached_objectives,
                author_id: author.id,
                content: model,
+               scope: scope,
                activity_type_id: activity_type.id
              }),
            {:ok, _} <-

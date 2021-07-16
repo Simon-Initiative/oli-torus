@@ -82,7 +82,9 @@ function prepareSaveFn(
 
 // Ensures that there is some default content if the initial content
 // of this resource is empty
-function withDefaultContent(content: (StructuredContent | ActivityReference)[]): [string, ResourceContent][] {
+function withDefaultContent(
+  content: (StructuredContent | ActivityReference)[],
+): [string, ResourceContent][] {
   if (content.length > 0) {
     return content.map((contentItem) => {
       // There is the possibility that ingested course material did not specify the
@@ -142,7 +144,9 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       editMode: true,
       title,
       objectives: Immutable.List<ResourceId>(objectives.attached),
-      content: Immutable.OrderedMap<string, ResourceContent>(withDefaultContent(content.model as any)),
+      content: Immutable.OrderedMap<string, ResourceContent>(
+        withDefaultContent(content.model as any),
+      ),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
@@ -399,7 +403,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       this.update({ title });
     };
 
-    const onAddItem = (c: StructuredContent | ActivityReference, index: number, a?: ActivityEditContext) => {
+    const onAddItem = (
+      c: StructuredContent | ActivityReference,
+      index: number,
+      a?: ActivityEditContext,
+    ) => {
       this.update({
         content: this.state.content
           .take(index)

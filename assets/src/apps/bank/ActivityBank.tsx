@@ -1,0 +1,407 @@
+import React from 'react';
+import { connect } from 'react-redux';
+import { State, Dispatch } from 'state';
+import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
+import * as Immutable from 'immutable';
+import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
+import {
+  ResourceContent,
+  ResourceContext,
+  ActivityMap,
+  createDefaultStructuredContent,
+  StructuredContent,
+  ActivityReference,
+} from 'data/content/resource';
+import { Objective } from 'data/content/objective';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import * as Persistence from 'data/persistence/resource';
+import * as ActivityPersistence from 'data/persistence/activity';
+import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
+import { Message, Severity, createMessage } from 'data/messages/messages';
+import { Banner } from 'components/messages/Banner';
+import { ActivityEditContext } from 'data/content/activity';
+import { create } from 'data/persistence/objective';
+import { Undoable as ActivityUndoable } from 'components/activities/types';
+import * as BankTypes from 'data/content/bank';
+import * as BankPersistence from 'data/persistence/bank';
+import { loadPreferences } from 'state/preferences';
+import guid from 'utils/guid';
+import { ActivityUndoables, ActivityUndoAction } from 'components/resource/resourceEditor/types';
+import { UndoToasts } from 'components/resource/resourceEditor/UndoToasts';
+import { applyOperations } from 'utils/undo';
+import { CreateActivity } from './CreateActivity';
+import { Maybe } from 'tsmonad';
+import { EditingLock } from './EditingLock';
+
+const PAGE_SIZE = 5;
+
+export interface ActivityBankProps {
+  editorMap: ActivityEditorMap; // Map of activity types to activity elements
+  projectSlug: ProjectSlug;
+  allObjectives: Objective[]; // All objectives
+}
+
+type ActivityBankState = {
+  messages: Message[];
+  activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
+  allObjectives: Immutable.List<Objective>;
+  persistence: 'idle' | 'pending' | 'inflight';
+  metaModifier: boolean;
+  undoables: ActivityUndoables;
+  paging: BankTypes.Paging;
+  totalCount: number;
+  editedSlug: Maybe<string>;
+};
+
+// Creates a function that when invoked submits a save request
+function prepareSaveFn(
+  project: ProjectSlug,
+  resource: ResourceSlug,
+  update: Persistence.ResourceUpdate,
+) {
+  return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
+}
+
+// The resource editor
+export class ActivityBank extends React.Component<ActivityBankProps, ActivityBankState> {
+  activityPersistence: { [id: string]: PersistenceStrategy };
+  editorById: { [id: number]: EditorDesc };
+
+  constructor(props: ActivityBankProps) {
+    super(props);
+
+    this.state = {
+      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(),
+      messages: [],
+      persistence: 'idle',
+      allObjectives: Immutable.List<Objective>(props.allObjectives),
+      metaModifier: false,
+      undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
+      paging: { offset: 0, limit: PAGE_SIZE },
+      totalCount: 0,
+      editedSlug: Maybe.nothing<string>(),
+    };
+
+    this.editorById = Object.keys(props.editorMap)
+      .map((key: string) => key)
+      .reduce((m: any, k) => {
+        const id = props.editorMap[k].id;
+        m[id] = props.editorMap[k];
+        return m;
+      }, {});
+
+    this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
+    this.onActivityAdd = this.onActivityAdd.bind(this);
+    this.onActivityEdit = this.onActivityEdit.bind(this);
+    this.onPostUndoable = this.onPostUndoable.bind(this);
+    this.onInvokeUndo = this.onInvokeUndo.bind(this);
+  }
+
+  componentDidMount() {
+    // Fetch the initial page of activities
+    this.fetchActivities(BankTypes.defaultLogic(), BankTypes.paging(0, PAGE_SIZE));
+  }
+
+  publishErrorMessage(failure: any) {
+    let message;
+    switch (failure?.status) {
+      case 423:
+        message = 'refresh the page to re-gain edit access.';
+        break;
+      case 404:
+        message = 'this page was not found. Try reopening it from the Curriculum.';
+        break;
+      case 403:
+        message = "you're not able to access this page. Did your login expire?";
+        break;
+      case 500:
+      default:
+        message =
+          // tslint:disable-next-line
+          'there was a general problem on our end. Please try refreshing the page and trying again.';
+        break;
+    }
+
+    this.addAsUnique(
+      createMessage({
+        guid: 'general-error',
+        canUserDismiss: true,
+        content: "Your changes weren't saved: " + message,
+      }),
+    );
+  }
+
+  initActivityPersistence() {
+    this.activityPersistence = Object.keys(this.state.activityContexts.toObject()).reduce(
+      (map, key) => {
+        const activity: ActivityEditContext = this.state.activityContexts.get(
+          key,
+        ) as ActivityEditContext;
+
+        const persistence = new DeferredPersistenceStrategy();
+        persistence.initialize(
+          () => Promise.resolve({ type: 'acquired' }),
+          () => Promise.resolve({ type: 'acquired' }),
+          // eslint-disable-next-line
+          () => {},
+          (failure) => this.publishErrorMessage(failure),
+          (persistence) => this.setState({ persistence }),
+        );
+
+        (map as any)[activity.activitySlug] = persistence;
+        return map;
+      },
+      {},
+    );
+  }
+
+  onActivityAdd(context: ActivityEditContext) {
+    const inserted = [
+      [context.activitySlug, context],
+      ...this.state.activityContexts.toArray(),
+    ].slice(0, PAGE_SIZE);
+    this.setState({
+      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
+    });
+  }
+
+  onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+    const withModel = {
+      title: update.title !== undefined ? update.title : undefined,
+      model: update.content !== undefined ? update.content : undefined,
+      objectives: update.objectives !== undefined ? update.objectives : undefined,
+    };
+    // apply the edit
+    const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
+    const activityContexts = this.state.activityContexts.set(key, merged);
+
+    this.setState({ activityContexts }, () => {
+      const saveFn = (releaseLock: boolean) =>
+        ActivityPersistence.edit(
+          this.props.projectSlug,
+          merged.activityId,
+          merged.activityId,
+          update as any,
+          releaseLock,
+        );
+
+      this.activityPersistence[key].save(saveFn);
+    });
+  }
+
+  onPostUndoable(key: string, undoable: ActivityUndoable) {
+    const id = guid();
+    this.setState(
+      {
+        undoables: this.state.undoables.set(id, {
+          guid: id,
+          contentKey: key,
+          undoable,
+        }),
+      },
+      () =>
+        setTimeout(
+          () =>
+            this.setState({
+              undoables: this.state.undoables.delete(id),
+            }),
+          5000,
+        ),
+    );
+  }
+
+  onInvokeUndo(guid: string) {
+    const item = this.state.undoables.get(guid);
+
+    if (item !== undefined) {
+      const context = this.state.activityContexts.get(item.contentKey);
+      if (context !== undefined) {
+        // Perform a deep copy
+        const model = JSON.parse(JSON.stringify(context.model));
+
+        // Apply the undo operations to the model
+        applyOperations(model as any, item.undoable.operations);
+
+        // Now save the change and push it down to the activity editor
+        this.onActivityEdit(item.contentKey, {
+          content: model,
+          title: context.title,
+          objectives: context.objectives,
+        });
+      }
+    }
+
+    this.setState({ undoables: this.state.undoables.delete(guid) });
+  }
+
+  createObjectiveErrorMessage(failure: any) {
+    const message = createMessage({
+      guid: 'objective-error',
+      canUserDismiss: true,
+      content: 'A problem occurred while creating your new objective',
+      severity: Severity.Error,
+    });
+    this.addAsUnique(message);
+  }
+
+  onRegisterNewObjective(objective: Objective) {
+    this.setState({
+      allObjectives: this.state.allObjectives.push(objective),
+    });
+  }
+
+  createActivityEditors() {
+    return this.state.activityContexts.toArray().map((item) => {
+      const [key, context] = item;
+      const editMode = this.state.editedSlug.caseOf({
+        just: (slug) => slug === key,
+        nothing: () => false,
+      });
+      const onChangeEditMode = (state: boolean) => {
+        const thisKey = key;
+        this.setState({
+          editedSlug: state ? Maybe.just<string>(thisKey) : Maybe.nothing<string>(),
+        });
+      };
+      return (
+        <div key={key} className="d-flex flex-column">
+          <div className="d-flex">
+            <EditingLock editMode={editMode} onChangeEditMode={onChangeEditMode} />
+          </div>
+          <InlineActivityEditor
+            key={key}
+            projectSlug={this.props.projectSlug}
+            editMode={editMode}
+            allObjectives={this.props.allObjectives}
+            onPostUndoable={this.onPostUndoable.bind(this, key)}
+            onEdit={this.onActivityEdit.bind(this, key)}
+            onRegisterNewObjective={this.onRegisterNewObjective}
+            {...context}
+          />
+        </div>
+      );
+    });
+  }
+
+  fetchActivities(logic: BankTypes.Logic, paging: BankTypes.Paging) {
+    BankPersistence.retrieve(this.props.projectSlug, logic, paging).then((result) => {
+      if (result.result === 'success') {
+        const contexts = result.queryResult.rows
+          .map((r) => {
+            const editorDesc = this.editorById[r.activity_type_id];
+
+            return {
+              authoringElement: editorDesc.authoringElement,
+              friendlyName: editorDesc.friendlyName,
+              description: editorDesc.description,
+              typeSlug: editorDesc.slug,
+              activityId: r.resource_id,
+              activitySlug: r.slug,
+              title: r.title,
+              model: r.content,
+              objectives: r.objectives,
+            } as ActivityEditContext;
+          })
+          .map((c) => [c.activitySlug, c]);
+
+        this.setState({
+          activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(contexts as any),
+          paging,
+          totalCount: result.queryResult.totalCount,
+        });
+        result.queryResult.rows;
+      }
+    });
+  }
+
+  addAsUnique(message: Message) {
+    const messages = this.state.messages.filter((m) => m.guid !== message.guid);
+    this.setState({ messages: [...messages, message] });
+  }
+
+  render() {
+    const props = this.props;
+    const state = this.state;
+
+    const { projectSlug } = this.props;
+
+    const onAddItem = (a: ActivityEditContext) => {
+      const persistence = new DeferredPersistenceStrategy();
+      persistence.initialize(
+        () => Promise.resolve({ type: 'acquired' }),
+        () => Promise.resolve({ type: 'acquired' }),
+        // eslint-disable-next-line
+        () => {},
+        (failure) => this.publishErrorMessage(failure),
+        (persistence) => this.setState({ persistence }),
+      );
+      this.activityPersistence[a.activitySlug] = persistence;
+
+      this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
+    };
+
+    const onRegisterNewObjective = (objective: Objective) => {
+      this.setState({
+        allObjectives: this.state.allObjectives.push(objective),
+      });
+    };
+
+    const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
+
+    const activities = this.createActivityEditors();
+
+    return (
+      <div className="resource-editor row">
+        <div className="col-12">
+          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+
+          <Banner
+            dismissMessage={(msg) =>
+              this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
+            }
+            executeAction={(message, action) => action.execute(message)}
+            messages={this.state.messages}
+          />
+          <PersistenceStatus persistence={this.state.persistence} />
+          <CreateActivity
+            projectSlug={props.projectSlug}
+            editorMap={props.editorMap}
+            onAdd={this.onActivityAdd}
+          />
+          {activities}
+        </div>
+      </div>
+    );
+  }
+}
+
+// eslint-disable-next-line
+interface StateProps {}
+
+interface DispatchProps {
+  onLoadPreferences: () => void;
+}
+
+type OwnProps = {
+  editorMap: ActivityEditorMap;
+  activities: ActivityMap;
+};
+
+const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+  return {};
+};
+
+const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+  return {
+    onLoadPreferences: () => dispatch(loadPreferences()),
+  };
+};
+
+export default connect<StateProps, DispatchProps, OwnProps>(
+  mapStateToProps,
+  mapDispatchToProps,
+)(ActivityBank);

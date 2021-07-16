@@ -147,7 +147,16 @@ defmodule OliWeb.Api.ActivityController do
       }) do
     author = conn.assigns[:current_author]
 
-    case ActivityEditor.create(project_slug, activity_type_slug, author, model, objectives) do
+    scope = Map.get(conn.body_params, "scope", "embedded")
+
+    case ActivityEditor.create(
+           project_slug,
+           activity_type_slug,
+           author,
+           model,
+           objectives,
+           scope
+         ) do
       {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
         json(conn, %{
           "type" => "success",

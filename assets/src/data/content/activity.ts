@@ -14,7 +14,6 @@ export type SiblingActivity = {
 };
 
 export type ActivityEditContext = {
-  authoringScript: string,        // The script file to include the editor
   authoringElement: string,       // Activity authoring component name
   friendlyName: string,           // Activity type friendly name
   description: string,            // Activity type description

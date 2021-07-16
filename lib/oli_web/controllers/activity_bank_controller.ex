@@ -16,14 +16,19 @@ defmodule OliWeb.ActivityBankController do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
 
-    # full title, short title, link, action descriptions
+    case Oli.Authoring.Editing.BankEditor.create_context(project_slug, author) do
+      {:ok, context} ->
+        render(conn, "index.html",
+          active: :bank,
+          context: context,
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Activity Bank"})],
+          project_slug: project_slug,
+          is_admin?: is_admin?,
+          scripts: Oli.Activities.get_activity_scripts()
+        )
 
-    render(conn, "index.html",
-      active: :bank,
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Activity Bank"})],
-      project_slug: project_slug,
-      is_admin?: is_admin?,
-      scripts: Oli.Activities.get_activity_scripts()
-    )
+      _ ->
+        OliWeb.ResourceController.render_not_found(conn, project_slug)
+    end
   end
 end

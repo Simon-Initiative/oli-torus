@@ -7,11 +7,13 @@ import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 import { Undoable } from 'components/activities/types';
 
-export interface ActivityEditorProps extends ActivityEditContext, ProjectResourceContext {
+export interface ActivityEditorProps extends ActivityEditContext {
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
   editMode: boolean;
+  projectSlug: string;
+  allObjectives: Objective[];
 }
 
 // This is the state of our activity editing that is undoable
