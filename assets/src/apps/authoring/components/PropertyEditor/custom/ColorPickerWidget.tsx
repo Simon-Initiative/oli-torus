@@ -1,10 +1,12 @@
 import React, { CSSProperties, useRef, useState } from 'react';
-import { SketchPicker } from 'react-color';
+import { ColorResult, SketchPicker } from 'react-color';
 interface ColorPickerProps {
-  value: any;
+  label: string;
+  value: string;
+  onChange: (colorValue: string) => void;
 }
 
-const getColorValueString = (value: any) => {
+const getColorValueString = (value: ColorResult) => {
   return `rgba(${value.rgb.r},${value.rgb.g},${value.rgb.b},${value.rgb.a})`;
 };
 
@@ -16,7 +18,7 @@ const getRGBColorValue = (value: any) => {
   return { r: 255, g: 255, b: 255, a: 0 };
 };
 
-const ColorPickerWidget: React.FC<ColorPickerProps> = (props: any) => {
+const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
   const color = getRGBColorValue(props.value);
   const [displayPicker, setDisplayPicker] = useState(false);
 
@@ -57,7 +59,7 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props: any) => {
           <div style={popup} ref={pickerRef}>
             <SketchPicker
               color={color}
-              onChangeComplete={(color) => {
+              onChangeComplete={(color: ColorResult) => {
                 props.onChange(getColorValueString(color));
               }}
             />
