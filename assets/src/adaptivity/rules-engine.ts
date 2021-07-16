@@ -185,7 +185,7 @@ export const check = async (
     if (mutations.length) {
       const mutApplies = mutations.map(({ params }) => params);
       bulkApplyState(mutApplies, env);
-      score = getValue('session.currentQuestionScore', env);
+      score = getValue('session.currentQuestionScore', env) || 0;
     }
   } else {
     const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;

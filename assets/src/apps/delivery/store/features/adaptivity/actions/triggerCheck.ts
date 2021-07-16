@@ -179,10 +179,11 @@ export const triggerCheck = createAsyncThunk(
         partResponses,
       );
       console.log('EVAL RESULT', { evalResult });
-      checkResult = (evalResult.result as any).actions;
-      isCorrect = checkResult.every((action: any) => action.params.correct);
-      score = evalResult.result.score;
-      outOf = evalResult.result.out_of;
+      const resultData: CheckResult = (evalResult as any).result.actions;
+      checkResult = resultData.results;
+      isCorrect = resultData.correct;
+      score = resultData.score;
+      outOf = resultData.out_of;
     }
 
     let attempt: any = currentAttempt;

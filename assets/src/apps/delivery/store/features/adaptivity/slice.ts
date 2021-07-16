@@ -59,8 +59,8 @@ const slice: Slice<AdaptivityState> = createSlice({
       state.lastCheckTriggered = action.payload.timestamp;
     },
     setLastCheckResults: (state, action: PayloadAction<CheckResults>) => {
-      const { results, attempt, timestamp } = action.payload;
-      state.lastCheckResults = { results, attempt, timestamp };
+      const { results, attempt, timestamp, correct, score, outOf } = action.payload;
+      state.lastCheckResults = { results, attempt, timestamp, correct, score, outOf };
     },
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;
