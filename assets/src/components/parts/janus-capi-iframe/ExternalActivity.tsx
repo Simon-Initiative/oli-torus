@@ -443,7 +443,11 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
-              processInitStateVariable(finalCurrentStateSnapshot);
+              if (payload.mode === 'REVIEW') {
+                processInitStateVariable(currentStateSnapshot);
+              } else {
+                processInitStateVariable(finalCurrentStateSnapshot);
+              }
               setSimIsInitStatePassedOnce(false);
             }
             break;
