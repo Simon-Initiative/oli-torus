@@ -1,3 +1,5 @@
+import { ScoringContext } from 'adaptivity/rules-engine';
+
 export const mockState = {
   'q:1555699921528:664|session.attemptNumber': 1,
   'q:1555699921528:664|stage.Name.enabled': true,
@@ -28,6 +30,7 @@ export const mockState = {
   'session.userName': '',
   'session.visits.q:1535559999043:482': 1,
   'variables.IBennu': 100,
+  'variables.scoreFactor': 2,
   'stage.simIFrame.TestObject.distance': 101,
   'stage.simIFrame.Globals.SelectedObject': 'Bennu',
 };
@@ -133,6 +136,77 @@ export const complexRuleWithMultipleActions = {
           },
         },
         { type: 'navigation', params: { target: 'next' } },
+      ],
+    },
+  },
+};
+
+export const getAttemptScoringContext = (
+  attempts = 1,
+  maxScore = 5,
+  maxAttempt = 5,
+  negativeScoreAllowed = false,
+): ScoringContext => ({
+  maxScore,
+  maxAttempt,
+  trapStateScoreScheme: false,
+  negativeScoreAllowed,
+  currentAttemptNumber: attempts,
+});
+
+export const simpleScoringCorrectRule = {
+  id: 'ts:1476204198961:2067.correct',
+  name: 'correct',
+  priority: 1,
+  disabled: false,
+  additionalScore: 0.0,
+  forceProgress: false,
+  default: true,
+  correct: true,
+  conditions: { all: [] },
+  event: {
+    type: 'ts:1476204198961:2067.correct',
+    params: {
+      actions: [
+        { type: 'navigation', params: { target: 'next' } },
+        {
+          type: 'mutateState',
+          params: {
+            target: 'session.currentQuestionScore',
+            targetType: 1,
+            operator: '=',
+            value: 10,
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const expressionScoringCorrectRule = {
+  id: 'ts:1476204198961:2067.correct',
+  name: 'correct',
+  priority: 1,
+  disabled: false,
+  additionalScore: 0.0,
+  forceProgress: false,
+  default: true,
+  correct: true,
+  conditions: { all: [] },
+  event: {
+    type: 'ts:1476204198961:2067.correct',
+    params: {
+      actions: [
+        { type: 'navigation', params: { target: 'next' } },
+        {
+          type: 'mutateState',
+          params: {
+            target: 'session.currentQuestionScore',
+            targetType: 1,
+            operator: '=',
+            value: '{variables.scoreFactor} * 50',
+          },
+        },
       ],
     },
   },
