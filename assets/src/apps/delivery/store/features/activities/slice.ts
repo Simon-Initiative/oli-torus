@@ -8,6 +8,7 @@ import {
   PayloadAction,
   Slice,
 } from '@reduxjs/toolkit';
+import { ObjectiveMap } from 'data/content/activity';
 import { RootState } from '../../rootReducer';
 
 export interface ActivityContent {
@@ -21,6 +22,8 @@ export interface IActivity {
   authoring?: any;
   content?: ActivityContent;
   activityType?: any;
+  title?: string;
+  objectives?: ObjectiveMap;
   [key: string]: any;
 }
 
