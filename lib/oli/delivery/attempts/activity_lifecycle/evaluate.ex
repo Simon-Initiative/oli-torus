@@ -37,6 +37,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
           currentAttemptNumber: attempt_number,
         }
+        # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
           resource_attempt,
@@ -64,9 +65,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     encodeResults = true
     case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
       {:ok, check_results} ->
-        Logger.debug("Check RESULTS: #{check_results}")
+        # Logger.debug("Check RESULTS: #{check_results}")
         decoded = Base.decode64!(check_results)
-        Logger.debug("Decoded: #{decoded}")
+        # Logger.debug("Decoded: #{decoded}")
         decodedResults = Poison.decode!(decoded)
 
         score = decodedResults["score"]
@@ -95,14 +96,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         }
       }
     end)
-  end
-
-  defp determine_score(check_results) do
-    if Map.get(check_results, "correct", false) do
-      1
-    else
-      0
-    end
   end
 
   defp assemble_full_adaptive_state(resource_attempt, part_inputs) do

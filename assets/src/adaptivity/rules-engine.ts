@@ -192,7 +192,7 @@ export const check = async (
     const scorePerAttempt = maxScore / maxAttempt;
     score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
   }
-  score = Math.max(score, scoringContext.maxScore);
+  score = Math.min(score, scoringContext.maxScore);
   if (!scoringContext.negativeScoreAllowed) {
     score = Math.max(0, score);
   }
