@@ -184,7 +184,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   def hierarchy_node_with_children(revision, revisions_by_resource_id, numberings, level) do
-    {numberings, numbering_index} = Numbering.increment_count(numberings, level)
+    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
 
     {children, numberings} =
       Enum.reduce(
@@ -210,8 +210,11 @@ defmodule Oli.Publishing.AuthoringResolver do
 
     {
       %HierarchyNode{
-        numbering_index: numbering_index,
-        numbering_level: level,
+        numbering: %Numbering{
+          index: numbering_index,
+          level: level,
+          revision: revision
+        },
         children: children,
         resource_id: revision.resource_id,
         revision: revision,

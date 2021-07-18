@@ -112,7 +112,7 @@ defmodule Oli.Delivery.Sections do
         join: e in Enrollment,
         on: e.section_id == s.id,
         where: e.user_id == ^user_id and s.open_and_free == true and s.status != :deleted,
-        preload: [:project, :publication],
+        preload: [:base_project],
         select: s
       )
 
@@ -440,7 +440,7 @@ defmodule Oli.Delivery.Sections do
          level,
          numberings
        ) do
-    {numberings, numbering_index} = Numbering.increment_count(numberings, level)
+    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
 
     {children, numberings, processed_ids} =
       Enum.reduce(

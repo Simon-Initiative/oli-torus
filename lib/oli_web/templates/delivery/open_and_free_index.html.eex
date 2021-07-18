@@ -12,7 +12,7 @@
               <img src="<%= Routes.static_path(@conn, "/images/course_default.jpg") %>" class="card-img-top" alt="course image">
               <div class="card-body">
                 <h5 class="card-title"><%= section.title %></h5>
-                <p class="card-text"><%= section.project.description %></p>
+                <p class="card-text"><%= section.description %></p>
               </div>
             </a>
           </div>

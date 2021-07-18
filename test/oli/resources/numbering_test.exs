@@ -30,37 +30,42 @@ defmodule Oli.Resources.NumberingTest do
       Seeder.base_project_with_resource2()
       |> Seeder.create_hierarchy([
         %{
-          title: "Unit 1",
+          title: "Root container",
           children: [
-            #  makes everything a container, so we're just simulating a page here
-            %{title: "Page 1", slug: "page_1", children: []},
             %{
-              title: "Module 2",
+              title: "Unit 1",
               children: [
+                #  makes everything a container, so we're just simulating a page here
+                %{title: "Page 1", slug: "page_1", children: []},
                 %{
-                  title: "Section 1",
+                  title: "Module 2",
                   children: [
-                    #  makes everything a container, so we're just simulating a page here
-                    %{title: "Page 2", slug: "page_2", children: []}
+                    %{
+                      title: "Section 1",
+                      children: [
+                        #  makes everything a container, so we're just simulating a page here
+                        %{title: "Page 2", slug: "page_2", children: []}
+                      ]
+                    },
+                    %{title: "Section 2", children: []},
+                    %{title: "Section 3", children: []}
                   ]
                 },
-                %{title: "Section 2", children: []},
-                %{title: "Section 3", children: []}
+                %{
+                  title: "Module 3",
+                  children: [
+                    %{title: "Section 4", children: []},
+                    %{title: "Section 5", children: []},
+                    %{title: "Section 6", children: []}
+                  ]
+                }
               ]
             },
             %{
-              title: "Module 3",
-              children: [
-                %{title: "Section 4", children: []},
-                %{title: "Section 5", children: []},
-                %{title: "Section 6", children: []}
-              ]
+              title: "Unit 2",
+              children: []
             }
           ]
-        },
-        %{
-          title: "Unit 2",
-          children: []
         }
       ])
     end
@@ -74,7 +79,9 @@ defmodule Oli.Resources.NumberingTest do
       Numbering.number_tree_from(root, fetch_hierarchy(project.slug))
       |> Enum.to_list()
       |> Enum.map(&elem(&1, 1))
-      |> Enum.filter(&(!Regex.match?(~r|page|, &1.container.slug)))
+      |> Enum.filter(
+        &(!Regex.match?(~r|page|, &1.revision.slug) && &1.revision.title != "Root container")
+      )
       |> Enum.each(fn n ->
         level =
           case n.level do
@@ -83,8 +90,8 @@ defmodule Oli.Resources.NumberingTest do
             3 -> "Section"
           end
 
-        assert Numbering.prefix(n) == n.container.title
-        assert n.container.title == "#{level} #{n.count}"
+        assert Numbering.prefix(n) == n.revision.title
+        assert n.revision.title == "#{level} #{n.index}"
       end)
     end
   end

@@ -10,6 +10,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing.HierarchyNode
+  alias Oli.Resources.Numbering
 
   defp section_resources(section_slug) do
     from(sr in SectionResource,
@@ -185,8 +186,10 @@ defmodule Oli.Publishing.DeliveryResolver do
       |> Repo.all()
       |> Enum.reduce({%{}, nil}, fn {sr, rev, is_root?}, {nodes, root} ->
         node = %HierarchyNode{
-          numbering_index: sr.numbering_index,
-          numbering_level: sr.numbering_level,
+          numbering: %Numbering{
+            index: sr.numbering_index,
+            level: sr.numbering_level
+          },
           children: sr.children,
           resource_id: rev.resource_id,
           revision: rev,

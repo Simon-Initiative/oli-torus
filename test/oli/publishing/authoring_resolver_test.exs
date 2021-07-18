@@ -146,26 +146,28 @@ defmodule Oli.Publishing.AuthoringResolverTest do
     } do
       hierarchy = AuthoringResolver.full_hierarchy(project.slug)
 
-      assert hierarchy.numbering_index == 1
-      assert hierarchy.numbering_level == 0
+      assert hierarchy.numbering.index == 1
+      assert hierarchy.numbering.level == 0
       assert Enum.count(hierarchy.children) == 3
-      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_index) == 1
-      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering_level) == 1
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering) |> Map.get(:index) == 1
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:numbering) |> Map.get(:level) == 1
 
-      assert hierarchy.children |> Enum.at(1) |> Map.get(:numbering_index) == 2
-      assert hierarchy.children |> Enum.at(2) |> Map.get(:numbering_index) == 3
-
-      assert hierarchy.children
-             |> Enum.at(2)
-             |> Map.get(:children)
-             |> Enum.at(0)
-             |> Map.get(:numbering_index) == 1
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:numbering) |> Map.get(:index) == 2
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:numbering) |> Map.get(:index) == 1
 
       assert hierarchy.children
              |> Enum.at(2)
              |> Map.get(:children)
              |> Enum.at(0)
-             |> Map.get(:numbering_level) == 2
+             |> Map.get(:numbering)
+             |> Map.get(:index) == 3
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:numbering)
+             |> Map.get(:level) == 2
     end
   end
 end
