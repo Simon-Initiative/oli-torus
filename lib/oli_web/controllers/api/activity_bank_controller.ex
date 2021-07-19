@@ -8,7 +8,7 @@ defmodule OliWeb.Api.ActivityBankController do
   alias Oli.Activities.Realizer.Query
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Result
-  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Publishing
 
   import Oli.Authoring.Editing.Utils
 
@@ -20,7 +20,8 @@ defmodule OliWeb.Api.ActivityBankController do
     if Oli.Accounts.can_access_via_slug?(author, project_slug) do
       with {:ok, %Logic{} = logic} <- Logic.parse(logic),
            {:ok, %Paging{} = paging} <- Paging.parse(paging),
-           {:ok, publication} <- AuthoringResolver.publication(project_slug) |> trap_nil(),
+           {:ok, publication} <-
+             Publishing.working_project_publication(project_slug) |> trap_nil(),
            {:ok, %Result{} = result} <-
              Query.execute(
                logic,

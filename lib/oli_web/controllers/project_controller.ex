@@ -40,7 +40,7 @@ defmodule OliWeb.ProjectController do
     project = conn.assigns.project
 
     latest_published_publication =
-      Publishing.get_latest_published_publication_by_slug!(project.slug)
+      Publishing.get_latest_published_publication_by_slug(project.slug)
 
     active_publication = Publishing.working_project_publication(project.slug)
 

@@ -192,7 +192,7 @@ defmodule Oli.Publishing do
       %Publication{}
 
       iex> working_project_publication("invalid-slug")
-      ** (Ecto.NoResultsError)
+      nil
   """
   def working_project_publication(project_slug) do
     Repo.one(
@@ -208,13 +208,13 @@ defmodule Oli.Publishing do
   Gets the latest published publication for a project from slug.
    ## Examples
 
-      iex> get_latest_published_publication_by_slug!("my-project-slug")
+      iex> get_latest_published_publication_by_slug("my-project-slug")
       %Publication{}
 
-      iex> get_latest_published_publication_by_slug!("invalid-slug")
-      ** (Ecto.NoResultsError)
+      iex> get_latest_published_publication_by_slug("invalid-slug")
+      nil
   """
-  def get_latest_published_publication_by_slug!(project_slug) do
+  def get_latest_published_publication_by_slug(project_slug) do
     Repo.one(
       from pub in Publication,
         join: proj in Project,

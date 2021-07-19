@@ -124,7 +124,7 @@
 
                 <div class="d-flex flex-row-reverse mt-3">
 
-                   <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+                   <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
                       <% nil -> %>
                         <button disabled class="btn btn-primary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
                       <% _pub -> %>

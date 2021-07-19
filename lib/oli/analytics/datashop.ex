@@ -54,7 +54,7 @@ defmodule Oli.Analytics.Datashop do
 
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
-    publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    publication = Publishing.get_latest_published_publication_by_slug(project.slug)
     dataset_name = Utils.make_dataset_name(project.slug)
 
     # create a map of resource ids to published revision

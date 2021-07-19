@@ -37,7 +37,7 @@ defmodule OliWeb.OpenAndFreeController do
   def create(conn, %{"section" => section_params}) do
     with %{"project_slug" => project_slug} <- section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
-         publication <- Publishing.get_latest_published_publication_by_slug!(project_slug) do
+         publication <- Publishing.get_latest_published_publication_by_slug(project_slug) do
       section_params =
         section_params
         |> Map.put("base_project_id", project_id)
