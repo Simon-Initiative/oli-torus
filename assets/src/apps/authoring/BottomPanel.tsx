@@ -32,39 +32,43 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule !== undefined && <span className="ruleName">{currentRule.name}</span>}
+              {currentRule && <span className="ruleName">{currentRule.name}</span>}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
-              <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
-                <i className="fa fa-times mr-2" />
-                <div className="custom-control custom-switch">
-                  <input
-                    type="checkbox"
-                    className="custom-control-input"
-                    id={`correct-toggle`}
-                    // checked={true}
-                    // onChange={(e) => handleValueChange(e, true)}
-                    // onBlur={(e) => handleValueChange(e, true)}
-                  />
-                  <label className="custom-control-label" htmlFor={`correct-toggle`}></label>
-                </div>
-                <i className="fa fa-check" />
-              </div>
-              <OverlayTrigger
-                placement="top"
-                delay={{ show: 150, hide: 150 }}
-                overlay={
-                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    Delete Rule
-                  </Tooltip>
-                }
-              >
-                <span>
-                  <button className="btn btn-link p-0 ml-3">
-                    <i className="fa fa-trash-alt" />
-                  </button>
-                </span>
-              </OverlayTrigger>
+              {currentRule && (
+                <>
+                  <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
+                    <i className="fa fa-times mr-2" />
+                    <div className="custom-control custom-switch">
+                      <input
+                        type="checkbox"
+                        className="custom-control-input"
+                        id={`correct-toggle`}
+                        checked={currentRule ? currentRule.correct : false}
+                        // onChange={(e) => handleValueChange(e, true)}
+                        // onBlur={(e) => handleValueChange(e, true)}
+                      />
+                      <label className="custom-control-label" htmlFor={`correct-toggle`}></label>
+                    </div>
+                    <i className="fa fa-check" />
+                  </div>
+                  <OverlayTrigger
+                    placement="top"
+                    delay={{ show: 150, hide: 150 }}
+                    overlay={
+                      <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                        Delete Rule
+                      </Tooltip>
+                    }
+                  >
+                    <span>
+                      <button className="btn btn-link p-0 ml-3">
+                        <i className="fa fa-trash-alt" />
+                      </button>
+                    </span>
+                  </OverlayTrigger>
+                </>
+              )}
               <OverlayTrigger
                 placement="top"
                 delay={{ show: 150, hide: 150 }}

@@ -14,9 +14,9 @@ const AdaptivityRuleList: React.FC<any> = (props) => {
   const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
 
   useEffect(() => {
-    if (rules.length > 0) {
-      dispatch(setCurrentRule({ currentRule: rules[0] }));
-    }
+    rules.length > 0
+      ? dispatch(setCurrentRule({ currentRule: rules[0] }))
+      : dispatch(setCurrentRule({ currentRule: undefined }));
   }, [currentActivity]);
 
   return (
