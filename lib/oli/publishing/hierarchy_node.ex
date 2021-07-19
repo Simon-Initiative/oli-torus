@@ -1,8 +1,7 @@
 defmodule Oli.Publishing.HierarchyNode do
   alias Oli.Publishing.HierarchyNode
 
-  defstruct numbering_index: nil,
-            numbering_level: nil,
+  defstruct numbering: nil,
             children: [],
             resource_id: nil,
             revision: nil,

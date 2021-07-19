@@ -1,6 +1,5 @@
 defmodule Oli.Publishing.ChangeTracker do
   alias Oli.Publishing
-  alias Oli.Publishing.AuthoringResolver
 
   @doc """
   Tracks the creation of a new revision for the current

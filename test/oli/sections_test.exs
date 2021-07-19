@@ -268,15 +268,15 @@ defmodule Oli.SectionsTest do
       assert page2_sr.numbering_level == 1
 
       unit1_resource_sr = Enum.find(section_resources, &(&1.resource_id == unit1_resource.id))
-      assert unit1_resource_sr.numbering_index == 3
+      assert unit1_resource_sr.numbering_index == 1
       assert unit1_resource_sr.numbering_level == 1
 
       nested_page1_sr = Enum.find(section_resources, &(&1.resource_id == nested_page1.id))
-      assert nested_page1_sr.numbering_index == 1
+      assert nested_page1_sr.numbering_index == 3
       assert nested_page1_sr.numbering_level == 2
 
       nested_page2_sr = Enum.find(section_resources, &(&1.resource_id == nested_page2.id))
-      assert nested_page2_sr.numbering_index == 2
+      assert nested_page2_sr.numbering_index == 4
       assert nested_page2_sr.numbering_level == 2
 
       # objectives and other non-structural items are not numbered

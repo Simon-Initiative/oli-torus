@@ -6,7 +6,6 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Institutions.Institution
-  alias Oli.Publishing.Publication
   alias Oli.Branding.Brand
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.DeliveryPolicy
@@ -18,6 +17,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :end_date, :utc_datetime
     field :timezone, :string
     field :title, :string
+    field :description, :string
     field :context_id, :string
     field :slug, :string
     field :open_and_free, :boolean, default: false

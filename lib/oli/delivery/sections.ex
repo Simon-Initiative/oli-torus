@@ -112,7 +112,7 @@ defmodule Oli.Delivery.Sections do
         join: e in Enrollment,
         on: e.section_id == s.id,
         where: e.user_id == ^user_id and s.open_and_free == true and s.status != :deleted,
-        preload: [:project, :publication],
+        preload: [:base_project],
         select: s
       )
 
@@ -440,7 +440,7 @@ defmodule Oli.Delivery.Sections do
          level,
          numberings
        ) do
-    {numberings, numbering_index} = Numbering.increment_count(numberings, level)
+    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
 
     {children, numberings, processed_ids} =
       Enum.reduce(
@@ -479,5 +479,26 @@ defmodule Oli.Delivery.Sections do
       })
 
     {section_resource_id, numberings, processed_ids}
+  end
+
+  def rebuild_section_resources(
+        section: %Section{id: section_id} = section,
+        publication: publication
+      ) do
+    section
+    |> Section.changeset(%{root_section_resource_id: nil})
+    |> Repo.update!()
+
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    create_section_resources(section, publication)
   end
 end

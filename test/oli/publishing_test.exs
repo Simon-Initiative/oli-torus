@@ -285,7 +285,6 @@ defmodule Oli.PublishingTest do
       assert project.slug == project_slug
     end
 
-    # TODO: REMOVE/REPLACE
     test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
          %{project: project} do
       institution = institution_fixture()
