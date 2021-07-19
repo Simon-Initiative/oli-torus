@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { debounce } from 'lodash';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import { selectCurrentRule } from './store/app/slice';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  IActivity,
+  selectCurrentActivity,
+  upsertActivity,
+} from '../delivery/store/features/activities/slice';
+import { selectCurrentRule, setCurrentRule } from './store/app/slice';
+import { clone } from '../../utils/common';
+import { saveActivity } from './store/activities/actions/saveActivity';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -13,7 +21,39 @@ export interface BottomPanelProps {
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
   const { panelState, onToggle, children } = props;
   const PANEL_SIDE_WIDTH = '250px';
+  const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
+  const currentActivity = useSelector(selectCurrentActivity);
+  const [correct, setCorrect] = useState(false);
+
+  useEffect(() => {
+    if (currentRule === undefined) return;
+    setCorrect(currentRule.correct);
+  }, [currentRule]);
+
+  const handleCorrectChange = () => {
+    const activityClone: IActivity = clone(currentActivity);
+    const updatedRule = { ...currentRule, correct: !correct };
+    const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
+      (rule: any) => rule.id === updatedRule.id,
+    );
+    ruleToUpdate.correct = !correct;
+    dispatch(setCurrentRule({ currentRule: updatedRule }));
+    setCorrect(!correct);
+    debounceSaveChanges(activityClone);
+  };
+
+  const debounceSaveChanges = useCallback(
+    debounce(
+      (activity) => {
+        dispatch(saveActivity({ activity }));
+        dispatch(upsertActivity({ activity }));
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
 
   return (
     <>
@@ -44,9 +84,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                         type="checkbox"
                         className="custom-control-input"
                         id={`correct-toggle`}
-                        checked={currentRule ? currentRule.correct : false}
-                        // onChange={(e) => handleValueChange(e, true)}
-                        // onBlur={(e) => handleValueChange(e, true)}
+                        checked={correct}
+                        onChange={() => handleCorrectChange()}
                       />
                       <label className="custom-control-label" htmlFor={`correct-toggle`}></label>
                     </div>
