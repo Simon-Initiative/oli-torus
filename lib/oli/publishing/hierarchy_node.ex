@@ -24,19 +24,4 @@ defmodule Oli.Publishing.HierarchyNode do
       Enum.reduce(node.children, all, &flatten_pages(&1, &2))
     end
   end
-
-  # TODO: REMOVE
-  # def flatten_hierarchy([], _), do: []
-
-  # def flatten_hierarchy([h | t], revisions_by_resource_id) do
-  #   revision = revisions_by_resource_id[h.resource_id]
-
-  #   if ResourceType.get_type_by_id(revision.resource_type_id) == "container" do
-  #     []
-  #   else
-  #     [h]
-  #   end ++
-  #     flatten_hierarchy(h.children, revisions_by_resource_id) ++
-  #     flatten_hierarchy(t, revisions_by_resource_id)
-  # end
 end

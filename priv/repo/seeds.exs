@@ -181,9 +181,5 @@ if Application.fetch_env!(:oli, :env) == :dev do
         # no registrations.json file, do nothing
         nil
     end
-
-    # TODO: REMOVE
-    Seeder.base_project_with_resource3()
-    |> Seeder.create_section()
   end
 end
