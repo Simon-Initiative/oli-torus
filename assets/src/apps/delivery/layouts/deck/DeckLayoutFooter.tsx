@@ -1,6 +1,8 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import { cursor } from 'components/misc/resizer/utils';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { CSSSelector } from 'swiper/types/shared';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -15,6 +17,7 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectHistoryNavigationActivity,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -61,8 +64,13 @@ const NextButton: React.FC<NextButton> = ({
   showCheckBtn,
 }) => {
   const isEnd = useSelector(selectLessonEnd);
-
-  const showDisabled = isLoading;
+  const historyMode = useSelector(selectHistoryNavigationActivity);
+  const styles: CSSProperties = {};
+  if (historyMode?.length) {
+    styles.opacity = 0.5;
+    styles.cursor = 'not-allowed';
+  }
+  const showDisabled = historyMode?.length ? true : isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
@@ -75,6 +83,7 @@ const NextButton: React.FC<NextButton> = ({
       <button
         onClick={handler}
         disabled={showDisabled}
+        style={styles}
         className={
           isGoodFeedbackPresent
             ? correctFeedbackNextButtonClassName
