@@ -73,6 +73,8 @@ export const initializeFromContext = createAsyncThunk(
         activityType: activity.activityType,
         content: { ...activity.model, authoring: undefined },
         authoring: activity.model.authoring,
+        title: activity.title,
+        objectives: activity.objectives,
       };
     });
     await dispatch(setActivities({ activities }));

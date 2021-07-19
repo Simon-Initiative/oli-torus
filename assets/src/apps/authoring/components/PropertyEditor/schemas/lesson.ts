@@ -43,6 +43,20 @@ const lessonSchema = {
             },
           },
         },
+        FinishPanel: {
+          type: 'object',
+          properties: {
+            logoutMessage:{
+              title: 'Message',
+              type: 'string',
+              format: 'textarea',
+            },
+            logoutPanelImageURL:{
+              type:'string',
+              title: 'Background URL'
+            }
+          }
+        },
         enableHistory: {
           title: 'Enable History',
           type: 'boolean'
@@ -98,6 +112,10 @@ export const lessonUiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Lesson Appearance',
     },
+    FinishPanel: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Finish Panel',
+    },
     ScoreOverview: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Score Overview',
@@ -129,6 +147,10 @@ export const transformModelToSchema = (model: any) => {
         enableLessonMax: model.custom.enableLessonMax,
         lessonMax: model.custom.lessonMax,
       },
+      FinishPanel: {
+        logoutMessage: model.custom.logoutMessage,
+        logoutPanelImageURL: model.custom.logoutPanelImageURL
+      },
       title: model.title,
       customCSS: model.customCss,
       enableHistory:
@@ -156,6 +178,8 @@ export const transformSchemaToModel = (schema: any) => {
       lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
       variables: JSON.parse(schema.CustomLogic.variables),
+      logoutMessage: schema.FinishPanel.logoutMessage,
+      logoutPanelImageURL: schema.FinishPanel.logoutPanelImageURL
     },
     additionalStylesheets,
     title: schema.Properties.title,
