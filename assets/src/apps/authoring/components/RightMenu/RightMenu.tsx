@@ -1,3 +1,5 @@
+import { findInSequence } from '../../../delivery/store/features/groups/actions/sequence';
+import { selectCurrentSequenceId, selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -39,16 +41,18 @@ const RightMenu: React.FC<any> = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
 
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
 
   const [screenData, setScreenData] = useState(
-    transformScreenModeltoSchema(currentActivity?.content?.custom),
+    transformScreenModeltoSchema(currentActivity),
   );
   useEffect(() => {
     console.log('CURRENT', { currentActivity, currentLesson });
-    setScreenData(transformScreenModeltoSchema(currentActivity?.content?.custom));
+    setScreenData(transformScreenModeltoSchema(currentActivity));
   }, [currentActivity]);
 
   // should probably wrap this in state too, but it doesn't change really
@@ -62,14 +66,23 @@ const RightMenu: React.FC<any> = () => {
   const screenPropertyChangeHandler = useCallback(
     (properties: any) => {
       if (currentActivity) {
+        const currentSequence = findInSequence(sequence, currentSequenceId);
         const modelChanges = transformScreenSchematoModel(properties);
+        //currentSequence?.custom.sequenceName = modelChanges.title;
         console.log('Screen Property Change...', { modelChanges });
+        const title = modelChanges.title;
+        delete modelChanges.title;
         const screenChanges = {
           ...currentActivity?.content?.custom,
           ...modelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
+        if(title){
+          cloneActivity.title = title;
+          cloneActivity.activitySlug = title.toLowerCase().split(' ').join('_');
+        }
+
         debounceSaveScreenSettings(cloneActivity);
       }
     },

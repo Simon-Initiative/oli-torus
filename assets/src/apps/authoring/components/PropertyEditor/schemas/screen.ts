@@ -5,6 +5,10 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const screenSchema = {
   type: 'object',
   properties: {
+    title:{
+      type:'string',
+      title: 'Title'
+    },
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -124,7 +128,8 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (data: any) => {
+export const transformScreenModeltoSchema = (activity: any) => {
+  const data = activity?.content?.custom;
   if (data) {
     const schemaPalette = {
       ...data.palette,
@@ -143,6 +148,7 @@ export const transformScreenModeltoSchema = (data: any) => {
     }
     return {
       ...data,
+      title:activity.title,
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
@@ -153,6 +159,7 @@ export const transformScreenModeltoSchema = (data: any) => {
 
 export const transformScreenSchematoModel = (schema: any) => {
   return {
+    title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
     customCssClass: schema.customCssClass,
