@@ -24,23 +24,37 @@ import { StemDeliveryConnected } from 'components/activities/common/stem/deliver
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { Maybe } from 'tsmonad';
-import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
+import { initialSelection, selectionToInput } from 'data/content/activities/utils';
 
 export const OrderingComponent: React.FC = () => {
   const {
     model,
     state: activityState,
     onResetActivity,
+    onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
+
+  const onSelectionChange = (selection: ActivityTypes.ChoiceId[]) => {
+    dispatch(activityDeliverySlice.actions.setSelection(selection));
+
+    onSaveActivity(uiState.attemptState.attemptGuid, [
+      {
+        attemptGuid: uiState.attemptState.parts[0].attemptGuid,
+        response: { input: selectionToInput(selection) },
+      },
+    ]);
+  };
 
   useEffect(() => {
     dispatch(
       initializeState(
         activityState,
-        model.choices.map((choice) => choice.id),
+        initialSelection(
+          activityState,
+          model.choices.map((c) => c.id),
+        ),
       ),
     );
   }, []);
@@ -57,9 +71,7 @@ export const OrderingComponent: React.FC = () => {
         <GradedPointsConnected />
         <ResponseChoices
           choices={uiState.selection.map((id) => getChoice(model, id))}
-          setChoices={(choices) =>
-            dispatch(activityDeliverySlice.actions.setSelection(choices.map((c) => c.id)))
-          }
+          setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
         />
         <ResetButtonConnected
           onReset={() => {

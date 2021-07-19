@@ -19,7 +19,7 @@ import {
   resetAction,
 } from 'data/content/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { isCorrect } from 'data/content/activities/activityUtils';
+import { initialSelection, isCorrect } from 'data/content/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
@@ -27,7 +27,6 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-import { valueOr } from 'utils/common';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -39,7 +38,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(activityState, valueOr(activityState?.parts[0]?.response?.input, [])));
+    dispatch(initializeState(activityState, initialSelection(activityState)));
   }, []);
 
   // First render initializes state
