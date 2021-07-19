@@ -12,10 +12,10 @@ const getColorValueString = (value: ColorResult) => {
 
 const getRGBColorValue = (value: any) => {
   if (value) {
-    const parts = value.replace('rgba(', '').replace('rgb(', '').replace(')', '').split(',');
+    const parts = value.replace('rgba(', '').replace(')', '').split(',');
     return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 100 };
   }
-  return { r: 255, g: 255, b: 255, a: 0 };
+  return { r: 255, g: 255, b: 255, a: 100 };
 };
 
 const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
@@ -26,14 +26,12 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
     setDisplayPicker(true);
     document.addEventListener('mousedown', handleClick);
   };
-
   const handleClick = (event: any) => {
     if (pickerRef.current && !pickerRef.current.contains(event.target)) {
       setDisplayPicker(false);
       document.removeEventListener('mousedown', handleClick);
     }
   };
-
   const pickerRef = useRef<HTMLDivElement>(null);
   const colorDiv: CSSProperties = {
     width: '36px',
@@ -59,7 +57,7 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
           <div style={popup} ref={pickerRef}>
             <SketchPicker
               color={color}
-              onChangeComplete={(color: ColorResult) => {
+              onChangeComplete={(color) => {
                 props.onChange(getColorValueString(color));
               }}
             />
