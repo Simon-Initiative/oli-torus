@@ -17,7 +17,7 @@ export interface AdaptivityState {
   lastMutateTriggered: any; // timestamp
   lastMutateChanges: any;
   initPhaseComplete: any; // timestamp
-  historyNavigationActivityId: string;
+  historyModeNavigation: boolean;
 }
 
 const initialState: AdaptivityState = {
@@ -31,7 +31,7 @@ const initialState: AdaptivityState = {
   lastMutateTriggered: null,
   lastMutateChanges: null,
   initPhaseComplete: null,
-  historyNavigationActivityId: '',
+  historyModeNavigation: false,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -66,9 +66,9 @@ const slice: Slice<AdaptivityState> = createSlice({
     },
     setHistoryNavigationTriggered(
       state,
-      action: PayloadAction<{ historyNavigationActivityId: any }>,
+      action: PayloadAction<{ historyModeNavigation: boolean }>,
     ) {
-      state.historyNavigationActivityId = action.payload.historyNavigationActivityId;
+      state.historyModeNavigation = action.payload.historyModeNavigation;
     },
     setInitPhaseComplete(state) {
       state.initPhaseComplete = Date.now();
@@ -126,7 +126,7 @@ export const selectLastCheckResults = createSelector(
 
 export const selectHistoryNavigationActivity = createSelector(
   selectState,
-  (state: AdaptivityState) => state.historyNavigationActivityId,
+  (state: AdaptivityState) => state.historyModeNavigation,
 );
 
 export const selectLastMutateTriggered = createSelector(

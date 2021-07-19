@@ -64,13 +64,13 @@ const NextButton: React.FC<NextButton> = ({
   showCheckBtn,
 }) => {
   const isEnd = useSelector(selectLessonEnd);
-  const historyMode = useSelector(selectHistoryNavigationActivity);
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const styles: CSSProperties = {};
-  if (historyMode?.length) {
+  if (historyModeNavigation) {
     styles.opacity = 0.5;
     styles.cursor = 'not-allowed';
   }
-  const showDisabled = historyMode?.length ? true : isLoading;
+  const showDisabled = historyModeNavigation ? true : isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
@@ -115,7 +115,7 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-  const isHistoryModeOn = useSelector(selectEnableHistory);
+  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
 
@@ -270,7 +270,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !isHistoryModeOn) {
+      if (currentPage.custom?.advancedAuthoring && !enableHistory) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&

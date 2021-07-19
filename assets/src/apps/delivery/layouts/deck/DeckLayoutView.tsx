@@ -46,7 +46,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
-  const historyMode = useSelector(selectHistoryNavigationActivity);
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const isEnd = useSelector(selectLessonEnd);
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -262,12 +262,14 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         AUTHOR: 'AUTHOR',
         REPORT: 'REPORT',
       };
+      console.log({ historyModeNavigation });
+
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: historyMode?.length ? contexts.REVIEW : contexts.VIEWER,
+          mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
         },
       });
       dispatch(setInitPhaseComplete(true));
