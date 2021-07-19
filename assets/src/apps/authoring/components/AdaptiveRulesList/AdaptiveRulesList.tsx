@@ -2,10 +2,10 @@ import React, { useEffect } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
-import { selectCurrentRule, setCurrentRule } from '../../../authoring/store/app/slice';
+import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
-const AdaptivityRuleList: React.FC<any> = (props) => {
+const AdaptiveRulesList: React.FC<any> = (props) => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
@@ -61,4 +61,4 @@ const AdaptivityRuleList: React.FC<any> = (props) => {
   );
 };
 
-export default AdaptivityRuleList;
+export default AdaptiveRulesList;
