@@ -302,7 +302,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         primary_resource_id: previous.primary_resource_id,
         scoring_strategy_id: previous.scoring_strategy_id,
         previous_revision_id: previous.id,
-        activity_type_id: previous.activity_type_id
+        activity_type_id: previous.activity_type_id,
+        scope: previous.scope
       })
 
     Publishing.get_published_resource!(publication.id, activity.id)

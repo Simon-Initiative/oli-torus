@@ -36,6 +36,7 @@ import { applyOperations } from 'utils/undo';
 import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
+import * as Lock from 'data/persistence/lock';
 
 const PAGE_SIZE = 5;
 
@@ -68,7 +69,7 @@ function prepareSaveFn(
 
 // The resource editor
 export class ActivityBank extends React.Component<ActivityBankProps, ActivityBankState> {
-  activityPersistence: { [id: string]: PersistenceStrategy };
+  persistence: Maybe<PersistenceStrategy>;
   editorById: { [id: number]: EditorDesc };
 
   constructor(props: ActivityBankProps) {
@@ -94,11 +95,13 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         return m;
       }, {});
 
+    this.persistence = Maybe.nothing<PersistenceStrategy>();
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
+    this.onChangeEditing = this.onChangeEditing.bind(this);
   }
 
   componentDidMount() {
@@ -135,30 +138,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
   }
 
-  initActivityPersistence() {
-    this.activityPersistence = Object.keys(this.state.activityContexts.toObject()).reduce(
-      (map, key) => {
-        const activity: ActivityEditContext = this.state.activityContexts.get(
-          key,
-        ) as ActivityEditContext;
-
-        const persistence = new DeferredPersistenceStrategy();
-        persistence.initialize(
-          () => Promise.resolve({ type: 'acquired' }),
-          () => Promise.resolve({ type: 'acquired' }),
-          // eslint-disable-next-line
-          () => {},
-          (failure) => this.publishErrorMessage(failure),
-          (persistence) => this.setState({ persistence }),
-        );
-
-        (map as any)[activity.activitySlug] = persistence;
-        return map;
-      },
-      {},
-    );
-  }
-
   onActivityAdd(context: ActivityEditContext) {
     const inserted = [
       [context.activitySlug, context],
@@ -167,6 +146,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.setState({
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
     });
+    this.onChangeEditing(context.activitySlug, true);
   }
 
   onActivityEdit(key: string, update: ActivityEditorUpdate): void {
@@ -189,7 +169,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           releaseLock,
         );
 
-      this.activityPersistence[key].save(saveFn);
+      this.persistence.lift((p) => p.save(saveFn));
     });
   }
 
@@ -254,6 +234,55 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     });
   }
 
+  onChangeEditing(key: string, editMode: boolean) {
+    if (editMode) {
+      this.persistence.lift((current) => current.destroy());
+      const persistence = new DeferredPersistenceStrategy();
+
+      const lockFn = (): Promise<Lock.LockResult> => {
+        return new Promise((resolve, reject) => {
+          Lock.acquireLock(this.props.projectSlug, key, true).then((result) => {
+            if (result.type === 'acquired') {
+              // Update our local context given the latest from the server
+              const context = this.state.activityContexts.get(key) as ActivityEditContext;
+              context.model = result.revision.content;
+              context.objectives = result.revision.objectives;
+              context.title = result.revision.title;
+
+              this.setState({
+                activityContexts: this.state.activityContexts.set(key, context),
+                editedSlug: Maybe.just<string>(key),
+              });
+              resolve(result);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+      };
+
+      const unlockFn = (): Promise<Lock.LockResult> => {
+        return Lock.releaseLock(this.props.projectSlug, key);
+      };
+
+      persistence.initialize(
+        lockFn,
+        unlockFn,
+        // eslint-disable-next-line
+        () => {},
+        (failure) => this.publishErrorMessage(failure),
+        (persistence) => this.setState({ persistence }),
+      );
+      this.persistence = Maybe.just<PersistenceStrategy>(persistence);
+    } else {
+      this.persistence.lift((current) => current.destroy());
+      this.persistence = Maybe.nothing<PersistenceStrategy>();
+      this.setState({
+        editedSlug: Maybe.nothing<string>(),
+      });
+    }
+  }
+
   createActivityEditors() {
     return this.state.activityContexts.toArray().map((item) => {
       const [key, context] = item;
@@ -263,10 +292,9 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       });
       const onChangeEditMode = (state: boolean) => {
         const thisKey = key;
-        this.setState({
-          editedSlug: state ? Maybe.just<string>(thisKey) : Maybe.nothing<string>(),
-        });
+        this.onChangeEditing(thisKey, state);
       };
+
       return (
         <div key={key} className="d-flex flex-column">
           <div className="d-flex">
@@ -330,17 +358,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     const { projectSlug } = this.props;
 
     const onAddItem = (a: ActivityEditContext) => {
-      const persistence = new DeferredPersistenceStrategy();
-      persistence.initialize(
-        () => Promise.resolve({ type: 'acquired' }),
-        () => Promise.resolve({ type: 'acquired' }),
-        // eslint-disable-next-line
-        () => {},
-        (failure) => this.publishErrorMessage(failure),
-        (persistence) => this.setState({ persistence }),
-      );
-      this.activityPersistence[a.activitySlug] = persistence;
-
       this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
     };
 

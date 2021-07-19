@@ -17,13 +17,22 @@ const create = (
   onAdded: (context: ActivityEditContext) => void,
 ) => {
   let model: any;
-  let objectives: any;
+
   invokeCreationFunc(editorDesc.slug, {} as any)
     .then((createdModel) => {
       model = createdModel;
       return Persistence.createBanked(projectSlug, editorDesc.slug, createdModel, []);
     })
     .then((result: Persistence.Created) => {
+      const objectives = model.authoring.parts
+        .map((p: any) => {
+          return p.id;
+        })
+        .reduce((m: any, id: any) => {
+          m[id] = [];
+          return m;
+        }, {});
+
       const activity: ActivityEditContext = {
         authoringElement: editorDesc.authoringElement as string,
         description: editorDesc.description,
@@ -33,7 +42,7 @@ const create = (
         activityId: result.resourceId,
         title: editorDesc.friendlyName,
         model,
-        objectives: {},
+        objectives,
       };
 
       onAdded(activity);

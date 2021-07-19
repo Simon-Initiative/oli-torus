@@ -5,6 +5,7 @@ export type LockResult = Acquired | Released | NotAcquired | ServerError;
 
 export type Acquired = {
   type: 'acquired',
+  revision: any,
 };
 
 export type NotAcquired = {
@@ -27,10 +28,14 @@ export function releaseLock(
 }
 
 export function acquireLock(
-  project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
+  project: ProjectSlug, resource: ResourceSlug, withRevision = false): Promise<LockResult> {
+
+  const url = withRevision
+    ? `/project/${project}/lock/${resource}?fetch_revision=true`
+    : `/project/${project}/lock/${resource}?fetch_revision=false`;
 
   const params = {
-    url: `/project/${project}/lock/${resource}`,
+    url,
     method: 'POST',
   };
   return makeRequest<LockResult>(params);

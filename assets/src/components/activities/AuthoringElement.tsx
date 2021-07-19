@@ -32,7 +32,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   props(): AuthoringElementProps<T> {
     const getProp = (key: string) => JSON.parse(this.getAttribute(key) as any);
     const model = this.migrateModelVersion(getProp('model'));
-    const editMode: boolean = getProp('editMode');
+    const editMode: boolean = this.getAttribute('editmode') === 'true';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
 
     const onEdit = (model: any) => {
@@ -69,9 +69,8 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     }
   }
 
-  static get observedAttributes() {
-    return ['model', 'editMode'];
-  }
+  // Lower case here as opposed to camelCase is required
+  static observedAttributes = ['editmode', 'model'];
 }
 
 export interface AuthoringElementState<T> {
