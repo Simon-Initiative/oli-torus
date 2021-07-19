@@ -6,7 +6,7 @@ const lessonSchema = {
   properties: {
     Properties: {
       type: 'object',
-      title:' Properties',
+      title: ' Properties',
       properties: {
         title: {
           type: 'string',
@@ -46,20 +46,20 @@ const lessonSchema = {
         FinishPanel: {
           type: 'object',
           properties: {
-            logoutMessage:{
+            logoutMessage: {
               title: 'Message',
               type: 'string',
               format: 'textarea',
             },
-            logoutPanelImageURL:{
-              type:'string',
-              title: 'Background URL'
-            }
-          }
+            logoutPanelImageURL: {
+              type: 'string',
+              title: 'Background URL',
+            },
+          },
         },
         enableHistory: {
           title: 'Enable History',
-          type: 'boolean'
+          type: 'boolean',
         },
         ScoreOverview: {
           type: 'object',
@@ -74,24 +74,24 @@ const lessonSchema = {
           description: 'block of css code to be injected into style tag',
           format: 'textarea',
         },
-      }
+      },
     },
     CustomLogic: {
-      type:'object',
+      type: 'object',
       title: 'Custom Logic',
       properties: {
-        variables:{
+        variables: {
           type: 'string',
           title: 'Variables',
           format: 'textarea',
         },
-        customScript:{
+        customScript: {
           type: 'string',
           title: 'Custom Script',
           format: 'textarea',
-        }
-      }
-    }
+        },
+      },
+    },
   },
 };
 
@@ -123,7 +123,7 @@ export const lessonUiSchema = {
   },
   CustomLogic: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
-  }
+  },
 };
 
 // we don't have the actual theme urls yet,
@@ -137,7 +137,7 @@ export const transformModelToSchema = (model: any) => {
   const theme = themeMap[themeUrl] || 'LEGACY';
 
   return {
-    Properties:{
+    Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
       Appearance: {
         theme,
@@ -149,26 +149,33 @@ export const transformModelToSchema = (model: any) => {
       },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
-        logoutPanelImageURL: model.custom.logoutPanelImageURL
+        logoutPanelImageURL: model.custom.logoutPanelImageURL,
       },
       title: model.title,
       customCSS: model.customCss,
-      enableHistory:
-        model.custom.allowNavigation ||
-        model.custom.enableHistory ||
-        false
+      enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
     },
     CustomLogic: {
       variables: JSON.stringify(model.custom.variables),
-      customScript: model.customScript
-    }
+      customScript: model.customScript,
+    },
   };
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const themeUrl = Object.keys(themeMap).find(key => themeMap[key] === schema.Appearance.theme) || null;
+  /* console.log('LESSON SCHEMA -> MODEL', schema); */
+  const themeUrl =
+    Object.keys(themeMap).find((key) => themeMap[key] === schema.Properties.Appearance.theme) ||
+    null;
 
-  const additionalStylesheets = [themeUrl, schema.Appearance.customCssUrl];
+  const additionalStylesheets = [themeUrl, schema.Properties.Appearance.customCssUrl];
+
+  let variables = [];
+  try {
+    variables = JSON.parse(schema.CustomLogic.variables);
+  } catch (e) {
+    console.warn('could not parse variables', e);
+  }
 
   return {
     custom: {
@@ -177,14 +184,14 @@ export const transformSchemaToModel = (schema: any) => {
       enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
       lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
-      variables: JSON.parse(schema.CustomLogic.variables),
-      logoutMessage: schema.FinishPanel.logoutMessage,
-      logoutPanelImageURL: schema.FinishPanel.logoutPanelImageURL
+      variables,
+      logoutMessage: schema.Properties.FinishPanel.logoutMessage,
+      logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
     },
     additionalStylesheets,
     title: schema.Properties.title,
     customCss: schema.Properties.customCSS,
-    customScript: schema.CustomLogic.customScript
+    customScript: schema.CustomLogic.customScript,
   };
 };
 
