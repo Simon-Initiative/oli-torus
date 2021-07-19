@@ -18,7 +18,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
     %ActivityAttempt{
       transformed_model: transformed_model,
-      resource_attempt: resource_attempt
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number,
     } =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
@@ -27,12 +28,22 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
-      {:ok, %Model{rules: rules}} ->
+      {:ok, %Model{rules: rules, delivery: delivery}} ->
+        custom = Map.get(delivery, "custom", %{})
+        scoringContext = %{
+          maxScore: Map.get(custom, "maxScore", 0),
+          maxAttempt: Map.get(custom, "maxAttempt", 1),
+          trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
+          negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
+          currentAttemptNumber: attempt_number,
+        }
+        # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
           resource_attempt,
           activity_attempt_guid,
           part_inputs,
+          scoringContext,
           rules
         )
 
@@ -46,24 +57,25 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         resource_attempt,
         activity_attempt_guid,
         part_inputs,
+        scoringContext,
         rules
       ) do
     state = assemble_full_adaptive_state(resource_attempt, part_inputs)
 
     encodeResults = true
-    case NodeJS.call({"rules", :check}, [state, rules, encodeResults]) do
+    case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
       {:ok, check_results} ->
-        Logger.debug("Check RESULTS: #{check_results}")
-        {:ok, decoded} = Base.url_decode64(check_results)
-        Logger.debug("Decoded: #{decoded}")
+        # Logger.debug("Check RESULTS: #{check_results}")
+        decoded = Base.decode64!(check_results)
+        # Logger.debug("Decoded: #{decoded}")
         decodedResults = Poison.decode!(decoded)
 
-        client_evaluations =
-          determine_score(%{correct: decodedResults["correct"]})
-          |> to_client_results(part_inputs)
+        score = decodedResults["score"]
+        out_of = decodedResults["out_of"]
+        client_evaluations = to_client_results(score, out_of, part_inputs)
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-          {:ok, _} -> {:ok, decodedResults["results"]}
+          {:ok, _} -> {:ok, decodedResults}
           e -> e
         end
 
@@ -72,26 +84,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  defp to_client_results(score, part_inputs) do
+  defp to_client_results(score, out_of, part_inputs) do
     Enum.map(part_inputs, fn part_input ->
       %{
         attempt_guid: part_input.attempt_guid,
         client_evaluation: %ClientEvaluation{
           input: part_input.input.input,
           score: score,
-          out_of: 1,
+          out_of: out_of,
           feedback: nil
         }
       }
     end)
-  end
-
-  defp determine_score(check_results) do
-    if Map.get(check_results, "correct", false) do
-      1
-    else
-      0
-    end
   end
 
   defp assemble_full_adaptive_state(resource_attempt, part_inputs) do
