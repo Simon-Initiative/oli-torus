@@ -1,14 +1,25 @@
 /* eslint-disable react/prop-types */
+import debounce from 'lodash/debounce';
+import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import debounce from 'lodash/debounce';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { CapiVariable } from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import './InputNumber.scss';
 
-const InputNumber: React.FC<any> = (props) => {
+interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
+  minValue: number;
+  maxValue: number;
+  unitsLabel: string;
+  label: string;
+  showLabel: boolean;
+  showIncrementArrows: boolean;
+}
+
+const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -26,10 +37,6 @@ const InputNumber: React.FC<any> = (props) => {
     const dCssClass = pModel.customCssClass || '';
     setCssClass(dCssClass);
 
-    // test undefined because 0 is falsey yet valid
-    const dValue = pModel.value !== undefined ? pModel.value : '';
-    setInputNumberValue(dValue);
-
     const initResult = await props.onInit({
       id,
       responses: [
@@ -41,7 +48,7 @@ const InputNumber: React.FC<any> = (props) => {
         {
           key: 'value',
           type: CapiVariableTypes.NUMBER,
-          value: dValue,
+          value: '',
         },
         {
           key: 'customCssClass',
@@ -55,7 +62,7 @@ const InputNumber: React.FC<any> = (props) => {
     const currentStateSnapshot = initResult.snapshot;
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
-      setEnabled(sEnabled);
+      setEnabled(parseBool(sEnabled));
     }
     const sValue = currentStateSnapshot[`stage.${id}.value`];
     if (sValue !== undefined) {
@@ -94,7 +101,7 @@ const InputNumber: React.FC<any> = (props) => {
               const { mutateChanges: changes } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
-                setEnabled(sEnabled);
+                setEnabled(parseBool(sEnabled));
               }
               const sValue = changes[`stage.${id}.value`];
               if (sValue !== undefined) {
@@ -187,26 +194,7 @@ const InputNumber: React.FC<any> = (props) => {
     [],
   );
 
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
-
-  const handleStateChange = (data: CapiVariable[]) => {
-    const interested = data.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
-    if (interested?.length) {
-      interested.forEach((stateVar) => {
-        if (stateVar.key === 'value') {
-          setInputNumberValue(stateVar.value as number);
-        }
-        if (stateVar.key === 'enabled') {
-          setEnabled(stateVar.value as boolean);
-        }
-      });
-    }
-  };
-
-  const saveInputText = (val: number, isEnabled = true) => {
+  const saveInputText = (val: number) => {
     props.onSave({
       id: `${id}`,
       responses: [
@@ -219,8 +207,9 @@ const InputNumber: React.FC<any> = (props) => {
     });
   };
 
-  const handleOnChange = (event: any) => {
-    setInputNumberValue(event.target.value);
+  const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
+    const val = (event.target as HTMLInputElement).value;
+    setInputNumberValue(val);
   };
 
   useEffect(() => {

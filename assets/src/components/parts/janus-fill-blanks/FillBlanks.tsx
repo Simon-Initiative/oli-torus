@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
 import { usePrevious } from '../../hooks/usePrevious';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -9,7 +9,11 @@ const quill = require('./Quill.css');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const select2Styles = require('react-select2-wrapper/css/select2.css');
 import { JanusFillBlanksProperties } from './FillBlanksType';
-
+import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -24,6 +28,9 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const id: string = props.id;
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : []);
+  const [localSnapshot, setLocalSnapshot] = useState<any>({});
+  const [stateChanged, setStateChanged] = useState<boolean>(false);
+  const [mutateState, setMutateState] = useState<any>({});
   const {
     x = 0,
     y = 0,
@@ -42,12 +49,28 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const [newElement, setNewElement] = useState<SelectOption>();
 
   useEffect(() => {
+    let pModel;
+    let pState;
     if (typeof props?.model === 'string') {
-      setModel(JSON.parse(props.model));
+      try {
+        pModel = JSON.parse(props.model);
+        setModel(pModel);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
     if (typeof props?.state === 'string') {
-      setState(JSON.parse(props.state));
+      try {
+        pState = JSON.parse(props.state);
+        setState(pState);
+      } catch (err) {
+        // bad json, what do?
+      }
     }
+    if (!pModel) {
+      return;
+    }
+    initialize(pModel);
   }, [props]);
   const prevElementValues = usePrevious<any[]>(elementValues);
 
@@ -62,7 +85,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   const [customCssClass, setCustomCssClass] = useState<string>(
     model?.customCss ? model.customCss : '',
   );
-
+  const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -73,38 +96,61 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     borderRadius: '5px',
     fontFamily: 'revert',
   };
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id,
+      responses: [],
+    });
+
+    // result of init has a state snapshot with latest (init state applied)
+    const currentStateSnapshot = initResult.snapshot;
+    setLocalSnapshot(currentStateSnapshot);
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+    if (sEnabled) {
+      setEnabled(parseBool(sEnabled));
+    }
+
+    const sShowCorrect = currentStateSnapshot[`stage.${id}.showCorrect`];
+    if (sShowCorrect) {
+      setShowCorrect(parseBool(sShowCorrect));
+    }
+
+    const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
+    if (sCustomCss) {
+      setCustomCss(sCustomCss);
+    }
+
+    const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
+    if (sEnabled) {
+      setCustomCssClass(sCustomCssClass);
+    }
+
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    props.onReady({ id, responses: [] });
+  }, [ready]);
 
   useEffect(() => {
     //if (elements?.length && state?.length) {
     if (elements?.length) {
-      getStateSelections();
+      getStateSelections(localSnapshot);
       setContentList(buildContentList);
     }
-  }, [elements, state]);
+  }, [elements, localSnapshot]);
 
   useEffect(() => {
-    props.onReady({ activityId: `${id}`, partResponses: [] });
-  }, []);
-
-  useEffect(() => {
-    //TODO implement once state support is added
-  }, [state]);
-
-  useEffect(() => {
-    // explicitly update properties from state
-    if (model.enabled) {
-      setEnabled(parseBool(model.enabled));
+    //if (elements?.length && state?.length) {
+    if (elements?.length && stateChanged) {
+      getStateSelections(mutateState);
+      setContentList(buildContentList);
+      setStateChanged(false);
     }
-    if (model.showCorrect) {
-      setShowCorrect(parseBool(model.showCorrect));
-    }
-    if (model.customCss) {
-      setCustomCss(model.customCss);
-    }
-    if (model.customCssClass) {
-      setCustomCssClass(model.customCssClass);
-    }
-  }, [model]);
+  }, [elements, stateChanged, mutateState]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -121,19 +167,18 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   }, [elementValues]);
 
   useEffect(() => {
-    /*  if (parseBool(attempted)) {
-            props.onSavePart({
-                activityId: `${id}`,
-                partResponses: [
-                    {
-                        id: `stage.${id}.attempted`,
-                        key: 'attempted',
-                        type: CapiVariableTypes.BOOLEAN,
-                        value: attempted,
-                    },
-                ],
-            });
-        } */
+    if (parseBool(attempted)) {
+      props.onSave({
+        activityId: `${id}`,
+        partResponses: [
+          {
+            key: 'attempted',
+            type: CapiVariableTypes.BOOLEAN,
+            value: attempted,
+          },
+        ],
+      });
+    }
   }, [attempted]);
 
   useEffect(() => {
@@ -142,6 +187,62 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       setElementValues([newElement, ...elementValues.filter((obj) => newElement.key !== obj?.key)]);
     }
   }, [newElement]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CHECK_STARTED,
+      NotificationType.CHECK_COMPLETE,
+      NotificationType.CONTEXT_CHANGED,
+      NotificationType.STATE_CHANGED,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload); */
+        switch (notificationType) {
+          case NotificationType.CHECK_STARTED:
+            // nothing to do
+            break;
+          case NotificationType.CHECK_COMPLETE:
+            // nothing to do
+            break;
+          case NotificationType.STATE_CHANGED:
+            const { mutateChanges: changes } = payload;
+            setStateChanged(true);
+            setMutateState(changes);
+            const sEnabled = changes[`stage.${id}.enabled`];
+            if (sEnabled) {
+              setEnabled(parseBool(sEnabled));
+            }
+            const sShowCorrect = changes[`stage.${id}.showCorrect`];
+            if (sShowCorrect) {
+              setShowCorrect(parseBool(sShowCorrect));
+            }
+            const sCustomCss = changes[`stage.${id}.customCss`];
+            if (sCustomCss) {
+              setCustomCss(sCustomCss);
+            }
+            const sCustomCssClass = changes[`stage.${id}.customCssClass`];
+            if (sCustomCssClass) {
+              setCustomCssClass(sCustomCssClass);
+            }
+            break;
+          case NotificationType.CONTEXT_CHANGED:
+            // nothing to do
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
@@ -190,41 +291,84 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
 
       return [
         {
-          id: `stage.${id}.Input ${index + 1}.Value`,
           key: `Input ${index + 1}.Value`,
-          type: 2,
+          type: CapiVariableTypes.STRING,
           value: val,
         },
         {
-          id: `stage.${id}.Input ${index + 1}.Correct`,
           key: `Input ${index + 1}.Correct`,
-          type: 4,
+          type: CapiVariableTypes.BOOLEAN,
           value: isCorrect(val, el.correct, el.alternateCorrect),
         },
       ];
     });
+    // save to state
+    try {
+      const elementPartResponses = [].concat(...partResponses);
+
+      props.onSave({
+        id: `${id}`,
+        responses: [
+          ...elementPartResponses,
+          {
+            key: 'enabled',
+            type: CapiVariableTypes.BOOLEAN,
+            value: enabled,
+          },
+          {
+            key: 'showCorrect',
+            type: CapiVariableTypes.BOOLEAN,
+            value: showCorrect,
+          },
+          {
+            key: 'customCss',
+            type: CapiVariableTypes.STRING,
+            value: customCss,
+          },
+          {
+            key: 'customCssClass',
+            type: CapiVariableTypes.STRING,
+            value: customCssClass,
+          },
+          {
+            key: 'correct',
+            type: CapiVariableTypes.BOOLEAN,
+            value: allCorrect,
+          },
+        ],
+      });
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  const getStateSelections = () => {
-    if (!state?.length || !elements?.length || !Array.isArray(state)) return;
+  const getStateSelections = (snapshot: any) => {
+    if (!Object.keys(snapshot)?.length || !elements?.length) return;
 
     // check for state vars that match elements keys and
-    const interested = state.filter((stateVar) => stateVar.id.indexOf(`stage.${id}.`) === 0);
+    const interested = Object.keys(snapshot).filter(
+      (stateVar) => stateVar.indexOf(`stage.${id}.`) === 0,
+    );
     const stateValues = interested.map((stateVar) => {
-      const sKey = stateVar?.key;
-      if (sKey?.startsWith('Input ') && sKey?.endsWith('.Value')) {
+      const sKey = stateVar;
+      if (sKey?.startsWith(`stage.${id}.Input `) && sKey?.endsWith('.Value')) {
+        const segments = sKey.split('.');
+        const finalsKey = segments.slice(-2).join('.');
         // extract index from stateVar key
-        const index: number = parseInt(sKey.replace(/[^0-9\\.]/g, ''), 10);
+        const index: number = parseInt(finalsKey.replace(/[^0-9\\.]/g, ''), 10);
         // get key from `elements` based on 'Input [index].Value'
         const el: any = elements[index - 1];
-        const val: string = stateVar?.value?.toString();
+        const val: string = snapshot[stateVar]?.toString();
         if (el?.key) return { key: el.key, value: val };
       } else {
         return false;
       }
     });
     // set new elementValues array
-    setElementValues([...stateValues]);
+    setElementValues([
+      ...stateValues,
+      ...elementValues.filter((obj) => !stateValues.includes(obj?.key)),
+    ]);
   };
 
   const buildContentList = content?.map(
@@ -318,6 +462,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       ref={fibContainer}
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
+      <style type="text/css">{`${customCss}`};</style>
       <div className="scene">
         <div className="app">
           <div className="editor ql-container ql-snow ql-disabled">

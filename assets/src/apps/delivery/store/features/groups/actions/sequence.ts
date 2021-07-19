@@ -19,7 +19,8 @@ export interface SequenceBank extends SequenceEntryChild {
 export type SequenceEntryType = SequenceEntryChild | SequenceLayer | SequenceBank;
 
 export interface SequenceEntry<T> {
-  activity_id: number;
+  activity_id?: number;
+  resourceId?: number;
   activitySlug?: string;
   custom: T;
 }

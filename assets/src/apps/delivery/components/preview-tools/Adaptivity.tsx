@@ -44,7 +44,7 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
   }, [currentActivity]);
 
   // helper because of lint
-  const hasOwnProperty = (obj: any, property: string) =>
+  const hasOwnProperty = (obj: unknown, property: string) =>
     Object.prototype.hasOwnProperty.call(obj || {}, property);
 
   return (

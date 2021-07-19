@@ -1,14 +1,25 @@
 <div class="workspace-sidebar">
-  <div class="container">
-    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
-  </div>
-  <div class="user">
-    <%= account_link @conn %>
-    <%= sidebar_link @conn, "Projects", :projects, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>
-  </div>
+
+  <img src="/images/torus-icon.png" class="mb-3 ml-1 mt-2" height="50px" width="50px"/>
+
+  <button type="button" class="btn btn-light" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
+    <i class="icon las la-project-diagram la" style="font-size: 32px;"></i>
+    <div class="label">Projects</div>
+  </button>
+
 
   <%= if is_admin?(@conn) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
   <% end %>
 
 </div>
+
+<script>
+// Allows hovering to trigger a click, this is preferred over a CSS solution leveraging :hover
+// as that gets interferred with when a user clicks
+$(function() {
+  $('.hoverdriven').hover(function(e){
+    $(e.target, this).trigger('click');
+  });
+});
+</script>

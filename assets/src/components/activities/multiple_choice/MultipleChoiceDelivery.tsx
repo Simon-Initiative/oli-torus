@@ -6,18 +6,19 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { MultipleChoiceModelSchema } from './schema';
+import { MCSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import {
   ActivityDeliveryState,
   initializeState,
-  selectChoice,
-  slice,
+  setSelection,
+  activityDeliverySlice,
   isEvaluated,
+  resetAction,
 } from 'data/content/activities/DeliveryState';
-import { Radio } from 'components/activities/common/icons/Radio';
+import { Radio } from 'components/misc/icons/radio/Radio';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
@@ -26,38 +27,35 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-
-export const store = configureStore({}, slice.reducer);
+import { valueOr } from 'utils/common';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
-    model,
     state: activityState,
     onSaveActivity,
-  } = useDeliveryElementContext<MultipleChoiceModelSchema>();
+    onResetActivity,
+  } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(model, activityState));
+    dispatch(initializeState(activityState, valueOr(activityState?.parts[0]?.response?.input, [])));
   }, []);
 
   // First render initializes state
-  if (!uiState.selectedChoices) {
+  if (!uiState.selection) {
     return null;
   }
 
-  const evaluated = isEvaluated(uiState);
-
   return (
-    <div className={`activity mc-activity ${evaluated ? 'evaluated' : ''}`}>
+    <div className="activity mc-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          unselectedIcon={<Radio.Unchecked disabled={evaluated} />}
+          unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
-            !evaluated ? (
+            !isEvaluated(uiState) ? (
               <Radio.Checked />
             ) : isCorrect(uiState.attemptState) ? (
               <Radio.Correct />
@@ -65,9 +63,9 @@ export const MultipleChoiceComponent: React.FC = () => {
               <Radio.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(selectChoice(id, onSaveActivity, 'single'))}
+          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'single'))}
         />
-        <ResetButtonConnected />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
         <SubmitButtonConnected />
         <HintsDeliveryConnected />
         <EvaluationConnected />
@@ -77,8 +75,9 @@ export const MultipleChoiceComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class MultipleChoiceDelivery extends DeliveryElement<MultipleChoiceModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultipleChoiceModelSchema>) {
+export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

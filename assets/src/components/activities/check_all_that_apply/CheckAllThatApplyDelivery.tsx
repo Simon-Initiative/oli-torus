@@ -1,13 +1,13 @@
-import { CheckAllThatApplyModelSchema } from 'components/activities/check_all_that_apply/schema';
-import { Checkbox } from 'components/activities/common/icons/Checkbox';
-import { Manifest } from 'components/activities/types';
+import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
+import { ChoiceId, Manifest } from 'components/activities/types';
 import { isCorrect } from 'data/content/activities/activityUtils';
 import {
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
-  selectChoice,
-  slice,
+  setSelection,
+  activityDeliverySlice,
+  resetAction,
 } from 'data/content/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -26,38 +26,48 @@ import { EvaluationConnected } from 'components/activities/common/delivery/evalu
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-
-export const store = configureStore({}, slice.reducer);
+import { valueOr } from 'utils/common';
+import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { Maybe } from 'tsmonad';
+import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
-    model,
     state: activityState,
+    onResetActivity,
     onSaveActivity,
-  } = useDeliveryElementContext<CheckAllThatApplyModelSchema>();
+  } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(model, activityState));
+    dispatch(
+      initializeState(
+        activityState,
+        valueOr(
+          activityState.parts[0]?.response?.input
+            ?.split(' ')
+            .reduce((ids: string[], id: string) => ids.concat([id]), [] as ChoiceId[]),
+          [],
+        ),
+      ),
+    );
   }, []);
 
   // First render initializes state
-  if (!uiState.selectedChoices) {
+  if (!uiState.selection) {
     return null;
   }
 
-  const evaluated = isEvaluated(uiState);
-
   return (
-    <div className={`activity cata-activity ${evaluated ? 'evaluated' : ''}`}>
+    <div className={`activity cata-activity ${isEvaluated(uiState) ? 'evaluated' : ''}`}>
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          unselectedIcon={<Checkbox.Unchecked disabled={evaluated} />}
+          unselectedIcon={<Checkbox.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
-            !evaluated ? (
+            !isEvaluated(uiState) ? (
               <Checkbox.Checked />
             ) : isCorrect(uiState.attemptState) ? (
               <Checkbox.Correct />
@@ -65,9 +75,9 @@ export const CheckAllThatApplyComponent: React.FC = () => {
               <Checkbox.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(selectChoice(id, onSaveActivity, 'multiple'))}
+          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'multiple'))}
         />
-        <ResetButtonConnected />
+        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
         <SubmitButtonConnected />
         <HintsDeliveryConnected />
         <EvaluationConnected />
@@ -77,8 +87,9 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class CheckAllThatApplyDelivery extends DeliveryElement<CheckAllThatApplyModelSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CheckAllThatApplyModelSchema>) {
+export class CheckAllThatApplyDelivery extends DeliveryElement<CATASchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<CATASchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

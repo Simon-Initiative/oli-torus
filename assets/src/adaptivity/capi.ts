@@ -1,4 +1,4 @@
-import { isStringArray, parseArray, parseBool, parseBoolean } from 'utils/common';
+import { isStringArray, parseArray, parseBoolean } from 'utils/common';
 
 export enum CapiVariableTypes {
   NUMBER = 1,

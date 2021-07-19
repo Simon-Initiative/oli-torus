@@ -47,7 +47,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     top: topPanelState,
     bottom: bottomPanelState,
   };
-
   const handlePanelStateChange = ({
     top,
     right,

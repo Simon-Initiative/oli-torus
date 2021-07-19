@@ -4,19 +4,19 @@ import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import PreviewTools from './components/PreviewTools';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
-import LessonFinishedDialogProps from './layouts/deck/LessonFinishedDialog';
+import LessonFinishedDialog from './layouts/deck/LessonFinishedDialog';
+import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 import { LayoutProps } from './layouts/layouts';
 import store from './store';
-import { selectLessonEnd } from './store/features/adaptivity/slice';
+import { selectLessonEnd, selectRestartLesson } from './store/features/adaptivity/slice';
 import { LayoutType, selectCurrentGroup } from './store/features/groups/slice';
 import { loadInitialPageState } from './store/features/page/actions/loadInitialPageState';
-import { selectRestartLesson } from './store/features/adaptivity/slice';
-import RestartLessonDialog from './layouts/deck/RestartLessonDialog';
 
 export interface DeliveryProps {
   resourceId: number;
   sectionSlug: string;
   userId: number;
+  userName: string;
   pageTitle: string;
   pageSlug: string;
   content: any;
@@ -30,6 +30,7 @@ export interface DeliveryProps {
 
 const Delivery: React.FC<DeliveryProps> = ({
   userId,
+  userName,
   resourceId,
   sectionSlug,
   pageTitle = '',
@@ -58,6 +59,7 @@ const Delivery: React.FC<DeliveryProps> = ({
     dispatch(
       loadInitialPageState({
         userId,
+        userName,
         resourceId,
         sectionSlug,
         pageTitle,
@@ -69,6 +71,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         previewMode: !!previewMode,
         activityTypes,
         enableHistory,
+        score: 0,
       }),
     );
   };
@@ -89,7 +92,7 @@ const Delivery: React.FC<DeliveryProps> = ({
       </div>
       {restartLesson ? <RestartLessonDialog onRestart={setInitialPageState} /> : null}
       {isLessonEnded ? (
-        <LessonFinishedDialogProps imageUrl={dialogImageUrl} message={dialogMessage} />
+        <LessonFinishedDialog imageUrl={dialogImageUrl} message={dialogMessage} />
       ) : null}
     </div>
   );

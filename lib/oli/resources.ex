@@ -292,7 +292,8 @@ defmodule Oli.Resources do
           primary_resource_id: previous_revision.primary_resource_id,
           max_attempts: previous_revision.max_attempts,
           recommended_attempts: previous_revision.recommended_attempts,
-          time_limit: previous_revision.time_limit
+          time_limit: previous_revision.time_limit,
+          scope: previous_revision.scope
         },
         attrs
       )

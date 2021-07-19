@@ -1,4 +1,4 @@
-import { applyOperations, InsertOperation } from 'utils/undo';
+import { applyOperations, InsertOperation, ReplaceOperation } from 'utils/undo';
 
 const model = () =>  ({
   authoring: {
@@ -23,6 +23,7 @@ it('restores choices', () => {
   const copy = Object.assign({}, model());
 
   const op : InsertOperation = {
+    type: 'InsertOperation',
     item: { id: 4},
     index: 0,
     path: '$.choices'
@@ -34,11 +35,27 @@ it('restores choices', () => {
 
 });
 
+it('replaces items', () => {
+  const copy = Object.assign({}, model());
+
+  const op : ReplaceOperation = {
+    type: 'ReplaceOperation',
+    item: [{ id: 4}],
+    path: '$.choices'
+  };
+
+  applyOperations(copy, [op]);
+  expect(copy.choices.length).toEqual(1);
+  expect(copy.choices[0].id).toEqual(4);
+
+});
+
 
 it('restores choices robust to size of array', () => {
   const copy = Object.assign({}, model());
 
   const op : InsertOperation = {
+    type: 'InsertOperation',
     item: { id: 4},
     index: 10,
     path: '$.choices'
@@ -55,11 +72,13 @@ it('restores items in parallel arrays', () => {
   const copy = Object.assign({}, model());
 
   const choices : InsertOperation = {
+    type: 'InsertOperation',
     item: { id: 4},
     index: 0,
     path: '$.choices'
   };
   const responses : InsertOperation = {
+    type: 'InsertOperation',
     item: { id: 4},
     index: 0,
     path: '$.authoring.parts[0].responses'

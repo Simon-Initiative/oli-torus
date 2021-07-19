@@ -13,6 +13,7 @@ import { AdaptiveModelSchema } from './schema';
 
 const sharedInitMap = new Map();
 const sharedPromiseMap = new Map();
+const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const {
@@ -20,8 +21,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   } = props.model;
 
   const [pusher, setPusher] = useState(new EventEmitter());
-
-  const attemptState = props.state;
 
   const parts = partsLayout || [];
 
@@ -47,6 +46,26 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         // the layer rendered, the parts can't simply call init again or they will not get the latest changes
         // still we just currently push notifications straight through, CONTEXT_CHANGED should have the latest snapshot
 
+        if (notificationType === NotificationType.CHECK_COMPLETE) {
+          // if the attempt was incorrect, then this will result in a new attempt record being generated
+          // if that is the case then the activity and all its parts need to update their guid references
+          const attempt = e.attempt;
+          const currentAttempt = sharedAttemptStateMap.get(props.model.id);
+          /* console.log('AD CHECK COMPLETE: ', {attempt, currentAttempt, props}); */
+          if (
+            attempt &&
+            currentAttempt &&
+            attempt.activityId === currentAttempt.activityId &&
+            attempt.attemptGuid !== currentAttempt.attemptGuid
+          ) {
+            /* console.log(
+              `ATTEMPT CHANGING from ${currentAttempt.attemptGuid} to ${attempt.attemptGuid}`,
+            ); */
+            sharedAttemptStateMap.set(props.model.id, attempt);
+            /* setAttemptState(attempt); */
+          }
+        }
+
         pusher.emit(notificationType.toString(), e);
       };
       const unsub = subscribeToNotification(
@@ -70,7 +89,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
     if (!parts.length) {
       if (props.onReady) {
-        props.onReady(attemptState.attemptGuid);
+        props.onReady(props.state.attemptGuid);
       }
       setInit(true);
       return;
@@ -92,7 +111,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         }
         console.error('[AllPartsInitialized] failed to resolve within time limit', {
           timeout,
-          attemptState,
+          attemptState: props.state,
           parts,
         });
       }, 2000);
@@ -107,18 +126,23 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
+    /* console.log('INIT AD', { props }); */
+    sharedAttemptStateMap.set(props.model.id, props.state);
+
     setInit(true);
 
     return () => {
       clearTimeout(timeout);
       sharedInitMap.delete(props.model.id);
       sharedPromiseMap.delete(props.model.id);
+      sharedAttemptStateMap.delete(props.model.id);
       setInit(false);
     };
   }, []);
 
   const partInit = useCallback(
     async (partId: string) => {
+      const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       const partsInitStatus = sharedInitMap.get(props.model.id);
       const partsInitDeferred = sharedPromiseMap.get(props.model.id);
       partsInitStatus[partId] = true;
@@ -128,7 +152,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }); */
       if (parts.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady) {
-          const readyResults: any = await props.onReady(attemptState.attemptGuid);
+          const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
           partsInitDeferred.resolve({ snapshot: readyResults.snapshot || {} });
         } else {
@@ -164,18 +188,19 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // TODO: throw? no reason to save something with no response
       return;
     }
-    // part attempt guid should be located in attemptState.parts matched to id (i think)
-    const partAttempt = attemptState.parts.find((p) => p.partId === id);
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
       // throw err? if this happens we can't proceed...
-      console.error(`part attempt guid for ${id} not found!`);
+      console.error(`part attempt guid for ${id} not found!`, { currentAttemptState });
       return;
     }
     const response: ActivityTypes.StudentResponse = {
       input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
     const result = await props.onSavePart(
-      attemptState.attemptGuid,
+      currentAttemptState.attemptGuid,
       partAttempt?.attemptGuid,
       response,
     );
@@ -185,8 +210,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSubmit', { id, responses }); */
-    // part attempt guid should be located in attemptState.parts matched to id (i think)
-    const partAttempt = attemptState.parts.find((p) => p.partId === id);
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
       // throw err? if this happens we can't proceed...
       console.error(`part attempt guid for ${id} not found!`);
@@ -196,7 +222,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
     const result = await props.onSubmitPart(
-      attemptState.attemptGuid,
+      currentAttemptState.attemptGuid,
       partAttempt?.attemptGuid,
       response,
     );

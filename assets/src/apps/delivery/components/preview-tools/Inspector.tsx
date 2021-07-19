@@ -22,10 +22,10 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   const dispatch = useDispatch();
 
   const [globalState, setGlobalState] = useState<any>(null);
-  const [globalInputState, setGlobalInputState] = useState<any>({});
   const [sessionState, setSessionState] = useState<any>({});
   const [variablesState, setVariablesState] = useState<any>({});
   const [stageState, setStageState] = useState<any>({});
+  const [appState, setAppState] = useState<Record<string, unknown>>({});
 
   const [autoApplyChanges, setAutoApplyChanges] = useState(false);
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
@@ -36,21 +36,28 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   // well actually the preview tools might only apply to deck layout
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
-  const getSessionState = (): any => {
+  const getAppState = () => {
+    const statePuff: any = unflatten(globalState);
+    const appSlice = { ...statePuff['app'] };
+    /* console.log('APP STATE PUFF', { statePuff, appSlice }); */
+    return setAppState(appSlice);
+  };
+
+  const getSessionState = () => {
     const statePuff: any = unflatten(globalState);
     const sessionSlice = { ...statePuff['session'] };
     /* console.log('SESSION STATE PUFF', { statePuff, sessionSlice }); */
     return setSessionState(sessionSlice);
   };
 
-  const getVariablesState = (): any => {
+  const getVariablesState = () => {
     const statePuff: any = unflatten(globalState);
     const variablesSlice = { ...statePuff['variables'] };
     /* console.log('VARIABLES STATE PUFF', { statePuff, variablesSlice }); */
     return setVariablesState(variablesSlice);
   };
 
-  const getStageState = (): any => {
+  const getStageState = () => {
     const statePuff: any = unflatten(globalState);
     const stageSlice = currentActivityTree?.reduce((collect: any, activity) => {
       const next = { ...collect, ...statePuff[`${activity.id}|stage`] };
@@ -74,6 +81,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   );
 
   useEffect(() => {
+    setAppState({});
     setStageState({});
     setSessionState({});
     setVariablesState({});
@@ -88,6 +96,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
     if (!globalState) {
       return;
     }
+    getAppState();
     getSessionState();
     getVariablesState();
     getStageState();
@@ -145,6 +154,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
         </button>
       </div>
       <div className="accordion">
+        <StateDisplay label="App" state={appState} onChange={handleValueChange} />
         <StateDisplay label="Session" state={sessionState} onChange={handleValueChange} />
         <StateDisplay label="Variables" state={variablesState} onChange={handleValueChange} />
         <StateDisplay label="Stage" state={stageState} onChange={handleValueChange} />

@@ -27,6 +27,7 @@ defmodule Oli.Resources.Revision do
     field :max_attempts, :integer, default: 0
     field :recommended_attempts, :integer, default: 0
     field :time_limit, :integer, default: 0
+    field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
     belongs_to :primary_resource, Oli.Resources.Resource
@@ -55,6 +56,7 @@ defmodule Oli.Resources.Revision do
       :max_attempts,
       :recommended_attempts,
       :time_limit,
+      :scope,
       :scoring_strategy_id,
       :activity_type_id
     ])

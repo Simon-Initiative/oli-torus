@@ -20,13 +20,13 @@ export { OrderingAuthoring } from './OrderingAuthoring';
 // Registers the creation function:
 import { Manifest, CreationContext } from '../types';
 import { registerCreationFunc } from '../creation';
-import { OrderingModelSchema } from './schema';
+import { OrderingSchema } from './schema';
 import { defaultOrderingModel } from './utils';
 
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<OrderingModelSchema> {
+function createFn(content: CreationContext): Promise<OrderingSchema> {
   return Promise.resolve(Object.assign({}, defaultOrderingModel()));
 }
 

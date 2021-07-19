@@ -1,0 +1,33 @@
+{
+  "conditions": {
+    "operator": "all",
+    "children": [{
+        "operator": "any",
+        "children": [{
+          "fact": "tags",
+          "operator": "doesNotContain",
+          "value": [1]
+        },
+        {
+          "fact": "text",
+          "operator": "contains",
+          "value": "test1"
+        }]},
+      {
+        "operator": "any",
+        "children": [
+          {
+            "fact": "type",
+            "operator": "equals",
+            "value": 3
+          },
+          {
+            "fact": "text",
+            "operator": "contains",
+            "value": "test2"
+          }
+        ]
+      }
+    ]
+  }
+}

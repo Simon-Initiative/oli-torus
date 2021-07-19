@@ -9,7 +9,7 @@ mix archive.install hex phx_new 1.5.9
 mix deps.get --only prod
 MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 
-npm install --prefix ./assets --legacy-peer-deps
+yarn --cwd ./assets
 npm run deploy --prefix ./assets
 npm run deploy-node --prefix ./assets
 mix phx.digest

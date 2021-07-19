@@ -367,6 +367,13 @@ defmodule OliWeb.Router do
     get("/", Api.MediaController, :index)
   end
 
+  # Activity Bank Service
+  scope "/api/v1/bank/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.ActivityBankController, :retrieve)
+  end
+
   # Objectives Service
   scope "/api/v1/objectives/project/:project", OliWeb do
     pipe_through([:api, :authoring_protected])

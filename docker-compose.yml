@@ -13,6 +13,22 @@ services:
     env_file: ./postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+  web:
+    build: .
+    depends_on:
+      - postgres
+    env_file: ./oli.env
+    command: bash -c "
+      mix ecto.setup
+      && mix phx.server"
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - default
+
 
 volumes:
   postgres_data:

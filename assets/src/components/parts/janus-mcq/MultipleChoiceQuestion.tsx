@@ -1,15 +1,14 @@
 /* eslint-disable react/prop-types */
-import {
-  NotificationType,
-  subscribeToNotification,
-} from '../../../apps/delivery/components/NotificationContext';
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from '../../../apps/delivery/components/NotificationContext';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import { CapiVariable } from '../types/parts';
 import {
   JanusMultipleChoiceQuestionItemProperties,
   JanusMultipleChoiceQuestionProperties,
@@ -60,6 +59,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   val,
   disabled,
   index,
+  overrideHeight,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -76,9 +76,14 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
       mcqItemStyles.position = `absolute`;
 
-      if (index !== 0) mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
+      if (index !== 0) {
+        mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
+      }
     }
     mcqItemStyles.display = `inline-block`;
+  }
+  if (layoutType === 'verticalLayout' && overrideHeight) {
+    mcqItemStyles.height = `calc(${100 / totalItems}%)`;
   }
 
   const textValue = getNodeText(nodes);
@@ -200,7 +205,30 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
-
+    const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
+    if (sRandomize !== undefined) {
+      setRandomized(sRandomize);
+    }
+    const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoices(sSelectedChoices);
+    }
+    const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
+    if (sSelectedChoices !== undefined) {
+      setSelectedChoicesText(sSelectedChoicesText);
+    }
+    const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
+    if (sSelectedChoiceText !== undefined) {
+      setSelectedChoiceText(sSelectedChoiceText);
+    }
+    const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
+    if (sSelectedChoice !== undefined) {
+      setSelectedChoice(sSelectedChoice);
+    }
+    const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
+    if (sNumberOfSelectedChoices !== undefined) {
+      setNumberOfSelectedChoices(sNumberOfSelectedChoices);
+    }
     setReady(true);
   }, []);
 
@@ -213,6 +241,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     mcqItems,
     customCssClass,
     layoutType,
+    height,
+    overrideHeight = false,
   } = model;
 
   useEffect(() => {
@@ -379,7 +409,10 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     width,
     zIndex: z,
   };
-
+  if (overrideHeight) {
+    styles.height = height;
+    styles.marginTop = '8px';
+  }
   if (layoutType === 'verticalLayout') {
     const hasImages = mcqItems.some((item: any) =>
       item.nodes.some((node: any) =>
@@ -407,11 +440,15 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     // watch for a new choice then
     // trigger item selection handler
     if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0) {
-      handleItemSelection({
-        value: selectedChoice,
-        textValue: selectedChoiceText,
-        checked: true,
-      });
+      /* console.log('handling MCQ single select'); */
+      handleItemSelection(
+        {
+          value: selectedChoice,
+          textValue: selectedChoiceText,
+          checked: true,
+        },
+        false,
+      );
     }
   }, [selectedChoice]);
 
@@ -427,25 +464,33 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
+      /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
-        handleItemSelection({
-          value: option.value,
-          textValue: option.textValue,
-          checked: selectedChoices.includes(option.value),
-        });
+        handleItemSelection(
+          {
+            value: option.value,
+            textValue: option.textValue,
+            checked: selectedChoices.includes(option.value),
+          },
+          false,
+        );
       });
     }
   }, [selectedChoices]);
 
-  const handleItemSelection = ({
-    value,
-    textValue,
-    checked,
-  }: {
-    value: number;
-    textValue: string;
-    checked: boolean;
-  }) => {
+  const handleItemSelection = (
+    {
+      value,
+      textValue,
+      checked,
+    }: {
+      value: number;
+      textValue: string;
+      checked: boolean;
+    },
+    shouldSave = true,
+  ) => {
+    /*  console.log('mcq handle select'); */
     // TODO: non-number values?? - pb: I suspect not, since there's no SS ability to specify a value for an item
     const newChoice = parseInt(value.toString(), 10);
     let newCount = 1;
@@ -479,23 +524,25 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       setSelectedChoices(newSelectedChoices);
       setSelectedChoicesText(updatedSelections);
     }
-    saveState({
-      numberOfSelectedChoices: newCount,
-      selectedChoice:
-        multipleSelection && newSelectedChoices?.length
-          ? newSelectedChoices[newSelectedChoices.length - 1]
-          : checked
-          ? newChoice
-          : 0,
-      selectedChoiceText:
-        multipleSelection && updatedChoicesText?.length
-          ? updatedChoicesText[updatedChoicesText.length - 1]
-          : checked
-          ? textValue
-          : '',
-      selectedChoices: newSelectedChoices,
-      selectedChoicesText: updatedChoicesText,
-    });
+    if (shouldSave) {
+      saveState({
+        numberOfSelectedChoices: newCount,
+        selectedChoice:
+          multipleSelection && newSelectedChoices?.length
+            ? newSelectedChoices[newSelectedChoices.length - 1]
+            : checked
+            ? newChoice
+            : 0,
+        selectedChoiceText:
+          multipleSelection && updatedChoicesText?.length
+            ? updatedChoicesText[updatedChoicesText.length - 1]
+            : checked
+            ? textValue
+            : '',
+        selectedChoices: newSelectedChoices,
+        selectedChoicesText: updatedChoicesText,
+      });
+    }
   };
 
   const saveState = ({
@@ -576,6 +623,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
           {...item}
           x={0}
           y={0}
+          overrideHeight={overrideHeight}
           disabled={!enabled}
           multipleSelection={multipleSelection}
         />

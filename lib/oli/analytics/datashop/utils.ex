@@ -1,6 +1,7 @@
 defmodule Oli.Analytics.Datashop.Utils do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
+  import Oli.Utils
 
   # For internal use and testing only, not for production file creation.
   def write_file(xml, file_name) do
@@ -11,12 +12,6 @@ defmodule Oli.Analytics.Datashop.Utils do
       :ok -> {:ok, path <> file_name, file_name}
       {:error, posix} -> {:error, posix}
     end
-  end
-
-  # for making ids unique
-  def uuid() do
-    {:ok, uuid} = ShortUUID.encode(UUID.uuid4())
-    uuid
   end
 
   # parse_content: make a cdata element from a parsed HTML string

@@ -13,6 +13,169 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   import Oli.Delivery.Attempts.Core
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
 
+  require Logger
+
+  def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
+    %ActivityAttempt{
+      transformed_model: transformed_model,
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number,
+    } =
+      get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+      |> Repo.preload([:resource_attempt])
+
+    case Model.parse(transformed_model) do
+      {:ok, %Model{rules: []}} ->
+        evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
+
+      {:ok, %Model{rules: rules, delivery: delivery}} ->
+        custom = Map.get(delivery, "custom", %{})
+        scoringContext = %{
+          maxScore: Map.get(custom, "maxScore", 0),
+          maxAttempt: Map.get(custom, "maxAttempt", 1),
+          trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
+          negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
+          currentAttemptNumber: attempt_number,
+        }
+        # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+        evaluate_from_rules(
+          section_slug,
+          resource_attempt,
+          activity_attempt_guid,
+          part_inputs,
+          scoringContext,
+          rules
+        )
+
+      e ->
+        e
+    end
+  end
+
+  def evaluate_from_rules(
+        section_slug,
+        resource_attempt,
+        activity_attempt_guid,
+        part_inputs,
+        scoringContext,
+        rules
+      ) do
+    state = assemble_full_adaptive_state(resource_attempt, part_inputs)
+
+    encodeResults = true
+    case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
+      {:ok, check_results} ->
+        # Logger.debug("Check RESULTS: #{check_results}")
+        decoded = Base.decode64!(check_results)
+        # Logger.debug("Decoded: #{decoded}")
+        decodedResults = Poison.decode!(decoded)
+
+        score = decodedResults["score"]
+        out_of = decodedResults["out_of"]
+        client_evaluations = to_client_results(score, out_of, part_inputs)
+
+        case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+          {:ok, _} -> {:ok, decodedResults}
+          e -> e
+        end
+
+      e ->
+        e
+    end
+  end
+
+  defp to_client_results(score, out_of, part_inputs) do
+    Enum.map(part_inputs, fn part_input ->
+      %{
+        attempt_guid: part_input.attempt_guid,
+        client_evaluation: %ClientEvaluation{
+          input: part_input.input.input,
+          score: score,
+          out_of: out_of,
+          feedback: nil
+        }
+      }
+    end)
+  end
+
+  defp assemble_full_adaptive_state(resource_attempt, part_inputs) do
+    extrinsic_state = resource_attempt.state
+
+    # need to get *all* of the activity attempts state (part responses saved thus far)
+    attempt_hierarchy =
+      Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
+
+    response_state =
+      Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
+        part_responses =
+          Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
+            case pa.response do
+              "" ->
+                acc
+
+              nil ->
+                acc
+
+              _ ->
+                part_values =
+                  Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
+                    case pv do
+                      nil -> acc1
+                      "" -> acc1
+                      _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+                    end
+                  end)
+
+                Map.merge(acc, part_values)
+            end
+          end)
+
+        Map.merge(m, part_responses)
+      end)
+
+    # need to combine with part_inputs as latest
+    input_state =
+      Enum.reduce(part_inputs, %{}, fn pi, acc ->
+        case pi.input.input do
+          "" ->
+            acc
+
+          nil ->
+            acc
+
+          _ ->
+            inputs =
+              Enum.reduce(Map.values(pi.input.input), %{}, fn input, acc1 ->
+                case input do
+                  nil ->
+                    acc1
+
+                  "" ->
+                    acc1
+
+                  _ ->
+                    if !Map.has_key?(input, "path") do
+                      acc1
+                    else
+                      path = Map.get(input, "path")
+                      # part_inputs are assumed to be from the current activity only
+                      # so we strip out the sequence id from the path to get our "local"
+                      # values for the rules
+                      local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                      value = Map.get(input, "value")
+                      Map.put(acc1, local_path, value)
+                    end
+                end
+              end)
+
+            Map.merge(acc, inputs)
+        end
+      end)
+
+    attempt_state = Map.merge(response_state, extrinsic_state)
+    Map.merge(input_state, attempt_state)
+  end
+
   @doc """
   Processes a student submission for some number of parts for the given
   activity attempt guid.  If this collection of part attempts completes the activity
