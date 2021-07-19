@@ -19,6 +19,7 @@ const setToUserStorage = async (simId: string | number, key: string | number, va
   fakeUserStorage[simId][key] = value;
 };
 const externalActivityMap: Map<string, any> = new Map();
+let context = 'VIEWER';
 const getExternalActivityMap = () => {
   const result: any = {};
 
@@ -37,7 +38,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
-  const [context, setContext] = useState<string>('VIEWER');
   const id: string = props.id;
 
   // model items, note that we use default values now because
@@ -131,7 +131,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
     if (initResult.context.mode) {
-      setContext(initResult.context.mode);
+      context = initResult.context.mode;
     }
     processInitStateVariable(currentStateSnapshot);
   }, []);
@@ -435,6 +435,7 @@ const ExternalActivity: React.FC<any> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
+              context = payload.mode;
               writeCapiLog('CONTEXT CHANGED!!!!', 3, {
                 simLife,
                 payload,
@@ -801,7 +802,7 @@ const ExternalActivity: React.FC<any> = (props) => {
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          handleValueChange(data);
+          if (context !== 'REVIEW') handleValueChange(data);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
