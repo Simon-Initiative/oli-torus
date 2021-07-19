@@ -2,7 +2,7 @@
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from 'utils/common';
+import { contexts, parseBoolean } from '../../../utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -231,7 +231,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
       setNumberOfSelectedChoices(sNumberOfSelectedChoices);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === 'REVIEW') {
+    if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
     setReady(true);

@@ -6,7 +6,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
+import { contexts, parseBool, parseBoolean } from '../../../utils/common';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 
 const fakeUserStorage: any = {};
@@ -444,7 +444,7 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
-              if (payload.mode === 'REVIEW') {
+              if (payload.mode === contexts.REVIEW) {
                 processInitStateVariable(currentStateSnapshot);
               } else {
                 processInitStateVariable(finalCurrentStateSnapshot);
@@ -532,12 +532,6 @@ const ExternalActivity: React.FC<any> = (props) => {
     simLife.handshake.requestToken = msgRequestToken;
 
     // taken from simcapi.js TODO move somewhere, use from settings
-    const contexts = {
-      VIEWER: 'VIEWER',
-      REVIEW: 'REVIEW',
-      AUTHOR: 'AUTHOR',
-      REPORT: 'REPORT',
-    };
     simLife.handshake.config = { context: context };
 
     // TODO: here in the handshake response we should send come config...
@@ -802,7 +796,7 @@ const ExternalActivity: React.FC<any> = (props) => {
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          if (context !== 'REVIEW') handleValueChange(data);
+          if (context !== contexts.REVIEW) handleValueChange(data);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:

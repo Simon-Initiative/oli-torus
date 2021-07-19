@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { contexts, parseBool } from '../../../utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -100,7 +100,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       setSelection(selectionIndex + 1);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === 'REVIEW') {
+    if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
     setReady(true);

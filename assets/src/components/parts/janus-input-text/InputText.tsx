@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { contexts, parseBool } from '../../../utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -77,7 +77,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
       setCssClass(sCssClass);
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
-    if (initResult.context.mode === 'REVIEW') {
+    if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
     setReady(true);

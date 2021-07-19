@@ -11,6 +11,7 @@ import {
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
+import { contexts } from '../../../../utils/common';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
@@ -256,14 +257,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      const contexts = {
-        VIEWER: 'VIEWER',
-        REVIEW: 'REVIEW',
-        AUTHOR: 'AUTHOR',
-        REPORT: 'REPORT',
-      };
-      console.log({ historyModeNavigation });
-
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),

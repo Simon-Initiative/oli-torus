@@ -16,6 +16,7 @@ import {
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { contexts } from '../../../utils/common';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   selectHistoryNavigationActivity,
@@ -293,7 +294,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
-      mode: historyModeNavigation ? 'REVIEW' : 'VIEWER',
+      mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
     });
   };

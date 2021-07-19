@@ -18,7 +18,7 @@ export function assertNever(x: never): never {
  * @param o the object to clone
  * @returns the cloned object
  */
- export function clone(o : any) {
+export function clone(o: any) {
   return JSON.parse(JSON.stringify(o));
 }
 
@@ -134,3 +134,10 @@ export const parseBool = (val: any) => {
   // have to ignore the false searchValue in 'replace'
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
 };
+
+export enum contexts {
+  VIEWER = 'VIEWER',
+  REVIEW = 'REVIEW',
+  AUTHOR = 'AUTHOR',
+  REPORT = 'REPORT',
+}
