@@ -317,6 +317,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // throw instead?
       return { result: 'error' };
     }
+
+    //if user navigated from history, don't save anything and just return the saved state
+    if (historyModeNavigation) {
+      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    }
+
     if (response?.input?.length) {
       let result;
       // in addition to the current part attempt, need to lookup in the tree
