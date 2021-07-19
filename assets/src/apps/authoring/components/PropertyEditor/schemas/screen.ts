@@ -1,3 +1,4 @@
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -128,9 +129,9 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (activity: any) => {
-  const data = activity?.content?.custom;
-  if (data) {
+export const transformScreenModeltoSchema = (activity?: IActivity) => {
+  if (activity) {
+    const data = activity?.content?.custom;
     const schemaPalette = {
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'
@@ -148,7 +149,7 @@ export const transformScreenModeltoSchema = (activity: any) => {
     }
     return {
       ...data,
-      title:activity.title,
+      title: activity?.title,
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
