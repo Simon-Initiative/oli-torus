@@ -24,6 +24,7 @@ import {
   resetAction,
 } from 'data/content/activities/DeliveryState';
 import { configureStore } from 'state/store';
+import { safelySelectInput } from 'data/content/activities/utils';
 
 type InputProps = {
   input: string;
@@ -84,7 +85,17 @@ export const ShortAnswerComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(activityState, valueOr(uiState.attemptState?.parts[0].response, '')));
+    dispatch(
+      initializeState(
+        activityState,
+        // Short answers only have one input, but the selection is modeled
+        // as an array just to make it consistent with the other activity types
+        safelySelectInput(activityState).caseOf({
+          just: (input) => [input],
+          nothing: () => [''],
+        }),
+      ),
+    );
   }, []);
 
   // First render initializes state
@@ -108,6 +119,8 @@ export const ShortAnswerComponent: React.FC = () => {
 
         <Input
           inputType={model.inputType}
+          // Short answers only have one selection, but are modeled as an array.
+          // Select the first element.
           input={uiState.selection[0]}
           isEvaluated={isEvaluated(uiState)}
           onChange={onInputChange}
