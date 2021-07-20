@@ -170,9 +170,15 @@ export const applyState = (
           } else {
             // this is where it's maybe just a string
             if (targetType !== CapiVariableTypes.STRING) {
-              // it's not supposed to be a string however, so we need to coerce it
-              const coerced = coerceCapiValue(newValue, targetType);
-              script += `= ${coerced};`;
+              if (newValue.indexOf('{') >= 0 && newValue.indexOf('}') >= 0) {
+                // this is most likely an expression that we don't want to coerce
+                // unlke above it doesn't *start* with the variable however
+                script += `= ${newValue};`;
+              } else {
+                // it's not supposed to be a string however, so we need to coerce it
+                const coerced = coerceCapiValue(newValue, targetType);
+                script += `= ${coerced};`;
+              }
             } else {
               script += `= "${newValue.replace(/"/g, '\\"')}";`;
             }
