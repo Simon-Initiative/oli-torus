@@ -141,55 +141,57 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                   )}
                 </>
               )}
-              <OverlayTrigger
-                placement="top"
-                delay={{ show: 150, hide: 150 }}
-                overlay={
-                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    New Rule
-                  </Tooltip>
-                }
-              >
-                <div className="dropdown">
-                  <button
-                    className={`dropdown-toggle btn btn-link p-0 ${
-                      currentRule?.default ? 'ml-3' : 'ml-1'
-                    }`}
-                    type="button"
-                    id={`bottom-panel-add-context-trigger`}
-                    data-toggle="dropdown"
-                    aria-haspopup="true"
-                    aria-expanded="false"
-                    onClick={(e) => {
-                      ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
-                    }}
-                  >
-                    <i className="fa fa-plus" />
-                  </button>
-                  <div
-                    id={`bottom-panel-add-context-menu`}
-                    className="dropdown-menu"
-                    aria-labelledby={`bottom-panel-add-context-trigger`}
-                  >
+              {currentRule && (
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      New Rule
+                    </Tooltip>
+                  }
+                >
+                  <div className="dropdown">
                     <button
-                      className="dropdown-item"
-                      onClick={() => {
-                        handleAddCorrectRule();
-                      }}
-                    >
-                      <i className="fa fa-check mr-2" /> New Correct Rule
-                    </button>
-                    <button
-                      className="dropdown-item"
+                      className={`dropdown-toggle btn btn-link p-0 ${
+                        currentRule?.default ? 'ml-3' : 'ml-1'
+                      }`}
+                      type="button"
+                      id={`bottom-panel-add-context-trigger`}
+                      data-toggle="dropdown"
+                      aria-haspopup="true"
+                      aria-expanded="false"
                       onClick={(e) => {
-                        handleAddIncorrectRule();
+                        ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
                       }}
                     >
-                      <i className="fa fa-times mr-2" /> New Incorrect Rule
+                      <i className="fa fa-plus" />
                     </button>
+                    <div
+                      id={`bottom-panel-add-context-menu`}
+                      className="dropdown-menu"
+                      aria-labelledby={`bottom-panel-add-context-trigger`}
+                    >
+                      <button
+                        className="dropdown-item"
+                        onClick={() => {
+                          handleAddCorrectRule();
+                        }}
+                      >
+                        <i className="fa fa-check mr-2" /> New Correct Rule
+                      </button>
+                      <button
+                        className="dropdown-item"
+                        onClick={(e) => {
+                          handleAddIncorrectRule();
+                        }}
+                      >
+                        <i className="fa fa-times mr-2" /> New Incorrect Rule
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </OverlayTrigger>
+                </OverlayTrigger>
+              )}
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
                 {panelState['bottom'] && <i className="fa fa-angle-down" />}
                 {!panelState['bottom'] && <i className="fa fa-angle-right" />}

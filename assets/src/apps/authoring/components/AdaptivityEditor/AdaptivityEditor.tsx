@@ -17,11 +17,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       {/* No Conditions */}
       {currentRule === undefined && (
         <div className="text-center border rounded">
-          <div className="card-body">
-            <button className="btn btn-sm btn-primary">
-              <i className="fa fa-plus" /> Add rule
-            </button>
-          </div>
+          <div className="card-body">No screen selected</div>
         </div>
       )}
 

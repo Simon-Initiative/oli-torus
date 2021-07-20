@@ -67,73 +67,77 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
           <ContextAwareToggle eventKey="0" />
           <span className="title">Adaptivity</span>
         </div>
-        <OverlayTrigger
-          placement="right"
-          delay={{ show: 150, hide: 150 }}
-          overlay={
-            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              New Rule
-            </Tooltip>
-          }
-        >
-          <div className="dropdown">
-            <button
-              className="dropdown-toggle btn btn-link p-0 ml-1"
-              type="button"
-              id={`rules-list-add-context-trigger`}
-              data-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-              onClick={(e) => {
-                ($(`#rules-list-add-context-trigger`) as any).dropdown('toggle');
-              }}
-            >
-              <i className="fa fa-plus" />
-            </button>
-            <div
-              id={`rules-list-add-context-menu`}
-              className="dropdown-menu"
-              aria-labelledby={`rules-list-add-context-trigger`}
-            >
+        {currentRule && (
+          <OverlayTrigger
+            placement="right"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                New Rule
+              </Tooltip>
+            }
+          >
+            <div className="dropdown">
               <button
-                className="dropdown-item"
-                onClick={() => {
-                  handleAddCorrectRule();
-                }}
-              >
-                <i className="fa fa-check mr-2" /> New Correct Rule
-              </button>
-              <button
-                className="dropdown-item"
+                className="dropdown-toggle btn btn-link p-0 ml-1"
+                type="button"
+                id={`rules-list-add-context-trigger`}
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
                 onClick={(e) => {
-                  handleAddIncorrectRule();
+                  ($(`#rules-list-add-context-trigger`) as any).dropdown('toggle');
                 }}
               >
-                <i className="fa fa-times mr-2" /> New Incorrect Rule
+                <i className="fa fa-plus" />
               </button>
+              <div
+                id={`rules-list-add-context-menu`}
+                className="dropdown-menu"
+                aria-labelledby={`rules-list-add-context-trigger`}
+              >
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    handleAddCorrectRule();
+                  }}
+                >
+                  <i className="fa fa-check mr-2" /> New Correct Rule
+                </button>
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    handleAddIncorrectRule();
+                  }}
+                >
+                  <i className="fa fa-times mr-2" /> New Incorrect Rule
+                </button>
+              </div>
             </div>
-          </div>
-        </OverlayTrigger>
+          </OverlayTrigger>
+        )}
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
-          {rules.map((rule: any, index: any) => (
-            <ListGroup.Item
-              className="aa-rules-list-item"
-              as="li"
-              key={rule.id}
-              active={rule.id === currentRule?.id}
-              onClick={() => handleSelectRule(rule)}
-            >
-              {rule.default && rule.correct && (
-                <i className="fa fa-check-circle mr-1 text-muted align-middle" />
-              )}
-              {rule.default && !rule.correct && (
-                <i className="fa fa-times-circle mr-1 text-muted align-middle" />
-              )}
-              {rule.name}
-            </ListGroup.Item>
-          ))}
+          {currentRule &&
+            rules.map((rule: any, index: any) => (
+              <ListGroup.Item
+                className="aa-rules-list-item"
+                as="li"
+                key={rule.id}
+                active={rule.id === currentRule?.id}
+                onClick={() => handleSelectRule(rule)}
+              >
+                {rule.default && rule.correct && (
+                  <i className="fa fa-check-circle mr-1 text-muted align-middle" />
+                )}
+                {rule.default && !rule.correct && (
+                  <i className="fa fa-times-circle mr-1 text-muted align-middle" />
+                )}
+                {rule.name}
+              </ListGroup.Item>
+            ))}
+          {!currentRule && <span>No screen selected</span>}
         </ListGroup>
       </Accordion.Collapse>
     </Accordion>

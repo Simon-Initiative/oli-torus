@@ -3,8 +3,11 @@ import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
-import { upsertActivity } from '../../../delivery/store/features/activities/slice';
-import { setRightPanelActiveTab } from '../../../authoring/store/app/slice';
+import {
+  selectCurrentActivity,
+  upsertActivity,
+} from '../../../delivery/store/features/activities/slice';
+import { setCurrentRule, setRightPanelActiveTab } from '../../../authoring/store/app/slice';
 import {
   findInHierarchy,
   flattenHierarchy,
@@ -31,6 +34,7 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
+  const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
 
   useEffect(() => {
@@ -233,6 +237,8 @@ const SequenceEditor: React.FC<any> = (props) => {
     const itemsToDelete = flatten(item);
     const sequenceItems = [...sequence];
     itemsToDelete.forEach((item: any) => {
+      if (item.activitySlug === currentActivity?.activitySlug)
+        dispatch(setCurrentRule({ currentRule: undefined }));
       const itemIndex = sequenceItems.findIndex(
         (entry) => entry.custom.sequenceId === item.custom.sequenceId,
       );
