@@ -63,7 +63,7 @@ const RightMenu: React.FC<any> = () => {
     (properties: any) => {
       if (currentActivity) {
         const modelChanges = transformScreenSchematoModel(properties);
-        console.log('Screen Property Change...', { modelChanges });
+        console.log('Screen Property Change...', { properties, modelChanges });
         const screenChanges = {
           ...currentActivity?.content?.custom,
           ...modelChanges,
@@ -155,7 +155,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div className="screen-tab p-3">
-          {currentActivity ? (
+          {currentActivity && screenData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
