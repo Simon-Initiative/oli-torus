@@ -177,7 +177,7 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] });
+    /*   console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
@@ -186,10 +186,10 @@ export const initializeActivity = createAsyncThunk(
       return collect;
     }, {});
 
-    console.log('about to update score [deck]', {
+    /* console.log('about to update score [deck]', {
       currentState,
       score: sessionState['session.tutorialScore'],
-    });
+    }); */
     thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
 
     // optimistically write to redux
@@ -311,7 +311,7 @@ export const navigateToPrevActivity = createAsyncThunk(
         const layerIndex = sequence.findIndex(
           (entry) => entry.custom.sequenceId === previousEntry?.custom?.sequenceId,
         );
-        console.log({ currentIndex, layerIndex });
+        /* console.log({ currentIndex, layerIndex }); */
 
         previousEntry = sequence[layerIndex - 1];
       }
