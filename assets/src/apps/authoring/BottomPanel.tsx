@@ -85,8 +85,8 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       activityClone.authoring.rules.splice(indexToDelete, 1);
       const prevRule = activityClone.authoring.rules[indexToDelete - 1];
       const nextRule = activityClone.authoring.rules[indexToDelete + 1];
-      debounceSaveChanges(activityClone);
       dispatch(setCurrentRule({ currentRule: prevRule !== undefined ? prevRule : nextRule }));
+      debounceSaveChanges(activityClone);
     }
   };
 

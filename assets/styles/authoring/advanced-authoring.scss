@@ -357,8 +357,8 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
     }
-    .aa-sequence-item {
-      // .aa-rules-list-item {
+    .aa-sequence-item,
+    .aa-rules-list-item {
       padding: 0;
       background-color: inherit;
       border: none;
@@ -391,7 +391,8 @@ $panel-section-title-bar-color: #e8ebed;
           visibility: visible;
         }
       }
-      .aa-sequence-details-wrapper {
+      .aa-sequence-details-wrapper,
+      .aa-rules-list-details-wrapper {
         display: flex;
         flex-grow: 1;
         padding: 2px 0;
@@ -410,7 +411,8 @@ $panel-section-title-bar-color: #e8ebed;
       &.active {
         color: inherit;
 
-        & > .aa-sequence-details-wrapper {
+        & > .aa-sequence-details-wrapper,
+        & > .aa-rules-list-details-wrapper {
           color: $white;
           background-color: $primary;
 

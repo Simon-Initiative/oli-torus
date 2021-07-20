@@ -12,6 +12,7 @@ import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { clone } from '../../../../utils/common';
+import guid from 'utils/guid';
 
 const AdaptiveRulesList: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -39,7 +40,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     );
     const activityClone: IActivity = clone(currentActivity);
     activityClone.authoring.rules.push(newCorrectRule);
-    dispatch(setCurrentRule({ currentRule: newCorrectRule }));
+    handleSelectRule(newCorrectRule);
     debounceSaveChanges(activityClone);
   };
 
@@ -49,16 +50,72 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     );
     const activityClone: IActivity = clone(currentActivity);
     activityClone.authoring.rules.push(newIncorrectRule);
-    dispatch(setCurrentRule({ currentRule: newIncorrectRule }));
+    handleSelectRule(newIncorrectRule);
     debounceSaveChanges(activityClone);
+  };
+
+  const handleDeleteRule = (rule: any) => {
+    const activityClone: IActivity = clone(currentActivity);
+    const indexToDelete = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    const isActiveRule: boolean = rule.id === currentRule.id;
+
+    if (indexToDelete !== -1) {
+      activityClone.authoring.rules.splice(indexToDelete, 1);
+      const prevRule = activityClone.authoring.rules[indexToDelete - 1];
+      const nextRule = activityClone.authoring.rules[indexToDelete + 1];
+      handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
+      debounceSaveChanges(activityClone);
+    }
   };
 
   useEffect(() => {
     if (currentRule !== undefined) return;
-    rules.length > 0
-      ? dispatch(setCurrentRule({ currentRule: rules[0] }))
-      : dispatch(setCurrentRule({ currentRule: undefined }));
+    rules.length > 0 ? handleSelectRule(rules[0]) : handleSelectRule(undefined);
   }, [currentActivity]);
+
+  const RuleItemContextMenu = (props: any) => {
+    const { id, item, index, arr } = props;
+
+    return (
+      <div key={id} className="dropdown aa-sequence-item-context-menu">
+        <button
+          className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
+          type="button"
+          id={`rule-list-item-${id}-context-trigger`}
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          onClick={(e) => {
+            e.stopPropagation();
+            ($(`#rule-list-item-${id}-context-trigger`) as any).dropdown('toggle');
+          }}
+        >
+          <i className="fas fa-ellipsis-v" />
+        </button>
+        <div
+          id={`rule-list-item-${id}-context-menu`}
+          className="dropdown-menu"
+          aria-labelledby={`rule-list-item-${id}-context-trigger`}
+        >
+          {!item.default && (
+            <>
+              <div className="dropdown-divider"></div>
+              <button
+                className="dropdown-item text-danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                  handleDeleteRule(item);
+                }}
+              >
+                <i className="fas fa-trash mr-2" /> Delete
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Accordion className="aa-adaptivity-rules" defaultActiveKey="0">
@@ -106,7 +163,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
                 </button>
                 <button
                   className="dropdown-item"
-                  onClick={(e) => {
+                  onClick={() => {
                     handleAddIncorrectRule();
                   }}
                 >
@@ -120,7 +177,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule &&
-            rules.map((rule: any, index: any) => (
+            rules.map((rule: any, index: any, arr: any) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
                 as="li"
@@ -128,13 +185,18 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
                 active={rule.id === currentRule?.id}
                 onClick={() => handleSelectRule(rule)}
               >
-                {rule.default && rule.correct && (
-                  <i className="fa fa-check-circle mr-1 text-muted align-middle" />
-                )}
-                {rule.default && !rule.correct && (
-                  <i className="fa fa-times-circle mr-1 text-muted align-middle" />
-                )}
-                {rule.name}
+                <div className="aa-rules-list-details-wrapper">
+                  <div className="details">
+                    {rule.default && rule.correct && (
+                      <i className="fa fa-check-circle mr-1 text-muted align-middle" />
+                    )}
+                    {rule.default && !rule.correct && (
+                      <i className="fa fa-times-circle mr-1 text-muted align-middle" />
+                    )}
+                    <span className="title">{rule.name}</span>
+                  </div>
+                  <RuleItemContextMenu id={guid()} item={rule} index={index} arr={arr} />
+                </div>
               </ListGroup.Item>
             ))}
           {!currentRule && <span>No screen selected</span>}
