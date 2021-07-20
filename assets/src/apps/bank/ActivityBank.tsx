@@ -36,7 +36,9 @@ import { applyOperations } from 'utils/undo';
 import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
+import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
+import { isThisTypeNode } from 'typescript';
 
 const PAGE_SIZE = 5;
 
@@ -54,6 +56,7 @@ type ActivityBankState = {
   metaModifier: boolean;
   undoables: ActivityUndoables;
   paging: BankTypes.Paging;
+  logic: BankTypes.Logic;
   totalCount: number;
   editedSlug: Maybe<string>;
 };
@@ -85,6 +88,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       paging: { offset: 0, limit: PAGE_SIZE },
       totalCount: 0,
       editedSlug: Maybe.nothing<string>(),
+      logic: BankTypes.defaultLogic(),
     };
 
     this.editorById = Object.keys(props.editorMap)
@@ -102,11 +106,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.onPostUndoable = this.onPostUndoable.bind(this);
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
     this.onChangeEditing = this.onChangeEditing.bind(this);
+    this.onPageChange = this.onPageChange.bind(this);
   }
 
   componentDidMount() {
     // Fetch the initial page of activities
-    this.fetchActivities(BankTypes.defaultLogic(), BankTypes.paging(0, PAGE_SIZE));
+    this.fetchActivities(this.state.logic, this.state.paging);
   }
 
   publishErrorMessage(failure: any) {
@@ -232,6 +237,13 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.setState({
       allObjectives: this.state.allObjectives.push(objective),
     });
+  }
+
+  onPageChange(page: BankTypes.Paging) {
+    this.persistence.lift((p) => p.destroy());
+    this.state.editedSlug.lift((slug) => this.onChangeEditing(slug, false));
+    this.setState({ undoables: Immutable.OrderedMap<string, ActivityUndoAction>() });
+    this.fetchActivities(this.state.logic, page);
   }
 
   onChangeEditing(key: string, editMode: boolean) {
@@ -370,6 +382,16 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
     const activities = this.createActivityEditors();
+    const pagingOrPlaceholder =
+      this.state.totalCount === 0 ? (
+        'No resuilts'
+      ) : (
+        <Paging
+          totalResults={this.state.totalCount}
+          page={this.state.paging}
+          onPageChange={this.onPageChange}
+        />
+      );
 
     return (
       <div className="resource-editor row">
@@ -383,7 +405,10 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             executeAction={(message, action) => action.execute(message)}
             messages={this.state.messages}
           />
-          <PersistenceStatus persistence={this.state.persistence} />
+          <div className="d-flex justify-content-between">
+            {pagingOrPlaceholder}
+            <PersistenceStatus persistence={this.state.persistence} />
+          </div>
           <CreateActivity
             projectSlug={props.projectSlug}
             editorMap={props.editorMap}
