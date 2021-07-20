@@ -120,7 +120,10 @@ const RightMenu: React.FC<any> = () => {
     };
     //need to remove the allowNavigation property
     //making sure the enableHistory is present before removing that.
-    if(lessonChanges.custom.enableHistory != undefined && lessonChanges.custom.allowNavigation != undefined){
+    if (
+      lessonChanges.custom.enableHistory !== undefined &&
+      lessonChanges.custom.allowNavigation !== undefined
+    ) {
       delete lessonChanges.custom.allowNavigation;
     }
     console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
