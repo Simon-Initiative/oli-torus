@@ -130,6 +130,7 @@ export const lessonUiSchema = {
 // they will likely come from somehwere else
 const themeMap: { [key: string]: string } = {
   'url to new theme': 'Light Responsive',
+  'default': 'LEGACY',
 };
 
 export const transformModelToSchema = (model: any) => {
@@ -184,6 +185,7 @@ export const transformSchemaToModel = (schema: any) => {
       enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
       lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
+      allowNavigation: schema.Properties.enableHistory,
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,
       logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
