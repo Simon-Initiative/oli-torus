@@ -29,11 +29,6 @@ const lessonSchema = {
               title: 'Lesson Theme',
               enum: [
                 'Light Responsive',
-                'Blue Responsive',
-                'Dark Responsive',
-                'Material Responsive',
-                'Light',
-                'Dark',
                 'LEGACY',
               ],
             },
