@@ -433,9 +433,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         console.error('could not find attempt state for ', activity);
         return;
       }
+      const activityKey = historyModeNavigation ? `${activity.id}_history` : activity.id;
+
       return (
         <ActivityRenderer
-          key={activity.id}
+          key={activityKey}
           activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
