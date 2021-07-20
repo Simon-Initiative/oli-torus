@@ -266,128 +266,134 @@ const SequenceEditor: React.FC<any> = (props) => {
 
     return (
       <div className="dropdown aa-sequence-item-context-menu">
-        <button
-          className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
-          type="button"
-          id={`sequence-item-${id}-context-trigger`}
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="false"
-          onClick={(e) => {
-            e.stopPropagation();
-            ($(`#sequence-item-${id}-context-trigger`) as any).dropdown('toggle');
-          }}
-        >
-          <i className="fas fa-ellipsis-v" />
-        </button>
-        <div
-          id={`sequence-item-${id}-context-menu`}
-          className="dropdown-menu"
-          aria-labelledby={`sequence-item-${id}-context-trigger`}
-        >
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-              handleItemAdd(item);
-            }}
-          >
-            <i className="fas fa-desktop mr-2" /> Add Subscreen
-          </button>
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-              handleItemAdd(item, true);
-            }}
-          >
-            <i className="fas fa-layer-group mr-2" /> Add Layer
-          </button>
-          {item.custom.isLayer ? (
+        {currentGroup && (
+          <>
             <button
-              className="dropdown-item"
+              className="dropdown-toggle aa-context-menu-trigger btn btn-link p-0 px-1"
+              type="button"
+              id={`sequence-item-${id}-context-trigger`}
+              data-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
               onClick={(e) => {
                 e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemConvert(item);
+                ($(`#sequence-item-${id}-context-trigger`) as any).dropdown('toggle');
               }}
             >
-              <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
+              <i className="fas fa-ellipsis-v" />
             </button>
-          ) : (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemConvert(item);
-              }}
+            <div
+              id={`sequence-item-${id}-context-menu`}
+              className="dropdown-menu"
+              aria-labelledby={`sequence-item-${id}-context-trigger`}
             >
-              <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
-            </button>
-          )}
-          <button
-            className="dropdown-item text-danger"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-              handleItemDelete(item);
-            }}
-          >
-            <i className="fas fa-trash mr-2" /> Delete
-          </button>
-          <div className="dropdown-divider"></div>
-          {index > 0 && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemReorder(e, item, ReorderDirection.UP);
-              }}
-            >
-              <i className="fas fa-arrow-up mr-2" /> Move Up
-            </button>
-          )}
-          {index < arr.length - 1 && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemReorder(e, item, ReorderDirection.DOWN);
-              }}
-            >
-              <i className="fas fa-arrow-down mr-2" /> Move Down
-            </button>
-          )}
-          {item.custom.layerRef && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemReorder(e, item, ReorderDirection.OUT);
-              }}
-            >
-              <i className="fas fa-arrow-left mr-2" /> Move Out
-            </button>
-          )}
-          {index > 0 && arr.length > 1 && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                handleItemReorder(e, item, ReorderDirection.IN);
-              }}
-            >
-              <i className="fas fa-arrow-right mr-2" /> Move In
-            </button>
-          )}
-          {/* <div className="dropdown-divider"></div>
+              <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  handleItemAdd(item);
+                }}
+              >
+                <i className="fas fa-desktop mr-2" /> Add Subscreen
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  handleItemAdd(item, true);
+                }}
+              >
+                <i className="fas fa-layer-group mr-2" /> Add Layer
+              </button>
+              {item.custom.isLayer ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemConvert(item);
+                  }}
+                >
+                  <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
+                </button>
+              ) : (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemConvert(item);
+                  }}
+                >
+                  <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
+                </button>
+              )}
+              {currentGroup?.children?.length > 1 && (
+                <>
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                      handleItemDelete(item);
+                    }}
+                  >
+                    <i className="fas fa-trash mr-2" /> Delete
+                  </button>
+                  <div className="dropdown-divider"></div>
+                </>
+              )}
+              {index > 0 && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemReorder(e, item, ReorderDirection.UP);
+                  }}
+                >
+                  <i className="fas fa-arrow-up mr-2" /> Move Up
+                </button>
+              )}
+              {index < arr.length - 1 && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemReorder(e, item, ReorderDirection.DOWN);
+                  }}
+                >
+                  <i className="fas fa-arrow-down mr-2" /> Move Down
+                </button>
+              )}
+              {item.custom.layerRef && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemReorder(e, item, ReorderDirection.OUT);
+                  }}
+                >
+                  <i className="fas fa-arrow-left mr-2" /> Move Out
+                </button>
+              )}
+              {index > 0 && arr.length > 1 && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemReorder(e, item, ReorderDirection.IN);
+                  }}
+                >
+                  <i className="fas fa-arrow-right mr-2" /> Move In
+                </button>
+              )}
+              {/* <div className="dropdown-divider"></div>
           <button
             className="dropdown-item"
             onClick={(e) => {
@@ -415,7 +421,9 @@ const SequenceEditor: React.FC<any> = (props) => {
           >
             <i className="fas fa-paste mr-2" /> Paste as Sibling
           </button> */}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     );
   };

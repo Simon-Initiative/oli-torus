@@ -10,6 +10,7 @@ import {
 import { selectCurrentRule, setCurrentRule } from './store/app/slice';
 import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
+import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -55,6 +56,26 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     [],
   );
 
+  const handleAddCorrectRule = async () => {
+    const { payload: newCorrectRule } = await dispatch<any>(
+      createCorrectRule({ isDefault: false }),
+    );
+    const activityClone: IActivity = clone(currentActivity);
+    activityClone.authoring.rules.push(newCorrectRule);
+    dispatch(setCurrentRule({ currentRule: newCorrectRule }));
+    debounceSaveChanges(activityClone);
+  };
+
+  const handleAddIncorrectRule = async () => {
+    const { payload: newIncorrectRule } = await dispatch<any>(
+      createIncorrectRule({ isDefault: false }),
+    );
+    const activityClone: IActivity = clone(currentActivity);
+    activityClone.authoring.rules.push(newIncorrectRule);
+    dispatch(setCurrentRule({ currentRule: newIncorrectRule }));
+    debounceSaveChanges(activityClone);
+  };
+
   return (
     <>
       <section
@@ -72,7 +93,17 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule && <span className="ruleName">{currentRule.name}</span>}
+              {currentRule && (
+                <span className="ruleName">
+                  {currentRule.default && currentRule.correct && (
+                    <i className="fa fa-check-circle mr-1 text-muted align-middle" />
+                  )}
+                  {currentRule.default && !currentRule.correct && (
+                    <i className="fa fa-times-circle mr-1 text-muted align-middle" />
+                  )}
+                  {currentRule.name}
+                </span>
+              )}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
               {currentRule && (
@@ -91,21 +122,23 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     </div>
                     <i className="fa fa-check" />
                   </div>
-                  <OverlayTrigger
-                    placement="top"
-                    delay={{ show: 150, hide: 150 }}
-                    overlay={
-                      <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                        Delete Rule
-                      </Tooltip>
-                    }
-                  >
-                    <span>
-                      <button className="btn btn-link p-0 ml-3">
-                        <i className="fa fa-trash-alt" />
-                      </button>
-                    </span>
-                  </OverlayTrigger>
+                  {!currentRule.default && (
+                    <OverlayTrigger
+                      placement="top"
+                      delay={{ show: 150, hide: 150 }}
+                      overlay={
+                        <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                          Delete Rule
+                        </Tooltip>
+                      }
+                    >
+                      <span>
+                        <button className="btn btn-link p-0 ml-3">
+                          <i className="fa fa-trash-alt" />
+                        </button>
+                      </span>
+                    </OverlayTrigger>
+                  )}
                 </>
               )}
               <OverlayTrigger
@@ -117,11 +150,45 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                   </Tooltip>
                 }
               >
-                <span>
-                  <button className="btn btn-link p-0 ml-1">
+                <div className="dropdown">
+                  <button
+                    className={`dropdown-toggle btn btn-link p-0 ${
+                      currentRule?.default ? 'ml-3' : 'ml-1'
+                    }`}
+                    type="button"
+                    id={`bottom-panel-add-context-trigger`}
+                    data-toggle="dropdown"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    onClick={(e) => {
+                      ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
+                    }}
+                  >
                     <i className="fa fa-plus" />
                   </button>
-                </span>
+                  <div
+                    id={`bottom-panel-add-context-menu`}
+                    className="dropdown-menu"
+                    aria-labelledby={`bottom-panel-add-context-trigger`}
+                  >
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        handleAddCorrectRule();
+                      }}
+                    >
+                      <i className="fa fa-check mr-2" /> New Correct Rule
+                    </button>
+                    <button
+                      className="dropdown-item"
+                      onClick={(e) => {
+                        handleAddIncorrectRule();
+                      }}
+                    >
+                      <i className="fa fa-times mr-2" /> New Incorrect Rule
+                    </button>
+                  </div>
+                </div>
               </OverlayTrigger>
               <button className="btn btn-link p-0 ml-1" onClick={() => onToggle()}>
                 {panelState['bottom'] && <i className="fa fa-angle-down" />}
