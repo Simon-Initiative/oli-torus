@@ -76,6 +76,20 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     debounceSaveChanges(activityClone);
   };
 
+  const handleDeleteRule = () => {
+    const activityClone: IActivity = clone(currentActivity);
+    const indexToDelete = activityClone.authoring.rules.findIndex(
+      (rule: any) => rule.id === currentRule.id,
+    );
+    if (indexToDelete !== -1) {
+      activityClone.authoring.rules.splice(indexToDelete, 1);
+      const prevRule = activityClone.authoring.rules[indexToDelete - 1];
+      const nextRule = activityClone.authoring.rules[indexToDelete + 1];
+      debounceSaveChanges(activityClone);
+      dispatch(setCurrentRule({ currentRule: prevRule !== undefined ? prevRule : nextRule }));
+    }
+  };
+
   return (
     <>
       <section
@@ -133,7 +147,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                       }
                     >
                       <span>
-                        <button className="btn btn-link p-0 ml-3">
+                        <button
+                          className="btn btn-link p-0 ml-3"
+                          onClick={() => handleDeleteRule()}
+                        >
                           <i className="fa fa-trash-alt" />
                         </button>
                       </span>
