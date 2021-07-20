@@ -16,7 +16,7 @@ describe('check all that apply delivery', () => {
   it('renders ungraded correctly', async () => {
     const model = defaultCATAModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
-    const defaultActivityState = defaultState(model);;
+    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',
@@ -26,7 +26,6 @@ describe('check all that apply delivery', () => {
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;
     const store = configureStore({}, activityDeliverySlice.reducer);
-
     render(
       <Provider store={store}>
         <DeliveryElementProvider {...defaultDeliveryElementProps} {...props}>
