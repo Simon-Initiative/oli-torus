@@ -118,6 +118,11 @@ const RightMenu: React.FC<any> = () => {
       ...modelChanges,
       custom: { ...currentLesson.custom, ...modelChanges.custom },
     };
+    //need to remove the allowNavigation property
+    //making sure the enableHistory is present before removing that.
+    if(lessonChanges.custom.enableHistory != undefined && lessonChanges.custom.allowNavigation != undefined){
+      delete lessonChanges.custom.allowNavigation;
+    }
     console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
     // need to put a healthy debounce in here, this fires every keystroke

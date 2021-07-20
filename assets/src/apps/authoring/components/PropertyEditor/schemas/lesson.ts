@@ -27,10 +27,6 @@ const lessonSchema = {
             theme: {
               type: 'string',
               title: 'Lesson Theme',
-              enum: [
-                'Light Responsive',
-                'LEGACY',
-              ],
             },
             customCssUrl: {
               type: 'string',
@@ -123,20 +119,19 @@ export const lessonUiSchema = {
 
 // we don't have the actual theme urls yet,
 // they will likely come from somehwere else
-const themeMap: { [key: string]: string } = {
-  'url to new theme': 'Light Responsive',
-  'default': 'LEGACY',
-};
+// const themeMap: { [key: string]: string } = {
+//   'url to new theme': 'Light Responsive',
+//   'default': 'LEGACY',
+// };
 
 export const transformModelToSchema = (model: any) => {
   const [themeUrl, customCssUrl] = model.additionalStylesheets;
-  const theme = themeMap[themeUrl] || 'LEGACY';
 
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
       Appearance: {
-        theme,
+        theme: themeUrl,
         customCssUrl,
       },
       ScoreOverview: {
@@ -160,11 +155,11 @@ export const transformModelToSchema = (model: any) => {
 
 export const transformSchemaToModel = (schema: any) => {
   /* console.log('LESSON SCHEMA -> MODEL', schema); */
-  const themeUrl =
-    Object.keys(themeMap).find((key) => themeMap[key] === schema.Properties.Appearance.theme) ||
-    null;
 
-  const additionalStylesheets = [themeUrl, schema.Properties.Appearance.customCssUrl];
+  const additionalStylesheets = [
+    schema.Properties.Appearance.theme,
+    schema.Properties.Appearance.customCssUrl,
+  ];
 
   let variables = [];
   try {
@@ -180,7 +175,6 @@ export const transformSchemaToModel = (schema: any) => {
       enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
       lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
-      allowNavigation: schema.Properties.enableHistory,
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,
       logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
