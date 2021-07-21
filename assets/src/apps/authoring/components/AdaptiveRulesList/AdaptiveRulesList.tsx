@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { debounce } from 'lodash';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
@@ -19,6 +19,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
   const rules = currentActivity?.authoring.rules || [];
+  const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
 
   const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
 
@@ -68,10 +69,28 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     }
   };
 
+  const handleRenameRule = (rule: any) => {
+    if (rule.name === ruleToEdit.name) {
+      setRuleToEdit(undefined);
+      return;
+    }
+    const activityClone: IActivity = clone(currentActivity);
+    const indexToRename = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
+    debounceSaveChanges(activityClone);
+    setRuleToEdit(undefined);
+  };
+
   useEffect(() => {
     if (currentRule !== undefined) return;
     rules.length > 0 ? handleSelectRule(rules[0]) : handleSelectRule(undefined);
   }, [currentActivity]);
+
+  useEffect(() => {
+    if (!ruleToEdit) return;
+    const inputToFocus = document.getElementById('input-rule-name');
+    if (inputToFocus) inputToFocus.focus();
+  }, [ruleToEdit]);
 
   const RuleItemContextMenu = (props: any) => {
     const { id, item, index, arr } = props;
@@ -97,6 +116,16 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
           className="dropdown-menu"
           aria-labelledby={`rule-list-item-${id}-context-trigger`}
         >
+          <button
+            className="dropdown-item"
+            onClick={(e) => {
+              e.stopPropagation();
+              ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              setRuleToEdit(item);
+            }}
+          >
+            <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
+          </button>
           {!item.default && (
             <>
               <div className="dropdown-divider"></div>
@@ -114,6 +143,20 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
           )}
         </div>
       </div>
+    );
+  };
+
+  const RuleName = ({ rule }: any) => {
+    return (
+      <span>
+        {rule.default && rule.correct && (
+          <i className="fa fa-check-circle mr-1 text-muted align-middle" />
+        )}
+        {rule.default && !rule.correct && (
+          <i className="fa fa-times-circle mr-1 text-muted align-middle" />
+        )}
+        <span className="title">{rule.name}</span>
+      </span>
     );
   };
 
@@ -187,13 +230,28 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
               >
                 <div className="aa-rules-list-details-wrapper">
                   <div className="details">
-                    {rule.default && rule.correct && (
-                      <i className="fa fa-check-circle mr-1 text-muted align-middle" />
+                    {!ruleToEdit ? (
+                      <RuleName rule={rule} />
+                    ) : ruleToEdit?.id !== rule.id ? (
+                      <RuleName rule={rule} />
+                    ) : null}
+                    {ruleToEdit && ruleToEdit?.id === rule.id && (
+                      <input
+                        id="input-rule-name"
+                        className="form-control form-control-sm"
+                        type="text"
+                        placeholder="Rule name"
+                        value={ruleToEdit.name}
+                        onClick={(e) => e.preventDefault()}
+                        onChange={(e) => setRuleToEdit({ ...rule, name: e.target.value })}
+                        onFocus={(e) => e.target.select()}
+                        onBlur={() => handleRenameRule(rule)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleRenameRule(rule);
+                          if (e.key === 'Escape') setRuleToEdit(undefined);
+                        }}
+                      />
                     )}
-                    {rule.default && !rule.correct && (
-                      <i className="fa fa-times-circle mr-1 text-muted align-middle" />
-                    )}
-                    <span className="title">{rule.name}</span>
                   </div>
                   <RuleItemContextMenu id={guid()} item={rule} index={index} arr={arr} />
                 </div>
