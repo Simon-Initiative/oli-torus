@@ -170,13 +170,16 @@ export const triggerCheck = createAsyncThunk(
           const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
           return { attemptGuid, response: { input: finalResponse } };
         }) || [];
-
-      /* console.log('PART RESPONSES', { partResponses, allResponseState }); */
+      //There are cases when duplicate part attempts in the PartResponses which throws error during save process hence need to filter unique records
+      const uniquePartResponses = [
+        ...new Map(partResponses.map((item: any) => [item['attemptGuid'], item])).values(),
+      ];
+      /* console.log('PART RESPONSES', { partResponses, uniquePartResponses }); */
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
         currentActivityAttemptGuid,
-        partResponses,
+        uniquePartResponses,
       );
       console.log('EVAL RESULT', { evalResult });
       const resultData: CheckResult = (evalResult as any).result.actions;
