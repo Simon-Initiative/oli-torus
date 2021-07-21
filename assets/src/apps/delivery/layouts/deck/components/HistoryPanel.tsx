@@ -25,9 +25,11 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
 
   const itemClickHandler = (item: HistoryEntry) => {
     dispatch(navigateToActivity(item.id));
+
+    const nextHistoryActivityIndex = items.findIndex((item: any) => item.id === item.id);
     dispatch(
       setHistoryNavigationTriggered({
-        historyModeNavigation: true,
+        historyModeNavigation: nextHistoryActivityIndex !== 0,
       }),
     );
   };
