@@ -108,7 +108,6 @@ export interface MediaManagerProps {
   onSelectionChange: (selection: MediaItem[]) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
   toggleDisableInsert?: (b: boolean) => void;
-  store: any;
 }
 
 export interface MediaManagerState {

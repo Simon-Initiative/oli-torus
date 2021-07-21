@@ -65,6 +65,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             projectSlug={projectSlug}
             // eslint-disable-next-line
             onEdit={() => {}}
+            store={(window as any).getStore()}
             mimeFilter={MIMETYPE_FILTERS.IMAGE}
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
@@ -101,6 +102,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             projectSlug={projectSlug}
             // eslint-disable-next-line
             onEdit={() => {}}
+            store={(window as any).getStore()}
             mimeFilter={MIMETYPE_FILTERS.CSV}
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
