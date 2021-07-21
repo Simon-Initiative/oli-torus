@@ -96,6 +96,8 @@ const SequenceEditor: React.FC<any> = (props) => {
       }),
     );
 
+    dispatch(setCurrentActivityFromSequence(newSequenceEntry.custom.sequenceId));
+
     // will write the current groups
     await dispatch(savePage());
   };
