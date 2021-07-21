@@ -1,3 +1,4 @@
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -5,6 +6,10 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const screenSchema = {
   type: 'object',
   properties: {
+    title:{
+      type:'string',
+      title: 'Title'
+    },
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -124,8 +129,9 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (data: any) => {
-  if (data) {
+export const transformScreenModeltoSchema = (activity?: IActivity) => {
+  if (activity) {
+    const data = activity?.content?.custom;
     const schemaPalette = {
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,
@@ -144,6 +150,7 @@ export const transformScreenModeltoSchema = (data: any) => {
     };
     return {
       ...data,
+      title: activity?.title,
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
@@ -154,6 +161,7 @@ export const transformScreenModeltoSchema = (data: any) => {
 
 export const transformScreenSchematoModel = (schema: any) => {
   return {
+    title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
     customCssClass: schema.customCssClass,
