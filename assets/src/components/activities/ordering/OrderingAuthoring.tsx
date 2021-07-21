@@ -79,7 +79,6 @@ export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
         <AuthoringElementProvider {...props}>
           <Ordering />
         </AuthoringElementProvider>
-        <ModalDisplay />
       </Provider>,
       mountPoint,
     );

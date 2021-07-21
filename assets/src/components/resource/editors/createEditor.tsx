@@ -1,7 +1,12 @@
 // Factory for creating top level editors, for things like structured
 
 import React from 'react';
-import { ActivityReference, ResourceContent, ResourceContext, ResourceType } from 'data/content/resource';
+import {
+  ActivityReference,
+  ResourceContent,
+  ResourceContext,
+  ResourceType,
+} from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { EditorDesc } from 'data/content/editors';
 import { ContentBlock } from './ContentBlock';
@@ -55,6 +60,7 @@ export const createEditor = (
           projectSlug={projectSlug}
           toolbarItems={getToolbarForResourceType(
             graded ? ResourceType.assessment : ResourceType.page,
+            null,
           )}
         />
       </ContentBlock>

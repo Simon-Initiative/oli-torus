@@ -85,9 +85,11 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
 
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MCSchema>) {
     ReactDOM.render(
-      <AuthoringElementProvider {...props}>
-        <MultipleChoice />
-      </AuthoringElementProvider>,
+      <Provider store={store}>
+        <AuthoringElementProvider {...props}>
+          <MultipleChoice />
+        </AuthoringElementProvider>
+      </Provider>,
       mountPoint,
     );
   }

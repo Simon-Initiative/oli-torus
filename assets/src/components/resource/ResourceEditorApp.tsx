@@ -27,7 +27,5 @@ let store = configureStore();
   },
 };
 
-(window as any).getStore = () => store;
-
 // Expose other libraries to server-side rendered templates
 (window as any).Maybe = Maybe;

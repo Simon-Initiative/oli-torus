@@ -52,9 +52,6 @@ const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchPro
   };
 };
 
-console.log('media component connected');
-console.log(typeof (window as any).getStore);
-
 export const controller = connect<StateProps, DispatchProps, OwnProps>
   (mapStateToProps, mapDispatchToProps)(MediaManager);
 
