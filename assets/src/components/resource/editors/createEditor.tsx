@@ -20,17 +20,6 @@ import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineAc
 import { Objective } from 'data/content/objective';
 import { Undoable } from 'components/activities/types';
 
-const unsupported: EditorDesc = {
-  deliveryElement: UnsupportedActivity,
-  authoringElement: UnsupportedActivity,
-  icon: '',
-  description: 'Not supported',
-  friendlyName: 'Not supported',
-  slug: 'unknown',
-  globallyAvailable: true,
-  enabledForProject: true,
-};
-
 // content or referenced activities
 export const createEditor = (
   resourceContext: ResourceContext,

@@ -31,8 +31,8 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 
 const store = configureStore();
 
-const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
-  const { dispatch, model } = useAuthoringElementContext<ShortAnswerModelSchema>();
+const ShortAnswer = () => {
+  const { dispatch, model, editMode } = useAuthoringElementContext<ShortAnswerModelSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -40,13 +40,13 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
           <div className="d-flex flex-column flex-md-row mb-2">
             <Stem />
             <InputTypeDropdown
-              editMode={props.editMode}
-              inputType={props.model.inputType}
+              editMode={editMode}
+              inputType={model.inputType}
               onChange={(inputType) =>
                 dispatch(
                   ShortAnswerActions.setInputType(
                     inputType,
-                    parseInputFromRule(getCorrectResponse(props.model).rule),
+                    parseInputFromRule(getCorrectResponse(model).rule),
                   ),
                 )
               }
@@ -57,13 +57,13 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
           <div className="d-flex flex-column mb-2">
             <StemDelivery stem={model.stem} context={defaultWriterContext()} />
             <InputEntry
-              key={getCorrectResponse(props.model).id}
-              inputType={props.model.inputType}
-              response={getCorrectResponse(props.model)}
+              key={getCorrectResponse(model).id}
+              inputType={model.inputType}
+              response={getCorrectResponse(model)}
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
             />
             <SimpleFeedback />
-            {getTargetedResponses(props.model).map((response: ActivityTypes.Response) => (
+            {getTargetedResponses(model).map((response: ActivityTypes.Response) => (
               <ResponseCard
                 title="Targeted feedback"
                 response={response}
@@ -75,7 +75,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
               >
                 <InputEntry
                   key={response.id}
-                  inputType={props.model.inputType}
+                  inputType={model.inputType}
                   response={response}
                   onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
                 />
@@ -93,7 +93,7 @@ const ShortAnswer = (props: AuthoringElementProps<ShortAnswerModelSchema>) => {
         <TabbedNavigation.Tab label="Hints">
           <Hints hintsPath="$.authoring.parts[0].hints" />
         </TabbedNavigation.Tab>
-        <ActivitySettings settings={[shuffleAnswerChoiceSetting(props.model, dispatch)]} />
+        <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>
   );
@@ -104,9 +104,8 @@ export class ShortAnswerAuthoring extends AuthoringElement<ShortAnswerModelSchem
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <ShortAnswer {...props} />
+          <ShortAnswer />
         </AuthoringElementProvider>
-        <ModalDisplay />
       </Provider>,
       mountPoint,
     );
