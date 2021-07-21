@@ -6,9 +6,9 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const screenSchema = {
   type: 'object',
   properties: {
-    title:{
-      type:'string',
-      title: 'Title'
+    title: {
+      type: 'string',
+      title: 'Title',
     },
     Size: {
       type: 'object',
