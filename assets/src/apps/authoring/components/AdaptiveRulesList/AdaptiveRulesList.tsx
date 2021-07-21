@@ -70,6 +70,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
   };
 
   const handleRenameRule = (rule: any) => {
+    if (ruleToEdit.name.trim() === '') return;
     if (rule.name === ruleToEdit.name) {
       setRuleToEdit(undefined);
       return;
@@ -79,6 +80,9 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
     debounceSaveChanges(activityClone);
     setRuleToEdit(undefined);
+    handleSelectRule(
+      currentRule.id === rule.id ? activityClone.authoring.rules[indexToRename] : currentRule,
+    );
   };
 
   useEffect(() => {
