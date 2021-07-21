@@ -1,5 +1,4 @@
-import { findInSequence } from '../../../delivery/store/features/groups/actions/sequence';
-import { selectCurrentSequenceId, selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -28,6 +27,7 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -40,16 +40,12 @@ const RightMenu: React.FC<any> = () => {
   const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
-
-  const currentSequenceId = useSelector(selectCurrentSequenceId);
-  const sequence = useSelector(selectSequence);
+  const currentGroup = useSelector(selectCurrentGroup);
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
 
-  const [screenData, setScreenData] = useState(
-    transformScreenModeltoSchema(currentActivity),
-  );
+  const [screenData, setScreenData] = useState(transformScreenModeltoSchema(currentActivity));
   useEffect(() => {
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
@@ -66,7 +62,6 @@ const RightMenu: React.FC<any> = () => {
   const screenPropertyChangeHandler = useCallback(
     (properties: any) => {
       if (currentActivity) {
-        const currentSequence = findInSequence(sequence, currentSequenceId);
         const modelChanges = transformScreenSchematoModel(properties);
         //currentSequence?.custom.sequenceName = modelChanges.title;
         console.log('Screen Property Change...', { modelChanges });
@@ -78,12 +73,10 @@ const RightMenu: React.FC<any> = () => {
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
-        if(title){
+        if (title) {
           cloneActivity.title = title;
-          cloneActivity.activitySlug = title.toLowerCase().split(' ').join('_');
         }
-
-        debounceSaveScreenSettings(cloneActivity);
+        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
       }
     },
     [currentActivity],
@@ -91,10 +84,15 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity) => {
+      (activity, currentActivity, group) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
         dispatch(upsertActivity({ activity }));
+
+        if (activity.title !== currentActivity?.title) {
+          dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
+          dispatch(savePage());
+        }
       },
       500,
       { maxWait: 10000, leading: false },
