@@ -95,6 +95,7 @@ export const UrlOrUpload = (props: Props) => {
         selectionType={SELECTION_TYPES.SINGLE}
         initialSelectionPaths={props.initialSelectionPaths}
         onSelectionChange={props.onMediaSelectionChange}
+        store={(window as any).getStore()}
       />
     </>
   );
