@@ -89,7 +89,6 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
         <AuthoringElementProvider {...props}>
           <MultipleChoice />
         </AuthoringElementProvider>
-        <ModalDisplay />
       </Provider>,
       mountPoint,
     );

@@ -6,6 +6,7 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { PartObjectives } from 'components/activity/PartObjectives';
 import { valueOr } from 'utils/common';
 import { Undoable } from 'components/activities/types';
+import { selectImage } from 'components/editing/commands/ImageCmd';
 
 export interface ActivityEditorProps extends ActivityEditContext, ProjectResourceContext {
   onEdit: (state: EditorUpdate) => void;
@@ -49,6 +50,18 @@ export class InlineActivityEditor extends React.Component<
         e.stopPropagation();
 
         this.props.onPostUndoable(e.detail.undoable);
+      });
+      this.ref.current.addEventListener('requestMedia', (e: CustomEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        selectImage(this.props.projectSlug).then((result) => {
+          if (result) {
+            e.detail.continuation(result);
+          } else {
+            e.detail.continuation(undefined, 'error');
+          }
+        });
       });
     }
   }
