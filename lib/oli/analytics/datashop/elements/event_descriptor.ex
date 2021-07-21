@@ -16,7 +16,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   require Logger
   alias Oli.Analytics.Datashop.Utils
 
-  def setup(%{type: type, problem_name: problem_name, part_attempt: part_attempt}) do
+  def setup(type, %{problem_name: problem_name, part_attempt: part_attempt}) do
     element(:event_descriptor, [
       element(:selection, problem_name),
       element(:action, get_action(part_attempt)),
@@ -26,10 +26,11 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
 
   defp get_action(part_attempt) do
     case activity_type(part_attempt) do
-      "oli_short_answer" -> "Short answer input"
-      "oli_multiple_choice" -> "Multiple choice selection"
-      "oli_check_all_that_apply" -> "Check all that apply selection"
-      _unregistered -> "Action in unregistered activity type"
+      "oli_short_answer" -> "Short answer submission"
+      "oli_multiple_choice" -> "Multiple choice submission"
+      "oli_check_all_that_apply" -> "Check all that apply submission"
+      "oli_ordering" -> "Ordering submission"
+      _other -> "Student activity submission"
     end
   end
 
@@ -47,56 +48,56 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
           input = part_attempt.response["input"]
 
           case activity_type(part_attempt) do
-            # for short answer questions, the input is the text the student entered in the field
             "oli_short_answer" ->
+              # SA student input is just the entered text
               input
               |> Utils.parse_content()
 
-            # for multiple choice questions, the input is a string id that refers to the selected choice
             "oli_multiple_choice" ->
-              choices = part_attempt.activity_attempt.transformed_model["choices"]
-              content = Enum.find(choices, &(&1["id"] == input))["content"]
-
-              case content do
+              # MC student input looks like "id1" where id1 is the selected choice
+              part_attempt.activity_attempt.transformed_model["choices"]
+              |> Enum.find(fn choice -> choice["id"] == input end)
+              |> Map.get("content")
+              |> case do
                 %{"model" => model} -> Utils.parse_content(model)
-                _ -> Utils.parse_content(content)
+                content -> Utils.parse_content(content)
               end
 
             "oli_check_all_that_apply" ->
-              # CATA Input includes all selected choices as "id1 id2 id3"
-              selected_choices = String.split(input, " ")
-              choices = part_attempt.activity_attempt.transformed_model["choices"]
-
-              contents =
-                choices
-                |> Enum.filter(fn choice ->
-                  Enum.find(
-                    selected_choices,
-                    fn selected_id -> choice["id"] == selected_id end
-                  )
-                end)
-                |> Enum.map(fn choice -> choice["content"] end)
-
-              contents
-              |> Enum.map(fn content_item ->
-                case content_item do
-                  %{"model" => model} -> Utils.parse_content(model)
-                  _ -> Utils.parse_content(content_item)
-                end
+              # CATA student input looks like "id1 id2 id3" where id1 id2 id3 are the selected choices
+              part_attempt.activity_attempt.transformed_model["choices"]
+              |> Enum.filter(fn choice ->
+                Enum.find(
+                  String.split(input, " "),
+                  fn selected_id -> choice["id"] == selected_id end
+                )
+              end)
+              |> Enum.map(fn choice -> choice["content"]["model"] end)
+              |> Enum.map(fn choice_content ->
+                IO.inspect(Utils.parse_content(choice_content), label: "Parsed attempt 1")
               end)
 
-            # fallback for future activity types
-            _unregistered ->
-              "Input in unregistered activity type: " <> input
+            "oli_ordering" ->
+              # Ordering student input looks like "id1 id2 id3" where id1 id2 id3 are the selected choices
+              part_attempt.activity_attempt.transformed_model["choices"]
+              |> Enum.filter(fn choice ->
+                Enum.find(
+                  String.split(input, " "),
+                  fn selected_id -> choice["id"] == selected_id end
+                )
+              end)
+              |> Enum.map(fn choice -> choice["content"]["model"] end)
+              |> Enum.map(fn choice_content -> Utils.parse_content(choice_content) end)
+
+            # fallback for other activity types
+            _other ->
+              {:cdata, input}
           end
 
         "RESULT" ->
-          content = part_attempt.feedback["content"]
-
-          case content do
-            %{"model" => model} -> Utils.parse_content(model)
-            _ -> Utils.parse_content(content)
-          end
+          content = part_attempt.feedback["content"]["model"]
+          IO.inspect(content, label: "Result content")
+          IO.inspect(Utils.parse_content(content), label: "Parsed result 1")
       end
     rescue
       e ->

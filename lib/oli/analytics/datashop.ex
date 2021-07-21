@@ -30,12 +30,9 @@ defmodule Oli.Analytics.Datashop do
   # 34 => [%Revision{}, %Revision{}, %Revision{}, %Revision{}]
   #         ^                ^            ^            ^
   #       the page       a module      a unit        Root Resource
-  #
-
   defp build_hierarchy_map(revision_map, root_resource_id) do
-    rev = Map.get(revision_map, root_resource_id)
-
-    build_hierarchy(rev, [], [], revision_map)
+    Map.get(revision_map, root_resource_id)
+    |> build_hierarchy([], [], revision_map)
     |> Enum.reduce(%{}, fn [page | _] = path, m -> Map.put(m, page.resource_id, path) end)
   end
 
@@ -55,128 +52,61 @@ defmodule Oli.Analytics.Datashop do
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
-    dataset_name = Utils.make_dataset_name(project.slug)
-
-    # create a map of resource ids to published revision
-    revision_map =
-      Publishing.get_published_resources_by_publication(publication.id)
-      |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
-
-    hierarchy_map = build_hierarchy_map(revision_map, publication.root_resource_id)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
     |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
-      context_message_id = Utils.make_unique_id(activity_slug, part_id)
-      problem_name = Utils.make_problem_name(activity_slug, part_id)
+      context = %{
+        date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
+        email: email,
+        context_message_id: Utils.make_unique_id(activity_slug, part_id),
+        problem_name: Utils.make_problem_name(activity_slug, part_id),
+        dataset_name: Utils.make_dataset_name(project.slug),
+        part_attempt: hd(part_attempts),
+        publication: publication,
+        # a map of resource ids to published revision
+        hierarchy_map:
+          Publishing.get_published_resources_by_publication(publication.id)
+          |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+          |> build_hierarchy_map(publication.root_resource_id)
+      }
 
-      context_message =
-        Context.setup(%{
-          name: "START_PROBLEM",
-          context_message_id: context_message_id,
-          meta_element_context: %{
-            date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
-            email: email
-          },
-          dataset_element_context: %{
-            dataset_name: dataset_name,
-            part_attempt: hd(part_attempts),
-            publication: publication,
-            problem_name: problem_name,
-            hierarchy_map: hierarchy_map
-          }
-        })
+      [
+        Context.setup("START_PROBLEM", context)
+        | part_attempts
+          |> Enum.flat_map(fn part_attempt ->
+            context =
+              Map.merge(
+                context,
+                %{
+                  transaction_id: Utils.make_unique_id(activity_slug, part_id),
+                  part_attempt: part_attempt,
+                  skill_ids:
+                    part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] ||
+                      [],
+                  total_hints_available:
+                    Utils.total_hints_available(get_part_from_attempt(part_attempt))
+                }
+              )
 
-      pairs =
-        part_attempts
-        |> Enum.flat_map(fn part_attempt ->
-          # The part should be able to be found assuming that it adheres to OLI's activity authoring model
-          # If it's a third-party custom activity, the part might not be under the authoring key
-          part =
-            part_attempt.activity_attempt.transformed_model["authoring"]["parts"]
-            |> Enum.find(%{}, &(&1["id"] == part_attempt.part_id))
+            hint_message_pairs =
+              create_hint_message_pairs(
+                part_attempt,
+                get_part_from_attempt(part_attempt),
+                context
+              )
 
-          skill_ids =
-            part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || []
+            # Attempt / Result pairs must have a different transaction ID from the hint message pairs
+            context =
+              Map.put(context, :transaction_id, Utils.make_unique_id(activity_slug, part_id))
 
-          meta_element_context = %{
-            date: part_attempt.inserted_at,
-            email: email
-          }
-
-          hint_message_pairs =
-            part_attempt.hints
-            |> Enum.with_index()
-            |> Enum.flat_map(fn {hint_id, hint_index} ->
-              # transaction id connects tool and tutor messages
-              transaction_id = Utils.make_unique_id(activity_slug, part_id)
-
+            hint_message_pairs ++
               [
-                Tool.setup(%{
-                  type: "HINT",
-                  context_message_id: context_message_id,
-                  meta_element_context: meta_element_context,
-                  semantic_event_context: %{
-                    transaction_id: transaction_id,
-                    name: "HINT_REQUEST"
-                  },
-                  part_attempt: part_attempt,
-                  problem_name: problem_name
-                }),
-                Tutor.setup(%{
-                  type: "HINT_MSG",
-                  context_message_id: context_message_id,
-                  transaction_id: transaction_id,
-                  meta_element_context: meta_element_context,
-                  action_evaluation_context: %{
-                    current_hint_number: hint_index + 1,
-                    total_hints_available: Utils.total_hints_available(part)
-                  },
-                  skill_context: %{
-                    publication: publication,
-                    skill_ids: skill_ids
-                  },
-                  problem_name: problem_name,
-                  part_attempt: part_attempt,
-                  hint_text: Utils.hint_text(part, hint_id)
-                })
+                Tool.setup("ATTEMPT", "ATTEMPT", context),
+                Tutor.setup("RESULT", context)
               ]
-            end)
-
-          transaction_id = Utils.make_unique_id(activity_slug, part_id)
-
-          hint_message_pairs ++
-            [
-              Tool.setup(%{
-                type: "ATTEMPT",
-                context_message_id: context_message_id,
-                meta_element_context: meta_element_context,
-                semantic_event_context: %{
-                  transaction_id: transaction_id,
-                  name: "ATTEMPT"
-                },
-                part_attempt: part_attempt,
-                problem_name: problem_name
-              }),
-              Tutor.setup(%{
-                type: "RESULT",
-                context_message_id: context_message_id,
-                transaction_id: transaction_id,
-                meta_element_context: meta_element_context,
-                action_evaluation_context: %{
-                  part_attempt: part_attempt
-                },
-                skill_context: %{
-                  publication: publication,
-                  skill_ids: skill_ids
-                },
-                problem_name: problem_name,
-                part_attempt: part_attempt
-              })
-            ]
-        end)
-
-      [context_message | pairs]
+          end)
+      ]
     end)
   end
 
@@ -200,5 +130,28 @@ defmodule Oli.Analytics.Datashop do
       },
       children
     )
+  end
+
+  defp create_hint_message_pairs(part_attempt, part, context) do
+    part_attempt.hints
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {hint_id, hint_index} ->
+      context =
+        context
+        |> Map.merge(%{
+          current_hint_number: hint_index + 1,
+          hint_text: Utils.hint_text(part, hint_id)
+        })
+
+      [
+        Tool.setup("HINT", "HINT_REQUEST", context),
+        Tutor.setup("HINT_MSG", context)
+      ]
+    end)
+  end
+
+  defp get_part_from_attempt(part_attempt) do
+    part_attempt.activity_attempt.transformed_model["authoring"]["parts"]
+    |> Enum.find(%{}, &(&1["id"] == part_attempt.part_id))
   end
 end
