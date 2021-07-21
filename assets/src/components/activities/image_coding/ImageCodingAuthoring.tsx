@@ -43,11 +43,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
       } as MediaItemRequest;
       if (props.onRequestMedia) {
         props.onRequestMedia(request).then((r) => {
-          console.log(r);
           if (r === false) {
             reject('error');
           } else {
-            console.log('resovl');
             resolve(r as string);
           }
         });
