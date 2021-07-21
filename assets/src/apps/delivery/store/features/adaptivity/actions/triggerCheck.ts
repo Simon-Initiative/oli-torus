@@ -170,8 +170,7 @@ export const triggerCheck = createAsyncThunk(
           const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
           return { attemptGuid, response: { input: finalResponse } };
         }) || [];
-
-      /* console.log('PART RESPONSES', { partResponses, allResponseState }); */
+      /* console.log('PART RESPONSES', { partResponses, uniquePartResponses }); */
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
