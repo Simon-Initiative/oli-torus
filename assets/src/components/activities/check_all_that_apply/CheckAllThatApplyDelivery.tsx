@@ -1,6 +1,6 @@
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
-import { ChoiceId, Manifest } from 'components/activities/types';
-import { isCorrect } from 'data/content/activities/activityUtils';
+import { Manifest } from 'components/activities/types';
+import { initialSelection, isCorrect } from 'data/content/activities/utils';
 import {
   ActivityDeliveryState,
   initializeState,
@@ -26,10 +26,7 @@ import { EvaluationConnected } from 'components/activities/common/delivery/evalu
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-import { valueOr } from 'utils/common';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
-import { Maybe } from 'tsmonad';
-import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -41,17 +38,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(
-      initializeState(
-        activityState,
-        valueOr(
-          activityState.parts[0]?.response?.input
-            ?.split(' ')
-            .reduce((ids: string[], id: string) => ids.concat([id]), [] as ChoiceId[]),
-          [],
-        ),
-      ),
-    );
+    dispatch(initializeState(activityState, initialSelection(activityState)));
   }, []);
 
   // First render initializes state

@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 - Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
+- Fix an issue where activities do not correctly restore their "in-progress" state from student work
 
 ### Enhancements
 

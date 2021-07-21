@@ -131,6 +131,14 @@ const RightMenu: React.FC<any> = () => {
       ...modelChanges,
       custom: { ...currentLesson.custom, ...modelChanges.custom },
     };
+    //need to remove the allowNavigation property
+    //making sure the enableHistory is present before removing that.
+    if (
+      lessonChanges.custom.enableHistory !== undefined &&
+      lessonChanges.custom.allowNavigation !== undefined
+    ) {
+      delete lessonChanges.custom.allowNavigation;
+    }
     console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
     // need to put a healthy debounce in here, this fires every keystroke
@@ -160,7 +168,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div className="screen-tab p-3">
-          {currentActivity ? (
+          {currentActivity && screenData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
