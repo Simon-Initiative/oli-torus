@@ -70,7 +70,10 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
   };
 
   const handleRenameRule = (rule: any) => {
-    if (ruleToEdit.name.trim() === '') return;
+    if (ruleToEdit.name.trim() === '') {
+      setRuleToEdit(undefined);
+      return;
+    }
     if (rule.name === ruleToEdit.name) {
       setRuleToEdit(undefined);
       return;
