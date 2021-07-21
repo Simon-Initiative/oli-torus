@@ -392,7 +392,7 @@ const DeckLayoutFooter: React.FC = () => {
         showCheckBtn={currentActivity?.custom?.showCheckBtn}
       />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className="bottomContainer fixed">
+        <div className={`bottomContainer fixed ${!displayFeedback?'minimized': ''}`}>
           <button
             onClick={checkFeedbackHandler}
             className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}

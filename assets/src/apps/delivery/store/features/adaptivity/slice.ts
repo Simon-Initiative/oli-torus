@@ -5,6 +5,9 @@ interface CheckResults {
   timestamp: number;
   results?: any;
   attempt?: any;
+  correct: boolean;
+  score: number;
+  outOf: number;
 }
 export interface AdaptivityState {
   isGoodFeedback: boolean;
@@ -25,7 +28,15 @@ const initialState: AdaptivityState = {
   currentFeedbacks: [],
   nextActivityId: '',
   lastCheckTriggered: null,
-  lastCheckResults: { timestamp: -1, results: [], attempt: null },
+
+  lastCheckResults: {
+    timestamp: -1,
+    results: [],
+    attempt: null,
+    correct: false,
+    score: 0,
+    outOf: 0,
+  },
   restartLesson: false,
   lessonEnded: false,
   lastMutateTriggered: null,
@@ -51,8 +62,8 @@ const slice: Slice<AdaptivityState> = createSlice({
       state.lastCheckTriggered = action.payload.timestamp;
     },
     setLastCheckResults: (state, action: PayloadAction<CheckResults>) => {
-      const { results, attempt, timestamp } = action.payload;
-      state.lastCheckResults = { results, attempt, timestamp };
+      const { results, attempt, timestamp, correct, score, outOf } = action.payload;
+      state.lastCheckResults = { results, attempt, timestamp, correct, score, outOf };
     },
     setRestartLesson(state, action: PayloadAction<{ restartLesson: boolean }>) {
       state.restartLesson = action.payload.restartLesson;

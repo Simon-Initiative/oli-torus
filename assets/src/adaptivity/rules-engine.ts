@@ -16,7 +16,7 @@ import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
-import { evalScript, getAssignScript } from './scripting';
+import { bulkApplyState, evalScript, getAssignScript, getValue } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;
@@ -103,11 +103,22 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
 export interface CheckResult {
   correct: boolean;
   results: Event[];
+  score: number;
+  out_of: number;
+}
+
+export interface ScoringContext {
+  maxScore: number;
+  maxAttempt: number;
+  trapStateScoreScheme: boolean;
+  negativeScoreAllowed: boolean;
+  currentAttemptNumber: number;
 }
 
 export const check = async (
   state: Record<string, unknown>,
   rules: JanusRuleProperties[],
+  scoringContext: ScoringContext,
   encodeResults = false,
 ): Promise<CheckResult | string> => {
   // load the std lib
@@ -158,7 +169,40 @@ export const check = async (
   }
   // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
-  const finalResults = { correct: isCorrect, results: resultEvents };
+  let score = 0;
+  if (scoringContext.trapStateScoreScheme) {
+    // apply all the actions from the resultEvents that mutate the state
+    // then check the session.currentQuestionScore and clamp it against the maxScore
+    // setting that value to score
+    const mutations = resultEvents.reduce((acc, evt) => {
+      const { actions } = evt.params as Record<string, any>;
+      const mActions = actions.filter(
+        (action: any) =>
+          action.type === 'mutateState' && action.params.target === 'session.currentQuestionScore',
+      );
+      return acc.concat(...acc, mActions);
+    }, []);
+    if (mutations.length) {
+      const mutApplies = mutations.map(({ params }) => params);
+      bulkApplyState(mutApplies, env);
+      score = getValue('session.currentQuestionScore', env) || 0;
+    }
+  } else {
+    const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+    const scorePerAttempt = maxScore / maxAttempt;
+    score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
+  }
+  score = Math.min(score, scoringContext.maxScore);
+  if (!scoringContext.negativeScoreAllowed) {
+    score = Math.max(0, score);
+  }
+
+  const finalResults = {
+    correct: isCorrect,
+    score,
+    out_of: scoringContext.maxScore || 0,
+    results: resultEvents,
+  };
   if (encodeResults) {
     return b64EncodeUnicode(JSON.stringify(finalResults));
   } else {

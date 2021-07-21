@@ -1,14 +1,15 @@
 /* eslint-disable react/prop-types */
-import React, { Fragment } from 'react';
 import Form from '@rjsf/bootstrap-4';
+import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
+import React, { Fragment } from 'react';
 import CustomCheckbox from './custom/CustomCheckbox';
 
 interface PropertyEditorProps {
-  schema: any;
-  uiSchema: any;
-  onChangeHandler: any;
-  value: any;
+  schema: JSONSchema7;
+  uiSchema: UiSchema;
+  onChangeHandler: (changes: unknown) => void;
+  value: unknown;
 }
 
 const widgets = {

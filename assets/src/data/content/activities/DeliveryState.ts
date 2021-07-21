@@ -11,6 +11,7 @@ import {
   PartResponse,
   Success,
 } from 'components/activities/types';
+import { selectionToInput } from 'data/content/activities/utils';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
@@ -84,7 +85,6 @@ export const requestHint =
     dispatch(slice.actions.setHasMoreHints(response.hasMoreHints));
   };
 
-export const selectedChoicesToInput = (state: ActivityDeliveryState) => state.selection.join(' ');
 export const selectAttemptState = (state: ActivityDeliveryState) => state.attemptState;
 export const isEvaluated = (state: ActivityDeliveryState) =>
   selectAttemptState(state).score !== null;
@@ -113,7 +113,7 @@ export const submit =
     const response = await onSubmitActivity(getState().attemptState.attemptGuid, [
       {
         attemptGuid: getState().attemptState.parts[0].attemptGuid,
-        response: { input: selectedChoicesToInput(getState()) },
+        response: { input: selectionToInput(getState().selection) },
       },
     ]);
     dispatch(slice.actions.activitySubmissionReceived(response));
@@ -149,7 +149,7 @@ export const setSelection =
     return onSaveActivity(getState().attemptState.attemptGuid, [
       {
         attemptGuid: getState().attemptState.parts[0].attemptGuid,
-        response: { input: selectedChoicesToInput(getState()) },
+        response: { input: selectionToInput(getState().selection) },
       },
     ]);
   };
