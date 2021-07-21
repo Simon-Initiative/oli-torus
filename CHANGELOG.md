@@ -5,7 +5,7 @@
 ### Bug Fixes
 ### Enhancements
 
-## 0.12.1 (2021-07-12)
+## 0.12.2 (2021-07-21)
 
 ### Bug Fixes
 
