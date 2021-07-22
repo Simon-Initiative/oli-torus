@@ -245,12 +245,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
-    console.log('DECK HANDLE READY', {
+    /* console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    });
+    }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
       /* const contexts = {

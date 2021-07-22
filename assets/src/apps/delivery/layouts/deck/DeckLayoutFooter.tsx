@@ -202,7 +202,10 @@ const DeckLayoutFooter: React.FC = () => {
         return globalOp;
       });
 
-      const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
+      const mutationsToApply = mutationsModified.filter(
+        (op: any) => !(op.target.indexOf('session.currentQuestionScore') === 0),
+      );
+      const mutateResults = bulkApplyState(mutationsToApply, defaultGlobalEnv);
       // should respond to scripting errors?
       console.log('MUTATE ACTIONS', {
         mutateResults,

@@ -178,7 +178,7 @@ export const triggerCheck = createAsyncThunk(
         currentActivityAttemptGuid,
         partResponses,
       );
-      console.log('EVAL RESULT', { evalResult });
+      /* console.log('EVAL RESULT', { evalResult }); */
       const resultData: CheckResult = (evalResult as any).result.actions;
       checkResult = resultData.results;
       isCorrect = resultData.correct;

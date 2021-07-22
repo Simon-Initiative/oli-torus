@@ -78,6 +78,10 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       order: rule.priority,
       correct: !!rule.correct,
       default: !!rule.default,
+      correctHasConditions:
+        (rule.conditions as AllConditions).all?.length ||
+        (rule.conditions as AnyConditions).any?.length ||
+        0,
     };
     applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
       const ogValue = condition.value;
@@ -147,27 +151,38 @@ export const check = async (
   /* console.log('RE CHECK', { checkResult }); */
   let resultEvents: Event[] = [];
   const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
+
   // if there are any correct in the success, get rid of the incorrect (defaultWrong most likely)
   const isCorrect = successEvents.some((evt) => evt.params?.correct === true);
-  if (isCorrect) {
-    resultEvents = successEvents.filter((evt) => evt.params?.correct === true);
-  } else {
-    // the failedEvents might be just because the invalid condition didn't trip
-    // can't use these
-    /* const failedEvents = checkResult.failureEvents
-      .filter((evt) => evt.params?.correct === false)
-      .sort((a, b) => a.params?.order - b.params?.order);
-    console.log('INCORRECT RESULT', { failedEvents }); */
-    // should only have "incorrect" at this point
-    resultEvents = successEvents;
-  }
+  //These are correct rules that do not have any condition so we need to make sure that the result does not have a wrong trap state otherwise it will
+  // fire the correct one even though there is a wrong trap state - example ITTAC lesson
+  const correctRulesWithoutConditions: any = successEvents.filter(
+    (e) => e.params?.correct && e.params?.correctHasConditions > 0,
+  );
+  const wrongRulesWithoutDefaultWrong: any = successEvents.filter(
+    (e) => !e.params?.default && !e.params?.correct,
+  );
+  const defaultCorrectRules: any = successEvents.filter(
+    (e) => e.params?.correct && e.params?.default,
+  );
 
-  if (resultEvents.length > 1) {
-    // if we have more events than one, then we don't need the defaults
-    // there shouldn't be more than one (or less really) of default rules (1 correct, 1 incorrect)
-    resultEvents = resultEvents.filter((evt) => evt.params?.default !== true);
+  let filteredEvents = successEvents;
+
+  if (
+    correctRulesWithoutConditions?.length > 0 &&
+    correctRulesWithoutConditions?.length !== successEvents?.length
+  ) {
+    filteredEvents = correctRulesWithoutConditions;
+  } else if (wrongRulesWithoutDefaultWrong?.length > 0) {
+    filteredEvents = wrongRulesWithoutDefaultWrong;
+  } else if (defaultCorrectRules?.length > 0 && wrongRulesWithoutDefaultWrong?.length <= 0) {
+    //if default correct rule is present and there is no wrong rule except the default
+    //then return the defaultcorrect rule.
+    filteredEvents = defaultCorrectRules;
+  } else {
+    filteredEvents = successEvents;
   }
-  // TODO: if resultEvents.length === 0 send a "defaultWrong"
+  resultEvents = filteredEvents;
 
   let score = 0;
   if (scoringContext.trapStateScoreScheme) {
