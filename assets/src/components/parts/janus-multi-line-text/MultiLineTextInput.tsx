@@ -6,7 +6,7 @@ import {
 import debounce from 'lodash/debounce';
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { contexts } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 
 const MultiLineTextInput: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

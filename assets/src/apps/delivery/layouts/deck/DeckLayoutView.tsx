@@ -11,7 +11,7 @@ import {
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
-import { contexts } from '../../../../utils/common';
+import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {

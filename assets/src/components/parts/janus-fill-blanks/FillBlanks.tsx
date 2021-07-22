@@ -14,7 +14,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { contexts } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;

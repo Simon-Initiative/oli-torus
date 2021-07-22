@@ -1,7 +1,8 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
-import { contexts, parseBool } from '../../../utils/common';
+import { parseBool } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

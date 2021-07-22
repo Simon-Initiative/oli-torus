@@ -6,7 +6,8 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { contexts, parseBool, parseBoolean } from '../../../utils/common';
+import { parseBool, parseBoolean } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 
 const fakeUserStorage: any = {};

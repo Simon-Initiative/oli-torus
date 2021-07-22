@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import { cursor } from 'components/misc/resizer/utils';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { CSSSelector } from 'swiper/types/shared';
@@ -392,7 +391,7 @@ const DeckLayoutFooter: React.FC = () => {
         showCheckBtn={currentActivity?.custom?.showCheckBtn}
       />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className={`bottomContainer fixed ${!displayFeedback?'minimized': ''}`}>
+        <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
           <button
             onClick={checkFeedbackHandler}
             className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}

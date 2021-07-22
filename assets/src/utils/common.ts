@@ -134,10 +134,3 @@ export const parseBool = (val: any) => {
   // have to ignore the false searchValue in 'replace'
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
 };
-
-export enum contexts {
-  VIEWER = 'VIEWER',
-  REVIEW = 'REVIEW',
-  AUTHOR = 'AUTHOR',
-  REPORT = 'REPORT',
-}

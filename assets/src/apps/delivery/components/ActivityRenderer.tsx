@@ -16,7 +16,7 @@ import {
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { contexts } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   selectHistoryNavigationActivity,
@@ -298,13 +298,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
     });
   };
-  const historyNavigationActivity = useSelector(selectHistoryNavigationActivity);
-
-  useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-  }, [historyNavigationActivity]);
 
   useEffect(() => {
     if (!initPhaseComplete || !ref.current) {
