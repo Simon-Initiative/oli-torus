@@ -26,9 +26,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     case Model.parse(transformed_model) do
       {:ok, %Model{rules: []}} ->
-        IO.inspect(evaluate_from_input(section_slug, activity_attempt_guid, part_inputs),
-          label: "Evaluated from input"
-        )
+        evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
       {:ok, %Model{rules: rules, delivery: delivery}} ->
         custom = Map.get(delivery, "custom", %{})
@@ -42,16 +40,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         }
 
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
-        IO.inspect(
-          evaluate_from_rules(
-            section_slug,
-            resource_attempt,
-            activity_attempt_guid,
-            part_inputs,
-            scoringContext,
-            rules
-          ),
-          label: "Evaluation"
+        evaluate_from_rules(
+          section_slug,
+          resource_attempt,
+          activity_attempt_guid,
+          part_inputs,
+          scoringContext,
+          rules
         )
 
       e ->
