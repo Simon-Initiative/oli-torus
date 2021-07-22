@@ -2,6 +2,7 @@ defmodule Oli.Analytics.Datashop.Utils do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
   import Oli.Utils
+  require Logger
 
   # For internal use and testing only, not for production file creation.
   def write_file(xml, file_name) do
@@ -25,7 +26,12 @@ defmodule Oli.Analytics.Datashop.Utils do
   end
 
   def cdata(content) do
-    IO.inspect(content, label: "Content was not binary")
+    Logger.error("""
+    Error in Utils.cdata. Content #{content} was not binary and could not be converted
+    to a CDATA element.
+    """)
+
+    cdata("Attempt student input")
   end
 
   def parse_content(content) do
