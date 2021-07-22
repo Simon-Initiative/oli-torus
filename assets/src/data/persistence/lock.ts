@@ -5,7 +5,7 @@ export type LockResult = Acquired | Released | NotAcquired | ServerError;
 
 export type Acquired = {
   type: 'acquired',
-  revision: any,
+  revision?: any,
 };
 
 export type NotAcquired = {
