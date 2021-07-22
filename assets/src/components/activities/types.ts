@@ -6,6 +6,11 @@ import guid from 'utils/guid';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
+export type MediaItemRequest = {
+  type: 'MediaItemRequest',
+  mimeTypes: string[]
+}
+
 export type Undoable = {
   type: 'Undoable';
   description: string;

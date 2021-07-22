@@ -11,11 +11,13 @@ import { ProjectSlug } from 'data/types';
 interface FeedbackProps extends ModelEditorProps {
   onEditResponse: (score: number, content: RichText) => void;
   projectSlug: ProjectSlug;
+  onRequestMedia: any;
 }
 
 interface ItemProps extends FeedbackProps {
   feedback: FeedbackItem;
   score: number;
+  onRequestMedia: any;
 }
 
 export const Item = (props: ItemProps) => {
@@ -31,6 +33,7 @@ export const Item = (props: ItemProps) => {
         projectSlug={props.projectSlug}
         editMode={editMode}
         text={feedback.content}
+        onRequestMedia={props.onRequestMedia}
         onEdit={(content) => onEditResponse(score, content)}
       />
     </div>

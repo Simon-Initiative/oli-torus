@@ -17,6 +17,7 @@ type Props = {
   text: RichText;
   onEdit: (text: RichText) => void;
   placeholder?: string;
+  onRequestMedia?: any;
   style?: React.CSSProperties;
 };
 export const RichTextEditor: React.FC<Props> = ({
@@ -26,6 +27,7 @@ export const RichTextEditor: React.FC<Props> = ({
   onEdit,
   projectSlug,
   placeholder,
+  onRequestMedia,
   style,
 }) => {
   return (
@@ -37,7 +39,7 @@ export const RichTextEditor: React.FC<Props> = ({
           value={text.model}
           onEdit={(model, selection) => onEdit({ model, selection })}
           selection={text.selection}
-          toolbarItems={getToolbarForResourceType(1)}
+          toolbarItems={getToolbarForResourceType(1, onRequestMedia)}
           placeholder={placeholder}
           style={style}
         />
@@ -49,6 +51,13 @@ export const RichTextEditor: React.FC<Props> = ({
 export const RichTextEditorConnected: React.FC<Omit<Props, 'projectSlug' | 'editMode'>> = (
   props,
 ) => {
-  const { editMode, projectSlug } = useAuthoringElementContext();
-  return <RichTextEditor {...props} editMode={editMode} projectSlug={projectSlug} />;
+  const { editMode, projectSlug, onRequestMedia } = useAuthoringElementContext();
+  return (
+    <RichTextEditor
+      {...props}
+      editMode={editMode}
+      projectSlug={projectSlug}
+      onRequestMedia={onRequestMedia}
+    />
+  );
 };
