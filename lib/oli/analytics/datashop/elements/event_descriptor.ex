@@ -58,8 +58,6 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
       e ->
         Logger.error(e)
 
-        IO.inspect(part_attempt, label: "Error: part attempt")
-
         Logger.error("""
         Error in EventDescriptor.get_input.
         Type: #{type}, part attempt: #{Kernel.inspect(part_attempt)}"
