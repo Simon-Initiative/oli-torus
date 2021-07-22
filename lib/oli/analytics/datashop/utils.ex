@@ -34,7 +34,6 @@ defmodule Oli.Analytics.Datashop.Utils do
     |> Phoenix.HTML.safe_to_string()
     # Remove trailing newlines
     |> String.trim()
-    |> IO.inspect(label: "Parsed content :: parse_content")
   end
 
   def hint_text(part, hint_id) do

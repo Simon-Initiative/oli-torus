@@ -137,8 +137,7 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.with_index()
     |> Enum.flat_map(fn {hint_id, hint_index} ->
       context =
-        context
-        |> Map.merge(%{
+        Map.merge(context, %{
           current_hint_number: hint_index + 1,
           hint_text: Utils.hint_text(part, hint_id)
         })

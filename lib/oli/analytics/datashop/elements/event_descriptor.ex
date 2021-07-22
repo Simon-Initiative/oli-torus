@@ -34,10 +34,19 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
         "HINT_MSG" ->
           "HINT"
 
+        # Attempt messages display the raw student input. For most activities, this is a space-separated
+        # string of selected choice IDs, e.g. "id1 id2 id3." Previously, this code mapped the input
+        # string of ids to the actual content of the selected choices. However, Datashop `<input>`
+        # elements have a maximum character count of 255 chars, so the parsed HTML content of all
+        # selected choices is often too long (e.g. ordering inputs displayed the contents of every
+        # choice). Each activity also has its own "meaning" for student input - e.g. activities are not
+        # required to treat student inputs as lists of choice IDs, so each activity had to be treated
+        # differently to show the human-friendly student "selection." The downside of showing the
+        # raw input string is that the actual choice content seen by the student is not obvious through
+        # Datashop without cross-referencing the IDs.
         "ATTEMPT" ->
           part_attempt
           |> select_input()
-          # |> map_to_choice_content(part_attempt)
           |> Utils.cdata()
 
         "RESULT" ->
@@ -48,6 +57,8 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     rescue
       e ->
         Logger.error(e)
+
+        IO.inspect(part_attempt, label: "Error: part attempt")
 
         Logger.error("""
         Error in EventDescriptor.get_input.
@@ -61,57 +72,11 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     end
   end
 
-  defp activity_type(part_attempt) do
-    part_attempt.activity_attempt.revision.activity_type.slug
-  end
-
   defp select_input(part_attempt) do
     part_attempt.response["input"]
   end
 
   defp select_feedback(part_attempt) do
     part_attempt.feedback["content"]["model"]
-  end
-
-  defp map_to_choice_content(input, part_attempt) do
-    case activity_type(part_attempt) do
-      "oli_short_answer" ->
-        # SA student input is just the entered text
-        input
-
-      "oli_multiple_choice" ->
-        # MC input is just the selected choice ID
-        choice_content_from_input(part_attempt, input)
-
-      "oli_check_all_that_apply" ->
-        # CATA is space-separated selected choice IDs
-        choice_content_from_input(part_attempt, input)
-
-      "oli_ordering" ->
-        # Ordering input is space-separated selected choice IDs
-        choice_content_from_input(part_attempt, input)
-
-      _other ->
-        # Fallback for other activity types. This shouldn't cause a problem
-        # if another activity type is used to create data, but the actual content
-        # of the student submission will not be shown in Datashop.
-        input
-    end
-  end
-
-  defp choice_content_from_input(part_attempt, input) do
-    part_attempt.activity_attempt.transformed_model["choices"]
-    |> Enum.filter(fn choice ->
-      Enum.find(
-        String.split(input, " "),
-        fn selected_id -> choice["id"] == selected_id end
-      )
-    end)
-    |> IO.inspect(label: "Found choices")
-    |> Enum.map(fn choice -> choice["content"]["model"] end)
-    |> IO.inspect(label: "choice content items")
-    |> Enum.map(fn content_model -> Utils.parse_content(content_model) end)
-    |> IO.inspect(label: "parsed")
-    |> Enum.join("\n")
   end
 end
