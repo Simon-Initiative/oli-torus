@@ -2,6 +2,7 @@ defmodule Oli.Analytics.Datashop.Utils do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
   import Oli.Utils
+  require Logger
 
   # For internal use and testing only, not for production file creation.
   def write_file(xml, file_name) do
@@ -14,9 +15,23 @@ defmodule Oli.Analytics.Datashop.Utils do
     end
   end
 
-  # parse_content: make a cdata element from a parsed HTML string
-  def parse_content(content) when is_binary(content) do
+  def structured_content_to_cdata(content) do
+    content
+    |> parse_content
+    |> cdata
+  end
+
+  def cdata(content) when is_binary(content) do
     {:cdata, content}
+  end
+
+  def cdata(content) do
+    Logger.error("""
+    Error in Utils.cdata. Content #{content} was not binary and could not be converted
+    to a CDATA element.
+    """)
+
+    cdata("Attempt student input")
   end
 
   def parse_content(content) do
@@ -25,8 +40,6 @@ defmodule Oli.Analytics.Datashop.Utils do
     |> Phoenix.HTML.safe_to_string()
     # Remove trailing newlines
     |> String.trim()
-    # Convert to cdata
-    |> parse_content
   end
 
   def hint_text(part, hint_id) do

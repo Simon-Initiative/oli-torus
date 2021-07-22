@@ -9,9 +9,9 @@ defmodule Oli.Analytics.Datashop.Elements.ProblemName do
     element(:problem_name, Utils.make_problem_name(activity_slug, part_id))
   end
 
-  def setup(%{name: nil}), do: element(:problem_name, "Unknown")
+  def setup(%{problem_name: nil}), do: element(:problem_name, "Unknown")
 
-  def setup(%{name: name}) do
-    element(:problem_name, name)
+  def setup(%{problem_name: problem_name}) do
+    element(:problem_name, problem_name)
   end
 end
