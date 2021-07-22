@@ -93,6 +93,8 @@ const SequenceEditor: React.FC<any> = (props) => {
         sequence: sequence,
         item: newSequenceEntry,
         group: currentGroup,
+        siblingId: currentActivity?.activitySlug,
+        // parentId: TODO attach parentId if it exists
       }),
     );
 
