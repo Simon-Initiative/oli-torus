@@ -3,10 +3,15 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.12.2 (2021-07-21)
+
+### Bug Fixes
+
 - Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
 - Fix an issue where activities do not correctly restore their "in-progress" state from student work
-
-### Enhancements
+- Fix an issue where images and audio could not be added to activiites
 
 ## 0.12.1 (2021-07-12)
 
