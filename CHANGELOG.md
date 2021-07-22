@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Bug Fixes
+
+- Fix datashop export content model parsing
+
 ### Enhancements
 
 ## 0.12.2 (2021-07-21)
