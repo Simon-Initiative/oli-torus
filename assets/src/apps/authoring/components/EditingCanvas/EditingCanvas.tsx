@@ -1,3 +1,4 @@
+import { setCurrentSelection } from '../../store/parts/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
@@ -27,6 +28,11 @@ const EditingCanvas: React.FC<any> = (props) => {
       // such as layer items should be readonly
       return acc.concat(...activity.content.partsLayout);
     }, []) || [];
+
+  const handleObjectClicked = (e: any, item: any) => {
+    console.log('object clicked handler', { e, item });
+    dispatch(setCurrentSelection({ selection: item.id }));
+  };
 
   return (
     <React.Fragment>
@@ -92,7 +98,12 @@ const EditingCanvas: React.FC<any> = (props) => {
               </button>
             </div>
           </div>
-          <FabricCanvas items={items} width={width} height={height} />
+          <FabricCanvas
+            items={items}
+            width={width}
+            height={height}
+            onObjectClicked={handleObjectClicked}
+          />
         </div>
       </section>
     </React.Fragment>

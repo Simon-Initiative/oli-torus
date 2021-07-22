@@ -28,6 +28,8 @@ import screenSchema, {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import { selectCurrentSelection } from '../../store/parts/slice';
+import partSchema from '../PropertyEditor/schemas/part';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -41,10 +43,44 @@ const RightMenu: React.FC<any> = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
   const currentGroup = useSelector(selectCurrentGroup);
+  const currentPartSelection = useSelector(selectCurrentSelection);
 
   // TODO: dynamically load schema from Part Component configuration
-  const componentSchema: JSONSchema7 = { type: 'object' };
-  const currentComponent = null;
+  const [componentSchema, setComponentSchema]: any = useState<any>(partSchema);
+  const [currentComponent, setCurrentComponent] = useState<any>(null);
+
+  useEffect(() => {
+    if (!currentPartSelection || !currentActivity) {
+      return;
+    }
+    const partDef = currentActivity.content?.partsLayout.find(
+      (part: any) => part.id === currentPartSelection,
+    );
+    console.log('part selected', { partDef });
+    if (partDef) {
+      // part component should be registered by type as a custom element
+      const PartClass = customElements.get(partDef.type);
+      if (PartClass) {
+        const instance = new PartClass();
+        if (instance.getSchema) {
+          const customPartSchema = instance.getSchema();
+          const newSchema = {
+            ...partSchema,
+            properties: {
+              ...partSchema.properties,
+              custom: { type: 'object', properties: { ...customPartSchema } },
+            },
+          };
+          setComponentSchema(newSchema);
+        }
+      }
+      setCurrentComponent(partDef);
+    }
+    return () => {
+      setComponentSchema(partSchema);
+      setCurrentComponent(null);
+    };
+  }, [currentPartSelection]);
 
   const [screenData, setScreenData] = useState(transformScreenModeltoSchema(currentActivity));
   useEffect(() => {

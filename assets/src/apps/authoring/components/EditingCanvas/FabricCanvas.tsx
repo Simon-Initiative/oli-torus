@@ -40,7 +40,11 @@ const FabricCanvas: React.FC<any> = (props) => {
           if (item.type === 'janus-image') {
             fabric.Image.fromURL(item.custom.src, (img: any) => {
               img.set({ top: 0, left: 0, width: w, height: h });
-              resolve(new fabric.Group([img, idLabel, typeLabel], groupConfig));
+              const groupObj = new fabric.Group([img, idLabel, typeLabel], groupConfig);
+              groupObj.on('mousedown', (e: any) => {
+                props.onObjectClicked(e, item);
+              });
+              resolve(groupObj);
             });
           } else {
             const rect = new fabric.Rect({
@@ -50,7 +54,11 @@ const FabricCanvas: React.FC<any> = (props) => {
               height: h,
               fill: 'grey',
             });
-            resolve(new fabric.Group([rect, idLabel, typeLabel], groupConfig));
+            const groupObj = new fabric.Group([rect, idLabel, typeLabel], groupConfig);
+            groupObj.on('mousedown', (e: any) => {
+              props.onObjectClicked(e, item);
+            });
+            resolve(groupObj);
           }
         });
         return promise;
