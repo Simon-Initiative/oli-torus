@@ -332,6 +332,11 @@ const ExternalActivity: React.FC<any> = (props) => {
       const typeOfMS = typeof vars[ms];
       const typeofInternalVal = typeof internalVal;
 
+      // if the variables is not an array just return it true. It seems that currently, we do not need to compare other values because it impacts the "resume mode in Open and Free"
+      if (!Array.isArray(mineValue)) {
+        return true;
+      }
+
       //handle case where internalVal = 'true' and mineValue =true
       if (ms.type === CapiVariableTypes.BOOLEAN && typeofInternalVal === 'string') {
         mineValue = JSON.stringify(mineValue);
@@ -602,7 +607,7 @@ const ExternalActivity: React.FC<any> = (props) => {
           responses,
         });
       },
-      500,
+      100,
       { maxWait: 30000, leading: true },
     ),
     [],
@@ -661,10 +666,12 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const handleCheckRequest = (data: any) => {
-    props.onSubmit({
-      id: `${id}`,
-      responses: [],
-    });
+    setTimeout(() => {
+      props.onSubmit({
+        id: `${id}`,
+        responses: [],
+      });
+    }, 150);
   };
 
   const handleResizeParentContainer = (data: any) => {

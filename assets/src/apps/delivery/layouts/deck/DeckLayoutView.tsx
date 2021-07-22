@@ -9,6 +9,7 @@ import {
   defaultGlobalEnv,
   evalScript,
   getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../adaptivity/scripting';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
@@ -19,7 +20,7 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectUserName } from '../../store/features/page/slice';
+import { selectUserName, setScore } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
@@ -43,7 +44,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentUserName = useSelector(selectUserName);
 
   const isEnd = useSelector(selectLessonEnd);
-  const [score, setScore] = useState<number>(0);
 
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -227,12 +227,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   const initCurrentActivity = useCallback(async () => {
     if (!currentActivityTree) {
+      console.error('[initCurrentActivity] no currentActivityTree');
       return;
     }
     const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
+      console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
-    }
+    } /*
+    console.log('[initCurrentActivity]', { currentActivity }); */
     await dispatch(initializeActivity(currentActivity.resourceId));
   }, [currentActivityTree]);
 
@@ -242,12 +245,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
-    /* console.log('DECK HANDLE READY', {
+    console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    }); */
+    });
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
       /* const contexts = {
@@ -449,10 +452,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [currentActivityTree]);
 
   useEffect(() => {
-    setScore(evalScript('session.tutorialScore', defaultGlobalEnv).result || 0);
-  }, [currentActivityTree]);
-
-  useEffect(() => {
     if (!isEnd) {
       return;
     }
@@ -468,7 +467,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       value: 0,
     };
     bulkApplyState([tutorialScoreOp, currentScoreOp], defaultGlobalEnv);
-    setScore(evalScript('session.tutorialScore', defaultGlobalEnv).result || 0);
+    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
     // we shouldn't have to send this to the server, it should already be calculated there
   }, [isEnd]);
 
@@ -478,7 +477,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         pageName={pageTitle}
         userName={currentUserName}
         activityName=""
-        scoreValue={score}
         showScore={true}
         themeId={pageContent?.custom?.themeId}
       />

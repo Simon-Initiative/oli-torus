@@ -6,12 +6,12 @@ import { parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
-  subscribeToNotification
+  subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import {
   JanusMultipleChoiceQuestionItemProperties,
-  JanusMultipleChoiceQuestionProperties
+  JanusMultipleChoiceQuestionProperties,
 } from './MultipleChoiceQuestionType';
 
 // SS assumes the unstyled "text" of the label is the text value
@@ -59,6 +59,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   val,
   disabled,
   index,
+  overrideHeight,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -75,9 +76,14 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
       mcqItemStyles.position = `absolute`;
 
-      if (index !== 0) mcqItemStyles.left = `calc(${100 / totalItems}% - 6px)`;
+      if (index !== 0) {
+        mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
+      }
     }
     mcqItemStyles.display = `inline-block`;
+  }
+  if (layoutType === 'verticalLayout' && overrideHeight) {
+    mcqItemStyles.height = `calc(${100 / totalItems}%)`;
   }
 
   const textValue = getNodeText(nodes);
@@ -235,6 +241,8 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     mcqItems,
     customCssClass,
     layoutType,
+    height,
+    overrideHeight = false,
   } = model;
 
   useEffect(() => {
@@ -401,7 +409,10 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     width,
     zIndex: z,
   };
-
+  if (overrideHeight) {
+    styles.height = height;
+    styles.marginTop = '8px';
+  }
   if (layoutType === 'verticalLayout') {
     const hasImages = mcqItems.some((item: any) =>
       item.nodes.some((node: any) =>
@@ -430,11 +441,14 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     // trigger item selection handler
     if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0) {
       /* console.log('handling MCQ single select'); */
-      handleItemSelection({
-        value: selectedChoice,
-        textValue: selectedChoiceText,
-        checked: true,
-      }, false);
+      handleItemSelection(
+        {
+          value: selectedChoice,
+          textValue: selectedChoiceText,
+          checked: true,
+        },
+        false,
+      );
     }
   }, [selectedChoice]);
 
@@ -452,25 +466,31 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     ) {
       /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
-        handleItemSelection({
-          value: option.value,
-          textValue: option.textValue,
-          checked: selectedChoices.includes(option.value),
-        }, false);
+        handleItemSelection(
+          {
+            value: option.value,
+            textValue: option.textValue,
+            checked: selectedChoices.includes(option.value),
+          },
+          false,
+        );
       });
     }
   }, [selectedChoices]);
 
-  const handleItemSelection = ({
-    value,
-    textValue,
-    checked,
-  }: {
-    value: number;
-    textValue: string;
-    checked: boolean;
-  }, shouldSave = true) => {
-   /*  console.log('mcq handle select'); */
+  const handleItemSelection = (
+    {
+      value,
+      textValue,
+      checked,
+    }: {
+      value: number;
+      textValue: string;
+      checked: boolean;
+    },
+    shouldSave = true,
+  ) => {
+    /*  console.log('mcq handle select'); */
     // TODO: non-number values?? - pb: I suspect not, since there's no SS ability to specify a value for an item
     const newChoice = parseInt(value.toString(), 10);
     let newCount = 1;
@@ -603,6 +623,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
           {...item}
           x={0}
           y={0}
+          overrideHeight={overrideHeight}
           disabled={!enabled}
           multipleSelection={multipleSelection}
         />

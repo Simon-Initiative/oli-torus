@@ -6,6 +6,7 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../adaptivity/scripting';
 import {
   selectCurrentActivityContent,
@@ -32,7 +33,7 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectPageContent } from '../../store/features/page/slice';
+import { selectPageContent, setScore } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -179,7 +180,11 @@ const DeckLayoutFooter: React.FC = () => {
 
       const mutateResults = bulkApplyState(mutationsModified, defaultGlobalEnv);
       // should respond to scripting errors?
-      console.log('MUTATE ACTIONS', { mutateResults, mutationsModified });
+      console.log('MUTATE ACTIONS', {
+        mutateResults,
+        mutationsModified,
+        score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
+      });
 
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
@@ -196,6 +201,10 @@ const DeckLayoutFooter: React.FC = () => {
         }),
       );
     }
+
+    // after any mutations applied, and just in case
+    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+
     if (hasFeedback) {
       dispatch(
         setCurrentFeedbacks({
@@ -374,7 +383,7 @@ const DeckLayoutFooter: React.FC = () => {
         showCheckBtn={currentActivity?.custom?.showCheckBtn}
       />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className="bottomContainer fixed">
+        <div className={`bottomContainer fixed ${!displayFeedback?'minimized': ''}`}>
           <button
             onClick={checkFeedbackHandler}
             className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}

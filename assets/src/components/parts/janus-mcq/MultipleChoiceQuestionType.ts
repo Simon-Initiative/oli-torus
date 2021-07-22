@@ -17,4 +17,5 @@ export interface JanusMultipleChoiceQuestionItemProperties extends JanusCustomCs
   val: number;
   disabled?: boolean;
   index: number;
+  overrideHeight: boolean;
 }

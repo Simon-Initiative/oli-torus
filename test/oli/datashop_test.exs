@@ -510,13 +510,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "2398016423"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Incorrect feedback"}],
-                  "id" => "3921469287",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Incorrect feedback"}],
+                    "id" => "3921469287",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "886882922"
             },
             hints: ["151590658"]
@@ -538,13 +540,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "4037228206"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Correct feedback"}],
-                  "id" => "3921469287",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Correct feedback"}],
+                    "id" => "3921469287",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "2494310518"
             },
             hints: ["3059890119"]
@@ -574,13 +578,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "4037228206"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Correct feedback"}],
-                  "id" => "3921469287",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Correct feedback"}],
+                    "id" => "3921469287",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "2494310518"
             },
             hints: ["3059890119"]
@@ -612,13 +618,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "Student 1's input"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Feedback (Incorrect)"}],
-                  "id" => "568333261",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Feedback (Incorrect)"}],
+                    "id" => "568333261",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "3844438371"
             },
             hints: ["1524891687"]
@@ -640,13 +648,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "answer"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Feedback (Correct)"}],
-                  "id" => "568333261",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Feedback (Correct)"}],
+                    "id" => "568333261",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "269147921"
             },
             hints: ["1507444816"]
@@ -676,13 +686,15 @@ defmodule Oli.DatashopTest do
             out_of: 1,
             response: %{"input" => "Student 1's input"},
             feedback: %{
-              "content" => [
-                %{
-                  "children" => [%{"text" => "Feedback (Correct)"}],
-                  "id" => "568333261",
-                  "type" => "p"
-                }
-              ],
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "Feedback (Correct)"}],
+                    "id" => "568333261",
+                    "type" => "p"
+                  }
+                ]
+              },
               "id" => "269147921"
             },
             hints: ["1137320916"]

@@ -1,4 +1,4 @@
-import { ActivityModelSchema, PostUndoable, Undoable } from './types';
+import { ActivityModelSchema, PostUndoable, Undoable, MediaItemRequest } from './types';
 import { ProjectSlug } from 'data/types';
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
@@ -8,6 +8,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
   onEdit: (model: T) => void;
   onPostUndoable: (undoable: Undoable) => void;
+  onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   editMode: boolean;
   projectSlug: ProjectSlug;
 }
@@ -41,10 +42,14 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const onPostUndoable = (undoable: Undoable) => {
       this.dispatchEvent(new CustomEvent('postUndoable', { bubbles: true, detail: { undoable } }));
     };
+    const onRequestMedia = (request: MediaItemRequest) => {
+      return this.dispatch('requestMedia', request);
+    };
 
     return {
       onEdit,
       onPostUndoable,
+      onRequestMedia,
       model,
       editMode,
       projectSlug,
@@ -53,6 +58,30 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
 
   migrateModelVersion(model: any): T {
     return model as T;
+  }
+
+  details(continuation: (result: any, error: any) => void, payload?: any) {
+    return {
+      bubbles: true,
+      detail: {
+        payload,
+        continuation,
+        props: this.props(),
+      },
+    };
+  }
+
+  dispatch(name: string, payload?: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const continuation = (result: any, error: any) => {
+        if (error !== undefined) {
+          reject(error);
+          return;
+        }
+        resolve(result);
+      };
+      this.dispatchEvent(new CustomEvent(name, this.details(continuation, payload)));
+    });
   }
 
   abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>): void;
@@ -76,6 +105,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
 export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
+  onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => void;
   model: T;
 }
@@ -95,12 +125,15 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   children,
   model,
   onPostUndoable,
+  onRequestMedia,
   onEdit,
 }) => {
   const dispatch: AuthoringElementState<any>['dispatch'] = (action) =>
     onEdit(produce(model, (draftState) => action(draftState, onPostUndoable)));
   return (
-    <AuthoringElementContext.Provider value={{ projectSlug, editMode, dispatch, model }}>
+    <AuthoringElementContext.Provider
+      value={{ projectSlug, editMode, dispatch, model, onRequestMedia }}
+    >
       {children}
     </AuthoringElementContext.Provider>
   );

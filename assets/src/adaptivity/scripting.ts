@@ -51,7 +51,7 @@ export const evalScript = (
   const parser = new Parser(lexer);
   const program = parser.parseProgram();
   if (parser.errors.length) {
-    // $log.error(`ERROR SCRIPT: ${script}`);
+    console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors });
     throw new Error(parser.errors.join('\n'));
   }
   const result = evaluator.eval(program, globalEnv);
@@ -94,6 +94,12 @@ export const getValues = (identifiers: string[], env?: Environment) => {
   return result;
 };
 
+export const getValue = (identifier: string, env?: Environment) => {
+  const script = `{${identifier}}`;
+  const { result } = evalScript(script, env);
+  return result;
+};
+
 export interface ApplyStateOperation {
   id?: string;
   target: string;
@@ -103,7 +109,10 @@ export interface ApplyStateOperation {
   targetType?: CapiVariableTypes;
 }
 
-export const applyState = (operation: ApplyStateOperation, env?: Environment): any => {
+export const applyState = (
+  operation: ApplyStateOperation,
+  env: Environment = defaultGlobalEnv,
+): any => {
   const targetKey = operation.target;
   const targetType = operation.type || operation.targetType || CapiVariableTypes.UNKNOWN;
 
@@ -161,9 +170,15 @@ export const applyState = (operation: ApplyStateOperation, env?: Environment): a
           } else {
             // this is where it's maybe just a string
             if (targetType !== CapiVariableTypes.STRING) {
-              // it's not supposed to be a string however, so we need to coerce it
-              const coerced = coerceCapiValue(newValue, targetType);
-              script += `= ${coerced};`;
+              if (newValue.indexOf('{') >= 0 && newValue.indexOf('}') >= 0) {
+                // this is most likely an expression that we don't want to coerce
+                // unlke above it doesn't *start* with the variable however
+                script += `= ${newValue};`;
+              } else {
+                // it's not supposed to be a string however, so we need to coerce it
+                const coerced = coerceCapiValue(newValue, targetType);
+                script += `= ${coerced};`;
+              }
             } else {
               script += `= "${newValue.replace(/"/g, '\\"')}";`;
             }
@@ -178,11 +193,14 @@ export const applyState = (operation: ApplyStateOperation, env?: Environment): a
       break;
   }
   const result = evalScript(script, env);
-  // console.log('APPLY STATE RESULTS: ', { script, result });
+  /* console.log('APPLY STATE RESULTS: ', { script, result }); */
   return result;
 };
 
-export const bulkApplyState = (operations: ApplyStateOperation[], env?: Environment): any[] => {
+export const bulkApplyState = (
+  operations: ApplyStateOperation[],
+  env: Environment = defaultGlobalEnv,
+): any[] => {
   // need to apply one at a time, TODO: break on error?
   return operations.map((op) => applyState(op, env));
 };

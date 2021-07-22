@@ -67,7 +67,7 @@ jobs:
         run: mix deps.get
 
       - name: Install node_module dependencies 📦
-        run: cd assets && npm install
+        run: npm install -g yarn && cd assets && yarn
 
       - name: 🧹 Lint
         run: cd assets && npm run lint

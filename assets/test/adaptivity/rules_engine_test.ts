@@ -5,7 +5,7 @@ import {
   containsOperator,
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
-  notContainsOperator
+  notContainsOperator,
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -13,47 +13,184 @@ import {
   isEqual,
   isNaNOperator,
   notEqual,
-  notIsAnyOfOperator
+  notIsAnyOfOperator,
 } from 'adaptivity/operators/equality';
 import {
   hasSameTermsMathOperator,
   isEquivalentOfMathOperator,
   isExactlyMathOperator,
-  notExactlyMathOperator
+  notExactlyMathOperator,
 } from 'adaptivity/operators/math';
 import { inRangeOperator, notInRangeOperator } from 'adaptivity/operators/range';
-import { check } from 'adaptivity/rules-engine';
+import { check, CheckResult, ScoringContext } from 'adaptivity/rules-engine';
+import { b64EncodeUnicode } from 'utils/decode';
 import {
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   disabledCorrectRule,
-  mockState
+  expressionScoringCorrectRule,
+  getAttemptScoringContext,
+  mockState,
+  simpleScoringCorrectRule,
 } from './rules_mocks';
 
 describe('Rules Engine', () => {
+  const correctAttemptScoringContext = getAttemptScoringContext();
+
   it('should not break if empty state is passed', async () => {
-    const { results: successEvents } = await check({}, []);
+    const { results: successEvents } = (await check(
+      {},
+      [],
+      correctAttemptScoringContext,
+    )) as CheckResult;
     expect(successEvents).toEqual([]);
   });
 
   it('should return successful events of rules with no conditions', async () => {
-    const { results: events } = await check(mockState, [defaultCorrectRule]);
+    const { results: events } = (await check(
+      mockState,
+      [defaultCorrectRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
     expect(events.length).toEqual(1);
     expect(events[0]).toEqual(defaultCorrectRule.event);
   });
 
   it('should evaluate complex conditions', async () => {
-    const { results: events } = await check(mockState, [
-      complexRuleWithMultipleActions,
-      defaultCorrectRule,
-    ]);
+    const { results: events } = (await check(
+      mockState,
+      [complexRuleWithMultipleActions, defaultCorrectRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
     expect(events.length).toEqual(1);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
   it('should not process disabled rules', async () => {
-    const { results: events } = await check(mockState, [disabledCorrectRule]);
+    const { results: events } = (await check(
+      mockState,
+      [disabledCorrectRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
     expect(events.length).toEqual(0);
+  });
+
+  it('should return base64 encoded results if the flag is set', async () => {
+    const notEncoded = await check(
+      mockState,
+      [defaultCorrectRule],
+      correctAttemptScoringContext,
+      false,
+    );
+    const results = await check(
+      mockState,
+      [defaultCorrectRule],
+      correctAttemptScoringContext,
+      true,
+    );
+    expect(typeof results === 'string').toBeTruthy();
+    expect(results).toEqual(b64EncodeUnicode(JSON.stringify(notEncoded)));
+  });
+
+  it('should calculate attempt based scores', async () => {
+    const attempts = 4;
+    const maxScore = 10;
+    const maxAttempt = 10;
+    const attemptScoringContext = getAttemptScoringContext(attempts, maxScore, maxAttempt);
+    const {
+      results: events,
+      score,
+      out_of,
+    } = (await check(mockState, [defaultCorrectRule], attemptScoringContext)) as CheckResult;
+    expect(events.length).toEqual(1);
+    expect(score).toEqual(7);
+    expect(out_of).toEqual(10);
+  });
+
+  it('should not allow negative scores based on the flag', async () => {
+    const attempts = 4;
+    const maxScore = 1;
+    const maxAttempt = 1;
+    const attemptScoringContext = getAttemptScoringContext(attempts, maxScore, maxAttempt);
+    const { score } = (await check(
+      mockState,
+      [defaultCorrectRule],
+      attemptScoringContext,
+    )) as CheckResult;
+    expect(score).toEqual(0);
+  });
+
+  it('should allow negative scores based on the flag', async () => {
+    const attempts = 4;
+    const maxScore = 1;
+    const maxAttempt = 1;
+    const negativeScoreAllowed = true;
+    const attemptScoringContext = getAttemptScoringContext(
+      attempts,
+      maxScore,
+      maxAttempt,
+      negativeScoreAllowed,
+    );
+    const { score } = (await check(
+      mockState,
+      [defaultCorrectRule],
+      attemptScoringContext,
+    )) as CheckResult;
+    expect(score).toEqual(-2);
+  });
+
+  it('should calculate score based on trap states', async () => {
+    const trapScoringContext: ScoringContext = {
+      maxAttempt: 1,
+      maxScore: 10,
+      negativeScoreAllowed: false,
+      trapStateScoreScheme: true,
+      currentAttemptNumber: 1,
+    };
+    const { score, out_of } = (await check(
+      mockState,
+      [simpleScoringCorrectRule],
+      trapScoringContext,
+    )) as CheckResult;
+
+    expect(score).toEqual(10);
+    expect(out_of).toEqual(10);
+  });
+
+  it('should calculate score based on trap states with expressions', async () => {
+    const trapScoringContext: ScoringContext = {
+      maxAttempt: 1,
+      maxScore: 100,
+      negativeScoreAllowed: false,
+      trapStateScoreScheme: true,
+      currentAttemptNumber: 1,
+    };
+    const { score, out_of } = (await check(
+      mockState,
+      [expressionScoringCorrectRule],
+      trapScoringContext,
+    )) as CheckResult;
+
+    expect(score).toEqual(100);
+    expect(out_of).toEqual(100);
+  });
+
+  it('should respect the max score even with trap states', async () => {
+    const trapScoringContext: ScoringContext = {
+      maxAttempt: 1,
+      maxScore: 20,
+      negativeScoreAllowed: false,
+      trapStateScoreScheme: true,
+      currentAttemptNumber: 1,
+    };
+    const { score, out_of } = (await check(
+      mockState,
+      [expressionScoringCorrectRule],
+      trapScoringContext,
+    )) as CheckResult;
+
+    expect(score).toEqual(20);
+    expect(out_of).toEqual(20);
   });
 });
 

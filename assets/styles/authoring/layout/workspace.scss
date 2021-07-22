@@ -25,9 +25,14 @@
 
   .workspace-header {
     width: 100%;
-    padding: 12px 47px 6px 47px;
+    padding: 6px 37px 3px 20px;
     position: relative;
     background-color: $workspace-header-bg;
+    border-bottom: 1px solid rgb(213, 207, 207);
+
+    h2 {
+      margin-bottom: 4px;
+    }
 
     .page-title {
       font-weight: bold;

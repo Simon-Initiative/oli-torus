@@ -1,43 +1,104 @@
+import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
-import React, { useCallback, useState } from 'react';
-import { Accordion, Tab, Tabs } from 'react-bootstrap';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { clone } from 'utils/common';
+import {
+  selectRightPanelActiveTab,
+  setRightPanelActiveTab,
+} from '../../../authoring/store/app/slice';
+import {
+  selectCurrentActivity,
+  upsertActivity,
+} from '../../../delivery/store/features/activities/slice';
+import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
-import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
-import screenSchema, { getScreenData, screenUiSchema } from '../PropertyEditor/schemas/screen';
+import screenSchema, {
+  screenUiSchema,
+  transformScreenModeltoSchema,
+  transformScreenSchematoModel,
+} from '../PropertyEditor/schemas/screen';
+import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 
-const RightMenu: React.FC<any> = (props) => {
+export enum RightPanelTabs {
+  LESSON = 'lesson',
+  SCREEN = 'screen',
+  COMPONENT = 'component',
+}
+
+const RightMenu: React.FC<any> = () => {
   const dispatch = useDispatch();
-  const [selectedTab, setSelectedTab] = useState<string>('lesson');
+  const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
-
-  console.log('CURRENT', { currentActivity, currentLesson });
+  const currentGroup = useSelector(selectCurrentGroup);
 
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
 
-  const screenData = getScreenData(currentActivity?.content?.custom);
+  const [screenData, setScreenData] = useState(transformScreenModeltoSchema(currentActivity));
+  useEffect(() => {
+    console.log('CURRENT', { currentActivity, currentLesson });
+    setScreenData(transformScreenModeltoSchema(currentActivity));
+  }, [currentActivity]);
+
+  // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
 
-  const handleSelectTab = (key: string) => {
+  const handleSelectTab = (key: RightPanelTabs) => {
     // TODO: any other saving or whatever
-    setSelectedTab(key);
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
 
-  const screenPropertyChangeHandler = (properties: any) => {
-    console.log('SCREEN PROP CHANGED', { properties });
-  };
+  const screenPropertyChangeHandler = useCallback(
+    (properties: any) => {
+      if (currentActivity) {
+        const modelChanges = transformScreenSchematoModel(properties);
+        console.log('Screen Property Change...', { properties, modelChanges });
+        const title = modelChanges.title;
+        delete modelChanges.title;
+        const screenChanges = {
+          ...currentActivity?.content?.custom,
+          ...modelChanges,
+        };
+        const cloneActivity = clone(currentActivity);
+        cloneActivity.content.custom = screenChanges;
+        if (title) {
+          cloneActivity.title = title;
+        }
+        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+      }
+    },
+    [currentActivity],
+  );
+
+  const debounceSaveScreenSettings = useCallback(
+    debounce(
+      (activity, currentActivity, group) => {
+        console.log('SAVING ACTIVITY:', { activity });
+        dispatch(saveActivity({ activity }));
+        dispatch(upsertActivity({ activity }));
+
+        if (activity.title !== currentActivity?.title) {
+          dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
+          dispatch(savePage());
+        }
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
 
   const debounceSavePage = useCallback(
     debounce(
@@ -68,6 +129,14 @@ const RightMenu: React.FC<any> = (props) => {
       ...modelChanges,
       custom: { ...currentLesson.custom, ...modelChanges.custom },
     };
+    //need to remove the allowNavigation property
+    //making sure the enableHistory is present before removing that.
+    if (
+      lessonChanges.custom.enableHistory !== undefined &&
+      lessonChanges.custom.allowNavigation !== undefined
+    ) {
+      delete lessonChanges.custom.allowNavigation;
+    }
     console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
     // need to put a healthy debounce in here, this fires every keystroke
@@ -85,29 +154,32 @@ const RightMenu: React.FC<any> = (props) => {
       activeKey={selectedTab}
       onSelect={handleSelectTab}
     >
-      <Tab eventKey="lesson" title="Lesson">
-        <div >
+      <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
+        <div className="lesson-tab">
           <PropertyEditor
-            schema={lessonSchema}
+            schema={lessonSchema as JSONSchema7}
             uiSchema={lessonUiSchema}
             value={lessonData}
             onChangeHandler={lessonPropertyChangeHandler}
           />
         </div>
       </Tab>
-      <Tab eventKey="screen" title="Screen">
-        <div>
-          <PropertyEditor
-            schema={screenSchema}
-            uiSchema={screenUiSchema}
-            value={screenData}
-            onChangeHandler={screenPropertyChangeHandler}
-          />
+      <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
+        <div className="screen-tab p-3">
+          {currentActivity && screenData ? (
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={screenSchema as JSONSchema7}
+              uiSchema={screenUiSchema}
+              value={screenData}
+              onChangeHandler={screenPropertyChangeHandler}
+            />
+          ) : null}
         </div>
       </Tab>
-      <Tab eventKey="component" title="Component" disabled={!currentComponent}>
+      <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && (
-          <div className="p-3">
+          <div className="commponent-tab">
             <PropertyEditor
               schema={componentSchema}
               uiSchema={{}}

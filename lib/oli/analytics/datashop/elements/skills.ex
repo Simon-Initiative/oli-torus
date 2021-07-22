@@ -23,9 +23,7 @@ defmodule Oli.Analytics.Datashop.Elements.Skills do
     case objective_rev do
       nil ->
         Logger.error(
-          "Error finding objective with resource id #{skill_id} and publication #{
-            Kernel.inspect(publication)
-          }"
+          "Error finding objective with resource id #{skill_id} and publication #{Kernel.inspect(publication)}"
         )
 
         nil
