@@ -46,7 +46,7 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
-    const isHistoryModeOn = selectEnableHistory(rootState);
+    const enableHistory = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -137,8 +137,8 @@ export const initializeActivity = createAsyncThunk(
     //Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
-    // Don't do anything id isHistoryModeOn is ON
-    if (!isHistoryModeOn && currentActivityTree) {
+    // Don't do anything id enableHistory is ON
+    if (!enableHistory && currentActivityTree) {
       const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
 
       const currentActivitySnapshot = getLocalizedStateSnapshot(
@@ -177,7 +177,6 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    /*   console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {

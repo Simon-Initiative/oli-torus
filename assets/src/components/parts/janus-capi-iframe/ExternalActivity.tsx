@@ -7,6 +7,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { parseBool, parseBoolean } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 
 const fakeUserStorage: any = {};
@@ -19,6 +20,7 @@ const setToUserStorage = async (simId: string | number, key: string | number, va
   fakeUserStorage[simId][key] = value;
 };
 const externalActivityMap: Map<string, any> = new Map();
+let context = 'VIEWER';
 const getExternalActivityMap = () => {
   const result: any = {};
 
@@ -37,7 +39,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
-
   const id: string = props.id;
 
   // model items, note that we use default values now because
@@ -130,7 +131,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
-
+    if (initResult.context.mode) {
+      context = initResult.context.mode;
+    }
     processInitStateVariable(currentStateSnapshot);
   }, []);
 
@@ -186,7 +189,6 @@ const ExternalActivity: React.FC<any> = (props) => {
       {},
     );
     setInitState(interestedSnapshot);
-
     setInitStateReceived(true);
   };
 
@@ -439,14 +441,20 @@ const ExternalActivity: React.FC<any> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
+              context = payload.mode;
               writeCapiLog('CONTEXT CHANGED!!!!', 3, {
                 simLife,
                 payload,
               });
+              simLife.handshake.config = { context: payload.mode };
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
-              processInitStateVariable(finalCurrentStateSnapshot);
+              if (payload.mode === contexts.REVIEW) {
+                processInitStateVariable(currentStateSnapshot);
+              } else {
+                processInitStateVariable(finalCurrentStateSnapshot);
+              }
               setSimIsInitStatePassedOnce(false);
             }
             break;
@@ -530,13 +538,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     simLife.handshake.requestToken = msgRequestToken;
 
     // taken from simcapi.js TODO move somewhere, use from settings
-    const contexts = {
-      VIEWER: 'VIEWER',
-      REVIEW: 'REVIEW',
-      AUTHOR: 'AUTHOR',
-      REPORT: 'REPORT',
-    };
-    simLife.handshake.config = { context: contexts.VIEWER };
+    simLife.handshake.config = { context: context };
 
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
@@ -802,7 +804,7 @@ const ExternalActivity: React.FC<any> = (props) => {
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          handleValueChange(data);
+          if (context !== contexts.REVIEW) handleValueChange(data);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:

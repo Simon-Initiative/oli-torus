@@ -161,7 +161,6 @@ export const triggerCheck = createAsyncThunk(
               const part = attempt.parts.find((p: any) => p.partId === partId);
               if (part) {
                 if (part.response) {
-                  // should update from snapshot now in case its newer??
                   collect = { ...collect, ...part.response };
                 }
               }
@@ -177,6 +176,7 @@ export const triggerCheck = createAsyncThunk(
         currentActivityAttemptGuid,
         partResponses,
       );
+
       console.log('EVAL RESULT', { evalResult });
       const resultData: CheckResult = (evalResult as any).result.actions;
       checkResult = resultData.results;

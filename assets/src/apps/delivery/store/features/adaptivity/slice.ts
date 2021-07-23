@@ -20,6 +20,7 @@ export interface AdaptivityState {
   lastMutateTriggered: any; // timestamp
   lastMutateChanges: any;
   initPhaseComplete: any; // timestamp
+  historyModeNavigation: boolean;
 }
 
 const initialState: AdaptivityState = {
@@ -27,6 +28,7 @@ const initialState: AdaptivityState = {
   currentFeedbacks: [],
   nextActivityId: '',
   lastCheckTriggered: null,
+
   lastCheckResults: {
     timestamp: -1,
     results: [],
@@ -40,6 +42,7 @@ const initialState: AdaptivityState = {
   lastMutateTriggered: null,
   lastMutateChanges: null,
   initPhaseComplete: null,
+  historyModeNavigation: false,
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -72,6 +75,12 @@ const slice: Slice<AdaptivityState> = createSlice({
       state.lastMutateTriggered = Date.now();
       state.lastMutateChanges = action.payload.changes;
     },
+    setHistoryNavigationTriggered(
+      state,
+      action: PayloadAction<{ historyModeNavigation: boolean }>,
+    ) {
+      state.historyModeNavigation = action.payload.historyModeNavigation;
+    },
     setInitPhaseComplete(state) {
       state.initPhaseComplete = Date.now();
     },
@@ -90,6 +99,7 @@ export const {
   setLessonEnd,
   setMutationTriggered,
   setInitPhaseComplete,
+  setHistoryNavigationTriggered,
 } = slice.actions;
 
 // selectors
@@ -123,6 +133,11 @@ export const selectLastCheckTriggered = createSelector(
 export const selectLastCheckResults = createSelector(
   selectState,
   (state: AdaptivityState) => state.lastCheckResults,
+);
+
+export const selectHistoryNavigationActivity = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.historyModeNavigation,
 );
 
 export const selectLastMutateTriggered = createSelector(

@@ -505,6 +505,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
             out_of: 1,
@@ -535,6 +536,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
             out_of: 1,
@@ -557,6 +559,31 @@ defmodule Oli.DatashopTest do
           :mc_user1_attempt2,
           :mc_user1_part_attempt2
         )
+        |> Seeder.create_part_attempt(
+          %{
+            date_evaluated: nil,
+            attempt_number: 3,
+            score: nil,
+            out_of: nil,
+            response: %{"input" => "4037228206"},
+            feedback: %{
+              "content" => %{
+                "model" => [
+                  %{
+                    "children" => [%{"text" => "This part attempt should not be present"}],
+                    "id" => "3921469287",
+                    "type" => "p"
+                  }
+                ]
+              },
+              "id" => "2494310518"
+            },
+            hints: ["3059890119"]
+          },
+          %Part{id: "1", responses: [], hints: []},
+          :mc_user1_attempt2,
+          :mc_user1_part_attempt3
+        )
         # User 2. One attempt (correct)
         |> Seeder.create_resource_attempt(
           %{attempt_number: 1},
@@ -573,6 +600,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
             out_of: 1,
@@ -613,6 +641,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
             out_of: 1,
@@ -643,6 +672,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
             out_of: 1,
@@ -681,6 +711,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
             out_of: 1,
@@ -758,6 +789,14 @@ defmodule Oli.DatashopTest do
         ~r/<tool_message.*<semantic_event.*transaction_id="(.*)"\/>.*<\/tool_message>.*<tutor_message.*<semantic_event.*transaction_id="\1"\/>.*<\/tutor_message>/s
 
       assert String.match?(datashop_file, regex)
+    end
+
+    test "unevaluated part attempts should not be present in the datashop attempt query", %{
+      datashop_file: datashop_file
+    } do
+      regex = ~r/this part attempt should not be present/s
+
+      assert !String.match?(datashop_file, regex)
     end
   end
 end

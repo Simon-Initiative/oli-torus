@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { CSSSelector } from 'swiper/types/shared';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -15,6 +16,7 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectHistoryNavigationActivity,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -33,7 +35,7 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectPageContent, setScore } from '../../store/features/page/slice';
+import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -61,8 +63,13 @@ const NextButton: React.FC<NextButton> = ({
   showCheckBtn,
 }) => {
   const isEnd = useSelector(selectLessonEnd);
-
-  const showDisabled = isLoading;
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const styles: CSSProperties = {};
+  if (historyModeNavigation) {
+    styles.opacity = 0.5;
+    styles.cursor = 'not-allowed';
+  }
+  const showDisabled = historyModeNavigation ? true : isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
@@ -75,6 +82,7 @@ const NextButton: React.FC<NextButton> = ({
       <button
         onClick={handler}
         disabled={showDisabled}
+        style={styles}
         className={
           isGoodFeedbackPresent
             ? correctFeedbackNextButtonClassName
@@ -106,7 +114,7 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-
+  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
 
@@ -261,7 +269,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.enableHistory) {
+      if (currentPage.custom?.advancedAuthoring && !enableHistory) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&
@@ -383,7 +391,7 @@ const DeckLayoutFooter: React.FC = () => {
         showCheckBtn={currentActivity?.custom?.showCheckBtn}
       />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className={`bottomContainer fixed ${!displayFeedback?'minimized': ''}`}>
+        <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
           <button
             onClick={checkFeedbackHandler}
             className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}
