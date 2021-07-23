@@ -95,7 +95,6 @@ export class CheckAllThatApplyAuthoring extends AuthoringElement<CATASchema> {
         <AuthoringElementProvider {...props}>
           <CheckAllThatApply />
         </AuthoringElementProvider>
-        <ModalDisplay />
       </Provider>,
       mountPoint,
     );

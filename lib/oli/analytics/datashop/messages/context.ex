@@ -17,21 +17,16 @@ defmodule Oli.Analytics.Datashop.Messages.Context do
   import XmlBuilder
   alias Oli.Analytics.Datashop.Elements.{Meta, Dataset}
 
-  def setup(%{
-        name: name,
-        context_message_id: context_message_id,
-        meta_element_context: meta_element_context,
-        dataset_element_context: dataset_element_context
-      }) do
+  def setup(name, context) do
     element(
       :context_message,
       %{
-        context_message_id: context_message_id,
+        context_message_id: context.context_message_id,
         name: name
       },
       [
-        Meta.setup(meta_element_context),
-        Dataset.setup(dataset_element_context)
+        Meta.setup(context),
+        Dataset.setup(context)
       ]
     )
   end

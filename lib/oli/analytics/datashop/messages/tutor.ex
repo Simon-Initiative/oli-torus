@@ -2,7 +2,7 @@ defmodule Oli.Analytics.Datashop.Messages.Tutor do
   @moduledoc """
     <tutor_message context_message_id="mary-smith-MAJOR-ARC-BFD-2-0">
       <meta>
-       <user_id >mary-smith</user_id>
+       <user_id>mary-smith</user_id>
         <session_id>mary-smith-2006-07-22</session_id>
         <time>2006-07-22 12:58:50 EST</time>
         <time_zone>EST</time_zone>
@@ -40,39 +40,23 @@ defmodule Oli.Analytics.Datashop.Messages.Tutor do
     Skills
   }
 
-  def setup(
-        %{
-          # HINT_MSG or RESULT
-          type: type,
-          context_message_id: context_message_id,
-          transaction_id: transaction_id,
-          meta_element_context: meta_element_context,
-          action_evaluation_context: action_evaluation_context,
-          skill_context: skill_context,
-          problem_name: problem_name,
-          part_attempt: part_attempt
-        } = context
-      ) do
+  def setup(message_type, context) do
     element(
       :tutor_message,
-      %{context_message_id: context_message_id},
+      %{context_message_id: context.context_message_id},
       [
-        Meta.setup(meta_element_context),
-        ProblemName.setup(%{name: problem_name}),
-        SemanticEvent.setup(%{transaction_id: transaction_id, name: type}),
-        EventDescriptor.setup(%{
-          type: type,
-          problem_name: problem_name,
-          part_attempt: part_attempt
-        }),
-        ActionEvaluation.setup(action_evaluation_context)
+        Meta.setup(context),
+        ProblemName.setup(context),
+        SemanticEvent.setup(message_type, context),
+        EventDescriptor.setup(message_type, context),
+        ActionEvaluation.setup(context)
       ] ++
-        if type == "HINT_MSG" do
-          [TutorAdvice.setup(%{hint_text: context.hint_text})]
+        if message_type == "HINT_MSG" do
+          [TutorAdvice.setup(context)]
         else
           []
         end ++
-        Skills.setup(skill_context)
+        Skills.setup(context)
     )
   end
 end

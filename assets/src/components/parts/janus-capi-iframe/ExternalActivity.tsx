@@ -609,7 +609,7 @@ const ExternalActivity: React.FC<any> = (props) => {
           responses,
         });
       },
-      500,
+      100,
       { maxWait: 30000, leading: true },
     ),
     [],
@@ -668,10 +668,12 @@ const ExternalActivity: React.FC<any> = (props) => {
   };
 
   const handleCheckRequest = (data: any) => {
-    props.onSubmit({
-      id: `${id}`,
-      responses: [],
-    });
+    setTimeout(() => {
+      props.onSubmit({
+        id: `${id}`,
+        responses: [],
+      });
+    }, 150);
   };
 
   const handleResizeParentContainer = (data: any) => {
