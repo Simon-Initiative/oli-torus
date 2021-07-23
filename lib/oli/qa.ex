@@ -25,7 +25,7 @@ defmodule Oli.Qa do
 
   alias Oli.Authoring.Course
   alias Oli.Qa.{Reviews}
-  alias Oli.Qa.Reviewers.{Accessibility, Content, Pedagogy}
+  alias Oli.Qa.Reviewers.{Accessibility, Content, Pedagogy, Equity}
 
   def review_project(project_slug) do
     Reviews.delete_reviews(Course.get_project_by_slug(project_slug).id)
@@ -36,5 +36,6 @@ defmodule Oli.Qa do
     |> Accessibility.review()
     |> Content.review()
     |> Pedagogy.review()
+    |> Equity.review()
   end
 end
