@@ -6,6 +6,7 @@ import {
 import debounce from 'lodash/debounce';
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { contexts } from '../../../types/applicationContext';
 
 const MultiLineTextInput: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -69,7 +70,10 @@ const MultiLineTextInput: React.FC<any> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setEnabled(false);
+    }
     setReady(true);
   }, []);
 
