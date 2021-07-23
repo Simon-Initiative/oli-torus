@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.12.3 (2021-07-23)
+
+### Bug Fixes
+
 - Fix datashop export content model parsing
 - Fix incorrect table column alignment on Insights page
 - Truncate "relative difficulty" on Insights page
