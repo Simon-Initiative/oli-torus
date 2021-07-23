@@ -69,11 +69,15 @@ const ConditionsBlockEditor = (props: any) => {
     }
   };
 
-  const ConditionsBlock = (conditions: any) => (
-    <div className="aa-condition border rounded p-2 mt-4">
-      <div className="aa-condition-header d-flex justify-content-between align-items-center">
-        <div>CONDITIONS</div>
-        {/* <div>
+  const ConditionsBlock = (props: any) => {
+    const { type, defaultConditions, onChange } = props;
+    const uuid = guid();
+
+    return (
+      <div className="aa-condition border rounded p-2 mt-4">
+        <div className="aa-condition-header d-flex justify-content-between align-items-center">
+          <div>CONDITIONS</div>
+          {/* <div>
                 <OverlayTrigger
                   placement="top"
                   delay={{ show: 150, hide: 150 }}
@@ -105,58 +109,60 @@ const ConditionsBlockEditor = (props: any) => {
                   </span>
                 </OverlayTrigger>
               </div> */}
-      </div>
-      <div className="d-flex align-items-center">
-        <span className="mr-2">If</span>
-        <div className="form-check form-check-inline mr-1">
-          <input
-            className="form-check-input"
-            type="radio"
-            name="anyAllToggle"
-            id="anyCondition"
-            defaultChecked={blockType === 'all'}
-            onChange={() => handleBlockTypeChange()}
-          />
-          <label className="form-check-label" htmlFor="anyCondition">
-            ANY
-          </label>
         </div>
-        <div className="form-check form-check-inline mr-2">
-          <input
-            className="form-check-input"
-            type="radio"
-            name="anyAllToggle"
-            id="allCondition"
-            value="all"
-          />
-          <label className="form-check-label" htmlFor="allCondition">
-            ALL
-          </label>
+        <div className="d-flex align-items-center">
+          <span className="mr-2">If</span>
+          <div className="form-check form-check-inline mr-1">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={`anyAllToggle-${uuid}`}
+              id={`anyCondition-${uuid}`}
+              defaultChecked={type === 'any'}
+              onChange={(changes: any) => handleSubBlockChange(defaultConditions, changes)}
+            />
+            <label className="form-check-label" htmlFor={`anyCondition-${uuid}`}>
+              ANY
+            </label>
+          </div>
+          <div className="form-check form-check-inline mr-2">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={`anyAllToggle-${uuid}`}
+              id={`allCondition-${uuid}`}
+              defaultChecked={type === 'all'}
+              onChange={(changes: any) => handleSubBlockChange(defaultConditions, changes)}
+            />
+            <label className="form-check-label" htmlFor={`allCondition-${uuid}`}>
+              ALL
+            </label>
+          </div>
+          of the following conditions are met
         </div>
-        of the following conditions are met
+        {defaultConditions.map((condition: any, index: number) => (
+          <Fragment key={`${guid()}`}>
+            {(condition && condition.all) || condition.any ? (
+              <ConditionsBlock
+                key={`${guid()}`}
+                type={condition.all ? 'all' : 'any'}
+                defaultConditions={condition.all || condition.any || []}
+                onChange={(changes: any) => handleSubBlockChange(condition, changes)}
+              />
+            ) : (
+              <ConditionItemEditor
+                key={`${guid()}`}
+                condition={condition}
+                onChange={(changes: any) => {
+                  handleConditionItemChange(condition, changes);
+                }}
+              />
+            )}
+          </Fragment>
+        ))}
       </div>
-      {conditions.map((condition: any, index: number) => (
-        <Fragment key={`${guid()}`}>
-          {condition.all || condition.any ? (
-            <ConditionsBlock
-              key={`${guid()}`}
-              type={condition.all ? 'all' : 'any'}
-              defaultConditions={condition.all || condition.any || []}
-              onChange={(changes: any) => handleSubBlockChange(condition, changes)}
-            />
-          ) : (
-            <ConditionItemEditor
-              key={`${guid()}`}
-              condition={condition}
-              onChange={(changes: any) => {
-                handleConditionItemChange(condition, changes);
-              }}
-            />
-          )}
-        </Fragment>
-      ))}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="aa-conditions d-flex w-100">
@@ -215,27 +221,97 @@ const ConditionsBlockEditor = (props: any) => {
       </div>
       <div className="d-flex flex-column w-100">
         {conditions.length === 0 && <div>No conditions. This rule will always fire.</div>}
-        {conditions.length > 0 &&
-          conditions.map((condition: any, index: number) => (
-            <Fragment key={`${guid()}`}>
-              {condition.all || condition.any ? (
-                <ConditionsBlock
-                  key={`${guid()}`}
-                  type={condition.all ? 'all' : 'any'}
-                  defaultConditions={condition.all || condition.any || []}
-                  onChange={(changes: any) => handleSubBlockChange(condition, changes)}
-                />
-              ) : (
-                <ConditionItemEditor
-                  key={`${guid()}`}
-                  condition={condition}
-                  onChange={(changes: any) => {
-                    handleConditionItemChange(condition, changes);
-                  }}
-                />
-              )}
-            </Fragment>
-          ))}
+        {conditions.length > 0 && (
+          <div>
+            <div className="aa-condition border rounded p-2 mt-4">
+              <div className="aa-condition-header d-flex justify-content-between align-items-center">
+                <div>CONDITIONS</div>
+                {/* <div>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      Delete Group
+                    </Tooltip>
+                  }
+                >
+                  <span>
+                    <button className="btn btn-link p-0">
+                      <i className="fa fa-trash-alt" />
+                    </button>
+                  </span>
+                </OverlayTrigger>
+                <OverlayTrigger
+                  placement="top"
+                  delay={{ show: 150, hide: 150 }}
+                  overlay={
+                    <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                      New Condition
+                    </Tooltip>
+                  }
+                >
+                  <span>
+                    <button className="btn btn-link p-0 ml-1">
+                      <i className="fa fa-plus" />
+                    </button>
+                  </span>
+                </OverlayTrigger>
+              </div> */}
+              </div>
+              <div className="d-flex align-items-center">
+                <span className="mr-2">If</span>
+                <div className="form-check form-check-inline mr-1">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="anyAllToggle-root"
+                    id="anyCondition-root"
+                    defaultChecked={blockType === 'any'}
+                    onChange={() => handleBlockTypeChange()}
+                  />
+                  <label className="form-check-label" htmlFor="anyCondition-root">
+                    ANY
+                  </label>
+                </div>
+                <div className="form-check form-check-inline mr-2">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="anyAllToggle-root"
+                    id="allCondition-root"
+                    defaultChecked={blockType === 'all'}
+                    onChange={() => handleBlockTypeChange()}
+                  />
+                  <label className="form-check-label" htmlFor="allCondition-root">
+                    ALL
+                  </label>
+                </div>
+                of the following conditions are met
+              </div>
+              {conditions.map((condition: any, index: number) => (
+                <Fragment key={`${guid()}`}>
+                  {condition.all || condition.any ? (
+                    <ConditionsBlock
+                      key={`${guid()}`}
+                      type={condition.all ? 'all' : 'any'}
+                      defaultConditions={condition.all || condition.any || []}
+                      onChange={(changes: any) => handleSubBlockChange(condition, changes)}
+                    />
+                  ) : (
+                    <ConditionItemEditor
+                      key={`${guid()}`}
+                      condition={condition}
+                      onChange={(changes: any) => {
+                        handleConditionItemChange(condition, changes);
+                      }}
+                    />
+                  )}
+                </Fragment>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
 

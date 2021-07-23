@@ -86,6 +86,13 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
   }
+  #aa-bottom-panel {
+    .aa-panel-section-title-bar {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+    }
+  }
   .aa-header-nav {
     z-index: 201;
     padding: 0 16px;

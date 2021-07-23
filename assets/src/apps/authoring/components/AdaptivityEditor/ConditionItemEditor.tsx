@@ -1,6 +1,6 @@
-import React, { Fragment, useState } from 'react';
+import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-// import { Input, Select } from 'semantic-ui-react';
+import guid from 'utils/guid';
 
 const conditionOperatorOptions = [
   { key: 'equal', text: '=', value: 'equal' },
@@ -66,8 +66,8 @@ const ConditionItemEditor = (props: any) => {
     onChange({ fact: val });
   };
 
-  const handleOperatorChange = (e: any, data: any) => {
-    const val = data.value;
+  const handleOperatorChange = (e: any) => {
+    const val = e.target.value;
     if (val === operator) {
       return;
     }
@@ -84,51 +84,49 @@ const ConditionItemEditor = (props: any) => {
     onChange({ value: val });
   };
 
+  const uuid = guid();
   return (
     <div className="d-flex mt-1">
-      <label className="sr-only" htmlFor="target">
+      <label className="sr-only" htmlFor={`target-${uuid}`}>
         target
       </label>
-      <select
-        className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
-        id="target"
-        defaultValue="0"
-      >
-        <option value="0">Choose...</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
-      </select>
-      <label className="sr-only" htmlFor="type">
-        type
-      </label>
-      <select
-        className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
-        id="type"
-        defaultValue="0"
-      >
-        <option value="0">Choose...</option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
-      </select>
-      <label className="sr-only" htmlFor="operator">
+      <input
+        id={`target-${uuid}`}
+        className="form-control form-control-sm flex-grow-1 mw-25 mr-2"
+        type="text"
+        placeholder="Target"
+        defaultValue={fact}
+        onBlur={handleFactChange}
+        title={fact}
+      />
+      <label className="sr-only" htmlFor={`operator-${uuid}`}>
         operator
       </label>
       <select
         className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
-        id="operator"
-        defaultValue="0"
+        id={`operator-${uuid}`}
+        placeholder="Operator"
+        defaultValue={operator}
+        onChange={(e) => handleOperatorChange(e)}
+        title={operator}
       >
-        <option value="0">
-          Choose with a really long name that might stretch out the labeel?...
-        </option>
-        <option value="1">One</option>
-        <option value="2">Two</option>
-        <option value="3">Three</option>
+        {conditionOperatorOptions.map((option, index) => (
+          <option key={`option${index}-${uuid}`} value={option.value} title={option.key}>
+            {option.text}
+          </option>
+        ))}
       </select>
-      <label className="sr-only">value</label>
-      <input type="email" className="form-control form-control-sm flex-grow-1 mw-25" id="value" />
+      <label className="sr-only" htmlFor={`value-${uuid}`}>
+        value
+      </label>
+      <input
+        type="text"
+        className="form-control form-control-sm flex-grow-1 mw-25"
+        id={`value-${uuid}`}
+        defaultValue={value}
+        onBlur={(e) => handleValueChange(e)}
+        title={value}
+      />
       <OverlayTrigger
         placement="top"
         delay={{ show: 150, hide: 150 }}
@@ -145,16 +143,6 @@ const ConditionItemEditor = (props: any) => {
         </span>
       </OverlayTrigger>
     </div>
-    // <Fragment>
-    //   <Input fluid placeholder="Fact" defaultValue={fact} onBlur={handleFactChange} />
-    //   <Select
-    //     options={conditionOperatorOptions}
-    //     placeholder="Operator"
-    //     defaultValue={operator}
-    //     onChange={handleOperatorChange}
-    //   />
-    //   <Input fluid placeholder="Value" defaultValue={value} onBlur={handleValueChange} />
-    // </Fragment>
   );
 };
 
