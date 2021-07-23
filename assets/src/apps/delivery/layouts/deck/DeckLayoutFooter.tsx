@@ -39,6 +39,33 @@ import { selectEnableHistory, selectPageContent, setScore } from '../../store/fe
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
+export const handleValueExpression = (
+  currentActivityTree: any[] | null,
+  operationValue: string,
+) => {
+  let value = operationValue;
+  if (typeof value === 'string' && currentActivityTree) {
+    if (
+      (value[0] === '{' && value[1] !== '"') ||
+      (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+    ) {
+      const variableList = value.match(/\{(.*?)\}/g);
+      variableList?.forEach((item) => {
+        //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
+        //it should be like {q.145225454.1|stage.input.value}
+        const modifiedValue = item.replace('{', '').replace('}', '');
+        const lstVar = item.split('.');
+        if (lstVar?.length > 2) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+        }
+      });
+    }
+  }
+  return value;
+};
 export interface NextButton {
   text: string;
   handler: () => void;
@@ -180,7 +207,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: op.params.value,
+          value: handleValueExpression(currentActivityTree, op.params.value),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
