@@ -1,5 +1,5 @@
 @use 'delivery/variables' as delivery;
-@import "authoring/variables.scss";
+@import 'authoring/variables.scss';
 
 .slate-editor {
   padding: 0.5rem;
@@ -33,6 +33,7 @@
     }
 
     > .card-header {
+      background-color: rgba(0, 0, 0, 0.1);
       cursor: grab;
       border-bottom: 0;
       border-top-left-radius: 8px;
@@ -41,13 +42,13 @@
 
     > .card-body {
       padding: 0;
-      border: 4px solid $card-cap-bg;
+      border: 4px solid rgba(0, 0, 0, 0.1);
       border-top: none;
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
 
       .activity-preview-info {
-        background-color: $card-cap-bg;
+        background-color: rgba(0, 0, 0, 0.1);
         color: rgba($color: $body-color, $alpha: 0.8);
         text-align: center;
         font-style: italic;
@@ -64,7 +65,7 @@
 
     .reorder-mode-description {
       display: none;
-      background-color: $card-cap-bg;
+      background-color: rgba(0, 0, 0, 0.1);
       border-bottom-left-radius: 8px;
       border-bottom-right-radius: 8px;
       color: rgba($color: $body-color, $alpha: 0.8);
@@ -141,11 +142,11 @@
       }
 
       &:disabled {
-        background-color: $card-cap-bg;
+        background-color: rgba(0, 0, 0, 0.1);
 
         &:hover {
           border-color: rgba($color: $body-color, $alpha: 0.1);
-          background: $card-cap-bg;
+          background: rgba(0, 0, 0, 0.1);
         }
       }
     }
