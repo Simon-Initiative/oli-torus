@@ -2,7 +2,8 @@
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from 'utils/common';
+import { parseBoolean } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -202,6 +203,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
+
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
@@ -228,6 +230,10 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
     if (sNumberOfSelectedChoices !== undefined) {
       setNumberOfSelectedChoices(sNumberOfSelectedChoices);
+    }
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setEnabled(false);
     }
     setReady(true);
   }, []);
