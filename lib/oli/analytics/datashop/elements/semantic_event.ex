@@ -6,10 +6,10 @@ defmodule Oli.Analytics.Datashop.Elements.SemanticEvent do
   """
   import XmlBuilder
 
-  def setup(%{transaction_id: transaction_id, name: name}) do
+  def setup(type, %{transaction_id: transaction_id}) do
     element(:semantic_event, %{
       transaction_id: transaction_id,
-      name: name
+      name: type
     })
   end
 end
