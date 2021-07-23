@@ -89,8 +89,8 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
   };
 
   useEffect(() => {
-    if (currentRule !== undefined) return;
-    rules.length > 0 ? handleSelectRule(rules[0]) : handleSelectRule(undefined);
+    if (currentActivity === undefined) return;
+    handleSelectRule(currentActivity.authoring.rules[0]);
   }, [currentActivity]);
 
   useEffect(() => {
