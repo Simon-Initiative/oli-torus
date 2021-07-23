@@ -177,7 +177,9 @@ export const applyState = (
               } else {
                 // it's not supposed to be a string however, so we need to coerce it
                 const coerced = coerceCapiValue(newValue, targetType);
-                script += `= ${coerced};`;
+                // need to wrap the content in "" as it's a string else it will be evaluated as undefined as the script
+                //generates the expression as 'let {stage.something.value} = Finches'
+                script += `= "${coerced}";`;
               }
             } else {
               script += `= "${newValue.replace(/"/g, '\\"')}";`;
