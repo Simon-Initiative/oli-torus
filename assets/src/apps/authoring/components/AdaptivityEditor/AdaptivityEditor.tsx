@@ -13,6 +13,9 @@ import {
   selectCurrentSequenceId,
   selectSequence,
 } from '../../../delivery/store/features/groups/selectors/deck';
+import ActionFeedbackEditor from './ActionFeedbackEditor';
+import ActionMutateEditor from './ActionMutateEditor';
+import ActionNavigationEditor from './ActionNavigationEditor';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -65,6 +68,50 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
     debounceNotifyChanges();
   };
 
+  const getActionEditor = (action: any) => {
+    switch (action.type) {
+      case 'feedback':
+        return (
+          <ActionFeedbackEditor
+            action={action}
+            onChange={(changes: any) => {
+              handleActionChange(action, changes);
+            }}
+          />
+        );
+      case 'navigation':
+        return (
+          <ActionNavigationEditor
+            action={action}
+            onChange={(changes: any) => {
+              handleActionChange(action, changes);
+            }}
+          />
+        );
+      case 'mutateState':
+        return (
+          <ActionMutateEditor
+            action={action}
+            onChange={(changes: any) => {
+              handleActionChange(action, changes);
+            }}
+          />
+        );
+    }
+  };
+
+  const handleActionChange = async (action: any, changes: any) => {
+    const updated = { ...action, params: { ...action.params, ...changes } };
+    const actionIndex = actions.indexOf(action);
+    console.log('action changed', { action, changes, actionIndex });
+    if (actionIndex !== -1) {
+      const cloneActions = [...actions];
+      cloneActions[actionIndex] = updated;
+      setActions(cloneActions);
+      debounceNotifyChanges();
+    }
+  };
+
   return (
     <div className="aa-adaptivity-editor">
       {/* No Conditions */}
@@ -107,40 +154,42 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
             </OverlayTrigger>
             <div className="d-flex flex-column w-100">
               {actions.length === 0 && <div>No actions. This rule will not do anything.</div>}
-              {actions.length > 0 && (
-                <div className="aa-action d-flex mb-2">
-                  <label className="sr-only" htmlFor="operator">
-                    operator
-                  </label>
-                  <select
-                    className="custom-select mr-2 form-control form-control-sm w-25"
-                    id="operator"
-                    defaultValue="0"
-                  >
-                    <option value="0">Choose...</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                  </select>
-                  <label className="sr-only">value</label>
-                  <input type="email" className="form-control form-control-sm w-75" id="value" />
-                  <OverlayTrigger
-                    placement="top"
-                    delay={{ show: 150, hide: 150 }}
-                    overlay={
-                      <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                        Delete Action
-                      </Tooltip>
-                    }
-                  >
-                    <span>
-                      <button className="btn btn-link p-0 ml-1">
-                        <i className="fa fa-trash-alt" />
-                      </button>
-                    </span>
-                  </OverlayTrigger>
-                </div>
-              )}
+              {actions.length > 0 &&
+                actions.map(
+                  (action: any, index: number) => getActionEditor(action),
+                  // <div key={index} className="aa-action d-flex mb-2">
+                  //   <label className="sr-only" htmlFor="operator">
+                  //     operator
+                  //   </label>
+                  //   <select
+                  //     className="custom-select mr-2 form-control form-control-sm w-25"
+                  //     id="operator"
+                  //     defaultValue="0"
+                  //   >
+                  //     <option value="0">Choose...</option>
+                  //     <option value="1">One</option>
+                  //     <option value="2">Two</option>
+                  //     <option value="3">Three</option>
+                  //   </select>
+                  //   <label className="sr-only">value</label>
+                  //   <input type="email" className="form-control form-control-sm w-75" id="value" />
+                  //   <OverlayTrigger
+                  //     placement="top"
+                  //     delay={{ show: 150, hide: 150 }}
+                  //     overlay={
+                  //       <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  //         Delete Action
+                  //       </Tooltip>
+                  //     }
+                  //   >
+                  //     <span>
+                  //       <button className="btn btn-link p-0 ml-1">
+                  //         <i className="fa fa-trash-alt" />
+                  //       </button>
+                  //     </span>
+                  //   </OverlayTrigger>
+                  // </div>
+                )}
             </div>
           </div>
         </>
