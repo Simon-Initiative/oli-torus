@@ -1,10 +1,80 @@
+import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+
 const partSchema = {
   type: 'object',
   properties: {
     id: { type: 'string' },
     type: { type: 'string' },
-    custom: { type: 'object' },
+    Position: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        x: { type: 'number' },
+        y: { type: 'number' },
+        z: { type: 'number' },
+      },
+    },
+    Size: {
+      type: 'object',
+      title: 'Dimensions',
+      properties: {
+        width: { type: 'number' },
+        height: { type: 'number' },
+      },
+    },
+    custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
   },
 };
+
+export const partUiSchema = {
+  type: {
+    'ui:title': 'Part Type',
+    'ui:readonly': true,
+  },
+  Position: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Position',
+    x: {
+      classNames: 'col-6',
+    },
+    y: {
+      classNames: 'col-6',
+    },
+    z: {
+      classNames: 'col-6',
+    },
+  },
+  Size: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Dimensions',
+    width: {
+      classNames: 'col-6',
+    },
+    height: {
+      classNames: 'col-6',
+    },
+  },
+};
+
+export const transformModelToSchema = (model: any) => {
+  const { id, type } = model;
+  const { x, y, z, width, height } = model.custom;
+  return {
+    id,
+    type,
+    Position: {
+      x,
+      y,
+      z,
+    },
+    Size: {
+      width,
+      height,
+    },
+    custom: { ...model.custom },
+  };
+};
+
+export const transformSchemaToModel = (schema: any) => {};
 
 export default partSchema;

@@ -1,4 +1,3 @@
-import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -13,23 +12,27 @@ import {
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
+import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
+import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
+import { selectCurrentSelection } from '../../store/parts/slice';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
+import partSchema, {
+  partUiSchema,
+  transformModelToSchema as transformPartModelToSchema,
+} from '../PropertyEditor/schemas/part';
 import screenSchema, {
   screenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
-import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
-import { selectCurrentSelection } from '../../store/parts/slice';
-import partSchema from '../PropertyEditor/schemas/part';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -47,6 +50,7 @@ const RightMenu: React.FC<any> = () => {
 
   // TODO: dynamically load schema from Part Component configuration
   const [componentSchema, setComponentSchema]: any = useState<any>(partSchema);
+  const [componentUiSchema, setComponentUiSchema]: any = useState<any>(partUiSchema);
   const [currentComponent, setCurrentComponent] = useState<any>(null);
 
   useEffect(() => {
@@ -73,11 +77,20 @@ const RightMenu: React.FC<any> = () => {
           };
           setComponentSchema(newSchema);
         }
+        if (instance.getUiSchema) {
+          const customPartUiSchema = instance.getUiSchema();
+          const newUiSchema = {
+            ...partUiSchema,
+            custom: { ...customPartUiSchema },
+          };
+          setComponentUiSchema(newUiSchema);
+        }
       }
       setCurrentComponent(partDef);
     }
     return () => {
       setComponentSchema(partSchema);
+      setComponentUiSchema(partUiSchema);
       setCurrentComponent(null);
     };
   }, [currentPartSelection]);
@@ -218,8 +231,8 @@ const RightMenu: React.FC<any> = () => {
           <div className="commponent-tab">
             <PropertyEditor
               schema={componentSchema}
-              uiSchema={{}}
-              value={currentComponent}
+              uiSchema={componentUiSchema}
+              value={transformPartModelToSchema(currentComponent)}
               onChangeHandler={componentPropertyChangeHandler}
             />
           </div>

@@ -1,19 +1,4 @@
 export const schema = {
-  x: {
-    type: 'number',
-  },
-  y: {
-    type: 'number',
-  },
-  z: {
-    type: 'number',
-  },
-  width: {
-    type: 'number',
-  },
-  height: {
-    type: 'number',
-  },
   customCssClass: {
     type: 'string',
   },
