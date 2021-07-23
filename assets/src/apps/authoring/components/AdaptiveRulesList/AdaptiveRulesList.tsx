@@ -13,11 +13,13 @@ import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { clone } from '../../../../utils/common';
 import guid from 'utils/guid';
+import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 
 const AdaptiveRulesList: React.FC<any> = (props) => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
+  const isLayer = getIsLayer();
   const rules = currentActivity?.authoring.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
 
@@ -174,7 +176,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
           <ContextAwareToggle eventKey="0" />
           <span className="title">Adaptivity</span>
         </div>
-        {currentRule && (
+        {currentRule && !isLayer && (
           <OverlayTrigger
             placement="right"
             delay={{ show: 150, hide: 150 }}
@@ -227,6 +229,7 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule &&
+            !isLayer &&
             rules.map((rule: any, index: any, arr: any) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
@@ -264,7 +267,24 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
                 </div>
               </ListGroup.Item>
             ))}
-          {!currentRule && <span>No screen selected</span>}
+          {!currentRule && (
+            <div className="text-center border rounded m-3">
+              <div className="card-body">
+                <p>
+                  <small>Please select a sequence item</small>
+                </p>
+              </div>
+            </div>
+          )}
+          {currentRule && isLayer && (
+            <div className="text-center border rounded m-3">
+              <div className="card-body">
+                <p>
+                  <small>This sequence item is a layer and does not support adaptivity</small>
+                </p>
+              </div>
+            </div>
+          )}
         </ListGroup>
       </Accordion.Collapse>
     </Accordion>

@@ -5,6 +5,14 @@ import debounce from 'lodash/debounce';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
+import {
+  findInSequence,
+  getIsLayer,
+} from '../../../delivery/store/features/groups/actions/sequence';
+import {
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../../../delivery/store/features/groups/selectors/deck';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -14,6 +22,8 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   // const currentActivity = useSelector(selectCurrentActivity);
+  const isLayer = getIsLayer();
+
   const [isDirty, setIsDirty] = useState(false);
   const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
   const [actions, setActions] = useState(currentRule?.event?.params?.actions || []);
@@ -60,12 +70,20 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       {/* No Conditions */}
       {currentRule === undefined && (
         <div className="text-center border rounded">
-          <div className="card-body">No screen selected</div>
+          <div className="card-body">Please select a sequence item</div>
+        </div>
+      )}
+
+      {currentRule && isLayer && (
+        <div className="text-center border rounded">
+          <div className="card-body">
+            This sequence item is a layer and does not support adaptivity
+          </div>
         </div>
       )}
 
       {/* Has Conditions */}
-      {currentRule && (
+      {currentRule && !isLayer && (
         <>
           <ConditionsBlockEditor
             type={rootConditionIsAll ? 'all' : 'any'}

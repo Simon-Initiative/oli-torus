@@ -465,6 +465,9 @@ const SequenceEditor: React.FC<any> = (props) => {
                     />
                   ) : null}
                   <span className="title">{title}</span>
+                  {item.custom.isLayer && (
+                    <i className="fas fa-layer-group ml-2 align-middle aa-isLayer" />
+                  )}
                 </div>
                 <SequenceItemContextMenu
                   id={item.activitySlug}

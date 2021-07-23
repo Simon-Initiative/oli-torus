@@ -11,6 +11,7 @@ import { selectCurrentRule, setCurrentRule } from './store/app/slice';
 import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
+import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -26,6 +27,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const [correct, setCorrect] = useState(false);
+  const isLayer = getIsLayer();
 
   useEffect(() => {
     if (currentRule === undefined) return;
@@ -107,7 +109,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule && (
+              {currentRule && !isLayer && (
                 <span className="ruleName">
                   {currentRule.default && currentRule.correct && (
                     <i className="fa fa-check-circle mr-1 text-muted align-middle" />
@@ -120,7 +122,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
               )}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
-              {currentRule && (
+              {currentRule && !isLayer && (
                 <>
                   <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
                     <i className="fa fa-times mr-2" />
@@ -158,7 +160,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                   )}
                 </>
               )}
-              {currentRule && (
+              {currentRule && !isLayer && (
                 <OverlayTrigger
                   placement="top"
                   delay={{ show: 150, hide: 150 }}

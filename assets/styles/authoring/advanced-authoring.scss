@@ -406,6 +406,11 @@ $panel-section-title-bar-color: #e8ebed;
         padding-left: 27px;
         align-items: center;
 
+        .aa-isLayer {
+          color: $secondary;
+          opacity: 0.75;
+        }
+
         &:hover,
         &:focus {
           background-color: $panel-section-title-bar-color;
@@ -422,6 +427,10 @@ $panel-section-title-bar-color: #e8ebed;
         & > .aa-rules-list-details-wrapper {
           color: $white;
           background-color: $primary;
+
+          .aa-isLayer {
+            color: $white;
+          }
 
           .aa-sequence-item-toggle {
             color: $white;
