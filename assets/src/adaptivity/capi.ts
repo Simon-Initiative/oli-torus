@@ -59,6 +59,9 @@ export const coerceCapiValue = (
           );
         }
       }
+      if (typeof value === 'string') {
+        return `"${value}"`;
+      }
       return `${value}`;
     case CapiVariableTypes.BOOLEAN:
       return String(parseBoolean(value)); // for some reason these need to be strings
