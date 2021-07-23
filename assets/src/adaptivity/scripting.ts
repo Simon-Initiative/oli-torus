@@ -177,7 +177,12 @@ export const applyState = (
               } else {
                 // it's not supposed to be a string however, so we need to coerce it
                 const coerced = coerceCapiValue(newValue, targetType);
-                script += `= ${coerced};`;
+                // after coersion if it's still a string (likely "ENUM" type) we need to add quotes
+                if (typeof coerced === 'string') {
+                  script += `= "${coerced}";`;
+                } else {
+                  script += `= ${coerced};`;
+                }
               }
             } else {
               script += `= "${newValue.replace(/"/g, '\\"')}";`;
