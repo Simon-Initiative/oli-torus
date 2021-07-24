@@ -1,15 +1,33 @@
-import React, { Fragment, useState } from 'react';
-// import { Button, Icon, List, Modal } from 'semantic-ui-react';
-// import ContentService from '../../../services/ContentService';
-// import JsonEditor from '../../JsonEditor/JsonEditor';
+import React, { useEffect, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import guid from 'utils/guid';
 
 const ActionFeedbackEditor = (props: any) => {
   // const textFlowSchema:any = ContentService.getInstance().getComponentSchema('janus-text-flow');
   const { action } = props;
-
   const [open, setOpen] = useState(false);
-
   const [textData, setTextData] = useState<any>({});
+  const [fakeFeedback, setFakeFeedback] = useState<string>('');
+  const uuid = guid();
+
+  useEffect(() => {
+    action.params?.feedback?.partsLayout?.forEach((part: any) =>
+      part.custom?.nodes?.forEach((node: any) => {
+        const feedbackText = getFeedbackTextFromNode(node);
+        setFakeFeedback(feedbackText);
+      }),
+    );
+  }, []);
+
+  const getFeedbackTextFromNode = (node: any): any => {
+    let nodeText = '';
+    if (node.tag === 'text') {
+      nodeText = node.text;
+    } else {
+      nodeText = getFeedbackTextFromNode(node.children[0]);
+    }
+    return nodeText;
+  };
 
   // const handleOpenModal = async () => {
   //   const feedbackEnsemble = await ContentService.getInstance().getEnsembleById(
@@ -56,7 +74,44 @@ const ActionFeedbackEditor = (props: any) => {
   // };
 
   return (
-    <div>ActionFeedbackEditor coming soon</div>
+    <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
+      <label className="sr-only" htmlFor={`action-navigation-${uuid}`}>
+        show feedback
+      </label>
+      <div className="input-group input-group-sm flex-grow-1">
+        <div className="input-group-prepend">
+          <div className="input-group-text">
+            <i className="fa fa-comment mr-1" />
+            Show feedback
+          </div>
+        </div>
+        <input
+          type="text"
+          className="form-control form-control-sm"
+          id={`action-navigation-${uuid}`}
+          placeholder="Enter feedback"
+          value={fakeFeedback}
+          onChange={(e) => setFakeFeedback(e.target.value)}
+          // onBlur={(e) => handleTargetChange(e)}
+          title={fakeFeedback}
+        />
+      </div>
+      <OverlayTrigger
+        placement="top"
+        delay={{ show: 150, hide: 150 }}
+        overlay={
+          <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+            Delete Action
+          </Tooltip>
+        }
+      >
+        <span>
+          <button className="btn btn-link p-0 ml-1">
+            <i className="fa fa-trash-alt" />
+          </button>
+        </span>
+      </OverlayTrigger>
+    </div>
     // <Fragment>
     //   <Icon name="comment" size="large" />
     //   <List.Content>

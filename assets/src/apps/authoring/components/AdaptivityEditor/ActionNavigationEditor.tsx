@@ -14,15 +14,15 @@ const ActionNavigationEditor = (props: any) => {
   };
 
   return (
-    <div className="aa-action d-flex mb-2 form-inline align-items-center">
+    <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
       <label className="sr-only" htmlFor={`action-navigation-${uuid}`}>
         SequenceId
       </label>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend">
           <div className="input-group-text">
-            <i className="fa fa-compass mr-2" />
-            Go to screen
+            <i className="fa fa-compass mr-1" />
+            Navigate to
           </div>
         </div>
         <input

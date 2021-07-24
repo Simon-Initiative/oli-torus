@@ -110,7 +110,7 @@ const ConditionsBlockEditor = (props: any) => {
                 </OverlayTrigger>
               </div> */}
         </div>
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center flex-wrap">
           <span className="mr-2">If</span>
           <div className="form-check form-check-inline mr-1">
             <input
@@ -259,7 +259,7 @@ const ConditionsBlockEditor = (props: any) => {
                 </OverlayTrigger>
               </div> */}
               </div>
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center flex-wrap">
                 <span className="mr-2">If</span>
                 <div className="form-check form-check-inline mr-1">
                   <input
