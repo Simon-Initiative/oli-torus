@@ -287,7 +287,8 @@ $panel-section-title-bar-color: #e8ebed;
       height: inherit;
     }
     .aa-condition-header {
-      margin-top: -22px;
+      margin-top: -18px;
+      margin-bottom: 0.25rem;
 
       > div {
         background-color: $panel-bg-color-light;

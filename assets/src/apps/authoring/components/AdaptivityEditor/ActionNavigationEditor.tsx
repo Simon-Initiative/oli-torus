@@ -22,7 +22,7 @@ const ActionNavigationEditor = (props: any) => {
         <div className="input-group-prepend">
           <div className="input-group-text">
             <i className="fa fa-compass mr-1" />
-            Navigate to
+            Navigate To
           </div>
         </div>
         <input

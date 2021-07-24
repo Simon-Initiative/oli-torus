@@ -95,7 +95,7 @@ const ActionMutateEditor = (props: any) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm mr-2 w-25"
+          className="form-control form-control-sm mr-2 flex-grow-1"
           id={`action-mutate-target-${uuid}`}
           value={target}
           onChange={(e) => handleTargetChange(e)}
@@ -106,7 +106,7 @@ const ActionMutateEditor = (props: any) => {
         type
       </label>
       <select
-        className="custom-select mr-2 form-control form-control-sm w-25"
+        className="custom-select mr-2 form-control form-control-sm"
         id={`action-mutate-type-${uuid}`}
         defaultValue={targetType}
         onChange={(e) => handleTargetTypeChange(e)}
@@ -121,7 +121,7 @@ const ActionMutateEditor = (props: any) => {
         operator
       </label>
       <select
-        className="custom-select mr-2 form-control form-control-sm w-25"
+        className="custom-select mr-2 form-control form-control-sm"
         id={`action-mutate-operator-${uuid}`}
         defaultValue={operator}
         onChange={(e) => handleOperatorChange(e)}
@@ -135,7 +135,7 @@ const ActionMutateEditor = (props: any) => {
       <label className="sr-only" htmlFor={`action-mutate-value-${uuid}`}>
         value
       </label>
-      <div className="input-group input-group-sm flex-grow-1">
+      <div className="input-group input-group-sm">
         <div className="input-group-prepend" title="value">
           <div className="input-group-text">
             <i className="fa fa-flag-checkered" />
@@ -143,7 +143,7 @@ const ActionMutateEditor = (props: any) => {
         </div>
         <input
           type="text"
-          className="form-control form-control-sm w-25"
+          className="form-control form-control-sm"
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}

@@ -84,7 +84,7 @@ const ActionFeedbackEditor = (props: any) => {
         <div className="input-group-prepend">
           <div className="input-group-text">
             <i className="fa fa-comment mr-1" />
-            Show feedback
+            Show Feedback
           </div>
         </div>
         <input

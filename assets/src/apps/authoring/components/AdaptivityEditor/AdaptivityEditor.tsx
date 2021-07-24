@@ -152,48 +152,38 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
                 </Tooltip>
               }
             >
-              <button className="aa-add-button btn btn-primary btn-sm mr-3">
+              <button
+                className="dropdown-toggle aa-add-button btn btn-primary btn-sm mr-3"
+                type="button"
+                id={`adaptive-editor-add-context-trigger`}
+                data-toggle="dropdown"
+                aria-haspopup="true"
+                aria-expanded="false"
+                onClick={(e) => {
+                  ($(`#adaptive-editor-add-context-trigger`) as any).dropdown('toggle');
+                }}
+              >
                 <i className="fa fa-plus" />
               </button>
             </OverlayTrigger>
+            <div
+              id={`adaptive-editor-add-context-menu`}
+              className="dropdown-menu"
+              aria-labelledby={`adaptive-editor-add-context-trigger`}
+            >
+              <button className="dropdown-item">
+                <i className="fa fa-comment mr-2" /> Show Feedback
+              </button>
+              <button className="dropdown-item">
+                <i className="fa fa-compass mr-2" /> Navigate To
+              </button>
+              <button className="dropdown-item">
+                <i className="fa fa-crosshairs mr-2" /> Mutate State
+              </button>
+            </div>
             <div className="d-flex flex-column w-100">
               {actions.length === 0 && <div>No actions. This rule will not do anything.</div>}
-              {actions.length > 0 &&
-                actions.map(
-                  (action: any, index: number) => getActionEditor(action),
-                  // <div key={index} className="aa-action d-flex mb-2">
-                  //   <label className="sr-only" htmlFor="operator">
-                  //     operator
-                  //   </label>
-                  //   <select
-                  //     className="custom-select mr-2 form-control form-control-sm w-25"
-                  //     id="operator"
-                  //     defaultValue="0"
-                  //   >
-                  //     <option value="0">Choose...</option>
-                  //     <option value="1">One</option>
-                  //     <option value="2">Two</option>
-                  //     <option value="3">Three</option>
-                  //   </select>
-                  //   <label className="sr-only">value</label>
-                  //   <input type="email" className="form-control form-control-sm w-75" id="value" />
-                  //   <OverlayTrigger
-                  //     placement="top"
-                  //     delay={{ show: 150, hide: 150 }}
-                  //     overlay={
-                  //       <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  //         Delete Action
-                  //       </Tooltip>
-                  //     }
-                  //   >
-                  //     <span>
-                  //       <button className="btn btn-link p-0 ml-1">
-                  //         <i className="fa fa-trash-alt" />
-                  //       </button>
-                  //     </span>
-                  //   </OverlayTrigger>
-                  // </div>
-                )}
+              {actions.length > 0 && actions.map((action: any) => getActionEditor(action))}
             </div>
           </div>
         </>
