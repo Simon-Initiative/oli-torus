@@ -14,6 +14,7 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { clone } from '../../../../utils/common';
 import guid from 'utils/guid';
 import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { usePrevious } from 'components/hooks/usePrevious';
 
 const AdaptiveRulesList: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -90,9 +91,11 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     );
   };
 
+  const previousActivity = usePrevious(currentActivity);
   useEffect(() => {
     if (currentActivity === undefined) return;
-    handleSelectRule(currentActivity.authoring.rules[0]);
+    if (previousActivity?.id !== currentActivity.id)
+      handleSelectRule(currentActivity.authoring.rules[0]);
   }, [currentActivity]);
 
   useEffect(() => {
