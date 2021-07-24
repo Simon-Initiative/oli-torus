@@ -21,10 +21,12 @@ const ActionFeedbackEditor = (props: any) => {
 
   const getFeedbackTextFromNode = (node: any): any => {
     let nodeText = '';
-    if (node.tag === 'text') {
+    if (node?.tag === 'text') {
       nodeText = node.text;
+    } else if (node?.children?.length > 0) {
+      nodeText = getFeedbackTextFromNode(node?.children[0]);
     } else {
-      nodeText = getFeedbackTextFromNode(node.children[0]);
+      nodeText = 'unknown';
     }
     return nodeText;
   };
@@ -75,7 +77,7 @@ const ActionFeedbackEditor = (props: any) => {
 
   return (
     <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
-      <label className="sr-only" htmlFor={`action-navigation-${uuid}`}>
+      <label className="sr-only" htmlFor={`action-feedback-${uuid}`}>
         show feedback
       </label>
       <div className="input-group input-group-sm flex-grow-1">
@@ -88,7 +90,7 @@ const ActionFeedbackEditor = (props: any) => {
         <input
           type="text"
           className="form-control form-control-sm"
-          id={`action-navigation-${uuid}`}
+          id={`action-feedback-${uuid}`}
           placeholder="Enter feedback"
           value={fakeFeedback}
           onChange={(e) => setFakeFeedback(e.target.value)}

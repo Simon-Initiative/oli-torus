@@ -298,10 +298,16 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-actions {
       position: relative;
       border-top: 1px solid $ui-border-color;
-
+    }
+    .aa-action {
       .input-group-text {
         font-size: 12px;
         min-width: 7.5rem;
+      }
+      &.aa-mutate {
+        .input-group-text {
+          min-width: auto;
+        }
       }
     }
     .aa-canvas-header {
