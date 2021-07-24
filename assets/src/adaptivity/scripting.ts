@@ -65,10 +65,17 @@ export const getAssignScript = (state: Record<string, any>): string => {
     let writeVal = { key, value: val };
     // if it's already a capi var like object
     if (val && val.constructor && val.constructor === Object) {
-      // the path should be a full key like stage.foo.text
-      writeVal = { ...val, key: val.path ? val.path : val.key };
+      if (val.key || val.path) {
+        // the path should be a full key like stage.foo.text
+        writeVal = { ...val, key: val.path ? val.path : val.key };
+      } else {
+        // with FIB getting a {} value? stringify it to stop errors
+        console.warn('[getAssignScript] wrong object value?', { key, val, state });
+        writeVal.value = JSON.stringify(val);
+      }
     }
-    return new CapiVariable(writeVal);
+    const cVar = new CapiVariable(writeVal);
+    return cVar;
   });
   const letStatements = vars.map(stateVarToJanusScriptAssign);
   return letStatements.join('');

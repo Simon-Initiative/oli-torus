@@ -295,13 +295,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    /* console.log('DECK HANDLE SAVE PART', {
+    console.log('DECK HANDLE SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
       response,
       currentActivityTree,
-    }); */
+    });
     const statePrefix = `${activityId}|stage`;
     const responseMap = response.input.reduce(
       (result: { [x: string]: any }, item: { key: string; path: string }) => {

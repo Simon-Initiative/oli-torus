@@ -100,11 +100,114 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
   });
 };
 
+export const defaultWrongRule = {
+  id: 'builtin.defaultWrong',
+  name: 'defaultWrong',
+  priority: 1,
+  disabled: false,
+  additionalScore: 0,
+  forceProgress: false,
+  default: true,
+  correct: false,
+  conditions: { all: [] },
+  event: {
+    type: 'builtin.defaultWrong',
+    params: {
+      actions: [
+        {
+          type: 'feedback',
+          params: {
+            feedback: {
+              id: 'builtin.feedback',
+              custom: {
+                showCheckBtn: true,
+                panelHeaderColor: 10027008,
+                rules: [],
+                facts: [],
+                applyBtnFlag: false,
+                checkButtonLabel: 'Next',
+                applyBtnLabel: 'Show Solution',
+                mainBtnLabel: 'Next',
+                panelTitleColor: 16777215,
+                lockCanvasSize: true,
+                width: 350,
+                palette: {
+                  fillColor: 16777215,
+                  fillAlpha: 1,
+                  lineColor: 16777215,
+                  lineAlpha: 1,
+                  lineThickness: 0.1,
+                  lineStyle: 0,
+                  useHtmlProps: false,
+                  backgroundColor: 'rgba(255,255,255,0)',
+                  borderColor: 'rgba(255,255,255,0)',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                },
+                height: 100,
+              },
+              partsLayout: [
+                {
+                  id: 'builtin.feedback.textflow',
+                  type: 'janus-text-flow',
+                  custom: {
+                    overrideWidth: true,
+                    nodes: [
+                      {
+                        tag: 'p',
+                        style: { fontSize: '16' },
+                        children: [
+                          {
+                            tag: 'span',
+                            style: { fontWeight: 'bold' },
+                            children: [
+                              {
+                                tag: 'text',
+                                text: 'Incorrect, please try again.',
+                                children: [],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                    x: 10,
+                    width: 330,
+                    overrideHeight: false,
+                    y: 10,
+                    z: 0,
+                    palette: {
+                      fillColor: 16777215,
+                      fillAlpha: 1,
+                      lineColor: 16777215,
+                      lineAlpha: 0,
+                      lineThickness: 0.1,
+                      lineStyle: 0,
+                      useHtmlProps: false,
+                      backgroundColor: 'rgba(255,255,255,0)',
+                      borderColor: 'rgba(255,255,255,0)',
+                      borderWidth: '1px',
+                      borderStyle: 'solid',
+                    },
+                    customCssClass: '',
+                    height: 22,
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  },
+};
+
 export interface CheckResult {
   correct: boolean;
   results: Event[];
   score: number;
   out_of: number;
+  triggered?: any;
 }
 
 export interface ScoringContext {
@@ -126,11 +229,14 @@ export const check = async (
   // setup script env context
   const assignScript = getAssignScript(state);
   // $log.info('assign: ', assignScript);
-  evalScript(assignScript, env);
+  const stateEvalResult = evalScript(assignScript, env);
   // TODO: check result for errors
-  // $log.info('eval1', result);
+  console.log('CHECK', { assignScript, stateEvalResult });
   // evaluate all rule conditions against context
   const enabledRules = rules.filter((r) => !r.disabled);
+  if (enabledRules.length === 0 || !enabledRules.find((r) => r.default && !r.correct)) {
+    enabledRules.push(defaultWrongRule);
+  }
   processRules(enabledRules, env);
 
   // finally run check
@@ -147,27 +253,29 @@ export const check = async (
   /* console.log('RE CHECK', { checkResult }); */
   let resultEvents: Event[] = [];
   const successEvents = checkResult.events.sort((a, b) => a.params?.order - b.params?.order);
-  // if there are any correct in the success, get rid of the incorrect (defaultWrong most likely)
-  const isCorrect = successEvents.some((evt) => evt.params?.correct === true);
-  if (isCorrect) {
-    resultEvents = successEvents.filter((evt) => evt.params?.correct === true);
+
+  // if every event is correct excluding the default wrong, then we are definitely correct
+  let defaultWrong = successEvents.find((e) => e.params?.default && !e.params?.correct);
+  if (!defaultWrong) {
+    console.warn('no default wrong found, there should always be one!');
+    // we should never actually get here, because the rules should be implanted earlier,
+    // however, in case we still do, use this because it's better than nothing
+    defaultWrong = defaultWrongRule.event;
+  }
+  resultEvents = successEvents.filter((evt) => evt !== defaultWrong);
+  const isCorrect = !!resultEvents.length && resultEvents.every((evt) => evt.params?.correct);
+  // if we are not correct, then lets filter out any correct
+  if (!isCorrect) {
+    resultEvents = resultEvents.filter((evt) => !evt.params?.correct);
   } else {
-    // the failedEvents might be just because the invalid condition didn't trip
-    // can't use these
-    /* const failedEvents = checkResult.failureEvents
-      .filter((evt) => evt.params?.correct === false)
-      .sort((a, b) => a.params?.order - b.params?.order);
-    console.log('INCORRECT RESULT', { failedEvents }); */
-    // should only have "incorrect" at this point
-    resultEvents = successEvents;
+    // if we are correct, then lets filter out any incorrect
+    resultEvents = resultEvents.filter((evt) => evt.params?.correct);
   }
 
-  if (resultEvents.length > 1) {
-    // if we have more events than one, then we don't need the defaults
-    // there shouldn't be more than one (or less really) of default rules (1 correct, 1 incorrect)
-    resultEvents = resultEvents.filter((evt) => evt.params?.default !== true);
+  // if we don't have any events left, then it's the default wrong
+  if (!resultEvents.length) {
+    resultEvents = [defaultWrong as Event];
   }
-  // TODO: if resultEvents.length === 0 send a "defaultWrong"
 
   let score = 0;
   if (scoringContext.trapStateScoreScheme) {
@@ -202,6 +310,12 @@ export const check = async (
     score,
     out_of: scoringContext.maxScore || 0,
     results: resultEvents,
+    triggered: {
+      r: resultEvents.length,
+      nr: resultEvents.map((e) => e.type),
+      s: successEvents.length,
+      ns: successEvents.map((e) => e.type),
+    },
   };
   if (encodeResults) {
     return b64EncodeUnicode(JSON.stringify(finalResults));
