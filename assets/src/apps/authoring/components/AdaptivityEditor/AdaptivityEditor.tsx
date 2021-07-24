@@ -16,6 +16,7 @@ import {
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
+import guid from 'utils/guid';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -73,6 +74,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       case 'feedback':
         return (
           <ActionFeedbackEditor
+            key={guid()}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);
@@ -82,6 +84,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       case 'navigation':
         return (
           <ActionNavigationEditor
+            key={guid()}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);
@@ -91,6 +94,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       case 'mutateState':
         return (
           <ActionMutateEditor
+            key={guid()}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);

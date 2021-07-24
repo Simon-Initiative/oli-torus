@@ -298,6 +298,10 @@ $panel-section-title-bar-color: #e8ebed;
     .aa-actions {
       position: relative;
       border-top: 1px solid $ui-border-color;
+
+      .input-group-text {
+        font-size: 12px;
+      }
     }
     .aa-canvas-header {
       position: relative;
