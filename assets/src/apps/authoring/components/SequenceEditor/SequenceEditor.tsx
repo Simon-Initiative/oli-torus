@@ -36,6 +36,7 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentGroup = useSelector(selectCurrentGroup);
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
+  const [itemToRename, setItemToRename] = useState<any>(undefined);
 
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
@@ -271,6 +272,34 @@ const SequenceEditor: React.FC<any> = (props) => {
     await dispatch(savePage());
   };
 
+  const handleRenameItem = async (item: any) => {
+    if (itemToRename.custom.sequenceName.trim() === '') {
+      setItemToRename(undefined);
+      return;
+    }
+    if (itemToRename.custom.sequenceName === item.custom.sequenceName) {
+      setItemToRename(undefined);
+      return;
+    }
+    const hierarchyCopy = clone(hierarchy);
+    const itemInHierarchy = findInHierarchy(hierarchyCopy, item.custom.sequenceId);
+    if (itemInHierarchy === undefined) {
+      return console.warn('item not renamed', item);
+    }
+    itemInHierarchy.custom.sequenceName = itemToRename.custom.sequenceName;
+    const newSequence = flattenHierarchy(hierarchyCopy);
+    const newGroup = { ...currentGroup, children: newSequence };
+    dispatch(upsertGroup({ group: newGroup }));
+    await dispatch(savePage());
+    setItemToRename(undefined);
+  };
+
+  useEffect(() => {
+    if (!itemToRename) return;
+    const inputToFocus = document.getElementById('input-sequence-item-name');
+    if (inputToFocus) inputToFocus.focus();
+  }, [itemToRename]);
+
   const SequenceItemContextMenu = (props: any) => {
     const { id, item, index, arr } = props;
 
@@ -340,6 +369,17 @@ const SequenceEditor: React.FC<any> = (props) => {
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
                 </button>
               )}
+              <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  setItemToRename(item);
+                }}
+              >
+                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
+              </button>
+              <div className="dropdown-divider" />
               {currentGroup?.children?.length > 1 && (
                 <>
                   <button
@@ -464,7 +504,33 @@ const SequenceEditor: React.FC<any> = (props) => {
                       className={`aa-sequence-item-toggle`}
                     />
                   ) : null}
-                  <span className="title">{title}</span>
+                  {!itemToRename ? (
+                    <span className="title">{title}</span>
+                  ) : itemToRename.custom.sequenceId !== item.custom.sequenceId ? (
+                    <span className="title">{title}</span>
+                  ) : null}
+                  {itemToRename && itemToRename?.custom.sequenceId === item.custom.sequenceId && (
+                    <input
+                      id="input-sequence-item-name"
+                      className="form-control form-control-sm"
+                      type="text"
+                      placeholder="Screen name"
+                      value={itemToRename.custom.sequenceName}
+                      onClick={(e) => e.preventDefault()}
+                      onChange={(e) =>
+                        setItemToRename({
+                          ...itemToRename,
+                          custom: { ...itemToRename.custom, sequenceName: e.target.value },
+                        })
+                      }
+                      onFocus={(e) => e.target.select()}
+                      onBlur={() => handleRenameItem(item)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleRenameItem(item);
+                        if (e.key === 'Escape') setItemToRename(undefined);
+                      }}
+                    />
+                  )}
                   {item.custom.isLayer && (
                     <i className="fas fa-layer-group ml-2 align-middle aa-isLayer" />
                   )}
