@@ -37,6 +37,8 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
   const [rootConditionIsAll, setRootConditionIsAll] = useState<boolean>(
     !!currentRule?.conditions?.all,
   );
+  const hasFeedback = actions.find((action: any) => action.type === 'feedback');
+  const hasNavigation = actions.find((action: any) => action.type === 'navigation');
 
   useEffect(() => {
     if (!currentRule) return;
@@ -171,12 +173,16 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
               className="dropdown-menu"
               aria-labelledby={`adaptive-editor-add-context-trigger`}
             >
-              <button className="dropdown-item">
-                <i className="fa fa-comment mr-2" /> Show Feedback
-              </button>
-              <button className="dropdown-item">
-                <i className="fa fa-compass mr-2" /> Navigate To
-              </button>
+              {!hasFeedback && (
+                <button className="dropdown-item">
+                  <i className="fa fa-comment mr-2" /> Show Feedback
+                </button>
+              )}
+              {!hasNavigation && (
+                <button className="dropdown-item">
+                  <i className="fa fa-compass mr-2" /> Navigate To
+                </button>
+              )}
               <button className="dropdown-item">
                 <i className="fa fa-crosshairs mr-2" /> Mutate State
               </button>
