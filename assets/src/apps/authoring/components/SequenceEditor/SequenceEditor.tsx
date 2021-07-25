@@ -281,15 +281,18 @@ const SequenceEditor: React.FC<any> = (props) => {
       setItemToRename(undefined);
       return;
     }
-    const hierarchyCopy = clone(hierarchy);
-    const itemInHierarchy = findInHierarchy(hierarchyCopy, item.custom.sequenceId);
-    if (itemInHierarchy === undefined) {
+    const hierarchyClone = clone(hierarchy);
+    const activityClone = clone(currentActivity);
+    const itemInHierarchy = findInHierarchy(hierarchyClone, item.custom.sequenceId);
+    if (itemInHierarchy === undefined || activityClone === undefined) {
       return console.warn('item not renamed', item);
     }
     itemInHierarchy.custom.sequenceName = itemToRename.custom.sequenceName;
-    const newSequence = flattenHierarchy(hierarchyCopy);
+    activityClone.title = itemToRename.custom.sequenceName;
+    const newSequence = flattenHierarchy(hierarchyClone);
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
+    await dispatch(upsertActivity({ activity: activityClone }));
     await dispatch(savePage());
     setItemToRename(undefined);
   };
