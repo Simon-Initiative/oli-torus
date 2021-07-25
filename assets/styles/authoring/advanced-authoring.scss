@@ -393,6 +393,8 @@ $panel-section-title-bar-color: #e8ebed;
       .details {
         flex-grow: 1;
         flex: 1;
+        display: flex;
+        align-items: center;
       }
       .title:hover {
         cursor: pointer;
