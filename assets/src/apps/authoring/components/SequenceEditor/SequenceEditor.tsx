@@ -517,7 +517,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                       id="input-sequence-item-name"
                       className="form-control form-control-sm"
                       type="text"
-                      placeholder="Screen name"
+                      placeholder={item.custom.isLayer ? 'Layer name' : 'Screen name'}
                       value={itemToRename.custom.sequenceName}
                       onClick={(e) => e.preventDefault()}
                       onChange={(e) =>
