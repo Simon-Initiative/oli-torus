@@ -38,7 +38,6 @@ import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
 import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
-import { isThisTypeNode } from 'typescript';
 
 const PAGE_SIZE = 5;
 
@@ -46,6 +45,7 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
+
 }
 
 type ActivityBankState = {

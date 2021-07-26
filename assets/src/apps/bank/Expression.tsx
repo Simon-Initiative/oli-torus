@@ -3,6 +3,11 @@ import * as Immutable from 'immutable';
 import * as Bank from 'data/content/bank';
 import { Objective } from 'data/content/objective';
 import { Select } from 'components/common/Selection';
+import { Objectives } from 'components/resource/Objectives';
+import { Fact } from 'data/content/bank';
+import { ActivityEditorMap } from 'data/content/editors';
+import { ActivityTypeSelection, ActivityType } from './ActivityTypeSelection';
+import { TextInput } from 'components/common/TextInput';
 
 export interface ExpressionProps {
   expression: Bank.Expression;
@@ -12,6 +17,9 @@ export interface ExpressionProps {
   editMode: boolean;
   allowText: boolean;
   allObjectives: Immutable.List<Objective>;
+  projectSlug: string;
+  onRegisterNewObjective: (objective: Objective) => void;
+  editorMap: ActivityEditorMap;
 }
 
 const baseFacts = [
@@ -91,6 +99,57 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
     },
   );
 
+  const buildValueEditor = () => {
+    if (props.expression.fact === Fact.objectives) {
+      return (
+        <Objectives
+          onRegisterNewObjective={props.onRegisterNewObjective}
+          selected={props.expression.value as number[]}
+          onEdit={(value) => {
+            props.onChange(Object.assign({}, props.expression, { value }));
+          }}
+          objectives={props.allObjectives.toArray()}
+          editMode={props.editMode}
+          projectSlug={props.projectSlug} />
+      );
+    } else if (props.expression.fact === Fact.type) {
+
+      const activityTypes = Object.keys(props.editorMap)
+        .map(k => {
+          const e = props.editorMap[k];
+          return {
+            id: e.id,
+            label: e.friendlyName,
+          };
+        });
+
+      return (
+        <ActivityTypeSelection
+          selected={props.expression.value as number[]}
+          onEdit={(value) => {
+            props.onChange(Object.assign({}, props.expression, { value }));
+          }}
+          multiple={props.expression.operator === Bank.ExpressionOperator.contains
+            || props.expression.operator === Bank.ExpressionOperator.doesNotContain}
+          activities={activityTypes}
+          editMode={props.editMode}
+        />
+      );
+    } else if (props.expression.fact === Fact.text) {
+      return (
+        <TextInput
+          editMode={props.editMode}
+          label="Enter search text"
+          value={props.expression.value as string}
+          type="text"
+          onEdit={(value) => {
+            props.onChange(Object.assign({}, props.expression, { value }));
+          }}
+        />
+      )
+    }
+  };
+
   return (
     <div>
       <Select
@@ -100,6 +159,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       >
         {facts}
       </Select>
+
       <Select
         editMode={props.editMode}
         value={props.expression.operator.toString()}
@@ -107,6 +167,8 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       >
         {operators}
       </Select>
+
+      {buildValueEditor()}
     </div>
   );
 };
