@@ -1,25 +1,16 @@
 import * as React from 'react';
-import * as Immutable from 'immutable';
 import * as Bank from 'data/content/bank';
-import { Objective } from 'data/content/objective';
 import { Select } from 'components/common/Selection';
 import { Objectives } from 'components/resource/Objectives';
 import { Fact } from 'data/content/bank';
-import { ActivityEditorMap } from 'data/content/editors';
-import { ActivityTypeSelection, ActivityType } from './ActivityTypeSelection';
-import { TextInput } from 'components/common/TextInput';
 
-export interface ExpressionProps {
+import { ActivityTypeSelection } from './ActivityTypeSelection';
+import { TextInput } from 'components/common/TextInput';
+import { LogicProps } from './common';
+
+export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;
   onChange: (expression: Bank.Expression) => void;
-  onRemove: () => void;
-  children?: (item: any, index: number) => React.ReactNode;
-  editMode: boolean;
-  allowText: boolean;
-  allObjectives: Immutable.List<Objective>;
-  projectSlug: string;
-  onRegisterNewObjective: (objective: Objective) => void;
-  editorMap: ActivityEditorMap;
 }
 
 const baseFacts = [
