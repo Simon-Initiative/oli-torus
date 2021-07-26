@@ -1,18 +1,5 @@
 import { IActivity } from "apps/delivery/store/features/activities/slice";
 
-export const screenSchema = {
-  title: 'Customize Avatar',
-  Size: { width: 1000, height: 500 },
-  checkButton: { showCheckBtn: false, checkButtonLabel: '' },
-  max: { maxAttempt: 0, maxScore: 0 },
-  palette: {},
-  customCssClass: '',
-  combineFeedback: false,
-  trapStateScoreScheme: true,
-  negativeScoreAllowed: false,
-  screenButton: false,
-};
-
 export const transformedSchema = {
   title: 'Customize Avatar',
   width: 1000,
@@ -43,7 +30,18 @@ export const screen: IActivity = {
       mainBtnLabel: '',
       negativeScoreAllowed: false,
       palette: {
-        useHtmlProps: true,
+        backgroundColor: "rgba(255,255,255,1)",
+        borderColor: "rgba(255,255,255,1)",
+        borderStyle: "solid",
+        borderWidth: "0.1px",
+        fillAlpha: 1,
+        fillColor: 16777215,
+        lineAlpha: 1,
+        lineColor: 16777215,
+        lineStyle: 0,
+        lineThickness: 0.1,
+        borderRadius: "10px",
+        useHtmlProps: false,
       },
       panelHeaderColor: 0,
       panelTitleColor: 0,

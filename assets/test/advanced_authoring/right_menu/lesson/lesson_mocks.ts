@@ -1,30 +1,3 @@
-export const lessonSchema = {
-  Properties: {
-    Size: {
-      width:1000,
-      height: 500,
-    },
-    Appearance: {
-      theme: 'default',
-      customCssUrl: 'https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css',
-    },
-    ScoreOverview: {
-      enableLessonMax: true,
-      lessonMax: 0,
-    },
-    FinishPanel: {
-      logoutMessage: '',
-      logoutPanelImageURL: '',
-    },
-    title: 'Seasons',
-    customCSS: '',
-    enableHistory: true,
-  },
-  CustomLogic: {
-    variables: JSON.stringify([]),
-    customScript: '',
-  },
-};
 
 export const transformedSchema = {
   custom: {
@@ -39,7 +12,8 @@ export const transformedSchema = {
   },
   additionalStylesheets: [
     'default',
-    'https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css',],
+    'https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css',
+  ],
   title: 'Seasons',
   customCss: '',
   customScript: '',
@@ -61,8 +35,7 @@ export const lesson = {
     'default',
     'https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/styles/style_season.css',
   ],
-  customCss:
-    '',
+  customCss: '',
   customScript: '',
   custom: {
     advancedAuthoring: false,
