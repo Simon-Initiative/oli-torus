@@ -51,7 +51,7 @@ const conditionOperatorOptions = [
 ];
 
 const ConditionItemEditor = (props: any) => {
-  const { condition, onChange } = props;
+  const { condition, onChange, onDelete } = props;
 
   const [fact, setFact] = useState<string>(condition.fact);
   const [operator, setOperator] = useState<string>(condition.operator);
@@ -91,24 +91,28 @@ const ConditionItemEditor = (props: any) => {
         target
       </label>
       <input
+        key={`target-${uuid}`}
         id={`target-${uuid}`}
         className="form-control form-control-sm flex-grow-1 mw-25 mr-2"
         type="text"
         placeholder="Target"
         defaultValue={fact}
-        onBlur={handleFactChange}
+        onBlur={(e) => handleFactChange(e)}
         title={fact}
+        tabIndex={0}
       />
       <label className="sr-only" htmlFor={`operator-${uuid}`}>
         operator
       </label>
       <select
+        key={`operator-${uuid}`}
         className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
         id={`operator-${uuid}`}
         placeholder="Operator"
         defaultValue={operator}
         onChange={(e) => handleOperatorChange(e)}
         title={operator}
+        tabIndex={0}
       >
         {conditionOperatorOptions.map((option, index) => (
           <option key={`option${index}-${uuid}`} value={option.value} title={option.key}>
@@ -122,10 +126,12 @@ const ConditionItemEditor = (props: any) => {
       <input
         type="text"
         className="form-control form-control-sm flex-grow-1 mw-25"
+        key={`value-${uuid}`}
         id={`value-${uuid}`}
         defaultValue={value}
         onBlur={(e) => handleValueChange(e)}
         title={value}
+        tabIndex={0}
       />
       <OverlayTrigger
         placement="top"
@@ -137,7 +143,7 @@ const ConditionItemEditor = (props: any) => {
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1">
+          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete()}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>

@@ -3,7 +3,11 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import debounce from 'lodash/debounce';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
-import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import {
+  IActivity,
+  selectCurrentActivity,
+  upsertActivity,
+} from '../../../delivery/store/features/activities/slice';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
 import {
   findInSequence,
@@ -17,6 +21,8 @@ import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import guid from 'utils/guid';
+import { clone } from 'utils/common';
+import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -25,7 +31,7 @@ export interface AdaptivityEditorProps {
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: AdaptivityEditorProps) => {
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
-  // const currentActivity = useSelector(selectCurrentActivity);
+  const currentActivity = useSelector(selectCurrentActivity);
   const isLayer = getIsLayer();
 
   const [isDirty, setIsDirty] = useState(false);
@@ -48,6 +54,56 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
     setRootConditionIsAll(!!currentRule.conditions?.all);
   }, [currentRule]);
 
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+    const updatedRule = {
+      id: currentRule.id,
+      name: currentRule.name,
+      additionalScore: currentRule.additionalScore || 0,
+      priority: currentRule.priority || 1,
+      forceProgress: !!currentRule.forceProgress,
+      correct: currentRule.correct,
+      default: currentRule.default,
+      disabled: currentRule.disabled,
+      conditions: {
+        [rootConditionIsAll ? 'all' : 'any']: conditions,
+      },
+      event: {
+        ...currentRule.event,
+        type: currentRule.event.type || `${currentRule.id}.${currentRule.name}`,
+        params: {
+          actions,
+        },
+      },
+    };
+    setIsDirty(false);
+    handleRuleChange(updatedRule);
+  }, [isDirty]);
+
+  const handleRuleChange = (rule: any) => {
+    const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
+    const diff = JSON.stringify(rule) !== JSON.stringify(existing);
+    console.log('RULE CHANGE: ', {
+      rule,
+      existing,
+      diff,
+    });
+    if (!existing) {
+      console.warn("rule not found, shouldn't happen!!!");
+      return;
+    }
+    if (diff) {
+      const activityClone = clone(currentActivity);
+      const rulesClone = [...currentActivity?.authoring.rules];
+      rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
+      activityClone.authoring.rules = rulesClone;
+      dispatch(saveActivity({ activity: activityClone }));
+      dispatch(upsertActivity({ activity: activityClone }));
+    }
+  };
+
   const notifyTime = 250;
   const debounceNotifyChanges = useCallback(
     debounce(
@@ -61,12 +117,18 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
   );
 
   const handleConditionsEditorChange = (updatedConditionsBlock: any) => {
+    console.log('CONDITION ED: ', updatedConditionsBlock);
     const conds = updatedConditionsBlock.all || updatedConditionsBlock.any || [];
-    if (JSON.stringify(conditions) === JSON.stringify(conds)) {
+    const updatedIsAll = !!updatedConditionsBlock.all;
+    const rootChanged = updatedIsAll !== rootConditionIsAll;
+    const condsChanged = JSON.stringify(conds) !== JSON.stringify(conditions);
+
+    if (!rootChanged && !condsChanged) {
+      // nothing changed
       return;
     }
-    console.log('CONDITION ED: ', updatedConditionsBlock);
-    setRootConditionIsAll(!!updatedConditionsBlock.all);
+
+    setRootConditionIsAll(updatedIsAll);
     setConditions(conds);
     debounceNotifyChanges();
   };
