@@ -4,6 +4,7 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import React, { Fragment } from 'react';
 import CustomCheckbox from './custom/CustomCheckbox';
+import CustomTextBox from './custom/CustomTextBox';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -14,6 +15,7 @@ interface PropertyEditorProps {
 
 const widgets = {
   CheckboxWidget: CustomCheckbox,
+  TextWidget: CustomTextBox,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
