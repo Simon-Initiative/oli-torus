@@ -28,6 +28,7 @@ import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import { clone } from 'utils/common';
+import useClipboard from 'react-use-clipboard';
 
 const SequenceEditor: React.FC<any> = (props) => {
   const dispatch = useDispatch();
@@ -37,6 +38,12 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
+  const [textToCopy, setTextToCopy] = useState('');
+  const [isCopied, setCopied] = useClipboard(textToCopy);
+
+  useEffect(() => {
+    if (textToCopy.trim() !== '') setCopied();
+  }, [textToCopy]);
 
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
@@ -382,6 +389,18 @@ const SequenceEditor: React.FC<any> = (props) => {
               >
                 <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
               </button>
+              {!item.custom.isLayer && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    setTextToCopy(item.custom.sequenceId);
+                  }}
+                >
+                  <i className="fas fa-clipboard align-text-top mr-2" /> Copy Screen ID
+                </button>
+              )}
               <div className="dropdown-divider" />
               {currentGroup?.children?.length > 1 && (
                 <>
