@@ -1,12 +1,12 @@
 import React from 'react';
-import { useEffect } from 'react';
-import { useState } from 'react';
-interface CustomTextBoxProps {
+import { useEffect, useState } from 'react';
+
+interface CustomTextboxProps {
   label: string;
   id: any;
   value: string;
 }
-const CustomTextBox: React.FC<CustomTextBoxProps> = (props: any) => {
+const CustomTextbox: React.FC<CustomTextboxProps> = (props: any) => {
   const [value, setValue] = useState<string>(props.value);
   useEffect(() => {
     setValue(props.value);
@@ -26,4 +26,4 @@ const CustomTextBox: React.FC<CustomTextBoxProps> = (props: any) => {
   );
 };
 
-export default CustomTextBox;
+export default CustomTextbox;
