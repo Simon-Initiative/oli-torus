@@ -4,7 +4,19 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.12.3 (2021-07-23)
+
+### Bug Fixes
+
 - Fix datashop export content model parsing
+- Fix incorrect table column alignment on Insights page
+- Truncate "relative difficulty" on Insights page
+- Change wording on "Break down objective" modal
+- Make "Break down objective" explanation image responsive
+- Fix page editor content block rendering issue in Firefox - increase block contrast
+- Fix problem in Firefox where changing question tabs scrolls to top of page
 
 ### Enhancements
 
