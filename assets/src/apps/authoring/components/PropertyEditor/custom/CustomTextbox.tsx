@@ -12,13 +12,14 @@ const CustomTextBox: React.FC<CustomTextBoxProps> = (props: any) => {
     setValue(props.value);
   }, [props]);
   return (
-    <div className='mb-0 form-group'>
+    <div className="mb-0 form-group">
       <span className="form-label">{props.label}</span>
-      <input className='form-control'
+      <input
+        className="form-control"
         type="text"
         id={props.id}
         value={value}
-        onChange={e => setValue(e.target.value)}
+        onChange={(e) => setValue(e.target.value)}
         onBlur={(e) => props.onChange(e.target.value)}
       />
     </div>
