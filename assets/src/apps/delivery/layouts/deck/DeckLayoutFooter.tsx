@@ -17,6 +17,7 @@ import { triggerCheck } from '../../store/features/adaptivity/actions/triggerChe
 import {
   selectCurrentFeedbacks,
   selectHistoryNavigationActivity,
+  selectInitPhaseComplete,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -59,7 +60,10 @@ export const handleValueExpression = (
           const ownerActivity = currentActivityTree?.find(
             (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
           );
-          value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+          if (ownerActivity) {
+            value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          }
         }
       });
     }
@@ -144,6 +148,7 @@ const DeckLayoutFooter: React.FC = () => {
   const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
+  const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -409,7 +414,7 @@ const DeckLayoutFooter: React.FC = () => {
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
-        isLoading={isLoading}
+        isLoading={isLoading || !initPhaseComplete}
         text={nextButtonText}
         handler={checkHandler}
         isGoodFeedbackPresent={isGoodFeedback}

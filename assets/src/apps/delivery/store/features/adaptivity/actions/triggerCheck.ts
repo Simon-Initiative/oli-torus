@@ -110,12 +110,20 @@ export const triggerCheck = createAsyncThunk(
 
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
+      // need to get this fresh right now so it is the latest
+      const rootState = getState() as RootState;
+      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+      const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
+
+      const treeActivityIds = currentActivityTree.map((a) => a.id);
+      const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
+
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
       // custom rules can be provided via PreviewTools Adaptivity pane for specific rule triggering
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
+      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
       const check_call_result = (await check(
         localizedSnapshot,
         rulesToCheck,
@@ -125,51 +133,59 @@ export const triggerCheck = createAsyncThunk(
       isCorrect = check_call_result.correct;
       score = check_call_result.score;
       outOf = check_call_result.out_of;
-      /* console.log('CHECK RESULT', {
+      console.log('CHECK RESULT', {
+        check_call_result,
         currentActivity,
         currentRules,
         checkResult,
         localizedSnapshot,
-      }); */
-    } else {
-      /* console.log('CHECKING', {
-        sectionSlug,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
-      }); */
+      });
+    } else {
+      // need to get this fresh right now so it is the latest
+      const rootState = getState() as RootState;
+      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+      const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
 
       if (!currentActivityAttemptGuid) {
-        console.error('not current attempt, cannot eval', { currentActivityTreeAttempts });
+        console.error('not current attempt, cannot eval', { currentActivityAttemptGuid });
         return;
       }
-
-      // BS: not sure why the current attempt responses are not up to date currently,
-      // for now just merge the tree state into the current attempt
-      // the LAYER is always up to date, but the current attempt is not for some reason
-      // this only occurs with layers, more investigation needed
 
       // we have to send all the current activity attempt state to the server
       // because the server doesn't know the current sequence id and will strip out
       // all sequence ids from the path for these only
-      const partResponses: PartResponse[] =
-        currentAttempt?.parts.map(({ partId, attemptGuid, response }) => {
-          // doing in reverse so that the layer's choice is the last one
-          const combinedResponse = currentActivityTreeAttempts
-            .reverse()
-            .reduce((collect: any, attempt: any) => {
-              const part = attempt.parts.find((p: any) => p.partId === partId);
-              if (part) {
-                if (part.response) {
-                  collect = { ...collect, ...part.response };
-                }
-              }
-              return collect;
-            }, {});
-          const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
-          return { attemptGuid, response: { input: finalResponse } };
-        }) || [];
-      /* console.log('PART RESPONSES', { partResponses, uniquePartResponses }); */
+      /* const partResponses: PartResponse[] = currentActivityTreeAttempts.reduce(
+        (acc: any, attempt) => {
+          const partResponsesForAttempt = attempt?.parts.map(
+            ({ partId, attemptGuid, response }) => ({
+              attemptGuid,
+              response: { input: response },
+            }),
+          );
+          return acc.concat(partResponsesForAttempt);
+        },
+        [],
+      ); */
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const partResponses: PartResponse[] = currentAttempt!.parts.map(
+        ({ attemptGuid, response }) => ({
+          attemptGuid,
+          response: { input: response },
+        }),
+      );
+
+      console.log('CHECKING', {
+        sectionSlug,
+        currentActivityTreeAttempts,
+        currentAttempt,
+        currentActivityTree,
+        localizedSnapshot,
+        partResponses,
+      });
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
