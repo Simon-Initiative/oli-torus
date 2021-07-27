@@ -141,12 +141,12 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
         data.palette.lineColor || data.palette.lineColor === 0
           ? chroma(data.palette.lineColor).rgb().join(',')
           : '255, 255, 255'
-      },${data.palette.lineAlpha ? data.palette.lineAlpha : '100'})`,
+      },${data.palette.lineAlpha || '100'})`,
       backgroundColor: `rgba(${
         data.palette.fillColor || data.palette.fillColor === 0
           ? chroma(data.palette.fillColor).rgb().join(',')
           : '255, 255, 255'
-      },${data.palette.fillAlpha? data.palette.fillAlpha : '100'})`,
+      },${data.palette.fillAlpha || '100'})`,
     };
     return {
       ...data,
