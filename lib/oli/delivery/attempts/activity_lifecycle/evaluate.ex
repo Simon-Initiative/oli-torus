@@ -72,14 +72,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         decoded = Base.decode64!(check_results)
         # Logger.debug("Decoded: #{decoded}")
         decodedResults = Poison.decode!(decoded)
+        dbg = decodedResults["debug"]
+        Logger.debug("Results #{Jason.encode!(dbg)}")
 
         score = decodedResults["score"]
         out_of = decodedResults["out_of"]
         client_evaluations = to_client_results(score, out_of, part_inputs)
+        Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
           {:ok, _} -> {:ok, decodedResults}
-          e -> e
+          {:error, err} ->
+            Logger.debug("Error in apply client results! #{err}")
+            {:error, err}
         end
 
       e ->
