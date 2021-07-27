@@ -1,21 +1,56 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { parseArray } from 'utils/common';
-import { CapiVariable, CapiVariableTypes, coerceCapiValue } from './capi';
+import { parseArray, parseBoolean } from 'utils/common';
+import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
-export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
+export const looksLikeJson = (str: string) => {
+  const emptyJsonObj = '{}';
+  const jsonStart1 = '{"';
+  const jsonStart2 = '{ "';
+  const jsonEnd = '}';
+
+  const startsLikeJson = str.startsWith(jsonStart1) || str.startsWith(jsonStart2);
+  const endsLikeJson = str.endsWith(jsonEnd);
+
+  return str === emptyJsonObj || (startsLikeJson && endsLikeJson);
+};
+
+export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value: any }): string => {
   let val: any = v.value;
   let isValueVar = false;
+
   if (typeof val === 'string') {
     // we're assuming this is {stage.foo.whatever} as opposed to JSON {"foo": 1}
     // note this will break if number keys are used {1:2} !!
-    if (val[0] === '{' && val[1] !== '"') {
-      isValueVar = true;
+
+    const looksLikeJSON = looksLikeJson(val);
+    const hasCurlies = val.includes('{') && val.includes('}');
+    isValueVar = hasCurlies && !looksLikeJSON;
+  }
+
+  if (isValueVar) {
+    // PMP-750 support expression arrays
+    if (val[0] === '[' && val[1] === '{' && (val.includes('},{') || val.includes('}, {'))) {
+      val = val.replace(/[[\]]+/g, '');
+    }
+    if (val.includes('},{') || val.includes('}, {')) {
+      val = JSON.stringify(val.split(',')).replace(/"/g, '');
+    }
+
+    // it might be CSS string, which can be decieving
+    let actuallyAString = false;
+    try {
+      evalScript(`let foo = ${val};`);
+    } catch (e) {
+      // if we have parsing error then we're guessing it's CSS
+      actuallyAString = true;
+    }
+
+    if (!actuallyAString) {
+      return `${val}`;
     }
   }
-  if (isValueVar) {
-    return `let {${v.key}} = ${val};`;
-  }
+
   if (
     v.type === CapiVariableTypes.STRING ||
     v.type === CapiVariableTypes.ENUM ||
@@ -28,9 +63,11 @@ export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
     // for janus-script
     val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '')}"`;
   }
+
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
     val = JSON.stringify(parseArray(val));
   }
+
   if (v.type === CapiVariableTypes.NUMBER) {
     // val = convertExponentialToDecimal(val);
     val = parseFloat(val);
@@ -38,7 +75,22 @@ export const stateVarToJanusScriptAssign = (v: CapiVariable): string => {
       val = 'null';
     }
   }
-  return `let {${v.key}} = ${val};`;
+
+  if (v.type === CapiVariableTypes.BOOLEAN) {
+    val = parseBoolean(val);
+  }
+
+  if (typeof val === 'object') {
+    val = JSON.stringify(val);
+  }
+
+  if (!v.type || v.type === CapiVariableTypes.UNKNOWN) {
+    if (typeof val === 'string' && val[0] !== '"' && val.slice(-1) !== '"') {
+      val = `"${val}"`;
+    }
+  }
+
+  return `${val}`;
 };
 
 export const evalScript = (
@@ -51,7 +103,7 @@ export const evalScript = (
   const parser = new Parser(lexer);
   const program = parser.parseProgram();
   if (parser.errors.length) {
-    console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors });
+    /* console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors }); */
     throw new Error(parser.errors.join('\n'));
   }
   const result = evaluator.eval(program, globalEnv);
@@ -62,22 +114,22 @@ export const evalScript = (
 export const getAssignScript = (state: Record<string, any>): string => {
   const vars = Object.keys(state).map((key) => {
     const val = state[key];
-    let writeVal = { key, value: val };
+    let writeVal = { key, value: val, type: 0 };
     // if it's already a capi var like object
     if (val && val.constructor && val.constructor === Object) {
       if (val.key || val.path) {
         // the path should be a full key like stage.foo.text
         writeVal = { ...val, key: val.path ? val.path : val.key };
       } else {
-        // with FIB getting a {} value? stringify it to stop errors
-        console.warn('[getAssignScript] wrong object value?', { key, val, state });
         writeVal.value = JSON.stringify(val);
       }
     }
-    const cVar = new CapiVariable(writeVal);
-    return cVar;
+    if (!writeVal.type) {
+      writeVal.type = getCapiType(writeVal.value);
+    }
+    return writeVal;
   });
-  const letStatements = vars.map(stateVarToJanusScriptAssign);
+  const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
   return letStatements.join('');
 };
 
@@ -127,78 +179,38 @@ export const applyState = (
   switch (operation.operator) {
     case 'adding':
     case '+':
-      script += `= {${targetKey}} + ${coerceCapiValue(operation.value, targetType)};`;
+      script += `= {${targetKey}} + ${getExpressionStringForValue({
+        value: operation.value,
+        type: targetType,
+      })};`;
       break;
     case 'subtracting':
     case '-':
-      script += `= {${targetKey}} - ${coerceCapiValue(operation.value, targetType)};`;
+      script += `= {${targetKey}} - ${getExpressionStringForValue({
+        value: operation.value,
+        type: targetType,
+      })};`;
       break;
     case 'bind to':
       // NOTE: once a value is bound, you can *never* set it other than through binding????
       // at least right now otherwise it will just overwrite the binding
       // binding is a special case, it MUST be a string because it's binding to a variable
-      script += `&= {${operation.value}};`;
+      // it should not be wrapped in curlies already
+      if (typeof operation.value !== 'string') {
+        throw new Error(`bind to value must be a string, got ${typeof operation.value}`);
+      }
+      if (operation.value[0] === '{' && operation.value.slice(-1) === '}') {
+        script += `= ${operation.value};`;
+      } else {
+        script += `&= {${operation.value}};`;
+      }
       break;
     case 'setting to':
     case '=':
-      {
-        let newValue = operation.value;
-        if (typeof newValue === 'string') {
-          // SUPPORTED:
-          // {q:1541204522672:818|stage.FillInTheBlanks.Input 1.Value}
-          // {stage.foo.whatever}
-          // {stage.foo.bar}{session.blah} (multiples)
-          // {stage.vft.Score}*70 + {stage.vft.Map complete}*100 - {session.tutorialScore}
-          // round({stage.foo.something})
-          // PMP-705: {e:1617736969329:1|stage.HeatSourceSorting.Content Slots.Slot 1},{e:1617736969329:1|stage.HeatSourceSorting.Content Slots.Slot 2}
-          // PMP-705: [{e:1617736969329:1|stage.HeatSourceSorting.Content Slots.Slot 1},{e:1617736969329:1|stage.HeatSourceSorting.Content Slots.Slot 2}]
-          // NOT SUPPORTED:
-          // @latex7@latex
-          if (
-            newValue[0] === '[' &&
-            newValue[1] === '{' &&
-            (newValue.includes('},{') || newValue.includes('}, {'))
-          ) {
-            newValue = newValue.replace(/[[\]]+/g, '');
-          }
-          if (newValue[0] === '{' && newValue[1] !== '"') {
-            // BS: this assumes that if the string starts with {" that it's intended
-            // as a JSON string, not a script; possibly check opType to see if
-            // the intended type is a string or not to allow for creating hashes like {"foo": 3}
-            // that are NOT meant to be JSON strings
-            if (newValue.slice(-1) === '}' && newValue?.indexOf('\n') !== -1) {
-              newValue = JSON.stringify(newValue.replace(/"/g, '"').replace(/\n/g, ''));
-            }
-            // PMP-705 (DS): initState contains an array of variables set as a string
-            if (newValue.includes('},{') || newValue.includes('}, {')) {
-              newValue = JSON.stringify(newValue.split(',')).replace(/"/g, '');
-            }
-            script += `= ${newValue};`;
-          } else {
-            // this is where it's maybe just a string
-            if (targetType !== CapiVariableTypes.STRING) {
-              if (newValue.indexOf('{') >= 0 && newValue.indexOf('}') >= 0) {
-                // this is most likely an expression that we don't want to coerce
-                // unlke above it doesn't *start* with the variable however
-                script += `= ${newValue};`;
-              } else {
-                // it's not supposed to be a string however, so we need to coerce it
-                const coerced = coerceCapiValue(newValue, targetType);
-                // after coersion if it's still a string (likely "ENUM" type) we need to add quotes
-                if (typeof coerced === 'string') {
-                  script += `= "${coerced}";`;
-                } else {
-                  script += `= ${coerced};`;
-                }
-              }
-            } else {
-              script += `= "${newValue.replace(/"/g, '\\"')}";`;
-            }
-          }
-        } else {
-          script += Array.isArray(newValue) ? `= ${JSON.stringify(newValue)}` : `= ${newValue}`;
-        }
-      }
+      script = `let {${targetKey}} = ${getExpressionStringForValue({
+        value: operation.value,
+        type: targetType,
+      })};`;
       break;
     default:
       console.warn(`Unknown applyState operator ${operation.operator}!`);
