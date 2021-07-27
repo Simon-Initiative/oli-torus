@@ -157,25 +157,42 @@ export const triggerCheck = createAsyncThunk(
       // we have to send all the current activity attempt state to the server
       // because the server doesn't know the current sequence id and will strip out
       // all sequence ids from the path for these only
-      /* const partResponses: PartResponse[] = currentActivityTreeAttempts.reduce(
-        (acc: any, attempt) => {
-          const partResponsesForAttempt = attempt?.parts.map(
-            ({ partId, attemptGuid, response }) => ({
-              attemptGuid,
-              response: { input: response },
-            }),
-          );
-          return acc.concat(partResponsesForAttempt);
-        },
-        [],
-      ); */
+
+      const treeActivityIds = currentActivityTree.map((a) => a.id);
+      const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const partResponses: PartResponse[] = currentAttempt!.parts.map(
-        ({ attemptGuid, response }) => ({
-          attemptGuid,
-          response: { input: response },
-        }),
+        ({ partId, attemptGuid, response }) => {
+          // snapshot is more up to date
+          // TODO: resolve syncing issue, this is a workaround
+          let finalResponse = response;
+          if (!finalResponse) {
+            // if a null response, it actually might live on a parent attempt
+            // walk backwards to find the parent
+            finalResponse = currentActivityTreeAttempts.reduce((acc, attempt) => {
+              const part = attempt?.parts.find((p) => p.partId === partId);
+              return part?.response || acc;
+            }, null);
+          }
+          if (finalResponse) {
+            finalResponse = Object.keys(finalResponse).reduce((acc: any, key) => {
+              acc[key] = { ...finalResponse[key] };
+              const item = acc[key];
+              if (item.path) {
+                const snapshotValue = localizedSnapshot[item.path];
+                if (snapshotValue !== undefined) {
+                  item.value = snapshotValue;
+                }
+              }
+              return acc;
+            }, {});
+          }
+          return {
+            attemptGuid,
+            response: { input: finalResponse },
+          };
+        },
       );
 
       console.log('CHECKING', {
