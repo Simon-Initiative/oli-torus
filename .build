@@ -192,6 +192,7 @@ Oli.Publishing.html
 Oli.Qa.Review.html
 Oli.Qa.Reviewers.Accessibility.html
 Oli.Qa.Reviewers.Content.html
+Oli.Qa.Reviewers.Equity.html
 Oli.Qa.Reviewers.Pedagogy.html
 Oli.Qa.Reviews.html
 Oli.Qa.UriValidator.html
@@ -437,8 +438,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-1dcbe734ba.js
-dist/sidebar_items-1ec8ebb658.js
+dist/search_items-4878a2ad2b.js
+dist/sidebar_items-21a3729c1e.js
 index.html
 license.html
 readme.html
