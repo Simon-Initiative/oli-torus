@@ -36,6 +36,13 @@ defmodule Oli.Qa do
     |> Accessibility.review()
     |> Content.review()
     |> Pedagogy.review()
-    |> Equity.review()
+    |> maybe_equity_review()
+  end
+
+  defp maybe_equity_review(project_slug) do
+    case Oli.Features.enabled?("equity") do
+      true -> Equity.review(project_slug)
+      false -> project_slug
+    end
   end
 end
