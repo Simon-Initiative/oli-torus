@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Updated research consent form
+
 ### Enhancements
 
 ## 0.12.3 (2021-07-23)
