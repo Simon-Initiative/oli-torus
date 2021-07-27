@@ -1,4 +1,5 @@
 import React, { CSSProperties, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { ColorResult, SketchPicker } from 'react-color';
 interface ColorPickerProps {
   label: string;
@@ -19,9 +20,13 @@ const getRGBColorValue = (value: any) => {
 };
 
 const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
-  const color = getRGBColorValue(props.value);
+  console.log('came to colorpicker',props);
+  const [color, setColor] = useState(getRGBColorValue(props.value));
   const [displayPicker, setDisplayPicker] = useState(false);
-
+  useEffect(() => {
+    console.log('inside useEffect',props);
+    setColor(getRGBColorValue(props.value));
+  }, [props]);
   const handleColorBoxClick = () => {
     setDisplayPicker(true);
     document.addEventListener('mousedown', handleClick);
