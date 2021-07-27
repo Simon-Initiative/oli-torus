@@ -6,6 +6,7 @@ import {
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
   notContainsOperator,
+  parseArrayString,
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -286,6 +287,18 @@ describe('Operators', () => {
       expect(containsOnlyOperator([8, 3, 1], [1, 3])).toEqual(false);
       expect(containsOnlyOperator([8, 3, 1], '3,1,8')).toEqual(true);
     });
+  });
+
+  describe('Parse Array String', () => {
+    expect(parseArrayString(['1', '2', '3'])).toEqual([1, 2, 3]);
+    expect(parseArrayString(['1', 2, '3'])).toEqual([1, 2, 3]);
+    expect(parseArrayString(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
+    expect(parseArrayString(['Stem', 'Option1', 'Option2'])).toEqual([
+      'Stem',
+      'Option1',
+      'Option2',
+    ]);
+    expect(parseArrayString('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
   });
 
   describe('Range Operators', () => {

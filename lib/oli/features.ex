@@ -4,7 +4,10 @@ defmodule Oli.Features do
   alias Oli.Repo
   alias Oli.Features.{FeatureState, Feature}
 
-  @features [%Feature{id: 1, label: "adaptivity", description: "Adaptive lesson authoring"}]
+  @features [
+    %Feature{id: 1, label: "adaptivity", description: "Adaptive lesson authoring"},
+    %Feature{id: 2, label: "equity", description: "Equity qa check"}
+  ]
 
   @by_id Enum.reduce(@features, %{}, fn f, m -> Map.put(m, f.id, f) end)
   @by_label Enum.reduce(@features, %{}, fn f, m -> Map.put(m, f.label, f) end)
@@ -14,10 +17,13 @@ defmodule Oli.Features do
   # By defining these functions like this we get a level of compile time
   # safety since a client could not do something like call get_by_label("something wrong")
   def get_by_id(1), do: Map.get(@by_id, 1)
+  def get_by_id(2), do: Map.get(@by_id, 2)
 
   def get_by_label("adaptivity"), do: Map.get(@by_label, "adaptivity")
+  def get_by_label("equity"), do: Map.get(@by_label, "equity")
 
   def enabled?("adaptivity"), do: get_state(get_by_label("adaptivity").id) == :enabled
+  def enabled?("equity"), do: get_state(get_by_label("equity").id) == :enabled
 
   defp get_state(id) do
     Repo.get!(FeatureState, id).state
@@ -35,8 +41,8 @@ defmodule Oli.Features do
     Enum.zip(@features, Repo.all(query))
   end
 
-  def change_state("adaptivity", state),
-    do: update_feature_state(get_by_label("adaptivity").id, state)
+  def change_state(label, state),
+    do: update_feature_state(get_by_label(label).id, state)
 
   def bootstrap_feature_states() do
     Enum.map(@features, fn %Feature{id: id} ->

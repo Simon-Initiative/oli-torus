@@ -60,7 +60,10 @@ export const handleValueExpression = (
           const ownerActivity = currentActivityTree?.find(
             (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
           );
-          value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+          if (ownerActivity) {
+            value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          }
         }
       });
     }

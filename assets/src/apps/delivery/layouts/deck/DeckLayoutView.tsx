@@ -200,19 +200,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         [...new Set([...defaultClasses, ...customClasses])].map((str) => str.trim()),
       );
     } else if (currentActivity?.content?.partsLayout) {
-      // check if activities have vft
-      // BS: TODO check whole tree for vft (often is in parent layer)
-      let hasVft = false;
-      currentActivityTree.forEach((activity) => {
-        if (!hasVft) {
-          hasVft = activity?.content?.partsLayout.some((part: any) => part.id === 'vft');
-        }
-      });
-      if (hasVft) {
-        // set new class list after check for duplicate strings
-        // & strip whitespace from array strings
-        setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
-      }
+      //since we already have getCustomClassAncestry wokring now, we don't need the previous code.
+      setActivityClasses([...new Set([...defaultClasses])].map((str) => str.trim()));
     }
 
     return () => {
