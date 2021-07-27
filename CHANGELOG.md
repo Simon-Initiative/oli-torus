@@ -2,11 +2,11 @@
 
 ## Unreleased
 
+## 0.12.4 (2021-07-27)
+
 ### Bug Fixes
 
 - Updated research consent form
-
-### Enhancements
 
 ## 0.12.3 (2021-07-23)
 
