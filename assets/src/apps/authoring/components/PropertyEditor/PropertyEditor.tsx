@@ -4,7 +4,7 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import React, { Fragment } from 'react';
 import CustomCheckbox from './custom/CustomCheckbox';
-import CustomTextBox from './custom/CustomTextBox';
+import CustomTextBox from './custom/CustomTextbox';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
