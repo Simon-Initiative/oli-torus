@@ -2,12 +2,17 @@ import React, { Fragment, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 import ConditionItemEditor from './ConditionItemEditor';
+import ConditionsBlock from './ConditionsBlock';
 
 const ConditionsBlockEditor = (props: any) => {
   const { type, defaultConditions, onChange } = props;
 
   const [blockType, setBlockType] = useState<'any' | 'all'>(type);
   const [conditions, setConditions] = useState<any[]>(defaultConditions || []);
+  console.log(
+    '🚀 > file: ConditionsBlockEditor.tsx > line 12 > ConditionsBlockEditor > conditions',
+    conditions,
+  );
 
   useEffect(() => {
     setBlockType(type);
@@ -46,6 +51,11 @@ const ConditionsBlockEditor = (props: any) => {
   };
 
   const handleDeleteCondition = (condition: any) => {
+    // find this specific condition with in all the conditions
+    // console.log(
+    //   '🚀 > file: ConditionsBlockEditor.tsx > line 50 > handleDeleteCondition > condition',
+    //   condition,
+    // );
     const temp = conditions.filter((c) => c !== condition);
     setConditions(temp);
   };
@@ -67,124 +77,6 @@ const ConditionsBlockEditor = (props: any) => {
       clone[index] = changes;
       setConditions(clone);
     }
-  };
-
-  const ConditionsBlock = (props: any) => {
-    const { type, defaultConditions, onChange } = props;
-    const uuid = guid();
-
-    return (
-      <div className="aa-condition border rounded p-2 mt-4">
-        {defaultConditions.map((condition: any, index: number) => (
-          <Fragment key={`${guid()}`}>
-            {(condition && condition.all) || condition.any ? (
-              <ConditionsBlock
-                key={`${guid()}`}
-                type={condition.all ? 'all' : 'any'}
-                defaultConditions={condition.all || condition.any || []}
-                onChange={onChange()}
-              />
-            ) : (
-              <ConditionItemEditor
-                key={`${guid()}`}
-                condition={condition}
-                onChange={(changes: any) => {
-                  handleConditionItemChange(condition, changes);
-                }}
-                onDelete={() => handleDeleteCondition(condition)}
-              />
-            )}
-          </Fragment>
-        ))}
-
-        {/* <div className="aa-condition-header d-flex justify-content-between align-items-center">
-          <div>CONDITIONS</div>
-          <div>
-            <OverlayTrigger
-              placement="top"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  Delete Group
-                </Tooltip>
-              }
-            >
-              <span>
-                <button className="btn btn-link p-0">
-                  <i className="fa fa-trash-alt" />
-                </button>
-              </span>
-            </OverlayTrigger>
-            <OverlayTrigger
-              placement="top"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  New Condition
-                </Tooltip>
-              }
-            >
-              <span>
-                <button className="btn btn-link p-0 ml-1">
-                  <i className="fa fa-plus" />
-                </button>
-              </span>
-            </OverlayTrigger>
-          </div>
-        </div>
-        <div className="d-flex align-items-center flex-wrap">
-          <span className="mr-2">If</span>
-          <div className="form-check form-check-inline mr-1">
-            <input
-              className="form-check-input"
-              type="radio"
-              name={`anyAllToggle-${uuid}`}
-              id={`anyCondition-${uuid}`}
-              defaultChecked={type === 'any'}
-              onChange={() => handleBlockTypeChange()}
-            />
-            <label className="form-check-label" htmlFor={`anyCondition-${uuid}`}>
-              ANY
-            </label>
-          </div>
-          <div className="form-check form-check-inline mr-2">
-            <input
-              className="form-check-input"
-              type="radio"
-              name={`anyAllToggle-${uuid}`}
-              id={`allCondition-${uuid}`}
-              defaultChecked={type === 'all'}
-              onChange={() => handleBlockTypeChange()}
-            />
-            <label className="form-check-label" htmlFor={`allCondition-${uuid}`}>
-              ALL
-            </label>
-          </div>
-          of the following conditions are met
-        </div>
-        {defaultConditions.map((condition: any, index: number) => (
-          <Fragment key={`${guid()}`}>
-            {(condition && condition.all) || condition.any ? (
-              <ConditionsBlock
-                key={`${guid()}`}
-                type={condition.all ? 'all' : 'any'}
-                defaultConditions={condition.all || condition.any || []}
-                onChange={onChange()}
-              />
-            ) : (
-              <ConditionItemEditor
-                key={`${guid()}`}
-                condition={condition}
-                onChange={(changes: any) => {
-                  handleConditionItemChange(condition, changes);
-                }}
-                onDelete={() => handleDeleteCondition(condition)}
-              />
-            )}
-          </Fragment>
-        ))} */}
-      </div>
-    );
   };
 
   return (
@@ -225,7 +117,7 @@ const ConditionsBlockEditor = (props: any) => {
         >
           <i className="fa fa-plus mr-2" /> Single Condition
         </button>
-        {/* <button
+        <button
           className="dropdown-item"
           onClick={() => {
             handleAddConditionBlock('any');
@@ -240,7 +132,7 @@ const ConditionsBlockEditor = (props: any) => {
           }}
         >
           <i className="fa fa-plus mr-2" /> All Block
-        </button> */}
+        </button>
       </div>
       <div className="d-flex flex-column w-100">
         {conditions.length === 0 && <div>No conditions. This rule will always fire.</div>}
@@ -312,27 +204,13 @@ const ConditionsBlockEditor = (props: any) => {
                 </div>
                 of the following conditions are met
               </div>
-              {defaultConditions.map((condition: any, index: number) => (
-                <Fragment key={`${guid()}`}>
-                  {condition.all || condition.any ? (
-                    <ConditionsBlock
-                      key={`${guid()}`}
-                      type={condition.all ? 'all' : 'any'}
-                      defaultConditions={condition.all || condition.any || []}
-                      onChange={handleSubBlockChange}
-                    />
-                  ) : (
-                    <ConditionItemEditor
-                      key={`${guid()}`}
-                      condition={condition}
-                      onChange={(changes: any) => {
-                        handleConditionItemChange(condition, changes);
-                      }}
-                      onDelete={() => handleDeleteCondition(condition)}
-                    />
-                  )}
-                </Fragment>
-              ))}
+              <ConditionsBlock
+                type={type}
+                defaultConditions={conditions}
+                onChange={handleSubBlockChange}
+                onItemChange={handleConditionItemChange}
+                onDeleteCondition={handleDeleteCondition}
+              />
             </div>
           </div>
         )}
@@ -367,6 +245,7 @@ const ConditionsBlockEditor = (props: any) => {
     //       <Button.Or />
     //       <Button
     //         onClick={() => {
+
     //           handleAddConditionBlock('any');
     //         }}
     //         content="Any Block"
