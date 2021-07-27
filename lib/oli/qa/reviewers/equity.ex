@@ -63,7 +63,7 @@ defmodule Oli.Qa.Reviewers.Equity do
       {_, advice} =
         Enum.filter(
           exclusive_phrases(),
-          fn {p, advice} -> String.contains?(text(e.content) |> String.downcase(), p) end
+          fn {p, _} -> String.contains?(text(e.content) |> String.downcase(), p) end
         )
         |> hd()
 
