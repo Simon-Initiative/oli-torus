@@ -83,12 +83,12 @@ export const savePartStateToTree = createAsyncThunk(
         // means its in the tree, but doesn't own or inherit this part (some grandparent likely)
         return Promise.resolve('does not own part but thats OK');
       }
-      console.log('updating activity tree part: ', {
+      /* console.log('updating activity tree part: ', {
         attemptGuid,
         partAttemptGuid,
         activity,
         response,
-      });
+      }); */
       return dispatch(savePartState({ attemptGuid, partAttemptGuid, response }));
     });
     return Promise.all(updates);

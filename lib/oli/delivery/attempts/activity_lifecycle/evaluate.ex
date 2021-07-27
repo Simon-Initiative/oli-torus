@@ -72,8 +72,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         decoded = Base.decode64!(check_results)
         # Logger.debug("Decoded: #{decoded}")
         decodedResults = Poison.decode!(decoded)
-        temp = decodedResults["triggered"]
-        Logger.debug("Results #{Jason.encode!(temp)}")
+        dbg = decodedResults["debug"]
+        Logger.debug("Results #{Jason.encode!(dbg)}")
 
         score = decodedResults["score"]
         out_of = decodedResults["out_of"]

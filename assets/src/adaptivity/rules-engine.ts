@@ -207,7 +207,7 @@ export interface CheckResult {
   results: Event[];
   score: number;
   out_of: number;
-  triggered?: any;
+  debug?: any;
 }
 
 export interface ScoringContext {
@@ -263,7 +263,8 @@ export const check = async (
     defaultWrong = defaultWrongRule.event;
   }
   resultEvents = successEvents.filter((evt) => evt !== defaultWrong);
-  const isCorrect = !!resultEvents.length && resultEvents.every((evt) => evt.params?.correct);
+  // if anything is correct, then we are correct
+  const isCorrect = !!resultEvents.length && resultEvents.some((evt) => evt.params?.correct);
   // if we are not correct, then lets filter out any correct
   if (!isCorrect) {
     resultEvents = resultEvents.filter((evt) => !evt.params?.correct);
@@ -310,11 +311,9 @@ export const check = async (
     score,
     out_of: scoringContext.maxScore || 0,
     results: resultEvents,
-    triggered: {
-      r: resultEvents.length,
-      nr: resultEvents.map((e) => e.type),
-      s: successEvents.length,
-      ns: successEvents.map((e) => e.type),
+    debug: {
+      sent: resultEvents.map((e) => e.type),
+      all: successEvents.map((e) => e.type),
     },
   };
   if (encodeResults) {
