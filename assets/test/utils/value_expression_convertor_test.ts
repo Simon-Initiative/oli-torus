@@ -14,4 +14,8 @@ describe('Evaluate value expression convertor', () => {
   expect(
     handleValueExpression(activities, '{stage.MoonAge2.value}*100*{stage.earthAge1.value}'),
   ).toEqual('{e:16167809845778|stage.MoonAge2.value}*100*{e:1616780984451|stage.earthAge1.value}');
+
+  expect(handleValueExpression(activities, '{app.spr.adaptivity.something}+1')).toEqual(
+    '{app.spr.adaptivity.something}+1',
+  );
 });
