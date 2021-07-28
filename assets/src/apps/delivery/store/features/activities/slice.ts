@@ -10,7 +10,6 @@ import {
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
 import { RootState } from '../../rootReducer';
-
 export interface ActivityContent {
   custom?: any;
   partsLayout: any[];

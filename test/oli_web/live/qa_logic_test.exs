@@ -105,13 +105,13 @@ defmodule OliWeb.Qa.StateLogicTest do
         State.selection_changed(state, Integer.to_string(first_pedagogy_warning.id))
         |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["pedagogy", "content", "accessibility"])
+      assert state.filters == MapSet.new(["pedagogy", "content", "equity", "accessibility"])
       assert length(state.filtered_warnings) == length(state.warnings)
 
       state =
         State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["content", "accessibility"])
+      assert state.filters == MapSet.new(["content", "equity", "accessibility"])
       assert length(state.filtered_warnings) != length(state.warnings)
       assert state.selected == first_content_warning
 
@@ -119,7 +119,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       state =
         State.set_filters(state, State.toggle_filter(state, "content")) |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["accessibility"])
+      assert state.filters == MapSet.new(["accessibility", "equity"])
       assert length(state.filtered_warnings) == 0
 
       # bring back pedagody and select the first pedagogy, then bring back content,
@@ -127,7 +127,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       state =
         State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["pedagogy", "accessibility"])
+      assert state.filters == MapSet.new(["pedagogy", "accessibility", "equity"])
 
       state =
         State.selection_changed(state, Integer.to_string(first_pedagogy_warning.id))
@@ -138,7 +138,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       state =
         State.set_filters(state, State.toggle_filter(state, "content")) |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["pedagogy", "content", "accessibility"])
+      assert state.filters == MapSet.new(["pedagogy", "content", "accessibility", "equity"])
       assert state.selected == first_pedagogy_warning
     end
 
@@ -256,7 +256,7 @@ defmodule OliWeb.Qa.StateLogicTest do
       state =
         State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)
 
-      assert state.filters == MapSet.new(["content", "accessibility"])
+      assert state.filters == MapSet.new(["content", "accessibility", "equity"])
 
       assert length(state.filtered_warnings) == 1
 

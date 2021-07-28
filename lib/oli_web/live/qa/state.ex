@@ -1,7 +1,7 @@
 defmodule OliWeb.Qa.State do
   alias OliWeb.Common.Breadcrumb
 
-  @default_filters MapSet.new(["pedagogy", "content", "accessibility"])
+  @default_filters MapSet.new(["pedagogy", "content", "accessibility", "equity"])
 
   @default_state %{
     active: :review,

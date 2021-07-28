@@ -11,9 +11,14 @@ import {
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
+import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import { selectLessonEnd, setInitPhaseComplete } from '../../store/features/adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  selectLessonEnd,
+  setInitPhaseComplete,
+} from '../../store/features/adaptivity/slice';
 import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
@@ -42,9 +47,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
-
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const isEnd = useSelector(selectLessonEnd);
-
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
@@ -196,19 +200,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         [...new Set([...defaultClasses, ...customClasses])].map((str) => str.trim()),
       );
     } else if (currentActivity?.content?.partsLayout) {
-      // check if activities have vft
-      // BS: TODO check whole tree for vft (often is in parent layer)
-      let hasVft = false;
-      currentActivityTree.forEach((activity) => {
-        if (!hasVft) {
-          hasVft = activity?.content?.partsLayout.some((part: any) => part.id === 'vft');
-        }
-      });
-      if (hasVft) {
-        // set new class list after check for duplicate strings
-        // & strip whitespace from array strings
-        setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
-      }
+      //since we already have getCustomClassAncestry wokring now, we don't need the previous code.
+      setActivityClasses([...new Set([...defaultClasses])].map((str) => str.trim()));
     }
 
     return () => {
@@ -234,8 +227,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivity) {
       console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
-    } /*
-    console.log('[initCurrentActivity]', { currentActivity }); */
+    }
     await dispatch(initializeActivity(currentActivity.resourceId));
   }, [currentActivityTree]);
 
@@ -245,26 +237,20 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // has already saved its "default" values or else the init state rules will just
     // get overwritten by them saving the default value
     //
-    console.log('DECK HANDLE READY', {
+    /* console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    });
+    }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      /* const contexts = {
-        VIEWER: 'VIEWER',
-        REVIEW: 'REVIEW',
-        AUTHOR: 'AUTHOR',
-        REPORT: 'REPORT',
-      }; */
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: 'VIEWER',
+          mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
         },
       });
       dispatch(setInitPhaseComplete(true));
@@ -298,13 +284,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    /* console.log('DECK HANDLE SAVE PART', {
+    console.log('DECK HANDLE SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
       response,
       currentActivityTree,
-    }); */
+    });
     const statePrefix = `${activityId}|stage`;
     const responseMap = response.input.reduce(
       (result: { [x: string]: any }, item: { key: string; path: string }) => {
@@ -319,6 +305,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // throw instead?
       return { result: 'error' };
     }
+
+    //if user navigated from history, don't save anything and just return the saved state
+    if (historyModeNavigation) {
+      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    }
+
     if (response?.input?.length) {
       let result;
       // in addition to the current part attempt, need to lookup in the tree
@@ -429,9 +421,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         console.error('could not find attempt state for ', activity);
         return;
       }
+      const activityKey = historyModeNavigation ? `${activity.id}_history` : activity.id;
+
       return (
         <ActivityRenderer
-          key={activity.id}
+          key={activityKey}
           activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}

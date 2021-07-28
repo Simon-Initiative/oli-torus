@@ -20,6 +20,7 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, acti
 interface TabsComponentProps {}
 const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState(0);
+  console.log('active tab', activeTab);
   return (
     <>
       <ul className="nav nav-tabs mb-4" id="activity-authoring-tabs" role="tablist">
@@ -28,8 +29,12 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
             return (
               <li key={'tab-' + index} className="nav-item" role="presentation">
                 <a
-                  onClick={(e) => setActiveTab(index)}
-                  className={'nav-link' + (index === 0 ? ' active' : '')}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveTab(index);
+                  }}
+                  className={'nav-link' + (index === activeTab ? ' active' : '')}
                   data-toggle="tab"
                   href="#"
                   role="tab"

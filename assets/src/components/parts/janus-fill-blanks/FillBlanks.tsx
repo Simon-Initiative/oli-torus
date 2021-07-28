@@ -14,6 +14,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { contexts } from '../../../types/applicationContext';
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -123,6 +124,10 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
     if (sEnabled) {
       setCustomCssClass(sCustomCssClass);
+    }
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setEnabled(false);
     }
 
     setReady(true);

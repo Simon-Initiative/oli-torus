@@ -1,4 +1,5 @@
 import { parseBoolean } from 'utils/common';
+import { parseArrayString } from './contains';
 
 export const isAnyOfOperator = (factValue: any, value: any): boolean => {
   if (!Array.isArray(value)) {
@@ -15,23 +16,17 @@ export const isEqual = (factValue: any, value: any): boolean => {
 
   if (Array.isArray(factValue)) {
     let compareValue = value;
+    const updatedFactValue = parseArrayString(factValue);
     if (Array.isArray(value)) {
       // ** We are doing this for the cases where factValue comes [2 , 5] but the values comes as ['2','5'] */
       // ** DT - making sure that value is of array type else value.map() will throw error. */
-      compareValue = value
-        .map((item) => {
-          if (!Number.isNaN(parseFloat(item))) {
-            return parseFloat(item);
-          }
-          return item;
-        })
-        .sort();
+      compareValue = parseArrayString(factValue).sort();
     }
 
     // ** DT - Sorting both arrays. depending upon user selection in UI the array sometimes comes
     // ** like factValue=[2,5] and value = [5,2] which is right selection but it evaluates to false*/
     factValue.sort();
-    return JSON.stringify(factValue) === JSON.stringify(compareValue);
+    return JSON.stringify(updatedFactValue) === JSON.stringify(compareValue);
   }
 
   const typeOfValue = typeof value;
