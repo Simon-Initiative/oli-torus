@@ -1,9 +1,11 @@
 import debounce from 'lodash/debounce';
+import isEqual from 'lodash/isEqual';
 import React, { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import {
@@ -11,15 +13,17 @@ import {
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
 import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
-import isEqual from 'lodash/isEqual';
 
 export interface AdaptivityEditorProps {
   content?: any;
 }
+
+export type ActionType = 'navigation' | 'mutateState' | 'feedback';
 
 export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: AdaptivityEditorProps) => {
   const dispatch = useDispatch();
@@ -127,7 +131,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
   };
 
   const getActionEditor = (action: any) => {
-    switch (action.type) {
+    switch (action.type as ActionType) {
       case 'feedback':
         return (
           <ActionFeedbackEditor
@@ -158,6 +162,39 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
             }}
           />
         );
+    }
+  };
+
+  const handleAddAction = async (actionType: ActionType) => {
+    let newAction;
+    switch (actionType) {
+      case 'feedback':
+        const result = await dispatch(createFeedback({}));
+        newAction = (result as any).payload;
+        break;
+      case 'navigation':
+        newAction = {
+          type: 'navigation',
+          params: {
+            target: 'next',
+          },
+        };
+        break;
+      case 'mutateState':
+        newAction = {
+          type: 'mutateState',
+          params: {
+            operator: 'adding',
+            target: 'session.currentQuestionScore',
+            targetType: CapiVariableTypes.NUMBER,
+            value: 1,
+          },
+        };
+        break;
+    }
+    if (newAction) {
+      setActions([...actions, newAction]);
+      debounceNotifyChanges();
     }
   };
 
@@ -230,16 +267,16 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
               aria-labelledby={`adaptive-editor-add-context-trigger`}
             >
               {!hasFeedback && (
-                <button className="dropdown-item">
+                <button className="dropdown-item" onClick={() => handleAddAction('feedback')}>
                   <i className="fa fa-comment mr-2" /> Show Feedback
                 </button>
               )}
               {!hasNavigation && (
-                <button className="dropdown-item">
+                <button className="dropdown-item" onClick={() => handleAddAction('navigation')}>
                   <i className="fa fa-compass mr-2" /> Navigate To
                 </button>
               )}
-              <button className="dropdown-item">
+              <button className="dropdown-item" onClick={() => handleAddAction('mutateState')}>
                 <i className="fa fa-crosshairs mr-2" /> Mutate State
               </button>
             </div>
