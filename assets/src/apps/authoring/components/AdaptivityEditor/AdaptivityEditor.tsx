@@ -15,6 +15,7 @@ import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
+import isEqual from 'lodash/isEqual';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -113,7 +114,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
     const conds = updatedConditionsBlock.all || updatedConditionsBlock.any || [];
     const updatedIsAll = !!updatedConditionsBlock.all;
     const rootChanged = updatedIsAll !== rootConditionIsAll;
-    const condsChanged = JSON.stringify(conds) !== JSON.stringify(conditions);
+    const condsChanged = !isEqual(conditions, conds);
 
     if (!rootChanged && !condsChanged) {
       // nothing changed
@@ -193,6 +194,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
       {currentRule && !isLayer && (
         <>
           <ConditionsBlockEditor
+            id="root"
             type={rootConditionIsAll ? 'all' : 'any'}
             rootConditions={conditions}
             onChange={handleConditionsEditorChange}

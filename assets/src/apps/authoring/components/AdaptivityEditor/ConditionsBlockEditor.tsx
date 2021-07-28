@@ -1,8 +1,9 @@
+import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
-import ConditionsBlock from './ConditionsBlock';
+import ConditionItemEditor from './ConditionItemEditor';
 
 export const findConditionById = (id: string, conditions: any[]) => {
   let found = conditions.find((condition) => condition.id === id);
@@ -53,7 +54,7 @@ export const deleteConditionById = (id: string, conditions: any[]) => {
 };
 
 const ConditionsBlockEditor = (props: any) => {
-  const { type, rootConditions, onChange } = props;
+  const { id, type, rootConditions, onChange } = props;
 
   const [blockType, setBlockType] = useState<'any' | 'all'>(type);
   const [conditions, setConditions] = useState<any[]>(rootConditions || []);
@@ -64,8 +65,13 @@ const ConditionsBlockEditor = (props: any) => {
 
   useEffect(() => {
     console.log('CONDITIONS BLOCK ED', { type, rootConditions });
-    setBlockType(type);
-    setConditions(rootConditions || []);
+    // this is just when the props change, only do it once?
+    if (type !== blockType) {
+      setBlockType(type);
+    }
+    if (!isEqual(conditions, rootConditions)) {
+      setConditions(rootConditions || []);
+    }
   }, [type, rootConditions]);
 
   useEffect(() => {
@@ -112,21 +118,36 @@ const ConditionsBlockEditor = (props: any) => {
   const handleConditionItemChange = (condition: any, changes: any) => {
     const updatedConditions = forEachCondition(conditions, (c: any) => {
       if (c.id === condition.id) {
-        Object.assign(c, changes);
+        if (changes.fact) {
+          c.fact = changes.fact;
+        }
+        if (changes.operator) {
+          c.operator = changes.operator;
+        }
+        if (changes.value) {
+          c.value = changes.value;
+        }
       }
     });
-    console.log('[handleConditionItemChange]', { condition, updatedConditions });
+    console.log('[handleConditionItemChange]', { changes, condition, updatedConditions });
     setConditions(updatedConditions);
   };
 
   const handleSubBlockChange = (condition: any, changes: any) => {
-    console.log('[handleSubBlockChange]', { condition, changes });
-    /* const index = conditions.indexOf(condition);
-    if (index !== -1) {
-      const clone = [...conditions];
-      clone[index] = changes;
-      setConditions(clone);
-    } */
+    const updatedConditions = forEachCondition(conditions, (c: any) => {
+      if (c.id === condition.id) {
+        // changes will be either any or all because that could change
+        if (changes.all) {
+          delete c.any;
+          c.all = changes.all;
+        } else {
+          delete c.all;
+          c.any = changes.any;
+        }
+      }
+    });
+    console.log('[handleSubBlockChange]', { condition, changes, updatedConditions });
+    setConditions(updatedConditions);
   };
 
   return (
@@ -230,8 +251,8 @@ const ConditionsBlockEditor = (props: any) => {
                   <input
                     className="form-check-input"
                     type="radio"
-                    name="anyAllToggle-root"
-                    id="anyCondition-root"
+                    name={`anyAllToggle-${id}`}
+                    id={`anyCondition-${id}`}
                     defaultChecked={blockType === 'any'}
                     onChange={() => handleBlockTypeChange()}
                   />
@@ -243,8 +264,8 @@ const ConditionsBlockEditor = (props: any) => {
                   <input
                     className="form-check-input"
                     type="radio"
-                    name="anyAllToggle-root"
-                    id="allCondition-root"
+                    name={`anyAllToggle-${id}`}
+                    id={`allCondition-${id}`}
                     defaultChecked={blockType === 'all'}
                     onChange={() => handleBlockTypeChange()}
                   />
@@ -254,13 +275,24 @@ const ConditionsBlockEditor = (props: any) => {
                 </div>
                 of the following conditions are met
               </div>
-              <ConditionsBlock
-                type={type}
-                defaultConditions={conditions}
-                onChange={handleSubBlockChange}
-                onItemChange={handleConditionItemChange}
-                onDeleteCondition={handleDeleteCondition}
-              />
+              {conditions.map((condition, index) =>
+                condition.all || condition.any ? (
+                  <ConditionsBlockEditor
+                    key={condition.id || `cb-${index}`}
+                    id={condition.id || `cb-${index}`}
+                    type={condition.all ? 'all' : 'any'}
+                    rootConditions={condition.all || condition.any || []}
+                    onChange={(changes: any) => handleSubBlockChange(condition, changes)}
+                  />
+                ) : (
+                  <ConditionItemEditor
+                    key={condition.id || `ci-${index}`}
+                    condition={condition}
+                    onChange={(changes: any) => handleConditionItemChange(condition, changes)}
+                    onDelete={() => handleDeleteCondition(condition)}
+                  />
+                ),
+              )}
             </div>
           </div>
         )}
