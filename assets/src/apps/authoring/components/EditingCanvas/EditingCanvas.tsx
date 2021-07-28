@@ -18,8 +18,8 @@ const EditingCanvas: React.FC<any> = (props) => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)
-  const width = currentActivity?.content.custom.width || 800;
-  const height = currentActivity?.content.custom.height || 600;
+  const width = currentActivity?.content?.custom?.width || 800;
+  const height = currentActivity?.content?.custom?.height || 600;
 
   const items =
     currentActivityTree?.reduce((acc, activity) => {
