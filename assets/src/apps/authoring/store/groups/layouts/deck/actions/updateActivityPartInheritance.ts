@@ -30,7 +30,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
           // this is really an error
           return;
         }
-        console.log('ACTIVITY" TO MAP: ', { activity });
+        /* console.log('ACTIVITY" TO MAP: ', { activity }); */
         const activityParts = activity?.content?.partsLayout.map((part: any) => {
           // TODO: response schema? & default response values?
           const partDefinition = {
@@ -47,7 +47,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
         return merged;
       }, []);
 
-      console.log(`COMBINED ${child.activitySlug}`, { combinedParts });
+      /* console.log(`COMBINED ${child.activitySlug}`, { combinedParts }); */
       // since we are not updating the partsLayout but rather the parts, it should be OK
       // to update each activity *now*
       const childActivity = selectActivityById(rootState, child.resourceId);
@@ -63,7 +63,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
     });
     if (activitiesToUpdate.length) {
       await dispatch(acquireEditingLock());
-      console.log('UPDATE: ', { activitiesToUpdate });
+      /* console.log('UPDATE: ', { activitiesToUpdate }); */
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);

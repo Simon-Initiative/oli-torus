@@ -1,25 +1,75 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { clone } from 'utils/common';
 import guid from 'utils/guid';
-import ConditionItemEditor from './ConditionItemEditor';
 import ConditionsBlock from './ConditionsBlock';
 
+export const findConditionById = (id: string, conditions: any[]) => {
+  let found = conditions.find((condition) => condition.id === id);
+  if (!found) {
+    // check if any of the conditions are blocks of any or all
+    const blocks = conditions.filter((condition) => condition.all || condition.any);
+    if (blocks.length > 0) {
+      for (let i = 0; i < blocks.length; i++) {
+        found = findConditionById(id, blocks[i].any || blocks[i].all);
+        if (found) {
+          break;
+        }
+      }
+    }
+  }
+  return found || null;
+};
+
+export const forEachCondition = (conditions: any[], callback: (condition: any) => void) => {
+  // clone so that callback can modify the original
+  const cloneConditions = clone(conditions);
+  for (let i = 0; i < cloneConditions.length; i++) {
+    const condition = cloneConditions[i];
+    callback(condition);
+    if (condition.all || condition.any) {
+      const isAll = !!condition.all;
+      const type = isAll ? 'all' : 'any';
+      condition[type] = forEachCondition(condition[type], callback);
+    }
+  }
+  return cloneConditions;
+};
+
+export const deleteConditionById = (id: string, conditions: any[]) => {
+  const cloneConditions = clone(conditions);
+  // first check if it is one of this level's conditions
+  const condition = cloneConditions.find((condition: any) => condition.id === id);
+  if (condition) {
+    return cloneConditions.filter((condition: any) => condition.id !== id);
+  }
+  return forEachCondition(cloneConditions, (condition) => {
+    if (condition.all || condition.any) {
+      const isAll = !!condition.all;
+      const type = isAll ? 'all' : 'any';
+      condition[type] = deleteConditionById(id, condition[type]);
+    }
+  });
+};
+
 const ConditionsBlockEditor = (props: any) => {
-  const { type, defaultConditions, onChange } = props;
+  const { type, rootConditions, onChange } = props;
 
   const [blockType, setBlockType] = useState<'any' | 'all'>(type);
-  const [conditions, setConditions] = useState<any[]>(defaultConditions || []);
+  const [conditions, setConditions] = useState<any[]>(rootConditions || []);
   console.log(
     '🚀 > file: ConditionsBlockEditor.tsx > line 12 > ConditionsBlockEditor > conditions',
     conditions,
   );
 
   useEffect(() => {
+    console.log('CONDITIONS BLOCK ED', { type, rootConditions });
     setBlockType(type);
-    setConditions(defaultConditions || []);
-  }, [type, defaultConditions]);
+    setConditions(rootConditions || []);
+  }, [type, rootConditions]);
 
   useEffect(() => {
+    console.log('CONDITIONS/BT CHANGE EFFECT', { blockType, conditions });
     onChange({ [blockType]: conditions });
   }, [conditions, blockType]);
 
@@ -30,6 +80,7 @@ const ConditionsBlockEditor = (props: any) => {
   const handleAddCondition = () => {
     // todo: support adding any/all sub chains?
     const newCondition = {
+      id: `c:${guid()}`,
       fact: 'stage.',
       operator: 'equal',
       value: '',
@@ -39,8 +90,10 @@ const ConditionsBlockEditor = (props: any) => {
 
   const handleAddConditionBlock = (newType: 'any' | 'all' = 'any') => {
     const block = {
+      id: `b:${guid()}`,
       [newType]: [
         {
+          id: `c:${guid()}`,
           fact: 'stage.',
           operator: 'equal',
           value: '',
@@ -51,32 +104,29 @@ const ConditionsBlockEditor = (props: any) => {
   };
 
   const handleDeleteCondition = (condition: any) => {
-    // find this specific condition with in all the conditions
-    // console.log(
-    //   '🚀 > file: ConditionsBlockEditor.tsx > line 50 > handleDeleteCondition > condition',
-    //   condition,
-    // );
-    const temp = conditions.filter((c) => c !== condition);
-    setConditions(temp);
+    const updatedConditions = deleteConditionById(condition.id, conditions);
+    console.log('[handleDeleteCondition]', { condition, updatedConditions });
+    setConditions(updatedConditions);
   };
 
   const handleConditionItemChange = (condition: any, changes: any) => {
-    const index = conditions.indexOf(condition);
-    if (index !== -1) {
-      const clone = [...conditions];
-      const updatedCondition = { ...condition, ...changes };
-      clone[index] = updatedCondition;
-      setConditions(clone);
-    }
+    const updatedConditions = forEachCondition(conditions, (c: any) => {
+      if (c.id === condition.id) {
+        Object.assign(c, changes);
+      }
+    });
+    console.log('[handleConditionItemChange]', { condition, updatedConditions });
+    setConditions(updatedConditions);
   };
 
   const handleSubBlockChange = (condition: any, changes: any) => {
-    const index = conditions.indexOf(condition);
+    console.log('[handleSubBlockChange]', { condition, changes });
+    /* const index = conditions.indexOf(condition);
     if (index !== -1) {
       const clone = [...conditions];
       clone[index] = changes;
       setConditions(clone);
-    }
+    } */
   };
 
   return (

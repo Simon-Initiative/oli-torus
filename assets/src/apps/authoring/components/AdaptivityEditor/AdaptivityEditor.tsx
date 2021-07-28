@@ -1,28 +1,20 @@
+import debounce from 'lodash/debounce';
 import React, { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import debounce from 'lodash/debounce';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
+import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import {
-  IActivity,
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
-import ConditionsBlockEditor from './ConditionsBlockEditor';
-import {
-  findInSequence,
-  getIsLayer,
-} from '../../../delivery/store/features/groups/actions/sequence';
-import {
-  selectCurrentSequenceId,
-  selectSequence,
-} from '../../../delivery/store/features/groups/selectors/deck';
+import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
-import guid from 'utils/guid';
-import { clone } from 'utils/common';
-import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
+import ConditionsBlockEditor from './ConditionsBlockEditor';
 
 export interface AdaptivityEditorProps {
   content?: any;
@@ -202,7 +194,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
         <>
           <ConditionsBlockEditor
             type={rootConditionIsAll ? 'all' : 'any'}
-            defaultConditions={conditions}
+            rootConditions={conditions}
             onChange={handleConditionsEditorChange}
           />
           <p className="mt-3 mb-0">Perform the following actions:</p>

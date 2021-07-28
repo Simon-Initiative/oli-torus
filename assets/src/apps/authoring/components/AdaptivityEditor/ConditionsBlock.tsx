@@ -9,7 +9,7 @@ const ConditionsBlock = (props: any) => {
       {defaultConditions.map((condition: any, index: number) =>
         condition.all || condition.any ? (
           <ConditionsBlock
-            key={`cbe-${index}`}
+            key={condition.id || `cb-${index}`}
             type={type}
             defaultConditions={condition.all || condition.any || []}
             onChange={onChange}
@@ -18,7 +18,7 @@ const ConditionsBlock = (props: any) => {
           />
         ) : (
           <ConditionItemEditor
-            key={`cie-${index}`}
+            key={condition.id || `ci-${index}`}
             condition={condition}
             onChange={(changes: any) => {
               onItemChange(condition, changes);
