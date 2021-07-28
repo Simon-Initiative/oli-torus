@@ -5,7 +5,7 @@ import {
 import { screen, screen1, transformedSchema } from './screen_mocks';
 
 describe('transforming screen structure to screen schema and back to structure', () => {
-  it('should transform activity structure to screen schema', () => {
+  it('should transform activity structure to screen schema(with useHTMLProps false)', () => {
     const schema = transformScreenModeltoSchema(screen);
     expect(schema.palette.backgroundColor).toEqual('rgba(0,0,0,1)');
     const changes = transformScreenSchematoModel(schema);
