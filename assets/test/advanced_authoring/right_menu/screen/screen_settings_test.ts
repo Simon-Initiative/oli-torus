@@ -7,17 +7,16 @@ import { screen, screen1, transformedSchema } from './screen_mocks';
 describe('transforming screen structure to screen schema and back to structure', () => {
   it('should transform activity structure to screen schema', () => {
     const schema = transformScreenModeltoSchema(screen);
-    console.log(schema);
+    expect(schema.palette.backgroundColor).toEqual('rgba(0,0,0,1)');
     const changes = transformScreenSchematoModel(schema);
-    console.log('changes', changes);
+    expect(changes.palette.useHtmlProps).toEqual(true);
     expect(changes).toMatchObject(transformedSchema);
   });
 
   it('should transform activity structure to screen schema', () => {
     const schema = transformScreenModeltoSchema(screen1);
-    console.log(schema);
+    expect(schema.palette.backgroundColor).toEqual('rgba(255,255,255,1)');
     const changes = transformScreenSchematoModel(schema);
-    console.log('changes', changes);
     expect(changes).toMatchObject(transformedSchema);
   });
 
