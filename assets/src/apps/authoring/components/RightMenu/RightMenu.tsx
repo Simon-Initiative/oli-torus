@@ -33,6 +33,7 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -43,7 +44,7 @@ export enum RightPanelTabs {
 const RightMenu: React.FC<any> = () => {
   const dispatch = useDispatch();
   const selectedTab = useSelector(selectRightPanelActiveTab);
-  const currentActivity = useSelector(selectCurrentActivity);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentLesson = useSelector(selectPageState);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentPartSelection = useSelector(selectCurrentSelection);
@@ -53,13 +54,22 @@ const RightMenu: React.FC<any> = () => {
   const [componentUiSchema, setComponentUiSchema]: any = useState<any>(partUiSchema);
   const [currentComponent, setCurrentComponent] = useState<any>(null);
 
+  const [currentActivity] = (currentActivityTree || []).slice(-1);
+
   useEffect(() => {
-    if (!currentPartSelection || !currentActivity) {
+    if (!currentPartSelection || !currentActivityTree) {
       return;
     }
-    const partDef = currentActivity.content?.partsLayout.find(
-      (part: any) => part.id === currentPartSelection,
-    );
+    let partDef;
+    for(let i = 0; i < currentActivityTree.length; i++) {
+      const activity = currentActivityTree[i];
+      partDef = activity.content?.partsLayout.find(
+        (part: any) => part.id === currentPartSelection,
+      );
+      if (partDef) {
+        break;
+      }
+    }
     console.log('part selected', { partDef });
     if (partDef) {
       // part component should be registered by type as a custom element
