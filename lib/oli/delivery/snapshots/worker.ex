@@ -100,7 +100,9 @@ defmodule Oli.Delivery.Snapshots.Worker do
         objective_id,
         revision_id
       ) do
-    now = DateTime.utc_now()
+    now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
 
     %{
       resource_id: resource_access.resource_id,
