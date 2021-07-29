@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
+import { JanusConditionProperties } from './ConditionsBlockEditor';
 
 const conditionOperatorOptions = [
   { key: 'equal', text: '=', value: 'equal' },
@@ -50,7 +51,13 @@ const conditionOperatorOptions = [
   { key: 'notIsExactly', text: 'Not Is Exactly', value: 'notIsExactly' },
 ];
 
-const ConditionItemEditor = (props: any) => {
+interface ConditionItemEditorProps {
+  condition: JanusConditionProperties;
+  onChange: (condition: Partial<JanusConditionProperties>) => void;
+  onDelete: () => void;
+}
+
+const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   const { condition, onChange, onDelete } = props;
 
   const [fact, setFact] = useState<string>(condition.fact);

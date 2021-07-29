@@ -1,3 +1,4 @@
+import { ConditionProperties } from 'json-rules-engine';
 import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
@@ -5,14 +6,32 @@ import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import ConditionItemEditor from './ConditionItemEditor';
 
-export const findConditionById = (id: string, conditions: any[]) => {
-  let found = conditions.find((condition) => condition.id === id);
+export interface JanusConditionProperties extends ConditionProperties {
+  id: string;
+}
+
+type JanusNestedCondition = JanusConditionProperties | JanusTopLevelCondition;
+type JanusAllConditions = { id: string; all: JanusNestedCondition[] };
+type JanusAnyConditions = { id: string; any: JanusNestedCondition[] };
+export type JanusTopLevelCondition = JanusAllConditions | JanusAnyConditions;
+type AnyOrAll = 'any' | 'all';
+
+export const findConditionById = (
+  id: string,
+  conditions: JanusNestedCondition[] | JanusTopLevelCondition[],
+): JanusNestedCondition | null => {
+  let found = conditions.find((condition) => condition.id === id) || null;
   if (!found) {
     // check if any of the conditions are blocks of any or all
-    const blocks = conditions.filter((condition) => condition.all || condition.any);
+    const blocks = conditions.filter(
+      (condition) => (condition as JanusAllConditions).all || (condition as JanusAnyConditions).any,
+    );
     if (blocks.length > 0) {
       for (let i = 0; i < blocks.length; i++) {
-        found = findConditionById(id, blocks[i].any || blocks[i].all);
+        found = findConditionById(
+          id,
+          (blocks[i] as JanusAnyConditions).any || (blocks[i] as JanusAllConditions).all,
+        );
         if (found) {
           break;
         }
@@ -22,7 +41,10 @@ export const findConditionById = (id: string, conditions: any[]) => {
   return found || null;
 };
 
-export const forEachCondition = (conditions: any[], callback: (condition: any) => void) => {
+export const forEachCondition = (
+  conditions: JanusNestedCondition[] | JanusTopLevelCondition[],
+  callback: (condition: JanusNestedCondition) => void,
+) => {
   // clone so that callback can modify the original
   const cloneConditions = clone(conditions);
   for (let i = 0; i < cloneConditions.length; i++) {
@@ -37,26 +59,46 @@ export const forEachCondition = (conditions: any[], callback: (condition: any) =
   return cloneConditions;
 };
 
-export const deleteConditionById = (id: string, conditions: any[]) => {
+export const deleteConditionById = (
+  id: string,
+  conditions: JanusNestedCondition[] | JanusTopLevelCondition[],
+) => {
   const cloneConditions = clone(conditions);
   // first check if it is one of this level's conditions
-  const condition = cloneConditions.find((condition: any) => condition.id === id);
+  const condition = cloneConditions.find((condition: JanusNestedCondition) => condition.id === id);
   if (condition) {
-    return cloneConditions.filter((condition: any) => condition.id !== id);
+    return cloneConditions.filter((condition: JanusNestedCondition) => condition.id !== id);
   }
   return forEachCondition(cloneConditions, (condition) => {
-    if (condition.all || condition.any) {
-      const isAll = !!condition.all;
-      const type = isAll ? 'all' : 'any';
-      condition[type] = deleteConditionById(id, condition[type]);
+    if ((condition as JanusAllConditions).all || (condition as JanusAnyConditions).any) {
+      const isAll = !!(condition as JanusAllConditions).all;
+      if (isAll) {
+        (condition as JanusAllConditions).all = deleteConditionById(
+          id,
+          (condition as JanusAllConditions).all,
+        );
+      } else {
+        (condition as JanusAnyConditions).any = deleteConditionById(
+          id,
+          (condition as JanusAnyConditions).any,
+        );
+      }
     }
   });
 };
 
-const ConditionsBlockEditor = (props: any) => {
+interface CondtionsBlockEditorProps {
+  id: string;
+  type: AnyOrAll;
+  index: number;
+  rootConditions: JanusNestedCondition[];
+  onChange: (changes: Partial<JanusTopLevelCondition>) => void;
+}
+
+const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   const { id, type, index, rootConditions, onChange } = props;
-  const [blockType, setBlockType] = useState<'any' | 'all'>(type);
-  const [conditions, setConditions] = useState<any[]>(rootConditions || []);
+  const [blockType, setBlockType] = useState<AnyOrAll>(type);
+  const [conditions, setConditions] = useState<JanusNestedCondition[]>(rootConditions || []);
   const [loopIndex, setLoopIndex] = useState<number>(index);
 
   useEffect(() => {
@@ -64,7 +106,7 @@ const ConditionsBlockEditor = (props: any) => {
   }, []);
 
   useEffect(() => {
-    console.log('CONDITIONS BLOCK ED', { type, rootConditions });
+    /* console.log('CONDITIONS BLOCK ED', { type, rootConditions }); */
     // this is just when the props change, only do it once?
     if (type !== blockType) {
       setBlockType(type);
@@ -94,7 +136,7 @@ const ConditionsBlockEditor = (props: any) => {
     setConditions([...conditions, newCondition]);
   };
 
-  const handleAddConditionBlock = (newType: 'any' | 'all' = 'any') => {
+  const handleAddConditionBlock = (newType: AnyOrAll = 'any') => {
     const block = {
       id: `b:${guid()}`,
       [newType]: [
@@ -105,31 +147,35 @@ const ConditionsBlockEditor = (props: any) => {
           value: '',
         },
       ],
-    };
+    } as JanusTopLevelCondition;
     setConditions([...conditions, block]);
   };
 
-  const handleDeleteCondition = (condition: any) => {
-    if (condition === 'root') {
-      setConditions([]);
-      return onChange([]);
+  const handleDeleteCondition = (condition: Partial<JanusNestedCondition>) => {
+    if (condition.id === 'root') {
+      const empty: JanusNestedCondition[] = [];
+      setConditions(empty);
+      return onChange({ [blockType]: empty });
     }
 
-    const updatedConditions = deleteConditionById(condition.id, conditions);
+    const updatedConditions = deleteConditionById(condition.id as string, conditions);
     setConditions(updatedConditions);
   };
 
-  const handleConditionItemChange = (condition: any, changes: any) => {
-    const updatedConditions = forEachCondition(conditions, (c: any) => {
+  const handleConditionItemChange = (
+    condition: JanusConditionProperties,
+    changes: Partial<JanusConditionProperties>,
+  ) => {
+    const updatedConditions = forEachCondition(conditions, (c) => {
       if (c.id === condition.id) {
         if (changes.fact) {
-          c.fact = changes.fact;
+          (c as JanusConditionProperties).fact = changes.fact;
         }
         if (changes.operator) {
-          c.operator = changes.operator;
+          (c as JanusConditionProperties).operator = changes.operator;
         }
         if (changes.value) {
-          c.value = changes.value;
+          (c as JanusConditionProperties).value = changes.value;
         }
       }
     });
@@ -233,7 +279,7 @@ const ConditionsBlockEditor = (props: any) => {
                   <span>
                     <button
                       className="btn btn-link p-0"
-                      onClick={() => handleDeleteCondition('root')}
+                      onClick={() => handleDeleteCondition({ id: 'root' })}
                     >
                       <i className="fa fa-trash-alt" />
                     </button>
@@ -253,7 +299,7 @@ const ConditionsBlockEditor = (props: any) => {
                   <span>
                     <button
                       className="btn btn-link p-0"
-                      onClick={() => handleDeleteCondition('root')}
+                      onClick={() => handleDeleteCondition({ id: 'root' })}
                     >
                       <i className="fa fa-trash-alt" />
                     </button>
@@ -327,20 +373,28 @@ const ConditionsBlockEditor = (props: any) => {
             <div className="mt-2 text-danger">No conditions. This rule will always fire.</div>
           )}
           {conditions.map((condition, index) =>
-            condition.all || condition.any ? (
+            (condition as JanusAllConditions).all || (condition as JanusAnyConditions).any ? (
               <ConditionsBlockEditor
                 key={condition.id || `cb-${index}`}
                 id={condition.id || `cb-${index}`}
-                type={condition.all ? 'all' : 'any'}
-                rootConditions={condition.all || condition.any || []}
-                onChange={(changes: any) => handleSubBlockChange(condition, changes)}
+                type={(condition as JanusAllConditions).all ? 'all' : 'any'}
+                rootConditions={
+                  (condition as JanusAllConditions).all ||
+                  (condition as JanusAnyConditions).any ||
+                  []
+                }
+                onChange={(changes) =>
+                  handleSubBlockChange(condition as JanusTopLevelCondition, changes)
+                }
                 index={loopIndex}
               />
             ) : (
               <ConditionItemEditor
                 key={condition.id || `ci-${index}`}
-                condition={condition}
-                onChange={(changes: any) => handleConditionItemChange(condition, changes)}
+                condition={condition as JanusConditionProperties}
+                onChange={(changes) =>
+                  handleConditionItemChange(condition as JanusConditionProperties, changes)
+                }
                 onDelete={() => handleDeleteCondition(condition)}
               />
             ),
