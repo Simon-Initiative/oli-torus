@@ -323,7 +323,9 @@ const ConditionsBlockEditor = (props: any) => {
             </div>
             of the following conditions are met
           </div>
-          {conditions.length <= 0 && <div>No conditions. This rule will always fire.</div>}
+          {conditions.length <= 0 && (
+            <div className="mt-2 text-danger">No conditions. This rule will always fire.</div>
+          )}
           {conditions.map((condition, index) =>
             condition.all || condition.any ? (
               <ConditionsBlockEditor
