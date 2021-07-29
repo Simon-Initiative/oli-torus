@@ -161,13 +161,9 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
   const RuleName = ({ rule }: any) => {
     return (
       <span>
-        {rule.default && rule.correct && (
-          <i className="fa fa-check-circle mr-1 text-muted align-middle" />
-        )}
-        {rule.default && !rule.correct && (
-          <i className="fa fa-times-circle mr-1 text-muted align-middle" />
-        )}
-        <span className="title">{rule.name}</span>
+        {rule.correct && <i className="fa fa-check-circle mr-1 text-muted align-middle" />}
+        {!rule.correct && <i className="fa fa-times-circle mr-1 text-muted align-middle" />}
+        <span className={`title${rule.default ? ' font-italic' : ''}`}>{rule.name}</span>
       </span>
     );
   };

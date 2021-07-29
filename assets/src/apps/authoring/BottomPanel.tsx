@@ -109,17 +109,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule && !isLayer && (
-                <span className="ruleName">
-                  {currentRule.default && currentRule.correct && (
-                    <i className="fa fa-check-circle mr-1 text-muted align-middle" />
-                  )}
-                  {currentRule.default && !currentRule.correct && (
-                    <i className="fa fa-times-circle mr-1 text-muted align-middle" />
-                  )}
-                  {currentRule.name}
-                </span>
-              )}
+              {currentRule && !isLayer && <span className="ruleName">{currentRule.name}</span>}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
               {currentRule && !isLayer && (
