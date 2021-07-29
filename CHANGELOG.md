@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+### Enhancements
+
+## 0.12.6 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue with timestamps containing microseconds
 ## 0.12.5 (2021-07-29)
 
 ### Bug Fixes
