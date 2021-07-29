@@ -1,8 +1,8 @@
-<div class="workspace-sidebar">
+<div class="workspace-sidebar pt-2">
 
-  <button type="button" class="btn btn-light" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
-    <i class="icon las la-project-diagram la" style="font-size: 32px;"></i>
-    <div class="label">Projects</div>
+  <button type="button" class="btn btn-light my-1" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
+    <img src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>
+    <div class="label mt-1">Projects</div>
   </button>
 
 

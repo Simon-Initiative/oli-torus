@@ -1,14 +1,14 @@
-<div class="workspace-sidebar">
+<div class="workspace-sidebar pt-2">
 
-  <button type="button" class="btn btn-light" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
-    <i class="icon las la-project-diagram la" style="font-size: 32px;"></i>
-    <div class="label">Projects</div>
+  <button type="button" class="btn btn-light my-1" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
+    <img src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>
+    <div class="label mt-1">Projects</div>
   </button>
 
-  <div class="btn-group dropright hoverdriven">
+  <div class="btn-group dropright hoverdriven my-1">
     <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="icon las la-lightbulb la" style="font-size: 32px;"></i>
-      <div class="label">Create</div>
+      <img src="/images/icons/icon-create-light.svg" height="35px" width="32px"/>
+      <div class="label mt-1">Create</div>
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a>
@@ -17,10 +17,10 @@
     </div>
   </div>
 
-  <div class="btn-group dropright hoverdriven">
+  <div class="btn-group dropright hoverdriven my-1">
     <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="icon las la-plane-departure la" style="font-size: 32px;"></i>
-      <div class="label">Publish</div>
+      <img src="/images/icons/icon-publish-light.svg" height="32px" width="32px"/>
+      <div class="label mt-1">Publish</div>
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Qa.QaLive, @project.slug) %>">Review</a>
@@ -28,10 +28,10 @@
     </div>
   </div>
 
-  <div class="btn-group dropright hoverdriven">
+  <div class="btn-group dropright hoverdriven my-1">
     <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-      <i class="icon las la-chart-bar la" style="font-size: 32px;"></i>
-      <div class="label">Improve</div>
+      <img src="/images/icons/icon-improve-light.svg" height="35px" width="32px"/>
+      <div class="label mt-1">Improve</div>
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a>
