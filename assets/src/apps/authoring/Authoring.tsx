@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { AdaptivityEditor } from './AdaptivityEditor';
+import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
 import { BottomPanel } from './BottomPanel';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
