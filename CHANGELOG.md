@@ -6,7 +6,7 @@
 
 ### Bug Fixes
 
-- Fix an issue with creating snapshots for insights
+- Fix an issue when creating snapshots for insights
 
 ## 0.12.4 (2021-07-27)
 
