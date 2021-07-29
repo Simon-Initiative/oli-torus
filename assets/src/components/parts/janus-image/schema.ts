@@ -22,3 +22,5 @@ export const schema = {
     default: true,
   },
 };
+
+export const uiSchema = {};
