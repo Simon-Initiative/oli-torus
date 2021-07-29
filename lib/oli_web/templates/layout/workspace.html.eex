@@ -7,37 +7,12 @@
       <div class="logo d-flex justify-content-center align-items-center">
           <img src="/images/torus-icon.png" height="50px" width="50px"/>
       </div>
-      <div class="workspace-header-container d-flex flex-column w-100 overflow-hidden">
-        <div class="header-bar d-flex align-items-center justify-content-between px-3">
-          <h2 class="title mr-4" title='This is the page title'>This is the page title</h2>
-          <div class='d-flex flex-nowrap align-items-center'>
-            <a href="javascript:;" onclick="showHelpModal();" class="small mr-1">Help</a>
-            <a class=" account-link" href="/authoring/account"><div class="user-initials-icon">A</div></a>
-          </div>
-        </div>
-        <nav class="breadcrumb-bar d-flex align-items-center px-3">
-          <ol class="breadcrumb custom-breadcrumb">
-            <li class="breadcrumb-item">
-              <a><i class="fas fa-home" ></i></a>
-            </li>
-            <li class="breadcrumb-item">
-              <a href="/authoring/project/first_project">First Project With a Really Really Really Long Name</a>
-            </li>
-            <li class="breadcrumb-item">
-              <a href="/authoring/project/first_project">First Project With a Really Really Really Long Name</a>
-            </li>
-            <li class="breadcrumb-item">
-              <a href="/authoring/project/first_project">First Project With a Really Really Really Long Name</a>
-            </li>
-            <li class="breadcrumb-item">
-              <a href="/authoring/project/first_project">First Project With a Really Really Really Long Name</a>
-            </li>
-            <li class="breadcrumb-item active">
-              Overview Page That Also Has a Really Really Really Long Name
-            </li>
-          </ol>
-        </nav>
-      </div>
+      <%= render OliWeb.LayoutView,
+        "_#{cond do
+          @conn.params["project_id"] -> "project" #_project_header.html.eex   (template)
+          @title == "Projects" -> "workspace"     #_workspace_header.html.eex (template)
+          @title != "Projects" -> "account"       #_account_header.html.eex   (template)
+      end}_header.html", assigns %>
     </div>
     <div class="d-flex flex-grow-1">
       <div class="workspace-left">
@@ -48,12 +23,6 @@
           end}_sidebar.html", assigns %>
       </div>
       <div class="workspace-right">
-        <%= render OliWeb.LayoutView,
-          "_#{cond do
-            @conn.params["project_id"] -> "project" #_project_header.html.eex   (template)
-            @title == "Projects" -> "workspace"     #_workspace_header.html.eex (template)
-            @title != "Projects" -> "account"       #_account_header.html.eex   (template)
-          end}_header.html", assigns %>
         <main role="main" id="main-content">
           <%= @inner_content %>
         </main>
