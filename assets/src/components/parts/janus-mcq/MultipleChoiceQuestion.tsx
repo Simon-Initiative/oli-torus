@@ -179,7 +179,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
         {
           key: 'selectedChoice',
           type: CapiVariableTypes.NUMBER,
-          value: selectedChoice,
+          value: -1,
         },
         {
           key: 'selectedChoiceText',
