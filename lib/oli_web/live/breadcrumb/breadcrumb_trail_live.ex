@@ -26,7 +26,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
 
   def render(assigns) do
     ~L"""
-    <nav aria-label="breadcrumb">
+    <nav aria-label="breadcrumb overflow-hidden">
       <ol class="breadcrumb custom-breadcrumb">
 
         <%= live_component BreadcrumbLive,
