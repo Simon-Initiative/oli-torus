@@ -100,6 +100,8 @@ defmodule Oli.Delivery.Snapshots.Worker do
         objective_id,
         revision_id
       ) do
+    now = DateTime.utc_now()
+
     %{
       resource_id: resource_access.resource_id,
       user_id: resource_access.user_id,
@@ -118,7 +120,9 @@ defmodule Oli.Delivery.Snapshots.Worker do
       part_attempt_number: part_attempt.attempt_number,
       part_attempt_id: part_attempt.id,
       objective_id: objective_id,
-      objective_revision_id: revision_id
+      objective_revision_id: revision_id,
+      inserted_at: now,
+      updated_at: now
     }
   end
 end
