@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.12.5 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue with creating snapshots for insights
+
 ## 0.12.4 (2021-07-27)
 
 ### Bug Fixes
