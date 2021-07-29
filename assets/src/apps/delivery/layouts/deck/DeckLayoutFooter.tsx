@@ -164,6 +164,21 @@ const DeckLayoutFooter: React.FC = () => {
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
 
+  const processResults = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    return actionsByType;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -174,24 +189,22 @@ const DeckLayoutFooter: React.FC = () => {
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
-
+    const actualActionsByType = processResults(lastCheckResults.results);
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
-      eventsToProcess = lastCheckResults.results;
+      if (actualActionsByType.navigation.length === 1) {
+        const [firstNavAction] = actualActionsByType.navigation;
+        if (firstNavAction.params.target !== currentActivityId) {
+          eventsToProcess = [lastCheckResults.results[0]];
+        } else {
+          eventsToProcess = lastCheckResults.results;
+        }
+      } else {
+        eventsToProcess = lastCheckResults.results;
+      }
     }
 
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-
-    eventsToProcess.forEach((evt) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
+    const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
