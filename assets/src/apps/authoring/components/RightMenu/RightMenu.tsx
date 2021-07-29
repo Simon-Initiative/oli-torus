@@ -95,8 +95,11 @@ const RightMenu: React.FC<any> = () => {
     };
   }, [currentPartSelection]);
 
-  const [screenData, setScreenData] = useState(transformScreenModeltoSchema(currentActivity));
+  const [screenData, setScreenData] = useState();
   useEffect(() => {
+    if (!currentActivity) {
+      return;
+    }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
   }, [currentActivity]);
