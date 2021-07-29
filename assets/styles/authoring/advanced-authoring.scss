@@ -276,6 +276,13 @@ $panel-section-title-bar-color: #e8ebed;
       top: 55px;
       height: max-content;
     }
+    .aa-conditions .aa-conditions {
+      margin: 16px 0 8px;
+
+      .aa-add-button {
+        display: none;
+      }
+    }
     .aa-condition {
       &:first-of-type {
         margin-top: 4px !important;
@@ -287,8 +294,8 @@ $panel-section-title-bar-color: #e8ebed;
       height: inherit;
     }
     .aa-condition-header {
-      margin-top: -18px;
-      margin-bottom: 0.25rem;
+      margin-top: -22px;
+      margin-bottom: 0;
 
       > div {
         background-color: $panel-bg-color-light;

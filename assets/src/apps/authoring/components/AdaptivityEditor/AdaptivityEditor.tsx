@@ -235,6 +235,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: Adaptiv
             type={rootConditionIsAll ? 'all' : 'any'}
             rootConditions={conditions}
             onChange={handleConditionsEditorChange}
+            index={-1}
           />
           <p className="mt-3 mb-0">Perform the following actions:</p>
           <div className="aa-actions pt-3 mt-2 d-flex w-100">

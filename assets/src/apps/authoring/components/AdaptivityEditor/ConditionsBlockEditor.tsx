@@ -54,14 +54,14 @@ export const deleteConditionById = (id: string, conditions: any[]) => {
 };
 
 const ConditionsBlockEditor = (props: any) => {
-  const { id, type, rootConditions, onChange } = props;
-
+  const { id, type, index, rootConditions, onChange } = props;
   const [blockType, setBlockType] = useState<'any' | 'all'>(type);
   const [conditions, setConditions] = useState<any[]>(rootConditions || []);
-  console.log(
-    '🚀 > file: ConditionsBlockEditor.tsx > line 12 > ConditionsBlockEditor > conditions',
-    conditions,
-  );
+  const [loopIndex, setLoopIndex] = useState<number>(index);
+
+  useEffect(() => {
+    setLoopIndex(index + 1);
+  }, []);
 
   useEffect(() => {
     console.log('CONDITIONS BLOCK ED', { type, rootConditions });
@@ -110,8 +110,12 @@ const ConditionsBlockEditor = (props: any) => {
   };
 
   const handleDeleteCondition = (condition: any) => {
+    if (condition === 'root') {
+      setConditions([]);
+      return onChange([]);
+    }
+
     const updatedConditions = deleteConditionById(condition.id, conditions);
-    console.log('[handleDeleteCondition]', { condition, updatedConditions });
     setConditions(updatedConditions);
   };
 
@@ -150,6 +154,35 @@ const ConditionsBlockEditor = (props: any) => {
     setConditions(updatedConditions);
   };
 
+  const AddConditionContextMenu = () => (
+    <>
+      <button
+        className="dropdown-item"
+        onClick={() => {
+          handleAddCondition();
+        }}
+      >
+        <i className="fa fa-plus mr-2" /> Single Condition
+      </button>
+      <button
+        className="dropdown-item"
+        onClick={() => {
+          handleAddConditionBlock('any');
+        }}
+      >
+        <i className="fa fa-plus mr-2" /> Any Block
+      </button>
+      <button
+        className="dropdown-item"
+        onClick={() => {
+          handleAddConditionBlock('all');
+        }}
+      >
+        <i className="fa fa-plus mr-2" /> All Block
+      </button>
+    </>
+  );
+
   return (
     <div className="aa-conditions d-flex w-100">
       <OverlayTrigger
@@ -180,194 +213,139 @@ const ConditionsBlockEditor = (props: any) => {
         className="dropdown-menu"
         aria-labelledby={`cb-editor-add-context-trigger`}
       >
-        <button
-          className="dropdown-item"
-          onClick={() => {
-            handleAddCondition();
-          }}
-        >
-          <i className="fa fa-plus mr-2" /> Single Condition
-        </button>
-        <button
-          className="dropdown-item"
-          onClick={() => {
-            handleAddConditionBlock('any');
-          }}
-        >
-          <i className="fa fa-plus mr-2" /> Any Block
-        </button>
-        <button
-          className="dropdown-item"
-          onClick={() => {
-            handleAddConditionBlock('all');
-          }}
-        >
-          <i className="fa fa-plus mr-2" /> All Block
-        </button>
+        <AddConditionContextMenu />
       </div>
       <div className="d-flex flex-column w-100">
-        {conditions.length === 0 && <div>No conditions. This rule will always fire.</div>}
-        {conditions.length > 0 && (
-          <div>
-            <div className="aa-condition border rounded p-2 mt-4">
-              <div className="aa-condition-header d-flex justify-content-between align-items-center">
-                <div>CONDITIONS</div>
-                {/* <div>
+        <div className="aa-condition border rounded p-2 mt-4">
+          <div className="aa-condition-header d-flex justify-content-between align-items-center">
+            <div>CONDITIONS</div>
+            <div>
+              {loopIndex !== 0 && (
                 <OverlayTrigger
                   placement="top"
                   delay={{ show: 150, hide: 150 }}
                   overlay={
                     <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                      Delete Group
+                      {`Delete Group`}
                     </Tooltip>
                   }
                 >
                   <span>
-                    <button className="btn btn-link p-0">
+                    <button
+                      className="btn btn-link p-0"
+                      onClick={() => handleDeleteCondition('root')}
+                    >
                       <i className="fa fa-trash-alt" />
                     </button>
                   </span>
                 </OverlayTrigger>
+              )}
+              {loopIndex === 0 && conditions.length >= 1 && (
                 <OverlayTrigger
                   placement="top"
                   delay={{ show: 150, hide: 150 }}
                   overlay={
                     <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                      New Condition
+                      {`Delete ${loopIndex === 0 ? 'All' : 'Group'}`}
                     </Tooltip>
                   }
                 >
                   <span>
-                    <button className="btn btn-link p-0 ml-1">
-                      <i className="fa fa-plus" />
+                    <button
+                      className="btn btn-link p-0"
+                      onClick={() => handleDeleteCondition('root')}
+                    >
+                      <i className="fa fa-trash-alt" />
                     </button>
                   </span>
                 </OverlayTrigger>
-              </div> */}
-              </div>
-              <div className="d-flex align-items-center flex-wrap">
-                <span className="mr-2">If</span>
-                <div className="form-check form-check-inline mr-1">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name={`anyAllToggle-${id}`}
-                    id={`anyCondition-${id}`}
-                    defaultChecked={blockType === 'any'}
-                    onChange={() => handleBlockTypeChange()}
-                  />
-                  <label className="form-check-label" htmlFor="anyCondition-root">
-                    ANY
-                  </label>
-                </div>
-                <div className="form-check form-check-inline mr-2">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name={`anyAllToggle-${id}`}
-                    id={`allCondition-${id}`}
-                    defaultChecked={blockType === 'all'}
-                    onChange={() => handleBlockTypeChange()}
-                  />
-                  <label className="form-check-label" htmlFor="allCondition-root">
-                    ALL
-                  </label>
-                </div>
-                of the following conditions are met
-              </div>
-              {conditions.map((condition, index) =>
-                condition.all || condition.any ? (
-                  <ConditionsBlockEditor
-                    key={condition.id || `cb-${index}`}
-                    id={condition.id || `cb-${index}`}
-                    type={condition.all ? 'all' : 'any'}
-                    rootConditions={condition.all || condition.any || []}
-                    onChange={(changes: any) => handleSubBlockChange(condition, changes)}
-                  />
-                ) : (
-                  <ConditionItemEditor
-                    key={condition.id || `ci-${index}`}
-                    condition={condition}
-                    onChange={(changes: any) => handleConditionItemChange(condition, changes)}
-                    onDelete={() => handleDeleteCondition(condition)}
-                  />
-                ),
               )}
+              <OverlayTrigger
+                placement="top"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    New Condition
+                  </Tooltip>
+                }
+              >
+                <button
+                  className="dropdown-toggle btn btn-link p-0 ml-1"
+                  type="button"
+                  id={`add-condition-${id}-context-trigger-${index}`}
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  onClick={(e) => {
+                    // e.stopPropagation();
+                    ($(`#add-condition-${id}-context-trigger-${index}`) as any).dropdown('toggle');
+                  }}
+                >
+                  <i className="fa fa-plus" />
+                </button>
+              </OverlayTrigger>
+              <div
+                id={`add-condition-${id}-context-menu`}
+                className="dropdown-menu"
+                aria-labelledby={`add-condition-${id}-context-trigger-${index}`}
+              >
+                <AddConditionContextMenu />
+              </div>
             </div>
           </div>
-        )}
+          <div className="d-flex align-items-center flex-wrap">
+            <span className="mr-2">If</span>
+            <div className="form-check form-check-inline mr-1">
+              <input
+                className="form-check-input"
+                type="radio"
+                name={`anyAllToggle-${id}`}
+                id={`anyCondition-${id}`}
+                defaultChecked={blockType === 'any'}
+                onChange={() => handleBlockTypeChange()}
+              />
+              <label className="form-check-label" htmlFor="anyCondition-root">
+                ANY
+              </label>
+            </div>
+            <div className="form-check form-check-inline mr-2">
+              <input
+                className="form-check-input"
+                type="radio"
+                name={`anyAllToggle-${id}`}
+                id={`allCondition-${id}`}
+                defaultChecked={blockType === 'all'}
+                onChange={() => handleBlockTypeChange()}
+              />
+              <label className="form-check-label" htmlFor="allCondition-root">
+                ALL
+              </label>
+            </div>
+            of the following conditions are met
+          </div>
+          {conditions.length <= 0 && <div>No conditions. This rule will always fire.</div>}
+          {conditions.map((condition, index) =>
+            condition.all || condition.any ? (
+              <ConditionsBlockEditor
+                key={condition.id || `cb-${index}`}
+                id={condition.id || `cb-${index}`}
+                type={condition.all ? 'all' : 'any'}
+                rootConditions={condition.all || condition.any || []}
+                onChange={(changes: any) => handleSubBlockChange(condition, changes)}
+                index={loopIndex}
+              />
+            ) : (
+              <ConditionItemEditor
+                key={condition.id || `ci-${index}`}
+                condition={condition}
+                onChange={(changes: any) => handleConditionItemChange(condition, changes)}
+                onDelete={() => handleDeleteCondition(condition)}
+              />
+            ),
+          )}
+        </div>
       </div>
     </div>
-
-    // <Fragment>
-    //   <Header attached="top">
-    //     <Grid>
-    //       <Grid.Column floated="left" width={5}>
-    //         Conditions
-    //       </Grid.Column>
-    //       <Grid.Column floated="right" width={5}>
-    //         Any{' '}
-    //         <Checkbox
-    //           toggle
-    //           defaultChecked={blockType === 'all'}
-    //           onChange={handleBlockTypeChange}
-    //         />{' '}
-    //         All
-    //       </Grid.Column>
-    //     </Grid>
-    //   </Header>
-    //   <Segment attached>
-    //     <Button.Group>
-    //       <Button
-    //         onClick={handleAddCondition}
-    //         labelPosition="left"
-    //         icon="plus"
-    //         content="Single Condition"
-    //       />
-    //       <Button.Or />
-    //       <Button
-    //         onClick={() => {
-
-    //           handleAddConditionBlock('any');
-    //         }}
-    //         content="Any Block"
-    //       />
-    //       <Button.Or />
-    //       <Button
-    //         onClick={() => {
-    //           handleAddConditionBlock('all');
-    //         }}
-    //         content="All Block"
-    //       />
-    //     </Button.Group>
-
-    //     <List divided verticalAlign="middle">
-    //       {conditions.map((condition, index) => (
-    //         <List.Item key={`${index}`}>
-    //           <List.Content floated="right">
-    //             <Button negative onClick={() => handleDeleteCondition(condition)}>
-    //               Delete
-    //             </Button>
-    //           </List.Content>
-    //           {condition.all || condition.any ? (
-    //             <ConditionsBlockEditor
-    //               type={condition.all ? 'all' : 'any'}
-    //               defaultConditions={condition.all || condition.any || []}
-    //               onChange={(changes: any) => handleSubBlockChange(condition, changes)}
-    //             />
-    //           ) : (
-    //             <ConditionItemEditor
-    //               condition={condition}
-    //               onChange={(changes: any) => {
-    //                 handleConditionItemChange(condition, changes);
-    //               }}
-    //             />
-    //           )}
-    //         </List.Item>
-    //       ))}
-    //     </List>
-    //   </Segment>
-    // </Fragment>
   );
 };
 
