@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import useClipboard from 'react-use-clipboard';
+import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
+import { setCurrentRule, setRightPanelActiveTab } from '../../../authoring/store/app/slice';
 import {
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { setCurrentRule, setRightPanelActiveTab } from '../../../authoring/store/app/slice';
 import {
   findInHierarchy,
   flattenHierarchy,
@@ -27,8 +29,6 @@ import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/
 import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import { clone } from 'utils/common';
-import useClipboard from 'react-use-clipboard';
 
 const SequenceEditor: React.FC<any> = (props) => {
   const dispatch = useDispatch();

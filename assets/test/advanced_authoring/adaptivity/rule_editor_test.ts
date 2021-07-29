@@ -2,6 +2,7 @@ import {
   deleteConditionById,
   findConditionById,
   forEachCondition,
+  JanusConditionProperties,
 } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
 import { mockDefaultRule, mockRuleNestedConditions, mockRuleWithConditions1 } from './rule_mocks';
 
@@ -34,7 +35,7 @@ describe('Rule Editor', () => {
       const ogConditions = mockRuleNestedConditions.conditions.all;
       const editedConditions = forEachCondition(ogConditions, (condition) => {
         if (condition.id === 'c:5') {
-          condition.value = 11;
+          (condition as JanusConditionProperties).value = 11;
         }
       });
       expect(editedConditions).not.toBe(ogConditions);
