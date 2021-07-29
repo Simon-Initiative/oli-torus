@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import useClipboard from 'react-use-clipboard';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
@@ -38,12 +37,6 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
-  const [textToCopy, setTextToCopy] = useState('');
-  const [isCopied, setCopied] = useClipboard(textToCopy);
-
-  useEffect(() => {
-    if (textToCopy.trim() !== '') setCopied();
-  }, [textToCopy]);
 
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
@@ -389,18 +382,16 @@ const SequenceEditor: React.FC<any> = (props) => {
               >
                 <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
               </button>
-              {!item.custom.isLayer && (
-                <button
-                  className="dropdown-item"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    setTextToCopy(item.custom.sequenceId);
-                  }}
-                >
-                  <i className="fas fa-clipboard align-text-top mr-2" /> Copy Screen ID
-                </button>
-              )}
+              <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  navigator.clipboard.writeText(item.custom.sequenceId);
+                }}
+              >
+                <i className="fas fa-clipboard align-text-top mr-2" /> Copy Screen ID
+              </button>
               <div className="dropdown-divider" />
               {currentGroup?.children?.length > 1 && (
                 <>

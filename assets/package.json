@@ -49,7 +49,6 @@
     "react-select2-wrapper": "^1.0.4-beta6",
     "react-tiny-popover": "^6.0.5",
     "react-transition-group": "^4.4.1",
-    "react-use-clipboard": "^1.0.7",
     "react-youtube": "^7.13.0",
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",
