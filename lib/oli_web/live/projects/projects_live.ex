@@ -69,12 +69,12 @@ defmodule OliWeb.Projects.ProjectsLive do
           <div class="col-12">
             <div class="d-flex justify-content-between align-items-baseline">
               <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-xs btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
+                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
                   <input type="radio" name="options" id="option1"
                     <%= if @display_mode == "cards" do "checked" else "" end %>
                   > <span><i class="las la-grip-horizontal"></i> Card</span>
                 </label>
-                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-xs btn-light <%= if @display_mode == "table" do "active" else "" end %>">
+                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-light <%= if @display_mode == "table" do "active" else "" end %>">
                   <input type="radio" name="options" id="option2"
                     <%= if @display_mode == "table" do "checked" else "" end %>
                   > <span><i class="las la-th-list"></i> Table</span>

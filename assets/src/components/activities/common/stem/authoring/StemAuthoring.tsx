@@ -13,7 +13,7 @@ export const StemAuthoring: React.FC<Props> = ({ stem, onEdit }) => {
       <RichTextEditorConnected
         text={stem.content}
         onEdit={onEdit}
-        placeholder="Enter question"
+        placeholder="Question"
       />
     </div>
   );
