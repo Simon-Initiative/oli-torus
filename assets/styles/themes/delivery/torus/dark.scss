@@ -217,6 +217,10 @@ html.delivery,
     pre {
       background: $gray-900;
     }
+
+    blockquote {
+      border-color: $gray-600;
+    }
   }
 
   .draggableColumn__card {

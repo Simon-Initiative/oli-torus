@@ -14,16 +14,12 @@
     clear: both;
     margin-top: 12px;
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-    font-size: 1.3em;
-    line-height: 1.5em;
-    letter-spacing: -0.003em;
-    color: rgba(0, 0, 0, 0.84);
-
-    border-left: 3px solid rgba(0, 0, 0, 0.84);
+    color: $body-color;
+    border-left: 3px solid $gray-400;
     padding-left: 20px;
-    margin-left: -23px;
     padding-bottom: 2px;
     word-break: break-word;
+
     p:last-of-type {
       margin-bottom: 0;
     }

@@ -266,14 +266,6 @@ html.authoring {
     }
   }
 
-  .blockquote {
-    border-color: $gray-600;
-
-    &::before {
-      color: transparentize($color: $gray-600, $amount: 0.3);
-    }
-  }
-
   .settings-editor-wrapper {
     .settings-editor {
       color: $gray-900;
