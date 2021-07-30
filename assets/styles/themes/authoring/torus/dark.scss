@@ -203,6 +203,14 @@ $workspace-bg: $body-bg;
     }
   }
 
+  .container-editor .curriculum-entries {
+    .curriculum-entry {
+      background-color: $gray-900;
+      border: 1px solid $gray-600;
+      box-shadow: none;
+    }
+  }
+
   .resource-block-editor {
     .resource-content-frame {
       &.card {
