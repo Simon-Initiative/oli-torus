@@ -69,4 +69,4 @@ supervisord.log
 supervisord.pid
 stacks.out
 .mnesia
-MnesiaCore.nonode@nohost_1626_883330_535995
+yarn-error.log

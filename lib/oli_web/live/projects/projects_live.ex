@@ -68,7 +68,6 @@ defmodule OliWeb.Projects.ProjectsLive do
         <div class="row">
           <div class="col-12">
             <div class="d-flex justify-content-between align-items-baseline">
-
               <div class="btn-group btn-group-toggle" data-toggle="buttons">
                 <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-xs btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
                   <input type="radio" name="options" id="option1"

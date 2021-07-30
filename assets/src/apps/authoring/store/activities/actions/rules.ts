@@ -5,7 +5,7 @@ import { createFeedback } from './createFeedback';
 
 export const createCorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createCorrectRule`,
-  async (payload: {ruleId?: string, isDefault?: boolean}) => {
+  async (payload: { ruleId?: string; isDefault?: boolean }) => {
     const { ruleId = `r:${guid()}`, isDefault = false } = payload;
 
     const rule = {
@@ -36,7 +36,7 @@ export const createCorrectRule = createAsyncThunk(
 
 export const createIncorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createIncorrectRule`,
-  async (payload: {ruleId?: string, isDefault?: boolean}, { dispatch }) => {
+  async (payload: { ruleId?: string; isDefault?: boolean }, { dispatch }) => {
     const { ruleId = `r:${guid()}`, isDefault = false } = payload;
 
     const { payload: feedbackAction } = await dispatch(createFeedback({}));
@@ -49,7 +49,7 @@ export const createIncorrectRule = createAsyncThunk(
       disabled: false,
       additionalScore: 0.0,
       forceProgress: false,
-      default: true,
+      default: isDefault,
       correct: false,
       conditions: { all: [] },
       event: {
