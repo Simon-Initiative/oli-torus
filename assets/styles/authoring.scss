@@ -11,7 +11,7 @@ body {
   flex-direction: column;
 }
 
-.authoring {
+html.authoring {
   @import "authoring/variables";
   @import "bootstrap";
   @import "common/**/*.scss";

@@ -11,7 +11,7 @@ body {
   flex-direction: column;
 }
 
-.delivery {
+html.delivery {
   @import "delivery/variables";
   @import "bootstrap";
   @import "common/**/*.scss";
