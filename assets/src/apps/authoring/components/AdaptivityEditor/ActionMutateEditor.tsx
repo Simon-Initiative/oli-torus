@@ -1,3 +1,4 @@
+import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
@@ -18,7 +19,12 @@ const opOptions = [
   { key: 'equal', text: '=', value: '=' },
 ];
 
-const ActionMutateEditor = (props: any) => {
+interface ActionMutateEditorProps {
+  action: MutateStateAction;
+  onChange: (changes: MutateStateActionParams) => void;
+}
+
+const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const { action, onChange } = props;
 
   const [target, setTarget] = useState(action.params.target);

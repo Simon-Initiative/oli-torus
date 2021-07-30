@@ -98,7 +98,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
         id="aa-bottom-panel"
         className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''}`}
         style={{
-          left: panelState['left'] ? PANEL_SIDE_WIDTH : 0,
+          left: panelState['left'] ? '315px' : '65px', // 315 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
           bottom: panelState['bottom']
             ? 0

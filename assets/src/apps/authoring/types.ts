@@ -24,3 +24,40 @@ export interface PageContext {
   resourceId?: ResourceId;
   activities?: any;
 }
+
+export type ActionType = 'navigation' | 'mutateState' | 'feedback';
+export type ActionParams = NavigationActionParams | MutateStateActionParams | FeedbackActionParams;
+export interface AdaptiveRuleAction {
+  type: ActionType;
+  params: ActionParams;
+}
+
+export interface NavigationActionParams {
+  target: string;
+}
+
+export interface MutateStateActionParams {
+  target: string;
+  targetType: number; // CapiVariableTypes
+  operator: string;
+  value: any;
+}
+
+export interface FeedbackActionParams {
+  feedback: any;
+}
+
+export type NavigationAction = {
+  type: 'navigation';
+  params: NavigationActionParams;
+};
+
+export type MutateStateAction = {
+  type: 'mutateState';
+  params: MutateStateActionParams;
+};
+
+export type FeedbackAction = {
+  type: 'feedback';
+  params: FeedbackActionParams;
+};
