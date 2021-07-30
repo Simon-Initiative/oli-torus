@@ -1,8 +1,14 @@
+import { NavigationAction, NavigationActionParams } from 'apps/authoring/types';
 import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 
-const ActionNavigationEditor = (props: any) => {
+interface ActionNavigationEditorProps {
+  action: NavigationAction;
+  onChange: (changes: NavigationActionParams) => void;
+}
+
+const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
   const { action, onChange } = props;
   const [target, setTarget] = useState(action?.params?.target || '');
   const uuid = guid();
