@@ -3,6 +3,7 @@ import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectProjectSlug, selectRevisionSlug, selectPaths } from '../store/app/slice';
+import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 
 interface HeaderNavProps {
   panelState: any;
@@ -140,6 +141,9 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
               </button>
             </span>
           </OverlayTrigger>
+        </div>
+        <div className="btn-group px-3 border-right align-items-center" role="group">
+          <ComponentSearchContextMenu />
         </div>
         <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
           <OverlayTrigger
