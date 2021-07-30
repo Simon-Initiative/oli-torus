@@ -79,7 +79,7 @@
 
   .content-block {
     .content-block-structured-content {
-      padding: 1.3em max(calc(50% - 400px), 50px);
+      padding: 1.3em max(calc(50% - 600px), 50px);
     }
 
     // handle the special case when purpose type is none, apply the
@@ -93,7 +93,7 @@
         padding: 1.3em 10px;
 
         &.structured-content {
-          padding: 1.3em max(calc(50% - 400px), 50px);
+          padding: 1.3em max(calc(50% - 600px), 50px);
         }
       }
     }
@@ -101,7 +101,7 @@
 
   .activity-block {
     .test-mode-handler {
-      padding: 1.3em max(calc(50% - 400px), 50px);
+      padding: 1.3em max(calc(50% - 600px), 50px);
     }
   }
 
