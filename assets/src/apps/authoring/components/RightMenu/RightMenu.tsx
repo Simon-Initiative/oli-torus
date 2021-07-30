@@ -34,6 +34,9 @@ import screenSchema, {
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
+import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
+import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -91,8 +94,29 @@ const RightMenu: React.FC<any> = () => {
           const customPartUiSchema = instance.getUiSchema();
           const newUiSchema = {
             ...partUiSchema,
-            custom: { ...customPartUiSchema },
+            custom: {
+              'ui:ObjectFieldTemplate': AccordionTemplate,
+              'ui:title': 'Custom',
+               ...customPartUiSchema },
           };
+          const customPartSchema = instance.getSchema();
+          if(customPartSchema.palette){
+            newUiSchema.custom = {
+              ...newUiSchema.custom,
+              palette: {
+                'ui:ObjectFieldTemplate': CustomFieldTemplate,
+                'ui:title': 'Palette',
+                backgroundColor: {
+                  'ui:widget': ColorPickerWidget,
+                },
+                borderColor: {
+                  'ui:widget': ColorPickerWidget,
+                },
+                borderStyle: { classNames: 'col-6' },
+                borderWidth: { classNames: 'col-6' },
+              },
+            }
+          }
           setComponentUiSchema(newUiSchema);
         }
       }
@@ -241,7 +265,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && (
-          <div className="commponent-tab">
+          <div className="commponent-tab p-3">
             <PropertyEditor
               schema={componentSchema}
               uiSchema={componentUiSchema}

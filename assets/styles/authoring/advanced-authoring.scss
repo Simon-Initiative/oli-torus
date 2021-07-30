@@ -201,9 +201,13 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
     }
-    .screen-tab {
+    .screen-tab, .commponent-tab {
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
+
+        .accordion {
+          margin: -10px -15px auto -15px;
+        }
       }
     }
   }
