@@ -50,47 +50,6 @@ const EditingCanvas: React.FC<any> = (props) => {
         >
           <div className="aa-canvas-header">
             <h2 style={{ display: 'inline-block' }}>Active Screen Title</h2>
-            <div style={{ float: 'right' }} className="btn-group" role="group">
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: false,
-                      left: false,
-                      top: false,
-                      bottom: false,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                hide all
-              </button>
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: true,
-                      left: true,
-                      top: true,
-                      bottom: true,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                show all
-              </button>
-              <button
-                onClick={() => dispatch(setVisible({ visible: false }))}
-                type="button"
-                className="btn btn-secondary"
-              >
-                quit
-              </button>
-            </div>
           </div>
           <FabricCanvas items={items} width={width} height={height} />
         </div>

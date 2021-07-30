@@ -113,7 +113,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         </button>
       )}
       <div id="advanced-authoring" className={`advanced-authoring d-none`}>
-        <HeaderNav content={props.content} isVisible={panelState.top} />
+        <HeaderNav panelState={panelState} isVisible={panelState.top} />
         <SidePanel
           position="left"
           panelState={panelState}
