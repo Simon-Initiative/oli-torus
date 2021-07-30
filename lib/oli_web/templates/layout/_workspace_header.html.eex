@@ -33,21 +33,12 @@
 </div>
 </div>
 <div class="workspace-header d-flex justify-content-between">
-
-    <h2><%= @title %></h2>
-    <div>
-      <button id="button-new-project"
-        class="btn btn-sm btn-primary mr-3"
-        data-toggle="modal"
-        data-target="#modal-new-project">
-        <i class="fa fa-plus"></i> New Project
-      </button>
-      <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
-      <%= account_link @conn %>
-    </div>
-
+  <h2><%= @title %></h2>
+  <div>
+    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
+    <%= account_link @conn %>
+  </div>
 </div>
-
 <script>
   const createProjectButton = document.getElementById("button-create-project")
   const titleInput = document.getElementById("input-title")

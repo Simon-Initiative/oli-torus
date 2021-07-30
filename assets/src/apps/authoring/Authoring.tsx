@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
 import { BottomPanel } from './BottomPanel';
+import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
@@ -13,10 +13,8 @@ import {
   selectLeftPanel,
   selectRightPanel,
   selectTopPanel,
-  selectVisible,
   setInitialConfig,
   setPanelState,
-  setVisible,
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
@@ -35,7 +33,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
 
   const authoringContainer = document.getElementById('advanced-authoring');
-  const isAppVisible = useSelector(selectVisible);
+  const isAppVisible = true;
 
   const leftPanelState = useSelector(selectLeftPanel);
   const rightPanelState = useSelector(selectRightPanel);
@@ -102,41 +100,30 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   return (
-    <>
-      {!isAppVisible && (
-        <button
-          onClick={() => dispatch(setVisible({ visible: true }))}
-          type="button"
-          className="btn btn-primary"
-        >
-          🚀 Launch
-        </button>
-      )}
-      <div id="advanced-authoring" className={`advanced-authoring d-none`}>
-        <HeaderNav content={props.content} isVisible={panelState.top} />
-        <SidePanel
-          position="left"
-          panelState={panelState}
-          onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-        >
-          <LeftMenu />
-        </SidePanel>
-        <EditingCanvas />
-        <BottomPanel
-          panelState={panelState}
-          onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-        >
-          <AdaptivityEditor />
-        </BottomPanel>
-        <SidePanel
-          position="right"
-          panelState={panelState}
-          onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-        >
-          <RightMenu />
-        </SidePanel>
-      </div>
-    </>
+    <div id="advanced-authoring" className={`advanced-authoring startup`}>
+      <HeaderNav panelState={panelState} isVisible={panelState.top} />
+      <SidePanel
+        position="left"
+        panelState={panelState}
+        onToggle={() => handlePanelStateChange({ left: !panelState.left })}
+      >
+        <LeftMenu />
+      </SidePanel>
+      <EditingCanvas />
+      <BottomPanel
+        panelState={panelState}
+        onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+      >
+        <AdaptivityEditor />
+      </BottomPanel>
+      <SidePanel
+        position="right"
+        panelState={panelState}
+        onToggle={() => handlePanelStateChange({ right: !panelState.right })}
+      >
+        <RightMenu />
+      </SidePanel>
+    </div>
   );
 };
 
