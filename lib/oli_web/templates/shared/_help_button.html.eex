@@ -1,0 +1,1 @@
+<a class="btn btn-xs btn-light rounded-pill help-btn mx-2" href='javascript:;' onclick="showHelpModal();"><i class="las la-life-ring text-danger"></i> Help</a>

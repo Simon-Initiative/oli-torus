@@ -2,97 +2,97 @@
 <div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Help</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="container form-container">
-          <div class="row">
-            <div class="col-lg-8 mx-auto">
-              <h5 id="help-success-message" class="d-none text-success">Your help request submitted</h5>
-              <%= f = form_for :help, "#", [id: "form-request-help"] %>
-              <%= hidden_input f, :location, id: "location"%>
-              <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
-              <div class="form-label-group">
-                <%= text_input f,
-            :full_name,
-            class: "form-control" <> error_class(f, :full_name, "is-invalid"),
-            placeholder: "Full Name",
-            required: true,
-            autofocus: true %>
-                <%= label f, :full_name, "Full Name", class: "control-label" %>
-                <%= error_tag f, :full_name %>
-              </div>
-              <div class="form-label-group">
-                <%= email_input f,
-            :email,
-            class: "form-control" <> error_class(f, :email, "is-invalid"),
-            placeholder: "Email Address",
-            required: true %>
-                <%= label f, :email, "Email Address", class: "control-label" %>
-                <%= error_tag f, :email %>
-              </div>
-              <%= label f, :subject, "Subject:", class: "control-label" %>
-              <div class="input-group mb-3">
-                <%= select f, :subject,
-          ["- - - - - - - - -": [
-          [value: "help_credit", key: "How can I get credit for an OLI course?"],
-          [value: "help_course_key", key: "Where do I find my course key?"],
-          [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
-          [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly"],
-          [value: "help_server", key: "The server timed out or I received an unknown error"]
-          ],
-          "- - - - - - - - -": [
-          [value: "help_tech", key: "Technical support"],
-          [value: "help_course_content", key: "Course content"],
-          [value: "help_course_feedback", key: "Feedback about a course or OLI"]
-          ],
-          "- - - - - - - - -": [
-          [value: "help_other", key: "Other questions or comments"]
-          ]
-          ],
-           prompt: "Select from the list of topics provided.",
-            class: "form-control" <> error_class(f, :message, "is-invalid"),
-            required: true %>
-              </div>
-              <%= label f, :message, "Questions or Comments:", class: "control-label" %>
-              <div class="input-group mb-3">
-                <%= textarea f,
-            :message,
-            class: "form-control" <> error_class(f, :message, "is-invalid"),
-            required: true,
-            rows: 8 %>
-                <%= error_tag f, :message %>
-              </div>
-              <div class="input-group mb-3">
-                <div id="help-captcha"></div>
-                <%= error_tag f, :captcha %>
-              </div>
-              <div id="help-error-message" class="d-none input-group mb-3 alert alert-danger" role="alert">
-              </div>
-              <div class="input-group-append">
-                <%= submit "Send Request",
-              id: "button-create-author",
-              class: "btn btn-primary",
-              phx_disable_with: "Requesting help..." %>
-              </div>
-            </form>
+      <%= f = form_for :help, "#", [id: "form-request-help"] %>
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="las la-life-ring text-danger"></i> Help</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="container form-container">
+            <div class="row">
+              <div class="col-lg-8 mx-auto">
+                <h5 id="help-success-message" class="d-none text-success">Your help request submitted</h5>
+                <%= hidden_input f, :location, id: "location"%>
+                <%= hidden_input f, :cookies_enabled, id: "cookies_enabled"%>
+                <div class="form-group">
+                  <%= label f, :full_name, "Name", class: "control-label" %>
+                  <%= text_input f,
+                      :full_name,
+                      class: "form-control" <> error_class(f, :full_name, "is-invalid"),
+                      placeholder: "Enter Name",
+                      required: true,
+                      autofocus: true %>
+                  <%= error_tag f, :full_name %>
+                </div>
+                <div class="form-group">
+                  <%= label f, :email, "Email Address", class: "control-label" %>
+                  <%= email_input f,
+                    :email,
+                    class: "form-control" <> error_class(f, :email, "is-invalid"),
+                    placeholder: "Enter Email",
+                    required: true %>
+                  <%= error_tag f, :email %>
+                </div>
+                <div class="form-group mb-3">
+                  <%= label f, :subject, "Subject:", class: "control-label" %>
+                  <%= select f, :subject,
+                      ["- - - - - - - - -": [
+                      [value: "help_credit", key: "How can I get credit for an OLI course?"],
+                      [value: "help_course_key", key: "Where do I find my course key?"],
+                      [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
+                      [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly"],
+                      [value: "help_server", key: "The server timed out or I received an unknown error"]
+                      ],
+                      "- - - - - - - - -": [
+                      [value: "help_tech", key: "Technical support"],
+                      [value: "help_course_content", key: "Course content"],
+                      [value: "help_course_feedback", key: "Feedback about a course or OLI"]
+                      ],
+                      "- - - - - - - - -": [
+                      [value: "help_other", key: "Other questions or comments"]
+                      ]
+                      ],
+                      prompt: "Select from the list of topics provided.",
+                      class: "form-control" <> error_class(f, :message, "is-invalid"),
+                      required: true %>
+                  </div>
+                  <div class="form-group mb-3">
+                    <%= label f, :message, "Questions or Comments:", class: "control-label" %>
+                    <%= textarea f,
+                      :message,
+                      class: "form-control" <> error_class(f, :message, "is-invalid"),
+                      required: true,
+                      rows: 8 %>
+                  <%= error_tag f, :message %>
+                </div>
+                <div class="input-group mb-3">
+                  <div id="help-captcha"></div>
+                  <%= error_tag f, :captcha %>
+                </div>
+                <div id="help-error-message" class="d-none input-group mb-3 alert alert-danger" role="alert">
+                </div>
+            </div>
           </div>
         </div>
-      </div>
+        <div class="modal-footer">
+            <%= submit "Send Request",
+                id: "button-create-author",
+                class: "btn btn-primary",
+                phx_disable_with: "Requesting help..." %>
+        </div>
+      </form>
     </div>
   </div>
 </div>
 </div>
 <script>
   let helpRecapture = null;
-  
+
   const showHelpModal = () => {
     $('#help-modal').modal('show');
-  
+
     document.getElementById('location').value = document.referrer
     if (typeof document.cookie == "undefined" || typeof navigator == "undefined" || !navigator.cookieEnabled) {
       document.getElementById('cookies_enabled').value = false;
@@ -109,13 +109,13 @@
       });
     }
   }
-  
+
   const helpForm = document.querySelector('#form-request-help')
   if (helpForm) {
     helpForm.addEventListener("submit", async function (event) {
       event.preventDefault();
       const form = event.target;
-  
+
       const result = await fetch('<%= Routes.help_path(@conn, :create) %>', {
         method: form.method,
         body: new URLSearchParams([...(new FormData(form))]),
