@@ -1,4 +1,4 @@
-@import 'bootstrap';
+@import "bootstrap";
 
 .content {
   h1,
@@ -13,7 +13,7 @@
   blockquote {
     clear: both;
     margin-top: 12px;
-    font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 1.3em;
     line-height: 1.5em;
     letter-spacing: -0.003em;
@@ -32,14 +32,18 @@
   pre {
     clear: both;
     text-align: left;
+    color: $body-color;
+    background: darken($body-bg, 5%);
+    font-family: "Source Code Pro", "Courier New", Courier, monospace;
+    letter-spacing: -0.003em;
+    border-radius: 6px;
+    padding: 1em;
+
+    code.hljs {
+      background: inherit;
+    }
   }
 
-  code {
-    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
-    color: rgba(0, 0, 0, 0.84);
-    background: rgba(0, 0, 0, 0.05);
-    letter-spacing: -0.003em;
-  }
   ul li,
   ol li {
     margin-bottom: 14px;
@@ -133,9 +137,10 @@
     clear: both;
     display: flex;
     justify-content: center;
+
     figure {
       display: inline-block;
-      background-color: darken($body-bg, 5%);
+      background-color: $gray-100;
       @extend .img-fluid;
       @extend .img-thumbnail;
 

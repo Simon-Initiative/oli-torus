@@ -207,5 +207,11 @@ $activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Theme-specific custom styles **/
-html.delivery {
+html.delivery,
+.content-block .delivery {
+  .content {
+    pre {
+      background: $gray-900;
+    }
+  }
 }

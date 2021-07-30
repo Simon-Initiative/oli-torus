@@ -2,8 +2,8 @@
  * Base delivery styles - built on top of Bootstrap 4 (https://getbootstrap.com)
  */
 
-html,
-body {
+html.delivery,
+html.delivery body {
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -11,7 +11,8 @@ body {
   flex-direction: column;
 }
 
-html.delivery {
+html.delivery,
+.content-block .delivery {
   @import "delivery/variables";
   @import "bootstrap";
   @import "common/**/*.scss";
