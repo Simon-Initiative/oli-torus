@@ -1,10 +1,13 @@
 <script src="https://www.google.com/recaptcha/api.js"></script>
-<div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal" aria-hidden="true">
+<div class="modal fade help-modal" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="help-modal" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
       <%= f = form_for :help, "#", [id: "form-request-help"] %>
         <div class="modal-header">
-          <h5 class="modal-title"><i class="las la-life-ring text-danger"></i> Help</h5>
+          <h5 class="modal-title">
+            <img src="<%= Routes.static_path(@conn, "/images/icons/life-ring-regular.svg") %>" class="help-icon"></img>
+            <span>Help</span>
+          </h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
