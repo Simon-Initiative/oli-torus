@@ -1,3 +1,7 @@
+import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
+import ColorPickerWidget from 'apps/authoring/components/PropertyEditor/custom/ColorPickerWidget';
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+
 export const schema = {
   customCssClass: {
     type: 'string',

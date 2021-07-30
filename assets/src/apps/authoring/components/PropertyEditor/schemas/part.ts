@@ -1,3 +1,5 @@
+import AccordionTemplate from '../custom/AccordionTemplate';
+import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema = {
@@ -35,13 +37,13 @@ export const partUiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Position',
     x: {
-      classNames: 'col-6',
+      classNames: 'col-4',
     },
     y: {
-      classNames: 'col-6',
+      classNames: 'col-4',
     },
     z: {
-      classNames: 'col-6',
+      classNames: 'col-4',
     },
   },
   Size: {
