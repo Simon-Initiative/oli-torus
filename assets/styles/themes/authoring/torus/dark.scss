@@ -17,16 +17,16 @@ $gray-900: #333438;
 $black: #000;
 $white: #fff;
 
-$blue: #5d84c4;
-$indigo: #9d6cec;
-$purple: #8567bd;
-$pink: #e46da4;
-$red: #e07266;
-$orange: #faa660;
-$yellow: #eeb75f;
-$green: #67bda7;
-$teal: #64c4a7;
-$cyan: #77accf;
+$blue: #4977c2;
+$indigo: #7e39ec;
+$purple: #8463c2;
+$pink: #d45695;
+$red: #d8636f;
+$orange: #ff9e4e;
+$yellow: #ffd34e;
+$green: #63a372;
+$teal: #58c7a6;
+$cyan: #69abd6;
 
 $primary: $blue;
 $secondary: $gray-600;
@@ -174,7 +174,7 @@ $pre-color: inherit;
 $workspace-header-bg: $gray-700;
 $workspace-sidebar-bg: $gray-700;
 $workspace-sidebar-link-color: $white;
-$workspace-bg: $gray-900;
+$workspace-bg: $body-bg;
 $workspace-logo-bg: $gray-800;
 $workspace-breadcrumb-bg: $gray-800;
 
@@ -189,158 +189,173 @@ $workspace-breadcrumb-bg: $gray-800;
 /** Theme-specific custom styles **/
 html.authoring {
   /** Theme-specific custom styles for authoring **/
-  .workspace-sidebar {
-    .label {
-      color: white;
+  .objectives {
+    .objective {
+      background-color: $gray-900;
+      border: 1px solid $gray-600;
+      box-shadow: none;
     }
-    .icon {
-      color: white;
+  }
+
+  .toolbar.add-resource-content .insert-button-container .insert-button {
+    background-color: $gray-800;
+  }
+
+  .container-editor .curriculum-entries {
+    .curriculum-entry {
+      background-color: $gray-900;
+      border: 1px solid $gray-600;
+      box-shadow: none;
     }
+  }
 
-    .objectives {
-      .objective {
-        background-color: $gray-900;
-        border: 1px solid $gray-600;
-        box-shadow: none;
-      }
-    }
-
-    .container-editor .curriculum-entries {
-      .curriculum-entry {
-        background-color: $gray-900;
-        border: 1px solid $gray-600;
-        box-shadow: none;
-      }
-    }
-
-    .resource-block-editor {
-      .resource-content-frame {
-        &.card {
-          .card-body {
-            background-color: $body-bg;
-          }
-        }
-      }
-
-      .toolbar {
-        .toolbar-buttons {
-          background-color: transparentize($color: $gray-700, $amount: 0);
+  .resource-block-editor {
+    .resource-content-frame {
+      &.card {
+        .card-body {
+          background-color: $body-bg;
         }
       }
     }
 
-    .table {
-      .thead-light th {
-        background-color: $gray-800;
-        color: $body-color;
+    .toolbar {
+      .toolbar-buttons {
+        background-color: transparentize($color: $gray-700, $amount: 0);
       }
     }
+  }
 
-    .review .reviews .review-links .review-link {
-      .review-link-header {
-        color: $gray-600;
-      }
-
-      &.active {
-        .review-link-header {
-          color: $gray-800;
-        }
-      }
+  .activity,
+  .activity-editor {
+    .card {
+      background-color: $gray-900;
     }
+  }
 
-    .container-editor {
-      .curriculum-entry {
-        &.active {
-          background-color: $gray-600;
-        }
-      }
+  .draggableColumn {
+    &__card {
+      background-color: $gray-900;
+      box-shadow: 1px 1px 8px 1px rgb(0 0 0 / 33%);
     }
+  }
 
-    .blockquote {
-      border-color: $gray-600;
-
-      &::before {
-        color: transparentize($color: $gray-600, $amount: 0.3);
-      }
-    }
-
-    .settings-editor-wrapper {
-      .settings-editor {
-        color: $gray-900;
-      }
-    }
-
-    /**
-    * Multi-select Input
-    */
-    .rbt-input-multi.form-control.rbt-input {
-      background-color: $body-bg;
-      border-color: $gray-700;
-
-      input {
-        color: $body-color;
-      }
-    }
-
-    .rbt-input-multi.focus {
-      border-color: #80bdff;
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-
-    .rbt-input-multi.form-control[disabled] {
-      background-color: $body-bg;
-    }
-
-    .rbt-input-multi.is-invalid.focus {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    }
-
-    .rbt-input-multi.is-valid.focus {
-      border-color: #28a745;
-      box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-    }
-
-    .rbt-input-multi input::-moz-placeholder {
-      color: $gray-100;
-    }
-
-    .rbt-input-multi input:-ms-input-placeholder {
-      color: $gray-100;
-    }
-
-    .rbt-input-multi input::-webkit-input-placeholder {
-      color: $gray-100;
-    }
-
-    .rbt-menu.dropdown-menu .dropdown-item {
+  .table {
+    .thead-light th {
+      background-color: $gray-800;
       color: $body-color;
     }
+  }
 
-    /**
-    * Token
-    */
-    .rbt-token {
-      background-color: darken(#007bff, 20%);
-      color: $white;
+  .review .reviews .review-links .review-link {
+    .review-link-header {
+      color: $gray-600;
     }
 
-    .rbt-token-disabled {
-      background-color: $gray-800;
-      color: $gray-200;
+    &.active {
+      .review-link-header {
+        color: $gray-800;
+      }
     }
+  }
 
-    .rbt-token-active {
-      background-color: #007bff;
+  .container-editor {
+    .curriculum-entry {
+      &.active {
+        background-color: $gray-600;
+      }
     }
+  }
 
-    .objective-selection {
-      .existing-objectives {
-        background-color: $body-bg;
+  .blockquote {
+    border-color: $gray-600;
 
-        .selected {
-          background-color: lighten($color: $body-bg, $amount: 30%);
-        }
+    &::before {
+      color: transparentize($color: $gray-600, $amount: 0.3);
+    }
+  }
+
+  .settings-editor-wrapper {
+    .settings-editor {
+      color: $gray-900;
+    }
+  }
+
+  .undotoast {
+    background-color: $gray-800;
+    border: 1px solid $gray-700;
+    box-shadow: 1px 1px 8px 1px rgb(0 0 0 / 33%);
+  }
+
+  /**
+  * Multi-select Input
+  */
+  .rbt-input-multi.form-control.rbt-input {
+    background-color: $body-bg;
+    border-color: $gray-700;
+
+    input {
+      color: $body-color;
+    }
+  }
+
+  .rbt-input-multi.focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  .rbt-input-multi.form-control[disabled] {
+    background-color: $body-bg;
+  }
+
+  .rbt-input-multi.is-invalid.focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+
+  .rbt-input-multi.is-valid.focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+  }
+
+  .rbt-input-multi input::-moz-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-input-multi input:-ms-input-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-input-multi input::-webkit-input-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-menu.dropdown-menu .dropdown-item {
+    color: $body-color;
+  }
+
+  /**
+  * Token
+  */
+  .rbt-token {
+    background-color: darken(#007bff, 20%);
+    color: $white;
+  }
+
+  .rbt-token-disabled {
+    background-color: $gray-800;
+    color: $gray-200;
+  }
+
+  .rbt-token-active {
+    background-color: #007bff;
+  }
+
+  .objective-selection {
+    .existing-objectives {
+      background-color: $body-bg;
+
+      .selected {
+        background-color: lighten($color: $body-bg, $amount: 30%);
       }
     }
   }

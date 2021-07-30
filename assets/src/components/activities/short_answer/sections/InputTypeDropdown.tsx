@@ -27,7 +27,7 @@ export const InputTypeDropdown: React.FC<InputTypeDropdownProps> = ({
 
   return (
     <select
-      style={{ height: 61, width: 150 }}
+      style={{ width: 150 }}
       disabled={!editMode}
       className="form-control ml-1"
       value={inputType}

@@ -10,11 +10,11 @@
 .activity,
 .activity-editor {
   max-width: 768px;
-  margin: 0 auto;
+  margin: 20px auto;
 
   .card {
     border: 0;
-    background-color: #f8f9fa;
+    background-color: $gray-100;
     @extend .mb-3;
   }
 
