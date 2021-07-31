@@ -3,7 +3,7 @@ import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
 export interface AppState {
-  paths: Record<string, string>;
+  paths: Record<string, string> | null;
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
@@ -17,7 +17,7 @@ export interface AppState {
 }
 
 const initialState: AppState = {
-  paths: {},
+  paths: null,
   isAdmin: false,
   projectSlug: '',
   revisionSlug: '',

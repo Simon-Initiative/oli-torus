@@ -19,7 +19,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
-  return (
+  console.log('PATHS!!', { paths });
+  return paths && (
     <nav
       className={`aa-header-nav top-panel${
         isVisible ? ' open' : ''

@@ -1,10 +1,10 @@
-import { setCurrentSelection } from '../../store/parts/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
+import { setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import FabricCanvas from './FabricCanvas';
+import KonvaStage from './KonvaStage';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -17,17 +17,20 @@ const EditingCanvas: React.FC = () => {
   const width = currentActivity?.content?.custom?.width || 800;
   const height = currentActivity?.content?.custom?.height || 600;
 
-  const items =
-    currentActivityTree?.reduce((acc, activity) => {
-      // TODO: map these items to a new object that has a few more things
-      // such as layer items should be readonly
-      return acc.concat(...activity.content.partsLayout);
-    }, []) || [];
+  const background = {
+    color: currentActivity?.content?.custom?.palette?.backgroundColor || '#ffffff',
+  };
+
+  const layers = (currentActivityTree || []).map((activity) => ({
+    id: activity.id,
+    parts: activity.content.partsLayout || [],
+  }));
 
   const handleObjectClicked = (e: any, item: any) => {
     console.log('object clicked handler', { e, item });
     dispatch(setCurrentSelection({ selection: item.id }));
   };
+  console.log('EC: RENDER', { layers });
 
   return (
     <React.Fragment>
@@ -37,7 +40,8 @@ const EditingCanvas: React.FC = () => {
           dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.LESSON }));
         }}
       >
-        <div
+        <KonvaStage background={background} size={{ width, height }} layers={layers} />
+        {/* <div
           className="aa-stage-inner"
           style={{
             width,
@@ -49,13 +53,8 @@ const EditingCanvas: React.FC = () => {
             dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
           }}
         >
-          <FabricCanvas
-            items={items}
-            width={width}
-            height={height}
-            onObjectClicked={handleObjectClicked}
-          />
-        </div>
+          {false && <KonvaStage />}
+        </div> */}
       </section>
     </React.Fragment>
   );

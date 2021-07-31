@@ -64,11 +64,9 @@ const RightMenu: React.FC<any> = () => {
       return;
     }
     let partDef;
-    for(let i = 0; i < currentActivityTree.length; i++) {
+    for (let i = 0; i < currentActivityTree.length; i++) {
       const activity = currentActivityTree[i];
-      partDef = activity.content?.partsLayout.find(
-        (part: any) => part.id === currentPartSelection,
-      );
+      partDef = activity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
       if (partDef) {
         break;
       }
@@ -97,10 +95,11 @@ const RightMenu: React.FC<any> = () => {
             custom: {
               'ui:ObjectFieldTemplate': AccordionTemplate,
               'ui:title': 'Custom',
-               ...customPartUiSchema },
+              ...customPartUiSchema,
+            },
           };
           const customPartSchema = instance.getSchema();
-          if(customPartSchema.palette){
+          if (customPartSchema.palette) {
             newUiSchema.custom = {
               ...newUiSchema.custom,
               palette: {
@@ -115,7 +114,7 @@ const RightMenu: React.FC<any> = () => {
                 borderStyle: { classNames: 'col-6' },
                 borderWidth: { classNames: 'col-6' },
               },
-            }
+            };
           }
           setComponentUiSchema(newUiSchema);
         }

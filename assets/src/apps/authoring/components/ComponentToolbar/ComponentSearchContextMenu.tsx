@@ -30,7 +30,7 @@ const ComponentSearchContextMenu: React.FC = (props: any) => {
 
   console.log('ALL PARTS', { allParts, currentActivityTree });
 
-  return (
+  return paths && (
     <div ref={ref}>
       <OverlayTrigger
         placement="bottom"
