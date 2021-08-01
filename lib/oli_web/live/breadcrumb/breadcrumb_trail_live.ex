@@ -4,6 +4,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   alias Oli.Authoring.Course
   alias OliWeb.Breadcrumb.BreadcrumbLive
   alias OliWeb.Common.Breadcrumb
+  alias Oli.Publishing.AuthoringResolver
 
   def mount(
         _params,
@@ -33,7 +34,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
           id: "breadcrumb-project",
           breadcrumb: Breadcrumb.new(%{
             full_title: @project.title,
-            link: Routes.project_path(@socket, :overview, @project)
+            link: Routes.container_path(@socket, :index, @project.slug, AuthoringResolver.root_container(@project.slug).slug)
           }),
           is_last: false,
           show_short: false

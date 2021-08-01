@@ -139,10 +139,6 @@
       @extend .img-fluid;
       @extend .img-thumbnail;
 
-      &.full-width {
-        @extend .embed-responsive;
-      }
-
       figcaption {
         margin-bottom: 8px;
         text-align: center;

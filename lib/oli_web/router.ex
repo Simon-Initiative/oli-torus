@@ -236,7 +236,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring, :authorize_project])
 
     # Project display pages
-    get("/:project_id", ProjectController, :overview)
+    get("/:project_id/overview", ProjectController, :overview)
     get("/:project_id/publish", ProjectController, :publish)
     post("/:project_id/publish", ProjectController, :publish_active)
     post("/:project_id/datashop", ProjectController, :download_datashop)
@@ -265,6 +265,9 @@ defmodule OliWeb.Router do
     )
 
     live("/:project_id/curriculum/", Curriculum.ContainerLive, :index,
+      session: {__MODULE__, :with_session, []}
+    )
+    live("/:project_id/", Curriculum.ContainerLive, :index,
       session: {__MODULE__, :with_session, []}
     )
 
