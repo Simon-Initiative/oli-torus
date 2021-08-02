@@ -9,7 +9,7 @@ const textFlowHack = (node: any): any => {
   } else if (node?.children?.length > 0) {
     nodeText = textFlowHack(node?.children[0]);
   } else {
-    nodeText = '\n';
+    nodeText = '';
   }
   return nodeText;
 };
