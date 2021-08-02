@@ -19,8 +19,6 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
-  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
-  media_url: System.get_env("MEDIA_URL"),
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "10")),
   load_testing_mode: :disabled,
   problematic_query_detection: :disabled,

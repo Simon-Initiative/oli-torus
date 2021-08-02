@@ -11,6 +11,8 @@ end
 
 config :oli,
   env: :dev,
+  s3_media_bucket_name: System.get_env("S3_MEDIA_BUCKET_NAME"),
+  media_url: System.get_env("MEDIA_URL"),
   problematic_query_detection:
     from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
