@@ -77,6 +77,20 @@ export const transformModelToSchema = (model: any) => {
   };
 };
 
-export const transformSchemaToModel = (schema: any) => {};
+export const transformSchemaToModel = (schema: any) => {
+  const { id, type, Position, Size } = schema;
+  return {
+    id,
+    type,
+    custom: {
+      ...schema.custom,
+      x: Position.x,
+      y: Position.y,
+      z: Position.z,
+      width: Size.width,
+      height: Size.height,
+    },
+  };
+};
 
 export default partSchema;
