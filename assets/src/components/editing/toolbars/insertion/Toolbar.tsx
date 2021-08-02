@@ -38,8 +38,6 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
 
     const reposition = () => positionInsertion(el, editor);
 
-    console.log('focused and should show', focused, shouldShowInsertionToolbar(editor));
-
     if (focused && shouldShowInsertionToolbar(editor)) {
       reposition();
       showToolbar(el);

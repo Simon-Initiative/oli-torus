@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Bug Fixes
+- Fix iframe rendering when elements contain captions (webpage, youtube)
+- Fix iframe rendering in activities
+- Add max-width for all content in delivery mode
 
 ### Enhancements
 
