@@ -1,8 +1,9 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel } from '../../store/app/slice';
+import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 import KonvaStage from './KonvaStage';
 
 const EditingCanvas: React.FC = () => {
@@ -29,7 +30,10 @@ const EditingCanvas: React.FC = () => {
   const handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
     console.log('[handleSelectionChanged]', { selected });
-    dispatch(setCurrentSelection({ selection: first || '' }));
+    const newSelection = first || '';
+    dispatch(setCurrentSelection({ selection: newSelection }));
+    const selectedTab = newSelection ? RightPanelTabs.COMPONENT : RightPanelTabs.SCREEN;
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: selectedTab }));
   };
   console.log('EC: RENDER', { layers });
 
