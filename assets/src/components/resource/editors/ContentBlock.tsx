@@ -81,7 +81,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
           className="content"
           draggable={props.editMode}
           onDragStart={(e) => {
-            // e.preventDefault();
+            e.preventDefault();
             e.stopPropagation();
           }}
         >

@@ -1,4 +1,4 @@
-@import 'bootstrap';
+@import "bootstrap";
 
 .draggableColumn {
   &__container {
@@ -6,9 +6,8 @@
   }
 
   &__dragIndicator {
-    cursor: pointer !important;
+    cursor: grab !important;
     width: 24px;
-    color: rgba(0, 0, 0, 0.26);
     margin-right: 0.5rem;
   }
 
@@ -19,7 +18,6 @@
     cursor: default !important;
     border-radius: 4px;
     box-shadow: 1px 1px 8px 1px rgb(206 212 218 / 33%);
-    background-color: white;
     padding: 0.8rem 0.5rem;
   }
 }

@@ -30,6 +30,7 @@
   font-weight: 400;
   line-height: 1.5;
   color: $body-color;
+  background-color: $body-bg;
   background-clip: padding-box;
   position: relative;
 
@@ -52,6 +53,18 @@
   .dropdown-item {
     cursor: pointer;
   }
+}
+
+.table-size-picker {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid $gray-600;
+  background-color: $body-bg;
+}
+
+.table-size-picker-label {
+  color: $body-color;
+  text-align: center;
 }
 
 .custom-select {

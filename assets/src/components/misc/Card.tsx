@@ -3,10 +3,11 @@ import React, { isValidElement } from 'react';
 interface Props {
   title?: JSX.Element | string;
   content?: JSX.Element | string;
+  className?: string;
 }
-const CardComponent: React.FC<Props> = ({ children }) => {
+const CardComponent: React.FC<Props> = ({ children, className = '' }) => {
   return (
-    <div className="card">
+    <div className={`${className} card`}>
       <div className="card-body">
         <div className="card-title d-flex align-items-center">
           {React.Children.toArray(children).find(

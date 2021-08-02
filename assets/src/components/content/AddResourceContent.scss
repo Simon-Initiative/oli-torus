@@ -105,8 +105,9 @@
 }
 
 .add-resource-popover {
-  z-index: 1;
-  box-shadow: 0 10px 15px rgba(0,0,0,0.05), 10px 0px 15px rgba(0,0,0,0.05), -10px 0px 15px rgba(0,0,0,0.05), 0px -5px 40px rgba(0,0,0,0.05);
+  z-index: 500;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05), 10px 0px 15px rgba(0, 0, 0, 0.05), -10px 0px 15px rgba(0, 0, 0, 0.05),
+    0px -5px 40px rgba(0, 0, 0, 0.05);
   border-radius: 6px;
 
   .add-resource-popover-content {
@@ -115,11 +116,11 @@
     background-color: $body-bg;
     padding: 14px;
     border-radius: 6px;
-    border: 1px solid rgba($color: $body-color, $alpha: .2);
+    border: 1px solid rgba($color: $body-color, $alpha: 0.2);
 
     .content {
       padding-right: 5px;
-      border-right: 1px solid rgba($color: $body-color, $alpha: .2);
+      border-right: 1px solid rgba($color: $body-color, $alpha: 0.2);
 
       .insert-content-btn {
         .content-icon {
