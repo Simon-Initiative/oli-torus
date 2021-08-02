@@ -1,4 +1,4 @@
-@import 'delivery/variables';
+@import "delivery/variables";
 
 .activity {
   margin-top: 1em;
@@ -65,44 +65,6 @@
       .result-divider {
         margin-left: 3px;
         margin-right: 3px;
-      }
-    }
-  }
-
-  .hints {
-    padding: 16px;
-    border: 1px solid $gray-400;
-    border-radius: 5px;
-    box-shadow: 0 1px 2px 0 $gray-400;
-    position: relative;
-
-    .hints-adornment {
-      position: absolute;
-      left: 0;
-      bottom: -3px;
-      border-top: 1px solid $gray-400;
-      height: 6px;
-      width: 100%;
-    }
-
-    h6 {
-      font-weight: 600;
-    }
-
-    .hints-list {
-      display: block;
-    }
-
-    .hint {
-      padding: 12px 16px;
-      border: 1px solid $hint-border-color;
-      border-radius: 4px;
-      background-color: $hint-bg;
-
-      i {
-        color: $hint-border-color;
-        font-weight: 600;
-        font-size: 1.3em;
       }
     }
   }
