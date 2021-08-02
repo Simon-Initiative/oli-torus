@@ -31,7 +31,7 @@ defmodule OliWeb.Projects.VisibilityLive do
     <div class="row">
       <div class="col-md-4">
         <h4>Publishing Visibility</h4>
-        <small>Control who can create course sections for this project once it is published.</small>
+        <div class="text-muted">Control who can create course sections for this project once it is published.</div>
       </div>
       <div class="col-md-8">
         <form phx-change="option" id="visibility_option">
@@ -39,7 +39,10 @@ defmodule OliWeb.Projects.VisibilityLive do
             <div class="form-group">
               <%= label class: "form-check-label" do %>
                 <%= radio_button :visibility, :option, "authors", class: "form-check-input", checked: @project.visibility == :authors or is_nil(@project.visibility) %>
-                <p>Project authors (default)</p>
+                <div class="d-flex align-items-center">
+                  <p>Project authors</p>
+                  <span class="ml-2 badge badge-pill badge-light">default</span>
+                </div>
                 <small>Only authors added as collaborators to this project</small>
               <% end %>
             </div>

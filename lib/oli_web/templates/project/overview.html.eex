@@ -4,10 +4,10 @@
   }
 </style>
 <div class="overview container">
-  <div class="row">
+  <div class="row mb-4">
     <div class="col-md-4">
       <h4>Details</h4>
-      <small>Your project title and description will be shown to students when you deploy this project.</small>
+      <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
     </div>
     <div class="col-md-8">
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
@@ -19,16 +19,14 @@
         <%= label f, :description, "Course Description", class: "control-label" %>
         <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
       </div>
-      <%# <div class="d-flex flex-row-reverse"> %>
-      <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
-      <%# </div> %>
+      <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
     <% end %>
   </div>
 </div>
 <div class="row">
   <div class="col-md-4">
     <h4>Collaborators</h4>
-    <small>Invite other authors by email to contribute to your project.</small>
+    <div class="text-muted">Invite other authors by email to contribute to your project.</div>
   </div>
   <div class="col-md-8">
     <script src="https://www.google.com/recaptcha/api.js"></script>
@@ -46,7 +44,7 @@
         <div class="input-group-append">
           <%= submit "Send Invite",
               id: "button-create-collaborator",
-              class: "btn btn-primary",
+              class: "btn btn-outline-primary",
               phx_disable_with: "Adding Collaborator...",
               form: f.id %>
         </div>
@@ -63,7 +61,7 @@
 <div class="row">
   <div class="col-md-4">
     <h4>Advanced Activities</h4>
-    <small>Enable advanced activity types for your project to include in your curriculum.</small>
+    <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
   </div>
   <div class="col-md-8">
     <table class="table table-sm">
@@ -80,40 +78,36 @@
     </table>
   </div>
 </div>
-<div class="row my-4">
-  <div class="col-12">
-    <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
-  </div>
-</div>
-<div class="card mt-4">
-  <div class="card-body">
+<%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
+<div class="row">
+  <div class="col-md-4">
     <h4>Actions</h4>
-    <div style="margin: auto 0; width: 80%">
-      <div class="d-flex flex-row-reverse mt-3">
-        <%= button("Duplicate",
+  </div>
+  <div class="col-md-8">
+    <div class="d-flex flex-row-reverse mt-3">
+      <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
-                    class: "btn btn-primary ml-5 action-button",
+                    class: "btn btn-outline-secondary ml-5 action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
-        <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
-      </div>
-      <div class="d-flex flex-row-reverse mt-3">
-        <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
-        <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
-      </div>
-      <div class="d-flex flex-row-reverse mt-3">
-        <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
-          <% nil -> %>
-          <button disabled class="btn btn-primary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
-          <% _pub -> %>
-          <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
-        <% end %>
-        <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
-      </div>
-      <div class="d-flex flex-row-reverse mt-3">
-        <button type="button" class="btn btn-danger ml-5 action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
-        <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
-      </div>
+      <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
+    </div>
+    <div class="d-flex flex-row-reverse mt-3">
+      <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-outline-secondary ml-5 action-button") %>
+      <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
+    </div>
+    <div class="d-flex flex-row-reverse mt-3">
+      <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+        <% nil -> %>
+        <button disabled class="btn btn-outline-secondary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+        <% _pub -> %>
+        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-outline-secondary ml-5 action-button") %>
+      <% end %>
+      <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
+    </div>
+    <div class="d-flex flex-row-reverse mt-3">
+      <button type="button" class="btn btn-outline-danger ml-5 action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
+      <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
     </div>
   </div>
 </div>
