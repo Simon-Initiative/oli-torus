@@ -4,6 +4,6 @@
   <% end %>
 </span>
 
-<%= render OliWeb.SharedView, "_form_container.html", Map.put(assigns, :title, "Create Registration") do %>
+<%= render OliWeb.SharedView, "_box_form_container.html", Map.put(assigns, :title, "Create Registration") do %>
   <%= render "form.html", Map.put(assigns, :action, Routes.institution_registration_path(@conn, :create, @institution_id)) %>
 <% end %>

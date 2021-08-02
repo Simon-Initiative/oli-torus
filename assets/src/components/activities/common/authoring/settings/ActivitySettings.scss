@@ -1,4 +1,4 @@
-@import 'bootstrap';
+@import "bootstrap";
 
 .btn.settings__open-button {
   padding: 0 3px;
@@ -13,7 +13,6 @@
   height: 46px;
   line-height: 46px;
   border: 0;
-  background-color: white;
 }
 
 .settings__is-enabled {
@@ -36,7 +35,6 @@
   @extend .flex-column;
   padding: 8px 0;
   width: 320px;
-  background-color: white;
 
   .insert-button {
     @extend .float-right;

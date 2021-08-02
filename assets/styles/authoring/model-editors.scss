@@ -1,5 +1,5 @@
-@import 'authoring/variables';
-@import 'bootstrap';
+@import "authoring/variables";
+@import "bootstrap";
 
 .editors .structured-content,
 .rich-text-editor {
@@ -15,16 +15,6 @@
     table {
       position: relative;
       margin-bottom: 0;
-      @extend .table-bordered;
-      @extend .table;
-      clear: both;
-      border-collapse: collapse;
-      table-layout: fixed;
-
-      td,
-      th {
-        position: relative;
-      }
 
       .table-dropdown {
         position: absolute;
@@ -51,88 +41,12 @@
     }
   }
 
-  blockquote {
-    clear: both;
-    margin-top: 12px;
-    font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-    font-size: 1.3em;
-    line-height: 1.5em;
-    letter-spacing: -0.003em;
-    color: rgba(0, 0, 0, 0.84);
-
-    border-left: 3px solid rgba(0, 0, 0, 0.84);
-    padding-left: 10px;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    word-break: break-word;
-    p:last-of-type {
-      margin-bottom: 0;
-    }
-  }
-
-  pre {
-    clear: both;
-    text-align: left;
-  }
-
-  code {
-    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
-    color: rgba(0, 0, 0, 0.84);
-    background: rgba(0, 0, 0, 0.05);
-    letter-spacing: -0.003em;
-  }
-
-  img {
-    @extend .img-fluid;
-  }
-
-  ul li,
-  ol li {
-    margin-bottom: 14px;
-  }
-
   .youtube-editor {
     clear: both;
     max-width: 700px;
     margin: 0 auto;
     iframe {
       pointer-events: none;
-    }
-  }
-
-  img.d-block,
-  iframe.d-block {
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  img.float-md-right,
-  img.float-md-left,
-  iframe.float-md-right,
-  iframe.float-md-left {
-    max-width: 400px;
-    @extend .mb-2;
-  }
-  img.float-md-left,
-  iframe.float-md-left,
-  div.float-md-left {
-    @extend .mr-4;
-  }
-  img.float-md-right,
-  iframe.float-md-right,
-  div.float-md-right {
-    @extend .ml-4;
-  }
-  div.float-md-left,
-  div.float-md-right {
-    max-width: 410px;
-    img.float-md-right,
-    img.float-md-left,
-    iframe.float-md-right,
-    iframe.float-md-left {
-      @extend .ml-0;
-      @extend .mr-0;
-      @extend .mb-0;
     }
   }
 

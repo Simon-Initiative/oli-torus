@@ -1,7 +1,7 @@
 <div class="container">
   <script src="https://www.google.com/recaptcha/api.js"></script>
 
-  <%= render OliWeb.SharedView, "_form_container.html", Map.merge(assigns, %{title: "Enroll in Course Section", bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
+  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: "Enroll in Course Section", bs_col_class: "col-sm-10 col-md-8 col-lg-6 col-xl-5 mx-auto"}) do %>
 
     <div class="course-card-link card h-100 mb-4">
       <img src="<%= Routes.static_path(@conn, "/images/course_default.jpg") %>" class="card-img-top" alt="course image">

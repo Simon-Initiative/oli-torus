@@ -3,8 +3,6 @@ import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
 import { MediaDisplayMode } from './model';
 
-const textLimit = 25;
-
 // float_left and float_right no longer supported as options
 export function displayModelToClassName(display: MediaDisplayMode | undefined) {
   switch (display) {
