@@ -76,9 +76,7 @@ defmodule Oli.Rendering.Content.Html do
       end
 
     figure(attrs, [
-      ~s|<img class="#{display_class(attrs)}"#{maybeAlt}#{maybeWidth}#{maybeHeight} src="#{
-        escape_xml!(src)
-      }"/>\n|
+      ~s|<img class="figure-img img-fluid"#{maybeAlt}#{maybeWidth}#{maybeHeight} src="#{escape_xml!(src)}"/>\n|
     ])
   end
 
@@ -86,16 +84,12 @@ defmodule Oli.Rendering.Content.Html do
     missing_media(context, e)
   end
 
-  def youtube(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(Map.put(attrs, "full-width", true), [
-      """
-      <div class="youtube-wrapper">
-        <iframe id="#{escape_xml!(src)}" class="#{display_class(attrs)}" allowfullscreen src="https://www.youtube.com/embed/#{
-        escape_xml!(src)
-      }"></iframe>
-      </div>
-      """
-    ])
+  def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
+    iframe(
+      context,
+      nil,
+      Map.put(attrs, "src", "https://www.youtube.com/embed/#{escape_xml!(src)}")
+    )
   end
 
   def youtube(%Context{} = context, _, e) do
@@ -103,10 +97,10 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(Map.put(attrs, "full-width", true), [
+    figure(attrs, [
       """
-      <div class="webpage-wrapper">
-        <iframe class="#{display_class(attrs)}" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      <div class="embed-responsive embed-responsive-16by9">
+        <iframe class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
@@ -260,23 +254,17 @@ defmodule Oli.Rendering.Content.Html do
     case error do
       {:unsupported, error_id, _error_msg} ->
         [
-          ~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{
-            error_id
-          }</div>\n|
+          ~s|<div class="content unsupported">Content element type '#{element["type"]}' is not supported. Please contact support with issue ##{error_id}</div>\n|
         ]
 
       {:invalid, error_id, _error_msg} ->
         [
-          ~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{
-            error_id
-          }</div>\n|
+          ~s|<div class="content invalid">Content element is invalid. Please contact support with issue ##{error_id}</div>\n|
         ]
 
       {_, error_id, _error_msg} ->
         [
-          ~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{
-            error_id
-          }</div>\n|
+          ~s|<div class="content invalid">An error occurred while rendering content. Please contact support with issue ##{error_id}</div>\n|
         ]
     end
   end
@@ -321,26 +309,10 @@ defmodule Oli.Rendering.Content.Html do
   defp figure(%{"caption" => ""} = _attrs, content), do: content
 
   defp figure(%{"caption" => caption} = attrs, content) do
-    [~s|<div class="figure-wrapper text-center #{display_class(attrs)}">|] ++
-      [
-        "<figure#{
-          if attrs["full-width"] do
-            " class=\"full-width\""
-          else
-            ""
-          end
-        }>"
-      ] ++
+    [~s|<div class="figure-wrapper">|] ++
+      [~s|<figure class="figure embed-responsive text-center">|] ++
       content ++
-      [
-        "<figcaption#{
-          if attrs["full-width"] do
-            " class=\"full-width\""
-          else
-            ""
-          end
-        }>"
-      ] ++
+      [~s|<figcaption class="figure-caption text-center">|] ++
       [escape_xml!(caption)] ++
       ["</figcaption>"] ++
       ["</figure>"] ++
@@ -348,15 +320,6 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp figure(_attrs, content), do: content
-
-  defp display_class(%{"display" => display}), do: display_class(display)
-
-  # float_left and float_right no longer supported as options
-  defp display_class(display) do
-    case display do
-      _ -> "d-block"
-    end
-  end
 
   defp missing_media(%Context{render_opts: render_opts} = context, element) do
     error_id = Utils.random_string(8)

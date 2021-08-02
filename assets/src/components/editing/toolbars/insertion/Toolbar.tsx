@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useFocused, useSelected, useSlate } from 'slate-react';
+import { useFocused, useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import { Popover } from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
@@ -37,6 +37,8 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     }
 
     const reposition = () => positionInsertion(el, editor);
+
+    console.log('focused and should show', focused, shouldShowInsertionToolbar(editor));
 
     if (focused && shouldShowInsertionToolbar(editor)) {
       reposition();
