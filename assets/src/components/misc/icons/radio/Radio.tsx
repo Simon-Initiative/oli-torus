@@ -24,7 +24,7 @@ const Unchecked = ({ className, disabled }: Props) => (
     readOnly
   />
 );
-const Correct = () => <Checked className="correct" />;
+const Correct = () => <Checked className="correct" disabled />;
 const Incorrect = () => <Checked className="incorrect" disabled />;
 
 export const Radio = {

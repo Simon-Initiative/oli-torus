@@ -4,28 +4,29 @@
  * Theme-specific variables and custom styles
  */
 
-$white: #fff;
-$gray-100: #f8f9fa;
-$gray-200: #ebebeb;
-$gray-300: #dee2e6;
-$gray-400: #ced4da;
-$gray-500: #adb5bd;
-$gray-600: #888;
-$gray-700: #444;
-$gray-800: #303030;
-$gray-900: #222;
-$black: #000;
+$gray-100: #cdcfdd;
+$gray-200: #b7b9c5;
+$gray-300: #a2a4af;
+$gray-400: #83858f;
+$gray-500: #73757e;
+$gray-600: #5c5d64;
+$gray-700: #494a50;
+$gray-800: #3e3f44;
+$gray-900: #333438;
 
-$blue: #2c67c4;
-$indigo: #6610f2;
-$purple: #6f42c1;
-$pink: #e83e8c;
-$red: #e74c3c;
-$orange: #fd7e14;
-$yellow: #f39c12;
-$green: #00bc8c;
-$teal: #20c997;
-$cyan: #3498db;
+$black: #000;
+$white: #fff;
+
+$blue: #4977c2;
+$indigo: #7e39ec;
+$purple: #8463c2;
+$pink: #d45695;
+$red: #d8636f;
+$orange: #ff9e4e;
+$yellow: #ffd34e;
+$green: #63a372;
+$teal: #58c7a6;
+$cyan: #69abd6;
 
 $primary: $blue;
 $secondary: $gray-600;
@@ -40,8 +41,8 @@ $yiq-contrasted-threshold: 175;
 
 // Body
 
-$body-bg: $gray-900;
-$body-color: $white;
+$body-bg: #2a2b2e;
+$body-color: #f5f5f5;
 
 // Links
 
@@ -77,8 +78,8 @@ $dropdown-bg: $gray-900;
 $dropdown-border-color: $gray-700;
 $dropdown-divider-bg: $gray-700;
 
-$dropdown-link-color: $white;
-$dropdown-link-hover-color: $white;
+$dropdown-link-color: $body-color;
+$dropdown-link-hover-color: $body-color;
 $dropdown-link-hover-bg: $primary;
 
 // Navs
@@ -86,13 +87,13 @@ $dropdown-link-hover-bg: $primary;
 $nav-link-disabled-color: $gray-500;
 $nav-tabs-border-color: $gray-700;
 $nav-tabs-link-hover-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
-$nav-tabs-link-active-color: $white;
+$nav-tabs-link-active-color: $body-color;
 $nav-tabs-link-active-border-color: $nav-tabs-border-color $nav-tabs-border-color transparent;
 
 // Navbar
 
-$navbar-dark-color: rgba($white, 0.6);
-$navbar-dark-hover-color: $white;
+$navbar-dark-color: rgba($body-color, 0.6);
+$navbar-dark-hover-color: $body-color;
 
 $navbar-light-color: rgba($gray-900, 0.7);
 $navbar-light-hover-color: $gray-900;
@@ -101,19 +102,19 @@ $navbar-light-toggler-border-color: rgba($gray-900, 0.1);
 
 // Pagination
 
-$pagination-color: $white;
+$pagination-color: $body-color;
 $pagination-bg: $success;
 $pagination-border-width: 0;
 $pagination-border-color: transparent;
 
-$pagination-hover-color: $white;
+$pagination-hover-color: $body-color;
 $pagination-hover-bg: lighten($success, 10%);
 $pagination-hover-border-color: transparent;
 
 $pagination-active-bg: $pagination-hover-bg;
 $pagination-active-border-color: transparent;
 
-$pagination-disabled-color: $white;
+$pagination-disabled-color: $body-color;
 $pagination-disabled-bg: darken($success, 15%);
 $pagination-disabled-border-color: transparent;
 
@@ -173,159 +174,181 @@ $pre-color: inherit;
 $workspace-header-bg: $gray-700;
 $workspace-sidebar-bg: $gray-700;
 $workspace-sidebar-link-color: $white;
-$workspace-bg: $gray-900;
+$workspace-bg: $body-bg;
 $workspace-logo-bg: $gray-800;
 $workspace-breadcrumb-bg: $gray-800;
 
-/** Theme-specific custom styles for authoring **/
-.workspace-sidebar {
-  .label {
-    color: white;
-  }
-  .icon {
-    color: white;
-  }
-}
+///////////////////////////////////////////////////////////////////////////////
+// IMPORTANT: DO NOT MODIFY IMPORT
+// This import is required and must always be after the last variable
+// declaration and before any custom styles in this style sheet
+///////////////////////////////////////////////////////////////////////////////
+@import "authoring.scss";
+///////////////////////////////////////////////////////////////////////////////
 
-.resource-block-editor {
-  .resource-content-frame {
-    &.card {
-      .card-body {
-        background-color: $body-bg;
+/** Theme-specific custom styles **/
+html.authoring {
+  /** Theme-specific custom styles for authoring **/
+  .objectives {
+    .objective {
+      background-color: $gray-900;
+      border: 1px solid $gray-600;
+      box-shadow: none;
+    }
+  }
+
+  .resource-block-editor .toolbar.add-resource-content .insert-button-container .insert-button {
+    background-color: $gray-800;
+  }
+
+  .container-editor .curriculum-entries {
+    .curriculum-entry {
+      background-color: $gray-900;
+      border: 1px solid $gray-600;
+      box-shadow: none;
+    }
+  }
+
+  .resource-block-editor {
+    .resource-content-frame {
+      &.card {
+        .card-body {
+          background-color: $body-bg;
+        }
+      }
+    }
+
+    .toolbar {
+      .toolbar-buttons {
+        background-color: transparentize($color: $gray-700, $amount: 0);
       }
     }
   }
 
-  .toolbar {
-    .toolbar-buttons {
-      background-color: transparentize($color: $gray-700, $amount: 0);
+  .activity,
+  .activity-editor {
+    .card {
+      background-color: $gray-900;
     }
   }
-}
 
-.table {
-  .thead-light th {
-    background-color: $gray-800;
-    color: $body-color;
-  }
-}
-
-.review .reviews .review-links .review-link {
-  .review-link-header {
-    color: $gray-600;
+  .draggableColumn {
+    &__card {
+      background-color: $gray-900;
+      box-shadow: 1px 1px 8px 1px rgb(0 0 0 / 33%);
+    }
   }
 
-  &.active {
+  .table {
+    .thead-light th {
+      background-color: $gray-800;
+      color: $body-color;
+    }
+  }
+
+  .review .reviews .review-links .review-link {
     .review-link-header {
-      color: $gray-800;
+      color: $gray-600;
     }
-  }
-}
 
-.container-editor {
-  .curriculum-entry {
     &.active {
-      background-color: $gray-600;
+      .review-link-header {
+        color: $gray-800;
+      }
     }
   }
-}
 
-.code-editor {
-  .code-editor-content {
-    background: #282c34;
+  .container-editor {
+    .curriculum-entry {
+      &.active {
+        background-color: $gray-600;
+      }
+    }
   }
-}
 
-.blockquote {
-  border-color: $gray-600;
-
-  &::before {
-    color: transparentize($color: $gray-600, $amount: 0.3);
+  .settings-editor-wrapper {
+    .settings-editor {
+      color: $gray-900;
+    }
   }
-}
 
-.settings-editor-wrapper {
-  .settings-editor {
-    color: $gray-900;
+  .undotoast {
+    background-color: $gray-800;
+    border: 1px solid $gray-700;
+    box-shadow: 1px 1px 8px 1px rgb(0 0 0 / 33%);
   }
-}
 
-/**
-* Multi-select Input
-*/
-.rbt-input-multi.form-control.rbt-input {
-  background-color: $body-bg;
-  border-color: $gray-700;
+  /**
+  * Multi-select Input
+  */
+  .rbt-input-multi.form-control.rbt-input {
+    background-color: $body-bg;
+    border-color: $gray-700;
 
-  input {
+    input {
+      color: $body-color;
+    }
+  }
+
+  .rbt-input-multi.focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  .rbt-input-multi.form-control[disabled] {
+    background-color: $body-bg;
+  }
+
+  .rbt-input-multi.is-invalid.focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+
+  .rbt-input-multi.is-valid.focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+  }
+
+  .rbt-input-multi input::-moz-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-input-multi input:-ms-input-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-input-multi input::-webkit-input-placeholder {
+    color: $gray-100;
+  }
+
+  .rbt-menu.dropdown-menu .dropdown-item {
     color: $body-color;
   }
-}
 
-.rbt-input-multi.focus {
-  border-color: #80bdff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
+  /**
+  * Token
+  */
+  .rbt-token {
+    background-color: darken(#007bff, 20%);
+    color: $white;
+  }
 
-.rbt-input-multi.form-control[disabled] {
-  background-color: $body-bg;
-}
+  .rbt-token-disabled {
+    background-color: $gray-800;
+    color: $gray-200;
+  }
 
-.rbt-input-multi.is-invalid.focus {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-}
+  .rbt-token-active {
+    background-color: #007bff;
+  }
 
-.rbt-input-multi.is-valid.focus {
-  border-color: #28a745;
-  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
-}
+  .objective-selection {
+    .existing-objectives {
+      background-color: $body-bg;
 
-.rbt-input-multi input::-moz-placeholder {
-  color: $gray-100;
-}
-
-.rbt-input-multi input:-ms-input-placeholder {
-  color: $gray-100;
-}
-
-.rbt-input-multi input::-webkit-input-placeholder {
-  color: $gray-100;
-}
-
-.rbt-menu.dropdown-menu .dropdown-item {
-  color: $body-color;
-}
-
-/**
-* Token
-*/
-.rbt-token {
-  background-color: darken(#007bff, 20%);
-  color: $white;
-}
-
-.rbt-token-disabled {
-  background-color: $gray-800;
-  color: $gray-200;
-}
-
-.rbt-token-active {
-  background-color: #007bff;
-}
-
-.objective-selection {
-  .existing-objectives {
-    background-color: $body-bg;
-
-    .selected {
-      background-color: lighten($color: $body-bg, $amount: 30%);
+      .selected {
+        background-color: lighten($color: $body-bg, $amount: 30%);
+      }
     }
   }
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// IMPORTANT: DO NOT MODIFY BELOW
-// This import is required and must always be the last item in this style sheet
-///////////////////////////////////////////////////////////////////////////////
-@import 'authoring.scss';

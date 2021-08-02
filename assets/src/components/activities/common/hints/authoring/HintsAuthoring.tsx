@@ -73,7 +73,6 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
         <div key={hint.id} className="d-flex">
           <span className="mr-3 mt-2">{index + 1}.</span>
           <RichTextEditorConnected
-            style={{ backgroundColor: 'white' }}
             placeholder="Explain how to solve the problem"
             className="mb-2 flex-grow-1"
             text={hint.content}

@@ -2,7 +2,7 @@
   <div class="header-bar d-flex align-items-center justify-content-between px-3">
     <h2 class="title mr-4" title='This is the page title'><%= hd(Enum.reverse(@breadcrumbs)).short_title %></h2>
     <div class='d-flex flex-nowrap align-items-center'>
-      <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small mr-1">Help</a>
+      <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
       <%= account_link @conn %>
     </div>
   </div>

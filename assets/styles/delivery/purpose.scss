@@ -1,6 +1,8 @@
 @import "delivery/variables";
 
 .content-purpose {
+  border-radius: 4px;
+
   .content-purpose-label {
     text-transform: uppercase;
     padding: 4px;
@@ -42,10 +44,10 @@
     background-color: $activity-purpose-checkpoint-color;
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: "Line Awesome Free";
       font-weight: 900;
       margin-right: 8px;
-      content: '\f46c';
+      content: "\f46c";
     }
   }
 
@@ -53,10 +55,10 @@
     background-color: $activity-purpose-didigetthis-color;
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: "Line Awesome Free";
       font-weight: 900;
       margin-right: 8px;
-      content: '\f256';
+      content: "\f256";
     }
   }
 
@@ -64,10 +66,10 @@
     background-color: $activity-purpose-learnbydoing-color;
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: "Line Awesome Free";
       font-weight: 900;
       margin-right: 8px;
-      content: '\f51c';
+      content: "\f51c";
     }
   }
 
@@ -75,10 +77,10 @@
     background-color: $activity-purpose-manystudentswonder-color;
 
     &::before {
-      font-family: 'Line Awesome Free';
+      font-family: "Line Awesome Free";
       font-weight: 900;
       margin-right: 8px;
-      content: '\f5da';
+      content: "\f5da";
     }
   }
 }

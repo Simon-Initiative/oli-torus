@@ -2,8 +2,8 @@
  * Base authoring styles - built on top of Bootstrap 4 (https://getbootstrap.com)
  */
 
-html,
-body {
+html.authoring,
+html.authoring body {
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -11,7 +11,7 @@ body {
   flex-direction: column;
 }
 
-.authoring {
+html.authoring {
   @import "authoring/variables";
   @import "bootstrap";
   @import "common/**/*.scss";
