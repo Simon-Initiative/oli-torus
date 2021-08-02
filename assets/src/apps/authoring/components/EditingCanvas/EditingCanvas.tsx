@@ -1,17 +1,12 @@
-import { setCurrentSelection } from '../../store/parts/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import {
-  selectBottomPanel,
-  setPanelState,
-  setRightPanelActiveTab,
-  setVisible,
-} from '../../store/app/slice';
+import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
+import { setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import FabricCanvas from './FabricCanvas';
+import KonvaStage from './KonvaStage';
 
-const EditingCanvas: React.FC<any> = (props) => {
+const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -22,17 +17,20 @@ const EditingCanvas: React.FC<any> = (props) => {
   const width = currentActivity?.content?.custom?.width || 800;
   const height = currentActivity?.content?.custom?.height || 600;
 
-  const items =
-    currentActivityTree?.reduce((acc, activity) => {
-      // TODO: map these items to a new object that has a few more things
-      // such as layer items should be readonly
-      return acc.concat(...activity.content.partsLayout);
-    }, []) || [];
+  const background = {
+    color: currentActivity?.content?.custom?.palette?.backgroundColor || '#ffffff',
+  };
+
+  const layers = (currentActivityTree || []).map((activity) => ({
+    id: activity.id,
+    parts: activity.content.partsLayout || [],
+  }));
 
   const handleObjectClicked = (e: any, item: any) => {
     console.log('object clicked handler', { e, item });
     dispatch(setCurrentSelection({ selection: item.id }));
   };
+  console.log('EC: RENDER', { layers });
 
   return (
     <React.Fragment>
@@ -42,7 +40,8 @@ const EditingCanvas: React.FC<any> = (props) => {
           dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.LESSON }));
         }}
       >
-        <div
+        <KonvaStage background={background} size={{ width, height }} layers={layers} />
+        {/* <div
           className="aa-stage-inner"
           style={{
             width,
@@ -54,57 +53,8 @@ const EditingCanvas: React.FC<any> = (props) => {
             dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
           }}
         >
-          <div className="aa-canvas-header">
-            <h2 style={{ display: 'inline-block' }}>Active Screen Title</h2>
-            <div style={{ float: 'right' }} className="btn-group" role="group">
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: false,
-                      left: false,
-                      top: false,
-                      bottom: false,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                hide all
-              </button>
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: true,
-                      left: true,
-                      top: true,
-                      bottom: true,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                show all
-              </button>
-              <button
-                onClick={() => dispatch(setVisible({ visible: false }))}
-                type="button"
-                className="btn btn-secondary"
-              >
-                quit
-              </button>
-            </div>
-          </div>
-          <FabricCanvas
-            items={items}
-            width={width}
-            height={height}
-            onObjectClicked={handleObjectClicked}
-          />
-        </div>
+          {false && <KonvaStage />}
+        </div> */}
       </section>
     </React.Fragment>
   );

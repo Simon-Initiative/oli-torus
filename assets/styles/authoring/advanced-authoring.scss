@@ -32,6 +32,12 @@ $panel-section-title-bar-color: #e8ebed;
     background-color: $panel-bg-color-light;
     box-shadow: 0 2px 4px 0 rgba($black, 0.1);
     border-bottom: 1px solid $ui-border-color;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     &.left-panel {
       top: $nav-height;
@@ -43,7 +49,7 @@ $panel-section-title-bar-color: #e8ebed;
       border-right: 1px solid $ui-border-color;
 
       &.open {
-        left: 0;
+        left: 65px;
         visibility: visible;
       }
     }
@@ -62,15 +68,14 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
     &.top-panel {
-      top: -$nav-height;
-      left: 0;
-      height: $nav-height;
-      width: 100%;
-      transition-property: top, visibility;
-      background-color: $white;
+      top: 0;
+      height: $panel-section-title-bar-height;
+      justify-content: center;
+      padding: 0;
+      transition-property: top, left, right, visibility;
 
       &.open {
-        top: 0;
+        top: 65px;
         visibility: visible;
       }
     }
@@ -96,6 +101,8 @@ $panel-section-title-bar-color: #e8ebed;
   .aa-header-nav {
     z-index: 201;
     padding: 0 16px;
+    justify-content: center;
+    padding: 0;
 
     .btn-link {
       &:disabled {
@@ -111,6 +118,7 @@ $panel-section-title-bar-color: #e8ebed;
     }
     .btn-toolbar {
       flex-wrap: initial;
+      transform: scale(0.7);
     }
   }
   .aa-panel-side-toggle {
@@ -148,9 +156,9 @@ $panel-section-title-bar-color: #e8ebed;
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       transition-property: left;
-      left: 0;
+      left: 65px;
       &.open {
-        left: $panel-side-width;
+        left: calc(#{$panel-side-width} + 65px);
       }
     }
     &.right {
@@ -167,6 +175,7 @@ $panel-section-title-bar-color: #e8ebed;
     position: relative;
     background-color: $panel-bg-color-light;
     color: $panel-font-color-light;
+    overflow: hidden;
 
     .tab-content {
       font-size: 12px;
@@ -214,8 +223,8 @@ $panel-section-title-bar-color: #e8ebed;
   .aa-stage {
     position: fixed;
     z-index: 100;
-    top: 0;
-    left: 0;
+    top: 65px;
+    left: 65px;
     right: 0;
     bottom: 0;
     overflow: scroll;

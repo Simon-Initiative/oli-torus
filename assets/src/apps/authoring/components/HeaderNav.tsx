@@ -3,33 +3,34 @@ import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectProjectSlug, selectRevisionSlug, selectPaths } from '../store/app/slice';
+import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 
 interface HeaderNavProps {
-  content: any;
+  panelState: any;
   isVisible: boolean;
 }
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const { content, isVisible } = props;
+  const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
+  const PANEL_SIDE_WIDTH = '250px';
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
-  return (
+  console.log('PATHS!!', { paths });
+  return paths && (
     <nav
       className={`aa-header-nav top-panel${
         isVisible ? ' open' : ''
-      } d-flex justify-content-between`}
-      style={{ alignItems: 'center' }}
+      } d-flex aa-panel-section-title-bar`}
+      style={{
+        alignItems: 'center',
+        left: panelState['left'] ? '315px' : '65px', // 315 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
+        right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
+      }}
     >
-      <div>
-        <div className="btn-group align-items-center" role="group">
-          <div className="pr-3 border-right">INFINISCOPE{/* Place for Logo */}</div>
-          <div className="pl-3">{content.title}</div>
-        </div>
-      </div>
       <div className="btn-toolbar" role="toolbar">
         <div className="btn-group pr-3 border-right align-items-center" role="group">
           <OverlayTrigger
@@ -125,7 +126,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             </span>
           </OverlayTrigger>
         </div>
-        <div className="btn-group pl-3 align-items-center" role="group">
+        <div className="btn-group px-3 border-right align-items-center" role="group">
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
@@ -142,9 +143,10 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             </span>
           </OverlayTrigger>
         </div>
-      </div>
-      <div>
-        <div className="btn-group align-items-center" role="group" aria-label="Third group">
+        <div className="btn-group px-3 border-right align-items-center" role="group">
+          <ComponentSearchContextMenu />
+        </div>
+        <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}

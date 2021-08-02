@@ -390,7 +390,8 @@ const SequenceEditor: React.FC<any> = (props) => {
                   navigator.clipboard.writeText(item.custom.sequenceId);
                 }}
               >
-                <i className="fas fa-clipboard align-text-top mr-2" /> Copy Screen ID
+                <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
+                {item.custom.isLayer ? 'Layer' : 'Screen'} ID
               </button>
               <div className="dropdown-divider" />
               {currentGroup?.children?.length > 1 && (
