@@ -6,7 +6,7 @@ import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-boot
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const ComponentSearchContextMenu: React.FC = (props: any) => {
+const ComponentSearchContextMenu: React.FC = () => {
   const [show, setShow] = useState(false);
   const [target, setTarget] = useState(null);
   const ref = useRef(null);

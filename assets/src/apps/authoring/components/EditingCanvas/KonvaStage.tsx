@@ -14,7 +14,15 @@ const textFlowHack = (node: any): any => {
   return nodeText;
 };
 
-const KonvaStage: React.FC<any> = (props: any) => {
+interface KonvaStageProps {
+  size: { width: number; height: number };
+  background: { color: string };
+  layers: any[];
+  selected: string[];
+  onSelectionChange: (selected: string[]) => void;
+}
+
+const KonvaStage: React.FC<KonvaStageProps> = (props) => {
   const {
     size = { width: 800, height: 600 },
     background = { color: '#fff' },
