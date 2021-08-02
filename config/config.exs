@@ -7,6 +7,20 @@
 # General application configuration
 use Mix.Config
 
+s3_media_bucket_name =
+  System.get_env("S3_MEDIA_BUCKET_NAME") ||
+    raise """
+    environment variable S3_MEDIA_BUCKET_NAME is missing.
+    For example: torus-media
+    """
+
+media_url =
+  System.get_env("MEDIA_URL") ||
+    raise """
+    environment variable MEDIA_URL is missing.
+    For example: your_s3_media_bucket_url.s3.amazonaws.com
+    """
+
 world_universities_and_domains_json =
   case File.read("./priv/data/world_universities_and_domains.json") do
     {:ok, body} ->
@@ -19,6 +33,8 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
+  s3_media_bucket_name: s3_media_bucket_name,
+  media_url: media_url,
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "10")),
   load_testing_mode: :disabled,
   problematic_query_detection: :disabled,
