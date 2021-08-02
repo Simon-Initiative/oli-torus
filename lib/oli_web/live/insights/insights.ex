@@ -61,7 +61,7 @@ defmodule OliWeb.Insights do
           <%= live_component TableHeader, assigns %>
           <tbody>
             <%= for row <- active_rows(assigns) do %>
-              <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project %>
+              <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project, selected: @selected %>
             <% end %>
           </tbody>
         </table>

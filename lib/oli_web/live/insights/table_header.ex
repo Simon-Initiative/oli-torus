@@ -7,8 +7,8 @@ defmodule OliWeb.Insights.TableHeader do
       <tr>
         <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="title" scope="col">
           <%= case @selected do
-            :by_page -> "Page"
-            :by_activity -> "Activity"
+            :by_page -> "Page Title"
+            :by_activity -> "Activity Title"
             :by_objective -> "Objective"
             _ -> "Objective"
           end %>

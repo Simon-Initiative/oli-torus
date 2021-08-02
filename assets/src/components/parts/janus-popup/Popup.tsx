@@ -10,14 +10,14 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
-
+import { contexts } from '../../../types/applicationContext';
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
-
+  const [context, setContext] = useState<boolean>(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
@@ -62,7 +62,9 @@ const Popup: React.FC<any> = (props) => {
         setIconSrc(initIconUrl);
       }
     }
-
+    if (initResult.context.mode === contexts.REVIEW) {
+      setContext(false);
+    }
     setReady(true);
   }, []);
 
@@ -219,7 +221,13 @@ const Popup: React.FC<any> = (props) => {
       ],
     });
   };
-
+  const handlePartInit = () => {
+    return {
+      type: 'success',
+      snapshot: {},
+      context: { mode: context },
+    };
+  };
   const partComponents = popup?.partsLayout;
 
   const config = popup?.custom ? popup.custom : null;
@@ -324,7 +332,10 @@ const Popup: React.FC<any> = (props) => {
               style={popupModalStyles}
             >
               <div className="popup-background" style={popupBGStyles}>
-                <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
+                <PartsLayoutRenderer
+                  onPartInit={handlePartInit}
+                  parts={partComponents}
+                ></PartsLayoutRenderer>
                 <button
                   aria-label="Close"
                   className="close"

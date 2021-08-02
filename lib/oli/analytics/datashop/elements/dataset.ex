@@ -12,34 +12,27 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   """
   import XmlBuilder
 
-  def setup(%{
-        dataset_name: dataset_name,
-        part_attempt: part_attempt,
-        problem_name: problem_name,
-        hierarchy_map: hierarchy_map
-      }) do
+  def setup(
+        %{
+          dataset_name: dataset_name
+        } = context
+      ) do
     element(:dataset, [
       element(:name, dataset_name),
-      create_problem_hierarchy(
-        problem_name,
-        part_attempt,
-        hierarchy_map
-      )
+      create_problem_hierarchy(context)
     ])
   end
 
   defp create_problem_hierarchy(
-         problem_name,
-         part_attempt,
-         hierarchy_map
+         %{part_attempt: part_attempt, problem_name: problem_name} = context
        ) do
-    context = %{
-      target: part_attempt.activity_attempt.resource_attempt.revision.resource_id,
-      problem_name: problem_name,
-      hierarchy_map: hierarchy_map
-    }
-
-    case assemble_from_hierarchy_path(context) do
+    case assemble_from_hierarchy_path(
+           Map.put(
+             context,
+             :target,
+             part_attempt.activity_attempt.resource_attempt.revision.resource_id
+           )
+         ) do
       [] ->
         # if for some reason the path to the page that contained this activity
         # cannot be located within  the hierarchy, we do a best effort and place

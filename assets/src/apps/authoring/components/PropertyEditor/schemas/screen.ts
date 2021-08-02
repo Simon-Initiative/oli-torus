@@ -1,3 +1,4 @@
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -5,6 +6,10 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const screenSchema = {
   type: 'object',
   properties: {
+    title: {
+      type: 'string',
+      title: 'Title',
+    },
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -105,10 +110,10 @@ export const screenUiSchema = {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Palette',
     backgroundColor: {
-      'ui:widget': ColorPickerWidget
+      'ui:widget': ColorPickerWidget,
     },
     borderColor: {
-      'ui:widget': ColorPickerWidget
+      'ui:widget': ColorPickerWidget,
     },
     borderStyle: { classNames: 'col-6' },
     borderWidth: { classNames: 'col-6' },
@@ -124,35 +129,39 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (data: any) => {
-  if (data) {
+export const transformScreenModeltoSchema = (activity?: IActivity) => {
+  if (activity) {
+    const data = activity?.content?.custom;
     const schemaPalette = {
       ...data.palette,
-      borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'
-        }`,
+      borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,
       borderRadius: '10px',
       borderStyle: 'solid',
-      borderColor: `rgba(${data.palette.lineColor || data.palette.lineColor === 0
-        ? chroma(data.palette.lineColor).rgb().join(',')
-        : '255, 255, 255'
-        },${data.palette.lineAlpha})`,
-      backgroundColor: `rgba(${data.palette.fillColor || data.palette.fillColor === 0
-        ? chroma(data.palette.fillColor).rgb().join(',')
-        : '255, 255, 255'
-        },${data.palette.fillAlpha})`
-    }
+      borderColor: `rgba(${
+        data.palette.lineColor || data.palette.lineColor === 0
+          ? chroma(data.palette.lineColor).rgb().join(',')
+          : '255, 255, 255'
+      },${data.palette.lineAlpha || '100'})`,
+      backgroundColor: `rgba(${
+        data.palette.fillColor || data.palette.fillColor === 0
+          ? chroma(data.palette.fillColor).rgb().join(',')
+          : '255, 255, 255'
+      },${data.palette.fillAlpha || '100'})`,
+    };
     return {
       ...data,
+      title: activity?.title || '',
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
-      palette: data.palette.useHtmlProps? data.palette : schemaPalette
+      palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
     };
   }
 };
 
 export const transformScreenSchematoModel = (schema: any) => {
   return {
+    title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
     customCssClass: schema.customCssClass,
@@ -164,7 +173,7 @@ export const transformScreenSchematoModel = (schema: any) => {
     palette: { ...schema.palette, useHtmlProps: true },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
-    screenButton: schema.screenButton
+    screenButton: schema.screenButton,
   };
 };
 

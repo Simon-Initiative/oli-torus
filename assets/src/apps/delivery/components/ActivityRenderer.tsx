@@ -3,7 +3,7 @@ import {
   EvaluationResponse,
   PartActivityResponse,
   RequestHintResponse,
-  ResetActivityResponse
+  ResetActivityResponse,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityModelSchema,
@@ -12,16 +12,19 @@ import {
   PartResponse,
   PartState,
   StudentResponse,
-  Success
+  Success,
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { contexts } from '../../../types/applicationContext';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
-  selectInitPhaseComplete, selectLastCheckResults,
+  selectHistoryNavigationActivity,
+  selectInitPhaseComplete,
+  selectLastCheckResults,
   selectLastCheckTriggered,
   selectLastMutateChanges,
-  selectLastMutateTriggered
+  selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectPreviewMode } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
@@ -257,7 +260,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
-
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -291,10 +294,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
-      mode: 'VIEWER', // TODO: based on isPreviewMOde
+      mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
     });
   };
+
   useEffect(() => {
     if (!initPhaseComplete || !ref.current) {
       return;

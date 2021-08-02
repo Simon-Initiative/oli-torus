@@ -43,7 +43,10 @@ export const savePartState = createAsyncThunk(
 
     // update scripting env with latest values
     const assignScript = getAssignScript(response);
+
     const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
+
+    console.log('SAVE PART SCRIPT', { assignScript, scriptResult });
 
     // in preview mode we don't write to server, so we're done
     if (isPreviewMode) {
@@ -64,7 +67,7 @@ export const savePartStateToTree = createAsyncThunk(
     const rootState = getState() as RootState;
 
     const attemptRecord = selectById(rootState, attemptGuid);
-    const partId = attemptRecord?.parts.find(p => p.attemptGuid === partAttemptGuid)?.partId;
+    const partId = attemptRecord?.parts.find((p) => p.attemptGuid === partAttemptGuid)?.partId;
     if (!partId) {
       throw new Error('cannot find the partId to update');
     }
@@ -80,6 +83,12 @@ export const savePartStateToTree = createAsyncThunk(
         // means its in the tree, but doesn't own or inherit this part (some grandparent likely)
         return Promise.resolve('does not own part but thats OK');
       }
+      /* console.log('updating activity tree part: ', {
+        attemptGuid,
+        partAttemptGuid,
+        activity,
+        response,
+      }); */
       return dispatch(savePartState({ attemptGuid, partAttemptGuid, response }));
     });
     return Promise.all(updates);

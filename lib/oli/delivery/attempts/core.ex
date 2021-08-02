@@ -146,8 +146,10 @@ defmodule Oli.Delivery.Attempts.Core do
         on: aattempt.id == pattempt.activity_attempt_id,
         join: spp in SectionsProjectsPublications,
         on: spp.section_id == section.id,
-        where: spp.publication_id == ^publication_id,
-
+        # Only look at evaluated part attempts -> date evaluated not nil
+        where:
+          spp.publication_id == ^publication_id and
+            not is_nil(pattempt.date_evaluated),
         # only fetch records for users enrolled as students
         left_join: er in "enrollments_context_roles",
         on: enrollment.id == er.enrollment_id,

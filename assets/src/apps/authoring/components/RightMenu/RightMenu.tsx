@@ -1,3 +1,4 @@
+import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -26,6 +27,7 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -38,17 +40,19 @@ const RightMenu: React.FC<any> = () => {
   const selectedTab = useSelector(selectRightPanelActiveTab);
   const currentActivity = useSelector(selectCurrentActivity);
   const currentLesson = useSelector(selectPageState);
+  const currentGroup = useSelector(selectCurrentGroup);
 
   // TODO: dynamically load schema from Part Component configuration
   const componentSchema: JSONSchema7 = { type: 'object' };
   const currentComponent = null;
 
-  const [screenData, setScreenData] = useState(
-    transformScreenModeltoSchema(currentActivity?.content?.custom),
-  );
+  const [screenData, setScreenData] = useState();
   useEffect(() => {
+    if (!currentActivity) {
+      return;
+    }
     console.log('CURRENT', { currentActivity, currentLesson });
-    setScreenData(transformScreenModeltoSchema(currentActivity?.content?.custom));
+    setScreenData(transformScreenModeltoSchema(currentActivity));
   }, [currentActivity]);
 
   // should probably wrap this in state too, but it doesn't change really
@@ -63,14 +67,19 @@ const RightMenu: React.FC<any> = () => {
     (properties: any) => {
       if (currentActivity) {
         const modelChanges = transformScreenSchematoModel(properties);
-        console.log('Screen Property Change...', { modelChanges });
+        console.log('Screen Property Change...', { properties, modelChanges });
+        const title = modelChanges.title;
+        delete modelChanges.title;
         const screenChanges = {
           ...currentActivity?.content?.custom,
           ...modelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
-        debounceSaveScreenSettings(cloneActivity);
+        if (title) {
+          cloneActivity.title = title;
+        }
+        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
       }
     },
     [currentActivity],
@@ -78,10 +87,15 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity) => {
+      (activity, currentActivity, group) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
         dispatch(upsertActivity({ activity }));
+
+        if (activity.title !== currentActivity?.title) {
+          dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
+          dispatch(savePage());
+        }
       },
       500,
       { maxWait: 10000, leading: false },
@@ -118,6 +132,14 @@ const RightMenu: React.FC<any> = () => {
       ...modelChanges,
       custom: { ...currentLesson.custom, ...modelChanges.custom },
     };
+    //need to remove the allowNavigation property
+    //making sure the enableHistory is present before removing that.
+    if (
+      lessonChanges.custom.enableHistory !== undefined &&
+      lessonChanges.custom.allowNavigation !== undefined
+    ) {
+      delete lessonChanges.custom.allowNavigation;
+    }
     console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
     // need to put a healthy debounce in here, this fires every keystroke
@@ -147,7 +169,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div className="screen-tab p-3">
-          {currentActivity ? (
+          {currentActivity && screenData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}

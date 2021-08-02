@@ -3,9 +3,47 @@
 ## Unreleased
 
 ### Bug Fixes
-- Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
 
 ### Enhancements
+
+## 0.12.6 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue with timestamps containing microseconds
+## 0.12.5 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue when creating snapshots for insights
+
+## 0.12.4 (2021-07-27)
+
+### Bug Fixes
+
+- Updated research consent form
+
+## 0.12.3 (2021-07-23)
+
+### Bug Fixes
+
+- Fix datashop export content model parsing
+- Fix incorrect table column alignment on Insights page
+- Truncate "relative difficulty" on Insights page
+- Change wording on "Break down objective" modal
+- Make "Break down objective" explanation image responsive
+- Fix page editor content block rendering issue in Firefox - increase block contrast
+- Fix problem in Firefox where changing question tabs scrolls to top of page
+
+### Enhancements
+
+## 0.12.2 (2021-07-21)
+
+### Bug Fixes
+
+- Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
+- Fix an issue where activities do not correctly restore their "in-progress" state from student work
+- Fix an issue where images and audio could not be added to activiites
 
 ## 0.12.1 (2021-07-12)
 

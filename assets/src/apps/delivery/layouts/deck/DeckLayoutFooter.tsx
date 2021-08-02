@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react';
+import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { CSSSelector } from 'swiper/types/shared';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -15,6 +16,8 @@ import {
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
 import {
   selectCurrentFeedbacks,
+  selectHistoryNavigationActivity,
+  selectInitPhaseComplete,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -33,10 +36,40 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectPageContent, setScore } from '../../store/features/page/slice';
+import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
+export const handleValueExpression = (
+  currentActivityTree: any[] | null,
+  operationValue: string,
+) => {
+  let value = operationValue;
+  if (typeof value === 'string' && currentActivityTree) {
+    if (
+      (value[0] === '{' && value[1] !== '"') ||
+      (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+    ) {
+      const variableList = value.match(/\{(.*?)\}/g);
+      variableList?.forEach((item) => {
+        //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
+        //it should be like {q.145225454.1|stage.input.value}
+        const modifiedValue = item.replace('{', '').replace('}', '');
+        const lstVar = item.split('.');
+        if (lstVar?.length > 2) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+          if (ownerActivity) {
+            value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          }
+        }
+      });
+    }
+  }
+  return value;
+};
 export interface NextButton {
   text: string;
   handler: () => void;
@@ -61,8 +94,13 @@ const NextButton: React.FC<NextButton> = ({
   showCheckBtn,
 }) => {
   const isEnd = useSelector(selectLessonEnd);
-
-  const showDisabled = isLoading;
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const styles: CSSProperties = {};
+  if (historyModeNavigation) {
+    styles.opacity = 0.5;
+    styles.cursor = 'not-allowed';
+  }
+  const showDisabled = historyModeNavigation ? true : isLoading;
   const showHideCheckButton =
     !showCheckBtn && !isGoodFeedbackPresent && !isFeedbackIconDisplayed ? 'hideCheckBtn' : '';
 
@@ -75,6 +113,7 @@ const NextButton: React.FC<NextButton> = ({
       <button
         onClick={handler}
         disabled={showDisabled}
+        style={styles}
         className={
           isGoodFeedbackPresent
             ? correctFeedbackNextButtonClassName
@@ -106,9 +145,10 @@ const DeckLayoutFooter: React.FC = () => {
   const isGoodFeedback = useSelector(selectIsGoodFeedback);
   const currentFeedbacks = useSelector(selectCurrentFeedbacks);
   const nextActivityId: string = useSelector(selectNextActivityId);
-
+  const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
+  const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -172,7 +212,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: op.params.value,
+          value: handleValueExpression(currentActivityTree, op.params.value),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
@@ -261,7 +301,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !currentPage.custom?.enableHistory) {
+      if (currentPage.custom?.advancedAuthoring && !enableHistory) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&
@@ -374,7 +414,7 @@ const DeckLayoutFooter: React.FC = () => {
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
-        isLoading={isLoading}
+        isLoading={isLoading || !initPhaseComplete}
         text={nextButtonText}
         handler={checkHandler}
         isGoodFeedbackPresent={isGoodFeedback}
@@ -383,7 +423,7 @@ const DeckLayoutFooter: React.FC = () => {
         showCheckBtn={currentActivity?.custom?.showCheckBtn}
       />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className="bottomContainer fixed">
+        <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
           <button
             onClick={checkFeedbackHandler}
             className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}

@@ -8,12 +8,11 @@ import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
+import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const isHistoryModeOn = useSelector(selectEnableHistory);
-  //comment the above line and uncomment this line for testing in preview mode
-  //const isHistoryModeOn = true;
+  const enableHistory = useSelector(selectEnableHistory);
 
   const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
@@ -54,15 +53,29 @@ const HistoryNavigation: React.FC = () => {
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
+
+    const nextHistoryActivityIndex = historyItems.findIndex(
+      (item: any) => item.id === prevActivity.id,
+    );
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyModeNavigation: nextHistoryActivityIndex !== 0,
+      }),
+    );
   };
 
   const prevHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyModeNavigation: true,
+      }),
+    );
   };
   return (
     <Fragment>
-      {isHistoryModeOn ? (
+      {enableHistory ? (
         <div className="historyStepView pullLeftInCheckContainer">
           <div className="historyStepContainer">
             <button
@@ -87,11 +100,11 @@ const HistoryNavigation: React.FC = () => {
       <div
         className={[
           'navigationContainer',
-          isHistoryModeOn ? undefined : 'pullLeftInCheckContainer',
+          enableHistory ? undefined : 'pullLeftInCheckContainer',
         ].join(' ')}
       >
         <aside className={minimized ? 'minimized' : undefined}>
-          {isHistoryModeOn ? (
+          {enableHistory ? (
             <Fragment>
               <button
                 onClick={minimizeHandler}

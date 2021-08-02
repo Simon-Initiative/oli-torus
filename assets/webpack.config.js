@@ -133,6 +133,7 @@ module.exports = (env, options) => ({
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
       styles: path.resolve(__dirname, 'styles'),
+      apps: path.resolve(__dirname, 'src/apps'),
     },
     fallback: { "vm": require.resolve("vm-browserify") }
   },

@@ -19,19 +19,15 @@ defmodule OliWeb.Objectives.BreakdownModal do
             </div>
             <div class="modal-body">
               <p class="mb-4">
-              This operation will convert this objective into a smaller sub-objective under a new parent objective.
-              All activities that are currently linked to this objective will remain linked to the resulting sub-objective.
-              </p>
-              <p class="text-center">
-                <img src="<%= Routes.static_path(OliWeb.Endpoint, "/images/objectives/breakdown_objective.svg") %>" />
+              Is this objective too broad? Convert this objective into a sub-objective under a new parent objective.
               </p>
               <p>
-              This operation is usually performed on objectives that have been identified as too broad after learning curve analysis.
-              Once finished, this action cannot be undone.
+              All activities linked to this sub-objective will remain linked.
               </p>
-
+              <p class="text-center">
+                <img class="img-fluid" src="<%= Routes.static_path(OliWeb.Endpoint, "/images/objectives/breakdown_objective.svg") %>" />
+              </p>
               <hr />
-
               <p>
               What would you like to call your new parent objective?
               </p>
@@ -56,7 +52,7 @@ defmodule OliWeb.Objectives.BreakdownModal do
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
-              <button type="submit" class="btn btn-primary" onclick="$('#breakdown_<%= slug %>').modal('hide')">Continue</button>
+              <button type="submit" class="btn btn-primary" onclick="$('#breakdown_<%= slug %>').modal('hide')">Break down objective</button>
             </div>
           </form>
         </div>

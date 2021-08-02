@@ -121,6 +121,7 @@ defmodule Oli.ReleaseTasks do
   @spec load_app() :: :ok | {:error, term()}
   defp load_app do
     Application.load(@app)
+    Application.load(:lti_1p3)
   end
 
   @spec eval_seed(Ecto.Repo.t(), String.t()) :: any()

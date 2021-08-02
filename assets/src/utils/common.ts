@@ -18,7 +18,7 @@ export function assertNever(x: never): never {
  * @param o the object to clone
  * @returns the cloned object
  */
- export function clone(o : any) {
+export function clone(o: any) {
   return JSON.parse(JSON.stringify(o));
 }
 

@@ -6,8 +6,6 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
-  alias Oli.Publishing.Publication
-  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
 
   def up do
@@ -31,7 +29,7 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       select: {s, p}
     )
     |> Repo.all()
-    |> Enum.each(fn {section, base_project} ->
+    |> Enum.each(fn {section, _base_project} ->
       p_id = section_publication_ids_map[section.id]
       publication = Publishing.get_publication!(p_id)
       Sections.create_section_resources(section, publication)

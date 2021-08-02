@@ -46,7 +46,7 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
-    const isHistoryModeOn = selectEnableHistory(rootState);
+    const enableHistory = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -134,29 +134,23 @@ export const initializeActivity = createAsyncThunk(
       sessionOps.push(targetVisitTimeStampOp);
     }
 
-    //Need to clear out snapshot for the current activity before we send the init trap state.
+    // Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
-    // Don't do anything id isHistoryModeOn is ON
-    if (!isHistoryModeOn && currentActivityTree) {
-      const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
-
-      const currentActivitySnapshot = getLocalizedStateSnapshot(
-        [currentActivityId],
-        defaultGlobalEnv,
+    // Don't do anything id enableHistory is ON
+    if (!enableHistory && currentActivityTree) {
+      // this is firing after some initial part saves and wiping out what we have just set
+      // maybe we don't need to write the local versions ever?? instead just whenever anything
+      // is asking for it we can just give the localized snapshot?
+      const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
+        (key: string) => key.indexOf('stage.') === 0,
       );
-
-      const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
-        .map((key: string) => {
-          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
-            return key;
-          }
-        })
-        .filter((item) => item);
-      if (idsToBeRemoved) {
+      if (idsToBeRemoved.length) {
+        console.log('REMOVING STATE VALUES: ', idsToBeRemoved);
         removeStateValues(defaultGlobalEnv, idsToBeRemoved);
       }
     }
+
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
@@ -177,7 +171,6 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] });
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
@@ -186,10 +179,10 @@ export const initializeActivity = createAsyncThunk(
       return collect;
     }, {});
 
-    console.log('about to update score [deck]', {
+    /* console.log('about to update score [deck]', {
       currentState,
       score: sessionState['session.tutorialScore'],
-    });
+    }); */
     thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
 
     // optimistically write to redux
@@ -311,7 +304,7 @@ export const navigateToPrevActivity = createAsyncThunk(
         const layerIndex = sequence.findIndex(
           (entry) => entry.custom.sequenceId === previousEntry?.custom?.sequenceId,
         );
-        console.log({ currentIndex, layerIndex });
+        /* console.log({ currentIndex, layerIndex }); */
 
         previousEntry = sequence[layerIndex - 1];
       }

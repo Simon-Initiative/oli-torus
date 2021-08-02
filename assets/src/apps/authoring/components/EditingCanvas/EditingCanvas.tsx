@@ -1,16 +1,11 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import {
-  selectBottomPanel,
-  setPanelState,
-  setRightPanelActiveTab,
-  setVisible,
-} from '../../store/app/slice';
+import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import FabricCanvas from './FabricCanvas';
 
-const EditingCanvas: React.FC<any> = (props) => {
+const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
@@ -18,8 +13,8 @@ const EditingCanvas: React.FC<any> = (props) => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)
-  const width = currentActivity?.content.custom.width || 800;
-  const height = currentActivity?.content.custom.height || 600;
+  const width = currentActivity?.content?.custom?.width || 800;
+  const height = currentActivity?.content?.custom?.height || 600;
 
   const items =
     currentActivityTree?.reduce((acc, activity) => {
@@ -48,50 +43,6 @@ const EditingCanvas: React.FC<any> = (props) => {
             dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
           }}
         >
-          <div className="aa-canvas-header">
-            <h2 style={{ display: 'inline-block' }}>Active Screen Title</h2>
-            <div style={{ float: 'right' }} className="btn-group" role="group">
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: false,
-                      left: false,
-                      top: false,
-                      bottom: false,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                hide all
-              </button>
-              <button
-                onClick={() =>
-                  dispatch(
-                    setPanelState({
-                      right: true,
-                      left: true,
-                      top: true,
-                      bottom: true,
-                    }),
-                  )
-                }
-                type="button"
-                className="btn btn-secondary"
-              >
-                show all
-              </button>
-              <button
-                onClick={() => dispatch(setVisible({ visible: false }))}
-                type="button"
-                className="btn btn-secondary"
-              >
-                quit
-              </button>
-            </div>
-          </div>
           <FabricCanvas items={items} width={width} height={height} />
         </div>
       </section>

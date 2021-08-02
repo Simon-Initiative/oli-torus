@@ -10,13 +10,13 @@ defmodule Oli.FeaturesTest do
     end
 
     test "basic operations of feature flags", _ do
-      [{%Feature{id: 1, label: "adaptivity"}, state}] = Features.list_features_and_states()
+      [{%Feature{id: 1, label: "adaptivity"}, state}, _] = Features.list_features_and_states()
       assert state == :disabled
 
       refute Features.enabled?("adaptivity")
 
       Features.change_state("adaptivity", :enabled)
-      [{%Feature{id: 1, label: "adaptivity"}, state}] = Features.list_features_and_states()
+      [{%Feature{id: 1, label: "adaptivity"}, state}, _] = Features.list_features_and_states()
       assert state == :enabled
 
       assert Features.enabled?("adaptivity")
