@@ -14,7 +14,6 @@ export const FeedbackCard: React.FC<{
       <Card.Title>{title}</Card.Title>
       <Card.Content>
         <RichTextEditorConnected
-          style={{ backgroundColor: 'white' }}
           placeholder="Enter feedback"
           text={feedback.content}
           onEdit={(content) => update(feedback.id, content)}

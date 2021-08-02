@@ -8,7 +8,7 @@
 
     <%= if not preview_mode(@conn) do %>
       <div class="nav-item my-2 my-lg-0 mr-2">
-        <a href='javascript:;' onclick="showHelpModal();">Help</a>
+        <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
       </div>
     <% end %>
 

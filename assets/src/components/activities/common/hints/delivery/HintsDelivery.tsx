@@ -31,7 +31,7 @@ export const HintsDelivery: React.FC<Props> = ({
     return null;
   }
   return (
-    <Card.Card>
+    <Card.Card className="hints">
       <Card.Title>Hints</Card.Title>
       <Card.Content>
         {hints.map((hint, index) => (

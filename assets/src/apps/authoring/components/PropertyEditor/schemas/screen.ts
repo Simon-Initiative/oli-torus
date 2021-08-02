@@ -77,12 +77,6 @@ const screenSchema = {
       format: 'checkbox',
       default: true,
     },
-    screenButton: {
-      title: 'Screen Button',
-      type: 'boolean',
-      format: 'checkbox',
-      default: true,
-    },
   },
 };
 
@@ -173,7 +167,6 @@ export const transformScreenSchematoModel = (schema: any) => {
     palette: { ...schema.palette, useHtmlProps: true },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
-    screenButton: schema.screenButton,
   };
 };
 
