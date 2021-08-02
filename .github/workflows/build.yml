@@ -19,10 +19,10 @@ jobs:
 
       - name: 🔧 Configure
         run: |
-          cp oli.example.env oli.env
           cp postgres.example.env postgres.env
-          sed -i 's/DB_HOST=/# DB_HOST=/g' oli.env
-          printf "\n\nDB_HOST=localhost" >> oli.env
+          cat > oli.env <<EOL
+          ${{ secrets.CI_OLI_ENV }}
+          EOL
 
       - name: 🗄 Start test database
         run: docker-compose up -d postgres
