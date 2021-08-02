@@ -1,6 +1,6 @@
 <div class="container-title mb-2"><%= container_title(@node) %></div>
 
-<div class="course-outline-container" style="padding-left: <%= @node.numbering_level * 20 %>px">
+<div class="course-outline-container" style="padding-left: <%= @node.numbering.level * 20 %>px">
   <%= if Enum.empty?(@node.children) do %>
     <span class="text-secondary">There are no items</span>
   <% else %>
