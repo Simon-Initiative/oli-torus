@@ -55,24 +55,6 @@ export const schema = {
       $ref: '../utility/subtitles.schema.json',
     },
   },
-  hasStarted: {
-    type: 'boolean',
-    description: 'specifies whether user has started playing the audio or not',
-    default: false,
-    isVisibleInTrapState: true,
-  },
-  currentTime: {
-    type: 'number',
-    description: 'specifies the current time of the audio player in seconds',
-    default: 0,
-    isVisibleInTrapState: true,
-  },
-  duration: {
-    type: 'number',
-    description: 'specifies total duration of the audio in seconds',
-    default: 0,
-    isVisibleInTrapState: true,
-  },
   exposureInSeconds: {
     type: 'number',
     description: 'specifies how much of the audio has been played, measured in seconds',
@@ -84,12 +66,6 @@ export const schema = {
     description:
       'specifies, how much of the audio has been played as a percentage of its full run-time',
     default: 0,
-    isVisibleInTrapState: true,
-  },
-  hasCompleted: {
-    type: 'boolean',
-    description: 'specifies whether audio was played till end',
-    default: false,
     isVisibleInTrapState: true,
   },
   state: {
