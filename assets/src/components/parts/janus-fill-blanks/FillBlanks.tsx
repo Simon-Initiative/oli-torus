@@ -121,7 +121,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     }
 
     const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
-    if (sCustomCss?.length) {
+    if (sCustomCss) {
       setCustomCss(sCustomCss);
     }
 
@@ -230,7 +230,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
               setShowCorrect(parseBool(sShowCorrect));
             }
             const sCustomCss = changes[`stage.${id}.customCss`];
-            if (sCustomCss?.length) {
+            if (sCustomCss) {
               setCustomCss(sCustomCss);
             }
             const sCustomCssClass = changes[`stage.${id}.customCssClass`];
