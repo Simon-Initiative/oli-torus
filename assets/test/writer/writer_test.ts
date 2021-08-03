@@ -20,7 +20,9 @@ describe('parser', () => {
     expect(htmlString).toContain('<h3>1651–1748: Early seeds</h3>');
     expect(htmlString).toContain('<ol><li>one</li>\n<li><em>two</em></li>\n<li><em><strong>three</strong></em></li>\n</ol>');
     expect(htmlString).toContain('<ul><li>alpha</li>\n<li>beta</li>\n<li>gamma</li>\n</ul>');
-    expect(htmlString).toMatch(new RegExp('<iframe.* id="fhdCslFcKFU".* src="https://www.youtube.com/embed/fhdCslFcKFU"></iframe>'));
+    expect(htmlString).toMatch(
+      new RegExp('<iframe.* src="https://www.youtube.com/embed/fhdCslFcKFU"></iframe>'),
+    );
     expect(htmlString).toMatch(new RegExp('<pre><code.*>import fresh-pots\n</code></pre>'));
   });
 
