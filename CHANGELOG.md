@@ -6,11 +6,18 @@
 
 ### Enhancements
 
+## 0.12.7 (2021-08-02)
+
+### Bug Fixes
+
+- Fix styling issues including darkmode
+
 ## 0.12.6 (2021-07-29)
 
 ### Bug Fixes
 
 - Fix an issue with timestamps containing microseconds
+
 ## 0.12.5 (2021-07-29)
 
 ### Bug Fixes

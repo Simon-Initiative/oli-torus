@@ -13,7 +13,6 @@ export const transformedSchema = {
   palette: {},
   trapStateScoreScheme: true,
   negativeScoreAllowed: false,
-  screenButton: false,
 };
 
 export const screen: IActivity = {
@@ -45,7 +44,6 @@ export const screen: IActivity = {
       },
       panelHeaderColor: 0,
       panelTitleColor: 0,
-      screenButton: false,
       showCheckBtn: false,
       checkButtonLabel: '',
       trapStateScoreScheme: true,
@@ -92,7 +90,6 @@ export const screen1: IActivity = {
       },
       panelHeaderColor: 0,
       panelTitleColor: 0,
-      screenButton: false,
       showCheckBtn: false,
       checkButtonLabel: '',
       trapStateScoreScheme: true,
