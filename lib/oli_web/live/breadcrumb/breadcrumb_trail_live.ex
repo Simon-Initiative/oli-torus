@@ -4,7 +4,6 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   alias Oli.Authoring.Course
   alias OliWeb.Breadcrumb.BreadcrumbLive
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Publishing.AuthoringResolver
 
   def mount(
         _params,
