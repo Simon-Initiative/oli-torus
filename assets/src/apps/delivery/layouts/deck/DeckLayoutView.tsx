@@ -199,9 +199,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       setActivityClasses(
         [...new Set([...defaultClasses, ...customClasses])].map((str) => str.trim()),
       );
-    } else if (currentActivity?.content?.partsLayout) {
-      //since we already have getCustomClassAncestry wokring now, we don't need the previous code.
-      setActivityClasses([...new Set([...defaultClasses])].map((str) => str.trim()));
     }
 
     return () => {
