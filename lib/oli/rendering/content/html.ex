@@ -308,7 +308,7 @@ defmodule Oli.Rendering.Content.Html do
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
   defp figure(%{"caption" => ""} = _attrs, content), do: content
 
-  defp figure(%{"caption" => caption} = attrs, content) do
+  defp figure(%{"caption" => caption} = _attrs, content) do
     [~s|<div class="figure-wrapper">|] ++
       [~s|<figure class="figure embed-responsive text-center">|] ++
       content ++
