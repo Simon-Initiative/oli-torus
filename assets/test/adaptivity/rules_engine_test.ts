@@ -253,6 +253,20 @@ describe('Operators', () => {
     });
   });
 
+  describe('Equalto Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(true);
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4'])).toEqual(false);
+    });
+  });
+
+  describe('Not Equal to Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(notEqual(['1', '2', '3', '4', '5'], [])).toEqual(true);
+      expect(notEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(false);
+    });
+  });
+
   describe('Contains Operators', () => {
     it('should return false if either value is not provided', () => {
       expect(containsOperator(null, null)).toEqual(false);
