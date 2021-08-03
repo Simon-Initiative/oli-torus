@@ -179,6 +179,17 @@ const DeckLayoutFooter: React.FC = () => {
     return actionsByType;
   };
 
+  const checkIfFirstEventHasNavigation = (event: any) => {
+    let isDifferentNavigationExist = false;
+    const { actions } = event.params;
+    actions.forEach((action: any) => {
+      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+        isDifferentNavigationExist = true;
+      }
+    });
+    return isDifferentNavigationExist;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -189,16 +200,15 @@ const DeckLayoutFooter: React.FC = () => {
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
-    const actualActionsByType = processResults(lastCheckResults.results);
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
-      if (actualActionsByType.navigation.length === 1) {
-        const [firstNavAction] = actualActionsByType.navigation;
-        if (firstNavAction.params.target !== currentActivityId) {
-          eventsToProcess = [lastCheckResults.results[0]];
-        } else {
-          eventsToProcess = lastCheckResults.results;
-        }
+      //if the first event has a navigation to different screen
+      // we ignore the rest of the events ang fire this one.
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
+        lastCheckResults.results[0],
+      );
+      if (doesFirstEventHasNavigation) {
+        eventsToProcess = [lastCheckResults.results[0]];
       } else {
         eventsToProcess = lastCheckResults.results;
       }
