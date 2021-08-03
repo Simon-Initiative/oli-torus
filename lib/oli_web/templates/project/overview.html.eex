@@ -4,7 +4,7 @@
   }
 </style>
 <div class="overview container">
-  <div class="row mb-4">
+  <div class="row py-5 border-bottom">
     <div class="col-md-4">
       <h4>Details</h4>
       <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
@@ -23,7 +23,7 @@
     <% end %>
   </div>
 </div>
-<div class="row">
+<div class="row py-5 border-bottom">
   <div class="col-md-4">
     <h4>Collaborators</h4>
     <div class="text-muted">Invite other authors by email to contribute to your project.</div>
@@ -58,20 +58,13 @@
   <%= render_many @collaborators, OliWeb.ProjectView, "_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
 </div>
 </div>
-<div class="row">
+<div class="row py-5 border-bottom">
   <div class="col-md-4">
     <h4>Advanced Activities</h4>
     <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
   </div>
   <div class="col-md-8">
     <table class="table table-sm">
-      <thead class="thead-light">
-        <tr>
-          <th>Title</th>
-          <th>Enabled</th>
-          <th></th>
-        </tr>
-      </thead>
       <tbody>
         <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
       </tbody>
@@ -79,34 +72,34 @@
   </div>
 </div>
 <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
-<div class="row">
+<div class="row py-5">
   <div class="col-md-4">
     <h4>Actions</h4>
   </div>
   <div class="col-md-8">
-    <div class="d-flex flex-row-reverse mt-3">
+    <div class="d-flex align-items-center">
       <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
-                    class: "btn btn-outline-secondary ml-5 action-button",
+                    class: "btn btn-link action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
       <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
     </div>
-    <div class="d-flex flex-row-reverse mt-3">
-      <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-outline-secondary ml-5 action-button") %>
+    <div class="d-flex align-items-center">
+      <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-link action-button") %>
       <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
     </div>
-    <div class="d-flex flex-row-reverse mt-3">
+    <div class="d-flex align-items-center">
       <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
         <% nil -> %>
-        <button disabled class="btn btn-outline-secondary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+        <button disabled class="btn btn-link action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
         <% _pub -> %>
-        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-outline-secondary ml-5 action-button") %>
+        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
       <% end %>
       <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
     </div>
-    <div class="d-flex flex-row-reverse mt-3">
-      <button type="button" class="btn btn-outline-danger ml-5 action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
+    <div class="d-flex align-items-center">
+      <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
       <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
     </div>
   </div>

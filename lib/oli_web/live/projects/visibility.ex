@@ -28,7 +28,7 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def render(assigns) do
     ~L"""
-    <div class="row">
+    <div class="row py-5 border-bottom">
       <div class="col-md-4">
         <h4>Publishing Visibility</h4>
         <div class="text-muted">Control who can create course sections for this project once it is published.</div>
