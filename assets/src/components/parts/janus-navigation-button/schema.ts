@@ -1,5 +1,6 @@
 export const schema = {
   customCssClass: {
+    title: 'Custom CSS Class',
     type: 'string',
   },
   palette: {
@@ -13,32 +14,28 @@ export const schema = {
     },
   },
   visible: {
+    title: 'Visible',
     type: 'boolean',
     format: 'checkbox',
     default: true,
   },
   enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     default: true,
   },
   textColor: {
+    title: 'Text Color',
     type: 'string',
     description: 'hex color value for text',
   },
-  buttonColor: {
-    type: 'string',
-    description: 'hex color value for button',
-  },
   transparent: {
+    title: 'Transparent',
     type: 'boolean',
     format: 'checkbox',
     default: false,
     description: 'specifies if button is transparent',
-  },
-  ariaLabel: {
-    type: 'string',
-    description: 'accessibility text label visible to screen readers',
   },
 };
 

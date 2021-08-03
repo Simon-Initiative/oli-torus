@@ -1,31 +1,39 @@
 export const schema = {
   src: {
+    title: 'Source',
     type: 'string',
   },
   cssClasses: {
+    title: 'CSS Classes',
     type: 'string',
   },
   customCss: {
+    title: 'Custom CSS',
     type: 'string',
   },
   fontSize: {
+    title: 'Font Size',
     type: 'number',
     default: 12,
   },
   showOnAnswersReport: {
+    title: 'Show On Answer Reoprt',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   maxManualGrade: {
+    title: 'Max Manual Grade',
     type: 'number',
   },
   showHints: {
+    title: 'Show Hints',
     type: 'boolean',
     format: 'checkbox',
     default: false,
@@ -34,11 +42,13 @@ export const schema = {
     },
   },
   mode: {
+    title: 'Mode',
     type: 'string',
     enum: ['Config', 'Student'],
     default: 'Student',
   },
   enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     default: true,
@@ -47,12 +57,14 @@ export const schema = {
     type: 'string',
   },
   showCorrect: {
+    title: 'Show Correct',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether to show the correct answers',
     default: false,
   },
   showSolution: {
+    title: 'Show Solution',
     type: 'boolean',
     format: 'checkbox',
     default: false,
@@ -61,6 +73,7 @@ export const schema = {
     },
   },
   formValidation: {
+    title: 'Form Validation',
     type: 'boolean',
     format: 'checkbox',
     default: false,
@@ -69,6 +82,7 @@ export const schema = {
     },
   },
   showValidation: {
+    title: 'Show Validation',
     type: 'boolean',
     format: 'checkbox',
     default: false,
@@ -77,6 +91,7 @@ export const schema = {
     },
   },
   screenReaderLanguage: {
+    title: 'Screen Reader Language',
     type: 'string',
     enum: [
       'Arabic',
@@ -91,6 +106,7 @@ export const schema = {
     default: 'English',
   },
   caseSensitiveAnswers: {
+    title: 'Case Sensitive Answers',
     type: 'boolean',
     format: 'checkbox',
     default: false,

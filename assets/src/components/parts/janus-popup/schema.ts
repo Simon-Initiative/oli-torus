@@ -1,8 +1,8 @@
 export const schema = {
-
   customCssClass: {
-    type: 'string'
-},
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   palette: {
     type: 'object',
     properties: {
@@ -13,95 +13,109 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-fontSize: {
+  fontSize: {
+    title: 'Font Size',
     type: 'number',
-    default: 12
-},
-maxManualGrade: {
-    type: 'number'
-},
-showOnAnswersReport: {
+    default: 12,
+  },
+  maxManualGrade: {
+    title: 'Max Manual Grade',
+    type: 'number',
+  },
+  showOnAnswersReport: {
+    title: 'Answers Report',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-requireManualGrading: {
+    default: false,
+  },
+  requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-description: {
+    default: false,
+  },
+  description: {
+    title: 'Description',
     type: 'string',
     default: 'Additional Information',
-    description: 'provides alt text and aria-label content'
-},
-questionFlow: {
+    description: 'provides alt text and aria-label content',
+  },
+  questionFlow: {
+    title: 'Question Flow',
     type: 'string',
     description: 'specifies the layout of the questions',
-    default: 'LRTB'
-},
-showLabel: {
+    default: 'LRTB',
+  },
+  showLabel: {
+    title: 'Show Label',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether label is visible',
-    default: true
-},
-openByDefault: {
+    default: true,
+  },
+  openByDefault: {
+    title: 'Open By Default',
     type: 'boolean',
     description: 'specifies whether popup should open by default',
     default: false,
     isVisibleInTrapState: true,
-    format: 'checkbox'
-},
-defaultID: {
+    format: 'checkbox',
+  },
+  defaultID: {
+    title: 'Default ID',
     type: 'string',
     options: {
-        hidden: true
-    }
-},
-defaultURL: {
+      hidden: true,
+    },
+  },
+  defaultURL: {
+    title: 'Default URL',
     type: 'string',
     description: 'default URL for the button icon',
     default: '/repo/icons/question_mark_orange_32x32.png',
     enum: [
-        '/repo/icons/question_mark_orange_32x32.png',
-       '/repo/icons/question_mark_red_32x32.png',
-       '/repo/icons/question_mark_green_32x32.png',
-       '/repo/icons/question_mark_blue_32x32.png',
-       '/repo/icons/information_mark_orange_32x32.png',
-       '/repo/icons/information_mark_red_32x32.png',
-       '/repo/icons/information_mark_green_32x32.png',
-       '/repo/icons/information_mark_blue_32x32.png',
-       '/repo/icons/exclamation_mark_orange_32x32.png',
-       '/repo/icons/exclamation_mark_red_32x32.png',
-       '/repo/icons/exclamation_mark_green_32x32.png',
-       '/repo/icons/exclamation_mark_blue_32x32.png'
-    ]
-},
-iconURL: {
+      '/repo/icons/question_mark_orange_32x32.png',
+      '/repo/icons/question_mark_red_32x32.png',
+      '/repo/icons/question_mark_green_32x32.png',
+      '/repo/icons/question_mark_blue_32x32.png',
+      '/repo/icons/information_mark_orange_32x32.png',
+      '/repo/icons/information_mark_red_32x32.png',
+      '/repo/icons/information_mark_green_32x32.png',
+      '/repo/icons/information_mark_blue_32x32.png',
+      '/repo/icons/exclamation_mark_orange_32x32.png',
+      '/repo/icons/exclamation_mark_red_32x32.png',
+      '/repo/icons/exclamation_mark_green_32x32.png',
+      '/repo/icons/exclamation_mark_blue_32x32.png',
+    ],
+  },
+  iconURL: {
+    title: 'Icon URL',
     type: 'string',
-    description: 'Custom URL for the button icon'
-},
-useToggleBehavior: {
+    description: 'Custom URL for the button icon',
+  },
+  useToggleBehavior: {
+    title: 'Use Toggle Behaviour',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether popup toggles open/closed on click or on mouse hover',
-    default: true
-},
-isOpen: {
+    default: true,
+  },
+  isOpen: {
+    title: 'Is Open',
     type: 'boolean',
     description: 'specifies whether popup is opened',
     default: false,
     isVisibleInTrapState: true,
-    format: 'checkbox'
-},
-visible: {
+    format: 'checkbox',
+  },
+  visible: {
+    title: 'Visible',
     type: 'boolean',
     description: 'specifies whether popup will be visible on the screen',
     default: true,
     isVisibleInTrapState: true,
-    format: 'checkbox'
-}
+    format: 'checkbox',
+  },
 };
 
 export const uiSchema = {};

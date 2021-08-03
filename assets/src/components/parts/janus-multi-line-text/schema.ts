@@ -10,64 +10,60 @@ export const schema = {
     },
   },
   customCssClass: {
+    title: 'Custom CSS Class',
     type: 'string',
   },
   fontSize: {
+    title: 'Font Size',
     type: 'number',
     default: 12,
   },
   maxManualGrade: {
+    title: 'Max Manual Grade',
     type: 'number',
   },
   showOnAnswersReport: {
+    title: 'Answers Report',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   showLabel: {
+    title: 'Show Label',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
   label: {
+    title: 'Label',
     type: 'string',
     description: 'text label for the textbox',
   },
   prompt: {
+    title: 'Prompt',
     type: 'string',
     description: 'placeholder for the textbox',
   },
   showCharacterCount: {
+    title: 'Show Character Count',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether the character count is visible',
   },
   enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether textbox is enabled',
     default: true,
     isVisibleInTrapState: true,
-  },
-  text: {
-    type: 'string',
-    description: 'specifies the text entered by user',
-    isVisibleInTrapState: true,
-  },
-  textLength: {
-    type: 'number',
-    description: 'specifies the length of text entered by user',
-    isVisibleInTrapState: true,
-    default: 0,
-    options: {
-      hidden: true,
-    },
   },
 };
 

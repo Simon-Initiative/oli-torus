@@ -1,5 +1,6 @@
 export const schema = {
   customCssClass: {
+    title: 'Custom CSS class',
     type: 'string',
   },
   src: {

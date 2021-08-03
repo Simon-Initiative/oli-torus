@@ -1,72 +1,68 @@
 export const schema = {
   defaultID: {
-    type: 'string'
-},
-customCssClass: {
-    type: 'string'
-},
-palette: {
-  type: 'object',
-  properties: {
-    backgroundColor: { type: 'string', title: 'Background Color' },
-    borderColor: { type: 'string', title: 'Border Color' },
-    borderRadius: { type: 'string', title: 'Border Radius' },
-    borderStyle: { type: 'string', title: 'Border Style' },
-    borderWidth: { type: 'string', title: 'Border Width' },
+    title: 'Default ID',
+    type: 'string',
   },
-},
-fontSize: {
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
+  palette: {
+    type: 'object',
+    properties: {
+      backgroundColor: { type: 'string', title: 'Background Color' },
+      borderColor: { type: 'string', title: 'Border Color' },
+      borderRadius: { type: 'string', title: 'Border Radius' },
+      borderStyle: { type: 'string', title: 'Border Style' },
+      borderWidth: { type: 'string', title: 'Border Width' },
+    },
+  },
+  fontSize: {
+    title: 'Font Size',
     type: 'number',
-    default: 12
-},
-maxManualGrade: {
-    type: 'number'
-},
-showOnAnswersReport: {
+    default: 12,
+  },
+  maxManualGrade: {
+    title: 'Manual Grade',
+    type: 'number',
+  },
+  showOnAnswersReport: {
+    title: 'Answers Report',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-requireManualGrading: {
+    default: false,
+  },
+  requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-showLabel: {
+    default: false,
+  },
+  showLabel: {
+    title: 'Show Label',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether label is visible',
-    default: true
-},
-label: {
+    default: true,
+  },
+  label: {
+    title: 'Label',
     type: 'string',
-    description: 'text label for the input field'
-},
-prompt: {
+    description: 'text label for the input field',
+  },
+  prompt: {
+    title: 'Prompt',
     type: 'string',
-    description: 'placeholder for the input field'
-},
-enabled: {
+    description: 'placeholder for the input field',
+  },
+  enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether textbox is enabled',
     isVisibleInTrapState: true,
-    default: true
-},
-text: {
-    type: 'string',
-    description: 'specifies the text entered by user',
-    isVisibleInTrapState: true
-},
-textLength: {
-    type: 'number',
-    description: 'specifies the length of text entered by user',
-    isVisibleInTrapState: true,
-    default: 0,
-    options: {
-        hidden: true
-    }
-}
+    default: true,
+  },
 };
 
 export const uiSchema = {};

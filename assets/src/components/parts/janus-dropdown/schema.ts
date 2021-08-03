@@ -1,5 +1,6 @@
 export const schema = {
   customCssClass: {
+    title: 'Custom CSS Class',
     type: 'string',
   },
   palette: {
@@ -13,23 +14,28 @@ export const schema = {
     },
   },
   fontSize: {
+    title: 'FontSize',
     type: 'number',
     default: 12,
   },
   maxManualGrade: {
+    title: 'Max Manual Grade',
     type: 'number',
   },
   showOnAnswersReport: {
+    title: 'Show on Answer Report',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
     default: false,
   },
   showLabel: {
+    title: 'Show Label',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether label is visible',
@@ -37,13 +43,16 @@ export const schema = {
   },
   label: {
     type: 'string',
+    title: 'Label',
     description: 'text label for the dropdown',
   },
   prompt: {
+    title: 'Prompt',
     type: 'string',
     description: 'placeholder text for dropdown',
   },
   optionLabels: {
+    title: 'Option Labels',
     type: 'array',
     description: 'list of options',
     items: {
@@ -51,6 +60,7 @@ export const schema = {
     },
   },
   enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether dropdown is enabled',
