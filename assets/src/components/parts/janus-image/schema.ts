@@ -20,7 +20,7 @@ export const schema = {
     default: true,
   },
   lockAspectRatio: {
-    title: 'Locl Aspect Ratio',
+    title: 'Local Aspect Ratio',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether image aspect ratio is locked',
