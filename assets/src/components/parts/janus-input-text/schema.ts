@@ -23,19 +23,7 @@ export const schema = {
     default: 12,
   },
   maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
-  maxValue: {
-    title: 'Max Value',
-    type: 'number',
-  },
-  minValue: {
-    title: 'Min Value',
+    title: 'Manual Grade',
     type: 'number',
   },
   showOnAnswersReport: {
@@ -62,29 +50,18 @@ export const schema = {
     type: 'string',
     description: 'text label for the input field',
   },
-  unitsLabel: {
-    title: 'Unit Label',
+  prompt: {
+    title: 'Prompt',
     type: 'string',
-    description: 'text label appended to the input',
-  },
-  deleteEnabled: {
-    title: 'Delete Enabled',
-    type: 'boolean',
-    format: 'checkbox',
+    description: 'placeholder for the input field',
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
-    description: 'specifies whether number input textbox is enabled',
+    description: 'specifies whether textbox is enabled',
     isVisibleInTrapState: true,
     default: true,
-  },
-  showIncrementArrows: {
-    title: 'Show Increment Arrows',
-    type: 'boolean',
-    description: 'specifies whether increment arrows should be visible in number textbox',
-    default: false,
   },
 };
 

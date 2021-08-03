@@ -1,8 +1,4 @@
 export const schema = {
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -18,7 +14,7 @@ export const schema = {
     },
   },
   fontSize: {
-    title: 'Font Size',
+    title: 'FontSize',
     type: 'number',
     default: 12,
   },
@@ -26,20 +22,8 @@ export const schema = {
     title: 'Max Manual Grade',
     type: 'number',
   },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
-  maxValue: {
-    title: 'Max Value',
-    type: 'number',
-  },
-  minValue: {
-    title: 'Min Value',
-    type: 'number',
-  },
   showOnAnswersReport: {
-    title: 'Answers Report',
+    title: 'Show on Answer Report',
     type: 'boolean',
     format: 'checkbox',
     default: false,
@@ -58,33 +42,30 @@ export const schema = {
     default: true,
   },
   label: {
+    type: 'string',
     title: 'Label',
-    type: 'string',
-    description: 'text label for the input field',
+    description: 'text label for the dropdown',
   },
-  unitsLabel: {
-    title: 'Unit Label',
+  prompt: {
+    title: 'Prompt',
     type: 'string',
-    description: 'text label appended to the input',
+    description: 'placeholder text for dropdown',
   },
-  deleteEnabled: {
-    title: 'Delete Enabled',
-    type: 'boolean',
-    format: 'checkbox',
+  optionLabels: {
+    title: 'Option Labels',
+    type: 'array',
+    description: 'list of options',
+    items: {
+      $ref: '#/definitions/optionLabel',
+    },
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
-    description: 'specifies whether number input textbox is enabled',
+    description: 'specifies whether dropdown is enabled',
     isVisibleInTrapState: true,
     default: true,
-  },
-  showIncrementArrows: {
-    title: 'Show Increment Arrows',
-    type: 'boolean',
-    description: 'specifies whether increment arrows should be visible in number textbox',
-    default: false,
   },
 };
 

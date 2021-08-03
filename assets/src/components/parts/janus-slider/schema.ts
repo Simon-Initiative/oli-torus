@@ -1,12 +1,4 @@
 export const schema = {
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-  },
-  customCssClass: {
-    title: 'Custom CSS Class',
-    type: 'string',
-  },
   palette: {
     type: 'object',
     properties: {
@@ -22,20 +14,12 @@ export const schema = {
     type: 'number',
     default: 12,
   },
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   maxManualGrade: {
     title: 'Max Manual Grade',
-    type: 'number',
-  },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
-  maxValue: {
-    title: 'Max Value',
-    type: 'number',
-  },
-  minValue: {
-    title: 'Min Value',
     type: 'number',
   },
   showOnAnswersReport: {
@@ -60,31 +44,52 @@ export const schema = {
   label: {
     title: 'Label',
     type: 'string',
-    description: 'text label for the input field',
+    description: 'text label for the slider',
   },
-  unitsLabel: {
-    title: 'Unit Label',
-    type: 'string',
-    description: 'text label appended to the input',
-  },
-  deleteEnabled: {
-    title: 'Delete Enabled',
+  showDataTip: {
+    title: 'Show Data Tip',
     type: 'boolean',
     format: 'checkbox',
+  },
+  showValueLabels: {
+    title: 'Show Value Labels',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  showTicks: {
+    title: 'Show Ticks',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  showThumbByDefault: {
+    title: 'Thumb By Default',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  invertScale: {
+    title: 'Invert Scale',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  minimum: {
+    title: 'Min',
+    type: 'number',
+  },
+  maximum: {
+    title: 'Max',
+    type: 'number',
+  },
+  snapInterval: {
+    title: 'Interval',
+    type: 'number',
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
-    description: 'specifies whether number input textbox is enabled',
+    description: 'specifies whether slider is enabled',
     isVisibleInTrapState: true,
     default: true,
-  },
-  showIncrementArrows: {
-    title: 'Show Increment Arrows',
-    type: 'boolean',
-    description: 'specifies whether increment arrows should be visible in number textbox',
-    default: false,
   },
 };
 

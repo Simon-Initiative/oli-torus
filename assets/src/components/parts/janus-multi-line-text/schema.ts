@@ -1,12 +1,4 @@
 export const schema = {
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-  },
-  customCssClass: {
-    title: 'Custom CSS Class',
-    type: 'string',
-  },
   palette: {
     type: 'object',
     properties: {
@@ -17,6 +9,10 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
   fontSize: {
     title: 'Font Size',
     type: 'number',
@@ -24,18 +20,6 @@ export const schema = {
   },
   maxManualGrade: {
     title: 'Max Manual Grade',
-    type: 'number',
-  },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
-  maxValue: {
-    title: 'Max Value',
-    type: 'number',
-  },
-  minValue: {
-    title: 'Min Value',
     type: 'number',
   },
   showOnAnswersReport: {
@@ -60,31 +44,26 @@ export const schema = {
   label: {
     title: 'Label',
     type: 'string',
-    description: 'text label for the input field',
+    description: 'text label for the textbox',
   },
-  unitsLabel: {
-    title: 'Unit Label',
+  prompt: {
+    title: 'Prompt',
     type: 'string',
-    description: 'text label appended to the input',
+    description: 'placeholder for the textbox',
   },
-  deleteEnabled: {
-    title: 'Delete Enabled',
+  showCharacterCount: {
+    title: 'Show Character Count',
     type: 'boolean',
     format: 'checkbox',
+    description: 'specifies whether the character count is visible',
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
-    description: 'specifies whether number input textbox is enabled',
-    isVisibleInTrapState: true,
+    description: 'specifies whether textbox is enabled',
     default: true,
-  },
-  showIncrementArrows: {
-    title: 'Show Increment Arrows',
-    type: 'boolean',
-    description: 'specifies whether increment arrows should be visible in number textbox',
-    default: false,
+    isVisibleInTrapState: true,
   },
 };
 

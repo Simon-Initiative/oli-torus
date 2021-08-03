@@ -216,6 +216,10 @@ $panel-section-title-bar-color: #e8ebed;
 
         .accordion {
           margin: -10px -15px auto -15px;
+
+          .collapse.show{
+            margin-top: 10px;
+          }
         }
       }
     }
