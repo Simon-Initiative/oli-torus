@@ -56,7 +56,13 @@ export const schema = {
     title: 'Subtitles',
     type: 'array',
     items: {
-      $ref: '../utility/subtitles.schema.json',
+      type: 'object',
+      properties: {
+        default: { type: 'boolean' },
+        language: { type: 'string' },
+        src: { type: 'string' },
+      },
+      required: ['src', 'language'],
     },
   },
 };

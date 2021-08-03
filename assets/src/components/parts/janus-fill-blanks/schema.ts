@@ -156,6 +156,37 @@ export const schema = {
       $ref: '#/definitions/inputElementItem',
     },
   },
+  definitions: {
+    keyValue: {
+      type: 'object',
+      properties: {
+        key: { type: 'string' },
+        value: { type: 'string' },
+      },
+    },
+    inputElementItem: {
+      type: 'object',
+      properties: {
+        key: {
+          type: 'string',
+          description: 'element id used to reference elements in content',
+        },
+        correct: {
+          type: 'string',
+        },
+        alternateCorrect: {
+          type: 'string',
+        },
+        options: {
+          type: 'array',
+          description: 'dropdown items',
+          items: {
+            $ref: '#/definitions/keyValue',
+          },
+        },
+      },
+    },
+  },
 };
 
 export const uiSchema = {};

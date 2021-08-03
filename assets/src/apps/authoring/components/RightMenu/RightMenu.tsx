@@ -205,13 +205,17 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
-          const newSchema = {
+          const newSchema: any = {
             ...partSchema,
             properties: {
               ...partSchema.properties,
               custom: { type: 'object', properties: { ...customPartSchema } },
             },
           };
+          if (customPartSchema.definitions) {
+            newSchema.definitions = customPartSchema.definitions;
+            delete newSchema.properties.custom.properties.definitions;
+          }
           setComponentSchema(newSchema);
         }
 
