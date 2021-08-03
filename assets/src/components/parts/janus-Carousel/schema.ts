@@ -53,6 +53,25 @@ export const schema = {
     description: 'Enables image zoom on double-click',
     default: false,
   },
+  definitions: {
+    image: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'Image URL',
+        },
+        caption: {
+          type: 'string',
+          description: 'Image caption',
+        },
+        alt: {
+          type: 'string',
+          description: 'Image description for screen readers',
+        },
+      },
+    },
+  },
 };
 
 export const uiSchema = {};

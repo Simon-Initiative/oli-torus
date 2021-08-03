@@ -3,6 +3,8 @@ import { acquireLock, releaseLock } from 'data/persistence/lock';
 import { RootState } from '../../rootReducer';
 import { AppSlice, selectProjectSlug, selectRevisionSlug } from '../slice';
 
+/* console.log('why is this undefined????', { AppSlice }); */
+
 export const acquireEditingLock = createAsyncThunk(
   `${AppSlice}/acquireEditingLock`,
   async (_, { getState }) => {
