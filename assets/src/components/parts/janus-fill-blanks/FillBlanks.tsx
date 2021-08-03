@@ -102,7 +102,11 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
       id,
       responses: [],
     });
-
+    //customCss comes from model and it was assigning blank value to customCss variable on line #85. Once model is updated
+    //need to assign the update values to the variable
+    if (pModel?.customCss) {
+      setCustomCss(pModel.customCss);
+    }
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
     setLocalSnapshot(currentStateSnapshot);
@@ -117,7 +121,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     }
 
     const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
-    if (sCustomCss) {
+    if (sCustomCss?.length) {
       setCustomCss(sCustomCss);
     }
 
@@ -226,7 +230,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
               setShowCorrect(parseBool(sShowCorrect));
             }
             const sCustomCss = changes[`stage.${id}.customCss`];
-            if (sCustomCss) {
+            if (sCustomCss?.length) {
               setCustomCss(sCustomCss);
             }
             const sCustomCssClass = changes[`stage.${id}.customCssClass`];
