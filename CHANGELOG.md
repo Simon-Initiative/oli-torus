@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- Redesign overview page, change language
+
 ## 0.12.7 (2021-08-02)
 
 ### Bug Fixes
