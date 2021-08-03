@@ -78,16 +78,18 @@
   </div>
   <div class="col-md-8">
     <div class="d-flex align-items-center">
-      <%= button("Duplicate",
+      <p>
+        <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
                     class: "btn btn-link action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
-      <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
+      </p>
+      <span>Create a complete copy of this project.</span>
     </div>
     <div class="d-flex align-items-center">
       <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-link action-button") %>
-      <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
+      <span>Download this project and its contents.</span>
     </div>
     <div class="d-flex align-items-center">
       <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
@@ -96,11 +98,11 @@
         <% _pub -> %>
         <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
       <% end %>
-      <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
+      <span>Download a <a class="text-primary" href="https://pslcdatashop.web.cmu.edu/" target="_blank">Datashop</a> file.</span>
     </div>
     <div class="d-flex align-items-center">
       <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
-      <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
+      <span>Permanently delete this course project.</span>
     </div>
   </div>
 </div>
