@@ -67,15 +67,8 @@ export class HtmlParser implements WriterImpl {
       return content;
     }
 
-<<<<<<< HEAD
-    return `<div class="figure-wrapper ${this.displayClass(attrs)}">
-        <figure${
-          attrs['full-width'] ? ' class="full-width embed-responsive embed-responsive-16by9"' : ''
-        }>
-=======
     return `<div class="figure-wrapper">
         <figure class="figure embed-responsive text-center">
->>>>>>> e1e54a7e6c445396b2c7b4dc37e7acf9bac02fa1
           ${content}
           <figcaption class="figure-caption text-center">
             ${this.escapeXml(attrs.caption)}
