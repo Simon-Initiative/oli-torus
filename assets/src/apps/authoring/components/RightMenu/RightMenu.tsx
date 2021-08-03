@@ -309,7 +309,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && currentComponentData && (
-          <div className="commponent-tab p-3">
+          <div className="component-tab p-3">
             <PropertyEditor
               schema={componentSchema}
               uiSchema={componentUiSchema}
