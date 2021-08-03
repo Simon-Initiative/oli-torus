@@ -1,22 +1,22 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import { usePrevious } from 'components/hooks/usePrevious';
 import { debounce } from 'lodash';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
+import guid from 'utils/guid';
+import { clone } from '../../../../utils/common';
 import {
   IActivity,
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
+import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
+import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
-import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { clone } from '../../../../utils/common';
-import guid from 'utils/guid';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
-import { usePrevious } from 'components/hooks/usePrevious';
 
-const AdaptiveRulesList: React.FC<any> = (props) => {
+const AdaptiveRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
@@ -104,8 +104,8 @@ const AdaptiveRulesList: React.FC<any> = (props) => {
     if (inputToFocus) inputToFocus.focus();
   }, [ruleToEdit]);
 
-  const RuleItemContextMenu = (props: any) => {
-    const { id, item, index, arr } = props;
+  const RuleItemContextMenu = (props: { id: string; item: any; index: number; arr: any[] }) => {
+    const { id, item } = props;
 
     return (
       <div key={id} className="dropdown aa-sequence-item-context-menu">

@@ -2,7 +2,7 @@
 import React, { useContext } from 'react';
 import { AccordionContext, useAccordionToggle } from 'react-bootstrap';
 
-const ContextAwareToggle: React.FC<any> = ({ children, eventKey, callback, className }) => {
+const ContextAwareToggle: React.FC<any> = ({ eventKey, callback, className }) => {
   const currentEventKey = useContext(AccordionContext);
 
   const decoratedOnClick = useAccordionToggle(eventKey, (e) => {

@@ -25,7 +25,7 @@ export interface AdaptivityEditorProps {
 
 export type ActionType = 'navigation' | 'mutateState' | 'feedback';
 
-export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = (props: AdaptivityEditorProps) => {
+export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);

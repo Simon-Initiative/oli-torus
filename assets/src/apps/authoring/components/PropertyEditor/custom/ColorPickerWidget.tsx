@@ -1,5 +1,5 @@
 import React, { CSSProperties, useRef, useState } from 'react';
-import { ColorResult, SketchPicker } from 'react-color';
+import { RGBColor, ColorResult, SketchPicker } from 'react-color';
 interface ColorPickerProps {
   label: string;
   value: string;
@@ -10,10 +10,11 @@ const getColorValueString = (value: ColorResult) => {
   return `rgba(${value.rgb.r},${value.rgb.g},${value.rgb.b},${value.rgb.a})`;
 };
 
-const getRGBColorValue = (value: any) => {
+const getRGBColorValue = (value?: string): RGBColor => {
   if (value) {
     const parts = value.replace('rgba(', '').replace(')', '').split(',');
-    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 100 };
+    const [r, g, b, a = '100'] = parts;
+    return { r: parseInt(r, 10), g: parseInt(g, 10), b: parseInt(b, 10), a: parseInt(a, 10) };
   }
   return { r: 255, g: 255, b: 255, a: 100 };
 };

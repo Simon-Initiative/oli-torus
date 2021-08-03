@@ -4,6 +4,10 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
 <div id="editor" class="container"/>
 
 <script>
