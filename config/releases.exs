@@ -46,8 +46,24 @@ host =
     For example: host.example.com
     """
 
+s3_media_bucket_name =
+  System.get_env("S3_MEDIA_BUCKET_NAME") ||
+    raise """
+    environment variable S3_MEDIA_BUCKET_NAME is missing.
+    For example: torus-media
+    """
+
+media_url =
+  System.get_env("MEDIA_URL") ||
+    raise """
+    environment variable MEDIA_URL is missing.
+    For example: your_s3_media_bucket_url.s3.amazonaws.com
+    """
+
 # General OLI app config
 config :oli,
+  s3_media_bucket_name: s3_media_bucket_name,
+  media_url: media_url,
   email_from_name: System.get_env("EMAIL_FROM_NAME", "OLI Torus"),
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),

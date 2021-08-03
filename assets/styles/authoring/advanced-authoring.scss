@@ -210,9 +210,17 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
     }
-    .screen-tab {
+    .screen-tab, .component-tab {
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
+
+        .accordion {
+          margin: -10px -15px auto -15px;
+
+          .collapse.show{
+            margin-top: 10px;
+          }
+        }
       }
     }
   }
@@ -519,6 +527,18 @@ $panel-section-title-bar-color: #e8ebed;
         border-radius: 0;
         margin-top: -10px;
         padding-top: 6px;
+      }
+    }
+  }
+
+  .aa-parts-list {
+    button {
+      padding: 4px;
+      img {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: 4px;
       }
     }
   }
