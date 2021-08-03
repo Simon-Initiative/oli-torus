@@ -9,85 +9,88 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-fontSize: {
+  fontSize: {
+    title: 'Font Size',
     type: 'number',
-    default: 12
-},
-customCssClass: {
-    type: 'string'
-},
-maxManualGrade: {
-    type: 'number'
-},
-showOnAnswersReport: {
+    default: 12,
+  },
+  customCssClass: {
+    title: 'Custom CSS Class',
+    type: 'string',
+  },
+  maxManualGrade: {
+    title: 'Max Manual Grade',
+    type: 'number',
+  },
+  showOnAnswersReport: {
+    title: 'Answers Report',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-requireManualGrading: {
+    default: false,
+  },
+  requireManualGrading: {
+    title: 'Require Manual Grading',
     type: 'boolean',
     format: 'checkbox',
-    default: false
-},
-showLabel: {
+    default: false,
+  },
+  showLabel: {
+    title: 'Show Label',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether label is visible',
-    default: true
-},
-label: {
+    default: true,
+  },
+  label: {
+    title: 'Label',
     type: 'string',
-    description: 'text label for the slider'
-},
-value: {
+    description: 'text label for the slider',
+  },
+  showDataTip: {
+    title: 'Show Data Tip',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  showValueLabels: {
+    title: 'Show Value Labels',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  showTicks: {
+    title: 'Show Ticks',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  showThumbByDefault: {
+    title: 'Thumb By Default',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  invertScale: {
+    title: 'Invert Scale',
+    type: 'boolean',
+    format: 'checkbox',
+  },
+  minimum: {
+    title: 'Min',
     type: 'number',
-    description: 'specifies the current value of slider',
-    isVisibleInTrapState: true,
-    default: 0
-},
-showDataTip: {
-    type: 'boolean',
-    format: 'checkbox'
-},
-showValueLabels: {
-    type: 'boolean',
-    format: 'checkbox'
-},
-showTicks: {
-    type: 'boolean',
-    format: 'checkbox'
-},
-showThumbByDefault: {
-    type: 'boolean',
-    format: 'checkbox'
-},
-invertScale: {
-    type: 'boolean',
-    format: 'checkbox'
-},
-minimum: {
-    type: 'number'
-},
-maximum: {
-    type: 'number'
-},
-snapInterval: {
-    type: 'number'
-},
-enabled: {
+  },
+  maximum: {
+    title: 'Max',
+    type: 'number',
+  },
+  snapInterval: {
+    title: 'Interval',
+    type: 'number',
+  },
+  enabled: {
+    title: 'Enabled',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether slider is enabled',
     isVisibleInTrapState: true,
-    default: true
-},
-userModified: {
-    type: 'boolean',
-    format: 'checkbox',
-    description: 'specifies whether user has interacted with slider',
-    isVisibleInTrapState: true,
-    default: false
-}
+    default: true,
+  },
 };
 
 export const uiSchema = {};

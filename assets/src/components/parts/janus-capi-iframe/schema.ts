@@ -4,6 +4,7 @@ export const schema = {
     type: 'string',
   },
   src: {
+    title: 'Source',
     type: 'string',
   },
   palette: {

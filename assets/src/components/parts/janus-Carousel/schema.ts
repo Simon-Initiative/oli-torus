@@ -1,5 +1,6 @@
 export const schema = {
   src: {
+    title: 'Source',
     type: 'string',
   },
   customCss: {

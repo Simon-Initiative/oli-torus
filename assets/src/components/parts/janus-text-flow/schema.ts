@@ -25,17 +25,4 @@ export const schema = {
   },
 };
 
-export const uiSchema = {
-  palette: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    'ui:title': 'Palette',
-    backgroundColor: {
-      'ui:widget': ColorPickerWidget,
-    },
-    borderColor: {
-      'ui:widget': ColorPickerWidget,
-    },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
-  },
-};
+export const uiSchema = {};
