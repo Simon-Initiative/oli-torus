@@ -8,7 +8,6 @@ import { clone } from '../../../../utils/common';
 import {
   IActivity,
   selectCurrentActivity,
-  upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
 import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
@@ -30,7 +29,6 @@ const AdaptiveRulesList: React.FC = () => {
     debounce(
       (activity) => {
         dispatch(saveActivity({ activity }));
-        dispatch(upsertActivity({ activity }));
       },
       500,
       { maxWait: 10000, leading: false },

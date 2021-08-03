@@ -1,5 +1,5 @@
 import { JSONSchema7 } from 'json-schema';
-import { debounce } from 'lodash';
+import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,14 +8,13 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import { upsertActivity } from '../../../delivery/store/features/activities/slice';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
-import { selectCurrentSelection } from '../../store/parts/slice';
+import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
 import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
@@ -101,7 +100,6 @@ const RightMenu: React.FC<any> = () => {
       (activity, currentActivity, group) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
-        dispatch(upsertActivity({ activity }));
 
         if (activity.title !== currentActivity?.title) {
           dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
@@ -158,12 +156,35 @@ const RightMenu: React.FC<any> = () => {
     debounceSavePage(lessonChanges);
   };
 
-  const debounceSavePartComponent = useCallback(
+  const debouncePartPropertyChanges = useCallback(
     debounce(
-      (activity) => {
-        console.log('SAVING ACTIVITY (PART COMPONENT):', { activity });
-        dispatch(saveActivity({ activity }));
-        dispatch(upsertActivity({ activity }));
+      (properties, partInstance, origActivity, origId) => {
+        let modelChanges = properties;
+        if (partInstance && partInstance.transformSchemaToModel) {
+          modelChanges.custom = partInstance.transformSchemaToModel(properties);
+        }
+        modelChanges = transformPartSchemaToModel(modelChanges);
+        console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
+
+        const cloneActivity = clone(origActivity);
+        const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === origId);
+        if (!ogPart) {
+          // hopefully UI will prevent this from happening
+          console.warn(
+            'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
+          );
+          return;
+        }
+        if (modelChanges.id !== ogPart.id) {
+          ogPart.id = modelChanges.id;
+          // in case the id changes, update the selection
+          dispatch(setCurrentSelection({ selection: modelChanges.id }));
+        }
+        ogPart.custom = modelChanges.custom;
+
+        if (!isEqual(cloneActivity, origActivity)) {
+          dispatch(saveActivity({ activity: cloneActivity }));
+        }
       },
       500,
       { maxWait: 10000, leading: false },
@@ -260,27 +281,19 @@ const RightMenu: React.FC<any> = () => {
       setCurrentComponentData(null);
       setCurrentPartInstance(null);
     };
-  }, [currentPartSelection]);
+  }, [currentPartSelection, currentActivityTree]);
 
-  const componentPropertyChangeHandler = (properties: any) => {
-    let modelChanges = properties;
-    if (currentPartInstance && currentPartInstance.transformSchemaToModel) {
-      modelChanges.custom = currentPartInstance.transformSchemaToModel(properties);
-    }
-    modelChanges = transformPartSchemaToModel(modelChanges);
-    console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
-
-    const cloneActivity = clone(currentActivity);
-    const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === modelChanges.id);
-    if (!ogPart) {
-      // hopefully UI will prevent this from happening
-      console.warn('couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly');
-      return;
-    }
-    ogPart.custom = modelChanges.custom;
-
-    debounceSavePartComponent(cloneActivity);
-  };
+  const componentPropertyChangeHandler = useCallback(
+    (properties: any) => {
+      debouncePartPropertyChanges(
+        properties,
+        currentPartInstance,
+        currentActivity,
+        currentPartSelection,
+      );
+    },
+    [currentActivity, currentPartInstance, currentPartSelection],
+  );
 
   return (
     <Tabs

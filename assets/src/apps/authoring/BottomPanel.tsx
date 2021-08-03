@@ -50,7 +50,6 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     debounce(
       (activity) => {
         dispatch(saveActivity({ activity }));
-        dispatch(upsertActivity({ activity }));
       },
       500,
       { maxWait: 10000, leading: false },
