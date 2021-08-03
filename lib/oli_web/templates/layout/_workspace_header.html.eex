@@ -1,41 +1,7 @@
-<div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Create Project</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <%= form_for @changeset, Routes.project_path(@conn, :create), [id: "form-create-project"], fn f -> %>
-      <div class="modal-body">
-        <div class="form-label-group">
-          <%= text_input f,
-                :title,
-                class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
-                placeholder: "Introduction to Psychology",
-                id: "input-title",
-                required: true,
-                autofocus: focusHelper(f, :title, default: true) %>
-          <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
-          <%= error_tag f, :title %>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
-        <%= submit "Create Project",
-            id: "button-create-project",
-            class: "btn btn-primary",
-            phx_disable_with: "Creating Project..." %>
-      </div>
-    <% end %>
-  </div>
-</div>
-</div>
 <div class="workspace-header d-flex justify-content-between">
   <h2><%= @title %></h2>
   <div>
-    <a href='javascript:;' onclick="showHelpModal();" class="justify-content-end small">Help</a>
+    <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
     <%= account_link @conn %>
   </div>
 </div>

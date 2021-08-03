@@ -199,7 +199,13 @@ $activity-purpose-learnbydoing-color: lighten($green, 10%);
 $activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
 
 ///////////////////////////////////////////////////////////////////////////////
-// IMPORTANT: DO NOT MODIFY BELOW
-// This import is required and must always be the last item in this style sheet
+// IMPORTANT: DO NOT MODIFY IMPORT
+// This import is required and must always be after the last variable
+// declaration and before any custom styles in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
 @import "preview.scss";
+///////////////////////////////////////////////////////////////////////////////
+
+/** Theme-specific custom styles **/
+html.preview {
+}

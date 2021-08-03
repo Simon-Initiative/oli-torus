@@ -530,4 +530,16 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
   }
+
+  .aa-parts-list {
+    button {
+      padding: 4px;
+      img {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin: 4px;
+      }
+    }
+  }
 }

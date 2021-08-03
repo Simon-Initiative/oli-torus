@@ -1,38 +1,23 @@
-@import 'authoring/variables';
+@import "authoring/variables";
 
 .undo-toasts {
   position: fixed;
-  top: 40px;
+  top: 60px;
   right: 20px;
   z-index: 1000;
 }
 
 .undotoast {
-  background-color: #3eabbf;
-  color: white;
+  background-color: $gray-100;
+  color: $body-color;
   position: relative;
   z-index: 1000;
   width: 270px;
   font-size: 1em;
-  text-transform: uppercase;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid $gray-200;
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 10%);
   border-radius: 0.25rem;
   margin-top: 20px;
-}
-
-.undo-toast-desc {
-  padding-top: 5px;
-}
-
-.btn.undo-toast-btn {
-  background-color: #199ab1;
-  color: white;
-
-  &:hover {
-    background-color: #51adbd;
-    color: white;
-  }
 }
 
 .undotoast-enter {
@@ -41,7 +26,7 @@
 
 .undotoast-enter.undotoast-enter-active {
   opacity: 1;
-  transition: opacity 500ms;
+  transition: opacity 200ms;
 }
 
 .undotoast-leave {

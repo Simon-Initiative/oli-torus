@@ -1,0 +1,4 @@
+<a class="btn btn-xs btn-light rounded-pill help-btn mx-2" href='javascript:;' onclick="showHelpModal();">
+  <img src="<%= Routes.static_path(@conn, "/images/icons/life-ring-regular.svg") %>" class="help-icon"></img>
+  <span>Help</span>
+</a>

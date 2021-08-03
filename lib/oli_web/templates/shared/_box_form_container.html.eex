@@ -1,4 +1,4 @@
-<div class="container form-container">
+<div class="container box-form-container">
   <div class="<%= value_or(Map.get(assigns, :bs_row_class), "row") %>"">
     <div class="<%= value_or(Map.get(assigns, :bs_col_class), "col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto") %>">
       <div class="card signin my-5">
