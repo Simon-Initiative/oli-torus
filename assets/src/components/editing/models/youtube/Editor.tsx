@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
@@ -9,8 +9,7 @@ import { displayModelToClassName } from 'data/content/utils';
 
 export const CUTE_OTTERS = 'zHIIzcWqsP0';
 
-// eslint-disable-next-line
-export interface YouTubeProps extends EditorProps<ContentModel.YouTube> { }
+export type YouTubeProps = EditorProps<ContentModel.YouTube>;
 
 export const YouTubeEditor = (props: YouTubeProps) => {
   const { attributes, children, editor, model } = props;

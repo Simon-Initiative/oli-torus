@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useFocused, useSelected, useSlate } from 'slate-react';
+import { useFocused, useSlate } from 'slate-react';
 import { ToolbarItem, CommandContext } from '../../commands/interfaces';
 import { Popover } from 'react-tiny-popover';
 import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';

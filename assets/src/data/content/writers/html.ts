@@ -24,6 +24,7 @@ import {
   CodeLine,
   Blockquote,
   Hyperlink,
+  Webpage,
 } from '../model';
 import { Text } from 'slate';
 import { WriterContext } from './context';
@@ -61,33 +62,24 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => `<${mark}>${acc}</${mark}>`, text);
   }
 
-  // float_left and float_right no longer supported as options
-  private displayClass(attrs: any) {
-    if (attrs.display) {
-      switch (attrs.display) {
-        case 'float_left':
-        case 'float_right':
-        case 'block':
-        default:
-          return 'd-block';
-      }
-    }
-    return '';
-  }
-
   private figure(attrs: any, content: string) {
     if (!attrs.caption) {
       return content;
     }
 
+<<<<<<< HEAD
     return `<div class="figure-wrapper ${this.displayClass(attrs)}">
         <figure${
           attrs['full-width'] ? ' class="full-width embed-responsive embed-responsive-16by9"' : ''
         }>
+=======
+    return `<div class="figure-wrapper">
+        <figure class="figure embed-responsive text-center">
+>>>>>>> e1e54a7e6c445396b2c7b4dc37e7acf9bac02fa1
           ${content}
-          <figcaption${attrs['full-width'] ? ' class="full-width"' : ''}>${
-      attrs.caption
-    }</figcaption>
+          <figcaption class="figure-caption text-center">
+            ${this.escapeXml(attrs.caption)}
+          </figcaption>
         </figure>
       </div>`;
   }
@@ -100,31 +92,41 @@ export class HtmlParser implements WriterImpl {
   h5 = (context: WriterContext, next: Next, x: HeadingFive) => `<h5>${next()}</h5>\n`;
   h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
   img = (context: WriterContext, next: Next, attrs: Image) => {
-    const alt = attrs.alt ? ` alt="${attrs.alt}"` : '';
-    const width = attrs.width ? ` width="${attrs.width}"` : '';
-    const height = attrs.height ? ` height="${attrs.height}"` : '';
+    const alt = attrs.alt ? ` alt="${this.escapeXml(attrs.alt)}"` : '';
+    const width = attrs.width ? ` width="${this.escapeXml(String(attrs.width))}"` : '';
+    const height = attrs.height ? ` height="${this.escapeXml(String(attrs.height))}"` : '';
     return this.figure(
       attrs,
-      `<img class="${this.displayClass(attrs)}"${alt}${width}${height} src="${attrs.src}"/>\n`,
+      `<img class="figure-img img-fluid"${alt}${width}${height} src="${this.escapeXml(
+        attrs.src,
+      )}"/>\n`,
     );
   };
   youtube = (context: any, next: Next, attrs: YouTube) => {
+    return this.iframe(context, next, {
+      ...attrs,
+      src: `https://www.youtube.com/embed/${this.escapeXml(attrs.src)}`,
+    });
+  };
+  iframe = (context: any, next: Next, attrs: Webpage | YouTube) => {
     return this.figure(
-      Object.assign(attrs, { 'full-width': true }),
-      `<div class="youtube-wrapper ${this.displayClass(attrs)}">
-          <iframe id="${attrs.src}" allowfullscreen src="https://www.youtube.com/embed/${
-        attrs.src
-      }"></iframe>
+      attrs,
+      `<div class="embed-responsive embed-responsive-16by9">
+          <iframe class="embed-responsive-item" allowfullscreen src="${this.escapeXml(
+            attrs.src,
+          )}"></iframe>
         </div>`,
     );
   };
   audio = (context: WriterContext, next: Next, attrs: Audio) =>
     this.figure(
       attrs,
-      `<audio controls src="${attrs.src}">Your browser does not support the <code>audio</code> element.</audio>\n`,
+      `<audio controls src="${this.escapeXml(
+        attrs.src,
+      )}">Your browser does not support the <code>audio</code> element.</audio>\n`,
     );
   table = (context: WriterContext, next: Next, attrs: Table) => {
-    const caption = attrs.caption ? `<caption>${attrs.caption}</caption>` : '';
+    const caption = attrs.caption ? `<caption>${this.escapeXml(attrs.caption)}</caption>` : '';
 
     return `<table>${caption}${next()}</table>\n`;
   };
@@ -137,7 +139,10 @@ export class HtmlParser implements WriterImpl {
   math = (context: WriterContext, next: Next, x: Math) => `<div>${next()}</div>\n`;
   mathLine = (context: WriterContext, next: Next, x: MathLine) => `${next()}\n`;
   code = (context: WriterContext, next: Next, attrs: Code) =>
-    this.figure(attrs, `<pre><code class="language-${attrs.language}">${next()}</code></pre>\n`);
+    this.figure(
+      attrs,
+      `<pre><code class="language-${this.escapeXml(attrs.language)}">${next()}</code></pre>\n`,
+    );
   codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
   blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`;

@@ -1,9 +1,7 @@
 use Mix.Config
 
 config :oli,
-  env: :prod,
-  s3_media_bucket_name: "torus-media",
-  media_url: "d2xvti2irp4c7t.cloudfront.net"
+  env: :prod
 
 # For production, don't forget to configure the url host
 # to something meaningful, Phoenix uses this information

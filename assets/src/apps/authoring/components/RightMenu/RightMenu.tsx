@@ -1,4 +1,3 @@
-import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { JSONSchema7 } from 'json-schema';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -9,25 +8,33 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import {
-  selectCurrentActivity,
-  upsertActivity,
-} from '../../../delivery/store/features/activities/slice';
+import { upsertActivity } from '../../../delivery/store/features/activities/slice';
+import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
+import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
+import { selectCurrentSelection } from '../../store/parts/slice';
+import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
+import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
+import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
   transformSchemaToModel as transformLessonSchema,
 } from '../PropertyEditor/schemas/lesson';
+import partSchema, {
+  partUiSchema,
+  transformModelToSchema as transformPartModelToSchema,
+  transformSchemaToModel as transformPartSchemaToModel,
+} from '../PropertyEditor/schemas/part';
 import screenSchema, {
   screenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
-import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -38,13 +45,17 @@ export enum RightPanelTabs {
 const RightMenu: React.FC<any> = () => {
   const dispatch = useDispatch();
   const selectedTab = useSelector(selectRightPanelActiveTab);
-  const currentActivity = useSelector(selectCurrentActivity);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentLesson = useSelector(selectPageState);
   const currentGroup = useSelector(selectCurrentGroup);
+  const currentPartSelection = useSelector(selectCurrentSelection);
 
   // TODO: dynamically load schema from Part Component configuration
-  const componentSchema: JSONSchema7 = { type: 'object' };
-  const currentComponent = null;
+  const [componentSchema, setComponentSchema]: any = useState<any>(partSchema);
+  const [componentUiSchema, setComponentUiSchema]: any = useState<any>(partUiSchema);
+  const [currentComponent, setCurrentComponent] = useState<any>(null);
+
+  const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [screenData, setScreenData] = useState();
   useEffect(() => {
@@ -147,8 +158,124 @@ const RightMenu: React.FC<any> = () => {
     debounceSavePage(lessonChanges);
   };
 
+  const debounceSavePartComponent = useCallback(
+    debounce(
+      (activity) => {
+        console.log('SAVING ACTIVITY (PART COMPONENT):', { activity });
+        dispatch(saveActivity({ activity }));
+        dispatch(upsertActivity({ activity }));
+      },
+      500,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
+
+  const [currentComponentData, setCurrentComponentData] = useState<any>(null);
+  const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
+  useEffect(() => {
+    if (!currentPartSelection || !currentActivityTree) {
+      return;
+    }
+    let partDef;
+    for (let i = 0; i < currentActivityTree.length; i++) {
+      const activity = currentActivityTree[i];
+      partDef = activity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
+      if (partDef) {
+        break;
+      }
+    }
+    console.log('part selected', { partDef });
+    if (partDef) {
+      // part component should be registered by type as a custom element
+      const PartClass = customElements.get(partDef.type);
+      if (PartClass) {
+        const instance = new PartClass();
+
+        setCurrentPartInstance(instance);
+
+        let data = partDef;
+        if (instance.transformModelToSchema) {
+          // because the part schema below only knows about the "custom" block
+          data.custom = instance.transformModelToSchema(partDef.custom);
+        }
+        data = transformPartModelToSchema(data);
+        setCurrentComponentData(data);
+
+        // schema
+        if (instance.getSchema) {
+          const customPartSchema = instance.getSchema();
+          const newSchema = {
+            ...partSchema,
+            properties: {
+              ...partSchema.properties,
+              custom: { type: 'object', properties: { ...customPartSchema } },
+            },
+          };
+          setComponentSchema(newSchema);
+        }
+
+        // ui schema
+        if (instance.getUiSchema) {
+          const customPartUiSchema = instance.getUiSchema();
+          const newUiSchema = {
+            ...partUiSchema,
+            custom: {
+              'ui:ObjectFieldTemplate': AccordionTemplate,
+              'ui:title': 'Custom',
+              ...customPartUiSchema,
+            },
+          };
+          const customPartSchema = instance.getSchema();
+          if (customPartSchema.palette) {
+            newUiSchema.custom = {
+              ...newUiSchema.custom,
+              palette: {
+                'ui:ObjectFieldTemplate': CustomFieldTemplate,
+                'ui:title': 'Palette',
+                backgroundColor: {
+                  'ui:widget': ColorPickerWidget,
+                },
+                borderColor: {
+                  'ui:widget': ColorPickerWidget,
+                },
+                borderStyle: { classNames: 'col-6' },
+                borderWidth: { classNames: 'col-6' },
+              },
+            };
+          }
+          setComponentUiSchema(newUiSchema);
+        }
+      }
+      setCurrentComponent(partDef);
+    }
+    return () => {
+      setComponentSchema(partSchema);
+      setComponentUiSchema(partUiSchema);
+      setCurrentComponent(null);
+      setCurrentComponentData(null);
+      setCurrentPartInstance(null);
+    };
+  }, [currentPartSelection]);
+
   const componentPropertyChangeHandler = (properties: any) => {
-    console.log('COMPONENT PROP CHANGED', { properties });
+    let modelChanges = properties;
+    if (currentPartInstance && currentPartInstance.transformSchemaToModel) {
+      modelChanges.custom = currentPartInstance.transformSchemaToModel(properties);
+    }
+    modelChanges = transformPartSchemaToModel(modelChanges);
+    console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
+
+    const cloneActivity = clone(currentActivity);
+    const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === modelChanges.id);
+    if (!ogPart) {
+      // hopefully UI will prevent this from happening
+      console.warn('couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly');
+      return;
+    }
+    ogPart.custom = modelChanges.custom;
+
+    debounceSavePartComponent(cloneActivity);
   };
 
   return (
@@ -181,12 +308,12 @@ const RightMenu: React.FC<any> = () => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
-        {currentComponent && (
-          <div className="commponent-tab">
+        {currentComponent && currentComponentData && (
+          <div className="component-tab p-3">
             <PropertyEditor
               schema={componentSchema}
-              uiSchema={{}}
-              value={currentComponent}
+              uiSchema={componentUiSchema}
+              value={currentComponentData}
               onChangeHandler={componentPropertyChangeHandler}
             />
           </div>

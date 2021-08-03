@@ -28,7 +28,8 @@ defmodule OliWeb.ResourceController do
           is_admin?: is_admin?,
           context: Jason.encode!(context),
           raw_context: context,
-          scripts: Activities.get_activity_scripts(),
+          scripts: Activities.get_activity_scripts(:authoring_script),
+          part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
           project_slug: project_slug,
           revision_slug: revision_slug
         )
