@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 
 interface CustomTextboxProps {
   label: string;
-  id: any;
+  id: string;
   value: string;
 }
 const CustomTextbox: React.FC<CustomTextboxProps> = (props: any) => {
