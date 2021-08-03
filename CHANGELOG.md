@@ -6,6 +6,23 @@
 
 ### Enhancements
 
+## 0.12.6 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue with timestamps containing microseconds
+## 0.12.5 (2021-07-29)
+
+### Bug Fixes
+
+- Fix an issue when creating snapshots for insights
+
+## 0.12.4 (2021-07-27)
+
+### Bug Fixes
+
+- Updated research consent form
+
 ## 0.12.3 (2021-07-23)
 
 ### Bug Fixes

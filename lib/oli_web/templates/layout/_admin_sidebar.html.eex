@@ -1,8 +1,8 @@
 
 <div class="btn-group dropright hoverdriven">
-  <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    <i class="icon las la-user-lock la" style="font-size: 32px;"></i>
-    <div class="label">Admin</div>
+  <button type="button" class="btn btn-light my-1 " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
+    <div class="label mt-1">Admin</div>
   </button>
   <div class="dropdown-menu">
     <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Accounts.AccountsLive) %>">Accounts</a>
