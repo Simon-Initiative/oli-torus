@@ -3,11 +3,7 @@ import { ModelElement } from '../model';
 import { Text } from 'slate';
 
 export type Next = () => string;
-type ElementWriter = (
-  ctx: WriterContext,
-  next: Next,
-  text: ModelElement,
-) => string;
+type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => string;
 
 export interface WriterImpl {
   text: (ctx: WriterContext, text: Text) => string;
@@ -20,6 +16,7 @@ export interface WriterImpl {
   h6: ElementWriter;
   img: ElementWriter;
   youtube: ElementWriter;
+  iframe: ElementWriter;
   audio: ElementWriter;
   table: ElementWriter;
   tr: ElementWriter;
@@ -42,59 +39,29 @@ function isContentItem(value: any): value is ContentItem {
   return value && value.type === 'content' && value.children !== undefined;
 }
 
-type ContentTypes =
-  | ContentItem[]
-  | ContentItem
-  | ModelElement[]
-  | ModelElement
-  | Text;
+type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
 
 export class ContentWriter {
-  render(
-    context: WriterContext,
-    content: ContentItem[],
-    impl: WriterImpl,
-  ): string;
-  render(
-    context: WriterContext,
-    content: ContentItem,
-    impl: WriterImpl,
-  ): string;
-  render(
-    context: WriterContext,
-    content: ModelElement[],
-    impl: WriterImpl,
-  ): string;
-  render(
-    context: WriterContext,
-    content: ModelElement,
-    impl: WriterImpl,
-  ): string;
+  render(context: WriterContext, content: ContentItem[], impl: WriterImpl): string;
+  render(context: WriterContext, content: ContentItem, impl: WriterImpl): string;
+  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): string;
+  render(context: WriterContext, content: ModelElement, impl: WriterImpl): string;
   render(context: WriterContext, content: Text, impl: WriterImpl): string;
-  render(
-    context: WriterContext,
-    content: ContentTypes,
-    impl: WriterImpl,
-  ): string {
+  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): string {
     if (Array.isArray(content)) {
       // Typescript seems not to be able to recognize the overloaded function signatures here
-      return (content as any)
-        .map((item: any) => this.render(context, item, impl))
-        .join('');
+      return (content as any).map((item: any) => this.render(context, item, impl)).join('');
     }
 
     if (isContentItem(content)) {
-      return content.children
-        .map((child) => this.render(context, child, impl))
-        .join('');
+      return content.children.map((child) => this.render(context, child, impl)).join('');
     }
 
     if (Text.isText(content)) {
       return impl.text(context, content);
     }
 
-    const next = () =>
-      this.render(context, content.children as ModelElement[], impl);
+    const next = () => this.render(context, content.children as ModelElement[], impl);
 
     switch (content.type) {
       case 'p':
@@ -115,6 +82,8 @@ export class ContentWriter {
         return impl.img(context, next, content);
       case 'youtube':
         return impl.youtube(context, next, content);
+      case 'iframe':
+        return impl.iframe(context, next, content);
       case 'audio':
         return impl.audio(context, next, content);
       case 'table':
