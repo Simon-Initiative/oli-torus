@@ -5,9 +5,7 @@ import ReactDOM from 'react-dom';
 
 const userOptions = consentOptions();
 
-export type CookiePreferencesProps = {};
-
-export const CookiePreferences = (props: CookiePreferencesProps) => {
+export const CookiePreferences = () => {
   const [functionalActive, setFunctionalActive] = useState(true);
   const [analyticsActive, setAnalyticActive] = useState(true);
   const [targetingActive, setTargetingActive] = useState(false);

@@ -119,6 +119,7 @@ export const dropHandler =
           scrollToResourceEditor(parsedContent.id);
         } catch (err) {
           // eslint-disable-next-line
+        }
       }
     }
   };

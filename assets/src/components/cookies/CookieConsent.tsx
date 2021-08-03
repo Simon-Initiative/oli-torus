@@ -4,9 +4,7 @@ import { consentOptions, setCookies } from 'components/cookies/utils';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import ReactDOM from 'react-dom';
 
-export type CookieConsentProps = {};
-
-export const CookieConsent = (props: CookieConsentProps) => {
+export const CookieConsent = () => {
   return (
     <div className="form-inline">
       <p>
