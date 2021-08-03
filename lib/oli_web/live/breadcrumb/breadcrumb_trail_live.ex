@@ -34,7 +34,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
           id: "breadcrumb-project",
           breadcrumb: Breadcrumb.new(%{
             full_title: @project.title,
-            link: Routes.container_path(@socket, :index, @project.slug, AuthoringResolver.root_container(@project.slug).slug)
+            link: Routes.project_path(@socket, :overview, @project)
           }),
           is_last: false,
           show_short: false
