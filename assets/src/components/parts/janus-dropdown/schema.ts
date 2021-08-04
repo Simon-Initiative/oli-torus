@@ -67,6 +67,13 @@ export const schema = {
     isVisibleInTrapState: true,
     default: true,
   },
+  definitions: {
+    optionLabel: {
+      type: 'string',
+      description: 'text for the dropdown item',
+      $anchor: 'optionLabel',
+    },
+  },
 };
 
 export const uiSchema = {};

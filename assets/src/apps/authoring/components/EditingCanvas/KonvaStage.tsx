@@ -20,6 +20,7 @@ interface KonvaStageProps {
   layers: any[];
   selected: string[];
   onSelectionChange: (selected: string[]) => void;
+  onPositionChange: (id: string, position: { x: number; y: number }) => void;
 }
 
 const KonvaStage: React.FC<KonvaStageProps> = (props) => {
@@ -142,7 +143,7 @@ const KonvaStage: React.FC<KonvaStageProps> = (props) => {
                 height: pHeight,
                 fill: 'magenta',
                 strokeWidth: 1,
-                stroke: '#000'
+                stroke: '#000',
               });
               const placeholderText = new Konva.Text({
                 x: 2,
@@ -189,7 +190,27 @@ const KonvaStage: React.FC<KonvaStageProps> = (props) => {
           }
         }
 
-        console.log('SELECTED', { selectedNode: evt.target, selectedParent, stage, selectedId });
+        console.log('SELECTED', {
+          selectedNode: evt.target,
+          selectedParent,
+          stage,
+          selectedId,
+          prevSelected: tr.nodes(),
+        });
+
+        // this isn't working?
+        tr.nodes().forEach((node: any) => {
+          console.log('OLD NODE', node, node.draggable());
+          node.draggable(false);
+          node.off('dragend');
+        });
+
+        selectedNode.draggable(true);
+        selectedNode.on('dragend', (evt: any) => {
+          console.log('node drag end', { evt });
+          const item = evt.target;
+          props.onPositionChange(item.id(), item.position());
+        });
 
         // for now just select it
         tr.nodes([selectedNode]);

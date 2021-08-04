@@ -1,5 +1,7 @@
-import React from 'react';
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -35,6 +37,27 @@ const EditingCanvas: React.FC = () => {
     const selectedTab = newSelection ? RightPanelTabs.COMPONENT : RightPanelTabs.SCREEN;
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: selectedTab }));
   };
+
+  const handlePositionChanged = useCallback(
+    (id: string, position: { x: number; y: number }) => {
+      console.log('[handlePositionChanged]', { id, position });
+      if (!currentActivityTree) {
+        return;
+      }
+      // only valid to move on the "owner" layer IF it's current
+      const currentActivityClone = clone(currentActivityTree.slice(-1)[0]);
+      const partDef = currentActivityClone.content.partsLayout.find((part: any) => part.id === id);
+      if (!partDef) {
+        return;
+      }
+      partDef.custom.x = position.x;
+      partDef.custom.y = position.y;
+
+      dispatch(saveActivity({ activity: currentActivityClone }));
+    },
+    [currentActivityTree],
+  );
+
   console.log('EC: RENDER', { layers });
 
   return (
@@ -48,6 +71,7 @@ const EditingCanvas: React.FC = () => {
             size={{ width, height }}
             layers={layers}
             onSelectionChange={handleSelectionChanged}
+            onPositionChange={handlePositionChanged}
           />
         )}
       </section>
