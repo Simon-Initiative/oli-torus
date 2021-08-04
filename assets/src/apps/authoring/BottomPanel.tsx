@@ -22,7 +22,7 @@ export interface BottomPanelProps {
 
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
   const { panelState, onToggle, children } = props;
-  const PANEL_SIDE_WIDTH = '250px';
+  const PANEL_SIDE_WIDTH = '270px';
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
@@ -97,7 +97,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
         id="aa-bottom-panel"
         className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''}`}
         style={{
-          left: panelState['left'] ? '315px' : '65px', // 315 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
+          left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
           bottom: panelState['bottom']
             ? 0
