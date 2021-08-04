@@ -5,6 +5,7 @@
 ### Bug Fixes
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
+- Standardize padding and headers across all pages
 
 ### Enhancements
 
