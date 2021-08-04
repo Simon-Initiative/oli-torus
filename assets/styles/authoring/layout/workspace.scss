@@ -22,6 +22,7 @@ $workspace-sidebar-width: 65px;
 
     .header-bar {
       height: 38px;
+      background-color: $workspace-logo-bg;
     }
 
     .logo {
@@ -44,7 +45,7 @@ $workspace-sidebar-width: 65px;
       }
     }
 
-    h2.title {
+    h3.title {
       font-size: toRem(18);
       margin-bottom: 0;
       white-space: nowrap;
