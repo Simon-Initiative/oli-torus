@@ -63,7 +63,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def render(assigns) do
     ~L"""
-    <div class="projects-title-row my-4">
+    <div class="projects-title-row mb-4">
       <div class="container">
         <div class="row">
           <div class="col-12">

@@ -1,5 +1,5 @@
 
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger mt-3" role="alert">
   <h4 class="alert-heading">Something went wrong!</h4>
   <p>Hmmmm, we can't seem to locate or load the resource you were trying to access.</p>
   <hr>

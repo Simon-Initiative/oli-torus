@@ -1,5 +1,5 @@
 <div class="workspace-header d-flex justify-content-between">
-  <h2><%= @title %></h2>
+  <h3><%= @title %></h3>
   <div>
     <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
     <%= account_link @conn %>
