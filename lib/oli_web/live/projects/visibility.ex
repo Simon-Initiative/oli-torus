@@ -43,21 +43,21 @@ defmodule OliWeb.Projects.VisibilityLive do
                   <p>Project authors</p>
                   <span class="ml-2 badge badge-pill badge-light">default</span>
                 </div>
-                <small>Only authors added as collaborators to this project</small>
+                <small>Only instructors who are collaborators and have linked their accounts</small>
               <% end %>
             </div>
             <div class="form-group">
               <%= label class: "form-check-label" do %>
                 <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: @project.visibility == :global %>
                 <p>Open</p>
-                <small>Any user who links their account to Proton as an instructor</small>
+                <small>Any instructor who has linked their account</small>
               <% end %>
             </div>
             <div class="form-group">
               <%= label class: "form-check-label" do %>
                 <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked:  @project.visibility == :selected %>
                 <p>Restricted</p>
-                <small>Only these users or institutions...</small>
+                <small>Only these instructors or institutions...</small>
               <% end %>
             </div>
           </div>
