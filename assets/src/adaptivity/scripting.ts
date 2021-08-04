@@ -40,7 +40,12 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     try {
-      evalScript(`let foo = ${val};`);
+      const evalResult = evalScript(`let foo = ${val};`);
+      // when evalScript is executed successfully, evalResult.result is null.
+      // evalScript does not trigger catch block even though there is error and add the error in stack property.
+      if (evalResult?.result?.stack?.indexOf('Error') !== -1) {
+        actuallyAString = true;
+      }
     } catch (e) {
       // if we have parsing error then we're guessing it's CSS
       actuallyAString = true;
