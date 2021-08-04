@@ -6,6 +6,7 @@
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
+- Standardize padding and headers across all pages
 
 ### Enhancements
 

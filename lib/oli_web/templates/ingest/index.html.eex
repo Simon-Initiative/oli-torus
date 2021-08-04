@@ -1,5 +1,4 @@
-
-
+<div class="container">
   <h3 class="display-6">Course Ingestion</h3>
   <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
   <hr class="my-4">
@@ -87,3 +86,4 @@
         </div>
       </div>
     </div>
+</div>
