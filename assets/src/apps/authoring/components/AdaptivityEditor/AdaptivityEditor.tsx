@@ -97,7 +97,6 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
       activityClone.authoring.rules = rulesClone;
       dispatch(saveActivity({ activity: activityClone }));
-      dispatch(upsertActivity({ activity: activityClone }));
     }
   };
 

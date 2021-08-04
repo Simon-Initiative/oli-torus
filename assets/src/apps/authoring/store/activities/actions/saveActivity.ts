@@ -1,7 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityUpdate, edit } from 'data/persistence/activity';
-import { ActivitiesSlice, IActivity } from '../../../../delivery/store/features/activities/slice';
+import {
+  ActivitiesSlice,
+  IActivity,
+  upsertActivity,
+} from '../../../../delivery/store/features/activities/slice';
 import { acquireEditingLock, releaseEditingLock } from '../../app/actions/locking';
 import { selectProjectSlug } from '../../app/slice';
 import { selectResourceId } from '../../page/slice';
@@ -30,6 +34,7 @@ export const saveActivity = createAsyncThunk(
     );
     console.log('EDIT SAVE RESULTS', { editResults });
     await dispatch(releaseEditingLock());
+    await dispatch(upsertActivity({ activity }));
     return;
   },
 );

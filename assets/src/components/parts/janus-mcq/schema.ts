@@ -88,7 +88,18 @@ export const schema = {
     type: 'array',
     description: 'list of items in the MCQ',
     items: {
-      $ref: '#/definitions/mcqItem',
+      type: 'object',
+      properties: {
+        scoreValue: {
+          type: 'number',
+        },
+        nodes: {
+          type: 'array',
+          items: {
+            $ref: '#/definitions/node',
+          },
+        },
+      },
     },
   },
   enabled: {
@@ -98,6 +109,32 @@ export const schema = {
     description: 'specifies whether MCQ is enabled',
     default: true,
     isVisibleInTrapState: true,
+  },
+  definitions: {
+    node: {
+      type: 'object',
+      properties: {
+        tag: {
+          type: 'string',
+          description: "should be an html tag, exception made for 'text'",
+        },
+        href: { type: 'string' },
+        src: {
+          type: 'string',
+          description: 'should map from either src OR source',
+        },
+        alt: { type: 'string' },
+        width: { type: 'number' },
+        height: { type: 'number' },
+        target: { type: 'string' },
+        style: { type: 'object' },
+        text: { type: 'string', format: 'textarea' },
+        children: {
+          type: 'array',
+          items: { $ref: '#/definitions/node' },
+        },
+      },
+    },
   },
 };
 

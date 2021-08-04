@@ -16,8 +16,8 @@ defmodule OliWeb.Common.Table.SortableTable do
 
   def render(assigns) do
     ~L"""
-    <table class="table table-hover table-bordered table-sm">
-      <thead class="thead-dark">
+    <table class="table table-striped table-bordered table-hover">
+      <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             <%= th(assigns, column_spec, @model.sort_by_spec, @model.sort_order, @model.event_suffix) %>

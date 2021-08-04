@@ -4,8 +4,8 @@
  * These along with any bootstrap variables can be overridden by a specific theme.
  * When creating a new variable, make sure you use !default so it can be overridden.
  **/
-@import '../../node_modules/bootstrap/scss/_functions.scss';
-@import '../../node_modules/bootstrap/scss/_variables.scss';
+@import "../../node_modules/bootstrap/scss/_functions.scss";
+@import "../../node_modules/bootstrap/scss/_variables.scss";
 
 $remove: $danger !default;
 $add: darken($primary, 10%) !default;
@@ -14,7 +14,7 @@ $selection: $primary !default;
 $hover: darken($primary, 10%) !default;
 $active: darken($primary, 15%) !default;
 
-$workspace-header-bg: $white !default;
+$workspace-header-bg: #f5f8fb !default;
 $workspace-sidebar-bg: #e3e7ec !default;
 $workspace-sidebar-link-color: $gray-800 !default;
 $workspace-bg: $white !default;
@@ -22,7 +22,7 @@ $workspace-logo-bg: #f5f8fb !default;
 $workspace-breadcrumb-bg: $workspace-logo-bg !default;
 
 $code-color: rgba(0, 0, 0, 0.84) !default;
-$font-family-monospace: 'Source Code Pro', 'Courier New', Courier, monospace !default;
+$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
 
 // Master z-index list
 // Because of the inherent global nature of z-index, all z-indexes used should be defined and

@@ -32,7 +32,7 @@ defmodule OliWeb.Features.FeaturesLive do
     <div class="container">
       <div class="row">
         <div class="col-12">
-          <p class="text-secondary mb-3">
+          <p class="mb-3">
             Change the status of system-wide feature flags
           </p>
         </div>
