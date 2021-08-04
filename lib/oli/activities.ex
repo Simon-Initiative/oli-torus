@@ -157,6 +157,13 @@ defmodule Oli.Activities do
     Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
+  def advanced_activities(project) do
+    project
+    |> activities_for_project()
+    |> Enum.filter(& !&1.global)
+    |> Enum.sort_by(& &1.title)
+  end
+
   # TODO only get needed for section... hide authoring sometimes
   def activities_for_section() do
     Enum.reduce(list_activity_registrations(), [], fn a, m ->
