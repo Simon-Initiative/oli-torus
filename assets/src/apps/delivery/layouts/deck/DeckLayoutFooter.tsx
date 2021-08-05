@@ -266,7 +266,9 @@ const DeckLayoutFooter: React.FC = () => {
     }
 
     // after any mutations applied, and just in case
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
 
     if (hasFeedback) {
       dispatch(

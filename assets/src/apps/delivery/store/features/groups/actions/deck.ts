@@ -166,7 +166,9 @@ export const initializeActivity = createAsyncThunk(
       currentState,
       score: sessionState['session.tutorialScore'],
     }); */
-    thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
+    const tutScore = sessionState['session.tutorialScore'] || 0;
+    const curScore = sessionState['session.currentQuestionScore'] || 0;
+    thunkApi.dispatch(setScore({ score: tutScore + curScore }));
 
     // optimistically write to redux
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
