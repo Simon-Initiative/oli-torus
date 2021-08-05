@@ -11,7 +11,10 @@ defmodule Oli.Accounts do
       [%User{}, ...]
   """
   def list_users do
-    Repo.all(User)
+    from(u in User,
+      where: u.guest == false
+    )
+    |> Repo.all()
   end
 
   @doc """
