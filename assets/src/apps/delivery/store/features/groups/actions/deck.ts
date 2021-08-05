@@ -134,24 +134,6 @@ export const initializeActivity = createAsyncThunk(
       sessionOps.push(targetVisitTimeStampOp);
     }
 
-    // Need to clear out snapshot for the current activity before we send the init trap state.
-    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
-    // some screens go in loop
-    // Don't do anything id enableHistory is ON
-    if (!enableHistory && currentActivityTree) {
-      // this is firing after some initial part saves and wiping out what we have just set
-      // maybe we don't need to write the local versions ever?? instead just whenever anything
-      // is asking for it we can just give the localized snapshot?
-      const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
-        (key: string) =>
-          key.indexOf('stage.') === 0 || key.indexOf(`${currentSequenceId}|stage.`) === 0,
-      );
-      if (idsToBeRemoved.length) {
-        console.log('REMOVING STATE VALUES: ', idsToBeRemoved);
-        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
-      }
-    }
-
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
