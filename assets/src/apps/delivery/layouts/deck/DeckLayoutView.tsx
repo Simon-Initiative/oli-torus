@@ -480,7 +480,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       value: 0,
     };
     bulkApplyState([tutorialScoreOp, currentScoreOp], defaultGlobalEnv);
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
     // we shouldn't have to send this to the server, it should already be calculated there
   }, [isEnd]);
 
