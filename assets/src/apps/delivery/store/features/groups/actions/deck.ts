@@ -143,7 +143,8 @@ export const initializeActivity = createAsyncThunk(
       // maybe we don't need to write the local versions ever?? instead just whenever anything
       // is asking for it we can just give the localized snapshot?
       const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
-        (key: string) => key.indexOf('stage.') === 0,
+        (key: string) =>
+          key.indexOf('stage.') === 0 || key.indexOf(`${currentSequenceId}|stage.`) === 0,
       );
       if (idsToBeRemoved.length) {
         console.log('REMOVING STATE VALUES: ', idsToBeRemoved);

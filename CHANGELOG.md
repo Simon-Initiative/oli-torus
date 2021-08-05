@@ -5,8 +5,12 @@
 ### Bug Fixes
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
+- Fix an issue where mod key changes current selection
+- Standardize padding and headers across all pages
 
 ### Enhancements
+
+- Redesign overview page, change language
 
 ## 0.12.7 (2021-08-02)
 

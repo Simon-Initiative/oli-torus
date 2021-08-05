@@ -29,9 +29,6 @@ import { create } from 'data/persistence/objective';
 import { Undoable as ActivityUndoable } from 'components/activities/types';
 import {
   registerUnload,
-  registerKeydown,
-  registerKeyup,
-  registerWindowBlur,
   unregisterUnload,
   unregisterKeydown,
   unregisterKeyup,
@@ -67,7 +64,6 @@ type ResourceEditorState = {
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
-  metaModifier: boolean;
   undoables: Undoables;
 };
 
@@ -146,7 +142,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
-      metaModifier: false,
       undoables: empty(),
     };
 
@@ -168,7 +163,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
         // eslint-disable-next-line
-        () => {},
+        () => { },
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -177,9 +172,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         if (editMode) {
           this.initActivityPersistence();
           this.windowUnloadListener = registerUnload(this.persistence);
-          this.keydownListener = registerKeydown(this);
-          this.keyupListener = registerKeyup(this);
-          this.windowBlurListener = registerWindowBlur(this);
         } else if (this.persistence.getLockResult().type === 'not_acquired') {
           const notAcquired: NotAcquired = this.persistence.getLockResult() as NotAcquired;
           this.editingLockedMessage(notAcquired.user);
@@ -191,9 +183,6 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.destroy();
 
     unregisterUnload(this.windowUnloadListener);
-    unregisterKeydown(this.keydownListener);
-    unregisterKeyup(this.keyupListener);
-    unregisterWindowBlur(this.windowBlurListener);
   }
 
   initActivityPersistence() {
@@ -208,7 +197,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => {},
+          () => { },
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -412,7 +401,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => {},
+          () => { },
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -490,7 +479,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 }
 
 // eslint-disable-next-line
-interface StateProps {}
+interface StateProps { }
 
 interface DispatchProps {
   onLoadPreferences: () => void;

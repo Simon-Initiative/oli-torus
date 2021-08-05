@@ -445,7 +445,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   useEffect(() => {
     // watch for a new choice then
     // trigger item selection handler
-    if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0) {
+    if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0 && selectedChoice !== -1) {
       /* console.log('handling MCQ single select'); */
       handleItemSelection(
         {

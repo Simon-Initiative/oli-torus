@@ -164,6 +164,32 @@ const DeckLayoutFooter: React.FC = () => {
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
 
+  const processResults = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    return actionsByType;
+  };
+
+  const checkIfFirstEventHasNavigation = (event: any) => {
+    let isDifferentNavigationExist = false;
+    const { actions } = event.params;
+    actions.forEach((action: any) => {
+      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+        isDifferentNavigationExist = true;
+      }
+    });
+    return isDifferentNavigationExist;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -174,24 +200,21 @@ const DeckLayoutFooter: React.FC = () => {
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
-
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
-      eventsToProcess = lastCheckResults.results;
+      //if the first event has a navigation to different screen
+      // we ignore the rest of the events ang fire this one.
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
+        lastCheckResults.results[0],
+      );
+      if (doesFirstEventHasNavigation) {
+        eventsToProcess = [lastCheckResults.results[0]];
+      } else {
+        eventsToProcess = lastCheckResults.results;
+      }
     }
 
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-
-    eventsToProcess.forEach((evt) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
+    const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;

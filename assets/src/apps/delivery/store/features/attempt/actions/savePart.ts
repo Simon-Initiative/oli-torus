@@ -46,7 +46,7 @@ export const savePartState = createAsyncThunk(
 
     const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
-    console.log('SAVE PART SCRIPT', { assignScript, scriptResult });
+    /*  console.log('SAVE PART SCRIPT', { assignScript, scriptResult }); */
 
     // in preview mode we don't write to server, so we're done
     if (isPreviewMode) {

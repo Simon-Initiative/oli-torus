@@ -15,7 +15,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
-  const PANEL_SIDE_WIDTH = '250px';
+  const PANEL_SIDE_WIDTH = '270px';
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
@@ -27,7 +27,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       } d-flex aa-panel-section-title-bar`}
       style={{
         alignItems: 'center',
-        left: panelState['left'] ? '315px' : '65px', // 315 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
+        left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
         right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
       }}
     >

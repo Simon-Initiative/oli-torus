@@ -19,6 +19,10 @@
     <div class="dropdown-divider"></div>
 
     <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive) %>">Feature Flags</a>
-    <a class="dropdown-item" href="<%= Routes.live_dashboard_path(OliWeb.Endpoint, :home) %>" target="_blank">Dashboard</a>
+    <a class="dropdown-item" href="<%= Routes.live_dashboard_path(OliWeb.Endpoint, :home) %>" target="_blank">
+      <div>Dashboard</div>
+      <div class="flex-grow-1"></div>
+      <i class="las la-external-link-alt align-self-center ml-1"></i>
+    </a>
   </div>
 </div>

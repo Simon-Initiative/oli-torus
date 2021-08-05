@@ -9,11 +9,11 @@
   });
 </script>
 
-<div class="publish container mt-5">
+<div class="publish container">
 
   <div class="row">
     <div class="col-12">
-      <p class="text-secondary">When you are satisfied with your course, publish it to give students and instructors access to the latest changes.</p>
+      <p>When you are satisfied with your course, publish it to give students and instructors access to the latest changes.</p>
 
       <%= case {@has_changes, @active_publication_changes} do %>
         <% {true, nil} -> %>

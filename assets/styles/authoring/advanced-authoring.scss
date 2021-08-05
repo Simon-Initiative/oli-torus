@@ -1,5 +1,5 @@
 $nav-height: 65px;
-$panel-side-width: 250px;
+$panel-side-width: 270px;
 $panel-bg-color-light: #f5f6f7;
 $panel-bg-color-dark: $gray-700;
 $panel-font-color-light: #333;
@@ -214,12 +214,28 @@ $panel-section-title-bar-color: #e8ebed;
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
 
+        .col-4.inner input[type='number'] {
+          padding: 0.375rem 0.45rem;
+        }
         .accordion {
           margin: -10px -15px auto -15px;
 
           .collapse.show{
             margin-top: 10px;
           }
+        }
+      }
+    }
+    .component-tab{
+      .collapse > .col-12 {
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+
+        > .form-group {
+          padding-left: 15px;
+          padding-right: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid $ui-border-color;
         }
       }
     }
