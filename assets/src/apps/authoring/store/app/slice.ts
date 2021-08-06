@@ -2,6 +2,30 @@ import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/tool
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
+interface PartComponentRegistration {
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  icon: string;
+  enabled: boolean;
+  global: boolean;
+  delivery_element: string;
+  delivery_script: string;
+  authoring_element: string;
+  authoring_script: string;
+}
+
+interface ActivityRegistration {
+  id: string;
+  slug: string;
+  title: string;
+  enabled: boolean;
+  global: boolean;
+  delivery_element: string;
+  authoring_element: string;
+}
+
 export interface AppState {
   paths: Record<string, string> | null;
   isAdmin: boolean;
@@ -14,8 +38,8 @@ export interface AppState {
   visible: boolean; // temp full screen rocket
   rightPanelActiveTab: RightPanelTabs;
   currentRule: any;
-  partComponentTypes: any[];
-  activityTypes: any[];
+  partComponentTypes: PartComponentRegistration[];
+  activityTypes: ActivityRegistration[];
 }
 
 const initialState: AppState = {

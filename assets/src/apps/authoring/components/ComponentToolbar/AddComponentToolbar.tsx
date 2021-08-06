@@ -112,12 +112,12 @@ const AddComponentToolbar: React.FC = () => {
           })
           .map((part) => (
             <OverlayTrigger
-              key={part.partComponentType}
+              key={part.slug}
               placement="bottom"
               delay={{ show: 150, hide: 150 }}
               overlay={
                 <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  {part.title}
+                  {part.title}<br />{part.description}
                 </Tooltip>
               }
             >
@@ -158,13 +158,16 @@ const AddComponentToolbar: React.FC = () => {
               <ListGroup className="aa-parts-list">
                 {availablePartComponents
                   .filter((part) => !frequentlyUsed.includes(part.slug))
-                  .map((part: any) => (
+                  .map((part) => (
                     <ListGroup.Item
                       action
                       onClick={() => handleAddComponent(part.slug)}
                       key={part.slug}
                     >
-                      <img title={part.type} src={`${imgsPath}/icons/${part.icon}`}></img>
+                      <img
+                        title={part.description}
+                        src={`${imgsPath}/icons/${part.icon}`}
+                      ></img>
                       <span>{part.title}</span>
                     </ListGroup.Item>
                   ))}
