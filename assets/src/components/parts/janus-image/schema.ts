@@ -1,3 +1,5 @@
+import { CreationContext } from "../types/parts";
+
 export const schema = {
   customCssClass: {
     title: 'Custom CSS Class',
@@ -41,17 +43,6 @@ export const transformSchemaToModel = (schema: any) => {
   // nothing to do for now
   return schema;
 };
-
-interface CreationContext {
-  transform?: {
-    x: number;
-    y: number;
-    z: number;
-    width: number;
-    height: number;
-  };
-  [key: string]: any;
-}
 
 export const createSchema = (context?: CreationContext) => {
   // maybe use the context to know the path of the images?

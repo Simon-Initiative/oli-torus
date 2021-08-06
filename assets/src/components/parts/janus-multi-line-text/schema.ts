@@ -18,22 +18,6 @@ export const schema = {
     type: 'number',
     default: 12,
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -68,3 +52,12 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  customCssClass: '',
+  showCharacterCount: true,
+  showLabel: true,
+  label: '',
+  prompt: '',
+});

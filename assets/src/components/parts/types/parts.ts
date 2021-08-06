@@ -32,3 +32,14 @@ export interface PartComponentProps<T extends CustomProperties> {
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
 }
+
+export interface CreationContext {
+  transform?: {
+    x: number;
+    y: number;
+    z: number;
+    width: number;
+    height: number;
+  };
+  [key: string]: any;
+}

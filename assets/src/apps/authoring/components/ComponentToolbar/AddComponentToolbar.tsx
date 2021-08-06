@@ -5,8 +5,8 @@ import {
   selectCurrentActivityTree,
   selectSequence,
 } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { Fragment, useCallback } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import React, { Fragment, useCallback, useState } from 'react';
+import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
@@ -16,6 +16,9 @@ const AddComponentToolbar: React.FC = () => {
   const paths = useSelector(selectPaths);
   const imgsPath = paths?.images || '';
 
+  const [showPartsMenu, setShowPartsMenu] = useState(false);
+  const [partsMenuTarget, setPartsMenuTarget] = useState(null);
+
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
@@ -24,6 +27,7 @@ const AddComponentToolbar: React.FC = () => {
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
+      setShowPartsMenu(false);
       if (!availablePartComponents || !currentActivityTree) {
         return;
       }
@@ -91,11 +95,21 @@ const AddComponentToolbar: React.FC = () => {
     'janus_capi_iframe',
   ];
 
+  const handlePartMenuButtonClick = (event: any) => {
+    setShowPartsMenu(!showPartsMenu);
+    setPartsMenuTarget(event.target);
+  };
+
   return (
     <Fragment>
       <div className="btn-group pr-3 border-right align-items-center" role="group">
         {availablePartComponents
           .filter((part) => frequentlyUsed.includes(part.slug))
+          .sort((a, b) => {
+            const aIndex = frequentlyUsed.indexOf(a.slug);
+            const bIndex = frequentlyUsed.indexOf(b.slug);
+            return aIndex - bIndex;
+          })
           .map((part) => (
             <OverlayTrigger
               key={part.partComponentType}
@@ -126,11 +140,38 @@ const AddComponentToolbar: React.FC = () => {
           }
         >
           <span>
-            <button className="px-2 btn btn-link" disabled>
+            <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
               <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
             </button>
           </span>
         </OverlayTrigger>
+        <Overlay
+          show={showPartsMenu}
+          target={partsMenuTarget}
+          placement="bottom"
+          container={document.getElementById('advanced-authoring')}
+          containerPadding={20}
+        >
+          <Popover id="search-popover">
+            <Popover.Title as="h3">Add Other</Popover.Title>
+            <Popover.Content>
+              <ListGroup className="aa-parts-list">
+                {availablePartComponents
+                  .filter((part) => !frequentlyUsed.includes(part.slug))
+                  .map((part: any) => (
+                    <ListGroup.Item
+                      action
+                      onClick={() => handleAddComponent(part.slug)}
+                      key={part.slug}
+                    >
+                      <img title={part.type} src={`${imgsPath}/icons/${part.icon}`}></img>
+                      <span>{part.title}</span>
+                    </ListGroup.Item>
+                  ))}
+              </ListGroup>
+            </Popover.Content>
+          </Popover>
+        </Overlay>
       </div>
     </Fragment>
   );
