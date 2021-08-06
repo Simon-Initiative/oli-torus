@@ -18,8 +18,6 @@ defmodule Oli.PartComponents.Manifest do
           "id" => id,
           "friendlyName" => friendlyName,
           "description" => description,
-          "icon" => icon,
-          "author" => author,
           "delivery" => delivery,
           "authoring" => authoring
         } = json
