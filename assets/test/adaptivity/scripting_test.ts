@@ -191,6 +191,45 @@ describe('Scripting Interface', () => {
       expect(value).toBe(42);
     });
 
+    it('should assign CSS values as strings', () => {
+      const environment = new Environment();
+      const varValue =
+        'let a = body[data-new-gr-c-s-check-loaded] #scene_Student{border-radius:3px;border:solid 1px #484848 !important;background-color: #161616;padding: 10px;box-sizing: border-box;}.columns-container {padding: 0;}.columns-container .items-column .item:last-child {margin-bottom: 0;}.container {overflow: hidden;}.items-column {height: 100%;}.items-column .items-container {height: 100%;display: flex;flex-direction: column;justify-content: space-between;}.columns-container .items-column .item {border: solid 0.5px #FFC627;background-color: black;padding: 10px;box-sizing: border-box;height: 40px;margin-bottom: 5px;height: 75px;}.item.link-hover {padding: 10px;}.columns-container .items-column .item .item-label {color: #ffffff;height: auto;position: relative;top: 50%;transform: translateY(calc(-50% + 4px));line-height:initial;}.columns-container .left-column .item {border-radius: 4px 100px 100px 4px;margin-left: 0;}.columns-container .left-column .item .item-label:after {content: "";width: 20px;height: 20px;box-sizing: border-box;position: absolute;background-color: transparent;border: solid 1px #FFC627;border-radius: 100px;margin: 0;padding: 0;top: 50%;transform: translateY(-50%);right: 5px;}.columns-container .right-column .item {border-radius: 100px 4px 4px 100px;margin-right: 0;}.columns-container .right-column .item .item-label:after {content: "";width: 20px;height: 20px;box-sizing: border-box;position: absolute;background-color: transparent;border: solid 1px #FFC627;border-radius: 100px;margin: 0;padding: 0;top: 50%;transform: translateY(-50%);left: 5px;}.columns-container .items-column .item.link-hover {border: solid 1px #FFC627;background-color: #222;padding: 0;box-sizing: border-box;box-shadow: none;}.columns-container .items-column .item[linked] {border: solid 2px #FFC627;background-color: #291b30;box-shadow: none;}.columns-container .items-column .item.preview-source-hover, .columns-container .items-column .item.preview-target-hover {border: solid 3px #ffcc00;background-color: #291b30;box-shadow: none;}.columns-container .items-column .item .remove-links:before {content: "X";margin-left: auto;margin-right: auto;position: relative;}.line-renderer line {stroke: #FFC627;stroke-width: 2px;}.line-renderer line.pointer {stroke: #ffcc00;stroke-width: 2px;}';
+      const script = getAssignScript({
+        x: {
+          key: 'Custom CSS',
+          path: 'stage.x',
+          value: varValue,
+        },
+      });
+      const result = evalScript(script, environment);
+      const value = getValue('stage.x', environment);
+      expect(result.result).toBe(null);
+      expect(value).toBe(varValue);
+    });
+
+    it('should assign variable expression value and calculate the expression', () => {
+      const environment = new Environment();
+      evalScript(
+        'let {stage.vft.Score} = 1;let {stage.vft.Map complete}=0;let {session.tutorialScore}=0',
+        environment,
+      );
+      const varValue =
+        '{stage.vft.Score}*70 + {stage.vft.Map complete}*100 - {session.tutorialScore}';
+      const script = getAssignScript({
+        x: {
+          key: 'score',
+          path: 'stage.x',
+          value: varValue,
+        },
+      });
+      const result = evalScript(script, environment);
+      const value = getValue('stage.x', environment);
+      expect(result.result).toBe(null);
+      expect(script).toBe(`let {stage.x} = ${varValue};`);
+      expect(value).toBe(70);
+    });
+
     it('should return an assignment script from a capi-like variable', () => {
       const environment = new Environment();
       const script = getAssignScript({ x: { key: 'x', path: 'stage.x', value: 42 } });
