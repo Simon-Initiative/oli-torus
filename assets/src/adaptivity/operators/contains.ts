@@ -1,4 +1,4 @@
-import { isString } from 'utils/common';
+import { isString, parseArray } from 'utils/common';
 
 export const parseNumString = (item: string): string | number => {
   // check if items are strings or numbers and converts if number
@@ -28,16 +28,9 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
     if (!value.includes(`[`) && !value.includes(']')) {
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
-    // if value = [March,June,September,December] and we do value.split(',') then the resulting array is
-    //["[March","June","September","December]""] due to this the first and the last values never matched
-    //hence checking if first and last characters are [] and removing them.
-    if (value[0] === '[' && value[value.length - 1] === ']') {
-      value = value.slice(1, -1);
-    }
-
+    value = parseArray(value);
     return (
       value
-        .split(',')
         // We are parseNumString for the cases where factValue contains numbers but the values contain strings
         .map((item: string) => parseNumString(item))
         // check if value is found in factValue array
