@@ -303,6 +303,13 @@ describe('Operators', () => {
     });
   });
 
+  describe('ContainsanyOf Operators', () => {
+    it('should check containsany Of', () => {
+      expect(containsAnyOfOperator('[March,June,September,December]', 'December')).toEqual(true);
+      expect(containsAnyOfOperator('[March,June,September,December]', 'winter')).toEqual(false);
+    });
+  });
+
   describe('Parse Array String', () => {
     expect(parseArrayString(['1', '2', '3'])).toEqual([1, 2, 3]);
     expect(parseArrayString(['1', 2, '3'])).toEqual([1, 2, 3]);

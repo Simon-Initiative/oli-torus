@@ -28,6 +28,13 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
     if (!value.includes(`[`) && !value.includes(']')) {
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
+    // if value = [March,June,September,December] and we do value.split(',') then the resulting array is
+    //["[March","June","September","December]""] due to this the first and the last values never matched
+    //hence checking if first and last characters are [] and removing them.
+    if (value[0] === '[' && value[value.length - 1] === ']') {
+      value = value.slice(1, -1);
+    }
+
     return (
       value
         .split(',')
