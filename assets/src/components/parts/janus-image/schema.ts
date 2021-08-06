@@ -54,14 +54,10 @@ interface CreationContext {
 }
 
 export const createSchema = (context?: CreationContext) => {
-  // placeholder image 150px by 150px
-  let src = 'https://via.placeholder.com/150';
+  // maybe use the context to know the path of the images?
+  // or bundle data url?
+  const src = '/images/placeholder-image.svg';
 
-  if (context?.transform) {
-    if (context.transform.width && context.transform.height) {
-      src = `https://via.placeholder.com/${context.transform.width}x${context.transform.height}`;
-    }
-  }
   return {
     customCssClass: '',
     src,

@@ -161,7 +161,7 @@ const RightMenu: React.FC<any> = () => {
       (properties, partInstance, origActivity, origId) => {
         let modelChanges = properties;
         if (partInstance && partInstance.transformSchemaToModel) {
-          modelChanges.custom = partInstance.transformSchemaToModel(properties);
+          modelChanges.custom = partInstance.transformSchemaToModel(properties.custom);
         }
         modelChanges = transformPartSchemaToModel(modelChanges);
         console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
