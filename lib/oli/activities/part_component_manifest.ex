@@ -5,6 +5,8 @@ defmodule Oli.PartComponents.Manifest do
     :id,
     :friendlyName,
     :description,
+    :icon,
+    :author,
     :delivery,
     :authoring,
     :allowClientEvaluation,
@@ -16,6 +18,8 @@ defmodule Oli.PartComponents.Manifest do
           "id" => id,
           "friendlyName" => friendlyName,
           "description" => description,
+          "icon" => icon,
+          "author" => author,
           "delivery" => delivery,
           "authoring" => authoring
         } = json
@@ -24,6 +28,8 @@ defmodule Oli.PartComponents.Manifest do
       id: id,
       friendlyName: friendlyName,
       description: description,
+      icon: value_or(json["icon"], "icon-part-generic.svg"),
+      author: value_or(json["author"], "Unknown"),
       delivery: Oli.Activities.ModeSpecification.parse(delivery),
       authoring: Oli.Activities.ModeSpecification.parse(authoring),
       allowClientEvaluation: value_or(json["allowClientEvaluation"], false),

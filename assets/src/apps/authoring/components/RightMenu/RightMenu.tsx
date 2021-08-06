@@ -215,7 +215,7 @@ const RightMenu: React.FC<any> = () => {
 
         setCurrentPartInstance(instance);
 
-        let data = partDef;
+        let data = clone(partDef);
         if (instance.transformModelToSchema) {
           // because the part schema below only knows about the "custom" block
           data.custom = instance.transformModelToSchema(partDef.custom);

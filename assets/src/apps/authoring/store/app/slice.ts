@@ -14,6 +14,8 @@ export interface AppState {
   visible: boolean; // temp full screen rocket
   rightPanelActiveTab: RightPanelTabs;
   currentRule: any;
+  partComponentTypes: any[];
+  activityTypes: any[];
 }
 
 const initialState: AppState = {
@@ -28,6 +30,8 @@ const initialState: AppState = {
   visible: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
   currentRule: undefined,
+  partComponentTypes: [],
+  activityTypes: [],
 };
 
 export interface AppConfig {
@@ -35,6 +39,8 @@ export interface AppConfig {
   isAdmin?: boolean;
   projectSlug?: string;
   revisionSlug?: string;
+  partComponentTypes?: any[];
+  activityTypes?: any[];
 }
 
 const slice: Slice<AppState> = createSlice({
@@ -46,6 +52,9 @@ const slice: Slice<AppState> = createSlice({
       state.isAdmin = !!action.payload.isAdmin;
       state.projectSlug = action.payload.projectSlug || initialState.projectSlug;
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
+      state.partComponentTypes =
+        action.payload.partComponentTypes || initialState.partComponentTypes;
+      state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
     },
     setPanelState(
       state,
@@ -113,5 +122,15 @@ export const selectCurrentRule = createSelector(
 );
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
+
+export const selectPartComponentTypes = createSelector(
+  selectState,
+  (state: AppState) => state.partComponentTypes,
+);
+
+export const selectActivityTypes = createSelector(
+  selectState,
+  (state: AppState) => state.activityTypes,
+);
 
 export default slice.reducer;
