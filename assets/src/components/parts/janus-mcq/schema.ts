@@ -33,7 +33,7 @@ export const schema = {
     default: 'verticalLayout',
   },
   verticalGap: {
-    title: 'Verticle Gap',
+    title: 'Vertical Gap',
     type: 'number',
   },
   maxManualGrade: {
@@ -139,3 +139,43 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => {
+  const createSimpleOption = (index: number, score = 1) => ({
+    scoreValue: score,
+    nodes: [
+      {
+        tag: 'p',
+        children: [
+          {
+            tag: 'span',
+            style: {},
+            children: [
+              {
+                tag: 'text',
+                text: `Option ${index}`,
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  return {
+    overrideHeight: false,
+    customCssClass: '',
+    layoutType: 'verticalLayout',
+    verticalGap: 0,
+    maxManualGrade: 0,
+    showOnAnswersReport: false,
+    requireManualGrading: false,
+    showLabel: true,
+    multipleSelection: false,
+    randomize: false,
+    showNumbering: false,
+    enabled: true,
+    mcqItems: [1, 2, 3].map(createSimpleOption),
+  };
+};

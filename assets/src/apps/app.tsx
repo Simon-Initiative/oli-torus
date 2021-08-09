@@ -25,10 +25,17 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
     } catch (err) {
       // should have been json, error handling
     }
+    let parsedPartComponentTypes: any = [];
+    try {
+      parsedPartComponentTypes = JSON.parse(b64DecodeUnicode(params.partComponentTypes));
+    } catch (err) {
+      // should have been json, error handling
+    }
     const props = {
       ...params,
       content: parsedContent,
       activityTypes: parsedActivityTypes,
+      partComponentTypes: parsedPartComponentTypes,
     };
 
     console.log('MOUNT UP', props);

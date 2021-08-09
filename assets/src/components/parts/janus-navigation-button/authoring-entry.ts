@@ -6,7 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import NavigationButton from './NavigationButton';
-import { schema, uiSchema } from './schema';
+import { createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -17,5 +17,6 @@ register(NavigationButton, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    createSchema,
   },
 });

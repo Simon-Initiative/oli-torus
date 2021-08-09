@@ -77,3 +77,12 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  customCssClass: '',
+  showLabel: true,
+  label: 'Choose',
+  prompt: '',
+  optionLabels: ['Option 1', 'Option 2'],
+  enabled: true,
+});
