@@ -52,7 +52,6 @@ defmodule OliWeb.Accounts.AccountsLive do
         },
         %ColumnSpec{
           name: :actions,
-          label: "",
           render_fn: &__MODULE__.render_author_actions_column/3
         }
       ],
@@ -76,14 +75,14 @@ defmodule OliWeb.Accounts.AccountsLive do
           render_fn: &__MODULE__.render_email_column/3
         },
         %ColumnSpec{
+          name: :independent_learner,
+          label: "Account Type",
+          render_fn: &__MODULE__.render_learner_column/3
+        },
+        %ColumnSpec{
           name: :author,
           label: "Linked Author",
           render_fn: &__MODULE__.render_author_column/3
-        },
-        %ColumnSpec{
-          name: :independent_learner,
-          label: "Learner",
-          render_fn: &__MODULE__.render_learner_column/3
         },
         %ColumnSpec{
           name: :actions,
@@ -162,6 +161,8 @@ defmodule OliWeb.Accounts.AccountsLive do
     resend_confirmation_link_path =
       Routes.pow_path(OliWeb.Endpoint, :resend_user_confirmation_link)
 
+    reset_password_link_path = Routes.pow_path(OliWeb.Endpoint, :send_user_password_reset_link)
+
     if independent_learner do
       ~L"""
         <div class="dropdown">
@@ -179,7 +180,10 @@ defmodule OliWeb.Accounts.AccountsLive do
               <div class="dropdown-divider"></div>
             <% end %>
 
-            <button class="dropdown-item">Send password reset</button>
+            <form method="post" action="<%= reset_password_link_path %>">
+              <input type="hidden" name="id" value="<%= id %>" />
+              <button type="submit" class="dropdown-item">Send password reset link</button>
+            </form>
 
             <div class="dropdown-divider"></div>
 
@@ -217,6 +221,8 @@ defmodule OliWeb.Accounts.AccountsLive do
     resend_confirmation_link_path =
       Routes.pow_path(OliWeb.Endpoint, :resend_author_confirmation_link)
 
+    reset_password_link_path = Routes.pow_path(OliWeb.Endpoint, :send_author_password_reset_link)
+
     if row != assigns.model.author and
          row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do
       ~L"""
@@ -235,7 +241,11 @@ defmodule OliWeb.Accounts.AccountsLive do
               <div class="dropdown-divider"></div>
             <% end %>
 
-            <button class="dropdown-item">Send password reset</button>
+            <form method="post" action="<%= reset_password_link_path %>">
+              <input type="hidden" name="id" value="<%= id %>" />
+              <button type="submit" class="dropdown-item">Send password reset link</button>
+            </form>
+
 
             <div class="dropdown-divider"></div>
 

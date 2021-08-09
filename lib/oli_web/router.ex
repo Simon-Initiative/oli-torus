@@ -615,6 +615,14 @@ defmodule OliWeb.Router do
       PowController,
       :resend_author_confirmation_link
     )
+
+    post("/accounts/send_user_password_reset_link", PowController, :send_user_password_reset_link)
+
+    post(
+      "/accounts/send_author_password_reset_link",
+      PowController,
+      :send_author_password_reset_link
+    )
   end
 
   scope "/project", OliWeb do
