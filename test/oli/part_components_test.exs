@@ -16,11 +16,19 @@ defmodule Oli.PartComponentsTest do
       project_parts = PartComponents.part_components_for_project(project)
 
       assert Enum.member?(project_parts, %{
-               enabled: true,
-               global: false,
-               slug: "test_part_component",
-               title: "Test Part Component"
-             })
+                enabled: true,
+                global: false,
+                authoring_script: "test_part_component_authoring.js",
+                authoring_element: "test-part-component-authoring",
+                delivery_script: "test_part_component_delivery.js",
+                delivery_element: "test-part-component-delivery",
+                description: "test part component for testing",
+                title: "Test Part Component",
+                icon: "nothing",
+                author: "Test McTesterson",
+                slug: "test_part_component",
+                title: "Test Part Component"
+              })
     end
 
     test "removing a custom registered part component from a project", %{project: project} do
@@ -31,11 +39,19 @@ defmodule Oli.PartComponentsTest do
       project_parts = PartComponents.part_components_for_project(project)
 
       assert Enum.member?(project_parts, %{
-               enabled: false,
-               global: false,
-               slug: "test_part_component",
-               title: "Test Part Component"
-             })
+                enabled: false,
+                global: false,
+                authoring_script: "test_part_component_authoring.js",
+                authoring_element: "test-part-component-authoring",
+                delivery_script: "test_part_component_delivery.js",
+                delivery_element: "test-part-component-delivery",
+                description: "test part component for testing",
+                title: "Test Part Component",
+                icon: "nothing",
+                author: "Test McTesterson",
+                slug: "test_part_component",
+                title: "Test Part Component"
+              })
     end
   end
 end

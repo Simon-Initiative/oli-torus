@@ -13,27 +13,6 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   description: {
     title: 'Description',
     type: 'string',
@@ -60,13 +39,6 @@ export const schema = {
     default: false,
     isVisibleInTrapState: true,
     format: 'checkbox',
-  },
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-    options: {
-      hidden: true,
-    },
   },
   defaultURL: {
     title: 'Default URL',
@@ -119,3 +91,69 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  customCssClass: '',
+  description: '',
+  questionFlow: 'LRTB',
+  showLabel: true,
+  openByDefault: false,
+  defaultURL: '/repo/icons/question_mark_orange_32x32.png',
+  iconURL: '',
+  useToggleBehavior: true,
+  isOpen: false,
+  visible: true,
+  popup: {
+    custom: {
+      customCssClass: '',
+      x: 0,
+      y: 0,
+      z: 0,
+      width: 350,
+      height: 350,
+      palette: {
+        backgroundColor: '#ffffff',
+        borderColor: '#ffffff',
+        borderRadius: '0',
+        borderStyle: 'solid',
+        borderWidth: '1px',
+      },
+    },
+    partsLayout: [
+      {
+        id: 'header-text',
+        type: 'janus-text-flow',
+        custom: {
+          x: 10,
+          y: 10,
+          z: 0,
+          width: 100,
+          height: 50,
+          nodes: [
+            {
+              tag: 'p',
+              style: {},
+              children: [
+                {
+                  tag: 'span',
+                  style: {
+                    color: '#000',
+                    fontWeight: 'bold',
+                  },
+                  children: [
+                    {
+                      tag: 'text',
+                      style: {},
+                      text: 'Popup Window Text',
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  },
+});

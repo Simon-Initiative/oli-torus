@@ -1,4 +1,10 @@
 export const schema = {
+  title: {
+    type: 'string',
+  },
+  ariaLabel: {
+    type: 'string',
+  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -40,3 +46,12 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  visible: true,
+  textColor: '#000',
+  transparent: false,
+  title: 'Button',
+  ariaLabel: 'Button',
+});

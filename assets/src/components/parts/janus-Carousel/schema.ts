@@ -1,8 +1,4 @@
 export const schema = {
-  src: {
-    title: 'Source',
-    type: 'string',
-  },
   customCss: {
     title: 'Custom CSS',
     type: 'string',
@@ -20,24 +16,6 @@ export const schema = {
       borderStyle: { type: 'string', title: 'Border Style' },
       borderWidth: { type: 'string', title: 'Border Width' },
     },
-  },
-  showOnAnswersReport: {
-    title: 'Show on Answer Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  mode: {
-    title: 'Mode',
-    type: 'string',
-    enum: ['Config', 'Student'],
-    default: 'Student',
   },
   images: {
     title: 'Images',
@@ -75,3 +53,10 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  customCss: '',
+  cssClasses: '',
+  zoom: true,
+  images: [{ url: '/images/placeholder-image.svg', caption: 'an image at night', alt: 'an image' }],
+});

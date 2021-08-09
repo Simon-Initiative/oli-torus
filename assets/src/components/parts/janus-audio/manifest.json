@@ -1,7 +1,9 @@
 {
   "id": "janus_audio",
   "friendlyName": "Audio",
-  "description": "Displays an audio from a url.",
+  "description": "Plays an audio from a url.",
+  "icon": "icon-part-audio.svg",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-audio",

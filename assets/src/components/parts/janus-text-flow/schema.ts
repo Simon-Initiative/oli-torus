@@ -1,5 +1,6 @@
 import ColorPickerWidget from '../../../apps/authoring/components/PropertyEditor/custom/ColorPickerWidget';
 import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { CreationContext } from '../types/parts';
 
 export const schema = {
   overrideHeight: {
@@ -26,3 +27,31 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = (context?: CreationContext) => {
+  return {
+    overrideWidth: true,
+    overrideHeight: false,
+    customCssClass: '',
+    nodes: [
+      {
+        tag: 'p',
+        style: {},
+        children: [
+          {
+            tag: 'span',
+            style: {},
+            children: [
+              {
+                tag: 'text',
+                style: {},
+                text: 'Static Text',
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+};

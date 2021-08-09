@@ -118,6 +118,9 @@ const KonvaStage: React.FC<KonvaStageProps> = (props) => {
             break;
           case 'janus-text-flow':
             {
+              if (!part.custom?.nodes) {
+                break;
+              }
               let y = 0;
               part.custom.nodes.forEach((node: any) => {
                 const text = textFlowHack(node);
