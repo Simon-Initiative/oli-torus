@@ -1,91 +1,200 @@
 defmodule OliWeb.Accounts.AccountsLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
+  alias Oli.Repo
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Table.{ColumnSpec, SortableTable, SortableTableModel}
   alias OliWeb.Common.Modal
   alias Oli.Accounts.{Author, SystemRole}
   alias Oli.Accounts
   alias OliWeb.Accounts.AccountsModel
+  alias OliWeb.Pow.UserContext
+  alias OliWeb.Pow.AuthorContext
 
-  alias Oli.Repo
+  def mount(_, %{"current_author_id" => current_author_id}, socket) do
+    current_author = Repo.get(Author, current_author_id)
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
-
-    {:ok, authors_model} =
-      SortableTableModel.new(
-        rows: Accounts.list_authors(),
-        column_specs: [
-          %ColumnSpec{name: :given_name, label: "First Name"},
-          %ColumnSpec{name: :family_name, label: "Last Name"},
-          %ColumnSpec{name: :email, label: "Email"},
-          %ColumnSpec{
-            name: :system_role_id,
-            label: "Role",
-            render_fn: &__MODULE__.render_role_column/3
-          }
-        ],
-        event_suffix: "_authors",
-        id_field: :email
-      )
-
-    authors_model = Map.put(authors_model, :author, author)
-
-    {:ok, users_model} =
-      SortableTableModel.new(
-        rows: Accounts.list_users(),
-        column_specs: [
-          %ColumnSpec{name: :given_name, label: "First Name"},
-          %ColumnSpec{name: :family_name, label: "Last Name"},
-          %ColumnSpec{name: :email, label: "Email"},
-          %ColumnSpec{
-            name: :author_id,
-            label: "Author?",
-            render_fn: &__MODULE__.render_author_column/3
-          }
-        ],
-        event_suffix: "_users",
-        id_field: :email
-      )
+    {:ok, authors_model} = load_authors_model(current_author)
+    {:ok, users_model} = load_users_model()
 
     {:ok, model} =
-      AccountsModel.new(users_model: users_model, authors_model: authors_model, author: author)
+      AccountsModel.new(
+        users_model: users_model,
+        authors_model: authors_model,
+        author: current_author
+      )
 
-    {:ok, assign(socket, model: model, title: "Manage Accounts", active: :accounts)}
+    {:ok,
+     assign(socket,
+       model: model,
+       title: "Manage Accounts",
+       active: :accounts,
+       selected_author: nil,
+       selected_user: nil
+     )}
+  end
+
+  def load_authors_model(current_author) do
+    SortableTableModel.new(
+      rows: Accounts.list_authors(),
+      column_specs: [
+        %ColumnSpec{name: :given_name, label: "First Name"},
+        %ColumnSpec{name: :family_name, label: "Last Name"},
+        %ColumnSpec{
+          name: :email,
+          label: "Email",
+          render_fn: &__MODULE__.render_email_column/3
+        },
+        %ColumnSpec{
+          name: :system_role_id,
+          label: "Role",
+          render_fn: &__MODULE__.render_role_column/3
+        },
+        %ColumnSpec{
+          name: :actions,
+          label: "",
+          render_fn: &__MODULE__.render_author_actions_column/3
+        }
+      ],
+      event_suffix: "_authors",
+      id_field: :email
+    )
+    |> then(fn {:ok, authors_model} -> authors_model end)
+    |> Map.put(:author, current_author)
+    |> then(fn authors_model -> {:ok, authors_model} end)
+  end
+
+  def load_users_model() do
+    SortableTableModel.new(
+      rows: Accounts.list_users(),
+      column_specs: [
+        %ColumnSpec{name: :given_name, label: "First Name"},
+        %ColumnSpec{name: :family_name, label: "Last Name"},
+        %ColumnSpec{name: :email, label: "Email"},
+        %ColumnSpec{
+          name: :author_id,
+          label: "Author?",
+          render_fn: &__MODULE__.render_author_column/3
+        }
+      ],
+      event_suffix: "_users",
+      id_field: :email
+    )
+  end
+
+  def render_email_column(
+        assigns,
+        %{email: email, email_confirmed_at: email_confirmed_at, locked_at: locked_at},
+        _
+      ) do
+    checkmark =
+      if email_confirmed_at == nil do
+        ~L"""
+        <span data-toggle="tooltip" data-html="true" title="<b>Confirmation Pending</b> sent to <%= email %>">
+          <i class="las la-paper-plane text-secondary"></i>
+        </span>
+        """
+      else
+        ~L"""
+        <span data-toggle="tooltip" data-html="true" title="<b>Email Confirmed</b> on <%= Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}") %>">
+          <i class="las la-check text-success"></i>
+        </span>
+        """
+      end
+
+    ~L"""
+      <div class="d-flex flex-row">
+       <%= email %> <div class="flex-grow-1"></div> <%= checkmark %>
+      </div>
+      <div>
+        <%= if locked_at != nil do %>
+          <span class="badge badge-warning"><i class="las la-user-lock"></i> Account Locked</span>
+        <% end %>
+      </div>
+    """
   end
 
   def render_role_column(assigns, %{system_role_id: system_role_id} = row, _) do
     admin_role_id = SystemRole.role_id().admin
 
-    if row == assigns.model.selected and
-         row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") and
-         row != assigns.model.author do
-      case system_role_id do
-        ^admin_role_id ->
-          ~L"""
-            <span class="badge badge-primary">Administrator</span>
-            <span class="ml-3 badge badge-danger" style="cursor: pointer;" data-toggle="modal" data-target="#revoke_admin">Revoke Admin</span>
-          """
+    case system_role_id do
+      ^admin_role_id ->
+        ~L"""
+          <span class="badge badge-warning">Administrator</span>
+        """
 
-        _ ->
-          ~L"""
-            <span class="badge badge-light">Author</span>
-            <span class="ml-3 badge badge-danger" style="cursor: pointer;" data-toggle="modal" data-target="#grant_admin">Grant Admin</span>
-          """
-      end
+      _ ->
+        ~L"""
+          <span class="badge badge-light">Author</span>
+        """
+    end
+  end
+
+  def render_author_actions_column(
+        assigns,
+        %{
+          id: id,
+          email: email,
+          email_confirmed_at: email_confirmed_at,
+          system_role_id: system_role_id,
+          locked_at: locked_at
+        } = row,
+        _
+      ) do
+    admin_role_id = SystemRole.role_id().admin
+
+    resend_confirmation_link_path =
+      Routes.pow_path(OliWeb.Endpoint, :resend_author_confirmation_link)
+
+    if row != assigns.model.author and
+         row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do
+      ~L"""
+        <div class="dropdown">
+          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="las la-tools"></i> Manage
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= if email_confirmed_at == nil do %>
+              <form method="post" action="<%= resend_confirmation_link_path %>">
+                <input type="hidden" name="id" value="<%= id %>" />
+                <button type="submit" class="dropdown-item">Resend confirmation link</button>
+              </form>
+              <button class="dropdown-item">Confirm email</button>
+
+              <div class="dropdown-divider"></div>
+            <% end %>
+
+            <button class="dropdown-item">Reset password</button>
+
+            <div class="dropdown-divider"></div>
+
+            <%= case system_role_id do %>
+              <% ^admin_role_id -> %>
+                <button class="dropdown-item text-danger" data-toggle="modal" data-target="#revoke_admin" phx-click="select_author" phx-value-id="<%= id %>">Revoke admin</button>
+
+              <% _ -> %>
+                <button class="dropdown-item text-warning" data-toggle="modal" data-target="#grant_admin" phx-click="select_author" phx-value-id="<%= id %>">Grant admin</button>
+            <% end %>
+
+            <div class="dropdown-divider"></div>
+
+
+            <%= if locked_at != nil do %>
+              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#unlock_user" phx-click="select_author" phx-value-id="<%= id %>">Unlock Account</button>
+            <% else %>
+              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_author" phx-value-id="<%= id %>">Lock Account</button>
+            <% end %>
+
+            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_author" phx-value-id="<%= id %>">Delete</button>
+          </div>
+        </div>
+      """
     else
-      case system_role_id do
-        ^admin_role_id ->
-          ~L"""
-            <span class="badge badge-primary">Administrator</span>
-          """
-
-        _ ->
-          ~L"""
-            <span class="badge badge-light">Author</span>
-          """
-      end
+      ~L"""
+      <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" disabled>
+        <i class="las la-tools"></i> Manage
+      </button>
+      """
     end
   end
 
@@ -150,20 +259,62 @@ defmodule OliWeb.Accounts.AccountsLive do
      push_patch(socket, to: Routes.live_path(socket, __MODULE__, get_patch_params(model)))}
   end
 
-  def handle_event("select_authors", %{"id" => email}, socket) do
-    authors_model = SortableTableModel.update_selection(socket.assigns.model.authors_model, email)
-    model = Map.put(socket.assigns.model, :authors_model, authors_model)
-
-    {:noreply,
-     push_patch(socket, to: Routes.live_path(socket, __MODULE__, get_patch_params(model)))}
+  def handle_event("select_user", %{"id" => id}, socket) do
+    user = Accounts.get_user!(id)
+    {:noreply, assign(socket, selected_user: user)}
   end
 
-  def handle_event("select_users", %{"id" => email}, socket) do
-    users_model = SortableTableModel.update_selection(socket.assigns.model.users_model, email)
-    model = Map.put(socket.assigns.model, :users_model, users_model)
+  def handle_event("select_author", %{"id" => id}, socket) do
+    author = Accounts.get_author!(id)
+    {:noreply, assign(socket, selected_author: author)}
+  end
 
-    {:noreply,
-     push_patch(socket, to: Routes.live_path(socket, __MODULE__, get_patch_params(model)))}
+  def handle_event("lock_user_users", _, socket) do
+    UserContext.lock(socket.assigns.selected_user)
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply, assign(socket, model: model, selected_user: nil)}
+  end
+
+  def handle_event("unlock_user_users", _, socket) do
+    UserContext.unlock(socket.assigns.selected_user)
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply, assign(socket, model: model, selected_user: nil)}
+  end
+
+  def handle_event("delete_user_users", _, socket) do
+    IO.inspect("TODO: delete_user_users")
+
+    {:noreply, assign(socket, selected_user: nil)}
+  end
+
+  def handle_event("lock_user_authors", _, socket) do
+    AuthorContext.lock(socket.assigns.selected_author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply, assign(socket, model: model, selected_author: nil)}
+  end
+
+  def handle_event("unlock_user_authors", _, socket) do
+    AuthorContext.unlock(socket.assigns.selected_author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply, assign(socket, model: model, selected_author: nil)}
+  end
+
+  def handle_event("delete_user_authors", _, socket) do
+    IO.inspect("TODO: delete_user_authors")
+
+    {:noreply, assign(socket, selected_author: nil)}
   end
 
   def handle_event("grant_admin", _, socket) do
@@ -177,7 +328,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   defp change_system_role(role_id, socket) do
-    author = Accounts.get_author_by_email(socket.assigns.model.authors_model.selected.email)
+    author = Accounts.get_author!(socket.assigns.selection)
 
     case Accounts.update_author(author, %{system_role_id: role_id}) do
       {:ok, author} ->
@@ -229,11 +380,11 @@ defmodule OliWeb.Accounts.AccountsLive do
           <ul class="nav nav-tabs">
             <li class="nav-item">
               <a phx-click="active_tab" phx-value-tab="authors"
-                class="nav-link <%= if @model.active_tab == :authors do "active" else "" end %>" href="#">Authors</a>
+                class="nav-link <%= if @model.active_tab == :authors do "active" else "" end %>" href="#authors">Authors</a>
             </li>
             <li class="nav-item">
               <a phx-click="active_tab" phx-value-tab="users"
-                class="nav-link <%= if @model.active_tab == :users do "active" else "" end %>" href="#">Users</a>
+                class="nav-link <%= if @model.active_tab == :users do "active" else "" end %>" href="#users">Users</a>
             </li>
           </ul>
           <div class="mt-4 ml-1 mr-2">
@@ -241,13 +392,25 @@ defmodule OliWeb.Accounts.AccountsLive do
           </div>
         </div>
       </div>
-      <%= live_component Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin" do %>
-        <p class="mb-4">Are you sure you want to do grant this user Administrator access?</p>
+      <%= live_component Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin", ok_label: "Grant", ok_style: "btn btn-warning" do %>
+        <p class="mb-4">Are you sure you want to grant this author <b>administrator privileges</b>?</p>
       <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin" do %>
-        <p class="mb-4">Are you sure you want to do revoke Administrator privileges from this author account?</p>
+      <%= live_component Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin", ok_label: "Revoke", ok_style: "btn btn-danger" do %>
+        <p class="mb-4">Are you sure you want to revoke <b>administrator privileges</b> from this author account?</p>
+      <% end %>
+      <%= live_component Modal, title: "Confirm", modal_id: "lock_user", ok_action: "lock_user_#{@model.active_tab}", ok_label: "Lock", ok_style: "btn btn-warning" do %>
+        <p class="mb-4">Are you sure you want to <b>lock</b> access this account?</p>
+      <% end %>
+      <%= live_component Modal, title: "Confirm", modal_id: "unlock_user", ok_action: "unlock_user_#{@model.active_tab}", ok_label: "Unlock", ok_style: "btn btn-warning" do %>
+        <p class="mb-4">Are you sure you want to <b>unlock</b> access this account?</p>
+      <% end %>
+      <%= live_component Modal, title: "Confirm", modal_id: "delete_user", ok_action: "delete_user_#{@model.active_tab}", ok_label: "Delete", ok_style: "btn btn-danger" do %>
+        <p class="mb-4">Are you sure you want to <b>delete</b> this account?</p>
       <% end %>
     </div>
+    <script>
+      $("[data-toggle=tooltip").tooltip();
+    </script>
     """
   end
 end

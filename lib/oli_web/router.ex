@@ -96,6 +96,8 @@ defmodule OliWeb.Router do
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
@@ -110,6 +112,8 @@ defmodule OliWeb.Router do
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
   end
 
   # Ensure that the user logged in is an admin user
@@ -568,6 +572,7 @@ defmodule OliWeb.Router do
 
   scope "/admin", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring, :admin])
+
     live("/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []})
     live("/features", Features.FeaturesLive)
 
@@ -595,6 +600,14 @@ defmodule OliWeb.Router do
 
     # Branding
     resources("/brands", BrandController)
+
+    post("/accounts/resend_user_confirmation_link", PowController, :resend_user_confirmation_link)
+
+    post(
+      "/accounts/resend_author_confirmation_link",
+      PowController,
+      :resend_author_confirmation_link
+    )
   end
 
   scope "/project", OliWeb do

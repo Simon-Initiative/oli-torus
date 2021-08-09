@@ -16,7 +16,7 @@ defmodule OliWeb.Common.Table.SortableTable do
 
   def render(assigns) do
     ~L"""
-    <table class="table table-striped table-bordered table-hover">
+    <table class="table table-striped table-bordered">
       <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
@@ -29,7 +29,7 @@ defmodule OliWeb.Common.Table.SortableTable do
           <%= if row == @model.selected do %>
           <tr id="<%= Map.get(row, @model.id_field) %>" class="table-active">
           <% else %>
-          <tr id="<%= Map.get(row, @model.id_field) %>" style="cursor: pointer;" phx-click="select<%= @model.event_suffix %>" phx-value-id="<%= Map.get(row, @model.id_field) %>">
+          <tr id="<%= Map.get(row, @model.id_field) %>">
           <% end %>
             <%= for column_spec <- @model.column_specs do %>
               <td>

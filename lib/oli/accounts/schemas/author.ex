@@ -19,6 +19,7 @@ defmodule Oli.Accounts.Author do
     field :given_name, :string
     field :family_name, :string
     field :picture, :string
+    field :locked_at, :utc_datetime
 
     has_many :user_identities,
              Oli.UserIdentities.AuthorIdentity,
@@ -51,7 +52,8 @@ defmodule Oli.Accounts.Author do
       :given_name,
       :family_name,
       :picture,
-      :system_role_id
+      :system_role_id,
+      :locked_at
     ])
     |> cast_embed(:preferences)
     |> default_system_role()
@@ -71,7 +73,8 @@ defmodule Oli.Accounts.Author do
       :given_name,
       :family_name,
       :picture,
-      :system_role_id
+      :system_role_id,
+      :locked_at
     ])
     |> cast_embed(:preferences)
     |> default_system_role()
@@ -89,6 +92,17 @@ defmodule Oli.Accounts.Author do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])
     |> pow_invite_changeset(invited_by, attrs)
+  end
+
+  @spec lock_changeset(Ecto.Schema.t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  def lock_changeset(user_or_changeset) do
+    changeset = Ecto.Changeset.change(user_or_changeset)
+    locked_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    case Ecto.Changeset.get_field(changeset, :locked_at) do
+      nil -> Ecto.Changeset.change(changeset, locked_at: locked_at)
+      _any -> Ecto.Changeset.add_error(changeset, :locked_at, "already set")
+    end
   end
 
   defp default_system_role(changeset) do
