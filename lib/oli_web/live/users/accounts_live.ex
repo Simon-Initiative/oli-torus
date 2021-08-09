@@ -383,9 +383,12 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   def handle_event("delete_user_users", _, socket) do
-    IO.inspect("TODO: delete_user_users")
+    {:ok, _user} = Accounts.delete_user(socket.assigns.selected_user)
 
-    {:noreply, assign(socket, selected_user: nil)}
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply, assign(socket, model: model, selected_user: nil)}
   end
 
   def handle_event("confirm_email_users", _, socket) do
@@ -420,9 +423,12 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   def handle_event("delete_user_authors", _, socket) do
-    IO.inspect("TODO: delete_user_authors")
+    {:ok, _author} = Accounts.delete_author(socket.assigns.selected_author)
 
-    {:noreply, assign(socket, selected_author: nil)}
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply, assign(socket, model: model, selected_author: nil)}
   end
 
   def handle_event("confirm_email_authors", _, socket) do
