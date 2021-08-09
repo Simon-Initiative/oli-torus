@@ -13,10 +13,11 @@ interface InputProps {
 export const TextInput: React.FC<InputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
   return (
-    <div className="d-flex flex-column flex-md-row mb-2">
+    <div className="d-flex flex-md-row mb-2">
       <select
         disabled={!editMode}
-        className="form-control"
+        className="form-control mr-2"
+        style={{ width: 250 }}
         value={state.operator}
         onChange={(e) => {
           if (!isOperator(e.target.value)) {

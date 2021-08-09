@@ -8,12 +8,11 @@ import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
+import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
-  const isHistoryModeOn = useSelector(selectEnableHistory);
-  //comment the above line and uncomment this line for testing in preview mode
-  //const isHistoryModeOn = true;
+  const enableHistory = useSelector(selectEnableHistory);
 
   const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
@@ -31,11 +30,11 @@ const HistoryNavigation: React.FC = () => {
 
   // Get the activities student visited
   const globalSnapshot = Object.keys(snapshot)
-    .filter((key: string) => key.indexOf('visitTimestamp') !== -1)
+    .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
     ?.reverse()
-    .map((entry) => entry.split('|')[0]);
+    .map((entry) => entry.split('.')[2]);
 
-  // Get the activity names and ids to be displaeyd in histroy panel
+  // Get the activity names and ids to be displayed in the history panel
   const historyItems = globalSnapshot?.map((activityId) => {
     const foundSequence = sequences.filter(
       (sequence) => sequence.custom?.sequenceId === activityId,
@@ -43,7 +42,7 @@ const HistoryNavigation: React.FC = () => {
     return {
       id: foundSequence.custom?.sequenceId,
       name: foundSequence.custom?.sequenceName || foundSequence.id,
-      timestamp: snapshot[`${foundSequence.custom?.sequenceId}|visitTimestamp`],
+      timestamp: snapshot[`session.visitTimestamps.${foundSequence.custom?.sequenceId}`],
     };
   });
   const currentHistoryActivityIndex = historyItems.findIndex(
@@ -54,15 +53,29 @@ const HistoryNavigation: React.FC = () => {
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
     dispatch(navigateToActivity(prevActivity.id));
+
+    const nextHistoryActivityIndex = historyItems.findIndex(
+      (item: any) => item.id === prevActivity.id,
+    );
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyModeNavigation: nextHistoryActivityIndex !== 0,
+      }),
+    );
   };
 
   const prevHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
     dispatch(navigateToActivity(prevActivity.id));
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyModeNavigation: true,
+      }),
+    );
   };
   return (
     <Fragment>
-      {isHistoryModeOn ? (
+      {enableHistory ? (
         <div className="historyStepView pullLeftInCheckContainer">
           <div className="historyStepContainer">
             <button
@@ -87,11 +100,11 @@ const HistoryNavigation: React.FC = () => {
       <div
         className={[
           'navigationContainer',
-          isHistoryModeOn ? undefined : 'pullLeftInCheckContainer',
+          enableHistory ? undefined : 'pullLeftInCheckContainer',
         ].join(' ')}
       >
         <aside className={minimized ? 'minimized' : undefined}>
-          {isHistoryModeOn ? (
+          {enableHistory ? (
             <Fragment>
               <button
                 onClick={minimizeHandler}

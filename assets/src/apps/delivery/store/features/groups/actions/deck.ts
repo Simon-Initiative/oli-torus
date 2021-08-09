@@ -34,6 +34,7 @@ import {
   selectPreviewMode,
   selectResourceAttemptGuid,
   selectSectionSlug,
+  setScore,
 } from '../../page/slice';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
@@ -45,7 +46,7 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
-    const isHistoryModeOn = selectEnableHistory(rootState);
+    const enableHistory = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -82,7 +83,7 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 0; // TODO: increment the server value
+    const currentAttempNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
@@ -118,45 +119,21 @@ export const initializeActivity = createAsyncThunk(
     ];
 
     const globalSnapshot = getEnvState(defaultGlobalEnv);
-    const isActivityAlreadyVisited = globalSnapshot[`${currentSequenceId}|visitTimestamp`];
+    const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
+    const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
     // don't update the time if student is revisiting that page
     if (!isActivityAlreadyVisited) {
-      //looks like SS captures the date when we leave the page but it should show in the history as soon as we visit but it does not show the timestamp
+      // looks like SS captures the date when we leave the page but it should
+      // show in the history as soon as we visit but it does not show the timestamp
       // so we will capture the time on trigger check
       const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: `${currentSequenceId}|visitTimestamp`,
+        target: trackingStampKey,
         operator: '=',
-        value: '',
+        value: 0,
       };
       sessionOps.push(targetVisitTimeStampOp);
     }
 
-    //Need to clear out snapshot for the current activity before we send the init trap state.
-    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
-    // some screens go in loop
-    // Don't do anything id isHistoryModeOn is ON
-    if (!isHistoryModeOn && currentActivityTree) {
-      const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
-
-      const currentActivitySnapshot = getLocalizedStateSnapshot(
-        [currentActivityId],
-        defaultGlobalEnv,
-      );
-
-      const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
-        .map((key: string) => {
-          if (
-            (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) &&
-            key.indexOf('visitTimestamp') === -1
-          ) {
-            return key;
-          }
-        })
-        .filter((item) => item);
-      if (idsToBeRemoved) {
-        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
-      }
-    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
@@ -177,7 +154,6 @@ export const initializeActivity = createAsyncThunk(
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
-    /* console.log('INIT STATE OPS', { results, ops: [...sessionOps, ...globalizedInitState] }); */
     const currentState = getEnvState(defaultGlobalEnv);
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
@@ -185,6 +161,14 @@ export const initializeActivity = createAsyncThunk(
       }
       return collect;
     }, {});
+
+    /* console.log('about to update score [deck]', {
+      currentState,
+      score: sessionState['session.tutorialScore'],
+    }); */
+    const tutScore = sessionState['session.tutorialScore'] || 0;
+    const curScore = sessionState['session.currentQuestionScore'] || 0;
+    thunkApi.dispatch(setScore({ score: tutScore + curScore }));
 
     // optimistically write to redux
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
@@ -305,7 +289,7 @@ export const navigateToPrevActivity = createAsyncThunk(
         const layerIndex = sequence.findIndex(
           (entry) => entry.custom.sequenceId === previousEntry?.custom?.sequenceId,
         );
-        console.log({ currentIndex, layerIndex });
+        /* console.log({ currentIndex, layerIndex }); */
 
         previousEntry = sequence[layerIndex - 1];
       }

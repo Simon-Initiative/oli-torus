@@ -1,3 +1,4 @@
+
 <nav class="navbar navbar-expand">
 
     <div class="container">
@@ -6,7 +7,7 @@
         </a>
 
         <div class="nav-item my-2 my-lg-0 mr-2">
-            <a href="javascript:" onclick="showHelpModal();">Help</a>
+            <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
         </div>
 
         <%= if user_signed_in?(@conn) do %>

@@ -13,7 +13,7 @@ const CustomFieldTemplate: React.FC<CustomFieldProps> = (props: any) => {
         {props.properties.map((element: any) => (
           <div
             key={element.content.key}
-            className={element.content.props.uiSchema.classNames || 'col-12'}
+            className={`${element.content.props.uiSchema.classNames || 'col-12'} inner`}
           >
             {element.content}
           </div>

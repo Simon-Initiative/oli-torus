@@ -2,8 +2,8 @@ import { selectCurrentActivityId } from '../../../store/features/activities/slic
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
-import { useState, useEffect } from 'react';
 import TimeAgo from '../../../../../components/common/TimeAgo';
+import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 
 interface HistoryEntry {
   id: string;
@@ -25,6 +25,15 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
 
   const itemClickHandler = (item: HistoryEntry) => {
     dispatch(navigateToActivity(item.id));
+
+    const nextHistoryActivityIndex = items.findIndex(
+      (historyItem: any) => historyItem.id === item.id,
+    );
+    dispatch(
+      setHistoryNavigationTriggered({
+        historyModeNavigation: nextHistoryActivityIndex !== 0,
+      }),
+    );
   };
 
   const getItemClasses = (item: HistoryEntry) => {

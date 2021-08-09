@@ -55,10 +55,10 @@ defmodule OliWeb.Objectives.Objectives do
 
   def render(assigns) do
     ~L"""
-    <div class="objectives container mt-5">
+    <div class="objectives container">
       <div class="mb-2 row">
         <div class="col-12">
-          <p class="text-secondary">
+          <p>
             Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
             <br/>Refer to the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
           </p>

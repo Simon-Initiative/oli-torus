@@ -1,7 +1,7 @@
 @import "authoring/variables.scss";
 
 .objectives-list-container {
-  background-color: $card-cap-bg;
+  background-color: darken($card-cap-bg, 20%);
   padding: 0 4px;
 }
 

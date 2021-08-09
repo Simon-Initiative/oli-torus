@@ -13,7 +13,6 @@ import { Stem } from '../common/DisplayedStem';
 import { Hints } from '../common/DisplayedHints';
 import { Reset } from '../common/Reset';
 import { Evaluation } from '../common/delivery/evaluation/Evaluation';
-import { valueOr } from 'utils/common';
 import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -25,26 +24,6 @@ type Evaluation = {
   feedback: ActivityTypes.RichText;
 };
 
-type InputProps = {
-  input: any;
-  onChange: (input: any) => void;
-  isEvaluated: boolean;
-};
-
-const Input = (props: InputProps) => {
-  const input = props.input === null ? '' : props.input;
-
-  return (
-    <textarea
-      rows={7}
-      cols={80}
-      className="form-control"
-      onChange={(e: any) => props.onChange(e.target.value)}
-      value={input}
-      disabled={props.isEvaluated}
-    />
-  );
-};
 // eslint-disable-next-line
 export interface ImageCodingDeliveryProps extends DeliveryElementProps<ImageCodingModelSchema> {
   // output: string;

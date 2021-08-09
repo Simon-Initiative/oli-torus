@@ -2,15 +2,17 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
-import { check } from '../../../../../../adaptivity/rules-engine';
+import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
 import {
+  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
-  getEnvState,
+  getLocalizedStateSnapshot,
+  getValue,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
-import { selectAll, selectExtrinsicState, setExtrinsicState } from '../../attempt/slice';
+import { selectExtrinsicState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
@@ -26,211 +28,196 @@ export const triggerCheck = createAsyncThunk(
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
 
-    /* console.log('TRIGGER CHECK', {currentAttempt}); */
+    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
+    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
 
     const currentActivityTree = selectCurrentActivityTree(rootState);
     if (!currentActivityTree || !currentActivityTree.length) {
       throw new Error('No Activity Tree, something very wrong!');
     }
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const [currentActivity] = currentActivityTree.slice(-1);
 
-    // reset timeStartQuestion (per attempt timer, maybe should wait til resolved)
-    // increase attempt number
-    const extrinsicState = selectExtrinsicState(rootState);
-    const modifiedExtrinsicState = Object.keys(extrinsicState).reduce(
-      (collect: any, key: string) => {
-        collect[key] = extrinsicState[key];
-        return collect;
-      },
-      {},
-    );
-    const timeStartQuestion = modifiedExtrinsicState['session.timeStartQuestion'];
-    const timeOnQuestion = Date.now() - timeStartQuestion;
-    modifiedExtrinsicState['session.timeOnQuestion'] = timeOnQuestion;
-
-    const currentAttemptNumber = modifiedExtrinsicState['session.attemptNumber'];
-    modifiedExtrinsicState['session.attemptNumber'] = currentAttemptNumber + 1;
-    modifiedExtrinsicState[`${currentActivity.id}|session.attemptNumber`] =
-      currentAttemptNumber + 1;
-
-    const updateScripting: ApplyStateOperation[] = [
+    // update time on question
+    applyState(
       {
         target: 'session.timeOnQuestion',
         operator: '=',
-        value: timeOnQuestion,
+        value: `${Date.now()} - {session.timeStartQuestion}`,
       },
-      {
-        target: 'session.attemptNumber',
-        operator: '=',
-        value: currentAttemptNumber + 1,
-      },
-      {
-        target: `${currentActivity.id}|session.attemptNumber`,
-        operator: '=',
-        value: currentAttemptNumber + 1,
-      },
-    ];
-    let globalSnapshot = getEnvState(defaultGlobalEnv);
-    const isActivityAlreadyVisited = globalSnapshot[`${currentActivity.id}|visitTimestamp`];
+      defaultGlobalEnv,
+    );
+
+    // for history tracking
+    const trackingStampKey = `session.visitTimestamps.${currentActivity.id}`;
+    const isActivityAlreadyVisited = !!getValue(trackingStampKey, defaultGlobalEnv);
     // don't update the time if student is revisiting that page
     if (!isActivityAlreadyVisited) {
-      //looks like SS captures the date when we leave the page so we will capture the time here for tracking history
+      // looks like SS captures the date when we leave the page so we will capture the time here for tracking history
       // update the scripting
       const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: `${currentActivity.id}|visitTimestamp`,
+        target: trackingStampKey,
         operator: '=',
         value: Date.now(),
       };
-      updateScripting.push(targetVisitTimeStampOp);
-      // update the store
-      modifiedExtrinsicState[`${currentActivity.id}|visitTimestamp`] = Date.now();
+      applyState(targetVisitTimeStampOp, defaultGlobalEnv);
     }
-    bulkApplyState(updateScripting, defaultGlobalEnv);
 
     //update the store with the latest changes
     const currentTriggerStamp = Date.now();
     await dispatch(setLastCheckTriggered({ timestamp: currentTriggerStamp }));
 
-    // this needs to be the attempt state
-    // at the very least needs the "local" version `stage.foo.whatevr` vs `q:1234|stage.foo.whatever`
-    // server side we aren't going to have the scripting engine until just in time (for condition eval)
-    // so the logic here should mimic server and pull only attempt state
-    const allActivityAttempts = selectAll(rootState);
-    const allResponseState = allActivityAttempts.reduce((collect: any, attempt: any) => {
-      attempt.parts.forEach((part: any) => {
-        if (part.response) {
-          Object.keys(part.response).forEach((key) => {
-            const input_response = part.response[key];
-            if (!input_response) {
-              return;
-            }
-            const { path, value } = input_response;
-            if (!path) {
-              return;
-            }
-            collect[path] = value;
-          });
-        }
-      });
-      return collect;
-    }, {});
-    // need to duplicate "local" state based on current sequenceId
-    Object.keys(allResponseState).forEach((key) => {
-      // need to localize for all layers
-      currentActivityTree.forEach((activity) => {
-        if (key.indexOf(`${activity.id}|`) === 0) {
-          const localKey = key.replace(`${activity.id}|`, '');
-          allResponseState[localKey] = allResponseState[key];
-        }
-      });
-    });
+    const treeActivityIds = currentActivityTree.map((a) => a.id);
+    const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
 
-    const snapshot = getEnvState(defaultGlobalEnv);
-    globalSnapshot = Object.keys(snapshot).reduce((collect: any, key: string) => {
-      if (key.indexOf('app.') === 0 || key.indexOf('variables.') === 0) {
-        collect[key] = snapshot[key];
-      }
-      return collect;
-    }, {});
+    const extrinsicSnapshot = Object.keys(localizedSnapshot).reduce(
+      (acc: Record<string, any>, key) => {
+        const isSessionVariable = key.startsWith('session.');
+        const isVarVariable = key.startsWith('variables.');
+        if (isSessionVariable || isVarVariable) {
+          acc[key] = localizedSnapshot[key];
+        }
+        return acc;
+      },
+      {},
+    );
+    // update redux first because we need to get the latest full extrnisic state to write to the server
+    await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
     if (!isPreviewMode) {
       // update the server with the latest changes
-      /* console.log('trigger check last min extrinsic state', {
+      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,
-        modifiedExtrinsicState,
-      }); */
-      await writePageAttemptState(sectionSlug, resourceAttemptGuid, modifiedExtrinsicState);
+        extrnisicState,
+      });
+      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
     }
-    await dispatch(setExtrinsicState({ state: modifiedExtrinsicState }));
-    const stateSnapshot = {
-      ...allResponseState,
-      ...modifiedExtrinsicState,
-      ...globalSnapshot,
-    };
 
     let checkResult;
     let isCorrect = false;
+    let score = 0;
+    let outOf = 0;
+
+    const scoringContext: ScoringContext = {
+      currentAttemptNumber: currentAttempt?.attemptNumber || 1,
+      maxAttempt: currentActivity.content.custom.maxAttempt || 0,
+      maxScore: currentActivity.content.custom.maxScore || 0,
+      trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
+      negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
+    };
+
     // if preview mode, gather up all state and rules from redux
     if (isPreviewMode) {
+      // need to get this fresh right now so it is the latest
+      const rootState = getState() as RootState;
+      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+      const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
+
+      const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
+      const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
+
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
       // custom rules can be provided via PreviewTools Adaptivity pane for specific rule triggering
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, stateSnapshot }); */
-      const check_call_result = await check(stateSnapshot, rulesToCheck);
+      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
+      const check_call_result = (await check(
+        localizedSnapshot,
+        rulesToCheck,
+        scoringContext,
+      )) as CheckResult;
       checkResult = check_call_result.results;
       isCorrect = check_call_result.correct;
-      /* console.log('CHECK RESULT', {
+      score = check_call_result.score;
+      outOf = check_call_result.out_of;
+      console.log('CHECK RESULT', {
+        check_call_result,
         currentActivity,
         currentRules,
         checkResult,
-        stateSnapshot,
-      }); */
-    } else {
-      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-      const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-      const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
-      /* console.log('CHECKING', {
-        sectionSlug,
+        localizedSnapshot,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
-      }); */
+      });
+    } else {
+      // need to get this fresh right now so it is the latest
+      const rootState = getState() as RootState;
+      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
+      const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
 
       if (!currentActivityAttemptGuid) {
-        console.error('not current attempt, cannot eval', { currentActivityTreeAttempts });
+        console.error('not current attempt, cannot eval', { currentActivityAttemptGuid });
         return;
       }
-
-      // BS: not sure why the current attempt responses are not up to date currently,
-      // for now just merge the tree state into the current attempt
-      // the LAYER is always up to date, but the current attempt is not for some reason
-      // this only occurs with layers, more investigation needed
 
       // we have to send all the current activity attempt state to the server
       // because the server doesn't know the current sequence id and will strip out
       // all sequence ids from the path for these only
-      const partResponses: PartResponse[] =
-        currentAttempt?.parts.map(({ partId, attemptGuid, response }) => {
-          // doing in reverse so that the layer's choice is the last one
-          const combinedResponse = currentActivityTreeAttempts.reverse().reduce(
-            (collect: any, attempt: any) => {
-              const part = attempt.parts.find((p: any) => p.partId === partId);
-              if (part) {
-                /* if (partId === 'orrery') {
-                  console.log('collecting parts:', { part, attempt, response, pr: part.response });
-                } */
-                if (part.response) {
-                  collect = {...collect, ...part.response};
+
+      const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
+      const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const partResponses: PartResponse[] = currentAttempt!.parts.map(
+        ({ partId, attemptGuid, response }) => {
+          // snapshot is more up to date
+          // TODO: resolve syncing issue, this is a workaround
+          let finalResponse = response;
+          if (!finalResponse) {
+            // if a null response, it actually might live on a parent attempt
+            // walk backwards to find the parent
+            finalResponse = currentActivityTreeAttempts.reduce((acc, attempt) => {
+              const part = attempt?.parts.find((p) => p.partId === partId);
+              return part?.response || acc;
+            }, null);
+          }
+          if (finalResponse) {
+            finalResponse = Object.keys(finalResponse).reduce((acc: any, key) => {
+              acc[key] = { ...finalResponse[key] };
+              const item = acc[key];
+              if (item.path) {
+                const snapshotValue = localizedSnapshot[item.path];
+                if (snapshotValue !== undefined) {
+                  item.value = snapshotValue;
                 }
               }
-              return collect;
-            },
-            {},
-          );
-          const finalResponse = Object.keys(combinedResponse).length > 0 ? combinedResponse : null;
-          // response should be wrapped in input, but only once
-          /* const input_response = response?.input ? response : { input: response }; */
-          return { attemptGuid, response: { input: finalResponse } };
-        }) || [];
+              return acc;
+            }, {});
+          }
+          return {
+            attemptGuid,
+            response: { input: finalResponse },
+          };
+        },
+      );
 
-      /* console.log('PART RESPONSES', { partResponses, allResponseState }); */
+      console.log('CHECKING', {
+        sectionSlug,
+        currentActivityTreeAttempts,
+        currentAttempt,
+        currentActivityTree,
+        localizedSnapshot,
+        partResponses,
+      });
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
         currentActivityAttemptGuid,
         partResponses,
       );
-      /* console.log('EVAL RESULT', { evalResult }); */
-      checkResult = (evalResult.result as any).actions;
-      isCorrect = checkResult.every((action: any) => action.params.correct);
+
+      console.log('EVAL RESULT', { evalResult });
+      const resultData: CheckResult = (evalResult as any).result.actions;
+      checkResult = resultData.results;
+      isCorrect = resultData.correct;
+      score = resultData.score;
+      outOf = resultData.out_of;
     }
 
-    const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-    const currentAttempt = currentActivityTreeAttempts[currentActivityTreeAttempts?.length - 1];
-    const currentActivityAttemptGuid = currentAttempt?.attemptGuid || '';
     let attempt: any = currentAttempt;
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
@@ -238,10 +225,38 @@ export const triggerCheck = createAsyncThunk(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
+      const updateAttempt: ApplyStateOperation[] = [
+        {
+          target: 'session.attemptNumber',
+          operator: '=',
+          value: attempt.attemptNumber,
+        },
+        {
+          target: `${currentActivity.id}|session.attemptNumber`,
+          operator: '=',
+          value: attempt.attemptNumber,
+        },
+      ];
+      bulkApplyState(updateAttempt, defaultGlobalEnv);
+      // need to write attempt number to extrinsic state?
+      // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
 
+    // TODO: get score back from check result
+    applyState(
+      { target: 'session.currentQuestionScore', operator: '=', value: score },
+      defaultGlobalEnv,
+    );
+
     await dispatch(
-      setLastCheckResults({ timestamp: currentTriggerStamp, results: checkResult, attempt }),
+      setLastCheckResults({
+        timestamp: currentTriggerStamp,
+        results: checkResult,
+        attempt,
+        correct: isCorrect,
+        score,
+        outOf,
+      }),
     );
   },
 );

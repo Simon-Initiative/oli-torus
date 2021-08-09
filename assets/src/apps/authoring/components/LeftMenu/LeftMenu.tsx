@@ -1,12 +1,12 @@
 import React from 'react';
-import AdaptivityEditor from '../AdaptivityEditor/AdaptivityEditor';
+import AdaptiveRulesList from '../AdaptiveRulesList/AdaptiveRulesList';
 import SequenceEditor from '../SequenceEditor/SequenceEditor';
 
-const LeftMenu: React.FC<any> = (props) => {
+const LeftMenu: React.FC = () => {
   return (
     <React.Fragment>
       <SequenceEditor />
-      <AdaptivityEditor />
+      <AdaptiveRulesList />
     </React.Fragment>
   );
 };

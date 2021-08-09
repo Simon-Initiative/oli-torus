@@ -10,6 +10,7 @@ import { PageContext } from '../../../types';
 import { createNew as createNewActivity } from '../../activities/actions/createNew';
 import { createNew as createNewGroup } from '../../groups/layouts/deck/actions/createNew';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
+import { updateActivityRules } from '../../groups/layouts/deck/actions/updateActivityRules';
 import { loadPage, PageSlice, PageState } from '../slice';
 import { savePage } from './savePage';
 
@@ -32,7 +33,9 @@ export const initializeFromContext = createAsyncThunk(
     };
     dispatch(loadPage(pageState));
 
-    const children: any[] = Object.keys(params.activities).map((id) => ({ ...params.activities[id] }));;
+    const children: any[] = Object.keys(params.activities).map((id) => ({
+      ...params.activities[id],
+    }));
     let pageModel = params.content.model;
     if (!pageModel.length) {
       // this should be a "new" lesson, at no point should we allow the model
@@ -73,6 +76,8 @@ export const initializeFromContext = createAsyncThunk(
         activityType: activity.activityType,
         content: { ...activity.model, authoring: undefined },
         authoring: activity.model.authoring,
+        title: activity.title,
+        objectives: activity.objectives,
       };
     });
     await dispatch(setActivities({ activities }));
@@ -91,7 +96,9 @@ export const initializeFromContext = createAsyncThunk(
     groups.forEach((group) => {
       group.children.forEach((child: any) => {
         if (child.type === 'activity-reference' && !child.resourceId) {
-          const matchingActivity = activities.find((activity) => activity.activitySlug === child.activitySlug);
+          const matchingActivity = activities.find(
+            (activity) => activity.activitySlug === child.activitySlug,
+          );
           if (matchingActivity) {
             child.resourceId = matchingActivity.resourceId;
           }
@@ -104,8 +111,11 @@ export const initializeFromContext = createAsyncThunk(
     // afterwards update that group record with a processing timestamp? so that we don't need to do every time?
     // NOTE: right now there really only is expected to be a single group
     const groupProcessing = groups.map((group) => dispatch(updateActivityPartInheritance(group)));
+    const ruleProcessing = groups.map((group) => dispatch(updateActivityRules(group)));
+
     // TODO: different for different layout types
     await Promise.all(groupProcessing);
+    await Promise.all(ruleProcessing);
 
     await dispatch(setGroups({ groups }));
 

@@ -1,17 +1,29 @@
 import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
-import { InsertOperation } from 'utils/undo';
+import { UndoOperation } from 'utils/undo';
 import guid from 'utils/guid';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
+export type MediaItemRequest = {
+  type: 'MediaItemRequest',
+  mimeTypes: string[]
+}
+
 export type Undoable = {
   type: 'Undoable';
   description: string;
-  operations: InsertOperation[];
+  operations: UndoOperation[];
 }
 
+export function makeUndoable(description: string, operations: UndoOperation[]) : Undoable {
+  return {
+    type: 'Undoable',
+    description,
+    operations
+  };
+}
 
 export type ChoiceId = ID;
 export type ResponseId = ID;

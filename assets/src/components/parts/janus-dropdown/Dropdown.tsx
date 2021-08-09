@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { parseBool } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -99,7 +100,10 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       setSelectedItem(sSelectedItem);
       setSelection(selectionIndex + 1);
     }
-
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setEnabled(false);
+    }
     setReady(true);
   }, []);
 
@@ -317,13 +321,15 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     if (prompt) {
       // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option
       options.push(
-        <option key="-1" value="-1" disabled>
+        <option key="-1" value="-1" style={{ display: 'none' }}>
           {prompt}
         </option>,
       );
-    } else {
+    } else if (!selection || selection === -1) {
       // If a prompt is blank and the selectedIndex is not set or is set to -1, set empty first option
-      options.push(<option key="-1" value="-1"></option>);
+      options.push(
+        <option key="-1" value="-1" selected={true} style={{ display: 'none' }}></option>,
+      );
     }
     if (optionLabels) {
       for (let i = 0; i < optionLabels.length; i++) {

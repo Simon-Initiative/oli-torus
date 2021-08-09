@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from 'utils/common';
+import { parseBoolean } from '../../../utils/common';
+import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -167,7 +168,10 @@ const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (p
     if (sTransparent !== undefined) {
       setButtonTransparent(sTransparent);
     }
-
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setButtonEnabled(false);
+    }
     setReady(true);
   }, []);
 

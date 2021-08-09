@@ -1,45 +1,34 @@
 @import 'bootstrap';
 
 .content {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    clear: both;
-  }
-
   blockquote {
-    clear: both;
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
-    font-size: 1.3em;
-    line-height: 1.5em;
-    letter-spacing: -0.003em;
-    color: rgba(0, 0, 0, 0.84);
-
-    border-left: 3px solid rgba(0, 0, 0, 0.84);
+    color: $body-color;
+    border-left: 3px solid $gray-400;
     padding-left: 20px;
-    margin-left: -23px;
     padding-bottom: 2px;
     word-break: break-word;
+
     p:last-of-type {
       margin-bottom: 0;
     }
   }
 
   pre {
-    clear: both;
     text-align: left;
+    color: $body-color;
+    background: darken($body-bg, 5%);
+    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
+    letter-spacing: -0.003em;
+    border-radius: 6px;
+    padding: 1em;
+
+    code.hljs {
+      background: inherit;
+    }
   }
 
-  code {
-    font-family: 'Source Code Pro', 'Courier New', Courier, monospace;
-    color: rgba(0, 0, 0, 0.84);
-    background: rgba(0, 0, 0, 0.05);
-    letter-spacing: -0.003em;
-  }
   ul li,
   ol li {
     margin-bottom: 14px;
@@ -48,7 +37,6 @@
   table {
     @extend .table-bordered;
     @extend .table;
-    clear: both;
     border-collapse: collapse;
     table-layout: fixed;
 
@@ -125,33 +113,24 @@
 
   .youtube-wrapper,
   .webpage-wrapper iframe {
-    clear: both;
     @extend .embed-responsive-item;
   }
 
   .figure-wrapper {
-    clear: both;
     display: flex;
     justify-content: center;
+
     figure {
       display: inline-block;
-      background-color: darken($body-bg, 5%);
+      background-color: $gray-100;
       @extend .img-fluid;
       @extend .img-thumbnail;
-
-      &.full-width {
-        @extend .embed-responsive;
-      }
 
       figcaption {
         margin-bottom: 8px;
         text-align: center;
-        margin-top: calc(8px + 0.25rem);
+        margin-top: 8px;
         color: black;
-
-        &.full-width {
-          margin-top: 8px;
-        }
       }
     }
   }

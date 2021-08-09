@@ -1,80 +1,55 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import {
+  AuthoringElement,
+  AuthoringElementProps,
+  AuthoringElementProvider,
+  useAuthoringElementContext,
+} from '../AuthoringElement';
 import { ImageCodingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from '../common/Stem';
-import { Hints } from '../common/Hints';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { ICActions } from './actions';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import produce from 'immer';
 import { Heading } from 'components/misc/Heading';
-import ModalSelection, { sizes } from 'components/modal/ModalSelection';
-import { modalActions } from 'actions/modal';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import { MediaManager } from 'components/media/manager/MediaManager.controller';
-import { MediaItem } from 'types/media';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import * as ContentModel from 'data/content/model';
 import { Feedback } from './sections/Feedback';
 import { lastPart } from './utils';
 import { CloseButton } from 'components/misc/CloseButton';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
-
-const store = configureStore();
+import guid from 'utils/guid';
+import { MediaItemRequest } from '../types';
+import { configureStore } from 'state/store';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const dispatch = (action: any) => {
-    const nextModel = produce(props.model, (draftState) => action(draftState));
-    props.onEdit(nextModel);
-  };
+  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
 
-  const { projectSlug, model } = props;
+  const { projectSlug } = props;
 
   const sharedProps = {
     model: props.model,
     editMode: props.editMode,
     projectSlug,
+    onRequestMedia,
   };
 
-  // Modal image selection
-  const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-  const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
-
-  function selectImage(
-    projectSlug: string,
-    model: ContentModel.Image,
-  ): Promise<ContentModel.Image> {
+  function selectImage(projectSlug: string, model: ContentModel.Image): Promise<string> {
     return new Promise((resolve, reject) => {
-      const selected = { img: null };
-
-      const mediaLibrary = (
-        <ModalSelection
-          title="Select an image"
-          size={sizes.extraLarge}
-          onInsert={() => {
-            dismiss();
-            resolve(selected.img as any);
-          }}
-          onCancel={() => dismiss()}
-          disableInsert={true}
-        >
-          <MediaManager
-            projectSlug={projectSlug}
-            // eslint-disable-next-line
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.IMAGE}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={model.src ? [model.src] : [selected.img as any]}
-            onSelectionChange={(images: MediaItem[]) => {
-              (selected as any).img = ContentModel.image(images[0].url);
-            }}
-          />
-        </ModalSelection>
-      );
-
-      display(mediaLibrary);
+      const request = {
+        type: 'MediaItemRequest',
+        mimeTypes: MIMETYPE_FILTERS.IMAGE,
+      } as MediaItemRequest;
+      if (props.onRequestMedia) {
+        props.onRequestMedia(request).then((r) => {
+          if (r === false) {
+            reject('error');
+          } else {
+            resolve(r as string);
+          }
+        });
+      }
     });
   }
 
@@ -83,40 +58,30 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     model: ContentModel.Image,
   ): Promise<ContentModel.Image> {
     return new Promise((resolve, reject) => {
-      const selected = { file: null };
-
-      const mediaLibrary = (
-        <ModalSelection
-          title="Select a csv file"
-          size={sizes.extraLarge}
-          onInsert={() => {
-            dismiss();
-            resolve(selected.file as any);
-          }}
-          onCancel={() => dismiss()}
-          disableInsert={true}
-        >
-          <MediaManager
-            projectSlug={projectSlug}
-            // eslint-disable-next-line
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.CSV}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={model.src ? [model.src] : [selected.file as any]}
-            onSelectionChange={(files: MediaItem[]) => {
-              (selected as any).file = ContentModel.image(files[0].url);
-            }}
-          />
-        </ModalSelection>
-      );
-
-      display(mediaLibrary);
+      const request = {
+        type: 'MediaItemRequest',
+        mimeTypes: MIMETYPE_FILTERS.CSV,
+      } as MediaItemRequest;
+      if (props.onRequestMedia) {
+        props.onRequestMedia(request).then((r) => {
+          if (r === false) {
+            reject('error');
+          } else {
+            resolve({
+              type: 'img',
+              src: r as string,
+              id: guid(),
+              children: [],
+            });
+          }
+        });
+      }
     });
   }
 
   const addImage = (e: any) => {
-    selectImage(projectSlug, ContentModel.image()).then((img) => {
-      dispatch(ICActions.addResourceURL(img.src));
+    selectImage(projectSlug, ContentModel.image()).then((url: string) => {
+      dispatch(ICActions.addResourceURL(url));
     });
   };
 
@@ -175,12 +140,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
   return (
     <React.Fragment>
-      <Stem
-        projectSlug={props.projectSlug}
-        editMode={props.editMode}
-        stem={model.stem}
-        onEditStem={(content) => dispatch(ICActions.editStem(content))}
-      />
+      <Stem />
 
       <Heading title="Resources" id="images" />
       <div>
@@ -232,14 +192,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         <div>
           {solutionParameters()}
 
-          <Hints
-            projectSlug={props.projectSlug}
-            hints={model.authoring.parts[0].hints}
-            editMode={props.editMode}
-            onAddHint={() => dispatch(ICActions.addHint())}
-            onEditHint={(id, content) => dispatch(ICActions.editHint(id, content))}
-            onRemoveHint={(id) => dispatch(ICActions.removeHint(id))}
-          />
+          <Hints hintsPath="$.authoring.parts[0].hints" />
 
           <Feedback
             {...sharedProps}
@@ -252,12 +205,15 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   );
 };
 
+const store = configureStore();
+
 export class ImageCodingAuthoring extends AuthoringElement<ImageCodingModelSchema> {
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<ImageCodingModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
-        <ImageCoding {...props} />
-        <ModalDisplay />
+        <AuthoringElementProvider {...props}>
+          <ImageCoding {...props} />
+        </AuthoringElementProvider>
       </Provider>,
       mountPoint,
     );

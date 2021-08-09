@@ -5,10 +5,10 @@
   <% %{component: component, assigns: assigns} -> %>
     <%= live_component component, assigns %>
 <% end %>
-<div id="curriculum-container" class="container container-editor mt-5">
+<div id="curriculum-container" class="container container-editor">
   <div class="row">
     <div class="col-12">
-      <p class="text-secondary mb-3">
+      <p class="mb-3">
         Create and arrange items in your curriculum to arrange the material for students.
       </p>
     </div>
@@ -16,34 +16,27 @@
   <div class="row">
     <div class="col-12">
       <div class="change-view-buttons">
-        <span class="text-secondary mr-2">View</span>
         <div class="btn-group btn-group-toggle" data-toggle="buttons">
           <label
-            title="Basic"
-            data-toggle="tooltip"
             phx-click="change-view"
             phx-value-view="Basic"
-            class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Basic" do "active" else "" end %> %>">
+            class="btn btn-xs btn-light p-2 <%= if @view == "Basic" do "active" else "" end %> %>">
             <input type="radio" name="options" id="view-1"
               <%= if @view == "Basic" do "checked" else "" end %>
             > <span>Basic</span>
           </label>
 
           <label
-            title="Detailed"
-            data-toggle="tooltip"
             phx-click="change-view"
-            phx-value-view="Detailed" class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Detailed" do "active" else "" end %>">
+            phx-value-view="Detailed" class="btn btn-xs btn-light p-2 <%= if @view == "Detailed" do "active" else "" end %>">
             <input type="radio" name="options" id="view-2"
               <%= if @view == "Detailed" do "checked" else "" end %>
             > <span>Detailed</span>
           </label>
 
           <label
-            title="Learning Summary"
-            data-toggle="tooltip"
             phx-click="change-view"
-            phx-value-view="Learning Summary" class="btn btn-xs btn-outline-secondary p-2 <%= if @view == "Learning Summary" do "active" else "" end %>">
+            phx-value-view="Learning Summary" class="btn btn-xs btn-light p-2 <%= if @view == "Learning Summary" do "active" else "" end %>">
             <input type="radio" name="options" id="view-3"
               <%= if @view == "Learning Summary" do "checked" else "" end %>
             > <span>Learning</span>
@@ -81,7 +74,7 @@
         <%= live_component DropTarget, id: "last", index: length(@children) %>
       </div>
       <div class="mt-5">
-        <span class="text-secondary mr-2">Add new</span>
+        <span class="text-secondary mr-2">Add</span>
         <button phx-click="add" phx-value-type="Unscored" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
           Practice Page
         </button>

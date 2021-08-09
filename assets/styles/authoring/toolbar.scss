@@ -1,16 +1,15 @@
 @import "authoring/variables";
 
 .react-tiny-popover-container {
-  z-index: 1;
+  z-index: 500;
 }
 
 .hovering-toolbar {
-
   .btn-group {
     padding-left: 5px;
     padding-right: 5px;
     border-radius: 4px;
-    background-image: linear-gradient(to bottom,rgba(49,49,47,.99),#262625);
+    background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
   }
 
   button {
@@ -22,7 +21,7 @@
     &.btn-dark:disabled,
     &.btn-dark:hover {
       white-space: nowrap;
-      padding: 0 .25rem;
+      padding: 0 0.25rem;
       display: inline-block;
       vertical-align: middle;
       background-color: transparent;
@@ -46,6 +45,6 @@
     width: 1px;
     margin: auto 6px;
     height: 24px;
-    background: rgba(255,255,255,.2);
+    background: rgba(255, 255, 255, 0.2);
   }
 }

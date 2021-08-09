@@ -249,6 +249,13 @@ const register = (Component: any, tagName?: string, watchedPropNames?: string[],
           });
         });
       }
+
+      const customApi = (options && options.customApi) || Component.customApi;
+      if (customApi) {
+        Object.keys(customApi).forEach((apiName) => {
+          Object.defineProperty(this, apiName, { value: customApi[apiName] });
+        });
+      }
     }
   }
 

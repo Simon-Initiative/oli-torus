@@ -1,12 +1,13 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
+import { useSelector } from 'react-redux';
+import { selectScore } from '../../store/features/page/slice';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;
   activityName?: string;
   showScore?: boolean;
   themeId?: string;
-  scoreValue: number;
   userName?: string;
 }
 
@@ -14,10 +15,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   pageName,
   activityName,
   showScore = false,
-  scoreValue = 0,
   themeId,
   userName,
 }) => {
+  const scoreValue = useSelector(selectScore);
   const isLegacyTheme = !themeId;
   const scoreToShow = scoreValue.toFixed(2);
   const scoreText = isLegacyTheme ? `(Score: ${scoreToShow})` : scoreToShow;

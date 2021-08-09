@@ -154,10 +154,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         if (props.onReady) {
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
-          partsInitDeferred.resolve({ snapshot: readyResults.snapshot || {} });
+          partsInitDeferred.resolve({
+            snapshot: readyResults.snapshot || {},
+            context: readyResults.context,
+          });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
-          partsInitDeferred.resolve({ snapshot: {} });
+          partsInitDeferred.resolve({ snapshot: {}, context: { mode: 'VIEWER' } });
         }
       }
       return partsInitDeferred.promise;
@@ -172,9 +175,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       const saveResults = await handlePartSave(payload);
     }
 
-    const { snapshot } = await partInit(payload.id.toString());
+    const { snapshot, context } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot };
+    return { snapshot, context };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {

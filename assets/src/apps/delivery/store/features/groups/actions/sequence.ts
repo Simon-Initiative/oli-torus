@@ -1,3 +1,6 @@
+import { useSelector } from 'react-redux';
+import { selectCurrentSequenceId, selectSequence } from '../selectors/deck';
+
 export interface SequenceEntryChild {
   sequenceId: string;
   sequenceName: string;
@@ -123,4 +126,11 @@ export const getSequenceLineage = (
     }
   }
   return lineage;
+};
+
+export const getIsLayer = () => {
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
+  const placeInSequence = findInSequence(sequence, currentSequenceId);
+  return placeInSequence?.custom.isLayer;
 };

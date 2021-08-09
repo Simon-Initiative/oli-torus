@@ -81,24 +81,18 @@ export const SizePicker = (props: SizePickerProps) => {
   const gridStyle = {
     height,
     width,
-    padding: '5px',
-    backgroundColor: 'white',
-    borderRadius: '4px',
-    border: '1px solid #eee',
   } as any;
 
   const labelStyle = {
     width,
-    color: '#808080',
-    textAlign: 'center',
   } as any;
 
   const sizeLabel = size.rows + ' by ' + size.columns;
 
   return (
-    <div style={gridStyle}>
+    <div className="table-size-picker" style={gridStyle}>
       {rows.map(mapRow)}
-      <div style={labelStyle}>{sizeLabel}</div>
+      <div className="table-size-picker-label" style={labelStyle}>{sizeLabel}</div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { clone } from 'utils/common';
 import {
   findInHierarchy,
   flattenHierarchy,
@@ -28,12 +29,12 @@ export const addSequenceItem = createAsyncThunk(
     let sequenceItems = [...sequence];
 
     if (parentId) {
-      const parentItem = sequenceItems.find((i) => i.id === parentId);
+      const parentItem = sequenceItems.find((i) => i.activitySlug === parentId);
       if (parentItem) {
         parentItem.custom = parentItem.custom || {};
         const parentIndex = sequenceItems.indexOf(parentItem);
         // it should already be set?
-        item.custom.layerRef = parentItem.id;
+        item.custom.layerRef = parentItem.activitySlug;
         // need to add it *after* any other children
         // in order to do that, need to stick it in heirarchy order
         const hierarchy = getHierarchy(sequenceItems);
@@ -44,7 +45,7 @@ export const addSequenceItem = createAsyncThunk(
         }
         if (siblingId) {
           const siblingEntryIndex = parentInHierarchy.children.findIndex(
-            (entry) => entry.activity_id === siblingId,
+            (entry) => entry.activitySlug === siblingId,
           );
           if (siblingEntryIndex < 0) {
             console.warn(`couldn't find sibling ${siblingId}, shouldn't be possible`);
@@ -61,7 +62,9 @@ export const addSequenceItem = createAsyncThunk(
       }
     } else {
       if (siblingId) {
-        const siblingEntryIndex = sequenceItems.findIndex((entry) => entry.id === siblingId);
+        const siblingEntryIndex = sequenceItems.findIndex(
+          (entry) => entry.activitySlug === siblingId,
+        );
         if (siblingEntryIndex < 0) {
           console.warn(`couldn't find sibling ${siblingId}, shouldn't be possible`);
           // just push at the end then
@@ -73,7 +76,7 @@ export const addSequenceItem = createAsyncThunk(
         sequenceItems.push(item);
       }
     }
-    const newGroup = JSON.parse(JSON.stringify(group));
+    const newGroup = clone(group);
     newGroup.children = sequenceItems;
     dispatch(upsertGroup({ group: newGroup }));
     // TODO: save it to a DB ?

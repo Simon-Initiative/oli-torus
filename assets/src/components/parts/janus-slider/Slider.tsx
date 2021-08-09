@@ -1,15 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import {
-  JanusAbsolutePositioned,
-  JanusCustomCss,
-  PartComponentProps,
-} from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
 import './Slider.scss';
 
 interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -24,8 +21,8 @@ interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
 }
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [state, setState] = useState<unknown>([]);
+  const [model, setModel] = useState<Partial<SliderModel>>({});
   const [ready, setReady] = useState<boolean>(false);
 
   const id: string = props.id;
@@ -88,7 +85,10 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-
+    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+    if (initResult.context.mode === contexts.REVIEW) {
+      setIsSliderEnabled(false);
+    }
     setReady(true);
   }, []);
 
@@ -184,8 +184,8 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     height,
     customCssClass,
     label,
-    maximum,
-    minimum,
+    maximum = 1,
+    minimum = 0,
     snapInterval,
     showDataTip,
     showValueLabels,

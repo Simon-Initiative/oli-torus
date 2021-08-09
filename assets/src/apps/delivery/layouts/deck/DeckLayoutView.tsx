@@ -4,40 +4,38 @@ import { ActivityState, PartResponse, StudentResponse } from 'components/activit
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  ApplyStateOperation,
+  bulkApplyState,
   defaultGlobalEnv,
   evalScript,
+  getEnvState,
   getLocalizedStateSnapshot,
+  getValue,
+  removeStateValues,
 } from '../../../../adaptivity/scripting';
+import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
 import { triggerCheck } from '../../store/features/adaptivity/actions/triggerCheck';
-import { setInitPhaseComplete } from '../../store/features/adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  selectLessonEnd,
+  setInitPhaseComplete,
+} from '../../store/features/adaptivity/slice';
 import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectUserName } from '../../store/features/page/slice';
+import { selectEnableHistory, selectUserName, setScore } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
-  // TODO: change defaultCss to '' (or possibly new theme?) once all converted include it
-  // as legacy
-  const defaultCss = `
-  .content *  {text-decoration: none; padding: 0px; margin:0px;white-space: normal; font-family: Arial; font-size: 13px; font-style: normal;border: none; border-collapse: collapse; border-spacing: 0px;line-height: 1.4; color: black; font-weight:inherit;color: inherit; display: inline-block; -moz-binding: none; text-decoration: none; white-space: normal; border: 0px; max-width:none;}
-  .content sup  {vertical-align: middle; font-size:65%; font-style:inherit;}
-  .content sub  {vertical-align: middle; font-size:65%; font-style:inherit;}
-  .content em  {font-style:italic; display:inline; font-size:inherit;}
-  .content strong  {font-weight:bold; display:inline; font-size:inherit;}
-  .content label  {margin-right:2px; display:inline-block; cursor:auto;}
-  .content div  {display:inline-block; margin-top:1px}
-  .content input  {margin:0px;}
-  .content span  {display:inline; font-size:inherit;}
-  .content option {display:block;}
-  .content ul {display:block}
-  .content ol {display:block}`;
+  // migrated legacy include as customCss
+  // BS: do we need a default?
+  const defaultCss = '';
   const injected = props.css || defaultCss;
   return injected ? <style>{injected}</style> : null;
 };
@@ -51,12 +49,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
-
+  const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const isEnd = useSelector(selectLessonEnd);
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
   const [contentStyles, setContentStyles] = useState<any>({});
-
+  const enableHistory = useSelector(selectEnableHistory);
   // Background
   const backgroundClasses = ['background'];
   const backgroundStyles: CSSProperties = {};
@@ -138,7 +137,27 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivityTree || currentActivityTree.length === 0) {
       return;
     }
+    // Need to clear out snapshot for the current activity before we send the init trap state.
+    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
+    // some screens go in loop
+    // Don't do anything id enableHistory is ON
 
+    if (!enableHistory && currentActivityTree) {
+      const globalSnapshot = getEnvState(defaultGlobalEnv);
+      // this is firing after some initial part saves and wiping out what we have just set
+      // maybe we don't need to write the local versions ever?? instead just whenever anything
+      // is asking for it we can just give the localized snapshot?
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
+      const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
+        (key: string) =>
+          key.indexOf('stage.') === 0 || key.indexOf(`${currentActivity.id}|stage.`) === 0,
+      ); /*
+      console.log('REMOVING STATE VALUES: ', idsToBeRemoved); */
+      if (idsToBeRemoved.length) {
+        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
+      }
+    }
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
@@ -202,20 +221,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       setActivityClasses(
         [...new Set([...defaultClasses, ...customClasses])].map((str) => str.trim()),
       );
-    } else if (currentActivity?.content?.partsLayout) {
-      // check if activities have vft
-      // BS: TODO check whole tree for vft (often is in parent layer)
-      let hasVft = false;
-      currentActivityTree.forEach((activity) => {
-        if (!hasVft) {
-          hasVft = activity?.content?.partsLayout.some((part: any) => part.id === 'vft');
-        }
-      });
-      if (hasVft) {
-        // set new class list after check for duplicate strings
-        // & strip whitespace from array strings
-        setActivityClasses([...new Set([...defaultClasses, 'vft'])].map((str) => str.trim()));
-      }
     }
 
     return () => {
@@ -234,10 +239,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   const initCurrentActivity = useCallback(async () => {
     if (!currentActivityTree) {
+      console.error('[initCurrentActivity] no currentActivityTree');
       return;
     }
     const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
+      console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
     }
     await dispatch(initializeActivity(currentActivity.resourceId));
@@ -257,18 +264,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
       await initCurrentActivity();
-      /* const contexts = {
-        VIEWER: 'VIEWER',
-        REVIEW: 'REVIEW',
-        AUTHOR: 'AUTHOR',
-        REPORT: 'REPORT',
-      }; */
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: 'VIEWER',
+          mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
         },
       });
       dispatch(setInitPhaseComplete(true));
@@ -323,6 +324,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // throw instead?
       return { result: 'error' };
     }
+
+    //if user navigated from history, don't save anything and just return the saved state
+    if (historyModeNavigation) {
+      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    }
+
     if (response?.input?.length) {
       let result;
       // in addition to the current part attempt, need to lookup in the tree
@@ -433,9 +440,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         console.error('could not find attempt state for ', activity);
         return;
       }
+      const activityKey = historyModeNavigation ? `${activity.id}_history` : activity.id;
+
       return (
         <ActivityRenderer
-          key={activity.id}
+          key={activityKey}
           activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
@@ -455,13 +464,34 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     );
   }, [currentActivityTree]);
 
+  useEffect(() => {
+    if (!isEnd) {
+      return;
+    }
+
+    const tutorialScoreOp: ApplyStateOperation = {
+      target: 'session.tutorialScore',
+      operator: '+',
+      value: '{session.currentQuestionScore}',
+    };
+    const currentScoreOp: ApplyStateOperation = {
+      target: 'session.currentQuestionScore',
+      operator: '=',
+      value: 0,
+    };
+    bulkApplyState([tutorialScoreOp, currentScoreOp], defaultGlobalEnv);
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
+    // we shouldn't have to send this to the server, it should already be calculated there
+  }, [isEnd]);
+
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
       <DeckLayoutHeader
         pageName={pageTitle}
         userName={currentUserName}
-        activityName="TODO: (Activity Name)"
-        scoreValue={0}
+        activityName=""
         showScore={true}
         themeId={pageContent?.custom?.themeId}
       />

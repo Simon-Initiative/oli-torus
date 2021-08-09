@@ -1,8 +1,9 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
 export interface AppState {
-  paths: Record<string, string>;
+  paths: Record<string, string> | null;
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
@@ -11,10 +12,12 @@ export interface AppState {
   topPanel: boolean;
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
+  rightPanelActiveTab: RightPanelTabs;
+  currentRule: any;
 }
 
 const initialState: AppState = {
-  paths: {},
+  paths: null,
   isAdmin: false,
   projectSlug: '',
   revisionSlug: '',
@@ -23,6 +26,8 @@ const initialState: AppState = {
   topPanel: true,
   bottomPanel: true,
   visible: false,
+  rightPanelActiveTab: RightPanelTabs.LESSON,
+  currentRule: undefined,
 };
 
 export interface AppConfig {
@@ -62,12 +67,24 @@ const slice: Slice<AppState> = createSlice({
     setVisible(state, action: PayloadAction<{ visible: boolean }>) {
       state.visible = action.payload.visible;
     },
+    setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
+      state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
+    },
+    setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
+      state.currentRule = action.payload.currentRule;
+    },
   },
 });
 
 export const AppSlice = slice.name;
 
-export const { setInitialConfig, setPanelState, setVisible } = slice.actions;
+export const {
+  setInitialConfig,
+  setPanelState,
+  setVisible,
+  setRightPanelActiveTab,
+  setCurrentRule,
+} = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
 export const selectPaths = createSelector(selectState, (state: AppState) => state.paths);
@@ -85,6 +102,14 @@ export const selectTopPanel = createSelector(selectState, (state: AppState) => s
 export const selectBottomPanel = createSelector(
   selectState,
   (state: AppState) => state.bottomPanel,
+);
+export const selectRightPanelActiveTab = createSelector(
+  selectState,
+  (state: AppState) => state.rightPanelActiveTab,
+);
+export const selectCurrentRule = createSelector(
+  selectState,
+  (state: AppState) => state.currentRule,
 );
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
