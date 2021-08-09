@@ -192,8 +192,6 @@ defmodule OliWeb.Accounts.AccountsLive do
             <% else %>
               <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_user" phx-value-id="<%= id %>">Lock Account</button>
             <% end %>
-
-            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_user" phx-value-id="<%= id %>">Delete</button>
           </div>
         </div>
       """
@@ -265,8 +263,6 @@ defmodule OliWeb.Accounts.AccountsLive do
             <% else %>
               <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_author" phx-value-id="<%= id %>">Lock Account</button>
             <% end %>
-
-            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_author" phx-value-id="<%= id %>">Delete</button>
           </div>
         </div>
       """
@@ -382,12 +378,6 @@ defmodule OliWeb.Accounts.AccountsLive do
     {:noreply, assign(socket, model: model, selected_user: nil)}
   end
 
-  def handle_event("delete_user_users", _, socket) do
-    IO.inspect("TODO: delete_user_users")
-
-    {:noreply, assign(socket, selected_user: nil)}
-  end
-
   def handle_event("confirm_email_users", _, socket) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
@@ -417,12 +407,6 @@ defmodule OliWeb.Accounts.AccountsLive do
     model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
 
     {:noreply, assign(socket, model: model, selected_author: nil)}
-  end
-
-  def handle_event("delete_user_authors", _, socket) do
-    IO.inspect("TODO: delete_user_authors")
-
-    {:noreply, assign(socket, selected_author: nil)}
   end
 
   def handle_event("confirm_email_authors", _, socket) do
