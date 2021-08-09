@@ -180,7 +180,17 @@ const RightMenu: React.FC<any> = () => {
           // in case the id changes, update the selection
           dispatch(setCurrentSelection({ selection: modelChanges.id }));
         }
+        if(modelChanges.json.jsonChanged){
+          const newJson = modelChanges.json;
+          if (newJson.id !== ogPart.id) {
+            ogPart.id = newJson.id;
+            // in case the id changes, update the selection
+            dispatch(setCurrentSelection({ selection: modelChanges.id }));
+          }
+          ogPart.custom = newJson.custom;
+        } else {
         ogPart.custom = modelChanges.custom;
+        }
 
         if (!isEqual(cloneActivity, origActivity)) {
           dispatch(saveActivity({ activity: cloneActivity }));

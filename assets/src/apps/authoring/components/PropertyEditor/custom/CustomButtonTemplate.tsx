@@ -1,48 +1,58 @@
 import React, { CSSProperties, useRef, useState } from 'react';
-import { JsonEditor as Editor } from 'jsoneditor-react';
 interface CustomButtonProps {
   label: string;
+  onChange: any;
 }
 const CustomButtonTemplate: React.FC<CustomButtonProps> = (props: any) => {
-  const jsonValue = props.value;
   const [displayJsonEditor, setDisplayJsonEditor] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const handleButtonClick = () => {
     setDisplayJsonEditor(true);
+    document.addEventListener('mousedown', handleClick);
   };
-  const handleClick = () => {
-    setDisplayJsonEditor(false);
+  const handleClick = (event: any) => {
+    if (editorRef.current && !editorRef.current.contains(event.target)) {
+      setDisplayJsonEditor(false);
+      document.removeEventListener('mousedown', handleClick);
+    }
   };
+
   const popup: CSSProperties = {
-    position: 'absolute',
+    position: 'fixed',
     width: '50%',
+    height: '50%',
     top: '20px',
     inset: 0,
     margin: 'auto',
     border: '1px solid grey',
     background: 'white',
-  };
-  const cover: CSSProperties = {
-    position: 'fixed',
-    background: 'black',
-    opacity: 0.8,
-    top: '0px',
-    right: '0px',
-    bottom: '0px',
-    left: '0px',
+    padding: '10px',
     zIndex: 202,
+    boxShadow: '0 10px 8px 0 , 0 10px 20px 0 ',
+  };
+  const textAreaStyle: CSSProperties = {
+    width: '100%',
   };
   return (
     <div className="d-flex justify-content-center">
       <button className="form-button" onClick={handleButtonClick}>
-        {props.title}
+        {props.label}
       </button>
       {displayJsonEditor ? (
-        <div style={cover} onClick={handleClick}>
-          <div style={popup} ref={pickerRef}>
-            <JSONInput />
-          </div>
+        <div style={popup} ref={editorRef} draggable="true">
+          {props.label} <br />
+          <textarea
+            style={textAreaStyle}
+            rows={19}
+            onChange={(e) => {
+              const json = JSON.parse(e.target.value);
+              json.jsonChanged = true;
+              props.onChange(JSON.stringify(json));
+            }}
+          >
+            {props.value}
+          </textarea>
         </div>
       ) : null}
     </div>

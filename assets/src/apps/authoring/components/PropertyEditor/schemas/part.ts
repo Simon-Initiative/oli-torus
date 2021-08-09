@@ -4,7 +4,7 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const partSchema = {
   type: 'object',
   properties: {
-    button: {type: 'object', title: 'Edit JSON'},
+    json: {type: 'string', title: 'Edit JSON'},
     id: { type: 'string', title:'Id' },
     type: { type: 'string', title:'Type' },
     Position: {
@@ -29,8 +29,8 @@ const partSchema = {
 };
 
 export const partUiSchema = {
-  button: {
-    'ui:ObjectFieldTemplate': CustomButtonTemplate,
+  json: {
+    'ui:widget': CustomButtonTemplate,
   },
   type: {
     'ui:title': 'Part Type',
@@ -65,6 +65,7 @@ export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
   const { x, y, z, width, height } = model.custom;
   return {
+    json: JSON.stringify({id, custom:model.custom}, null, 4),
     id,
     type,
     Position: {
@@ -81,8 +82,9 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size } = schema;
+  const { id, type, Position, Size, json } = schema;
   return {
+    json: JSON.parse(json),
     id,
     type,
     custom: {
