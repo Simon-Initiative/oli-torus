@@ -66,6 +66,9 @@ $panel-section-title-bar-color: #e8ebed;
         right: 0;
         visibility: visible;
       }
+      .aa-panel-inner {
+        overflow: hidden;
+      }
     }
     &.top-panel {
       top: 0;
@@ -175,7 +178,6 @@ $panel-section-title-bar-color: #e8ebed;
     position: relative;
     background-color: $panel-bg-color-light;
     color: $panel-font-color-light;
-    overflow: hidden;
 
     .tab-content {
       font-size: 12px;
@@ -210,7 +212,8 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
     }
-    .screen-tab, .component-tab {
+    .screen-tab,
+    .component-tab {
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
 
@@ -220,13 +223,13 @@ $panel-section-title-bar-color: #e8ebed;
         .accordion {
           margin: -10px -15px auto -15px;
 
-          .collapse.show{
+          .collapse.show {
             margin-top: 10px;
           }
         }
       }
     }
-    .component-tab{
+    .component-tab {
       .collapse > .col-12 {
         padding-left: 0px !important;
         padding-right: 0px !important;
