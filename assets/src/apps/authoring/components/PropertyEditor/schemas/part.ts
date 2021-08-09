@@ -1,10 +1,10 @@
-import AccordionTemplate from '../custom/AccordionTemplate';
-import ColorPickerWidget from '../custom/ColorPickerWidget';
+import CustomButtonTemplate from '../custom/CustomButtonTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema = {
   type: 'object',
   properties: {
+    button: {type: 'object', title: 'Edit JSON'},
     id: { type: 'string', title:'Id' },
     type: { type: 'string', title:'Type' },
     Position: {
@@ -29,6 +29,9 @@ const partSchema = {
 };
 
 export const partUiSchema = {
+  button: {
+    'ui:ObjectFieldTemplate': CustomButtonTemplate,
+  },
   type: {
     'ui:title': 'Part Type',
     'ui:readonly': true,
