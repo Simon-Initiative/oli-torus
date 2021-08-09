@@ -571,7 +571,14 @@ defmodule OliWeb.Router do
   end
 
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authoring, :admin])
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring,
+      :admin,
+      :pow_email_layout
+    ])
 
     live("/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []})
     live("/features", Features.FeaturesLive)

@@ -91,7 +91,8 @@ defmodule Oli.Accounts.User do
       :independent_learner,
       :research_opt_out,
       :state,
-      :locked_at
+      :locked_at,
+      :email_confirmed_at
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
@@ -131,7 +132,8 @@ defmodule Oli.Accounts.User do
       :independent_learner,
       :research_opt_out,
       :state,
-      :locked_at
+      :locked_at,
+      :email_confirmed_at
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()

@@ -5,7 +5,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Table.{ColumnSpec, SortableTable, SortableTableModel}
   alias OliWeb.Common.Modal
-  alias Oli.Accounts.{Author, SystemRole}
+  alias Oli.Accounts.{Author, User, SystemRole}
   alias Oli.Accounts
   alias OliWeb.Accounts.AccountsModel
   alias OliWeb.Pow.UserContext
@@ -70,11 +70,24 @@ defmodule OliWeb.Accounts.AccountsLive do
       column_specs: [
         %ColumnSpec{name: :given_name, label: "First Name"},
         %ColumnSpec{name: :family_name, label: "Last Name"},
-        %ColumnSpec{name: :email, label: "Email"},
         %ColumnSpec{
-          name: :author_id,
-          label: "Author?",
+          name: :email,
+          label: "Email",
+          render_fn: &__MODULE__.render_email_column/3
+        },
+        %ColumnSpec{
+          name: :author,
+          label: "Linked Author",
           render_fn: &__MODULE__.render_author_column/3
+        },
+        %ColumnSpec{
+          name: :independent_learner,
+          label: "Learner",
+          render_fn: &__MODULE__.render_learner_column/3
+        },
+        %ColumnSpec{
+          name: :actions,
+          render_fn: &__MODULE__.render_user_actions_column/3
         }
       ],
       event_suffix: "_users",
@@ -84,22 +97,28 @@ defmodule OliWeb.Accounts.AccountsLive do
 
   def render_email_column(
         assigns,
-        %{email: email, email_confirmed_at: email_confirmed_at, locked_at: locked_at},
+        %{email: email, email_confirmed_at: email_confirmed_at, locked_at: locked_at} = row,
         _
       ) do
     checkmark =
-      if email_confirmed_at == nil do
-        ~L"""
-        <span data-toggle="tooltip" data-html="true" title="<b>Confirmation Pending</b> sent to <%= email %>">
-          <i class="las la-paper-plane text-secondary"></i>
-        </span>
-        """
-      else
-        ~L"""
-        <span data-toggle="tooltip" data-html="true" title="<b>Email Confirmed</b> on <%= Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}") %>">
-          <i class="las la-check text-success"></i>
-        </span>
-        """
+      case row do
+        %{independent_learner: false} ->
+          nil
+
+        _ ->
+          if email_confirmed_at == nil do
+            ~L"""
+            <span data-toggle="tooltip" data-html="true" title="<b>Confirmation Pending</b> sent to <%= email %>">
+              <i class="las la-paper-plane text-secondary"></i>
+            </span>
+            """
+          else
+            ~L"""
+            <span data-toggle="tooltip" data-html="true" title="<b>Email Confirmed</b> on <%= Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}") %>">
+              <i class="las la-check text-success"></i>
+            </span>
+            """
+          end
       end
 
     ~L"""
@@ -114,7 +133,7 @@ defmodule OliWeb.Accounts.AccountsLive do
     """
   end
 
-  def render_role_column(assigns, %{system_role_id: system_role_id} = row, _) do
+  def render_role_column(assigns, %{system_role_id: system_role_id}, _) do
     admin_role_id = SystemRole.role_id().admin
 
     case system_role_id do
@@ -125,8 +144,61 @@ defmodule OliWeb.Accounts.AccountsLive do
 
       _ ->
         ~L"""
-          <span class="badge badge-light">Author</span>
+          <span class="badge badge-dark">Author</span>
         """
+    end
+  end
+
+  def render_user_actions_column(
+        assigns,
+        %{
+          id: id,
+          email_confirmed_at: email_confirmed_at,
+          locked_at: locked_at,
+          independent_learner: independent_learner
+        },
+        _
+      ) do
+    resend_confirmation_link_path =
+      Routes.pow_path(OliWeb.Endpoint, :resend_user_confirmation_link)
+
+    if independent_learner do
+      ~L"""
+        <div class="dropdown">
+          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="user-actions-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="las la-tools"></i> Manage
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <%= if email_confirmed_at == nil do %>
+              <form method="post" action="<%= resend_confirmation_link_path %>">
+                <input type="hidden" name="id" value="<%= id %>" />
+                <button type="submit" class="dropdown-item">Resend confirmation link</button>
+              </form>
+              <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_user" phx-value-id="<%= id %>">Confirm email</button>
+
+              <div class="dropdown-divider"></div>
+            <% end %>
+
+            <button class="dropdown-item">Send password reset</button>
+
+            <div class="dropdown-divider"></div>
+
+            <%= if locked_at != nil do %>
+              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#unlock_user" phx-click="select_user" phx-value-id="<%= id %>">Unlock Account</button>
+            <% else %>
+              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_user" phx-value-id="<%= id %>">Lock Account</button>
+            <% end %>
+
+            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_user" phx-value-id="<%= id %>">Delete</button>
+          </div>
+        </div>
+      """
+    else
+      ~L"""
+      <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" disabled>
+        <i class="las la-tools"></i> Manage
+      </button>
+      """
     end
   end
 
@@ -134,7 +206,6 @@ defmodule OliWeb.Accounts.AccountsLive do
         assigns,
         %{
           id: id,
-          email: email,
           email_confirmed_at: email_confirmed_at,
           system_role_id: system_role_id,
           locked_at: locked_at
@@ -150,7 +221,7 @@ defmodule OliWeb.Accounts.AccountsLive do
          row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do
       ~L"""
         <div class="dropdown">
-          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="author-actions-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="las la-tools"></i> Manage
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -159,12 +230,12 @@ defmodule OliWeb.Accounts.AccountsLive do
                 <input type="hidden" name="id" value="<%= id %>" />
                 <button type="submit" class="dropdown-item">Resend confirmation link</button>
               </form>
-              <button class="dropdown-item">Confirm email</button>
+              <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_author" phx-value-id="<%= id %>">Confirm email</button>
 
               <div class="dropdown-divider"></div>
             <% end %>
 
-            <button class="dropdown-item">Reset password</button>
+            <button class="dropdown-item">Send password reset</button>
 
             <div class="dropdown-divider"></div>
 
@@ -198,15 +269,29 @@ defmodule OliWeb.Accounts.AccountsLive do
     end
   end
 
-  def render_author_column(assigns, %{author_id: author_id}, _) do
-    case author_id do
+  def render_author_column(assigns, %{author: author}, _) do
+    case author do
       nil ->
-        ""
-
-      _ ->
         ~L"""
-          <span class="badge badge-light">Author</span>
+          <span class="text-secondary"><em>None</em></span>
         """
+
+      author ->
+        ~L"""
+          <span class="badge badge-dark"><%= author.email %></span>
+        """
+    end
+  end
+
+  def render_learner_column(assigns, %{independent_learner: independent_learner}, _) do
+    if independent_learner do
+      ~L"""
+        <span class="badge badge-primary">Independent Learner</span>
+      """
+    else
+      ~L"""
+        <span class="badge badge-dark">LTI</span>
+      """
     end
   end
 
@@ -293,6 +378,19 @@ defmodule OliWeb.Accounts.AccountsLive do
     {:noreply, assign(socket, selected_user: nil)}
   end
 
+  def handle_event("confirm_email_users", _, socket) do
+    email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    socket.assigns.selected_user
+    |> User.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
+    |> Repo.update!()
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply, assign(socket, model: model, selected_user: nil)}
+  end
+
   def handle_event("lock_user_authors", _, socket) do
     AuthorContext.lock(socket.assigns.selected_author)
 
@@ -315,6 +413,19 @@ defmodule OliWeb.Accounts.AccountsLive do
     IO.inspect("TODO: delete_user_authors")
 
     {:noreply, assign(socket, selected_author: nil)}
+  end
+
+  def handle_event("confirm_email_authors", _, socket) do
+    email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    socket.assigns.selected_author
+    |> Author.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
+    |> Repo.update!()
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply, assign(socket, model: model, selected_author: nil)}
   end
 
   def handle_event("grant_admin", _, socket) do
@@ -392,17 +503,20 @@ defmodule OliWeb.Accounts.AccountsLive do
           </div>
         </div>
       </div>
+      <%= live_component Modal, title: "Confirm", modal_id: "confirm_email", ok_action: "confirm_email_#{@model.active_tab}", ok_label: "Confirm", ok_style: "btn btn-primary" do %>
+        <p class="mb-4">Are you sure you want to <b>confirm email</b>?</p>
+      <% end %>
       <%= live_component Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin", ok_label: "Grant", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to grant this author <b>administrator privileges</b>?</p>
+        <p class="mb-4">Are you sure you want to grant <b>administrator privileges</b>?</p>
       <% end %>
       <%= live_component Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin", ok_label: "Revoke", ok_style: "btn btn-danger" do %>
-        <p class="mb-4">Are you sure you want to revoke <b>administrator privileges</b> from this author account?</p>
+        <p class="mb-4">Are you sure you want to revoke <b>administrator privileges</b>?</p>
       <% end %>
       <%= live_component Modal, title: "Confirm", modal_id: "lock_user", ok_action: "lock_user_#{@model.active_tab}", ok_label: "Lock", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to <b>lock</b> access this account?</p>
+        <p class="mb-4">Are you sure you want to <b>lock</b> access to this account?</p>
       <% end %>
       <%= live_component Modal, title: "Confirm", modal_id: "unlock_user", ok_action: "unlock_user_#{@model.active_tab}", ok_label: "Unlock", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to <b>unlock</b> access this account?</p>
+        <p class="mb-4">Are you sure you want to <b>unlock</b> access to this account?</p>
       <% end %>
       <%= live_component Modal, title: "Confirm", modal_id: "delete_user", ok_action: "delete_user_#{@model.active_tab}", ok_label: "Delete", ok_style: "btn btn-danger" do %>
         <p class="mb-4">Are you sure you want to <b>delete</b> this account?</p>
