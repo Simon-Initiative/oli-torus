@@ -89,3 +89,16 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  showIncrementArrows: false,
+  showLabel: true,
+  label: 'How many?',
+  unitsLabel: 'quarks',
+  deleteEnabled: true,
+  requireManualGrading: false,
+  maxManualGrade: 0,
+  maxValue: 1,
+  minValue: 0,
+});

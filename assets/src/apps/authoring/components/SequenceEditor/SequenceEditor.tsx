@@ -393,9 +393,9 @@ const SequenceEditor: React.FC<any> = (props) => {
                 <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
                 {item.custom.isLayer ? 'Layer' : 'Screen'} ID
               </button>
-              <div className="dropdown-divider" />
               {currentGroup?.children?.length > 1 && (
                 <>
+                  <div className="dropdown-divider" />
                   <button
                     className="dropdown-item text-danger"
                     onClick={(e) => {

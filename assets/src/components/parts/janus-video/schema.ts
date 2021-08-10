@@ -75,3 +75,16 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  subtitles: [],
+  enableReplay: true,
+  autoPlay: false,
+  startTime: 0,
+  endTime: 0,
+  src: '',
+  alt: '',
+  customCssClass: '',
+  triggerCheck: false,
+});

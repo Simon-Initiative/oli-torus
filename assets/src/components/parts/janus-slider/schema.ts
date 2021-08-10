@@ -9,30 +9,9 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
   },
   showLabel: {
     title: 'Show Label',
@@ -94,3 +73,18 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  customCssClass: '',
+  showLabel: true,
+  showDataTip: true,
+  showValueLabels: true,
+  showTicks: true,
+  showThumbByDefault: true,
+  invertScale: false,
+  minimum: 0,
+  maximum: 100,
+  snapInterval: 1,
+  label: 'Slider',
+});

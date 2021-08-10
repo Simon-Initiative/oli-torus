@@ -1,7 +1,9 @@
 {
     "id": "janus_input_number",
-    "friendlyName": "InputNumber",
+    "friendlyName": "Number Input",
     "description": "Displays an number input",
+    "icon": "icon-part-userInput.svg",
+    "author": "Project Janus Team",
     "global": true,
     "delivery": {
         "element": "janus-input-number",

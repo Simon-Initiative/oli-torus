@@ -5,8 +5,8 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
+import { createSchema, schema, uiSchema } from './schema';
 import Video from './Video';
-import { schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -17,5 +17,6 @@ register(Video, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    createSchema,
   },
 });

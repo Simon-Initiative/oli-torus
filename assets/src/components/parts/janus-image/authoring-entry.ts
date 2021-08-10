@@ -6,7 +6,13 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import Image from './Image';
-import { schema, uiSchema } from './schema';
+import {
+  createSchema,
+  schema,
+  transformModelToSchema,
+  transformSchemaToModel,
+  uiSchema,
+} from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -17,5 +23,8 @@ register(Image, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    transformModelToSchema,
+    transformSchemaToModel,
+    createSchema,
   },
 });
