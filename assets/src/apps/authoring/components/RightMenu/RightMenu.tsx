@@ -17,6 +17,7 @@ import { selectState as selectPageState, updatePage } from '../../store/page/sli
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
+import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
@@ -57,6 +58,7 @@ const RightMenu: React.FC<any> = () => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [screenData, setScreenData] = useState();
+  const [displayEditor, setDisplayEditor] = useState<boolean>(false);
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -302,7 +304,28 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
-
+  const handleEditComponentJson = (newJson: any, isCancelled = false) => {
+    setDisplayEditor(false);
+    if(isCancelled)
+      return;
+    const cloneActivity = clone(currentActivity);
+    const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
+    if (!ogPart) {
+      console.warn(
+        'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
+      );
+      return;
+    }
+    if (newJson.id !== ogPart.id) {
+      ogPart.id = newJson.id;
+      // in case the id changes, update the selection
+      dispatch(setCurrentSelection({ selection: newJson.id }));
+    }
+    ogPart.custom = newJson.custom;
+    if (!isEqual(cloneActivity, currentActivity)) {
+      dispatch(saveActivity({ activity: cloneActivity }));
+    }
+  };
   const handleDeleteComponent = useCallback(() => {
     // only allow delete of "owned" parts
     // TODO: disable/hide button if that is not owned
@@ -371,6 +394,9 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" />
                 </Button>
+                <Button onClick={() => setDisplayEditor(true)}>
+                  <i className="fas fa-edit mr-2" />
+                </Button>
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
@@ -382,6 +408,12 @@ const RightMenu: React.FC<any> = () => {
               value={currentComponentData}
               onChangeHandler={componentPropertyChangeHandler}
             />
+            {displayEditor ? (
+              <CompJsonEditor
+                onChangeHandler={handleEditComponentJson}
+                jsonValue={currentComponentData}
+              />
+            ) : null}
           </div>
         )}
       </Tab>
