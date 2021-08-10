@@ -139,6 +139,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
       case 'navigation':
@@ -149,6 +150,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
       case 'mutateState':
@@ -159,6 +161,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
     }
@@ -207,6 +210,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       setActions(cloneActions);
       debounceNotifyChanges();
     }
+  };
+
+  const handleDeleteAction = async (action: any) => {
+    // TODO: get rid of orphaned feedback ensembles!
+    const temp = actions.filter((a: any) => a !== action);
+    setActions(temp);
+    debounceNotifyChanges();
   };
 
   return (
@@ -281,7 +291,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
               </button>
             </div>
             <div className="d-flex flex-column w-100">
-              {actions.length === 0 && <div>No actions. This rule will not do anything.</div>}
+              {actions.length === 0 && (
+                <div className="text-danger">No actions. This rule will not do anything.</div>
+              )}
               {actions.length > 0 && actions.map((action: any) => getActionEditor(action))}
             </div>
           </div>
