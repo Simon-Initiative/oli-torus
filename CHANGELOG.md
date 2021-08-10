@@ -7,6 +7,7 @@
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
 - Standardize padding and headers across all pages
+- Fix an issue where users with social logins have null sub
 
 ### Enhancements
 
