@@ -26,19 +26,6 @@ export interface MCSchemaV2 extends ActivityModelSchema {
   };
 }
 
-export interface CATASchemaV2 extends ActivityModelSchema {
-  stem: Stem;
-  choices: Choice[];
-  authoring: {
-    version: 2;
-    // An association list of correct choice ids to the matching response id
-    targeted: ChoiceIdsToResponseId[];
-    parts: Part[];
-    transformations: Transformation[];
-    previewText: string;
-  };
-}
-
 export const mcV1toV2 = (model: MCSchemaV1): MCSchemaV2 => {
   const newModel: MCSchemaV2 = {
     stem: model.stem,

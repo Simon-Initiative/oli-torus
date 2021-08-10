@@ -6,30 +6,28 @@ import {
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { MCSchema } from './schema';
+import { DropdownModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { AnswerKey } from 'components/activities/common/authoring/answerKey/AnswerKey';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { Maybe } from 'tsmonad';
-import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
+import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
+import { Radio } from 'components/misc/icons/radio/Radio';
+import { AnswerKey } from 'components/activities/common/authoring/answerKey/AnswerKey';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
+import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 
 const store = configureStore();
 
-const MultipleChoice: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext<MCSchema>();
+const Dropdown = () => {
+  const { dispatch, model } = useAuthoringElementContext<DropdownModelSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -74,19 +72,12 @@ const MultipleChoice: React.FC = () => {
   );
 };
 
-export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
-  migrateModelVersion(model: any): MCSchema {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
-      nothing: () => mcV1toV2(model),
-    });
-  }
-
-  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MCSchema>) {
+export class DropdownAuthoring extends AuthoringElement<DropdownModelSchema> {
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<DropdownModelSchema>) {
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>
-          <MultipleChoice />
+          <Dropdown />
         </AuthoringElementProvider>
       </Provider>,
       mountPoint,
@@ -95,4 +86,4 @@ export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
 }
 // eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
-window.customElements.define(manifest.authoring.element, MultipleChoiceAuthoring);
+window.customElements.define(manifest.authoring.element, DropdownAuthoring);

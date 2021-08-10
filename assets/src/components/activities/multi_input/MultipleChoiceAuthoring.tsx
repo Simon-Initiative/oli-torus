@@ -8,7 +8,8 @@ import {
 } from '../AuthoringElement';
 import { MCSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
+import { MCActions as Actions } from './actions';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';

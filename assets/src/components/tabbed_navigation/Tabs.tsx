@@ -20,7 +20,6 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, acti
 interface TabsComponentProps {}
 const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState(0);
-  console.log('active tab', activeTab);
   return (
     <>
       <ul className="nav nav-tabs mb-4" id="activity-authoring-tabs" role="tablist">
