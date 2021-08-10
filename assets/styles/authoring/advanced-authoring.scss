@@ -299,7 +299,8 @@ $panel-section-title-bar-color: #e8ebed;
     }
   }
   .aa-panel-section-controls {
-    .correct-toggle {
+    .correct-toggle,
+    .disable-state-toggle {
       border-right: 1px solid $ui-border-color;
     }
   }
@@ -549,7 +550,6 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
   }
-
   .aa-parts-list {
     button {
       padding: 4px;
@@ -560,5 +560,8 @@ $panel-section-title-bar-color: #e8ebed;
         margin: 4px;
       }
     }
+  }
+  .strikethru {
+    text-decoration: line-through;
   }
 }
