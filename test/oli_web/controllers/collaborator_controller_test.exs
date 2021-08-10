@@ -1,6 +1,8 @@
 defmodule OliWeb.CollaboratorControllerTest do
   use OliWeb.ConnCase
 
+  import ExUnit.CaptureLog
+
   alias Oli.Accounts
 
   @admin_email System.get_env("ADMIN_EMAIL", "admin@example.edu")
@@ -14,11 +16,42 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email: @admin_email,
+          email_text: @admin_email,
           "g-recaptcha-response": "any"
         )
 
       assert html_response(conn, 302) =~ "/project/"
+      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+    end
+
+    test "allows multiple comma separated values", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(conn, Routes.collaborator_path(conn, :create, project),
+          email_text: "#{@admin_email}, #{@invite_email},someotheremail@example.edu",
+          "g-recaptcha-response": "any"
+        )
+
+      assert html_response(conn, 302) =~ "/project/"
+      assert assert get_flash(conn, :info) == "Collaborator invitations sent!"
+    end
+
+    test "some emails succeed, some fail", %{conn: conn, project: project} do
+      expect_recaptcha_http_post()
+
+      assert capture_log(fn ->
+               conn =
+                 post(conn, Routes.collaborator_path(conn, :create, project),
+                   email_text: "#{@admin_email}, notevenan_email",
+                   "g-recaptcha-response": "any"
+                 )
+
+               assert html_response(conn, 302) =~ "/project/"
+
+               assert assert get_flash(conn, :error) ==
+                               "Failed to add some collaborators: notevenan_email"
+             end) =~ "Failed to add collaborators: notevenan_email"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
@@ -26,7 +59,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email: @invalid_email,
+          email_text: @invalid_email,
           "g-recaptcha-response": "any"
         )
 
@@ -40,7 +73,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email: @invite_email,
+          email_text: @invite_email,
           "g-recaptcha-response": "any"
         )
 

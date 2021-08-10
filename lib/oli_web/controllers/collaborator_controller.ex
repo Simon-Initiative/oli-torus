@@ -2,12 +2,49 @@ defmodule OliWeb.CollaboratorController do
   use OliWeb, :controller
   alias Oli.Authoring.Collaborators
 
-  def create(conn, %{"email" => email, "g-recaptcha-response" => g_recaptcha_response}) do
+  require Logger
+
+  def create(conn, %{"email_text" => email_text, "g-recaptcha-response" => g_recaptcha_response}) do
     project_id = conn.params["project_id"]
 
     case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
-        add_collaborator(conn, email, project_id)
+        emails =
+          email_text
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+
+        emails
+        |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
+          add_collaborator(conn, email, project_id, failures)
+        end)
+        |> case do
+          {conn, []} ->
+            conn
+            |> put_flash(:info, "Collaborator invitations sent!")
+            |> redirect(to: Routes.project_path(conn, :overview, project_id))
+
+          {conn, failures} ->
+            failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
+
+            Logger.error("Failed to add collaborators: #{Enum.join(failed_emails, ", ")}")
+
+            if Enum.count(failures) == Enum.count(emails) do
+              conn
+              |> put_flash(
+                :error,
+                "Failed to add collaborators. Please try again or contact support."
+              )
+              |> redirect(to: Routes.project_path(conn, :overview, project_id))
+            else
+              conn
+              |> put_flash(
+                :error,
+                "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
+              )
+              |> redirect(to: Routes.project_path(conn, :overview, project_id))
+            end
+        end
 
       {:success, false} ->
         conn
@@ -32,17 +69,13 @@ defmodule OliWeb.CollaboratorController do
     end
   end
 
-  defp add_collaborator(conn, email, project_id) do
+  defp add_collaborator(conn, email, project_id, failures) do
     case Collaborators.add_collaborator(conn, email, project_id) do
       {:ok, _results} ->
-        conn
-        |> put_flash(:info, "Collaborator invitation sent to #{email}!")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        {conn, failures}
 
       {:error, message} ->
-        conn
-        |> put_flash(:error, "We couldn't add that author to the project. #{message}")
-        |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        {conn, [{email, message} | failures]}
     end
   end
 end

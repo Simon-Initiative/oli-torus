@@ -4,7 +4,6 @@
     <div class="text-muted"><%= "#{@collaborator.email}" %></div>
   </div>
   <div class="user-actions">
-  <% IO.inspect(@collaborator, label: "Collaborator") %>
     <%= link "Remove", to: Routes.collaborator_path(@conn, :delete, @project, @collaborator.email), method: :delete, class: "btn btn-link text-danger" %>
   </div>
 </div>

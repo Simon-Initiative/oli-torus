@@ -26,7 +26,7 @@
 <div class="row py-5 border-bottom">
   <div class="col-md-4">
     <h4>Collaborators</h4>
-    <div class="text-muted">Invite other authors by email to contribute to your project.</div>
+    <div class="text-muted">Invite other authors by email to contribute to your project. Specify multiple separated by a comma.</div>
   </div>
   <div class="col-md-8">
     <script src="https://www.google.com/recaptcha/api.js"></script>
@@ -34,13 +34,13 @@
     <div class="form-group">
       <div class="input-group mb-3">
         <%= text_input f,
-            :email,
+            :email_text,
             class: "form-control" <> error_class(f, :title, "is-invalid"),
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
-            autofocus: focusHelper(f, :email, default: false) %>
-        <%= error_tag f, :email %>
+            autofocus: focusHelper(f, :email_text, default: false) %>
+        <%= error_tag f, :email_text %>
         <div class="input-group-append">
           <%= submit "Send Invite",
               id: "button-create-collaborator",
