@@ -151,6 +151,7 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
@@ -307,6 +308,10 @@ const DeckLayoutFooter: React.FC = () => {
         }
       }
     }
+
+    if (!hasFeedback && !hasFeedback) {
+      setHasOnlyMutation(true);
+    }
   }, [lastCheckResults]);
 
   const checkHandler = () => {
@@ -372,6 +377,12 @@ const DeckLayoutFooter: React.FC = () => {
     setCheckInProgress(true);
     setIsLoading(true);
   }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (hasOnlyMutation) {
+      setIsLoading(false);
+    }
+  }, [hasOnlyMutation]);
 
   useEffect(() => {
     if (checkInProgress && lastCheckResults) {
