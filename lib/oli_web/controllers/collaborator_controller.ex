@@ -4,13 +4,16 @@ defmodule OliWeb.CollaboratorController do
 
   require Logger
 
-  def create(conn, %{"email_text" => email_text, "g-recaptcha-response" => g_recaptcha_response}) do
+  def create(conn, %{
+        "collaborator_emails" => collaborator_emails,
+        "g-recaptcha-response" => g_recaptcha_response
+      }) do
     project_id = conn.params["project_id"]
 
     case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
         emails =
-          email_text
+          collaborator_emails
           |> String.split(",")
           |> Enum.map(&String.trim/1)
 

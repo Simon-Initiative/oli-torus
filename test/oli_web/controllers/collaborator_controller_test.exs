@@ -16,7 +16,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email_text: @admin_email,
+          collaborator_emails: @admin_email,
           "g-recaptcha-response": "any"
         )
 
@@ -29,7 +29,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email_text: "#{@admin_email}, #{@invite_email},someotheremail@example.edu",
+          collaborator_emails: "#{@admin_email}, #{@invite_email},someotheremail@example.edu",
           "g-recaptcha-response": "any"
         )
 
@@ -43,7 +43,7 @@ defmodule OliWeb.CollaboratorControllerTest do
       assert capture_log(fn ->
                conn =
                  post(conn, Routes.collaborator_path(conn, :create, project),
-                   email_text: "#{@admin_email}, notevenan_email",
+                   collaborator_emails: "#{@admin_email}, notevenan_email",
                    "g-recaptcha-response": "any"
                  )
 
@@ -59,7 +59,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email_text: @invalid_email,
+          collaborator_emails: @invalid_email,
           "g-recaptcha-response": "any"
         )
 
@@ -73,7 +73,7 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       conn =
         post(conn, Routes.collaborator_path(conn, :create, project),
-          email_text: @invite_email,
+          collaborator_emails: @invite_email,
           "g-recaptcha-response": "any"
         )
 

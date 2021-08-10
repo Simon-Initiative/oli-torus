@@ -34,13 +34,13 @@
     <div class="form-group">
       <div class="input-group mb-3">
         <%= text_input f,
-            :email_text,
+            :collaborator_emails,
             class: "form-control" <> error_class(f, :title, "is-invalid"),
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
-            autofocus: focusHelper(f, :email_text, default: false) %>
-        <%= error_tag f, :email_text %>
+            autofocus: focusHelper(f, :collaborator_emails, default: false) %>
+        <%= error_tag f, :collaborator_emails %>
         <div class="input-group-append">
           <%= submit "Send Invite",
               id: "button-create-collaborator",
