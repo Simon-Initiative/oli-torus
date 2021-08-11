@@ -65,6 +65,9 @@ const RightMenu: React.FC<any> = () => {
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
+    currentActivity?.content?.partsLayout?.forEach((part: any) => {
+      setExistingIds([...existingIds, part.id]);
+    });
   }, [currentActivity]);
 
   // should probably wrap this in state too, but it doesn't change really
@@ -204,6 +207,7 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentComponentData, setCurrentComponentData] = useState<any>(null);
   const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
+  const [existingIds, setExistingIds] = useState<string []>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {
       return;
@@ -304,19 +308,22 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
-  const handleEditComponentJson = (newJson: any, isCancelled = false) => {
+  const handleEditorClose = () => {
     setDisplayEditor(false);
-    if(isCancelled)
-      return;
+  };
+  const handleEditComponentJson = (newJson: any) => {
+    setDisplayEditor(false);
     const cloneActivity = clone(currentActivity);
-    const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === currentPartSelection);
+    const ogPart = cloneActivity.content?.partsLayout.find(
+      (part: any) => part.id === currentPartSelection,
+    );
     if (!ogPart) {
       console.warn(
         'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
       );
       return;
     }
-    if (newJson.id !== ogPart.id) {
+    if (newJson.id !== '' && newJson.id !== ogPart.id) {
       ogPart.id = newJson.id;
       // in case the id changes, update the selection
       dispatch(setCurrentSelection({ selection: newJson.id }));
@@ -394,7 +401,7 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" />
                 </Button>
-                <Button onClick={() => setDisplayEditor(true)}>
+                <Button onClick={() => setDisplayEditor(true)} data-toggle="modal" data-target="#jsonEditorModal">
                   <i className="fas fa-edit mr-2" />
                 </Button>
                 <Button variant="danger" onClick={handleDeleteComponent}>
@@ -410,8 +417,10 @@ const RightMenu: React.FC<any> = () => {
             />
             {displayEditor ? (
               <CompJsonEditor
-                onChangeHandler={handleEditComponentJson}
+                onChange={handleEditComponentJson}
+                onCancel={handleEditorClose}
                 jsonValue={currentComponentData}
+                existingPartIds={existingIds}
               />
             ) : null}
           </div>
