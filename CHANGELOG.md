@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Bug Fixes
+- Fix an issue where Update Line Items was failing
+
+### Bug Fixes
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
