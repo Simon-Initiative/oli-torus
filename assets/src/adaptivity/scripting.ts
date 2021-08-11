@@ -47,7 +47,7 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
         try {
           //trying to check if it is a CSS string.This might not handle any advance CSS string.
           const matchingCssElements = val.match(
-            /([#.@]?[\w.:> ]+)[\s]{[\r\n]?([A-Za-z\- \r\n\t]+[:][\s]*[\w .\\/()\-!]+;[\r\n]*(?:[A-Za-z\- \r\n\t]+[:][\s]*[\w .\\/()\-!]+;[\r\n]*(2)*)*)}/gi,
+            /^(([a-z0-9\\[\]=:]+\s?)|((div|span|body.*|.box-sizing:*|.columns-container.*|background-color.*)?(#|\.){1}[a-z0-9\-_\s?:]+\s?)+)(\{[\s\S][^}]*})$/im,
           );
           //matchingCssElements !== null then it means it's a CSS string so set actuallyAString=true so that it can be wrapped in ""
           if (matchingCssElements) {
