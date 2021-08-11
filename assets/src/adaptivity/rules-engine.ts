@@ -228,7 +228,7 @@ export const check = async (
   const { env } = evalScript(janus_std);
 
   const { result: assignResults } = evalAssignScript(state, env);
-  console.log('RULES ENGINE CHECK', { assignResults, state, env });
+  console.log('RULES ENGINE STATE ASSIGN', { assignResults, state, env });
 
   // evaluate all rule conditions against context
   const enabledRules = rules.filter((r) => !r.disabled);
