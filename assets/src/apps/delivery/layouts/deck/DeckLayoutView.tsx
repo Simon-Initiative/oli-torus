@@ -142,7 +142,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // some screens go in loop
     // Don't do anything id enableHistory/historyModeNavigation is ON
 
-    if (!historyModeNavigation || (!enableHistory && currentActivityTree)) {
+    if (!historyModeNavigation && currentActivityTree) {
       const globalSnapshot = getEnvState(defaultGlobalEnv);
       // this is firing after some initial part saves and wiping out what we have just set
       // maybe we don't need to write the local versions ever?? instead just whenever anything
