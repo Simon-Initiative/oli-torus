@@ -309,7 +309,7 @@ const DeckLayoutFooter: React.FC = () => {
       }
     }
 
-    if (!hasFeedback && !hasFeedback) {
+    if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
   }, [lastCheckResults]);
