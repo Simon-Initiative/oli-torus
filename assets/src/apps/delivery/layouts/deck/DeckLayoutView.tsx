@@ -31,6 +31,7 @@ import { selectEnableHistory, selectUserName, setScore } from '../../store/featu
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
+import { parseArray, parseNumString } from 'utils/common';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss
@@ -121,7 +122,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-
+          if (
+            typeof expr === 'string' &&
+            expr.charAt(0) === '[' &&
+            expr.charAt(expr.length - 1) === ']'
+          ) {
+            expr = parseArray(expr);
+          }
           const stmt = `let {variables.${v.name}} = ${expr};`;
           return stmt;
         })

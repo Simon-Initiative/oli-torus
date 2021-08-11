@@ -1,9 +1,4 @@
-import { isString, parseArray } from 'utils/common';
-
-export const parseNumString = (item: string): string | number => {
-  // check if items are strings or numbers and converts if number
-  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item.toString().trim();
-};
+import { isString, parseArray, parseNumString } from 'utils/common';
 
 export const parseArrayString = (value: (string | number)[] | string): (string | number)[] => {
   if (Array.isArray(value)) {

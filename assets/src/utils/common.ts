@@ -72,7 +72,7 @@ export const isStringArray = (s: unknown): boolean =>
 // otherwise we could just parse
 export const parseArray = (val: unknown): unknown[] => {
   if (Array.isArray(val)) {
-    return val;
+    return val.map((item: string) => parseNumString(item));
   }
 
   if (isStringArray(val)) {
@@ -99,7 +99,7 @@ export const parseArray = (val: unknown): unknown[] => {
         .split(/,\n/g);
       return innerEls.map(parseArray);
     } else {
-      const elements = inner.split(',');
+      const elements = inner.split(',').map((item: string) => parseNumString(item));
       const isEmpty = elements.length === 1 && elements[0] === '';
       const parsedArray = isEmpty ? [] : elements;
       if (isNested) {
@@ -107,6 +107,7 @@ export const parseArray = (val: unknown): unknown[] => {
       }
 
       return parsedArray.map((element) => {
+        if (typeof element !== 'string') return element;
         if (element.match(/^\s+$/)) {
           return element;
         } else {
@@ -133,4 +134,9 @@ export const parseBool = (val: any) => {
   const num: number = +val;
   // have to ignore the false searchValue in 'replace'
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
+};
+
+export const parseNumString = (item: string): string | number => {
+  // check if items are strings or numbers and converts if number
+  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item;
 };
