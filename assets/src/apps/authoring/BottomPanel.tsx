@@ -27,11 +27,13 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const [correct, setCorrect] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
   const isLayer = getIsLayer();
 
   useEffect(() => {
     if (currentRule === undefined) return;
     setCorrect(currentRule.correct);
+    setIsDisabled(currentRule.disabled);
   }, [currentRule]);
 
   const handleCorrectChange = () => {
@@ -43,6 +45,18 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     ruleToUpdate.correct = !correct;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
     setCorrect(!correct);
+    debounceSaveChanges(activityClone);
+  };
+
+  const handleDisabledChange = () => {
+    const activityClone: IActivity = clone(currentActivity);
+    const updatedRule = { ...currentRule, disabled: !isDisabled };
+    const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
+      (rule: any) => rule.id === updatedRule.id,
+    );
+    ruleToUpdate.disabled = !isDisabled;
+    dispatch(setCurrentRule({ currentRule: updatedRule }));
+    setIsDisabled(!isDisabled);
     debounceSaveChanges(activityClone);
   };
 
@@ -111,7 +125,21 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
               {currentRule && !isLayer && <span className="ruleName">{currentRule.name}</span>}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
-              {currentRule && !isLayer && (
+              {currentRule && currentRule.default && currentRule.correct && (
+                <div className="disable-state-toggle pr-3 mr-0 d-flex justify-content-center align-items-center form-check form-check-inline">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="disable-state-toggle"
+                    checked={isDisabled}
+                    onChange={() => handleDisabledChange()}
+                  />
+                  <label className="form-check-label" htmlFor="disable-state-toggle">
+                    Disable State
+                  </label>
+                </div>
+              )}
+              {currentRule && !isLayer && !currentRule.default && (
                 <>
                   <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
                     <i className="fa fa-times mr-2" />
@@ -127,26 +155,21 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     </div>
                     <i className="fa fa-check" />
                   </div>
-                  {!currentRule.default && (
-                    <OverlayTrigger
-                      placement="top"
-                      delay={{ show: 150, hide: 150 }}
-                      overlay={
-                        <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                          Delete Rule
-                        </Tooltip>
-                      }
-                    >
-                      <span>
-                        <button
-                          className="btn btn-link p-0 ml-3"
-                          onClick={() => handleDeleteRule()}
-                        >
-                          <i className="fa fa-trash-alt" />
-                        </button>
-                      </span>
-                    </OverlayTrigger>
-                  )}
+                  <OverlayTrigger
+                    placement="top"
+                    delay={{ show: 150, hide: 150 }}
+                    overlay={
+                      <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                        Delete Rule
+                      </Tooltip>
+                    }
+                  >
+                    <span>
+                      <button className="btn btn-link p-0 ml-3" onClick={() => handleDeleteRule()}>
+                        <i className="fa fa-trash-alt" />
+                      </button>
+                    </span>
+                  </OverlayTrigger>
                 </>
               )}
               {currentRule && !isLayer && (

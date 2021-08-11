@@ -1,4 +1,4 @@
-import { FeedbackAction } from 'apps/authoring/types';
+import { FeedbackAction, NavigationAction } from 'apps/authoring/types';
 import React, { useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
@@ -6,11 +6,12 @@ import guid from 'utils/guid';
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;
   onChange: (changes: any) => void;
+  onDelete: (changes: FeedbackAction) => void;
 }
 
 const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
   // const textFlowSchema:any = ContentService.getInstance().getComponentSchema('janus-text-flow');
-  const { action } = props;
+  const { action, onDelete } = props;
   const [fakeFeedback, setFakeFeedback] = useState<string>('');
   const uuid = guid();
 
@@ -112,7 +113,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1">
+          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
