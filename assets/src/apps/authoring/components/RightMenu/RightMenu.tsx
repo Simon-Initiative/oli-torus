@@ -18,6 +18,7 @@ import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/s
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
 import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
+import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
@@ -63,6 +64,9 @@ const RightMenu: React.FC<any> = () => {
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
+    currentActivity?.content?.partsLayout?.forEach((part: any) => {
+      setExistingIds([...existingIds, part.id]);
+    });
   }, [currentActivity]);
 
   // should probably wrap this in state too, but it doesn't change really
@@ -202,6 +206,7 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentComponentData, setCurrentComponentData] = useState<any>(null);
   const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
+  const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {
       return;
@@ -234,8 +239,13 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
+          let requiredFields = [];
+          if(instance.getRequiredFields){
+            requiredFields = instance.getRequiredFields();
+          }
           const newSchema: any = {
             ...partSchema,
+            required: requiredFields,
             properties: {
               ...partSchema.properties,
               custom: { type: 'object', properties: { ...customPartSchema } },
@@ -302,7 +312,27 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
-
+  const handleEditComponentJson = (newJson: any) => {
+    const cloneActivity = clone(currentActivity);
+    const ogPart = cloneActivity.content?.partsLayout.find(
+      (part: any) => part.id === currentPartSelection,
+    );
+    if (!ogPart) {
+      console.warn(
+        'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
+      );
+      return;
+    }
+    if (newJson.id !== '' && newJson.id !== ogPart.id) {
+      ogPart.id = newJson.id;
+      // in case the id changes, update the selection
+      dispatch(setCurrentSelection({ selection: newJson.id }));
+    }
+    ogPart.custom = newJson.custom;
+    if (!isEqual(cloneActivity, currentActivity)) {
+      dispatch(saveActivity({ activity: cloneActivity }));
+    }
+  };
   const handleDeleteComponent = useCallback(() => {
     // only allow delete of "owned" parts
     // TODO: disable/hide button if that is not owned
@@ -371,6 +401,12 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" />
                 </Button>
+                <CompJsonEditor
+                  onChange={handleEditComponentJson}
+                  jsonValue={currentComponentData}
+                  existingPartIds={existingIds}
+                  schema={componentSchema}
+                />
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
