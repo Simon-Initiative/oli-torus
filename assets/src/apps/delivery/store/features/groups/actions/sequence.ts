@@ -113,6 +113,17 @@ export const findInSequence = (
   return found;
 };
 
+export const findInSequenceByResourceId = (
+  sequence: SequenceEntry<SequenceEntryChild>[],
+  resourceId: number,
+): SequenceEntry<SequenceEntryChild> | null => {
+  const found = sequence.find((entry) => entry.resourceId === resourceId);
+  if (!found) {
+    return null;
+  }
+  return found;
+};
+
 export const getSequenceLineage = (
   sequence: SequenceEntry<SequenceEntryChild>[],
   childId: string | number,

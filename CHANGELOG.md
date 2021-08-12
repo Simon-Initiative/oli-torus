@@ -3,14 +3,22 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.12.8 (2021-08-11)
+
+### Bug Fixes
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
 - Standardize padding and headers across all pages
+- Fix an issue where users with social logins have null sub
+- Fix an issue where Update Line Items was failing
 
 ### Enhancements
 
 - Redesign overview page, change language
+- Allow multiple comma-separated collaborators to be added at once
 
 ## 0.12.7 (2021-08-02)
 

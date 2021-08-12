@@ -68,3 +68,14 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  src: '',
+  customCssClass: '',
+  triggerCheck: false,
+  autoPlay: false,
+  startTime: 0,
+  endTime: 0,
+  enableReplay: true,
+  subtitles: [],
+});

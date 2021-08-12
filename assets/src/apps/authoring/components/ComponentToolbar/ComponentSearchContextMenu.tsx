@@ -1,4 +1,4 @@
-import { selectPaths, setRightPanelActiveTab } from 'apps/authoring/store/app/slice';
+import { selectPartComponentTypes, selectPaths, setRightPanelActiveTab } from 'apps/authoring/store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { useRef, useState } from 'react';
@@ -14,6 +14,7 @@ const ComponentSearchContextMenu: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const dispatch = useDispatch();
   const currentPartSelection = useSelector(selectCurrentSelection);
+  const availablePartComponents = useSelector(selectPartComponentTypes);
 
   const handleClick = (event: any) => {
     setShow(!show);
@@ -31,26 +32,13 @@ const ComponentSearchContextMenu: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
 
-  // TODO: allow parts to specify various icons in manifest
   const getPartIcon = (type: string) => {
-    switch (type) {
-      case 'janus-text-flow':
-        return `${paths?.images}/icons/icon-text.svg`;
-      case 'janus-image':
-        return `${paths?.images}/icons/icon-image.svg`;
-      case 'janus-video':
-        return `${paths?.images}/icons/icon-video.svg`;
-      case 'janus-audio':
-        return `${paths?.images}/icons/icon-audio.svg`;
-      case 'janus-mcq':
-        return `${paths?.images}/icons/icon-multiChoice.svg`;
-      case 'janus-navbutton':
-        return `${paths?.images}/icons/icon-navButton.svg`;
-      case 'janus-input-text':
-        return `${paths?.images}/icons/icon-userInput.svg`;
+    const part = availablePartComponents.find(part => part.delivery_element === type);
+    if (!part) {
+      return `${paths?.images}/icons/icon-componentList.svg`;
     }
-    // TODO: unknown icon?
-    return `${paths?.images}/icons/icon-componentList.svg`;
+    // TODO: test if part.icon starts with http and if so use that instead of the paths.images
+    return `${paths?.images}/icons/${part.icon}`;
   };
 
   console.log('ALL PARTS', { allParts, currentActivityTree });

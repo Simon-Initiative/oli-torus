@@ -66,3 +66,14 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  enabled: true,
+  customCssClass: '',
+  showLabel: true,
+  label: 'Input',
+  prompt: 'enter some text',
+  maxManualGrade: 0,
+  showOnAnswersReport: false,
+  requireManualGrading: false,
+});

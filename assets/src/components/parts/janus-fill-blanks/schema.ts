@@ -1,8 +1,4 @@
 export const schema = {
-  src: {
-    title: 'Source',
-    type: 'string',
-  },
   cssClasses: {
     title: 'CSS Classes',
     type: 'string',
@@ -40,12 +36,6 @@ export const schema = {
     options: {
       hidden: true,
     },
-  },
-  mode: {
-    title: 'Mode',
-    type: 'string',
-    enum: ['Config', 'Student'],
-    default: 'Student',
   },
   enabled: {
     title: 'Enabled',
@@ -190,3 +180,14 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = () => ({
+  cssClasses: '',
+  customCss: '',
+  showHints: false,
+  showCorrect: false,
+  alternateCorrectDelimiter: '',
+  caseSensitiveAnswers: false,
+  content: [],
+  elements: [],
+});

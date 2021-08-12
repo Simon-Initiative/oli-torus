@@ -1,7 +1,9 @@
 {
   "id": "janus_image_carousel",
   "friendlyName": "Carousel",
-  "description": "Displays a carousel.",
+  "description": "An image carousel.",
+  "icon": "icon-part-carousel.svg",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-image-carousel",

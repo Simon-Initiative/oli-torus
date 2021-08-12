@@ -1,3 +1,5 @@
+import { CreationContext } from "../types/parts";
+
 export const schema = {
   customCssClass: {
     title: 'Custom CSS Class',
@@ -20,7 +22,7 @@ export const schema = {
     default: true,
   },
   lockAspectRatio: {
-    title: 'Local Aspect Ratio',
+    title: 'Lock Aspect Ratio',
     type: 'boolean',
     format: 'checkbox',
     description: 'specifies whether image aspect ratio is locked',
@@ -29,3 +31,29 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const transformModelToSchema = (model: any) => {
+  console.log('Image Model -> Schema transformer', model);
+  // nothing to do for now
+  return model;
+};
+
+export const transformSchemaToModel = (schema: any) => {
+  console.log('Image Schema -> Model transformer', schema);
+  // nothing to do for now
+  return schema;
+};
+
+export const createSchema = (context?: CreationContext) => {
+  // maybe use the context to know the path of the images?
+  // or bundle data url?
+  const src = '/images/placeholder-image.svg';
+
+  return {
+    customCssClass: '',
+    src,
+    alt: 'an image',
+    scaleContent: true,
+    lockAspectRatio: true,
+  };
+};

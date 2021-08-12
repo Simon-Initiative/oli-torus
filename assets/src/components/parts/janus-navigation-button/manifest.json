@@ -1,7 +1,9 @@
 {
     "id": "janus_navigation_button",
-    "friendlyName": "NavigationButton",
-    "description": "Displays an button",
+    "friendlyName": "Navigation Button",
+    "description": "A button that can trigger check events, used to control navigation.",
+    "icon": "icon-part-navButton.svg",
+    "author": "Project Janus Team",
     "global": true,
     "delivery": {
         "element": "janus-navigation-button",

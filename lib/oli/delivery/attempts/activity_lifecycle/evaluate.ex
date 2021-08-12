@@ -169,7 +169,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                       # part_inputs are assumed to be from the current activity only
                       # so we strip out the sequence id from the path to get our "local"
                       # values for the rules
-                      local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                      # might look like this "q:1465253111364:752|stage.dragdrop.Drag and Drop.Body Fossil | Direct Evidence.Count"
+                      path_parts = String.split(path, "|stage")
+                      path_interested = List.last(path_parts)
+                      local_path = if String.starts_with?(path_interested, ".") do
+                        "stage" <> path_interested
+                      else
+                        path_interested
+                      end
                       value = Map.get(input, "value")
                       Map.put(acc1, local_path, value)
                     end
