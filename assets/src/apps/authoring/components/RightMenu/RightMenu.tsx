@@ -58,7 +58,6 @@ const RightMenu: React.FC<any> = () => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [screenData, setScreenData] = useState();
-  const [displayEditor, setDisplayEditor] = useState<boolean>(false);
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -308,11 +307,7 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
-  const handleEditorClose = () => {
-    setDisplayEditor(false);
-  };
   const handleEditComponentJson = (newJson: any) => {
-    setDisplayEditor(false);
     const cloneActivity = clone(currentActivity);
     const ogPart = cloneActivity.content?.partsLayout.find(
       (part: any) => part.id === currentPartSelection,
@@ -401,9 +396,11 @@ const RightMenu: React.FC<any> = () => {
                 <Button>
                   <i className="fas fa-copy mr-2" />
                 </Button>
-                <Button onClick={() => setDisplayEditor(true)} data-toggle="modal" data-target="#jsonEditorModal">
-                  <i className="fas fa-edit mr-2" />
-                </Button>
+                <CompJsonEditor
+                onChange={handleEditComponentJson}
+                jsonValue={currentComponentData}
+                existingPartIds={existingIds}
+              />
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
@@ -415,14 +412,6 @@ const RightMenu: React.FC<any> = () => {
               value={currentComponentData}
               onChangeHandler={componentPropertyChangeHandler}
             />
-            {displayEditor ? (
-              <CompJsonEditor
-                onChange={handleEditComponentJson}
-                onCancel={handleEditorClose}
-                jsonValue={currentComponentData}
-                existingPartIds={existingIds}
-              />
-            ) : null}
           </div>
         )}
       </Tab>
