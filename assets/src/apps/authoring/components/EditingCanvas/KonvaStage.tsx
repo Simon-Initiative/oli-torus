@@ -56,6 +56,7 @@ const KonvaStage: React.FC<KonvaStageProps> = (props) => {
         width: el.clientWidth,
         height: el.clientHeight,
         container: el,
+        draggable: true,
       });
       setStage(_stage);
     }
