@@ -27,7 +27,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
         setValidationMsg('');
         document.getElementById('btnSave')?.removeAttribute('disabled');
       }
-    } catch (e: any) {
+    } catch (e) {
       document.getElementById('btnSave')?.setAttribute('disabled', 'disabled');
       setValidationMsg('Please make sure the JSON is in proper format.');
     }
