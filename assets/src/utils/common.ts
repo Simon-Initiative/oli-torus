@@ -119,8 +119,11 @@ export const parseArray = (val: unknown): unknown[] => {
 
   if (!val) {
     return [];
+  } else if (typeof val === 'string') {
+    //if the val = 'abc' or val = '3,1,8' then it does not go in any of the above conditions and was throwing error. Since this fn will be used in contains operator as well, we need to return something
+    // because there could be a rules saying val.contains('abc'). it's not an array but it is valid condition
+    return val.split(',').map((item: string) => parseNumString(item));
   }
-
   // if we hit this, it was something WAY off
   const err = new Error('not a valid array');
   // console.error(err, { val });

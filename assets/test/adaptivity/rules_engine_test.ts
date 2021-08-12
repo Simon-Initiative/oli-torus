@@ -6,7 +6,6 @@ import {
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
   notContainsOperator,
-  parseArrayString,
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -29,6 +28,7 @@ import {
   defaultWrongRule as builtinDefaultWrongRule,
   ScoringContext,
 } from 'adaptivity/rules-engine';
+import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
   complexRuleWithMultipleActions,
@@ -311,15 +311,11 @@ describe('Operators', () => {
   });
 
   describe('Parse Array String', () => {
-    expect(parseArrayString(['1', '2', '3'])).toEqual([1, 2, 3]);
-    expect(parseArrayString(['1', 2, '3'])).toEqual([1, 2, 3]);
-    expect(parseArrayString(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
-    expect(parseArrayString(['Stem', 'Option1', 'Option2'])).toEqual([
-      'Stem',
-      'Option1',
-      'Option2',
-    ]);
-    expect(parseArrayString('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
+    expect(parseArray(['1', '2', '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['1', 2, '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
+    expect(parseArray(['Stem', 'Option1', 'Option2'])).toEqual(['Stem', 'Option1', 'Option2']);
+    expect(parseArray('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
   });
 
   describe('Range Operators', () => {
