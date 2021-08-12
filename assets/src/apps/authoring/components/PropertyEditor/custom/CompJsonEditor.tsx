@@ -6,10 +6,13 @@ import { useSelector } from 'react-redux';
 interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: any) => void;
+  schema: any;
   existingPartIds: string[];
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
-  const { jsonValue, onChange, existingPartIds } = props;
+  const { jsonValue, onChange, existingPartIds, schema } = props;
+  const requiredFields = schema['required'];
+  const blankReqFields = [];
   const val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');
@@ -22,14 +25,15 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
     try {
       const jsonVal = JSON.parse(value);
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
-        document.getElementById('btnSave')?.setAttribute('disabled', 'disabled');
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else {
+        // if(checkForRequiredFields(jsonVal)){
+        //   setValidationMsg('');
+        //   document.getElementById('btnSave')?.removeAttribute('disabled');
+        // }else {
         setValidationMsg('');
-        document.getElementById('btnSave')?.removeAttribute('disabled');
       }
     } catch (e) {
-      document.getElementById('btnSave')?.setAttribute('disabled', 'disabled');
       setValidationMsg('Please make sure the JSON is in proper format.');
     }
   }, [value]);
@@ -61,7 +65,9 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
               className="btn btn-success"
               onClick={() => {
                 setDisplayEditor(false);
-                onChange(JSON.parse(value))}}
+              onChange(JSON.parse(value));
+            }}
+            disabled={validationMsg !== ''}
             >
               Save
             </button>

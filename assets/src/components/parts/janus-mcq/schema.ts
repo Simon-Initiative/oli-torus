@@ -140,6 +140,8 @@ export const schema = {
 
 export const uiSchema = {};
 
+export const requiredFields = ["id"];
+
 export const createSchema = () => {
   const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,

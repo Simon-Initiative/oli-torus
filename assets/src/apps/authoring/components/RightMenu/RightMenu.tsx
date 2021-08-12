@@ -206,7 +206,7 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentComponentData, setCurrentComponentData] = useState<any>(null);
   const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
-  const [existingIds, setExistingIds] = useState<string []>([]);
+  const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {
       return;
@@ -239,8 +239,13 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
+          let requiredFields = [];
+          if(instance.getRequiredFields){
+            requiredFields = instance.getRequiredFields();
+          }
           const newSchema: any = {
             ...partSchema,
+            required: requiredFields,
             properties: {
               ...partSchema.properties,
               custom: { type: 'object', properties: { ...customPartSchema } },
@@ -397,10 +402,11 @@ const RightMenu: React.FC<any> = () => {
                   <i className="fas fa-copy mr-2" />
                 </Button>
                 <CompJsonEditor
-                onChange={handleEditComponentJson}
-                jsonValue={currentComponentData}
-                existingPartIds={existingIds}
-              />
+                  onChange={handleEditComponentJson}
+                  jsonValue={currentComponentData}
+                  existingPartIds={existingIds}
+                  schema={componentSchema}
+                />
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />
                 </Button>

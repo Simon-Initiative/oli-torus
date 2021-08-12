@@ -21,6 +21,8 @@ export const schema = {
 
 export const uiSchema = {};
 
+export const requiredFields = ["id","src"]
+
 export const createSchema = () => ({
   customCssClass: '',
   src: '',
