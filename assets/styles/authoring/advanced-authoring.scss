@@ -555,13 +555,15 @@ $panel-section-title-bar-color: #e8ebed;
       padding: 4px;
       img {
         display: inline-block;
-        width: 16px;
-        height: 16px;
+        max-height: 16px;
         margin: 4px;
       }
     }
   }
   .strikethru {
     text-decoration: line-through;
+  }
+  .popover {
+    max-width: 550px;
   }
 }
