@@ -209,7 +209,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
       {:ok, line_items, access_token} ->
-        graded_pages = Grading.fetch_graded_pages(socket.assigns.section)
+        graded_pages = Grading.fetch_graded_pages(socket.assigns.section.slug)
 
         case determine_line_item_tasks(graded_pages, line_items) do
           [] ->

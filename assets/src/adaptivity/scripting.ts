@@ -47,7 +47,7 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
         try {
           //trying to check if it is a CSS string.This might not handle any advance CSS string.
           const matchingCssElements = val.match(
-            /([#.@]?[\w.:> ]+)[\s]{[\r\n]?([A-Za-z\- \r\n\t]+[:][\s]*[\w .\\/()\-!]+;[\r\n]*(?:[A-Za-z\- \r\n\t]+[:][\s]*[\w .\\/()\-!]+;[\r\n]*(2)*)*)}/gi,
+            /^(([a-z0-9\\[\]=:]+\s?)|((div|span|body.*|.box-sizing:*|.columns-container.*|background-color.*)?(#|\.){1}[a-z0-9\-_\s?:]+\s?)+)(\{[\s\S][^}]*})$/im,
           );
           //matchingCssElements !== null then it means it's a CSS string so set actuallyAString=true so that it can be wrapped in ""
           if (matchingCssElements) {
@@ -120,14 +120,26 @@ export const evalScript = (
   const program = parser.parseProgram();
   if (parser.errors.length) {
     /* console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors }); */
-    throw new Error(parser.errors.join('\n'));
+    throw new Error(`Error in script: ${script}\n${parser.errors.join('\n')}`);
   }
   const result = evaluator.eval(program, globalEnv);
   const jsResult = result.toJS();
   return { env: globalEnv, result: jsResult };
 };
 
-export const getAssignScript = (state: Record<string, any>): string => {
+export const evalAssignScript = (
+  state: Record<string, any>,
+  env?: Environment,
+): { env: Environment; result: any } => {
+  const globalEnv = env || new Environment();
+  const assignStatements = getAssignStatements(state);
+  const results = assignStatements.map((assignStatement) => {
+    return evalScript(assignStatement, globalEnv).result;
+  });
+  return { env: globalEnv, result: results };
+};
+
+export const getAssignStatements = (state: Record<string, any>): string[] => {
   const vars = Object.keys(state).map((key) => {
     const val = state[key];
     let writeVal = { key, value: val, type: 0 };
@@ -146,6 +158,11 @@ export const getAssignScript = (state: Record<string, any>): string => {
     return writeVal;
   });
   const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
+  return letStatements;
+};
+
+export const getAssignScript = (state: Record<string, any>): string => {
+  const letStatements = getAssignStatements(state);
   return letStatements.join('');
 };
 
