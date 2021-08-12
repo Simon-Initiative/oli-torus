@@ -250,22 +250,9 @@ $panel-section-title-bar-color: #e8ebed;
     left: 65px;
     right: 0;
     bottom: 0;
-    overflow: scroll;
+    overflow: hidden;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
       repeat;
-  }
-  .aa-stage-inner {
-    position: relative;
-    width: 1000px;
-    height: 1000px;
-    display: inline-block;
-    margin-top: calc(#{$nav-height} + 64px);
-    margin-left: calc(#{$panel-side-width} + 64px);
-    margin-right: calc(#{$panel-side-width} + 64px);
-    background-color: $white;
-    border-radius: $rounded;
-    border: 1px solid $ui-border-color;
-    padding: 24px;
   }
   .aa-panel-section-title-bar {
     background: $panel-section-title-bar-color;
