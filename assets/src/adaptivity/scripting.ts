@@ -43,7 +43,7 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
       const evalResult = evalScript(`let foo = ${val};`);
       // when evalScript is executed successfully, evalResult.result is null.
       // evalScript does not trigger catch block even though there is error and add the error in stack property.
-      if (evalResult?.result?.stack?.indexOf('Error') !== -1) {
+      if (evalResult?.result !== null) {
         try {
           //trying to check if it is a CSS string.This might not handle any advance CSS string.
           const matchingCssElements = val.match(
