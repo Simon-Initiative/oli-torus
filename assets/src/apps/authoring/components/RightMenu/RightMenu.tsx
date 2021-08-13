@@ -51,8 +51,8 @@ const RightMenu: React.FC<any> = () => {
   const currentPartSelection = useSelector(selectCurrentSelection);
 
   // TODO: dynamically load schema from Part Component configuration
-  const [componentSchema, setComponentSchema]: any = useState<any>(partSchema);
-  const [componentUiSchema, setComponentUiSchema]: any = useState<any>(partUiSchema);
+  const [componentSchema, setComponentSchema] = useState<any>(partSchema);
+  const [componentUiSchema, setComponentUiSchema] = useState<any>(partUiSchema);
   const [currentComponent, setCurrentComponent] = useState<any>(null);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
@@ -204,8 +204,8 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const [currentComponentData, setCurrentComponentData] = useState<any>(null);
-  const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
+  const [currentComponentData, setCurrentComponentData] = useState(null);
+  const [currentPartInstance, setCurrentPartInstance] = useState(null);
   const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {

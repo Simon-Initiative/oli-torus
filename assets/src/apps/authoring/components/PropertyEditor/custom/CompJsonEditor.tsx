@@ -10,7 +10,7 @@ interface JsonEditorProps {
   schema: any;
   existingPartIds: string[];
 }
-const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
+const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   const { jsonValue, onChange, existingPartIds, schema } = props;
   const val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
