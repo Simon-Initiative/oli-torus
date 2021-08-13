@@ -16,7 +16,7 @@ interface ContextProps {
   mode: string;
 }
 interface InitResultProps extends ContextProps {
-  snapshot: { [key: string]: string };
+  snapshot: Record<string, unknown>;
   context: ContextProps;
 }
 
