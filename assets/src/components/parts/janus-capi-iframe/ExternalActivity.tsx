@@ -839,7 +839,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
-  }, [simFrame]);
+  }, [simFrame, activityId]);
 
   useEffect(() => {
     if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
