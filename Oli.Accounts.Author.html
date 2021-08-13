@@ -10,7 +10,7 @@
     <title>Oli.Accounts.Author — OLI Torus v0.12.8</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-3d961962be.js"></script>
+    <script src="dist/sidebar_items-2a0e868a34.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -120,6 +120,13 @@ Oli.Accounts.Author <small class="app-vsn">(OLI Torus v0.12.8)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#invite_changeset/3">invite_changeset(changeset, invited_by, attrs)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#lock_changeset/1">lock_changeset(user_or_changeset)</a>
 
   </div>
 
@@ -333,7 +340,7 @@ Functions
     </a>
     <h1 class="signature">invite_changeset(changeset, invited_by, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L88" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L93" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -342,6 +349,35 @@ Functions
   </div>
 
   <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="lock_changeset/1">
+
+  <div class="detail-header">
+    <a href="#lock_changeset/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">lock_changeset(user_or_changeset)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L100" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>lock_changeset(<a href="https://hexdocs.pm/ecto/3.5.8/Ecto.Schema.html#t:t/0">Ecto.Schema.t</a>() | <a href="https://hexdocs.pm/ecto/3.5.8/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()) :: <a href="https://hexdocs.pm/ecto/3.5.8/Ecto.Changeset.html#t:t/0">Ecto.Changeset.t</a>()</pre>
+
+      </div>
 
 
   </section>
@@ -357,7 +393,7 @@ Functions
     </a>
     <h1 class="signature">noauth_changeset(author, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L66" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L69" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -722,7 +758,7 @@ Functions
     </a>
     <h1 class="signature">user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L82" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts/schemas/author.ex#L87" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

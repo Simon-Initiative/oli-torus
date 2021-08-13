@@ -10,7 +10,7 @@
     <title>OliWeb.Accounts.AccountsLive — OLI Torus v0.12.8</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-3d961962be.js"></script>
+    <script src="dist/sidebar_items-2a0e868a34.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -123,6 +123,20 @@ OliWeb.Accounts.AccountsLive <small class="app-vsn">(OLI Torus v0.12.8)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#load_authors_model/1">load_authors_model(current_author)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#load_users_model/0">load_users_model()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#mount/3">mount(_, map, socket)</a>
 
   </div>
@@ -141,6 +155,13 @@ OliWeb.Accounts.AccountsLive <small class="app-vsn">(OLI Torus v0.12.8)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#render_author_actions_column/3">render_author_actions_column(assigns, row, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#render_author_column/3">render_author_column(assigns, map, _)</a>
 
   </div>
@@ -148,7 +169,28 @@ OliWeb.Accounts.AccountsLive <small class="app-vsn">(OLI Torus v0.12.8)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render_role_column/3">render_role_column(assigns, row, _)</a>
+    <a href="#render_email_column/3">render_email_column(assigns, row, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_learner_column/3">render_learner_column(assigns, map, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_role_column/3">render_role_column(assigns, map, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_user_actions_column/3">render_user_actions_column(assigns, map, _)</a>
 
   </div>
 
@@ -177,7 +219,7 @@ Functions
     </a>
     <h1 class="signature">handle_event(binary, arg2, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L113" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L313" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -199,7 +241,7 @@ Functions
     </a>
     <h1 class="signature">handle_params(params, _, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L203" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L459" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -212,6 +254,50 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.15.7/Phoenix.LiveView.html#c:handle_params/3"><code class="inline">Phoenix.LiveView.handle_params/3</code></a>.</p>
   </section>
 </section>
+<section class="detail" id="load_authors_model/1">
+
+  <div class="detail-header">
+    <a href="#load_authors_model/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">load_authors_model(current_author)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L37" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="load_users_model/0">
+
+  <div class="detail-header">
+    <a href="#load_users_model/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">load_users_model()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L66" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="mount/3">
 
   <div class="detail-header">
@@ -221,7 +307,7 @@ Functions
     </a>
     <h1 class="signature">mount(_, map, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L13" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -243,7 +329,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L224" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L480" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -263,6 +349,28 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.15.7/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
   </section>
 </section>
+<section class="detail" id="render_author_actions_column/3">
+
+  <div class="detail-header">
+    <a href="#render_author_actions_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_author_actions_column(assigns, row, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L207" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="render_author_column/3">
 
   <div class="detail-header">
@@ -272,7 +380,51 @@ Functions
     </a>
     <h1 class="signature">render_author_column(assigns, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L92" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L278" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_email_column/3">
+
+  <div class="detail-header">
+    <a href="#render_email_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_email_column(assigns, row, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L97" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_learner_column/3">
+
+  <div class="detail-header">
+    <a href="#render_learner_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_learner_column(assigns, map, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L292" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -292,9 +444,31 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render_role_column(assigns, row, _)</h1>
+    <h1 class="signature">render_role_column(assigns, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L135" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_user_actions_column/3">
+
+  <div class="detail-header">
+    <a href="#render_user_actions_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_user_actions_column(assigns, map, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/users/accounts_live.ex#L151" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
