@@ -52,12 +52,15 @@ const SequenceEditor: React.FC<any> = (props) => {
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
+    isQuestionBank = false,
   ) => {
     let layerRef: string | undefined;
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
-    const newTitle = `New ${layerRef ? 'Child' : ''}${isLayer ? 'Layer' : 'Screen'}`;
+    const newTitle = `New ${layerRef && !isQuestionBank ? 'Child' : ''}${
+      isLayer ? 'Layer' : isQuestionBank ? 'Question Bank' : 'Screen'
+    }`;
 
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -71,6 +74,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       activitySlug: newActivity.activitySlug,
       custom: {
         isLayer,
+        isQuestionBank,
         layerRef,
         sequenceId: `${newActivity.activitySlug}_${guid()}`,
         sequenceName: newTitle,
@@ -305,7 +309,7 @@ const SequenceEditor: React.FC<any> = (props) => {
 
   const SequenceItemContextMenu = (props: any) => {
     const { id, item, index, arr } = props;
-
+    console.log(id, item, arr);
     return (
       <div className="dropdown aa-sequence-item-context-menu">
         {currentGroup && (
@@ -339,7 +343,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               >
                 <i className="fas fa-desktop mr-2" /> Add Subscreen
               </button>
-              <button
+              {!item.custom.isQuestionBank ? <button
                 className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -348,7 +352,17 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-layer-group mr-2" /> Add Layer
-              </button>
+              </button> : null}
+              {!item.custom.isQuestionBank ? <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                  handleItemAdd(item, false, true);
+                }}
+              >
+                <i className="fas fa-cubes mr-2" /> Add Question Bank
+              </button>: null}
               {item.custom.isLayer ? (
                 <button
                   className="dropdown-item"
