@@ -373,6 +373,11 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
                       type: CapiVariableTypes.NUMBER,
                       value: updatedValues?.length,
                     },
+                    {
+                      key: 'selectedChoices',
+                      type: CapiVariableTypes.ARRAY,
+                      value: updatedValues,
+                    },
                   ],
                 });
                 setSelectedChoices(updatedValues);
