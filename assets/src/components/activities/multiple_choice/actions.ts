@@ -1,5 +1,11 @@
 import { MCSchema } from './schema';
-import { ChoiceId, makeResponse, makeUndoable, PostUndoable, ResponseId } from 'components/activities/types';
+import {
+  ChoiceId,
+  makeResponse,
+  makeUndoable,
+  PostUndoable,
+  ResponseId,
+} from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
@@ -25,9 +31,9 @@ export const MCActions = {
       }
 
       const undoable = makeUndoable('Removed a choice', [
-        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)},
-        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice)}
-      ])
+        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice) },
+      ]);
       post(undoable);
     };
   },
@@ -40,7 +46,9 @@ export const MCActions = {
 
   editTargetedFeedbackChoice(responseId: ResponseId, choiceId: ChoiceId) {
     return (model: MCSchema, post: PostUndoable) => {
-      const assoc = model.authoring.targeted.find((assoc: any) => getResponseId(assoc) === responseId);
+      const assoc = model.authoring.targeted.find(
+        (assoc: any) => getResponseId(assoc) === responseId,
+      );
       if (!assoc) return;
       assoc[0] = [choiceId];
       getResponse(model, getResponseId(assoc)).rule = matchRule(choiceId);

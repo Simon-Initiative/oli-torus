@@ -1,9 +1,6 @@
-
 import React from 'react';
 
-export type UnsupportedActivityProps = {
-
-};
+export type UnsupportedActivityProps = {};
 
 export const UnsupportedActivity = (props: UnsupportedActivityProps) => {
   return (

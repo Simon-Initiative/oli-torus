@@ -1,5 +1,4 @@
-
-export function getQueryVariableFromString(variable: string, str: string) : string {
+export function getQueryVariableFromString(variable: string, str: string): string {
   const vars = str.split('&');
   for (let i = 0; i < vars.length; i += 1) {
     const pair = vars[i].split('=');

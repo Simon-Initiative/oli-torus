@@ -73,7 +73,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
         const changeData: ActivityUpdate = {
           title: activity.title,
           objectives: activity.objectives,
-          content: {...activity.content, authoring: activity.authoring},
+          content: { ...activity.content, authoring: activity.authoring },
         };
         return edit(projectSlug, resourceId, activity.resourceId, changeData, false);
       });

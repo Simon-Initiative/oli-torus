@@ -46,9 +46,8 @@ const NestedStateDisplay: React.FC<NestedStateDisplayProps> = ({
           onClick={() =>
             setExpandedPanels({
               ...expandedPanels,
-              [`panel-${rootLevel}${levelIndex}`]: !expandedPanels[
-                `panel-${rootLevel}${levelIndex}`
-              ],
+              [`panel-${rootLevel}${levelIndex}`]:
+                !expandedPanels[`panel-${rootLevel}${levelIndex}`],
             })
           }
         >

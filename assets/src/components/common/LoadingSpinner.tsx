@@ -21,9 +21,7 @@ export interface LoadingSpinnerState {
 /**
  * LoadingSpinner React Component
  */
-export class LoadingSpinner
-  extends React.PureComponent<LoadingSpinnerProps, LoadingSpinnerState> {
-
+export class LoadingSpinner extends React.PureComponent<LoadingSpinnerProps, LoadingSpinnerState> {
   constructor(props: LoadingSpinnerProps) {
     super(props);
   }
@@ -31,17 +29,20 @@ export class LoadingSpinner
   render() {
     const { message, failed, children, size } = this.props;
 
-    const sizeClass = size === LoadingSpinnerSize.Small
-      ? 'ls-small'
-      : size === LoadingSpinnerSize.Large
+    const sizeClass =
+      size === LoadingSpinnerSize.Small
+        ? 'ls-small'
+        : size === LoadingSpinnerSize.Large
         ? 'ls-large'
         : 'ls-normal';
 
     return (
       <div className={'LoadingSpinner ' + sizeClass}>
-        {failed
-          ? <i className="fa fa-times-circle" />
-          : <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />}
+        {failed ? (
+          <i className="fa fa-times-circle" />
+        ) : (
+          <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
+        )}
         &nbsp;{message ? message : children}
       </div>
     );

@@ -52,9 +52,7 @@ import { Socket } from 'phoenix';
 //
 // Finally, connect to the socket:
 
-
 export function initSocket() {
-
   const socket = new Socket('/v1/api/state', { params: { token: (window as any).userToken } });
   socket.connect();
 

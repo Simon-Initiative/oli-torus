@@ -18,7 +18,6 @@ export interface ModalMediaEditorState {
 }
 
 class ModalMediaEditor extends React.PureComponent<ModalMediaEditorProps, ModalMediaEditorState> {
-
   constructor(props: ModalMediaEditorProps) {
     super(props);
 
@@ -38,27 +37,25 @@ class ModalMediaEditor extends React.PureComponent<ModalMediaEditorProps, ModalM
       model: this.state.model,
       onEdit: this.onEdit,
     };
-    return React.Children.map(
-      this.props.children,
-      (c) => {
-        return React.cloneElement(c as any, additionalProps);
-      });
+    return React.Children.map(this.props.children, (c) => {
+      return React.cloneElement(c as any, additionalProps);
+    });
   }
 
   render() {
-
     return (
-      <ModalSelection title="Edit" size={sizes.extraLarge}
-        okLabel="Done" cancelLabel="Cancel"
+      <ModalSelection
+        title="Edit"
+        size={sizes.extraLarge}
+        okLabel="Done"
+        cancelLabel="Cancel"
         onCancel={this.props.onCancel}
-        onInsert={() => this.props.onInsert(this.state.model)}>
-
+        onInsert={() => this.props.onInsert(this.state.model)}
+      >
         {this.renderChildren()}
-
       </ModalSelection>
     );
   }
-
 }
 
 export default ModalMediaEditor;
