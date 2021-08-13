@@ -17,6 +17,7 @@ register(TextFlow, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    getRequiredFields: () => requiredFields,
     createSchema,
   },
 });

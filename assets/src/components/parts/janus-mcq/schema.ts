@@ -79,9 +79,6 @@ export const schema = {
     format: 'checkbox',
     description: 'specifies whether to show numbering on the MCQ items',
     default: false,
-    options: {
-      hidden: true,
-    },
   },
   mcqItems: {
     title: 'Items',
@@ -108,7 +105,6 @@ export const schema = {
     format: 'checkbox',
     description: 'specifies whether MCQ is enabled',
     default: true,
-    isVisibleInTrapState: true,
   },
   definitions: {
     node: {
@@ -139,6 +135,8 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const requiredFields = ['id', 'palette'];
 
 export const createSchema = () => {
   const createSimpleOption = (index: number, score = 1) => ({

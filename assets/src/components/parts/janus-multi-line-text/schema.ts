@@ -47,11 +47,12 @@ export const schema = {
     format: 'checkbox',
     description: 'specifies whether textbox is enabled',
     default: true,
-    isVisibleInTrapState: true,
   },
 };
 
 export const uiSchema = {};
+
+export const requiredFields = ['id'];
 
 export const createSchema = () => ({
   enabled: true,

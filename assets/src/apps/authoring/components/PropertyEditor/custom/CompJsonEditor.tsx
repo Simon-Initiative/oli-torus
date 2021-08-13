@@ -3,6 +3,7 @@ import React, { CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import  Ajv  from 'ajv'
 interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: any) => void;
@@ -11,8 +12,6 @@ interface JsonEditorProps {
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
   const { jsonValue, onChange, existingPartIds, schema } = props;
-  const requiredFields = schema['required'];
-  const blankReqFields = [];
   const val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');
@@ -27,10 +26,10 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props: any) => {
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else {
-        // if(checkForRequiredFields(jsonVal)){
-        //   setValidationMsg('');
-        //   document.getElementById('btnSave')?.removeAttribute('disabled');
-        // }else {
+        const ajv = new Ajv();
+        const validate = ajv.compile(schema);
+        const valid = validate(jsonVal)
+        if (!valid) console.log(validate.errors);
         setValidationMsg('');
       }
     } catch (e) {

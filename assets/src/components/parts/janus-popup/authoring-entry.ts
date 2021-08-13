@@ -6,7 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import Popup from './Popup';
-import { createSchema, schema, uiSchema } from './schema';
+import { createSchema, schema, uiSchema, requiredFields } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -17,6 +17,7 @@ register(Popup, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    getRequiredFields: () => requiredFields,
     createSchema,
   },
 });

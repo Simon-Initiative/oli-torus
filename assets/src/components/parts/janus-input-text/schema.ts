@@ -67,6 +67,8 @@ export const schema = {
 
 export const uiSchema = {};
 
+export const requiredFields = ['id'];
+
 export const createSchema = () => ({
   enabled: true,
   customCssClass: '',
