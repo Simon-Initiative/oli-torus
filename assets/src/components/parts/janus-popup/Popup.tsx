@@ -11,6 +11,15 @@ import {
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
 import { contexts } from '../../../types/applicationContext';
+interface ContextProps {
+  currentActivity: string;
+  mode: string;
+}
+interface InitResultProps extends ContextProps {
+  snapshot: string[];
+  context: ContextProps;
+}
+
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
@@ -22,7 +31,7 @@ const Popup: React.FC<any> = (props) => {
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
 
-  const [initSnapshot, setInitSnapshot] = useState<any>();
+  const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
