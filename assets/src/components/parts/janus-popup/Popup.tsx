@@ -15,7 +15,7 @@ interface ContextProps {
   currentActivity: string;
   mode: string;
 }
-interface InitResultProps extends ContextProps {
+interface InitResultProps {
   snapshot: Record<string, unknown>;
   context: ContextProps;
 }
