@@ -381,6 +381,7 @@ const DeckLayoutFooter: React.FC = () => {
   useEffect(() => {
     if (hasOnlyMutation) {
       setIsLoading(false);
+      setHasOnlyMutation(false);
     }
   }, [hasOnlyMutation]);
 
