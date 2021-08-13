@@ -52,7 +52,7 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
-
+  const [activityId, setActivityId] = useState<number>(0);
   // these rely on being set every render and the "model" useState value being set
   const { src, title, customCssClass, configData } = model;
 
@@ -131,6 +131,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
+    if (initResult.context.currentActivity) {
+      setActivityId(initResult.context.currentActivity);
+    }
     if (initResult.context.mode) {
       context = initResult.context.mode;
     }
@@ -326,7 +329,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       if (!isMine) {
         return false;
       }
-      const internalValue = externalActivityMap.get(ms);
+      const internalValue = externalActivityMap.get(`${activityId}|${ms}`);
       // mineValue is the value that was passed on to this part component
       // internalVal is the value that is stored locally in key-value pair for value changes comparions
       let mineValue = vars[ms];
@@ -433,7 +436,7 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentMutateStateSnapshot = payload.mutateChanges;
               //udpate the local key-value pair when variables changed by mutation i.e. from outside
               Object.keys(currentMutateStateSnapshot).forEach((key) => {
-                externalActivityMap.set(key, currentMutateStateSnapshot[key]);
+                externalActivityMap.set(`${activityId}|${key}`, currentMutateStateSnapshot[key]);
               });
               processInitStateVariable(currentMutateStateSnapshot);
               setSimIsInitStatePassedOnce(false);
@@ -468,7 +471,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, simLife]);
+  }, [props.notify, simLife, activityId]);
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
@@ -492,7 +495,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         setInternalState(mutableState);
         mutableState.forEach((element) => {
           if (element.id.indexOf(`stage.${id}.`) === 0) {
-            externalActivityMap.set(element.id, element);
+            externalActivityMap.set(`${activityId}|${element.id}`, element);
           }
         });
       }
@@ -836,7 +839,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
-  }, [simFrame]);
+  }, [simFrame, activityId]);
 
   useEffect(() => {
     if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
