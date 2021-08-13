@@ -335,7 +335,7 @@ const RightMenu: React.FC<any> = () => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
-        <div className="lesson-tab">
+        <div className="lesson-tab overflow-hidden">
           <PropertyEditor
             schema={lessonSchema as JSONSchema7}
             uiSchema={lessonUiSchema}
@@ -345,7 +345,7 @@ const RightMenu: React.FC<any> = () => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
-        <div className="screen-tab p-3">
+        <div className="screen-tab p-3 overflow-hidden">
           {currentActivity && screenData ? (
             <PropertyEditor
               key={currentActivity.id}
@@ -359,7 +359,7 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && currentComponentData && (
-          <div className="component-tab p-3">
+          <div className="component-tab p-3 overflow-hidden">
             <ButtonToolbar aria-label="Component Tools">
               <ButtonGroup className="me-2" aria-label="First group">
                 <Button>
