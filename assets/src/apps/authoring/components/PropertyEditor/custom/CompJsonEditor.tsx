@@ -29,8 +29,11 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
         const ajv = new Ajv();
         const validate = ajv.compile(schema);
         const valid = validate(jsonVal)
-        if (!valid) console.log(validate.errors);
-        setValidationMsg('');
+        if (!valid){
+          setValidationMsg('Please make sure all the required Fields are pesent');
+        } else {
+          setValidationMsg('');
+        }
       }
     } catch (e) {
       setValidationMsg('Please make sure the JSON is in proper format.');

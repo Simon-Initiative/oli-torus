@@ -3,7 +3,7 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import { schema, uiSchema, createSchema } from './schema';
+import { schema, uiSchema, createSchema, requiredFields } from './schema';
 import TextFlow from './TextFlow';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');

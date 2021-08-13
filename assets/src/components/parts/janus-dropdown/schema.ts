@@ -25,19 +25,16 @@ export const schema = {
   showOnAnswersReport: {
     title: 'Show on Answer Report',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
   },
   requireManualGrading: {
     title: 'Require Manual Grading',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
   },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -62,9 +59,7 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether dropdown is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
   definitions: {

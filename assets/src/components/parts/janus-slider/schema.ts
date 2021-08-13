@@ -16,7 +16,6 @@ export const schema = {
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -28,27 +27,22 @@ export const schema = {
   showDataTip: {
     title: 'Show Data Tip',
     type: 'boolean',
-    format: 'checkbox',
   },
   showValueLabels: {
     title: 'Show Value Labels',
     type: 'boolean',
-    format: 'checkbox',
   },
   showTicks: {
     title: 'Show Ticks',
     type: 'boolean',
-    format: 'checkbox',
   },
   showThumbByDefault: {
     title: 'Thumb By Default',
     type: 'boolean',
-    format: 'checkbox',
   },
   invertScale: {
     title: 'Invert Scale',
     type: 'boolean',
-    format: 'checkbox',
   },
   minimum: {
     title: 'Min',
@@ -65,9 +59,7 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether slider is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
 };

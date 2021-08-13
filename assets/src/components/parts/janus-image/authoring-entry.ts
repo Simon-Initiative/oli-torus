@@ -11,6 +11,7 @@ import {
   schema,
   transformModelToSchema,
   transformSchemaToModel,
+  requiredFields,
   uiSchema,
 } from './schema';
 
