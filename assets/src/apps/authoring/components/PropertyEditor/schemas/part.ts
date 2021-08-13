@@ -1,8 +1,9 @@
+import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const partSchema = {
+const partSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     id: { type: 'string', title:'Id' },
