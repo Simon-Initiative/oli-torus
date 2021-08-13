@@ -3,7 +3,6 @@ import React, { CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
-import  Ajv  from 'ajv'
 interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: any) => void;
@@ -26,14 +25,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else {
-        const ajv = new Ajv();
-        const validate = ajv.compile(schema);
-        const valid = validate(jsonVal)
-        if (!valid){
-          setValidationMsg('Please make sure all the required Fields are pesent');
-        } else {
-          setValidationMsg('');
-        }
+        setValidationMsg(jsonVal.id === '' ? 'ID is required Field and can not be empty' : '');
       }
     } catch (e) {
       setValidationMsg('Please make sure the JSON is in proper format.');
@@ -45,38 +37,38 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
         <i className="fas fa-edit mr-2" />
       </Button>
       <Modal show={displayEditor} onHide={() => setDisplayEditor(false)}>
-          <Modal.Header closeButton={true}>
-            <h4 className="modal-title">Edit JSON</h4>
-          </Modal.Header>
-          <Modal.Body>
-            <textarea
-              style={textAreaStyle}
-              rows={20}
-              onChange={(e) => {
-                setValue(e.target.value);
-              }}
-            >
-              {value}
-            </textarea>
-            <label className="text-danger">{validationMsg}</label>
-          </Modal.Body>
-          <Modal.Footer>
-            <button
-              id="btnSave"
-              type="button"
-              className="btn btn-success"
-              onClick={() => {
-                setDisplayEditor(false);
+        <Modal.Header closeButton={true}>
+          <h4 className="modal-title">Edit JSON</h4>
+        </Modal.Header>
+        <Modal.Body>
+          <textarea
+            style={textAreaStyle}
+            rows={20}
+            onChange={(e) => {
+              setValue(e.target.value);
+            }}
+          >
+            {value}
+          </textarea>
+          <label className="text-danger">{validationMsg}</label>
+        </Modal.Body>
+        <Modal.Footer>
+          <button
+            id="btnSave"
+            type="button"
+            className="btn btn-success"
+            onClick={() => {
+              setDisplayEditor(false);
               onChange(JSON.parse(value));
             }}
             disabled={validationMsg !== ''}
-            >
-              Save
-            </button>
-            <button type="button" className="btn btn-danger" onClick={() => setDisplayEditor(false)}>
-              Cancel
-            </button>
-          </Modal.Footer>
+          >
+            Save
+          </button>
+          <button type="button" className="btn btn-danger" onClick={() => setDisplayEditor(false)}>
+            Cancel
+          </button>
+        </Modal.Footer>
       </Modal>
     </Fragment>
   );
