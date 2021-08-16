@@ -24,8 +24,10 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       const jsonVal = JSON.parse(value);
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
+      } else if (!jsonVal.id) {
+        setValidationMsg('ID is required and cannot be empty');
       } else {
-        setValidationMsg(jsonVal.id === '' ? 'ID is required Field and can not be empty' : '');
+        setValidationMsg('');
       }
     } catch (e) {
       setValidationMsg('Please make sure the JSON is in proper format.');

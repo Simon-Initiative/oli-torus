@@ -64,9 +64,8 @@ const RightMenu: React.FC<any> = () => {
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
-    currentActivity?.content?.partsLayout?.forEach((part: any) => {
-      setExistingIds([...existingIds, part.id]);
-    });
+    const currentIds = currentActivityTree?.reduce((acc, activity) => acc.concat(activity.content.partsLayout.map((p:any) => p.id)));
+    setExistingIds(currentIds);
   }, [currentActivity]);
 
   // should probably wrap this in state too, but it doesn't change really
