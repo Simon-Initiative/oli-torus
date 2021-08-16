@@ -309,7 +309,6 @@ const SequenceEditor: React.FC<any> = (props) => {
 
   const SequenceItemContextMenu = (props: any) => {
     const { id, item, index, arr, isParentQB } = props;
-    console.log(id, item, arr);
     return (
       <div className="dropdown aa-sequence-item-context-menu">
         {currentGroup && (
