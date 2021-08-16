@@ -17,11 +17,12 @@ export type UPDATE_PREFERENCES = 'preferences/UPDATE_PREFERENCES';
 export const UPDATE_PREFERENCES: UPDATE_PREFERENCES = 'preferences/UPDATE_PREFERENCES';
 
 export type UpdatePreferencesAction = {
-  type: UPDATE_PREFERENCES,
-  preferences: Preferences,
+  type: UPDATE_PREFERENCES;
+  preferences: Preferences;
 };
 
-export const updatePreferences = (preferences: Partial<Preferences>) =>
+export const updatePreferences =
+  (preferences: Partial<Preferences>) =>
   async (dispatch: Dispatch<Action>, getState: () => State) => {
     // dispatch any async actions such as AJAX calls, etc...
     const previousState = getState();
@@ -50,26 +51,21 @@ export type LOAD_PREFERENCES = 'preferences/LOAD_PREFERENCES';
 export const LOAD_PREFERENCES: LOAD_PREFERENCES = 'preferences/LOAD_PREFERENCES';
 
 export type LoadPreferencesAction = {
-  type: LOAD_PREFERENCES,
-  preferences: Preferences,
+  type: LOAD_PREFERENCES;
+  preferences: Preferences;
 };
 
-export const loadPreferences = () =>
-  async (dispatch: Dispatch<Action>, getState: () => State) => {
-    // dispatch any async actions such as AJAX calls, etc...
-    const preferences = await fetchPreferencesRequest();
+export const loadPreferences = () => async (dispatch: Dispatch<Action>, getState: () => State) => {
+  // dispatch any async actions such as AJAX calls, etc...
+  const preferences = await fetchPreferencesRequest();
 
-    dispatch({
-      type: LOAD_PREFERENCES,
-      preferences,
-    });
-  };
+  dispatch({
+    type: LOAD_PREFERENCES,
+    preferences,
+  });
+};
 
-export type PreferencesActions
-  = LoadPreferencesAction
-  | UpdatePreferencesAction
-  | OtherAction;
-
+export type PreferencesActions = LoadPreferencesAction | UpdatePreferencesAction | OtherAction;
 
 //// MODEL ////
 
@@ -92,7 +88,6 @@ export class PreferencesState extends Record(defaults()) implements PreferencesS
     return this.merge(values) as this;
   }
 }
-
 
 //// REDUCER ////
 

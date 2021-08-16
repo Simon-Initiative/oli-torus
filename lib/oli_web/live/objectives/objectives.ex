@@ -55,7 +55,7 @@ defmodule OliWeb.Objectives.Objectives do
 
   def render(assigns) do
     ~L"""
-    <div class="objectives container mt-5">
+    <div class="objectives container">
       <div class="mb-2 row">
         <div class="col-12">
           <p>

@@ -1,4 +1,4 @@
-defmodule OliWeb.Pow.UsersContextTest do
+defmodule OliWeb.Pow.UserContextTest do
   use OliWeb.ConnCase
 
   alias OliWeb.Router.Helpers, as: Routes

@@ -10,7 +10,7 @@ import {
   PostUndoable,
   ResponseId,
   RichText,
-  makeUndoable
+  makeUndoable,
 } from 'components/activities/types';
 import { clone } from 'utils/common';
 
@@ -35,9 +35,11 @@ export const ResponseActions = {
       model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } },
       post: PostUndoable,
     ) => {
-
-      post(makeUndoable('Removed feedback',
-        [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)}]));
+      post(
+        makeUndoable('Removed feedback', [
+          { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+        ]),
+      );
 
       const response = getResponse(model, responseId);
       remove(response, getResponses(model));
@@ -45,7 +47,6 @@ export const ResponseActions = {
         model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
         model.authoring.targeted,
       );
-
     };
   },
 };

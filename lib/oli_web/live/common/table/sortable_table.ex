@@ -14,10 +14,31 @@ defmodule OliWeb.Common.Table.SortableTable do
     """
   end
 
+  def id_field(row, %{id_field: id_field}) when is_list(id_field) do
+    id_field
+    |> Enum.reduce("", fn field, acc ->
+      cond do
+        is_atom(field) ->
+          "#{acc}-#{Map.get(row, field)}"
+
+        is_binary(field) ->
+          "#{acc}-#{field}"
+
+        true ->
+          acc
+      end
+    end)
+    |> String.trim("-")
+  end
+
+  def id_field(row, %{id_field: id_field}) do
+    Map.get(row, id_field)
+  end
+
   def render(assigns) do
     ~L"""
-    <table class="table table-hover table-bordered table-sm">
-      <thead class="thead-dark">
+    <table class="table table-striped table-bordered">
+      <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
             <%= th(assigns, column_spec, @model.sort_by_spec, @model.sort_order, @model.event_suffix) %>
@@ -27,9 +48,9 @@ defmodule OliWeb.Common.Table.SortableTable do
       <tbody>
         <%= for row <- @model.rows do %>
           <%= if row == @model.selected do %>
-          <tr id="<%= Map.get(row, @model.id_field) %>" class="table-active">
+          <tr id="<%= id_field(row, @model) %>" class="table-active">
           <% else %>
-          <tr id="<%= Map.get(row, @model.id_field) %>" style="cursor: pointer;" phx-click="select<%= @model.event_suffix %>" phx-value-id="<%= Map.get(row, @model.id_field) %>">
+          <tr id="<%= id_field(row, @model) %>">
           <% end %>
             <%= for column_spec <- @model.column_specs do %>
               <td>

@@ -4,8 +4,6 @@
 .editors .structured-content,
 .rich-text-editor {
   .table-editor {
-    clear: both;
-
     .table-remove {
       position: absolute;
       left: -10px;
@@ -42,7 +40,6 @@
   }
 
   .youtube-editor {
-    clear: both;
     max-width: 700px;
     margin: 0 auto;
     iframe {
@@ -66,10 +63,6 @@
     z-index: 40;
     background-color: rgb(26, 115, 232);
     position: absolute;
-  }
-
-  .image-editor {
-    clear: both;
   }
 
   .settings-input {

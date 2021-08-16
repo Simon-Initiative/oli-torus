@@ -25,6 +25,7 @@ export interface AuthoringProps {
   revisionSlug: string;
   content: PageContext;
   activityTypes?: any[];
+  partComponentTypes?: any[];
   resourceId?: number;
   paths: Record<string, string>;
 }
@@ -65,6 +66,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       isAdmin: props.isAdmin,
       projectSlug: props.projectSlug,
       revisionSlug: props.revisionSlug,
+      partComponentTypes: props.partComponentTypes,
+      activityTypes: props.activityTypes,
     };
     dispatch(setInitialConfig(appConfig));
 

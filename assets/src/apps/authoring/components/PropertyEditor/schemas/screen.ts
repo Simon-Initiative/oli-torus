@@ -126,6 +126,12 @@ export const screenUiSchema = {
 export const transformScreenModeltoSchema = (activity?: IActivity) => {
   if (activity) {
     const data = activity?.content?.custom;
+    if (!data) {
+      console.warn('no custom??', { activity });
+      // this might have happened from a previous version that trashed the lesson data
+      // TODO: maybe look into validation / defaults
+      return;
+    }
     const schemaPalette = {
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,

@@ -6,7 +6,6 @@ import {
   notContainsAnyOfOperator,
   notContainsExactlyOperator,
   notContainsOperator,
-  parseArrayString,
 } from 'adaptivity/operators/contains';
 import {
   equalWithToleranceOperator,
@@ -29,6 +28,7 @@ import {
   defaultWrongRule as builtinDefaultWrongRule,
   ScoringContext,
 } from 'adaptivity/rules-engine';
+import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
   complexRuleWithMultipleActions,
@@ -253,6 +253,20 @@ describe('Operators', () => {
     });
   });
 
+  describe('Equalto Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(true);
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4'])).toEqual(false);
+    });
+  });
+
+  describe('Not Equal to Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(notEqual(['1', '2', '3', '4', '5'], [])).toEqual(true);
+      expect(notEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(false);
+    });
+  });
+
   describe('Contains Operators', () => {
     it('should return false if either value is not provided', () => {
       expect(containsOperator(null, null)).toEqual(false);
@@ -289,16 +303,19 @@ describe('Operators', () => {
     });
   });
 
+  describe('ContainsanyOf Operators', () => {
+    it('should check containsany Of', () => {
+      expect(containsAnyOfOperator('[March,June,September,December]', 'December')).toEqual(true);
+      expect(containsAnyOfOperator('[March,June,September,December]', 'winter')).toEqual(false);
+    });
+  });
+
   describe('Parse Array String', () => {
-    expect(parseArrayString(['1', '2', '3'])).toEqual([1, 2, 3]);
-    expect(parseArrayString(['1', 2, '3'])).toEqual([1, 2, 3]);
-    expect(parseArrayString(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
-    expect(parseArrayString(['Stem', 'Option1', 'Option2'])).toEqual([
-      'Stem',
-      'Option1',
-      'Option2',
-    ]);
-    expect(parseArrayString('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
+    expect(parseArray(['1', '2', '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['1', 2, '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
+    expect(parseArray(['Stem', 'Option1', 'Option2'])).toEqual(['Stem', 'Option1', 'Option2']);
+    expect(parseArray('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
   });
 
   describe('Range Operators', () => {

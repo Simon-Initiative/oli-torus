@@ -151,6 +151,7 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
@@ -164,6 +165,32 @@ const DeckLayoutFooter: React.FC = () => {
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
 
+  const processResults = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    return actionsByType;
+  };
+
+  const checkIfFirstEventHasNavigation = (event: any) => {
+    let isDifferentNavigationExist = false;
+    const { actions } = event.params;
+    actions.forEach((action: any) => {
+      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+        isDifferentNavigationExist = true;
+      }
+    });
+    return isDifferentNavigationExist;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -174,24 +201,21 @@ const DeckLayoutFooter: React.FC = () => {
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
-
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
-      eventsToProcess = lastCheckResults.results;
+      //if the first event has a navigation to different screen
+      // we ignore the rest of the events ang fire this one.
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
+        lastCheckResults.results[0],
+      );
+      if (doesFirstEventHasNavigation) {
+        eventsToProcess = [lastCheckResults.results[0]];
+      } else {
+        eventsToProcess = lastCheckResults.results;
+      }
     }
 
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-
-    eventsToProcess.forEach((evt) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
+    const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
@@ -243,7 +267,9 @@ const DeckLayoutFooter: React.FC = () => {
     }
 
     // after any mutations applied, and just in case
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
 
     if (hasFeedback) {
       dispatch(
@@ -281,6 +307,10 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToActivity(navTarget));
         }
       }
+    }
+
+    if (!hasFeedback && !hasNavigation) {
+      setHasOnlyMutation(true);
     }
   }, [lastCheckResults]);
 
@@ -347,6 +377,13 @@ const DeckLayoutFooter: React.FC = () => {
     setCheckInProgress(true);
     setIsLoading(true);
   }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (hasOnlyMutation) {
+      setIsLoading(false);
+      setHasOnlyMutation(false);
+    }
+  }, [hasOnlyMutation]);
 
   useEffect(() => {
     if (checkInProgress && lastCheckResults) {

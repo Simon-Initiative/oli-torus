@@ -6,7 +6,6 @@ export interface DragHandleProps {
 }
 
 export const DragHandle = (props: DragHandleProps) => {
-
   const { hidden = false, style = {} } = props;
 
   return (

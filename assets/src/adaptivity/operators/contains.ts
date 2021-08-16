@@ -1,17 +1,4 @@
-import { isString } from 'utils/common';
-
-export const parseNumString = (item: string): string | number => {
-  // check if items are strings or numbers and converts if number
-  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item.toString().trim();
-};
-
-export const parseArrayString = (value: (string | number)[] | string): (string | number)[] => {
-  if (Array.isArray(value)) {
-    return value.map((item: string) => parseNumString(item));
-  } else {
-    return value.split(',').map((item: string) => parseNumString(item));
-  }
-};
+import { isString, parseArray, parseNumString } from 'utils/common';
 
 const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOperator: boolean) => {
   // factValue contains value, can contain other items
@@ -28,9 +15,9 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
     if (!value.includes(`[`) && !value.includes(']')) {
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
+    value = parseArray(value);
     return (
       value
-        .split(',')
         // We are parseNumString for the cases where factValue contains numbers but the values contain strings
         .map((item: string) => parseNumString(item))
         // check if value is found in factValue array
@@ -40,8 +27,8 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
 
   if (Array.isArray(factValue) && Array.isArray(value)) {
     // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-    const updatedFacts = parseArrayString(factValue);
-    const modifideValue = parseArrayString(value);
+    const updatedFacts = parseArray(factValue);
+    const modifideValue = parseArray(value);
     if (isDoesNotContainsOperator) {
       return (
         modifideValue
@@ -57,7 +44,7 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
     }
   } else if (Array.isArray(factValue) && value) {
     // We are parseArrayString for the cases where factValue contains strings but the values contain strings
-    const updatedFacts = parseArrayString(factValue);
+    const updatedFacts = parseArray(factValue);
     // split value into array
     return (
       value
@@ -94,8 +81,8 @@ export const containsOnlyOperator = (factValue: any, value: any) => {
   }
 
   // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArrayString(factValue);
-  const updatedValues = parseArrayString(value);
+  const updatedFacts = parseArray(factValue);
+  const updatedValues = parseArray(value);
 
   if (updatedValues.length !== updatedFacts.length) {
     return false;
@@ -111,8 +98,8 @@ export const containsExactlyOperator = (factValue: any, value: any) => {
   }
 
   // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArrayString(factValue);
-  const updatedValues = parseArrayString(value);
+  const updatedFacts = parseArray(factValue);
+  const updatedValues = parseArray(value);
 
   if (Array.isArray(factValue) && Array.isArray(value)) {
     return (

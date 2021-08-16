@@ -19,7 +19,7 @@ defmodule OliWeb.ProjectController do
       breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
       active: :overview,
       collaborators: Accounts.project_authors(project),
-      activities_enabled: Activities.activities_for_project(project),
+      activities_enabled: Activities.advanced_activities(project),
       changeset:
         Utils.value_or(
           Map.get(project_params, :changeset),
@@ -154,7 +154,7 @@ defmodule OliWeb.ProjectController do
           breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.activities_for_project(project),
+          activities_enabled: Activities.advanced_activities(project),
           changeset: changeset
         }
 
@@ -222,7 +222,7 @@ defmodule OliWeb.ProjectController do
           breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.activities_for_project(project),
+          activities_enabled: Activities.advanced_activities(project),
           changeset: changeset
         }
 

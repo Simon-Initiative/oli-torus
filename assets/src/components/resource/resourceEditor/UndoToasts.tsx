@@ -8,7 +8,9 @@ export type UndoToastsProps = {
 };
 
 const toProperCase = (text: string) => {
-  return text.replace(/\w\S*/g, (s: string) => { return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase(); });
+  return text.replace(/\w\S*/g, (s: string) => {
+    return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase();
+  });
 };
 
 export const UndoToasts = (props: UndoToastsProps) => {

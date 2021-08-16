@@ -8,8 +8,10 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   evalScript,
+  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
+  removeStateValues,
 } from '../../../../adaptivity/scripting';
 import { contexts } from '../../../../types/applicationContext';
 import ActivityRenderer from '../../components/ActivityRenderer';
@@ -25,10 +27,11 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectUserName, setScore } from '../../store/features/page/slice';
+import { selectEnableHistory, selectUserName, setScore } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
+import { parseArray, parseNumString } from 'utils/common';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss
@@ -53,7 +56,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
   const [contentStyles, setContentStyles] = useState<any>({});
-
+  const enableHistory = useSelector(selectEnableHistory);
   // Background
   const backgroundClasses = ['background'];
   const backgroundStyles: CSSProperties = {};
@@ -119,7 +122,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-
+          if (
+            typeof expr === 'string' &&
+            expr.charAt(0) === '[' &&
+            expr.charAt(expr.length - 1) === ']'
+          ) {
+            expr = parseArray(expr);
+          }
           const stmt = `let {variables.${v.name}} = ${expr};`;
           return stmt;
         })
@@ -135,7 +144,27 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivityTree || currentActivityTree.length === 0) {
       return;
     }
+    // Need to clear out snapshot for the current activity before we send the init trap state.
+    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
+    // some screens go in loop
+    // Don't do anything id enableHistory/historyModeNavigation is ON
 
+    if (!historyModeNavigation && currentActivityTree) {
+      const globalSnapshot = getEnvState(defaultGlobalEnv);
+      // this is firing after some initial part saves and wiping out what we have just set
+      // maybe we don't need to write the local versions ever?? instead just whenever anything
+      // is asking for it we can just give the localized snapshot?
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
+      const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
+        (key: string) =>
+          key.indexOf('stage.') === 0 || key.indexOf(`${currentActivity.id}|stage.`) === 0,
+      ); /*
+      console.log('REMOVING STATE VALUES: ', idsToBeRemoved); */
+      if (idsToBeRemoved.length) {
+        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
+      }
+    }
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
@@ -199,9 +228,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       setActivityClasses(
         [...new Set([...defaultClasses, ...customClasses])].map((str) => str.trim()),
       );
-    } else if (currentActivity?.content?.partsLayout) {
-      //since we already have getCustomClassAncestry wokring now, we don't need the previous code.
-      setActivityClasses([...new Set([...defaultClasses])].map((str) => str.trim()));
     }
 
     return () => {
@@ -284,13 +310,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     partAttemptGuid: string,
     response: StudentResponse,
   ) => {
-    console.log('DECK HANDLE SAVE PART', {
+    /* console.log('DECK HANDLE SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
       response,
       currentActivityTree,
-    });
+    }); */
     const statePrefix = `${activityId}|stage`;
     const responseMap = response.input.reduce(
       (result: { [x: string]: any }, item: { key: string; path: string }) => {
@@ -461,7 +487,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       value: 0,
     };
     bulkApplyState([tutorialScoreOp, currentScoreOp], defaultGlobalEnv);
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
     // we shouldn't have to send this to the server, it should already be calculated there
   }, [isEnd]);
 

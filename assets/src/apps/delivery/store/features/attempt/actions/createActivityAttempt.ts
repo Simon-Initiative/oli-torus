@@ -25,7 +25,11 @@ export const createActivityAttempt = createAsyncThunk(
       attempt.attemptGuid = `npreview_${guid()}`;
     } else {
       const seedResponses = true; // parameterize at function level?
-      const new_attempt_result = await createNewActivityAttempt(sectionSlug, attemptGuid, seedResponses);
+      const new_attempt_result = await createNewActivityAttempt(
+        sectionSlug,
+        attemptGuid,
+        seedResponses,
+      );
       /* console.log({ new_attempt_result }); */
       attempt = new_attempt_result.attemptState as ActivityState;
       // this should be for the same resource id, which doesn't come back from the server

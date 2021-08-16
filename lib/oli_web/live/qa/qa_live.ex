@@ -129,10 +129,10 @@ defmodule OliWeb.Qa.QaLive do
 
   def render(assigns) do
     ~L"""
-    <div class="container review mt-5">
+    <div class="container review">
       <div class="row">
         <div class="col-12">
-          <p class="text-secondary">Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
+          <p>Run an automated review before publishing to check for broken links and other common issues that may be present in your course.</p>
 
           <button class="btn btn-primary mt-3" id="button-publish"
             phx-click="review"

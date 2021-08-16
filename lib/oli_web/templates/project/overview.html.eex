@@ -3,153 +3,112 @@
     width: 100px;
   }
 </style>
-
 <div class="overview container">
-  <div class="row">
-    <div class="col-12">
-
-      <div class="card mt-4">
-        <div class="card-body">
+  <div class="row py-5 border-bottom">
+    <div class="col-md-4">
       <h4>Details</h4>
-
-
+      <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
+    </div>
+    <div class="col-md-8">
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
-
-        <div class="form-label-group mb-3">
-          <%= label f, :title, "Course Title", class: "control-label" %>
-          <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
-        </div>
-
-        <div class="form-label-group mb-3">
-          <%= label f, :description, "Course Description", class: "control-label" %>
-          <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
-        </div>
-        <div class="d-flex flex-row-reverse">
-          <%= submit "Save", class: "btn btn-md btn-primary mt-2" %>
-        </div>
-
-      <% end %>
-        </div>
+      <div class="form-label-group mb-3">
+        <%= label f, :title, "Course Title", class: "control-label" %>
+        <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
       </div>
-      <div class="card mt-4">
-        <div class="card-body">
-      <h4>Collaborators</h4>
-      <script src="https://www.google.com/recaptcha/api.js"></script>
-      <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
-        <div class="form-group">
-          <%= label f, :email, "Invite others to collaborate on your course", class: "control-label" %>
-          <div class="input-group mb-3">
-          <%= text_input f,
-            :email,
+      <div class="form-label-group mb-3">
+        <%= label f, :description, "Course Description", class: "control-label" %>
+        <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
+      </div>
+      <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
+    <% end %>
+  </div>
+</div>
+<div class="row py-5 border-bottom">
+  <div class="col-md-4">
+    <h4>Collaborators</h4>
+    <div class="text-muted">Invite other authors by email to contribute to your project. Specify multiple separated by a comma.</div>
+  </div>
+  <div class="col-md-8">
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+    <%= form_for @conn, Routes.collaborator_path(@conn, :create, @project), [id: "form-add-collaborator"], fn f -> %>
+    <div class="form-group">
+      <div class="input-group mb-3">
+        <%= text_input f,
+            :collaborator_emails,
             class: "form-control" <> error_class(f, :title, "is-invalid"),
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
-            autofocus: focusHelper(f, :email, default: false) %>
-          <%= error_tag f, :email %>
-          </div>
-          <div class="input-group mb-3">
-            <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
-            <%= error_tag f, :captcha %>
-          </div>
-          <div class="d-flex flex-row-reverse">
-            <%= submit "Send Invite",
+            autofocus: focusHelper(f, :collaborator_emails, default: false) %>
+        <%= error_tag f, :collaborator_emails %>
+        <div class="input-group-append">
+          <%= submit "Send Invite",
               id: "button-create-collaborator",
-              class: "btn btn-primary",
+              class: "btn btn-outline-primary",
               phx_disable_with: "Adding Collaborator...",
               form: f.id %>
-          </div>
-        </div>
-      <% end %>
-
-      <table class="table table-sm">
-        <thead class="thead-light">
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= render_many @collaborators, OliWeb.ProjectView, "_tr_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
-        </tbody>
-      </table>
         </div>
       </div>
-      <div class="card mt-4">
-        <div class="card-body">
-          <h4>Activities enabled</h4>
-          <table class="table table-sm">
-            <thead class="thead-light">
-            <tr>
-              <th>Title</th>
-              <th>Enabled</th>
-              <th></th>
-            </tr>
-            </thead>
-            <tbody>
-            <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
-            </tbody>
-          </table>
-        </div>
+      <div class="input-group mb-3">
+        <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
+        <%= error_tag f, :captcha %>
       </div>
-      <div class="row my-4">
-        <div class="col-12">
-          <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
-        </div>
-      </div>
-
-      <div class="card mt-4">
-        <div class="card-body">
-          <h4>Actions</h4>
-
-            <div style="margin: auto 0; width: 80%">
-              <div class="d-flex flex-row-reverse mt-3">
-
-                  <%= button("Duplicate",
+    </div>
+  <% end %>
+  <%= render_many @collaborators, OliWeb.ProjectView, "_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
+</div>
+</div>
+<div class="row py-5 border-bottom">
+  <div class="col-md-4">
+    <h4>Advanced Activities</h4>
+    <div class="text-muted">Enable advanced activity types for your project to include in your curriculum.</div>
+  </div>
+  <div class="col-md-8">
+    <table class="table table-sm">
+      <tbody>
+        <%= render_many @activities_enabled, OliWeb.ProjectView, "_tr_activities_available.html", %{conn: @conn, as: :activity_enabled, project: @project} %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
+<div class="row py-5">
+  <div class="col-md-4">
+    <h4>Actions</h4>
+  </div>
+  <div class="col-md-8">
+    <div class="d-flex align-items-center">
+      <p>
+        <%= button("Duplicate",
                     to: Routes.project_path(@conn, :clone_project, @project),
                     method: :post,
-                    class: "btn btn-primary ml-5 action-button",
+                    class: "btn btn-link action-button",
                     data_confirm: "Are you sure you want to duplicate this project?") %>
-
-                  <span>Create a complete <b>duplicate</b> of this course, with you as the owner</span>
-
-              </div>
-
-                <div class="d-flex flex-row-reverse mt-3">
-                  <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
-
-                  <span><b>Export</b> this course project as a downloadable <code>.zip</code> file</span>
-                  </div>
-
-                <div class="d-flex flex-row-reverse mt-3">
-
-                   <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
-                      <% nil -> %>
-                        <button disabled class="btn btn-primary ml-5 action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
-                      <% _pub -> %>
-                        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-primary ml-5 action-button") %>
-                    <% end %>
-
-                    <span>Download a <b>Datashop</b> batch import <code>.xml</code> file</span>
-
-                </div>
-
-                <div class="d-flex flex-row-reverse mt-3">
-                  <button type="button" class="btn btn-danger ml-5 action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
-
-                  <span>Permanently <b>delete</b> this course project. This cannot be undone.</span>
-                </div>
-
-            </div>
-
-        </div>
-      </div>
-
+      </p>
+      <span>Create a complete copy of this project.</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <%= button("Export", to: Routes.project_path(@conn, :download_export, @project), method: :post, class: "btn btn-link action-button") %>
+      <span>Download this project and its contents.</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+        <% nil -> %>
+        <button disabled class="btn btn-link action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
+        <% _pub -> %>
+        <%= button("Download", to: Routes.project_path(@conn, :download_datashop, @project), method: :post, class: "btn btn-link action-button") %>
+      <% end %>
+      <span>Download a <a class="text-primary" href="https://pslcdatashop.web.cmu.edu/" target="_blank">Datashop</a> file.</span>
+    </div>
+    <div class="d-flex align-items-center">
+      <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
+      <span>Permanently delete this course project.</span>
     </div>
   </div>
 </div>
-
+</div>
+</div>
+</div>
 <div class="modal fade" id="delete-package-modal" tabindex="-1" role="dialog" aria-labelledby="delete-modal" aria-hidden="true">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
@@ -163,24 +122,23 @@
         <div class="container form-container">
           <div class="mb-3">This action will not affect existing course sections that are using this project.
             Those sections will continue to operate as intended</div>
-          <div><p>Please type <strong><%= @project.title %></strong> below to confirm.</p></div>
-              <%= form_for @conn, Routes.project_path(@conn, :delete, @project), fn f -> %>
-              <input type="hidden" name="_method" value="DELETE">
-              <div class="mt-2">
-                <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
-              </div>
-
-              <div class="d-flex">
-                <button id="delete-modal-submit" type="submit" class="btn btn-outline-danger mt-2 flex-fill" disabled>Delete this course</button>
-              </div>
-
-              <% end %>
-        </div>
+          <div>
+            <p>Please type <strong><%= @project.title %></strong> below to confirm.</p>
+          </div>
+          <%= form_for @conn, Routes.project_path(@conn, :delete, @project), fn f -> %>
+          <input type="hidden" name="_method" value="DELETE">
+          <div class="mt-2">
+            <%= text_input f, :title, class: "form-control", id: "delete-confirm-title", required: true %>
+          </div>
+          <div class="d-flex">
+            <button id="delete-modal-submit" type="submit" class="btn btn-outline-danger mt-2 flex-fill" disabled>Delete this course</button>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
 </div>
-
+</div>
 <script>
   OLI.onReady(() => OLI.enableSubmitWhenTitleMatches('#delete-confirm-title', '#delete-modal-submit', '<%= Base.encode64(@project.title) %>'));
 </script>

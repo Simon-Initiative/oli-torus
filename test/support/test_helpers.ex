@@ -328,7 +328,8 @@ defmodule Oli.TestHelpers do
         description: "test part component for testing",
         title: "Test Part Component",
         icon: "nothing",
-        slug: "test_part_component"
+        slug: "test_part_component",
+        author: "Test McTesterson"
       })
 
     {:ok, _registration} = PartComponents.create_registration(params)

@@ -1,12 +1,13 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { Accordion } from 'react-bootstrap';
 import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 interface AccordionProps {
-  key: string,
-  title: string,
-  properties: boolean;
+  key: string;
+  title: string;
+  properties: any;
 }
-const AccordionTemplate: React.FC<AccordionProps> = (props: any) => {
+
+const AccordionTemplate: React.FC<AccordionProps> = (props) => {
   return (
     <Accordion className="aa-lesson-properties-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
@@ -16,11 +17,7 @@ const AccordionTemplate: React.FC<AccordionProps> = (props: any) => {
         </div>
       </div>
       <Accordion.Collapse eventKey="0">
-        <div className="col-12">
-          {props.properties.map((element: any) => (
-              element.content
-          ))}
-        </div>
+        <div className="col-12">{props.properties.map((element: any) => element.content)}</div>
       </Accordion.Collapse>
     </Accordion>
   );

@@ -1,14 +1,18 @@
-import React from 'react';
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
+import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import FabricCanvas from './FabricCanvas';
+import KonvaStage from './KonvaStage';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const currentPartSelection = useSelector(selectCurrentSelection);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
@@ -16,35 +20,60 @@ const EditingCanvas: React.FC = () => {
   const width = currentActivity?.content?.custom?.width || 800;
   const height = currentActivity?.content?.custom?.height || 600;
 
-  const items =
-    currentActivityTree?.reduce((acc, activity) => {
-      // TODO: map these items to a new object that has a few more things
-      // such as layer items should be readonly
-      return acc.concat(...activity.content.partsLayout);
-    }, []) || [];
+  const background = {
+    color: currentActivity?.content?.custom?.palette?.backgroundColor || '#ffffff',
+  };
+
+  const layers = (currentActivityTree || []).map((activity) => ({
+    id: activity.id,
+    parts: activity.content.partsLayout || [],
+  }));
+
+  const handleSelectionChanged = (selected: string[]) => {
+    const [first] = selected;
+    console.log('[handleSelectionChanged]', { selected });
+    const newSelection = first || '';
+    dispatch(setCurrentSelection({ selection: newSelection }));
+    const selectedTab = newSelection ? RightPanelTabs.COMPONENT : RightPanelTabs.SCREEN;
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: selectedTab }));
+  };
+
+  const handlePositionChanged = useCallback(
+    (id: string, position: { x: number; y: number }) => {
+      console.log('[handlePositionChanged]', { id, position });
+      if (!currentActivityTree) {
+        return;
+      }
+      // only valid to move on the "owner" layer IF it's current
+      const currentActivityClone = clone(currentActivityTree.slice(-1)[0]);
+      const partDef = currentActivityClone.content.partsLayout.find((part: any) => part.id === id);
+      if (!partDef) {
+        return;
+      }
+      partDef.custom.x = position.x;
+      partDef.custom.y = position.y;
+
+      dispatch(saveActivity({ activity: currentActivityClone }));
+    },
+    [currentActivityTree],
+  );
+
+  console.log('EC: RENDER', { layers });
 
   return (
     <React.Fragment>
-      <section
-        className="aa-stage"
-        onClick={(e) => {
-          dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.LESSON }));
-        }}
-      >
-        <div
-          className="aa-stage-inner"
-          style={{
-            width,
-            height,
-            marginBottom: bottomPanelState ? 'calc(40vh + 64px)' : 'calc(64px + 39px)',
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
-          }}
-        >
-          <FabricCanvas items={items} width={width} height={height} />
-        </div>
+      <section className="aa-stage">
+        {currentActivity && (
+          <KonvaStage
+            key={currentActivity.id}
+            selected={[currentPartSelection]}
+            background={background}
+            size={{ width, height }}
+            layers={layers}
+            onSelectionChange={handleSelectionChanged}
+            onPositionChange={handlePositionChanged}
+          />
+        )}
       </section>
     </React.Fragment>
   );
