@@ -410,7 +410,8 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
-                {item.custom.isLayer ? 'Layer ' : item.custom.isBank ? 'Qustion Bank ' : 'Screen '} ID
+                {item.custom.isLayer ? 'Layer ' : item.custom.isBank ? 'Qustion Bank ' : 'Screen '}{' '}
+                ID
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
