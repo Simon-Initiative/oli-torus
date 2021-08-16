@@ -3,11 +3,11 @@ interface CustomCheckboxProps {
   label: string;
   id: string;
   value: boolean;
-  onChange: (value: boolean) => void ;
+  onChange: (value: boolean) => void;
 }
 const CustomCheckbox: React.FC<CustomCheckboxProps> = (props) => {
   return (
-    <div className="d-flex justify-content-between" >
+    <div className="d-flex justify-content-between">
       <span className="form-label">{props.label}</span>
       <input
         type="checkbox"
