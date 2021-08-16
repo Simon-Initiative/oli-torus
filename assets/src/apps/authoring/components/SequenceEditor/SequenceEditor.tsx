@@ -332,16 +332,18 @@ const SequenceEditor: React.FC<any> = (props) => {
               className="dropdown-menu"
               aria-labelledby={`sequence-item-${id}-context-trigger`}
             >
-              {!isParentQB ? <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleItemAdd(item);
-                }}
-              >
-                <i className="fas fa-desktop mr-2" /> Add Subscreen
-              </button> : null}
+              {!isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item);
+                  }}
+                >
+                  <i className="fas fa-desktop mr-2" /> Add Subscreen
+                </button>
+              ) : null}
               {!item.custom.isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
@@ -408,12 +410,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
-                {item.custom.isLayer
-                  ? 'Layer'
-                  : item.custom.isBank
-                  ? 'Qustion Bank'
-                  : 'Screen'}{' '}
-                ID
+                {item.custom.isLayer ? 'Layer ' : item.custom.isBank ? 'Qustion Bank ' : 'Screen '} ID
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
@@ -514,7 +511,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
-  const getHierarchyList = (items: any, isParentQB = false ) =>
+  const getHierarchyList = (items: any, isParentQB = false) =>
     items.map(
       (
         item: SequenceHierarchyItem<SequenceEntryType>,
