@@ -77,8 +77,8 @@ const WebComponent: React.FC<any> = (props) => {
     };
   }, []);
   const compStyles: CSSProperties = {
-    display: 'block'
-  }
+    display: 'block',
+  };
   const webComponentProps = {
     ref,
     id: props.id,

@@ -6,7 +6,7 @@ interface CustomCheckboxProps {
 }
 const CustomCheckbox: React.FC<CustomCheckboxProps> = (props: any) => {
   return (
-    <div className="d-flex justify-content-between" >
+    <div className="d-flex justify-content-between">
       <span className="form-label">{props.label}</span>
       <input
         type="checkbox"

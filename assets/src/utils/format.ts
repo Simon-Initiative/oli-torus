@@ -1,7 +1,6 @@
 import { measureTextWidth } from 'utils/measure';
 
 export const convert = {
-
   // Converts a zero-based index to an alpha notation.
   //
   // Examples:
@@ -22,7 +21,6 @@ export const convert = {
     let result = '';
 
     do {
-
       rem = num % 26;
       num = Math.floor(num / 26);
 
@@ -34,12 +32,10 @@ export const convert = {
       // this by simply adjusting the first, leftmost digit, when there are
       // more than one digits, by one (turning that leading B into an A).
       const adjustment = num === 0 && result.length !== 0 ? -1 : 0;
-      result = String.fromCharCode((rem + adjustment + 65)) + result;
-
+      result = String.fromCharCode(rem + adjustment + 65) + result;
     } while (num !== 0);
 
     return result;
-
   },
 
   /**
@@ -58,7 +54,7 @@ export const convert = {
       kb: 1 << 10,
       mb: 1 << 20,
       gb: 1 << 30,
-      tb: ((1 << 30) * 1024),
+      tb: (1 << 30) * 1024,
     } as any;
 
     const mag = Math.abs(value);
@@ -77,30 +73,53 @@ export const convert = {
     }
 
     const val = value / UNIT_MAP[unit.toLowerCase()];
-    const str = val.toFixed(decimalPlaces).replace(/^(.+)\.?[0]+$/, '$1').replace(/\.0$/, '');
+    const str = val
+      .toFixed(decimalPlaces)
+      .replace(/^(.+)\.?[0]+$/, '$1')
+      .replace(/\.0$/, '');
 
     return `${str} ${unit}`;
   },
 
   numberToWords: (num: number) => {
     const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy',
-      'eighty', 'ninety'];
-    const teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
-      'seventeen', 'eighteen', 'nineteen'];
+    const tens = [
+      '',
+      '',
+      'twenty',
+      'thirty',
+      'forty',
+      'fifty',
+      'sixty',
+      'seventy',
+      'eighty',
+      'ninety',
+    ];
+    const teens = [
+      'ten',
+      'eleven',
+      'twelve',
+      'thirteen',
+      'fourteen',
+      'fifteen',
+      'sixteen',
+      'seventeen',
+      'eighteen',
+      'nineteen',
+    ];
 
     const convertMillions = (num: number): string => {
       if (num >= 1000000) {
-        return convertMillions(Math.floor(num / 1000000))
-          + ' million ' + convertThousands(num % 1000000);
+        return (
+          convertMillions(Math.floor(num / 1000000)) + ' million ' + convertThousands(num % 1000000)
+        );
       }
       return convertThousands(num);
     };
 
     const convertThousands = (num: number) => {
       if (num >= 1000) {
-        return convertHundreds(Math.floor(num / 1000))
-          + ' thousand ' + convertHundreds(num % 1000);
+        return convertHundreds(Math.floor(num / 1000)) + ' thousand ' + convertHundreds(num % 1000);
       }
       return convertHundreds(num);
     };
@@ -157,14 +176,27 @@ export const stringFormat = {
    * element to measure it
    */
   ellipsizePx: (
-    text: string, maxWidth: number, fontFamily: string,
-    fontSize: number, fontWeight?: number, fontStyle?: string) => {
+    text: string,
+    maxWidth: number,
+    fontFamily: string,
+    fontSize: number,
+    fontWeight?: number,
+    fontStyle?: string,
+  ) => {
     const MAX_TEXT_LENGTH = 500;
     const ellipsizeWidth = measureTextWidth({
-      text: '...', fontFamily, fontSize, fontWeight, fontStyle
+      text: '...',
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontStyle,
     });
     const textWidth = measureTextWidth({
-      text, fontFamily, fontSize, fontWeight, fontStyle
+      text,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      fontStyle,
     });
 
     if (textWidth <= maxWidth) {
@@ -172,13 +204,17 @@ export const stringFormat = {
     }
 
     if (maxWidth <= ellipsizeWidth) {
-      console.error('ellipsizePx: maxWidth must be greater than size of ellipsis \'...\'');
+      console.error("ellipsizePx: maxWidth must be greater than size of ellipsis '...'");
       return '...';
     }
 
     const findLargestString = (str: string): string => {
       return measureTextWidth({
-        text: `${str}...`, fontFamily, fontSize, fontWeight, fontStyle
+        text: `${str}...`,
+        fontFamily,
+        fontSize,
+        fontWeight,
+        fontStyle,
       }) <= maxWidth
         ? str
         : findLargestString(str.substr(0, str.length - 1));
@@ -186,5 +222,4 @@ export const stringFormat = {
 
     return findLargestString(text.substr(0, MAX_TEXT_LENGTH)) + '...';
   },
-
 };

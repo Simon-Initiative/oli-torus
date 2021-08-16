@@ -7,8 +7,8 @@ import { DragPayload, ActivityPayload, UnknownPayload } from './interfaces';
 export const getFriendlyName = (
   item: ActivityReference,
   editorMap: ActivityEditorMap,
-  activities: Immutable.Map<string, ActivityEditContext>) => {
-
+  activities: Immutable.Map<string, ActivityEditContext>,
+) => {
   const activity = activities.get(item.activitySlug);
   return editorMap[(activity as any).typeSlug].friendlyName;
 };

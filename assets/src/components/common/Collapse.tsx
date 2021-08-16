@@ -16,8 +16,7 @@ export interface CollapseState {
 }
 
 export class Collapse extends React.PureComponent<CollapseProps, CollapseState> {
-
-  constructor(props : CollapseProps) {
+  constructor(props: CollapseProps) {
     super(props);
 
     this.id = guid();
@@ -34,7 +33,6 @@ export class Collapse extends React.PureComponent<CollapseProps, CollapseState> 
   }
 
   render() {
-
     const collapsedOrNot = this.state.collapsed ? 'collapse' : 'collapse.show';
     let detailsOrExpanded = null;
     if (this.props.details !== undefined && this.state.collapsed) {
@@ -47,12 +45,8 @@ export class Collapse extends React.PureComponent<CollapseProps, CollapseState> 
 
     return (
       <div>
-
-        <button
-          onClick={this.onClick}
-          type="button"
-          className="btn btn-link">
-           {indicator} {this.props.caption}
+        <button onClick={this.onClick} type="button" className="btn btn-link">
+          {indicator} {this.props.caption}
         </button>
         {detailsOrExpanded}
         <div className={collapsedOrNot} id={this.id}>
@@ -61,6 +55,4 @@ export class Collapse extends React.PureComponent<CollapseProps, CollapseState> 
       </div>
     );
   }
-
 }
-

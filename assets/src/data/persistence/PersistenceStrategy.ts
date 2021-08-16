@@ -8,19 +8,18 @@ export type PersistenceState = 'idle' | 'pending' | 'inflight';
 
 export type onStateChangeCallback = (state: PersistenceState) => void;
 
-
 export interface PersistenceStrategy {
-
   /**
    * Enables the persistence strategy, can asynchronously return false to indicate
    * that editing is not allowed.
    */
-  initialize: (lockFn: () => Promise<LockResult>,
-               releaseFn: () => Promise<LockResult>,
-               onSuccess: onSaveCompletedCallback,
-               onFailure: onFailureCallback,
-               onStateChange: onStateChangeCallback,
-              ) => Promise<boolean>;
+  initialize: (
+    lockFn: () => Promise<LockResult>,
+    releaseFn: () => Promise<LockResult>,
+    onSuccess: onSaveCompletedCallback,
+    onFailure: onFailureCallback,
+    onStateChange: onStateChangeCallback,
+  ) => Promise<boolean>;
 
   /**
    * Method called to request that the persistence strategy saves the document.
@@ -34,5 +33,4 @@ export interface PersistenceStrategy {
   destroy: () => void;
 
   getLockResult: () => LockResult;
-
 }

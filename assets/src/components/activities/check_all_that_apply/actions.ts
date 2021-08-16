@@ -32,11 +32,12 @@ export class CATAActions {
 
   static removeChoiceAndUpdateRules(id: string) {
     return (model: CATA, post: PostUndoable) => {
-
-      post(makeUndoable('Removed choice',
-      [{ type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
-       { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) }
-      ]));
+      post(
+        makeUndoable('Removed choice', [
+          { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+          { type: 'ReplaceOperation', path: '$.choices', item: clone(model.choices) },
+        ]),
+      );
 
       const choice = getChoice(model, id);
       const index = getChoices(model).findIndex((c) => c.id === id);
@@ -46,7 +47,6 @@ export class CATAActions {
       model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));
 
       updateResponseRules(model);
-
     };
   }
 
@@ -65,7 +65,9 @@ export class CATAActions {
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: CATA) => {
-      const assoc = model.authoring.targeted.find((assoc: any) => getResponseId(assoc) === responseId);
+      const assoc = model.authoring.targeted.find(
+        (assoc: any) => getResponseId(assoc) === responseId,
+      );
       if (!assoc) return;
       assoc[0] = choiceIds;
       updateResponseRules(model);

@@ -13,9 +13,13 @@ interface StateProps {
 }
 
 interface DispatchProps {
-  onLoadCourseMediaNextPage: (projectSlug: string,
-    mimeFilter: string[] | undefined, searchText: string,
-    orderBy: string, order: string) => void;
+  onLoadCourseMediaNextPage: (
+    projectSlug: string,
+    mimeFilter: string[] | undefined,
+    searchText: string,
+    orderBy: string,
+    order: string,
+  ) => void;
   onResetMedia: () => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
 }
@@ -40,19 +44,21 @@ const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
 const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
   return {
     onLoadCourseMediaNextPage: (projectSlug, mimeFilter, searchText, orderBy, order) => {
-      return dispatch(fetchCourseMediaNextPage(
-        projectSlug, mimeFilter, searchText, orderBy, order) as any);
+      return dispatch(
+        fetchCourseMediaNextPage(projectSlug, mimeFilter, searchText, orderBy, order) as any,
+      );
     },
     onResetMedia: () => {
       dispatch(resetMedia());
     },
-    onLoadMediaItemByPath: (projectSlug: string, path: string) => (
-      dispatch(fetchMediaItemByPath(projectSlug, path) as any)
-    ),
+    onLoadMediaItemByPath: (projectSlug: string, path: string) =>
+      dispatch(fetchMediaItemByPath(projectSlug, path) as any),
   };
 };
 
-export const controller = connect<StateProps, DispatchProps, OwnProps>
-  (mapStateToProps, mapDispatchToProps)(MediaManager);
+export const controller = connect<StateProps, DispatchProps, OwnProps>(
+  mapStateToProps,
+  mapDispatchToProps,
+)(MediaManager);
 
 export { controller as MediaManager };
