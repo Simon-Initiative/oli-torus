@@ -502,8 +502,6 @@ const ExternalActivity: React.FC<any> = (props) => {
         });
       }
     }
-    console.log({ externalActivityMap });
-
     return mutableState;
   };
 
