@@ -104,6 +104,7 @@ const operators = {
   equal: isEqual,
   is: isEqual,
   notIs: notEqual,
+  notEqual: notEqual,
   equalWithTolerance: equalWithToleranceOperator,
   notEqualWithTolerance: notEqualWithToleranceOperator,
 };
