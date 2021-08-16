@@ -64,7 +64,10 @@ const RightMenu: React.FC<any> = () => {
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
-    const currentIds = currentActivityTree?.reduce((acc, activity) => acc.concat(activity.content.partsLayout.map((p:any) => p.id)));
+    const currentIds = currentActivityTree?.reduce(
+      (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
+      [],
+    );
     setExistingIds(currentIds);
   }, [currentActivity]);
 
@@ -239,7 +242,7 @@ const RightMenu: React.FC<any> = () => {
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
           let requiredFields = [];
-          if(instance.getRequiredFields){
+          if (instance.getRequiredFields) {
             requiredFields = instance.getRequiredFields();
           }
           const newSchema: any = {
