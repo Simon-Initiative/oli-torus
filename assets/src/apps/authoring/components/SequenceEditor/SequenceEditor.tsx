@@ -52,14 +52,14 @@ const SequenceEditor: React.FC<any> = (props) => {
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
-    isQuestionBank = false,
+    isBank = false,
   ) => {
     let layerRef: string | undefined;
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
-    const newTitle = `New ${layerRef && !isQuestionBank ? 'Child' : ''}${
-      isLayer ? 'Layer' : isQuestionBank ? 'Question Bank' : 'Screen'
+    const newTitle = `New ${layerRef && !isBank ? 'Child' : ''}${
+      isLayer ? 'Layer' : isBank ? 'Question Bank' : 'Screen'
     }`;
 
     const { payload: newActivity } = await dispatch<any>(
@@ -74,7 +74,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       activitySlug: newActivity.activitySlug,
       custom: {
         isLayer,
-        isQuestionBank,
+        isBank,
         layerRef,
         sequenceId: `${newActivity.activitySlug}_${guid()}`,
         sequenceName: newTitle,
@@ -308,7 +308,7 @@ const SequenceEditor: React.FC<any> = (props) => {
   }, [itemToRename]);
 
   const SequenceItemContextMenu = (props: any) => {
-    const { id, item, index, arr } = props;
+    const { id, item, index, arr, isParentQB } = props;
     console.log(id, item, arr);
     return (
       <div className="dropdown aa-sequence-item-context-menu">
@@ -333,7 +333,7 @@ const SequenceEditor: React.FC<any> = (props) => {
               className="dropdown-menu"
               aria-labelledby={`sequence-item-${id}-context-trigger`}
             >
-              <button
+              {!isParentQB ? <button
                 className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -342,27 +342,31 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-desktop mr-2" /> Add Subscreen
-              </button>
-              {!item.custom.isQuestionBank ? <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleItemAdd(item, true);
-                }}
-              >
-                <i className="fas fa-layer-group mr-2" /> Add Layer
               </button> : null}
-              {!item.custom.isQuestionBank ? <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleItemAdd(item, false, true);
-                }}
-              >
-                <i className="fas fa-cubes mr-2" /> Add Question Bank
-              </button>: null}
+              {!item.custom.isBank && !isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item, true);
+                  }}
+                >
+                  <i className="fas fa-layer-group mr-2" /> Add Layer
+                </button>
+              ) : null}
+              {!item.custom.isBank && !isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item, false, true);
+                  }}
+                >
+                  <i className="fas fa-cubes mr-2" /> Add Question Bank
+                </button>
+              ) : null}
               {item.custom.isLayer ? (
                 <button
                   className="dropdown-item"
@@ -374,7 +378,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 >
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
                 </button>
-              ) : (
+              ) : !item.custom.isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -385,7 +389,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 >
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
                 </button>
-              )}
+              ) : null}
               <button
                 className="dropdown-item"
                 onClick={(e) => {
@@ -405,7 +409,12 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
-                {item.custom.isLayer ? 'Layer' : 'Screen'} ID
+                {item.custom.isLayer
+                  ? 'Layer'
+                  : item.custom.isBank
+                  ? 'Qustion Bank'
+                  : 'Screen'}{' '}
+                ID
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
@@ -506,7 +515,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
-  const getHierarchyList = (items: any) =>
+  const getHierarchyList = (items: any, isParentQB = false ) =>
     items.map(
       (
         item: SequenceHierarchyItem<SequenceEntryType>,
@@ -568,12 +577,13 @@ const SequenceEditor: React.FC<any> = (props) => {
                   item={item}
                   index={index}
                   arr={arr}
+                  isParentQB={isParentQB}
                 />
               </div>
               {item.children.length ? (
                 <Accordion.Collapse eventKey={`${index}`}>
                   <ListGroup as="ol" className="aa-sequence nested">
-                    {getHierarchyList(item.children)}
+                    {getHierarchyList(item.children, item.custom.isBank)}
                   </ListGroup>
                 </Accordion.Collapse>
               ) : null}
