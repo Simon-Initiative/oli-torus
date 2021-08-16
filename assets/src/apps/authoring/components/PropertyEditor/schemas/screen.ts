@@ -77,12 +77,6 @@ const screenSchema = {
       format: 'checkbox',
       default: true,
     },
-    screenButton: {
-      title: 'Screen Button',
-      type: 'boolean',
-      format: 'checkbox',
-      default: true,
-    },
   },
 };
 
@@ -132,6 +126,12 @@ export const screenUiSchema = {
 export const transformScreenModeltoSchema = (activity?: IActivity) => {
   if (activity) {
     const data = activity?.content?.custom;
+    if (!data) {
+      console.warn('no custom??', { activity });
+      // this might have happened from a previous version that trashed the lesson data
+      // TODO: maybe look into validation / defaults
+      return;
+    }
     const schemaPalette = {
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,
@@ -141,16 +141,16 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
         data.palette.lineColor || data.palette.lineColor === 0
           ? chroma(data.palette.lineColor).rgb().join(',')
           : '255, 255, 255'
-      },${data.palette.lineAlpha})`,
+      },${data.palette.lineAlpha || '100'})`,
       backgroundColor: `rgba(${
         data.palette.fillColor || data.palette.fillColor === 0
           ? chroma(data.palette.fillColor).rgb().join(',')
           : '255, 255, 255'
-      },${data.palette.fillAlpha})`,
+      },${data.palette.fillAlpha || '100'})`,
     };
     return {
       ...data,
-      title: activity?.title,
+      title: activity?.title || '',
       Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
@@ -173,7 +173,6 @@ export const transformScreenSchematoModel = (schema: any) => {
     palette: { ...schema.palette, useHtmlProps: true },
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
-    screenButton: schema.screenButton,
   };
 };
 

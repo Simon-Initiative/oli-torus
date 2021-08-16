@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSlate, ReactEditor } from 'slate-react';
+import { useSlate } from 'slate-react';
 import { Command, CommandContext } from '../commands/interfaces';
 import * as Popover from 'react-tiny-popover';
 
@@ -77,7 +77,6 @@ export const DropdownToolbarButton = ({
   context,
   active,
   description,
-  position,
   setParentPopoverOpen,
   tooltip,
 }: ToolbarButtonProps) => {

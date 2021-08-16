@@ -3,24 +3,22 @@ import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
 import { MediaDisplayMode } from './model';
 
-const textLimit = 25;
-
 // float_left and float_right no longer supported as options
 export function displayModelToClassName(display: MediaDisplayMode | undefined) {
   switch (display) {
     case 'float_left':
     case 'float_right':
-    case 'block': return 'd-block';
-    default: return 'd-block';
+    case 'block':
+      return 'd-block';
+    default:
+      return 'd-block';
   }
 }
 
 export function getContentDescription(content: StructuredContent): JSX.Element {
-
   let simpleText;
 
   if (content.children.length > 0) {
-
     let i = 0;
 
     while (i < content.children.length) {
@@ -56,7 +54,6 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
           }
       }
       i = i + 1;
-
     }
   }
 

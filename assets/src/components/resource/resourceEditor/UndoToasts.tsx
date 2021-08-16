@@ -7,6 +7,12 @@ export type UndoToastsProps = {
   onInvokeUndo: (guid: string) => void;
 };
 
+const toProperCase = (text: string) => {
+  return text.replace(/\w\S*/g, (s: string) => {
+    return s.charAt(0).toUpperCase() + s.substr(1).toLowerCase();
+  });
+};
+
 export const UndoToasts = (props: UndoToastsProps) => {
   const toasts = props.undoables.toArray().map((u) => {
     const [key, action] = u;
@@ -23,8 +29,8 @@ export const UndoToasts = (props: UndoToastsProps) => {
       >
         <div key={key} className="undotoast">
           <div className="toast-body d-flex justify-content-between">
-            <span className="undo-toast-desc">{action.undoable.description}</span>
-            <button onClick={() => props.onInvokeUndo(key)} className="btn undo-toast-btn btn-sm">
+            <span className="undo-toast-desc">{toProperCase(action.undoable.description)}</span>
+            <button onClick={() => props.onInvokeUndo(key)} className="btn btn-primary btn-xs">
               Undo
             </button>
           </div>

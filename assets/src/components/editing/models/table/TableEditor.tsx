@@ -7,7 +7,6 @@ import * as Settings from 'components/editing/models/settings/Settings';
 // eslint-disable-next-line
 interface Props extends EditorProps<ContentModel.Table> { }
 export const TableEditor = (props: Props) => {
-
   const { attributes, children, editor, model } = props;
 
   const editMode = getEditMode(editor);
@@ -15,8 +14,7 @@ export const TableEditor = (props: Props) => {
   const onEdit = (updated: ContentModel.Table) => {
     updateModel<ContentModel.Table>(editor, model, updated);
   };
-  const update = (attrs: Partial<ContentModel.Table>) =>
-    Object.assign({}, model, attrs);
+  const update = (attrs: Partial<ContentModel.Table>) => Object.assign({}, model, attrs);
 
   const setCaption = (caption: string) => {
     onEdit(update({ caption }));
@@ -30,9 +28,7 @@ export const TableEditor = (props: Props) => {
   return (
     <div {...attributes} className="table-editor">
       <table>
-        <tbody>
-          {children}
-        </tbody>
+        <tbody>{children}</tbody>
       </table>
       <div contentEditable={false} style={{ userSelect: 'none' }}>
         <Settings.Input

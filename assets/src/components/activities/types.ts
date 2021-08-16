@@ -7,21 +7,21 @@ import guid from 'utils/guid';
 export type PostUndoable = (undoable: Undoable) => void;
 
 export type MediaItemRequest = {
-  type: 'MediaItemRequest',
-  mimeTypes: string[]
-}
+  type: 'MediaItemRequest';
+  mimeTypes: string[];
+};
 
 export type Undoable = {
   type: 'Undoable';
   description: string;
   operations: UndoOperation[];
-}
+};
 
-export function makeUndoable(description: string, operations: UndoOperation[]) : Undoable {
+export function makeUndoable(description: string, operations: UndoOperation[]): Undoable {
   return {
     type: 'Undoable',
     description,
-    operations
+    operations,
   };
 }
 

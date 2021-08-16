@@ -2,8 +2,32 @@ import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/tool
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
+interface PartComponentRegistration {
+  slug: string;
+  title: string;
+  description: string;
+  author: string;
+  icon: string;
+  enabled: boolean;
+  global: boolean;
+  delivery_element: string;
+  delivery_script: string;
+  authoring_element: string;
+  authoring_script: string;
+}
+
+interface ActivityRegistration {
+  id: string;
+  slug: string;
+  title: string;
+  enabled: boolean;
+  global: boolean;
+  delivery_element: string;
+  authoring_element: string;
+}
+
 export interface AppState {
-  paths: Record<string, string>;
+  paths: Record<string, string> | null;
   isAdmin: boolean;
   projectSlug: string;
   revisionSlug: string;
@@ -13,10 +37,13 @@ export interface AppState {
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
   rightPanelActiveTab: RightPanelTabs;
+  currentRule: any;
+  partComponentTypes: PartComponentRegistration[];
+  activityTypes: ActivityRegistration[];
 }
 
 const initialState: AppState = {
-  paths: {},
+  paths: null,
   isAdmin: false,
   projectSlug: '',
   revisionSlug: '',
@@ -26,6 +53,9 @@ const initialState: AppState = {
   bottomPanel: true,
   visible: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
+  currentRule: undefined,
+  partComponentTypes: [],
+  activityTypes: [],
 };
 
 export interface AppConfig {
@@ -33,6 +63,8 @@ export interface AppConfig {
   isAdmin?: boolean;
   projectSlug?: string;
   revisionSlug?: string;
+  partComponentTypes?: any[];
+  activityTypes?: any[];
 }
 
 const slice: Slice<AppState> = createSlice({
@@ -44,6 +76,9 @@ const slice: Slice<AppState> = createSlice({
       state.isAdmin = !!action.payload.isAdmin;
       state.projectSlug = action.payload.projectSlug || initialState.projectSlug;
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
+      state.partComponentTypes =
+        action.payload.partComponentTypes || initialState.partComponentTypes;
+      state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
     },
     setPanelState(
       state,
@@ -68,13 +103,21 @@ const slice: Slice<AppState> = createSlice({
     setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
+    setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
+      state.currentRule = action.payload.currentRule;
+    },
   },
 });
 
 export const AppSlice = slice.name;
 
-export const { setInitialConfig, setPanelState, setVisible, setRightPanelActiveTab } =
-  slice.actions;
+export const {
+  setInitialConfig,
+  setPanelState,
+  setVisible,
+  setRightPanelActiveTab,
+  setCurrentRule,
+} = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
 export const selectPaths = createSelector(selectState, (state: AppState) => state.paths);
@@ -97,7 +140,21 @@ export const selectRightPanelActiveTab = createSelector(
   selectState,
   (state: AppState) => state.rightPanelActiveTab,
 );
+export const selectCurrentRule = createSelector(
+  selectState,
+  (state: AppState) => state.currentRule,
+);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
+
+export const selectPartComponentTypes = createSelector(
+  selectState,
+  (state: AppState) => state.partComponentTypes,
+);
+
+export const selectActivityTypes = createSelector(
+  selectState,
+  (state: AppState) => state.activityTypes,
+);
 
 export default slice.reducer;

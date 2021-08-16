@@ -3,7 +3,6 @@ import { Transforms, Node, Path } from 'slate';
 import * as ContentModel from 'data/content/model';
 
 export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
-
   if (node.type === 'table') {
     // Ensure that the number of cells in each row is the same
 
@@ -27,7 +26,6 @@ export const normalize = (editor: ReactEditor, node: Node, path: Path) => {
     });
 
     if (anyDiffer) {
-
       (node.children as any).forEach((row: Node, index: number) => {
         const children = row.children as any;
         let count = children.length;

@@ -98,20 +98,22 @@ export const loadMediaReferences = (
   references,
 });
 
-export const fetchCourseMedia = (
-  courseId: ProjectSlug,
-  offset?: number,
-  limit?: number,
-  mimeFilter?: string[],
-  searchText?: string,
-  orderBy?: string,
-  order?: string,
-) => (dispatch: Dispatch, getState: () => State): Promise<Maybe<List<MediaItem>>> => {
-  const reqId = guid();
-  dispatch(fetchMediaPage(courseId, reqId));
+export const fetchCourseMedia =
+  (
+    courseId: ProjectSlug,
+    offset?: number,
+    limit?: number,
+    mimeFilter?: string[],
+    searchText?: string,
+    orderBy?: string,
+    order?: string,
+  ) =>
+  (dispatch: Dispatch, getState: () => State): Promise<Maybe<List<MediaItem>>> => {
+    const reqId = guid();
+    dispatch(fetchMediaPage(courseId, reqId));
 
-  const handleError = (err: any) => {
-    /*
+    const handleError = (err: any) => {
+      /*
         const content = new Messages.TitledContent().with({
           title: 'Failed to load media',
           message: 'There was a problem loading media for this course. '
@@ -127,57 +129,58 @@ export const fetchCourseMedia = (
 
         dispatch(messageActions.showMessage(failedMessage));
         */
+    };
+
+    return persistence
+      .fetchMedia(courseId, offset, limit, mimeFilter, undefined, searchText, orderBy, order)
+      .then((response) => {
+        if (response.type === 'success') {
+          const items = List<MediaItem>(response.results);
+
+          // check if the response is for the latest request
+          if (getState().media.lastReqId === reqId) {
+            // request is latest, update state
+            dispatch(receiveMediaPage(courseId, items, response.totalResults));
+            // dispatch(fetchMediaReferences(courseId) as any);
+          }
+
+          return Maybe.just<List<MediaItem>>(items);
+        }
+        return Maybe.nothing<List<MediaItem>>();
+      })
+      .catch(() => {
+        return Maybe.nothing<List<MediaItem>>();
+      });
   };
 
-  return persistence
-    .fetchMedia(courseId, offset, limit, mimeFilter, undefined, searchText, orderBy, order)
-    .then((response) => {
+export const fetchCourseMediaNextPage =
+  (
+    courseId: ProjectSlug,
+    mimeFilter?: string[],
+    searchText?: string,
+    orderBy?: string,
+    order?: string,
+  ) =>
+  (dispatch: Dispatch, getState: () => State): Promise<Maybe<List<MediaItem>>> => {
+    const limit = MEDIA_PAGE_SIZE;
+    const offset = getState().media.items.size || 0;
+
+    return dispatch(
+      fetchCourseMedia(courseId, offset, limit, mimeFilter, searchText, orderBy, order),
+    );
+  };
+
+export const fetchMediaItemByPath =
+  (courseId: ProjectSlug, url: string) =>
+  (dispatch: Dispatch, getState: () => State): Promise<Maybe<MediaItem>> => {
+    const limit = 1;
+    const offset = 0;
+
+    return persistence.fetchMedia(courseId, offset, limit, undefined, url).then((response) => {
       if (response.type === 'success') {
-        const items = List<MediaItem>(response.results);
-
-        // check if the response is for the latest request
-        if (getState().media.lastReqId === reqId) {
-          // request is latest, update state
-          dispatch(receiveMediaPage(courseId, items, response.totalResults));
-          // dispatch(fetchMediaReferences(courseId) as any);
-        }
-
-        return Maybe.just<List<MediaItem>>(items);
+        const data = Map<string, MediaItem>(response.results.map((item) => [item.guid, item]));
+        return Maybe.just<MediaItem>(data.first() as any);
       }
-      return Maybe.nothing<List<MediaItem>>();
-    })
-    .catch(() => {
-      return Maybe.nothing<List<MediaItem>>();
+      return Maybe.nothing<MediaItem>();
     });
-};
-
-export const fetchCourseMediaNextPage = (
-  courseId: ProjectSlug,
-  mimeFilter?: string[],
-  searchText?: string,
-  orderBy?: string,
-  order?: string,
-) => (dispatch: Dispatch, getState: () => State): Promise<Maybe<List<MediaItem>>> => {
-  const limit = MEDIA_PAGE_SIZE;
-  const offset = getState().media.items.size || 0;
-
-  return dispatch(
-    fetchCourseMedia(courseId, offset, limit, mimeFilter, searchText, orderBy, order),
-  );
-};
-
-export const fetchMediaItemByPath = (courseId: ProjectSlug, url: string) => (
-  dispatch: Dispatch,
-  getState: () => State,
-): Promise<Maybe<MediaItem>> => {
-  const limit = 1;
-  const offset = 0;
-
-  return persistence.fetchMedia(courseId, offset, limit, undefined, url).then((response) => {
-    if (response.type === 'success') {
-      const data = Map<string, MediaItem>(response.results.map((item) => [item.guid, item]));
-      return Maybe.just<MediaItem>(data.first() as any);
-    }
-    return Maybe.nothing<MediaItem>();
-  });
-};
+  };

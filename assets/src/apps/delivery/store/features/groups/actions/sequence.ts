@@ -1,3 +1,6 @@
+import { useSelector } from 'react-redux';
+import { selectCurrentSequenceId, selectSequence } from '../selectors/deck';
+
 export interface SequenceEntryChild {
   sequenceId: string;
   sequenceName: string;
@@ -110,6 +113,17 @@ export const findInSequence = (
   return found;
 };
 
+export const findInSequenceByResourceId = (
+  sequence: SequenceEntry<SequenceEntryChild>[],
+  resourceId: number,
+): SequenceEntry<SequenceEntryChild> | null => {
+  const found = sequence.find((entry) => entry.resourceId === resourceId);
+  if (!found) {
+    return null;
+  }
+  return found;
+};
+
 export const getSequenceLineage = (
   sequence: SequenceEntry<SequenceEntryChild>[],
   childId: string | number,
@@ -123,4 +137,11 @@ export const getSequenceLineage = (
     }
   }
   return lineage;
+};
+
+export const getIsLayer = () => {
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
+  const placeInSequence = findInSequence(sequence, currentSequenceId);
+  return placeInSequence?.custom.isLayer;
 };

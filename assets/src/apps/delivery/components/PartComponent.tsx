@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState, CSSProperties } from 'react';
 import {
   NotificationContext,
   NotificationType,
@@ -76,7 +76,9 @@ const WebComponent: React.FC<any> = (props) => {
       });
     };
   }, []);
-
+  const compStyles: CSSProperties = {
+    display: 'block',
+  };
   const webComponentProps = {
     ref,
     id: props.id,
@@ -84,6 +86,7 @@ const WebComponent: React.FC<any> = (props) => {
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
+    style: compStyles,
   };
 
   const wcTagName = props.type;

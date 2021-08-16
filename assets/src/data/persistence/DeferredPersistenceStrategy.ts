@@ -1,16 +1,13 @@
-
-import {
-  AbstractPersistenceStrategy,
-} from './AbstractPersistenceStrategy';
+import { AbstractPersistenceStrategy } from './AbstractPersistenceStrategy';
 
 export interface DeferredPersistenceStrategy {
   timer: any;
   timerStart: number;
   quietPeriodInMs: number;
   maxDeferredTimeInMs: number;
-  pending: any;                    // A function to execute to initiate save
-  inFlight: boolean;               // Document that is in flight
-  flushResolve: any;               // Function to call to resolve inflight requests after destroy
+  pending: any; // A function to execute to initiate save
+  inFlight: boolean; // Document that is in flight
+  flushResolve: any; // Function to call to resolve inflight requests after destroy
 }
 
 /**
@@ -19,7 +16,6 @@ export interface DeferredPersistenceStrategy {
  * wait period has exceeded.
  */
 export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
-
   constructor(quietPeriodInMs = 2000, maxDeferredTimeInMs = 5000) {
     super();
     this.quietPeriodInMs = quietPeriodInMs;
@@ -37,7 +33,6 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   save(saveFn: any) {
-
     this.pending = saveFn;
 
     if (this.stateChangeCallback !== null) {
@@ -48,17 +43,13 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   queueSave() {
-
-    const startTimer =
-      () => setTimeout(
-        () => {
-          this.timer = null;
-          this.persist();
-        },
-        this.quietPeriodInMs);
+    const startTimer = () =>
+      setTimeout(() => {
+        this.timer = null;
+        this.persist();
+      }, this.quietPeriodInMs);
 
     if (this.timer !== null) {
-
       clearTimeout(this.timer);
       this.timer = null;
 
@@ -74,7 +65,6 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   persist(): Promise<unknown> {
-
     return new Promise((resolve, reject) => {
       this.inFlight = true;
       const saveFn = this.pending;
@@ -86,7 +76,6 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
 
       saveFn(false)
         .then((result: any) => {
-
           if (this.flushResolve !== null) {
             this.flushResolve();
             return;
@@ -108,7 +97,6 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
           resolve(result);
         })
         .catch((err: any) => {
-
           if (this.stateChangeCallback !== null) {
             this.stateChangeCallback(this.pending === null ? 'idle' : 'pending');
           }
@@ -131,9 +119,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
    return false;
   }
 
-
   flushPendingChanges(): boolean {
-
     if (this.timer !== null) {
       clearTimeout(this.timer);
     }

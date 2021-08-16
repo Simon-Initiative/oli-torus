@@ -13,7 +13,6 @@ export type EditorDesc = {
 };
 
 export interface ActivityEditorMap {
-
   // Index signature
   [prop: string]: EditorDesc;
 }

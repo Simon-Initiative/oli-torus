@@ -4,6 +4,10 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
+<%= for script <- @part_scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
 <div id="editor" class="container"/>
 
 <script>
@@ -14,7 +18,9 @@
     content: "<%= Base.encode64(@context) %>",
     paths: {
       images: "<%= Routes.static_path(@conn, "/images") %>"
-    }
+    },
+    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
+    partComponentTypes: "<%= Jason.encode!(@part_component_types) |> Base.encode64() %>",
   };
 
   window.oliMountApplication(document.getElementById('editor'), params);

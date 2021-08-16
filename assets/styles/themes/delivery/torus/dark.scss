@@ -16,18 +16,18 @@ $gray-800: #303030;
 $gray-900: #222;
 $black: #000;
 
-$blue: #0d6efd;
-$indigo: #6610f2;
-$purple: #6f42c1;
-$pink: #d63384;
-$red: #dc3545;
-$orange: #fd7e14;
-$yellow: #ffc107;
-$green: #28a745;
-$teal: #20c997;
-$cyan: #3498db;
+$blue: #4977c2;
+$indigo: #7e39ec;
+$purple: #8463c2;
+$pink: #d45695;
+$red: #d8636f;
+$orange: #ff9e4e;
+$yellow: #ffd34e;
+$green: #63a372;
+$teal: #58c7a6;
+$cyan: #69abd6;
 
-$primary: #2c67c4;
+$primary: $blue;
 $secondary: $gray-600;
 $success: $green;
 $info: $cyan;
@@ -40,15 +40,15 @@ $yiq-contrasted-threshold: 175;
 
 // Body
 
-$body-bg: $gray-900;
-$body-color: $white;
+$body-bg: #2a2b2e;
+$body-color: #f5f5f5;
 
-$title-color: $white;
+$title-color: $body-color;
 
 // Footer
 
 $footer-bg-color: $gray-800;
-$footer-color: $white;
+$footer-color: $body-color;
 
 // Links
 
@@ -66,7 +66,11 @@ $table-border-color: $gray-700;
 
 // Forms
 
-$input-border-color: $body-bg;
+$input-bg: $body-bg;
+$input-disabled-bg: $gray-700;
+
+$input-color: $body-color;
+$input-border-color: $gray-600;
 
 $input-group-addon-color: $gray-500;
 $input-group-addon-bg: $gray-700;
@@ -199,7 +203,34 @@ $activity-purpose-learnbydoing-color: lighten($green, 10%);
 $activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
 
 ///////////////////////////////////////////////////////////////////////////////
-// IMPORTANT: DO NOT MODIFY BELOW
-// This import is required and must always be the last item in this style sheet
+// IMPORTANT: DO NOT MODIFY IMPORT
+// This import is required and must always be after the last variable
+// declaration and before any custom styles in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
 @import "delivery.scss";
+///////////////////////////////////////////////////////////////////////////////
+
+/** Theme-specific custom styles **/
+html.delivery,
+.content-block .delivery {
+  .content {
+    pre {
+      background: $gray-900;
+    }
+
+    blockquote {
+      border-color: $gray-600;
+    }
+  }
+
+  .activity {
+    .hints.card {
+      background-color: $gray-700;
+    }
+  }
+
+  .draggableColumn__card {
+    background-color: $gray-900;
+    box-shadow: 1px 1px 8px 1px rgb(0 0 0 / 33%);
+  }
+}

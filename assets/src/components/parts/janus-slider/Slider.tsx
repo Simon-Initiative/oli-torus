@@ -241,7 +241,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   };
 
   const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const sliderVal = parseInt(e.target.value, 10);
+    const sliderVal = parseFloat(e.target.value);
     setSliderValue(sliderVal);
     saveState({ sliderVal, userModified: true });
   };

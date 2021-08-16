@@ -72,14 +72,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         decoded = Base.decode64!(check_results)
         # Logger.debug("Decoded: #{decoded}")
         decodedResults = Poison.decode!(decoded)
+        dbg = decodedResults["debug"]
+        Logger.debug("Results #{Jason.encode!(dbg)}")
 
         score = decodedResults["score"]
         out_of = decodedResults["out_of"]
         client_evaluations = to_client_results(score, out_of, part_inputs)
+        Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
           {:ok, _} -> {:ok, decodedResults}
-          e -> e
+          {:error, err} ->
+            Logger.debug("Error in apply client results! #{err}")
+            {:error, err}
         end
 
       e ->
@@ -164,7 +169,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                       # part_inputs are assumed to be from the current activity only
                       # so we strip out the sequence id from the path to get our "local"
                       # values for the rules
-                      local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                      # might look like this "q:1465253111364:752|stage.dragdrop.Drag and Drop.Body Fossil | Direct Evidence.Count"
+                      path_parts = String.split(path, "|stage")
+                      path_interested = List.last(path_parts)
+                      local_path = if String.starts_with?(path_interested, ".") do
+                        "stage" <> path_interested
+                      else
+                        path_interested
+                      end
                       value = Map.get(input, "value")
                       Map.put(acc1, local_path, value)
                     end

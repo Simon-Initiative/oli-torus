@@ -22,11 +22,18 @@ import {
   notExactlyMathOperator,
 } from 'adaptivity/operators/math';
 import { inRangeOperator, notInRangeOperator } from 'adaptivity/operators/range';
-import { check, CheckResult, ScoringContext } from 'adaptivity/rules-engine';
+import {
+  check,
+  CheckResult,
+  defaultWrongRule as builtinDefaultWrongRule,
+  ScoringContext,
+} from 'adaptivity/rules-engine';
+import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
   complexRuleWithMultipleActions,
   defaultCorrectRule,
+  defaultWrongRule,
   disabledCorrectRule,
   expressionScoringCorrectRule,
   getAttemptScoringContext,
@@ -43,7 +50,9 @@ describe('Rules Engine', () => {
       [],
       correctAttemptScoringContext,
     )) as CheckResult;
-    expect(successEvents).toEqual([]);
+
+    expect(successEvents.length).toEqual(1);
+    expect(successEvents[0].type).toEqual(builtinDefaultWrongRule.event.type);
   });
 
   it('should return successful events of rules with no conditions', async () => {
@@ -62,7 +71,7 @@ describe('Rules Engine', () => {
       [complexRuleWithMultipleActions, defaultCorrectRule],
       correctAttemptScoringContext,
     )) as CheckResult;
-    expect(events.length).toEqual(1);
+    expect(events.length).toEqual(2);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
   });
 
@@ -72,7 +81,31 @@ describe('Rules Engine', () => {
       [disabledCorrectRule],
       correctAttemptScoringContext,
     )) as CheckResult;
-    expect(events.length).toEqual(0);
+    expect(events.length).toEqual(1);
+    expect(events[0].type).toEqual(builtinDefaultWrongRule.event.type);
+  });
+
+  it('should return the correct rule when there are both correct and incorrect DEFAULT rules', async () => {
+    const { results: events } = (await check(
+      mockState,
+      [defaultCorrectRule, defaultWrongRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
+
+    expect(events.length).toEqual(1);
+    expect(events[0].params?.correct).toEqual(true);
+  });
+
+  it('should return the default rule when there are no other rules left', async () => {
+    const { results: events } = (await check(
+      mockState,
+      [disabledCorrectRule, defaultWrongRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
+
+    expect(events.length).toEqual(1);
+    expect(events[0].params?.correct).toEqual(false);
+    expect(events[0].params?.default).toEqual(true);
   });
 
   it('should return base64 encoded results if the flag is set', async () => {
@@ -220,6 +253,20 @@ describe('Operators', () => {
     });
   });
 
+  describe('Equalto Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(true);
+      expect(isEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4'])).toEqual(false);
+    });
+  });
+
+  describe('Not Equal to Operators', () => {
+    it('should return false if all the values are not equal', () => {
+      expect(notEqual(['1', '2', '3', '4', '5'], [])).toEqual(true);
+      expect(notEqual(['1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5'])).toEqual(false);
+    });
+  });
+
   describe('Contains Operators', () => {
     it('should return false if either value is not provided', () => {
       expect(containsOperator(null, null)).toEqual(false);
@@ -254,6 +301,21 @@ describe('Operators', () => {
       expect(containsOnlyOperator([8, 3, 1], [1, 3])).toEqual(false);
       expect(containsOnlyOperator([8, 3, 1], '3,1,8')).toEqual(true);
     });
+  });
+
+  describe('ContainsanyOf Operators', () => {
+    it('should check containsany Of', () => {
+      expect(containsAnyOfOperator('[March,June,September,December]', 'December')).toEqual(true);
+      expect(containsAnyOfOperator('[March,June,September,December]', 'winter')).toEqual(false);
+    });
+  });
+
+  describe('Parse Array String', () => {
+    expect(parseArray(['1', '2', '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['1', 2, '3'])).toEqual([1, 2, 3]);
+    expect(parseArray(['Stem', 'Options', '3'])).toEqual(['Stem', 'Options', 3]);
+    expect(parseArray(['Stem', 'Option1', 'Option2'])).toEqual(['Stem', 'Option1', 'Option2']);
+    expect(parseArray('Stem,Option1,Option2')).toEqual(['Stem', 'Option1', 'Option2']);
   });
 
   describe('Range Operators', () => {

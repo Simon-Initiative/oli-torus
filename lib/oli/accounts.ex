@@ -11,7 +11,13 @@ defmodule Oli.Accounts do
       [%User{}, ...]
   """
   def list_users do
-    Repo.all(User)
+    from(u in User,
+      left_join: a in Author,
+      on: a.id == u.author_id,
+      where: u.guest == false,
+      preload: [author: a]
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -285,8 +291,9 @@ defmodule Oli.Accounts do
     q = "%" <> q <> "%"
 
     Repo.all(
-      from author in Author,
+      from(author in Author,
         where: ilike(author.email, ^q)
+      )
     )
   end
 
@@ -319,11 +326,12 @@ defmodule Oli.Accounts do
       # in case the author has many projects
       _ ->
         Repo.one(
-          from assoc in "authors_projects",
+          from(assoc in "authors_projects",
             where:
               assoc.author_id == ^author.id and
                 assoc.project_id == ^project.id,
             select: count(assoc)
+          )
         ) != 0
     end
   end
@@ -340,50 +348,54 @@ defmodule Oli.Accounts do
       # in case the author has many projects
       _ ->
         Repo.one(
-          from assoc in "authors_projects",
+          from(assoc in "authors_projects",
             join: p in "projects",
             on: assoc.project_id == p.id,
             where:
               assoc.author_id == ^author.id and
                 p.slug == ^project_slug,
             select: count(assoc)
+          )
         ) != 0
     end
   end
 
   def project_author_count(project) do
     Repo.one(
-      from assoc in "authors_projects",
+      from(assoc in "authors_projects",
         join: author in Author,
         on: assoc.author_id == author.id,
         where:
           assoc.project_id in ^project.id and
             (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: count(author)
+      )
     )
   end
 
   def project_authors(project_ids) when is_list(project_ids) do
     Repo.all(
-      from assoc in "authors_projects",
+      from(assoc in "authors_projects",
         join: author in Author,
         on: assoc.author_id == author.id,
         where:
           assoc.project_id in ^project_ids and
             (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: [author, assoc.project_id]
+      )
     )
   end
 
   def project_authors(project) do
     Repo.all(
-      from assoc in "authors_projects",
+      from(assoc in "authors_projects",
         join: author in Author,
         on: assoc.author_id == author.id,
         where:
           assoc.project_id == ^project.id and
             (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: author
+      )
     )
   end
 end

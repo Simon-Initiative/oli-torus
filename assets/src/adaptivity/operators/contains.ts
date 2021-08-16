@@ -1,9 +1,4 @@
-import { isString } from 'utils/common';
-
-export const parseNumString = (item: string): string | number => {
-  // check if items are strings or numbers and converts if number
-  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item.toString().trim();
-};
+import { isString, parseArray, parseNumString } from 'utils/common';
 
 const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOperator: boolean) => {
   // factValue contains value, can contain other items
@@ -20,9 +15,9 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
     if (!value.includes(`[`) && !value.includes(']')) {
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
+    value = parseArray(value);
     return (
       value
-        .split(',')
         // We are parseNumString for the cases where factValue contains numbers but the values contain strings
         .map((item: string) => parseNumString(item))
         // check if value is found in factValue array
@@ -31,22 +26,25 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
   }
 
   if (Array.isArray(factValue) && Array.isArray(value)) {
-    // We are parseNumString for the cases where factValue contains numbers but the values contain strings
-    const modifideValue = value.map((item) => parseNumString(item));
+    // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
+    const updatedFacts = parseArray(factValue);
+    const modifideValue = parseArray(value);
     if (isDoesNotContainsOperator) {
       return (
         modifideValue
           // check if value is found in factValue array
-          .every((item) => factValue.includes(item))
+          .every((item) => updatedFacts.includes(item))
       );
     } else {
       return (
         modifideValue
           // check if value is found in factValue array
-          .some((item) => factValue.includes(item))
+          .some((item) => updatedFacts.includes(item))
       );
     }
   } else if (Array.isArray(factValue) && value) {
+    // We are parseArrayString for the cases where factValue contains strings but the values contain strings
+    const updatedFacts = parseArray(factValue);
     // split value into array
     return (
       value
@@ -54,7 +52,7 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
         // We are parseNumString for the cases where factValue contains numbers but the values contain strings
         .map((item: string) => parseNumString(item))
         // check if value is found in factValue array
-        .some((item: any) => factValue.includes(item))
+        .some((item: any) => updatedFacts.includes(item))
     );
   }
 
@@ -82,17 +80,15 @@ export const containsOnlyOperator = (factValue: any, value: any) => {
     return false;
   }
 
-  let updatedValues = value;
-  if (Array.isArray(value)) {
-    updatedValues = updatedValues.map((item: string) => parseNumString(item));
-  } else {
-    updatedValues = updatedValues.split(',').map((item: string) => parseNumString(item));
-  }
-  if (updatedValues.length !== factValue.length) {
+  // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
+  const updatedFacts = parseArray(factValue);
+  const updatedValues = parseArray(value);
+
+  if (updatedValues.length !== updatedFacts.length) {
     return false;
   }
 
-  return factValue.every((fact: any) => updatedValues.includes(fact));
+  return updatedFacts.every((fact: any) => updatedValues.includes(fact));
 };
 
 export const containsExactlyOperator = (factValue: any, value: any) => {
@@ -101,16 +97,14 @@ export const containsExactlyOperator = (factValue: any, value: any) => {
     return false;
   }
 
-  let updatedValues = value;
-  if (Array.isArray(value)) {
-    updatedValues = updatedValues.map((item: string) => parseNumString(item));
-  } else {
-    updatedValues = updatedValues.split(',').map((item: string) => parseNumString(item));
-  }
+  // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
+  const updatedFacts = parseArray(factValue);
+  const updatedValues = parseArray(value);
+
   if (Array.isArray(factValue) && Array.isArray(value)) {
     return (
-      factValue.every((fact) => updatedValues.includes(fact)) &&
-      factValue.length == updatedValues.length
+      updatedFacts.every((fact) => updatedValues.includes(fact)) &&
+      updatedFacts.length == updatedValues.length
     );
   } else {
     return factValue === value;

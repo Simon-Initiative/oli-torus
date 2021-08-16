@@ -17,8 +17,9 @@ defmodule Oli.PartComponents do
       delivery_element: manifest.delivery.element,
       globally_available: manifest.global,
       description: manifest.description,
+      author: manifest.author,
       title: manifest.friendlyName,
-      icon: "nothing",
+      icon: manifest.icon,
       slug: manifest.id
     }
 
@@ -147,6 +148,13 @@ defmodule Oli.PartComponents do
             %{
               slug: a.slug,
               title: a.title,
+              icon: a.icon,
+              description: a.description,
+              author: a.author,
+              authoring_element: a.authoring_element,
+              authoring_script: a.authoring_script,
+              delivery_element: a.delivery_element,
+              delivery_script: a.delivery_script,
               global: a.globally_available,
               enabled: enabled_for_project
             }

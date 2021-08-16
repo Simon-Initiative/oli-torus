@@ -30,7 +30,8 @@ export const updateActivityPartInheritance = createAsyncThunk(
           // this is really an error
           return;
         }
-        const activityParts = activity.model.partsLayout.map((part: any) => {
+        /* console.log('ACTIVITY" TO MAP: ', { activity }); */
+        const activityParts = activity?.content?.partsLayout.map((part: any) => {
           // TODO: response schema? & default response values?
           const partDefinition = {
             id: part.id,
@@ -41,7 +42,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
 
           return partDefinition;
         });
-        const merged = [...collect, ...activityParts];
+        const merged = [...collect, ...(activityParts || [])];
 
         return merged;
       }, []);
@@ -54,9 +55,9 @@ export const updateActivityPartInheritance = createAsyncThunk(
         return;
       }
 
-      if (!isEqual(childActivity.model.authoring.parts, combinedParts)) {
+      if (!isEqual(childActivity.authoring.parts, combinedParts)) {
         const clone = JSON.parse(JSON.stringify(childActivity));
-        clone.model.authoring.parts = combinedParts;
+        clone.authoring.parts = combinedParts;
         activitiesToUpdate.push(clone);
       }
     });
@@ -72,9 +73,9 @@ export const updateActivityPartInheritance = createAsyncThunk(
         const changeData: ActivityUpdate = {
           title: activity.title,
           objectives: activity.objectives,
-          content: activity.model,
+          content: { ...activity.content, authoring: activity.authoring },
         };
-        return edit(projectSlug, resourceId, activity.activity_id, changeData, false);
+        return edit(projectSlug, resourceId, activity.resourceId, changeData, false);
       });
       await Promise.all(updates);
       await dispatch(releaseEditingLock());

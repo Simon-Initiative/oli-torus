@@ -1,4 +1,3 @@
-
 .card-links {
   display: flex;
   flex-wrap: wrap;
@@ -12,19 +11,18 @@ a.card-link {
     text-decoration: none;
   }
   border-radius: 6px;
-  box-shadow: 0px 0px 2px rgba(0,0,0, .45);
+  box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.45);
   &:not(:disabled):not(.disabled):hover {
-    background-color: rgba(0,0,0,.06);
+    background-color: rgba(0, 0, 0, 0.06);
     outline: none;
   }
   &:not(:disabled):not(.disabled):focus,
   &:not(:disabled):not(.disabled):active:focus {
-    background-color: white;
     color: #333;
     border-color: #18a0fb;
     outline: none;
     &:hover {
-      background-color: rgba(0,0,0,.06);
+      background-color: rgba(0, 0, 0, 0.06);
     }
   }
   margin: 0 16px 16px 0;

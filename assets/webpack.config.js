@@ -134,6 +134,7 @@ module.exports = (env, options) => ({
       state: path.resolve(__dirname, 'src/state'),
       utils: path.resolve(__dirname, 'src/utils'),
       styles: path.resolve(__dirname, 'styles'),
+      apps: path.resolve(__dirname, 'src/apps'),
     },
     fallback: { "vm": require.resolve("vm-browserify") }
   },
@@ -178,6 +179,7 @@ module.exports = (env, options) => ({
               sassOptions: {
                 includePaths: [path.join(__dirname, 'src'), path.join(__dirname, 'styles')],
                 importer: globImporter(),
+                quietDeps: true
               },
               sourceMap: true,
             },

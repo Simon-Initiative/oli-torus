@@ -6,14 +6,13 @@ import { ActivityEditContext } from './activity';
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
 
-
 export type PageContent = {
-  model: ResourceContent[],
-  [key: string]: any,
+  model: ResourceContent[];
+  [key: string]: any;
 };
 
 export type AttachedObjectives = {
-  attached: ResourceId[],
+  attached: ResourceId[];
 };
 
 // The types of things that can be present as top level
@@ -22,16 +21,16 @@ export type ResourceContent = GroupContent | StructuredContent | ActivityReferen
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
-  graded: boolean,                // Page or assessment?
-  authorEmail: string,            // The current author
-  projectSlug: ProjectSlug,       // The current project
-  resourceSlug: ResourceSlug,     // The current resource
-  resourceId: ResourceId,         // The resource id
-  title: string,                  // The title of the resource
-  content: PageContent,           // Content of the resource
-  objectives: AttachedObjectives, // Attached objectives
-  allObjectives: Objective[],     // All objectives
-  activityContexts: ActivityEditContext[],  // Contexts for inline activity editing
+  graded: boolean; // Page or assessment?
+  authorEmail: string; // The current author
+  projectSlug: ProjectSlug; // The current project
+  resourceSlug: ResourceSlug; // The current resource
+  resourceId: ResourceId; // The resource id
+  title: string; // The title of the resource
+  content: PageContent; // Content of the resource
+  objectives: AttachedObjectives; // Attached objectives
+  allObjectives: Objective[]; // All objectives
+  activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
 };
 
 export enum ResourceType {
@@ -40,8 +39,8 @@ export enum ResourceType {
 }
 
 export type Purpose = {
-  value: string,
-  label: string,
+  value: string;
+  label: string;
 };
 
 export const ActivityPurposes: Purpose[] = [
@@ -58,15 +57,11 @@ export const ContentPurposes: Purpose[] = [
   { value: 'learnmore', label: 'Learn more' },
 ];
 
-
-
 export const createDefaultStructuredContent = () => {
   return {
     type: 'content',
     id: guid(),
-    children: [
-      { type: 'p', id: guid(), children: [{ text: '' }] },
-    ],
+    children: [{ type: 'p', id: guid(), children: [{ text: '' }] }],
     purpose: 'none',
     selection: null,
   } as StructuredContent;

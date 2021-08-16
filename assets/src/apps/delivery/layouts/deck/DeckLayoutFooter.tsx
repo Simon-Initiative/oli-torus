@@ -17,6 +17,7 @@ import { triggerCheck } from '../../store/features/adaptivity/actions/triggerChe
 import {
   selectCurrentFeedbacks,
   selectHistoryNavigationActivity,
+  selectInitPhaseComplete,
   selectIsGoodFeedback,
   selectLastCheckResults,
   selectLastCheckTriggered,
@@ -39,6 +40,36 @@ import { selectEnableHistory, selectPageContent, setScore } from '../../store/fe
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
+export const handleValueExpression = (
+  currentActivityTree: any[] | null,
+  operationValue: string,
+) => {
+  let value = operationValue;
+  if (typeof value === 'string' && currentActivityTree) {
+    if (
+      (value[0] === '{' && value[1] !== '"') ||
+      (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+    ) {
+      const variableList = value.match(/\{(.*?)\}/g);
+      variableList?.forEach((item) => {
+        //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
+        //it should be like {q.145225454.1|stage.input.value}
+        const modifiedValue = item.replace('{', '').replace('}', '');
+        const lstVar = item.split('.');
+        if (lstVar?.length > 2) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+          if (ownerActivity) {
+            value = value.replace(`${item}`, `{${ownerActivity.id}|${modifiedValue}}`);
+          }
+        }
+      });
+    }
+  }
+  return value;
+};
 export interface NextButton {
   text: string;
   handler: () => void;
@@ -117,8 +148,10 @@ const DeckLayoutFooter: React.FC = () => {
   const enableHistory = useSelector(selectEnableHistory);
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
+  const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
@@ -132,6 +165,32 @@ const DeckLayoutFooter: React.FC = () => {
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
 
+  const processResults = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    return actionsByType;
+  };
+
+  const checkIfFirstEventHasNavigation = (event: any) => {
+    let isDifferentNavigationExist = false;
+    const { actions } = event.params;
+    actions.forEach((action: any) => {
+      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+        isDifferentNavigationExist = true;
+      }
+    });
+    return isDifferentNavigationExist;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -142,24 +201,21 @@ const DeckLayoutFooter: React.FC = () => {
 
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
-
     let eventsToProcess = [lastCheckResults.results[0]];
     if (combineFeedback) {
-      eventsToProcess = lastCheckResults.results;
+      //if the first event has a navigation to different screen
+      // we ignore the rest of the events ang fire this one.
+      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
+        lastCheckResults.results[0],
+      );
+      if (doesFirstEventHasNavigation) {
+        eventsToProcess = [lastCheckResults.results[0]];
+      } else {
+        eventsToProcess = lastCheckResults.results;
+      }
     }
 
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-
-    eventsToProcess.forEach((evt) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
+    const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
     const hasNavigation = actionsByType.navigation.length > 0;
@@ -180,7 +236,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: op.params.value,
+          value: handleValueExpression(currentActivityTree, op.params.value),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
@@ -211,7 +267,9 @@ const DeckLayoutFooter: React.FC = () => {
     }
 
     // after any mutations applied, and just in case
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
 
     if (hasFeedback) {
       dispatch(
@@ -249,6 +307,10 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToActivity(navTarget));
         }
       }
+    }
+
+    if (!hasFeedback && !hasNavigation) {
+      setHasOnlyMutation(true);
     }
   }, [lastCheckResults]);
 
@@ -317,6 +379,13 @@ const DeckLayoutFooter: React.FC = () => {
   }, [lastCheckTriggered]);
 
   useEffect(() => {
+    if (hasOnlyMutation) {
+      setIsLoading(false);
+      setHasOnlyMutation(false);
+    }
+  }, [hasOnlyMutation]);
+
+  useEffect(() => {
     if (checkInProgress && lastCheckResults) {
       setCheckInProgress(false);
     }
@@ -382,7 +451,7 @@ const DeckLayoutFooter: React.FC = () => {
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
       <NextButton
-        isLoading={isLoading}
+        isLoading={isLoading || !initPhaseComplete}
         text={nextButtonText}
         handler={checkHandler}
         isGoodFeedbackPresent={isGoodFeedback}

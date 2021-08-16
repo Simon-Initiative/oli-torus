@@ -100,7 +100,13 @@ $close-text-shadow: none;
 /** OLI specific varaibles **/
 
 ///////////////////////////////////////////////////////////////////////////////
-// IMPORTANT: DO NOT MODIFY BELOW
-// This import is required and must always be the last item in this style sheet
+// IMPORTANT: DO NOT MODIFY IMPORT
+// This import is required and must always be after the last variable
+// declaration and before any custom styles in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
 @import "authoring.scss";
+///////////////////////////////////////////////////////////////////////////////
+
+/** Theme-specific custom styles **/
+html.authoring {
+}

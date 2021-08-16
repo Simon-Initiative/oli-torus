@@ -10,6 +10,15 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
+import { contexts } from '../../../types/applicationContext';
+interface ContextProps {
+  currentActivity: string;
+  mode: string;
+}
+interface InitResultProps {
+  snapshot: Record<string, unknown>;
+  context: ContextProps;
+}
 
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
@@ -17,11 +26,12 @@ const Popup: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
-
+  const [context, setContext] = useState<boolean>(false);
   const [showPopup, setShowPopup] = useState(false);
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
 
+  const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
@@ -45,6 +55,7 @@ const Popup: React.FC<any> = (props) => {
     });
     /* console.log('POPUP INIT', initResult); */
     // result of init has a state snapshot with latest (init state applied)
+    setInitSnapshot(initResult);
     const currentStateSnapshot = initResult.snapshot;
     const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
     if (isOpen !== undefined) {
@@ -62,7 +73,9 @@ const Popup: React.FC<any> = (props) => {
         setIconSrc(initIconUrl);
       }
     }
-
+    if (initResult.context.mode === contexts.REVIEW) {
+      setContext(false);
+    }
     setReady(true);
   }, []);
 
@@ -219,7 +232,9 @@ const Popup: React.FC<any> = (props) => {
       ],
     });
   };
-
+  const handlePartInit = () => {
+    return initSnapshot;
+  };
   const partComponents = popup?.partsLayout;
 
   const config = popup?.custom ? popup.custom : null;
@@ -324,7 +339,10 @@ const Popup: React.FC<any> = (props) => {
               style={popupModalStyles}
             >
               <div className="popup-background" style={popupBGStyles}>
-                <PartsLayoutRenderer parts={partComponents}></PartsLayoutRenderer>
+                <PartsLayoutRenderer
+                  onPartInit={handlePartInit}
+                  parts={partComponents}
+                ></PartsLayoutRenderer>
                 <button
                   aria-label="Close"
                   className="close"

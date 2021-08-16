@@ -14,6 +14,9 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Repo
   alias Oli.Accounts
 
+  import Phoenix.HTML.Form
+  import OliWeb.ErrorHelpers
+
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
     is_admin = Accounts.is_admin?(author)
@@ -60,13 +63,11 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   def render(assigns) do
     ~L"""
-    <div class="projects-title-row my-4">
+    <div class="projects-title-row mb-4">
       <div class="container">
         <div class="row">
           <div class="col-12">
-
             <div class="d-flex justify-content-between align-items-baseline">
-              <div class="flex-grow-1"></div>
               <div class="btn-group btn-group-toggle" data-toggle="buttons">
                 <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
                   <input type="radio" name="options" id="option1"
@@ -80,6 +81,14 @@ defmodule OliWeb.Projects.ProjectsLive do
                 </label>
               </div>
 
+              <div class="flex-grow-1"></div>
+
+              <button id="button-new-project"
+                class="btn btn-sm btn-primary ml-2"
+                data-toggle="modal"
+                data-target="#modal-new-project">
+                <i class="fa fa-plus"></i> New Project
+              </button>
             </div>
           </div>
 
@@ -98,6 +107,41 @@ defmodule OliWeb.Projects.ProjectsLive do
           </div>
         </div>
     <% end %>
+
+    <div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">Create Project</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <%= form_for @changeset, Routes.project_path(@socket, :create), [id: "form-create-project"], fn f -> %>
+            <div class="modal-body">
+              <div class="form-label-group">
+                <%= text_input f,
+                      :title,
+                      class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
+                      placeholder: "Introduction to Psychology",
+                      id: "input-title",
+                      required: true,
+                      autofocus: focusHelper(f, :title, default: true) %>
+                <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
+                <%= error_tag f, :title %>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
+              <%= submit "Create Project",
+                  id: "button-create-project",
+                  class: "btn btn-primary",
+                  phx_disable_with: "Creating Project..." %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
     """
   end
 

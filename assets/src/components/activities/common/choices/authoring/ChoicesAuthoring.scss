@@ -1,6 +1,7 @@
-@import 'bootstrap';
+@import "bootstrap";
 
 .choicesAuthoring__choicesContainer {
+  cursor: default;
   @extend .mt-3;
 }
 
@@ -11,7 +12,7 @@
 }
 
 .choicesAuthoring__dragHandle {
-  cursor: 'move';
+  cursor: "move";
   width: 24px;
   color: rgba(0, 0, 0, 0.26);
 }

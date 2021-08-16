@@ -1,11 +1,81 @@
+$workspace-header-height: 65px;
+$workspace-sidebar-width: 65px;
+
+#nprogress .spinner {
+  top: 10px;
+  right: 4px;
+}
+
 .workspace {
   flex: 1;
   display: flex;
   background-color: $workspace-bg;
+  flex-direction: column;
+
+  .workspace-top {
+    height: $workspace-header-height;
+    position: sticky;
+    top: 0;
+    z-index: 203;
+    background-color: $workspace-header-bg;
+    box-shadow: 0 2px 4px 0 rgba($black, 0.15);
+
+    .header-bar {
+      height: 38px;
+      background-color: $workspace-logo-bg;
+    }
+
+    .logo {
+      position: relative;
+      min-width: $workspace-sidebar-width;
+      background: $workspace-logo-bg;
+      background-image: radial-gradient(70% 176%, $workspace-header-bg 0%, $workspace-logo-bg 100%);
+
+      // bottom triangle
+      &:after {
+        display: block;
+        position: absolute;
+        bottom: -4px;
+        content: "";
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 4px ($workspace-sidebar-width / 2) 0 ($workspace-sidebar-width / 2);
+        border-color: $workspace-logo-bg transparent transparent transparent;
+      }
+    }
+
+    h3.title {
+      font-size: toRem(18);
+      margin-bottom: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .breadcrumb-bar {
+      height: 27px;
+      background: $workspace-breadcrumb-bg;
+      box-shadow: inset 0 1px 2px 0 rgba($black, 0.17);
+
+      .phx-connected {
+        width: 100%;
+      }
+    }
+
+    .breadcrumb {
+      font-size: toRem(12);
+      margin-bottom: 0;
+    }
+  }
 
   .workspace-left {
     display: flex;
     flex-direction: column;
+    position: sticky;
+    top: $workspace-header-height;
+    height: calc(100vh - #{$workspace-header-height});
+    z-index: 202;
   }
 
   .workspace-right {
@@ -19,16 +89,15 @@
     padding-bottom: 40px;
 
     main {
-      padding: 0 32px 32px 32px;
+      padding: 32px;
     }
   }
 
   .workspace-header {
     width: 100%;
-    padding: 6px 37px 3px 20px;
+    padding: 16px 32px;
     position: relative;
     background-color: $workspace-header-bg;
-    border-bottom: 1px solid rgb(213, 207, 207);
 
     h2 {
       margin-bottom: 4px;
@@ -43,36 +112,56 @@
       text-overflow: ellipsis;
       overflow: hidden;
     }
+  }
 
-    .custom-breadcrumb {
-      background-color: transparent;
-      box-shadow: none;
-      padding: 0px;
-      flex-wrap: none;
-      margin-bottom: 8px;
+  .user-initials-icon {
+    background-color: $workspace-sidebar-bg;
+    border: 2px solid rgb(213, 207, 207);
+    vertical-align: middle;
+    text-align: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-block;
+    padding-top: 2px;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-right: 10px;
+  }
+
+  .custom-breadcrumb {
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0px;
+    margin-bottom: 8px;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    overflow-x: scroll;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+
+    &::-webkit-scrollbar {
+      display: none;
     }
 
-    .user-initials-icon {
-      background-color: $workspace-sidebar-bg;
-      border: 2px solid rgb(213, 207, 207);
-      vertical-align: middle;
-      text-align: center;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: inline-block;
-      padding-top: 2px;
-      font-size: 0.9em;
-      font-weight: 600;
+    .breadcrumb-item {
+      display: inline-flex;
+
+      & + .breadcrumb-item {
+        padding-left: 0.35rem;
+
+        &::before {
+          padding-right: 0.35rem;
+        }
+      }
     }
   }
 
   .workspace-sidebar {
     flex: 1;
-    width: 60px;
-    padding: 2px;
+    width: $workspace-sidebar-width;
     background-color: $workspace-sidebar-bg;
-    box-shadow: 0px 0px 4px 0px rgba(50, 50, 50, 0.15);
+    box-shadow: inset -1px 0 3px 0 rgba(0, 0, 0, 0.09);
     z-index: 1;
 
     .dropdown-menu {
@@ -80,6 +169,7 @@
       padding-bottom: 0px;
       margin-right: 2px;
       margin-left: 0px;
+      z-index: 202;
     }
 
     .dropdown-item {
@@ -94,14 +184,14 @@
     }
 
     .btn-group {
-      width: 60px;
+      width: $workspace-sidebar-width;
       padding: 0px;
       background-color: transparent;
       border-color: transparent;
     }
 
     .btn {
-      width: 60px;
+      width: $workspace-sidebar-width;
       background-color: transparent;
       border-color: transparent;
       padding: 0px;
@@ -116,6 +206,7 @@
       outline: none !important;
       box-shadow: none;
     }
+
     .btn:focus {
       outline: none !important;
       box-shadow: none;
@@ -123,8 +214,6 @@
 
     .label {
       font-size: 0.65em;
-      max-width: 50px;
-      text-align: center;
     }
 
     a {

@@ -134,29 +134,6 @@ export const initializeActivity = createAsyncThunk(
       sessionOps.push(targetVisitTimeStampOp);
     }
 
-    //Need to clear out snapshot for the current activity before we send the init trap state.
-    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
-    // some screens go in loop
-    // Don't do anything id enableHistory is ON
-    if (!enableHistory && currentActivityTree) {
-      const currentActivityId = currentActivityTree[currentActivityTree.length - 1].id;
-
-      const currentActivitySnapshot = getLocalizedStateSnapshot(
-        [currentActivityId],
-        defaultGlobalEnv,
-      );
-
-      const idsToBeRemoved: any[] = Object.keys(currentActivitySnapshot)
-        .map((key: string) => {
-          if (key.indexOf(currentActivityId) === 0 || key.indexOf('stage.') === 0) {
-            return key;
-          }
-        })
-        .filter((item) => item);
-      if (idsToBeRemoved) {
-        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
-      }
-    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
@@ -189,7 +166,9 @@ export const initializeActivity = createAsyncThunk(
       currentState,
       score: sessionState['session.tutorialScore'],
     }); */
-    thunkApi.dispatch(setScore({ score: sessionState['session.tutorialScore'] }));
+    const tutScore = sessionState['session.tutorialScore'] || 0;
+    const curScore = sessionState['session.currentQuestionScore'] || 0;
+    thunkApi.dispatch(setScore({ score: tutScore + curScore }));
 
     // optimistically write to redux
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
