@@ -36,7 +36,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
-  const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
@@ -52,7 +51,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
-  const [activityId, setActivityId] = useState<number>(0);
   // these rely on being set every render and the "model" useState value being set
   const { src, title, customCssClass, configData } = model;
 
@@ -132,7 +130,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
     if (initResult.context.currentActivity) {
-      setActivityId(initResult.context.currentActivity);
+      simLife.ownerActivityId = initResult.context.currentActivity;
     }
     if (initResult.context.mode) {
       context = initResult.context.mode;
@@ -290,6 +288,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     init: false, // initial setup complete; this might be init state?
     ready: false,
     currentState: [],
+    ownerActivityId: 0,
   });
   const [simLife, setSimLife] = useState(getCleanSimLife());
   const [internalState, setInternalState] = useState(state || []);
@@ -329,7 +328,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       if (!isMine) {
         return false;
       }
-      const internalValue = externalActivityMap.get(`${activityId}|${ms}`);
+      const internalValue = externalActivityMap.get(`${simLife.ownerActivityId}|${ms}`);
       // mineValue is the value that was passed on to this part component
       // internalVal is the value that is stored locally in key-value pair for value changes comparions
       let mineValue = vars[ms];
@@ -436,7 +435,10 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentMutateStateSnapshot = payload.mutateChanges;
               //udpate the local key-value pair when variables changed by mutation i.e. from outside
               Object.keys(currentMutateStateSnapshot).forEach((key) => {
-                externalActivityMap.set(`${activityId}|${key}`, currentMutateStateSnapshot[key]);
+                externalActivityMap.set(
+                  `${simLife.ownerActivityId}|${key}`,
+                  currentMutateStateSnapshot[key],
+                );
               });
               processInitStateVariable(currentMutateStateSnapshot);
               setSimIsInitStatePassedOnce(false);
@@ -471,7 +473,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, simLife, activityId]);
+  }, [props.notify, simLife]);
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
@@ -495,11 +497,13 @@ const ExternalActivity: React.FC<any> = (props) => {
         setInternalState(mutableState);
         mutableState.forEach((element) => {
           if (element.id.indexOf(`stage.${id}.`) === 0) {
-            externalActivityMap.set(`${activityId}|${element.id}`, element);
+            externalActivityMap.set(`${simLife.ownerActivityId}|${element.id}`, element);
           }
         });
       }
     }
+    console.log({ externalActivityMap });
+
     return mutableState;
   };
 
@@ -839,7 +843,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
-  }, [simFrame, activityId]);
+  }, [simFrame]);
 
   useEffect(() => {
     if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
