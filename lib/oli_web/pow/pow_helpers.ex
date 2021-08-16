@@ -16,7 +16,7 @@ defmodule OliWeb.Pow.PowHelpers do
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
       controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
       cache_store_backend: Pow.Store.Backend.MnesiaCache,
-      users_context: OliWeb.Pow.UsersContext,
+      users_context: OliWeb.Pow.UserContext,
       mailer_backend: OliWeb.Pow.Mailer,
       web_mailer_module: OliWeb,
       pow_assent: [
@@ -47,6 +47,7 @@ defmodule OliWeb.Pow.PowHelpers do
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
       controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
       cache_store_backend: Pow.Store.Backend.MnesiaCache,
+      users_context: OliWeb.Pow.AuthorContext,
       mailer_backend: OliWeb.Pow.Mailer,
       web_mailer_module: OliWeb,
       pow_assent: [

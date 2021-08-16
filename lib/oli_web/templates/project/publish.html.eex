@@ -17,11 +17,13 @@
 
       <%= case {@has_changes, @active_publication_changes} do %>
         <% {true, nil} -> %>
-          This project has not been published yet
+          <div class="my-3">
+            <b>This project has not been published yet</b>
+          </div>
         <% {false, _} -> %>
           <div class="my-3">
-          Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
-          There are <strong>no changes</strong> since last publish.
+            Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
+            There are <strong>no changes</strong> since last publish.
           </div>
         <% {true, changes} -> %>
           <div class="my-3">Last published <strong><%= @latest_published_publication.updated_at |> Timex.format!("{relative}", :relative) %></strong>.
