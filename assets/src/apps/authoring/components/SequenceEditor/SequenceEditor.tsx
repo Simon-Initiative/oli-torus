@@ -17,8 +17,6 @@ import {
   SequenceEntryChild,
   SequenceEntryType,
   SequenceHierarchyItem,
-  getIsBank,
-  getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentSequenceId,
@@ -39,17 +37,11 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
-  const isLayer = getIsLayer();
-  const isBank = getIsBank();
 
-  let sequenceTypeLabel = '';
-  if (isLayer) {
-    sequenceTypeLabel = 'Layer';
-  } else if (isBank) {
-    sequenceTypeLabel = 'Question Bank';
-  } else {
-    sequenceTypeLabel = 'Screen';
-  }
+  const layerLabel = 'Layer';
+  const bankLabel = 'Question Bank';
+  const screenLabel = 'Screen';
+
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
     return setHierarchy(newHierarchy);
@@ -70,7 +62,8 @@ const SequenceEditor: React.FC<any> = (props) => {
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
-    const newTitle = `New ${layerRef && !isBank ? 'Child' : ''}${sequenceTypeLabel}`;
+    const newSeqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
+    const newTitle = `New ${layerRef ? 'Child' : ''}${newSeqType}`;
 
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -319,6 +312,9 @@ const SequenceEditor: React.FC<any> = (props) => {
 
   const SequenceItemContextMenu = (props: any) => {
     const { id, item, index, arr, isParentQB } = props;
+    const isBank = item.custom.isBank;
+    const isLayer = item.custom.isLayer;
+    const seqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
     return (
       <div className="dropdown aa-sequence-item-context-menu">
         {currentGroup && (
@@ -354,7 +350,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                   <i className="fas fa-desktop mr-2" /> Add Subscreen
                 </button>
               ) : null}
-              {!item.custom.isBank && !isParentQB ? (
+              {!isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -366,7 +362,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                   <i className="fas fa-layer-group mr-2" /> Add Layer
                 </button>
               ) : null}
-              {!item.custom.isBank && !isParentQB ? (
+              {!isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -378,7 +374,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                   <i className="fas fa-cubes mr-2" /> Add Question Bank
                 </button>
               ) : null}
-              {item.custom.isLayer ? (
+              {isLayer ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -389,7 +385,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 >
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
                 </button>
-              ) : !item.custom.isBank && !isParentQB ? (
+              ) : !isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -419,8 +415,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                   navigator.clipboard.writeText(item.custom.sequenceId);
                 }}
               >
-                <i className="fas fa-clipboard align-text-top mr-2" />{' '}
-                {`Copy ${sequenceTypeLabel} ID`}
+                <i className="fas fa-clipboard align-text-top mr-2" /> {`Copy ${seqType} ID`}
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
