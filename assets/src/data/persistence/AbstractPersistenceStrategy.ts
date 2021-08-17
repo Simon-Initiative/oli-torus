@@ -1,9 +1,10 @@
-
 import { LockResult } from './lock';
 
 import {
-  onFailureCallback, onSaveCompletedCallback,
-  onStateChangeCallback, PersistenceStrategy,
+  onFailureCallback,
+  onSaveCompletedCallback,
+  onStateChangeCallback,
+  PersistenceStrategy,
 } from './PersistenceStrategy';
 
 export interface AbstractPersistenceStrategy {
@@ -18,7 +19,6 @@ export interface AbstractPersistenceStrategy {
 }
 
 export abstract class AbstractPersistenceStrategy implements PersistenceStrategy {
-
   constructor() {
     this.successCallback = null;
     this.failureCallback = null;
@@ -37,7 +37,6 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
     return this.releaseFn();
   }
 
-
   /**
    * This strategy requires the user to acquire the write lock before
    * editing.
@@ -49,20 +48,17 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
     onFailure: onFailureCallback,
     onStateChange: onStateChangeCallback,
   ): Promise<boolean> {
-
     this.successCallback = onSuccess;
     this.failureCallback = onFailure;
     this.stateChangeCallback = onStateChange;
     this.releaseFn = releaseFn;
 
     return new Promise((resolve, reject) => {
-      lockFn()
-        .then((result) => {
-          this.lockResult = result;
-          resolve(result.type === 'acquired');
-        });
+      lockFn().then((result) => {
+        this.lockResult = result;
+        resolve(result.type === 'acquired');
+      });
     });
-
   }
 
   abstract save(saveFn: any): void;
@@ -80,10 +76,8 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
   destroy() {
     // If we had a pending change that released the lock, doDestroy returns true
     if (!this.doDestroy()) {
-
       // We need to explicity release the lock
       this.releaseLock();
     }
-
   }
 }

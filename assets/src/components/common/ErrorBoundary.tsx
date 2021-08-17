@@ -1,9 +1,11 @@
-import React, {ErrorInfo} from 'react';
+import React, { ErrorInfo } from 'react';
 import guid from 'utils/guid';
 import { Collapse } from 'components/common/Collapse';
 
-export class ErrorBoundary extends React.Component<any,
-  { hasError: boolean, error: Error | null, info: ErrorInfo | null, id: string }> {
+export class ErrorBoundary extends React.Component<
+  any,
+  { hasError: boolean; error: Error | null; info: ErrorInfo | null; id: string }
+> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false, error: null, info: null, id: guid() };
@@ -18,9 +20,7 @@ export class ErrorBoundary extends React.Component<any,
 
   render() {
     try {
-
       if (this.state.hasError) {
-
         return (
           <div className="alert alert-warning" role="alert">
             <h4 className="alert-heading">Oh no!</h4>
@@ -44,15 +44,11 @@ export class ErrorBoundary extends React.Component<any,
             </Collapse>
           </div>
         );
-
       }
       return this.props.children;
-
     } catch (error) {
       // tslint:disable-next-line
       console.error(error);
     }
-
   }
-
 }

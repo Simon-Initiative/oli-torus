@@ -1,13 +1,13 @@
 {
-  "id": "oli_short_answer",
-  "friendlyName": "Single Response",
-  "description": "A question with a single response input following the stem",
+  "id": "oli_dropdown",
+  "friendlyName": "Dropdown",
+  "description": "A question with a dropdown input following the stem",
   "delivery": {
-    "element": "oli-short-answer-delivery",
+    "element": "oli-dropdown-delivery",
     "entry": "./delivery-entry.ts"
   },
   "authoring": {
-    "element": "oli-short-answer-authoring",
+    "element": "oli-dropdown-authoring",
     "entry": "./authoring-entry.ts"
   },
   "schemaPruning": {

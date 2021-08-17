@@ -8,11 +8,9 @@ import {
   ResourceType,
 } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
-import { EditorDesc } from 'data/content/editors';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
-import { UnsupportedActivity } from '../UnsupportedActivity';
 import * as Immutable from 'immutable';
 import { defaultState } from '../TestModeHandler';
 import { ActivityEditContext } from 'data/content/activity';

@@ -31,6 +31,7 @@ import { selectEnableHistory, selectUserName, setScore } from '../../store/featu
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
+import { parseArray, parseNumString } from 'utils/common';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss
@@ -121,7 +122,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-
+          if (
+            typeof expr === 'string' &&
+            expr.charAt(0) === '[' &&
+            expr.charAt(expr.length - 1) === ']'
+          ) {
+            expr = parseArray(expr);
+          }
           const stmt = `let {variables.${v.name}} = ${expr};`;
           return stmt;
         })
@@ -140,9 +147,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // Need to clear out snapshot for the current activity before we send the init trap state.
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
-    // Don't do anything id enableHistory is ON
+    // Don't do anything id enableHistory/historyModeNavigation is ON
 
-    if (!enableHistory && currentActivityTree) {
+    if (!historyModeNavigation && currentActivityTree) {
       const globalSnapshot = getEnvState(defaultGlobalEnv);
       // this is firing after some initial part saves and wiping out what we have just set
       // maybe we don't need to write the local versions ever?? instead just whenever anything

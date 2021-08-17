@@ -20,14 +20,17 @@ import { Choices } from 'components/activities/common/choices/authoring/ChoicesA
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { AnswerKey } from 'components/activities/common/authoring/answerKey/AnswerKey';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { defaultWriterContext } from 'data/content/writers/context';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { toSimpleText } from 'data/content/text';
 
 const store = configureStore();
 
 const Dropdown = () => {
   const { dispatch, model } = useAuthoringElementContext<DropdownModelSchema>();
+
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -35,7 +38,7 @@ const Dropdown = () => {
           <Stem />
 
           <Choices
-            icon={<Radio.Unchecked />}
+            icon={(_c, i) => <span>{i + 1}.</span>}
             choices={model.choices}
             addOne={() => dispatch(ChoiceActions.addChoice(ActivityTypes.makeChoice('')))}
             setAll={(choices: ActivityTypes.Choice[]) =>
@@ -43,15 +46,21 @@ const Dropdown = () => {
             }
             onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
             onRemove={(id) => dispatch(Actions.removeChoice(id))}
+            simpleText
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          <AnswerKey
-            selectedChoiceIds={[getCorrectChoice(model).id]}
-            selectedIcon={<Radio.Correct />}
-            unselectedIcon={<Radio.Unchecked />}
-            onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
-          />
+          <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+          <select
+            onChange={(e) => dispatch(Actions.toggleChoiceCorrectness(e.target.value))}
+            className="custom-select mb-3"
+          >
+            {model.choices.map((c) => (
+              <option selected={getCorrectChoice(model).id === c.id} key={c.id} value={c.id}>
+                {toSimpleText({ children: c.content.model })}
+              </option>
+            ))}
+          </select>
           <SimpleFeedback />
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {

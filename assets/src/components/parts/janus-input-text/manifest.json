@@ -1,16 +1,16 @@
 {
-    "id": "janus_input_text",
-    "friendlyName": "Text Input",
-    "description": "A short single line text input.",
-    "icon": "icon-part-userInput.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-input-text",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-input-text",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_input_text",
+  "friendlyName": "Text Input",
+  "description": "A short single line text input.",
+  "icon": "icon-part-textInput.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-input-text",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-input-text",
+    "entry": "./authoring-entry.ts"
+  }
 }

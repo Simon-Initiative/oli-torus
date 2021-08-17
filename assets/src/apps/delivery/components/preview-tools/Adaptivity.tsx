@@ -65,9 +65,8 @@ const Adaptivity: React.FC<AdaptivityProps> = ({ currentActivity }) => {
                   onClick={(e) =>
                     setExpandedRules({
                       ...expandedRules,
-                      [`initState-${currentActivity.id}`]: !expandedRules[
-                        `initState-${currentActivity.id}`
-                      ],
+                      [`initState-${currentActivity.id}`]:
+                        !expandedRules[`initState-${currentActivity.id}`],
                     })
                   }
                 >

@@ -28,17 +28,17 @@ const ObjectiveNode = (props: ObjectNodeProps) => {
     myChildren === undefined
       ? null
       : myChildren
-        .toArray()
-        .map((o) => (
-          <ObjectiveNode
-            key={o.id}
-            selected={props.selected}
-            toggleSelected={props.toggleSelected}
-            objective={o}
-            childrenObjectives={childrenObjectives}
-            level={level + 1}
-          />
-        ));
+          .toArray()
+          .map((o) => (
+            <ObjectiveNode
+              key={o.id}
+              selected={props.selected}
+              toggleSelected={props.toggleSelected}
+              objective={o}
+              childrenObjectives={childrenObjectives}
+              level={level + 1}
+            />
+          ));
 
   return (
     <div key={objective.id}>

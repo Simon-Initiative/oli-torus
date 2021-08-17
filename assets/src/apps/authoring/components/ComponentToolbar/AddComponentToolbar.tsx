@@ -102,7 +102,7 @@ const AddComponentToolbar: React.FC = () => {
 
   return (
     <Fragment>
-      <div className="btn-group pr-3 border-right align-items-center" role="group">
+      <div className="btn-group align-items-center" role="group">
         {availablePartComponents
           .filter((part) => frequentlyUsed.includes(part.slug))
           .sort((a, b) => {
@@ -117,7 +117,9 @@ const AddComponentToolbar: React.FC = () => {
               delay={{ show: 150, hide: 150 }}
               overlay={
                 <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  {part.title}<br />{part.description}
+                  <strong>{part.title}</strong>
+                  <br />
+                  <em>{part.description}</em>
                 </Tooltip>
               }
             >
@@ -129,13 +131,13 @@ const AddComponentToolbar: React.FC = () => {
             </OverlayTrigger>
           ))}
       </div>
-      <div className="btn-group px-3 border-right align-items-center" role="group">
+      <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 150 }}
           overlay={
             <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              All Components
+              More Components
             </Tooltip>
           }
         >
@@ -152,8 +154,8 @@ const AddComponentToolbar: React.FC = () => {
           container={document.getElementById('advanced-authoring')}
           containerPadding={20}
         >
-          <Popover id="search-popover">
-            <Popover.Title as="h3">Add Other</Popover.Title>
+          <Popover id="moreComponents-popover">
+            <Popover.Title as="h3">More Components</Popover.Title>
             <Popover.Content>
               <ListGroup className="aa-parts-list">
                 {availablePartComponents
@@ -163,12 +165,12 @@ const AddComponentToolbar: React.FC = () => {
                       action
                       onClick={() => handleAddComponent(part.slug)}
                       key={part.slug}
+                      className="d-flex align-items-center"
                     >
-                      <img
-                        title={part.description}
-                        src={`${imgsPath}/icons/${part.icon}`}
-                      ></img>
-                      <span>{part.title}</span>
+                      <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
+                        <img title={part.description} src={`${imgsPath}/icons/${part.icon}`} />
+                      </div>
+                      <span className="mr-3">{part.title}</span>
                     </ListGroup.Item>
                   ))}
               </ListGroup>

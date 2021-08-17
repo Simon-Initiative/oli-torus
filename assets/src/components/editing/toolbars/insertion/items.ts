@@ -8,7 +8,10 @@ import { ToolbarItem } from 'components/editing/commands/interfaces';
 import { commandDesc as codeCmd } from 'components/editing/commands/BlockcodeCmd';
 
 // Can be extended to provide different insertion toolbar options based on resource type
-export function getToolbarForResourceType(resourceType: ResourceType, onRequestMedia: any) : ToolbarItem[] {
+export function getToolbarForResourceType(
+  resourceType: ResourceType,
+  onRequestMedia: any,
+): ToolbarItem[] {
   return [
     tableCommandDesc,
     codeCmd,
@@ -20,5 +23,4 @@ export function getToolbarForResourceType(resourceType: ResourceType, onRequestM
     audioCommandBuilder(onRequestMedia),
     webpageCmdDesc,
   ];
-
 }

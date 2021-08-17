@@ -1,17 +1,19 @@
 {
-  "id": "oli_multiple_choice",
-  "friendlyName": "Multiple Choice",
-  "description": "A traditional multiple choice question with one correct answer",
+  "id": "oli_multi_input",
+  "friendlyName": "Multi Input",
+  "description": "A question with a multiple inline inputs in the stem",
   "delivery": {
-    "element": "oli-multiple-choice-delivery",
+    "element": "oli-multi-input-delivery",
     "entry": "./delivery-entry.ts"
   },
   "authoring": {
-    "element": "oli-multiple-choice-authoring",
+    "element": "oli-multi-input-authoring",
     "entry": "./authoring-entry.ts"
   },
   "schemaPruning": {
     "type": "keys",
-    "keys": ["feedback"]
+    "keys": [
+      "feedback"
+    ]
   }
 }

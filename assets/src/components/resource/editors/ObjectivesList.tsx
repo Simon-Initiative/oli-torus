@@ -5,8 +5,9 @@ export interface ObjectivesListProps {
 }
 
 export const ObjectivesList = (props: ObjectivesListProps) => {
-  const className = `objectives-list ${props.objectives.length > 0 ? 'with-objectives' : 'no-objectives'
-    }`;
+  const className = `objectives-list ${
+    props.objectives.length > 0 ? 'with-objectives' : 'no-objectives'
+  }`;
   return (
     <div className="objectives-list-container">
       <div className={className}>

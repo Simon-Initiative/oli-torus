@@ -6,7 +6,7 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { MCSchema } from './schema';
+import { MultiInputSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -15,25 +15,24 @@ import {
   initializeState,
   setSelection,
   activityDeliverySlice,
-  isEvaluated,
   resetAction,
 } from 'data/content/activities/DeliveryState';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { initialSelection, isCorrect } from 'data/content/activities/utils';
+import { initialSelection } from 'data/content/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { toSimpleText } from 'data/content/text';
 
-export const MultipleChoiceComponent: React.FC = () => {
+export const MultiInputComponent: React.FC = () => {
   const {
     state: activityState,
     onSaveActivity,
     onResetActivity,
-  } = useDeliveryElementContext<MCSchema>();
+    model,
+  } = useDeliveryElementContext<MultiInputSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
@@ -46,26 +45,25 @@ export const MultipleChoiceComponent: React.FC = () => {
     return null;
   }
 
+  console.log('selection', uiState.selection);
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
-        <ChoicesDeliveryConnected
-          unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
-          selectedIcon={
-            !isEvaluated(uiState) ? (
-              <Radio.Checked />
-            ) : isCorrect(uiState.attemptState) ? (
-              <Radio.Correct />
-            ) : (
-              <Radio.Incorrect />
-            )
-          }
-          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'single'))}
-        />
+        <select
+          onChange={(e) => dispatch(setSelection(e.target.value, onSaveActivity, 'single'))}
+          className="custom-select"
+        >
+          {model.choices.map((c) => (
+            <option selected={uiState.selection[0] === c.id} key={c.id} value={c.id}>
+              {toSimpleText({ children: c.content.model })}
+            </option>
+          ))}
+        </select>
         <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
-        <SubmitButtonConnected />
+        <SubmitButtonConnected disabled={false} />
         <HintsDeliveryConnected />
         <EvaluationConnected />
       </div>
@@ -74,13 +72,13 @@ export const MultipleChoiceComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
+export class MultiInputDelivery extends DeliveryElement<MultiInputSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultiInputSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <MultipleChoiceComponent />
+          <MultiInputComponent />
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,
@@ -91,4 +89,4 @@ export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
 // Register the web component:
 // eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
-window.customElements.define(manifest.delivery.element, MultipleChoiceDelivery);
+window.customElements.define(manifest.delivery.element, MultiInputDelivery);

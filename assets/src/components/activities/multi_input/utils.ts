@@ -1,20 +1,23 @@
+import { MultiInputSchema } from './schema';
 import {
+  Choice,
+  HasParts,
+  makeChoice,
+  makeHint,
+  makeResponse,
+  makeStem,
+  makeTransformation,
   Operation,
   ScoringStrategy,
-  Choice,
-  makeHint,
-  makeChoice,
-  makeStem,
-  makeResponse,
-  makeTransformation,
 } from '../types';
-import { Maybe } from 'tsmonad';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
-import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
-import { MCSchema } from 'components/activities/multiple_choice/schema';
+import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import {
+  getCorrectResponse,
+  getIncorrectResponse,
+  getResponses,
+} from 'components/activities/common/responses/authoring/responseUtils';
 
-export const defaultMCModel: () => MCSchema = () => {
+export const defaultModel: () => MultiInputSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
   const choiceB: Choice = makeChoice('Choice B');
 
@@ -22,10 +25,9 @@ export const defaultMCModel: () => MCSchema = () => {
     stem: makeStem(''),
     choices: [choiceA, choiceB],
     authoring: {
-      version: 2,
       parts: [
         {
-          id: '1', // an MCQ only has one part, so it is safe to hardcode the id
+          id: '1',
           scoringStrategy: ScoringStrategy.average,
           responses: [
             makeResponse(matchRule(choiceA.id), 1, ''),
@@ -41,10 +43,8 @@ export const defaultMCModel: () => MCSchema = () => {
   };
 };
 
-export const getCorrectChoice = (model: MCSchema) => {
-  const responseIdMatch = Maybe.maybe(getCorrectResponse(model).rule.match(/{(.*)}/)).valueOrThrow(
-    new Error('Could not find choice id in correct response'),
+export const getTargetedResponses = (model: HasParts) =>
+  getResponses(model).filter(
+    (response) =>
+      response !== getCorrectResponse(model) && response !== getIncorrectResponse(model),
   );
-
-  return getChoice(model, responseIdMatch[1]);
-};

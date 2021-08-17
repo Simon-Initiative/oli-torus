@@ -7,7 +7,7 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier"
+    "plugin:prettier/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -21,6 +21,7 @@
   "rules": {
     "@typescript-eslint/explicit-module-boundary-types": 0,
     "react/prop-types": 0,
-    "no-case-declarations": 0
+    "no-case-declarations": 0,
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
   }
 }

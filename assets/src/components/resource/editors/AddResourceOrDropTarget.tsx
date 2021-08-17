@@ -3,7 +3,7 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { ResourceContext, ResourceContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ResourceId } from 'data/types';
-import { AddResourceContent } from 'components/content/AddResourceContent';
+import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import * as Immutable from 'immutable';
 import { DropTarget } from './dragndrop/DropTarget';
 import { ActivityEditContext } from 'data/content/activity';

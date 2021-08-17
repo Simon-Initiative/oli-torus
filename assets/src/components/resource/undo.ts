@@ -16,7 +16,6 @@ export function init<T>(current: T): UndoableState<T> {
 }
 
 export function processUndo<T>(state: UndoableState<T>): UndoableState<T> {
-
   const next = state.undoStack.peek();
 
   if (next !== undefined) {
@@ -29,7 +28,6 @@ export function processUndo<T>(state: UndoableState<T>): UndoableState<T> {
 }
 
 export function processRedo<T>(state: UndoableState<T>): UndoableState<T> {
-
   const next = state.redoStack.peek();
 
   if (next !== undefined) {
@@ -41,15 +39,13 @@ export function processRedo<T>(state: UndoableState<T>): UndoableState<T> {
   return state;
 }
 
-export function processUpdate<T>(
-  state: UndoableState<T>, update: Partial<T>): UndoableState<T> {
+export function processUpdate<T>(state: UndoableState<T>, update: Partial<T>): UndoableState<T> {
   return {
     current: Object.assign({}, state.current, update),
     undoStack: state.undoStack.push(state.current),
     redoStack: state.redoStack,
   };
 }
-
 
 export function registerUndoRedoHotkeys(onUndo: () => void, onRedo: () => void) {
   // register hotkeys

@@ -4,21 +4,19 @@ import { ProjectSlug, ResourceSlug } from '../types';
 export type LockResult = Acquired | Released | NotAcquired | ServerError;
 
 export type Acquired = {
-  type: 'acquired',
+  type: 'acquired';
 };
 
 export type NotAcquired = {
-  type: 'not_acquired',
-  user: string,
+  type: 'not_acquired';
+  user: string;
 };
 
 export type Released = {
-  type: 'released',
+  type: 'released';
 };
 
-export function releaseLock(
-  project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
-
+export function releaseLock(project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
   const params = {
     url: `/project/${project}/lock/${resource}`,
     method: 'DELETE',
@@ -26,13 +24,10 @@ export function releaseLock(
   return makeRequest<LockResult>(params);
 }
 
-export function acquireLock(
-  project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
-
+export function acquireLock(project: ProjectSlug, resource: ResourceSlug): Promise<LockResult> {
   const params = {
     url: `/project/${project}/lock/${resource}`,
     method: 'POST',
   };
   return makeRequest<LockResult>(params);
 }
-

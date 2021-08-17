@@ -11,6 +11,7 @@
     "build": "npm run clean && npm run lint && npm run test && npm run deploy",
     "clean": "del --force coverage/** ../priv/static",
     "lint": "eslint --quiet \"src/**/*.ts*\"",
+    "format": "eslint --fix --quiet \"src/**/*.ts*\"",
     "test": "jest && type-coverage",
     "test:watch": "jest --watch -o"
   },
@@ -99,6 +100,7 @@
     "del-cli": "^3.0.0",
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
+    "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-react": "^7.23.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^26.0.0",

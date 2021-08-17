@@ -1,8 +1,8 @@
-import { MCActions } from 'components/activities/multiple_choice/actions';
 import { makeChoice } from 'components/activities/types';
 import { defaultMCModel } from 'components/activities/multiple_choice/utils';
 import { dispatch } from 'utils/test_utils';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 
 describe('multiple choice question', () => {
   const model = defaultMCModel();

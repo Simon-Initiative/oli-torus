@@ -11,6 +11,15 @@ import {
 import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
 import { contexts } from '../../../types/applicationContext';
+interface ContextProps {
+  currentActivity: string;
+  mode: string;
+}
+interface InitResultProps {
+  snapshot: Record<string, unknown>;
+  context: ContextProps;
+}
+
 // TODO: fix typing
 const Popup: React.FC<any> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
@@ -22,6 +31,7 @@ const Popup: React.FC<any> = (props) => {
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
 
+  const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
@@ -45,6 +55,7 @@ const Popup: React.FC<any> = (props) => {
     });
     /* console.log('POPUP INIT', initResult); */
     // result of init has a state snapshot with latest (init state applied)
+    setInitSnapshot(initResult);
     const currentStateSnapshot = initResult.snapshot;
     const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
     if (isOpen !== undefined) {
@@ -222,11 +233,7 @@ const Popup: React.FC<any> = (props) => {
     });
   };
   const handlePartInit = () => {
-    return {
-      type: 'success',
-      snapshot: {},
-      context: { mode: context },
-    };
+    return initSnapshot;
   };
   const partComponents = popup?.partsLayout;
 
