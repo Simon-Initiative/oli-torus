@@ -27,7 +27,6 @@ export const schema = {
   },
   zoom: {
     type: 'boolean',
-    format: 'checkbox',
     description: 'Enables image zoom on double-click',
     default: false,
   },
