@@ -17,6 +17,8 @@ import {
   SequenceEntryChild,
   SequenceEntryType,
   SequenceHierarchyItem,
+  getIsBank,
+  getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentSequenceId,
@@ -37,7 +39,17 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
+  const isLayer = getIsLayer();
+  const isBank = getIsBank();
 
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'Layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'Question Bank';
+  } else {
+    sequenceTypeLabel = 'Screen';
+  }
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
     return setHierarchy(newHierarchy);
@@ -58,9 +70,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
-    const newTitle = `New ${layerRef && !isBank ? 'Child' : ''}${
-      isLayer ? 'Layer' : isBank ? 'Question Bank' : 'Screen'
-    }`;
+    const newTitle = `New ${layerRef && !isBank ? 'Child' : ''}${sequenceTypeLabel}`;
 
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -409,9 +419,8 @@ const SequenceEditor: React.FC<any> = (props) => {
                   navigator.clipboard.writeText(item.custom.sequenceId);
                 }}
               >
-                <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
-                {item.custom.isLayer ? 'Layer ' : item.custom.isBank ? 'Qustion Bank ' : 'Screen '}{' '}
-                ID
+                <i className="fas fa-clipboard align-text-top mr-2" />{' '}
+                {`Copy ${sequenceTypeLabel} ID`}
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
