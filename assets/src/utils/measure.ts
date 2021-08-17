@@ -9,8 +9,8 @@ export const measureTextWidth = ({
   fontWeight = DEFAULT_FONT_WEIGHT,
   fontStyle = DEFAULT_FONT_STYLE,
   canvas = DEFAULT_CANVAS,
-} : any) => {
-  const ctx : any = canvas.getContext('2d');
+}: any) => {
+  const ctx: any = canvas.getContext('2d');
   ctx.font = `${fontWeight} ${fontStyle} ${fontSize} ${fontFamily}`;
 
   return ctx.measureText(text).width;

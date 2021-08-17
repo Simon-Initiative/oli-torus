@@ -1,30 +1,27 @@
-
 // Phoenix LiveView hooks that implements drag and drop
 
 export const DropTarget = {
   mounted() {
     this.el.addEventListener('dragenter', (e: any) => {
-      this.el.classList.add('hovered')
+      this.el.classList.add('hovered');
     });
     this.el.addEventListener('dragleave', (e: any) => {
-      this.el.classList.remove('hovered')
+      this.el.classList.remove('hovered');
     });
     this.el.addEventListener('drop', (e: any) => {
       e.preventDefault();
-      this.el.classList.remove('hovered')
+      this.el.classList.remove('hovered');
 
       // handle the drop
       const sourceIndex = e.dataTransfer.getData('text/plain');
       const dropIndex = this.el.getAttribute('data-drop-index');
       this.pushEvent('reorder', { sourceIndex, dropIndex });
-
     });
     this.el.addEventListener('dragover', (e: any) => {
       e.stopPropagation();
       e.preventDefault();
     });
   },
-
 };
 
 export const DragSource = {

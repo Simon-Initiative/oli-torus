@@ -13,9 +13,5 @@ export const AudioIcon: React.StatelessComponent<AudioIconProps> = ({
   // eslint-disable-next-line
   children,
 }) => {
-  return (
-    <div className={`example-component ${className || ''}`}>
-      {children}
-    </div>
-  );
+  return <div className={`example-component ${className || ''}`}>{children}</div>;
 };

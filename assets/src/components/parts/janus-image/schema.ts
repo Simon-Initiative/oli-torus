@@ -1,4 +1,4 @@
-import { CreationContext } from "../types/parts";
+import { CreationContext } from '../types/parts';
 
 export const schema = {
   customCssClass: {

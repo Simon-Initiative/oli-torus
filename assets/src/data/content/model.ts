@@ -3,10 +3,13 @@ import guid from 'utils/guid';
 import { normalizeHref } from 'components/editing/models/link/utils';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
-  return Object.assign({
-    id: guid(),
-    children: [{ text: '' }],
-  } as any, params) as ModelElement;
+  return Object.assign(
+    {
+      id: guid(),
+      children: [{ text: '' }],
+    } as any,
+    params,
+  ) as ModelElement;
 }
 
 // Helper functions for creating ModelElements
@@ -19,7 +22,8 @@ export const ol = () => create<OrderedList>({ type: 'ol', children: [li()] });
 export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()] });
 export const youtube = (src: string) => create<YouTube>({ type: 'youtube', src });
 export const webpage = (src: string) => create<Webpage>({ type: 'iframe', src });
-export const link = (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
+export const link = (href = '') =>
+  create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
 export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
 export const p = () => create<Paragraph>({ type: 'p' });
@@ -39,14 +43,40 @@ export type Selection = Range | null;
 // float_left and float_right no longer available as options and will render as block
 export type MediaDisplayMode = 'float_left' | 'float_right' | 'block';
 
-export type ModelElement
-  = Paragraph | HeadingOne | HeadingTwo | HeadingThree
-  | HeadingFour | HeadingFive | HeadingSix | Image | YouTube | Webpage
-  | Audio | Table | TableRow | TableHeader | TableData | OrderedList | UnorderedList
-  | ListItem | Math | MathLine | Code | CodeLine | Blockquote | Hyperlink;
+export type ModelElement =
+  | Paragraph
+  | HeadingOne
+  | HeadingTwo
+  | HeadingThree
+  | HeadingFour
+  | HeadingFive
+  | HeadingSix
+  | Image
+  | YouTube
+  | Webpage
+  | Audio
+  | Table
+  | TableRow
+  | TableHeader
+  | TableData
+  | OrderedList
+  | UnorderedList
+  | ListItem
+  | Math
+  | MathLine
+  | Code
+  | CodeLine
+  | Blockquote
+  | Hyperlink;
 
-export type TextElement = Paragraph | HeadingOne | HeadingTwo | HeadingThree
-  | HeadingFour | HeadingFive | HeadingSix;
+export type TextElement =
+  | Paragraph
+  | HeadingOne
+  | HeadingTwo
+  | HeadingThree
+  | HeadingFour
+  | HeadingFive
+  | HeadingSix;
 
 export type ID = string;
 
@@ -227,13 +257,16 @@ export enum CodeLanguages {
   'clojure',
 }
 
-const toObj = (arr: string[]) => arr
-  .reduce((p: unknown, c: string) => { (p as any)[c] = true; return p; }, {});
+const toObj = (arr: string[]) =>
+  arr.reduce((p: unknown, c: string) => {
+    (p as any)[c] = true;
+    return p;
+  }, {});
 
 export type SchemaConfig = {
-  isVoid: boolean,
-  isBlock: boolean,
-  isTopLevel: boolean,
+  isVoid: boolean;
+  isBlock: boolean;
+  isTopLevel: boolean;
   // eslint-disable-next-line
   validChildren: Object,
 };
@@ -344,5 +377,3 @@ export const schema = {
     validChildren: {},
   },
 };
-
-

@@ -32,12 +32,12 @@ $panel-section-title-bar-color: #e8ebed;
     background-color: $panel-bg-color-light;
     box-shadow: 0 2px 4px 0 rgba($black, 0.1);
     border-bottom: 1px solid $ui-border-color;
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    // -ms-overflow-style: none; /* IE and Edge */
+    // scrollbar-width: none; /* Firefox */
 
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    // &::-webkit-scrollbar {
+    //   display: none;
+    // }
 
     &.left-panel {
       top: $nav-height;
@@ -66,8 +66,10 @@ $panel-section-title-bar-color: #e8ebed;
         right: 0;
         visibility: visible;
       }
-      .aa-panel-inner {
-        overflow: hidden;
+      .aa-panel-tabs {
+        position: sticky;
+        top: 0;
+        z-index: 3;
       }
     }
     &.top-panel {
