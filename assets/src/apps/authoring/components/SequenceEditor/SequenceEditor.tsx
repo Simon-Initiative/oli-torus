@@ -38,6 +38,10 @@ const SequenceEditor: React.FC<any> = (props) => {
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
 
+  const layerLabel = 'Layer';
+  const bankLabel = 'Question Bank';
+  const screenLabel = 'Screen';
+
   useEffect(() => {
     const newHierarchy: SequenceHierarchyItem<SequenceEntryChild>[] = getHierarchy(sequence);
     return setHierarchy(newHierarchy);
@@ -52,12 +56,14 @@ const SequenceEditor: React.FC<any> = (props) => {
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
+    isBank = false,
   ) => {
     let layerRef: string | undefined;
     if (parentItem) {
       layerRef = parentItem.custom.sequenceId;
     }
-    const newTitle = `New ${layerRef ? 'Child' : ''}${isLayer ? 'Layer' : 'Screen'}`;
+    const newSeqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
+    const newTitle = `New ${layerRef ? 'Child' : ''}${newSeqType}`;
 
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -71,6 +77,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       activitySlug: newActivity.activitySlug,
       custom: {
         isLayer,
+        isBank,
         layerRef,
         sequenceId: `${newActivity.activitySlug}_${guid()}`,
         sequenceName: newTitle,
@@ -304,8 +311,10 @@ const SequenceEditor: React.FC<any> = (props) => {
   }, [itemToRename]);
 
   const SequenceItemContextMenu = (props: any) => {
-    const { id, item, index, arr } = props;
-
+    const { id, item, index, arr, isParentQB } = props;
+    const isBank = item.custom.isBank;
+    const isLayer = item.custom.isLayer;
+    const seqType = isLayer ? layerLabel : isBank ? bankLabel : screenLabel;
     return (
       <div className="dropdown aa-sequence-item-context-menu">
         {currentGroup && (
@@ -329,27 +338,43 @@ const SequenceEditor: React.FC<any> = (props) => {
               className="dropdown-menu"
               aria-labelledby={`sequence-item-${id}-context-trigger`}
             >
-              <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleItemAdd(item);
-                }}
-              >
-                <i className="fas fa-desktop mr-2" /> Add Subscreen
-              </button>
-              <button
-                className="dropdown-item"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleItemAdd(item, true);
-                }}
-              >
-                <i className="fas fa-layer-group mr-2" /> Add Layer
-              </button>
-              {item.custom.isLayer ? (
+              {!isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item);
+                  }}
+                >
+                  <i className="fas fa-desktop mr-2" /> Add Subscreen
+                </button>
+              ) : null}
+              {!isBank && !isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item, true);
+                  }}
+                >
+                  <i className="fas fa-layer-group mr-2" /> Add Layer
+                </button>
+              ) : null}
+              {!isBank && !isParentQB ? (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemAdd(item, false, true);
+                  }}
+                >
+                  <i className="fas fa-cubes mr-2" /> Add Question Bank
+                </button>
+              ) : null}
+              {isLayer ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -360,7 +385,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 >
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Screen
                 </button>
-              ) : (
+              ) : !isBank && !isParentQB ? (
                 <button
                   className="dropdown-item"
                   onClick={(e) => {
@@ -371,7 +396,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                 >
                   <i className="fas fa-exchange-alt mr-2" /> Convert to Layer
                 </button>
-              )}
+              ) : null}
               <button
                 className="dropdown-item"
                 onClick={(e) => {
@@ -390,8 +415,7 @@ const SequenceEditor: React.FC<any> = (props) => {
                   navigator.clipboard.writeText(item.custom.sequenceId);
                 }}
               >
-                <i className="fas fa-clipboard align-text-top mr-2" /> Copy{' '}
-                {item.custom.isLayer ? 'Layer' : 'Screen'} ID
+                <i className="fas fa-clipboard align-text-top mr-2" /> {`Copy ${seqType} ID`}
               </button>
               {currentGroup?.children?.length > 1 && (
                 <>
@@ -492,7 +516,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     );
   };
 
-  const getHierarchyList = (items: any) =>
+  const getHierarchyList = (items: any, isParentQB = false) =>
     items.map(
       (
         item: SequenceHierarchyItem<SequenceEntryType>,
@@ -548,18 +572,22 @@ const SequenceEditor: React.FC<any> = (props) => {
                   {item.custom.isLayer && (
                     <i className="fas fa-layer-group ml-2 align-middle aa-isLayer" />
                   )}
+                  {item.custom.isBank && (
+                    <i className="fas fa-cubes ml-2 align-middle aa-isLayer" />
+                  )}
                 </div>
                 <SequenceItemContextMenu
                   id={item.activitySlug}
                   item={item}
                   index={index}
                   arr={arr}
+                  isParentQB={isParentQB}
                 />
               </div>
               {item.children.length ? (
                 <Accordion.Collapse eventKey={`${index}`}>
                   <ListGroup as="ol" className="aa-sequence nested">
-                    {getHierarchyList(item.children)}
+                    {getHierarchyList(item.children, item.custom.isBank)}
                   </ListGroup>
                 </Accordion.Collapse>
               ) : null}
@@ -616,6 +644,14 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-layer-group mr-2" /> Layer
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  handleItemAdd(undefined, false, true);
+                }}
+              >
+                <i className="fas fa-cubes mr-2" /> Question Bank
               </button>
             </div>
           </div>
