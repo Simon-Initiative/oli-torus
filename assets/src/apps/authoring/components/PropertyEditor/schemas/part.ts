@@ -27,6 +27,7 @@ const partSchema: JSONSchema7 = {
     },
     custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
   },
+  required: ["id"]
 };
 
 export const partUiSchema = {

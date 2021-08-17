@@ -1,4 +1,4 @@
-import { CreationContext } from "../types/parts";
+import { CreationContext } from '../types/parts';
 
 export const schema = {
   customCssClass: {
@@ -29,8 +29,6 @@ export const schema = {
 };
 
 export const uiSchema = {};
-
-export const requiredFields = ['id'];
 
 export const transformModelToSchema = (model: any) => {
   console.log('Image Model -> Schema transformer', model);

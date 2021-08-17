@@ -241,13 +241,8 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
-          let requiredFields = [];
-          if (instance.getRequiredFields) {
-            requiredFields = instance.getRequiredFields();
-          }
           const newSchema: any = {
             ...partSchema,
-            required: requiredFields,
             properties: {
               ...partSchema.properties,
               custom: { type: 'object', properties: { ...customPartSchema } },

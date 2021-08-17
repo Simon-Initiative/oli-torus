@@ -24,7 +24,6 @@ register(Image, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
-    getRequiredFields: () => requiredFields,
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
