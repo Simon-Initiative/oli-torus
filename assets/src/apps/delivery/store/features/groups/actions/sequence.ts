@@ -143,7 +143,7 @@ export const getSequenceInstance = () => {
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
   return findInSequence(sequence, currentSequenceId);
-}
+};
 export const getIsLayer = () => {
   const seq = getSequenceInstance();
   return seq?.custom.isLayer;
@@ -153,4 +153,3 @@ export const getIsBank = () => {
   const seq = getSequenceInstance();
   return seq?.custom.isBank;
 };
-
