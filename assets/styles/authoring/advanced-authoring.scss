@@ -10,6 +10,29 @@ $ui-border-color: #ccc;
 $panel-section-title-bar-height: 39px;
 $panel-section-title-bar-color: #e8ebed;
 
+#aa-loading {
+  transition-timing-function: ease-in-out;
+  transition-duration: 0.3s;
+  transition-property: opacity;
+  opacity: 1;
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  top: $nav-height;
+  bottom: 0;
+  left: $nav-height;
+  right: 0;
+  background-color: $workspace-bg;
+  z-index: 99999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .loader {
+    margin-left: -$nav-height;
+    margin-top: -$nav-height;
+  }
+}
 .advanced-authoring {
   position: relative;
   opacity: 0;
