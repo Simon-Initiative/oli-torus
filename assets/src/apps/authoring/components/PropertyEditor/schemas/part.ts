@@ -6,8 +6,8 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const partSchema: JSONSchema7 = {
   type: 'object',
   properties: {
-    id: { type: 'string', title:'Id' },
-    type: { type: 'string', title:'Type' },
+    id: { type: 'string', title: 'Id' },
+    type: { type: 'string', title: 'Type' },
     Position: {
       type: 'object',
       title: 'Dimensions',
@@ -21,13 +21,13 @@ const partSchema: JSONSchema7 = {
       type: 'object',
       title: 'Dimensions',
       properties: {
-        width: { type: 'number', title:'Width' },
-        height: { type: 'number', title:'Height' },
+        width: { type: 'number', title: 'Width' },
+        height: { type: 'number', title: 'Height' },
       },
     },
     custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
   },
-  required: ["id"]
+  required: ['id'],
 };
 
 export const partUiSchema = {
