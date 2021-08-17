@@ -572,6 +572,9 @@ const SequenceEditor: React.FC<any> = (props) => {
                   {item.custom.isLayer && (
                     <i className="fas fa-layer-group ml-2 align-middle aa-isLayer" />
                   )}
+                  {item.custom.isBank && (
+                    <i className="fas fa-cubes ml-2 align-middle aa-isLayer" />
+                  )}
                 </div>
                 <SequenceItemContextMenu
                   id={item.activitySlug}
@@ -641,6 +644,14 @@ const SequenceEditor: React.FC<any> = (props) => {
                 }}
               >
                 <i className="fas fa-layer-group mr-2" /> Layer
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  handleItemAdd(undefined, false, true);
+                }}
+              >
+                <i className="fas fa-cubes mr-2" /> Question Bank
               </button>
             </div>
           </div>
