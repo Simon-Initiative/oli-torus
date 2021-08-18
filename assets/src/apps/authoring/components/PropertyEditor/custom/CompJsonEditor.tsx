@@ -50,11 +50,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
           <h4 className="modal-title">Edit JSON</h4>
         </Modal.Header>
         <Modal.Body>
-          <textarea
-            style={textAreaStyle}
-            rows={20}
-            onChange={handleOnChange}
-          >
+          <textarea style={textAreaStyle} rows={20} onChange={handleOnChange}>
             {value}
           </textarea>
           <label className="text-danger">{validationMsg}</label>
