@@ -41,9 +41,13 @@ const AdaptiveRulesList: React.FC = () => {
       createCorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newCorrectRule);
-    handleSelectRule(newCorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: any) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newCorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     debounceSaveChanges(activityClone);
+    handleSelectRule(newCorrectRule);
   };
 
   const handleAddIncorrectRule = async () => {
@@ -51,9 +55,13 @@ const AdaptiveRulesList: React.FC = () => {
       createIncorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newIncorrectRule);
-    handleSelectRule(newIncorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: any) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newIncorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     debounceSaveChanges(activityClone);
+    handleSelectRule(newIncorrectRule);
   };
 
   const handleDeleteRule = (rule: any) => {
