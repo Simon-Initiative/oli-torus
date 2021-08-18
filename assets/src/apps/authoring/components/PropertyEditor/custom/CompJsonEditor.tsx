@@ -21,8 +21,9 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   };
   useEffect(() => {
     try {
+      setValue(JSON.stringify(jsonValue, null, 4));
       const jsonVal = JSON.parse(value);
-      if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
+      if (existingPartIds.indexOf(jsonValue.id) !== -1 && currentPartSelection !== jsonValue.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else if (!jsonVal.id) {
         setValidationMsg('ID is required and cannot be empty');
@@ -32,7 +33,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
     } catch (e) {
       setValidationMsg('Please make sure the JSON is in proper format.');
     }
-  }, [value]);
+  }, [jsonValue]);
   return (
     <Fragment>
       <Button onClick={() => setDisplayEditor(true)}>
