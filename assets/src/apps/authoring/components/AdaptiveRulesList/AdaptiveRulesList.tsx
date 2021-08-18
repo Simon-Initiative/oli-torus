@@ -23,8 +23,8 @@ export interface AdaptiveRule {
   forceProgress?: boolean;
   default: boolean;
   correct: boolean;
-  conditions: {};
-  event: {};
+  conditions: Record<string, unknown>;
+  event: Record<string, unknown>;
 }
 
 const AdaptiveRulesList: React.FC = () => {
