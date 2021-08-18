@@ -25,10 +25,10 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   }, [jsonValue]);
 
   const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const val = event.target.value;
-    setValue(val);
+    const changedVal = event.target.value;
+    setValue(changedVal);
     try {
-      const jsonVal = JSON.parse(value);
+      const jsonVal = JSON.parse(changedVal);
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else if (!jsonVal.id) {
@@ -50,8 +50,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
           <h4 className="modal-title">Edit JSON</h4>
         </Modal.Header>
         <Modal.Body>
-          <textarea style={textAreaStyle} rows={20} onChange={handleOnChange}>
-            {value}
+          <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value}>
           </textarea>
           <label className="text-danger">{validationMsg}</label>
         </Modal.Body>
