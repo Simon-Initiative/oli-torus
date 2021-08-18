@@ -39,6 +39,7 @@
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
+            autocomplete: "off",
             autofocus: focusHelper(f, :collaborator_emails, default: false) %>
         <%= error_tag f, :collaborator_emails %>
         <div class="input-group-append">

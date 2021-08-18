@@ -4,6 +4,8 @@ defmodule OliWeb.CollaboratorController do
 
   require Logger
 
+  @max_invitation_emails 20
+
   def create(conn, %{
         "collaborator_emails" => collaborator_emails,
         "g-recaptcha-response" => g_recaptcha_response
@@ -16,37 +18,47 @@ defmodule OliWeb.CollaboratorController do
           collaborator_emails
           |> String.split(",")
           |> Enum.map(&String.trim/1)
+          |> Enum.filter(fn e -> e != "" end)
 
-        emails
-        |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
-          add_collaborator(conn, email, project_id, failures)
-        end)
-        |> case do
-          {conn, []} ->
-            conn
-            |> put_flash(:info, "Collaborator invitations sent!")
-            |> redirect(to: Routes.project_path(conn, :overview, project_id))
-
-          {conn, failures} ->
-            failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
-
-            Logger.error("Failed to add collaborators: #{Enum.join(failed_emails, ", ")}")
-
-            if Enum.count(failures) == Enum.count(emails) do
+        if Enum.count(emails) > @max_invitation_emails do
+          conn
+          |> put_flash(
+            :error,
+            "Collaborator invitations cannot exceed #{@max_invitation_emails} emails at a time. Please try again with fewer invites"
+          )
+          |> redirect(to: Routes.project_path(conn, :overview, project_id))
+        else
+          emails
+          |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
+            add_collaborator(conn, email, project_id, failures)
+          end)
+          |> case do
+            {conn, []} ->
               conn
-              |> put_flash(
-                :error,
-                "Failed to add collaborators. Please try again or contact support."
-              )
+              |> put_flash(:info, "Collaborator invitations sent!")
               |> redirect(to: Routes.project_path(conn, :overview, project_id))
-            else
-              conn
-              |> put_flash(
-                :error,
-                "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
-              )
-              |> redirect(to: Routes.project_path(conn, :overview, project_id))
-            end
+
+            {conn, failures} ->
+              failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
+
+              Logger.error("Failed to add collaborators: #{Enum.join(failed_emails, ", ")}")
+
+              if Enum.count(failures) == Enum.count(emails) do
+                conn
+                |> put_flash(
+                  :error,
+                  "Failed to add collaborators. Please try again or contact support."
+                )
+                |> redirect(to: Routes.project_path(conn, :overview, project_id))
+              else
+                conn
+                |> put_flash(
+                  :error,
+                  "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
+                )
+                |> redirect(to: Routes.project_path(conn, :overview, project_id))
+              end
+          end
         end
 
       {:success, false} ->
