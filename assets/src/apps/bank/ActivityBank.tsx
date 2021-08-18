@@ -38,6 +38,7 @@ import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
 import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
+import { LogicBuilder } from './LogicBuilder';
 
 const PAGE_SIZE = 5;
 
@@ -45,7 +46,6 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
-
 }
 
 type ActivityBankState = {
@@ -413,6 +413,17 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             projectSlug={props.projectSlug}
             editorMap={props.editorMap}
             onAdd={this.onActivityAdd}
+          />
+          <LogicBuilder
+            logic={this.state.logic}
+            editMode={true}
+            allowText={true}
+            projectSlug={props.projectSlug}
+            editorMap={props.editorMap}
+            allObjectives={this.state.allObjectives}
+            onRegisterNewObjective={onRegisterNewObjective}
+            onChange={(logic) => this.setState({ logic })}
+            onRemove={() => true}
           />
           {activities}
         </div>

@@ -7,10 +7,12 @@ import { Fact } from 'data/content/bank';
 import { ActivityTypeSelection } from './ActivityTypeSelection';
 import { TextInput } from 'components/common/TextInput';
 import { LogicProps } from './common';
+import { CloseButton } from '../../components/misc/CloseButton';
 
 export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;
   onChange: (expression: Bank.Expression) => void;
+  hideRemove?: boolean;
 }
 
 const baseFacts = [
@@ -101,18 +103,17 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           }}
           objectives={props.allObjectives.toArray()}
           editMode={props.editMode}
-          projectSlug={props.projectSlug} />
+          projectSlug={props.projectSlug}
+        />
       );
     } else if (props.expression.fact === Fact.type) {
-
-      const activityTypes = Object.keys(props.editorMap)
-        .map(k => {
-          const e = props.editorMap[k];
-          return {
-            id: e.id,
-            label: e.friendlyName,
-          };
-        });
+      const activityTypes = Object.keys(props.editorMap).map((k) => {
+        const e = props.editorMap[k];
+        return {
+          id: e.id,
+          label: e.friendlyName,
+        };
+      });
 
       return (
         <ActivityTypeSelection
@@ -120,8 +121,10 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           onEdit={(value) => {
             props.onChange(Object.assign({}, props.expression, { value }));
           }}
-          multiple={props.expression.operator === Bank.ExpressionOperator.contains
-            || props.expression.operator === Bank.ExpressionOperator.doesNotContain}
+          multiple={
+            props.expression.operator === Bank.ExpressionOperator.contains ||
+            props.expression.operator === Bank.ExpressionOperator.doesNotContain
+          }
           activities={activityTypes}
           editMode={props.editMode}
         />
@@ -137,9 +140,13 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
             props.onChange(Object.assign({}, props.expression, { value }));
           }}
         />
-      )
+      );
     }
   };
+
+  const removeButton = props.hideRemove ? null : (
+    <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
+  );
 
   return (
     <div>
@@ -160,6 +167,8 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       </Select>
 
       {buildValueEditor()}
+
+      {removeButton}
     </div>
   );
 };
