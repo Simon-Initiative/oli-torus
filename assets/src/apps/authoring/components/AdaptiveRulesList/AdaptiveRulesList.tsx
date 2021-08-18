@@ -15,6 +15,18 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
+export interface AdaptiveRule {
+  id?: string;
+  name: string;
+  disabled: boolean;
+  additionalScore?: number;
+  forceProgress?: boolean;
+  default: boolean;
+  correct: boolean;
+  conditions: {};
+  event: {};
+}
+
 const AdaptiveRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
@@ -23,7 +35,7 @@ const AdaptiveRulesList: React.FC = () => {
   const rules = currentActivity?.authoring.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
 
-  const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
+  const handleSelectRule = (rule: AdaptiveRule) => dispatch(setCurrentRule({ currentRule: rule }));
 
   const debounceSaveChanges = useCallback(
     debounce(
@@ -42,7 +54,7 @@ const AdaptiveRulesList: React.FC = () => {
     );
     const activityClone: IActivity = clone(currentActivity);
     const currentRuleIndex = activityClone.authoring.rules.findIndex(
-      (rule: any) => rule.id === currentRule.id,
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
     );
     activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newCorrectRule);
     activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
@@ -56,7 +68,7 @@ const AdaptiveRulesList: React.FC = () => {
     );
     const activityClone: IActivity = clone(currentActivity);
     const currentRuleIndex = activityClone.authoring.rules.findIndex(
-      (rule: any) => rule.id === currentRule.id,
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
     );
     activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newIncorrectRule);
     activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
@@ -64,9 +76,11 @@ const AdaptiveRulesList: React.FC = () => {
     handleSelectRule(newIncorrectRule);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: AdaptiveRule) => {
     const activityClone: IActivity = clone(currentActivity);
-    const indexToDelete = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    const indexToDelete = activityClone.authoring.rules.findIndex(
+      (r: AdaptiveRule) => r.id === rule.id,
+    );
     const isActiveRule: boolean = rule.id === currentRule.id;
 
     if (indexToDelete !== -1) {
@@ -94,7 +108,7 @@ const AdaptiveRulesList: React.FC = () => {
     debounceSaveChanges(activityClone);
   };
 
-  const handleRenameRule = (rule: any) => {
+  const handleRenameRule = (rule: AdaptiveRule) => {
     if (ruleToEdit.name.trim() === '') {
       setRuleToEdit(undefined);
       return;
@@ -104,7 +118,9 @@ const AdaptiveRulesList: React.FC = () => {
       return;
     }
     const activityClone: IActivity = clone(currentActivity);
-    const indexToRename = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    const indexToRename = activityClone.authoring.rules.findIndex(
+      (r: AdaptiveRule) => r.id === rule.id,
+    );
     activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
     debounceSaveChanges(activityClone);
     setRuleToEdit(undefined);
@@ -113,10 +129,14 @@ const AdaptiveRulesList: React.FC = () => {
     );
   };
 
-  const reorderDefaultRules = (rules: any, saveChanges?: boolean) => {
+  const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {
     // process the rules to make a defaultRule sandwich before displaying them
-    const defaultCorrectIndex = rules.findIndex((rule: any) => rule.default && rule.correct);
-    const defaultWrongIndex = rules.findIndex((rule: any) => rule.default && !rule.correct);
+    const defaultCorrectIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && rule.correct,
+    );
+    const defaultWrongIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && !rule.correct,
+    );
 
     if (defaultCorrectIndex === 0 && defaultWrongIndex === rules.length - 1) return rules;
     const rulesClone = clone(rules);
@@ -149,7 +169,12 @@ const AdaptiveRulesList: React.FC = () => {
     if (inputToFocus) inputToFocus.focus();
   }, [ruleToEdit]);
 
-  const RuleItemContextMenu = (props: { id: string; item: any; index: number; arr: any[] }) => {
+  const RuleItemContextMenu = (props: {
+    id: string;
+    item: AdaptiveRule;
+    index: number;
+    arr: AdaptiveRule[];
+  }) => {
     const { id, item, index, arr } = props;
 
     return (
@@ -305,7 +330,7 @@ const AdaptiveRulesList: React.FC = () => {
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule &&
             !isLayer &&
-            rules.map((rule: any, index: any, arr: any) => (
+            rules.map((rule: AdaptiveRule, index: number, arr: AdaptiveRule[]) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
                 as="li"

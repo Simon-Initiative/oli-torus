@@ -12,6 +12,7 @@ import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
+import { AdaptiveRule } from './components/AdaptiveRulesList/AdaptiveRulesList';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -40,7 +41,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     const activityClone: IActivity = clone(currentActivity);
     const updatedRule = { ...currentRule, correct: !correct };
     const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
-      (rule: any) => rule.id === updatedRule.id,
+      (rule: AdaptiveRule) => rule.id === updatedRule.id,
     );
     ruleToUpdate.correct = !correct;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
@@ -52,7 +53,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     const activityClone: IActivity = clone(currentActivity);
     const updatedRule = { ...currentRule, disabled: !isDisabled };
     const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
-      (rule: any) => rule.id === updatedRule.id,
+      (rule: AdaptiveRule) => rule.id === updatedRule.id,
     );
     ruleToUpdate.disabled = !isDisabled;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
@@ -94,7 +95,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const handleDeleteRule = () => {
     const activityClone: IActivity = clone(currentActivity);
     const indexToDelete = activityClone.authoring.rules.findIndex(
-      (rule: any) => rule.id === currentRule.id,
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
     );
     if (indexToDelete !== -1) {
       activityClone.authoring.rules.splice(indexToDelete, 1);
