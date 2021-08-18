@@ -15,13 +15,11 @@ export const schema = {
   showOnAnswersReport: {
     title: 'Show On Answer Reoprt',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
   },
   requireManualGrading: {
     title: 'Require Manual Grading',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
   },
   maxManualGrade: {
@@ -31,7 +29,6 @@ export const schema = {
   showHints: {
     title: 'Show Hints',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
     options: {
       hidden: true,
@@ -40,7 +37,6 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     default: true,
   },
   alternateCorrectDelimiter: {
@@ -49,14 +45,12 @@ export const schema = {
   showCorrect: {
     title: 'Show Correct',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether to show the correct answers',
     default: false,
   },
   showSolution: {
     title: 'Show Solution',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
     options: {
       hidden: true,
@@ -65,7 +59,6 @@ export const schema = {
   formValidation: {
     title: 'Form Validation',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
     options: {
       hidden: true,
@@ -74,7 +67,6 @@ export const schema = {
   showValidation: {
     title: 'Show Validation',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
     options: {
       hidden: true,
@@ -98,7 +90,6 @@ export const schema = {
   caseSensitiveAnswers: {
     title: 'Case Sensitive Answers',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
   },
   content: {
@@ -111,7 +102,6 @@ export const schema = {
           properties: {
             insert: {
               type: 'string',
-              format: 'textarea',
               description: 'text portion of the sentence/paragraph',
             },
           },
