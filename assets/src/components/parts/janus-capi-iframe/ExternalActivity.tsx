@@ -854,12 +854,10 @@ const ExternalActivity: React.FC<any> = (props) => {
           key: baseKey,
           value,
         });
-        if (cVar.value === 'false' || cVar.value === false) {
-          cVar.value = true;
-        } else if (cVar.value === 'true' || cVar.value === true) {
-          cVar.value = false;
+        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
+          cVar.value = !parseBoolean(cVar.value);
+          formatted[baseKey] = cVar;
         }
-        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) formatted[baseKey] = cVar;
         return formatted;
       },
       {},
