@@ -9,7 +9,7 @@ import {
   IActivity,
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { getIsLayer, getIsBank } from '../../../delivery/store/features/groups/actions/sequence';
 import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
@@ -19,9 +19,18 @@ const AdaptiveRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
-  const isLayer = getIsLayer();
   const rules = currentActivity?.authoring.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
+  const isLayer = getIsLayer();
+  const isBank = getIsBank();
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'Layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'Question Bank';
+  } else {
+    sequenceTypeLabel = 'Screen';
+  }
 
   const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
 
@@ -179,7 +188,7 @@ const AdaptiveRulesList: React.FC = () => {
           <ContextAwareToggle eventKey="0" />
           <span className="title">Adaptivity</span>
         </div>
-        {currentRule && !isLayer && (
+        {currentRule && !isLayer && !isBank && (
           <OverlayTrigger
             placement="right"
             delay={{ show: 150, hide: 150 }}
@@ -232,7 +241,7 @@ const AdaptiveRulesList: React.FC = () => {
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule &&
-            !isLayer &&
+            !isLayer && !isBank &&
             rules.map((rule: any, index: any, arr: any) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
@@ -279,11 +288,11 @@ const AdaptiveRulesList: React.FC = () => {
               </div>
             </div>
           )}
-          {currentRule && isLayer && (
+          {currentRule && (isLayer || isBank) && (
             <div className="text-center border rounded m-3">
               <div className="card-body">
                 <p>
-                  <small>This sequence item is a layer and does not support adaptivity</small>
+                  <small>{`This sequence item is a ${sequenceTypeLabel} and does not support adaptivity`}</small>
                 </p>
               </div>
             </div>
