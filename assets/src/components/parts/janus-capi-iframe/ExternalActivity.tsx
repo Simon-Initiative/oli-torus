@@ -846,22 +846,24 @@ const ExternalActivity: React.FC<any> = (props) => {
   // for some reason when trap state variable contains 'System.AllowNextOnCacheCase' then SIM does not behave properly so it needs to be
   // handled different i.e. on first value change set the value to !value and then send actual value and send them in another value_change event
   const simulationHacks = () => {
-    const AllowNextOnCacheCaseVars = Object.keys(initState).reduce((formatted: any, key) => {
-      const baseKey = key.replace(`stage.${id}.`, '');
-      const value = initState[key];
-      const cVar = new CapiVariable({
-        key: baseKey,
-        value,
-      });
-      if (cVar.value === 'false' || cVar.value === false) {
-        cVar.value = true;
-      } else if (cVar.value === 'true' || cVar.value === true) {
-        cVar.value = false;
-      }
-      if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) formatted[baseKey] = cVar;
-      return formatted;
-    }, {});
-
+    const AllowNextOnCacheCaseVars: Record<string, unknown> = Object.keys(initState).reduce(
+      (formatted: any, key) => {
+        const baseKey = key.replace(`stage.${id}.`, '');
+        const value = initState[key];
+        const cVar = new CapiVariable({
+          key: baseKey,
+          value,
+        });
+        if (cVar.value === 'false' || cVar.value === false) {
+          cVar.value = true;
+        } else if (cVar.value === 'true' || cVar.value === true) {
+          cVar.value = false;
+        }
+        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) formatted[baseKey] = cVar;
+        return formatted;
+      },
+      {},
+    );
     if (AllowNextOnCacheCaseVars && Object.keys(AllowNextOnCacheCaseVars)?.length !== 0) {
       sendFormedResponse(
         simLife.handshake,
@@ -870,8 +872,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         AllowNextOnCacheCaseVars,
       );
     }
-
-    const AllowNextOnCacheCaseOriginalVars = Object.keys(initState).reduce(
+    const AllowNextOnCacheCaseOriginalVars: Record<string, unknown> = Object.keys(initState).reduce(
       (formatted: any, key) => {
         const baseKey = key.replace(`stage.${id}.`, '');
         const value = initState[key];
@@ -880,7 +881,6 @@ const ExternalActivity: React.FC<any> = (props) => {
           value,
         });
         if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) formatted[baseKey] = cVar;
-
         return formatted;
       },
       {},
