@@ -65,9 +65,25 @@ const AdaptiveRulesList: React.FC = () => {
       activityClone.authoring.rules.splice(indexToDelete, 1);
       const prevRule = activityClone.authoring.rules[indexToDelete - 1];
       const nextRule = activityClone.authoring.rules[indexToDelete + 1];
-      handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
       debounceSaveChanges(activityClone);
+      handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
     }
+  };
+
+  const handleMoveRule = (ruleIndex: number, direction: string) => {
+    const activityClone: IActivity = clone(currentActivity);
+    const ruleToMove = activityClone.authoring.rules.splice(ruleIndex, 1)[0];
+    switch (direction) {
+      case 'down':
+        activityClone.authoring.rules.splice(ruleIndex + 1, 0, ruleToMove);
+        break;
+      case 'up':
+        activityClone.authoring.rules.splice(ruleIndex - 1, 0, ruleToMove);
+        break;
+      default:
+        break;
+    }
+    debounceSaveChanges(activityClone);
   };
 
   const handleRenameRule = (rule: any) => {
@@ -89,11 +105,34 @@ const AdaptiveRulesList: React.FC = () => {
     );
   };
 
+  const reorderDefaultRules = (rules: any, saveChanges?: boolean) => {
+    // process the rules to make a defaultRule sandwich before displaying them
+    const defaultCorrectIndex = rules.findIndex((rule: any) => rule.default && rule.correct);
+    const defaultWrongIndex = rules.findIndex((rule: any) => rule.default && !rule.correct);
+
+    if (defaultCorrectIndex === 0 && defaultWrongIndex === rules.length - 1) return rules;
+    const rulesClone = clone(rules);
+
+    // set the defaultCorrect to the first position
+    rulesClone.unshift(rulesClone.splice(defaultCorrectIndex, 1)[0]);
+
+    // set the defaultWrong rule to the last position
+    rulesClone.push(rulesClone.splice(defaultWrongIndex, 1)[0]);
+
+    if (saveChanges) {
+      const activityClone: IActivity = clone(currentActivity);
+      activityClone.authoring.rules = rulesClone;
+      debounceSaveChanges(activityClone);
+    } else return rulesClone;
+  };
+
   const previousActivity = usePrevious(currentActivity);
   useEffect(() => {
     if (currentActivity === undefined) return;
-    if (previousActivity?.id !== currentActivity.id)
+    if (previousActivity?.id !== currentActivity.id) {
+      reorderDefaultRules(currentActivity.authoring.rules, true);
       handleSelectRule(currentActivity.authoring.rules[0]);
+    }
   }, [currentActivity]);
 
   useEffect(() => {
@@ -103,7 +142,7 @@ const AdaptiveRulesList: React.FC = () => {
   }, [ruleToEdit]);
 
   const RuleItemContextMenu = (props: { id: string; item: any; index: number; arr: any[] }) => {
-    const { id, item } = props;
+    const { id, item, index, arr } = props;
 
     return (
       <div key={id} className="dropdown aa-sequence-item-context-menu">
@@ -149,7 +188,32 @@ const AdaptiveRulesList: React.FC = () => {
               >
                 <i className="fas fa-trash mr-2" /> Delete
               </button>
+              <div className="dropdown-divider"></div>
             </>
+          )}
+          {index > 1 && !item.default && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveRule(index, 'up');
+                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              }}
+            >
+              <i className="fas fa-arrow-up mr-2" /> Move Up
+            </button>
+          )}
+          {index < arr.length - 2 && !item.default && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveRule(index, 'down');
+                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              }}
+            >
+              <i className="fas fa-arrow-down mr-2" /> Move Down
+            </button>
           )}
         </div>
       </div>
