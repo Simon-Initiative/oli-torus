@@ -241,7 +241,8 @@ const AdaptiveRulesList: React.FC = () => {
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
           {currentRule &&
-            !isLayer && !isBank &&
+            !isLayer &&
+            !isBank &&
             rules.map((rule: any, index: any, arr: any) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
