@@ -1,5 +1,5 @@
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
-import React, { CSSProperties, Fragment, useState } from 'react';
+import React, { ChangeEvent, CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
@@ -11,7 +11,7 @@ interface JsonEditorProps {
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   const { jsonValue, onChange, existingPartIds, schema } = props;
-  const val = { id: jsonValue.id, custom: jsonValue.custom };
+  let val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');
   const currentPartSelection = useSelector(selectCurrentSelection);
@@ -20,8 +20,15 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
     width: '100%',
   };
   useEffect(() => {
+    val = { id: jsonValue.id, custom: jsonValue.custom };
+    setValue(JSON.stringify(val, null, 4));
+  }, [jsonValue]);
+
+  const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const changedVal = event.target.value;
+    setValue(changedVal);
     try {
-      const jsonVal = JSON.parse(value);
+      const jsonVal = JSON.parse(changedVal);
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else if (!jsonVal.id) {
@@ -32,7 +39,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
     } catch (e) {
       setValidationMsg('Please make sure the JSON is in proper format.');
     }
-  }, [value]);
+  };
   return (
     <Fragment>
       <Button onClick={() => setDisplayEditor(true)}>
@@ -43,15 +50,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
           <h4 className="modal-title">Edit JSON</h4>
         </Modal.Header>
         <Modal.Body>
-          <textarea
-            style={textAreaStyle}
-            rows={20}
-            onChange={(e) => {
-              setValue(e.target.value);
-            }}
-          >
-            {value}
-          </textarea>
+          <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
           <label className="text-danger">{validationMsg}</label>
         </Modal.Body>
         <Modal.Footer>
