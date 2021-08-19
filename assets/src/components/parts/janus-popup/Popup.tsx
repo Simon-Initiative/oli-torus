@@ -8,7 +8,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
+import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { getIcon } from './GetIcon';
 import { contexts } from '../../../types/applicationContext';
 interface ContextProps {

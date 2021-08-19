@@ -4,7 +4,7 @@ import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
-} from './NotificationContext';
+} from '../../../../../apps/delivery/components/NotificationContext';
 import Unknown from './UnknownComponent';
 
 const WebComponent: React.FC<any> = (props) => {
