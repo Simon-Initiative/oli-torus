@@ -73,63 +73,18 @@ export const schema = {
     description: 'specifies whether to show numbering on the MCQ items',
     default: false,
   },
-  mcqItems: {
-    title: 'Items',
-    type: 'array',
-    description: 'list of items in the MCQ',
-    items: {
-      type: 'object',
-      properties: {
-        scoreValue: {
-          type: 'number',
-        },
-        nodes: {
-          type: 'array',
-          items: {
-            $ref: '#/definitions/node',
-          },
-        },
-      },
-    },
-  },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
     description: 'specifies whether MCQ is enabled',
     default: true,
   },
-  definitions: {
-    node: {
-      type: 'object',
-      properties: {
-        tag: {
-          type: 'string',
-          description: "should be an html tag, exception made for 'text'",
-        },
-        href: { type: 'string' },
-        src: {
-          type: 'string',
-          description: 'should map from either src OR source',
-        },
-        alt: { type: 'string' },
-        width: { type: 'number' },
-        height: { type: 'number' },
-        target: { type: 'string' },
-        style: { type: 'object' },
-        text: { type: 'string' },
-        children: {
-          type: 'array',
-          items: { $ref: '#/definitions/node' },
-        },
-      },
-    },
-  },
 };
 
 export const uiSchema = {};
 
 export const createSchema = () => {
-  const createSimpleOption = (index: number, score = 1) => ({
+  /*const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
     nodes: [
       {
@@ -149,7 +104,7 @@ export const createSchema = () => {
         ],
       },
     ],
-  });
+  });*/
 
   return {
     overrideHeight: false,
@@ -164,6 +119,6 @@ export const createSchema = () => {
     randomize: false,
     showNumbering: false,
     enabled: true,
-    mcqItems: [1, 2, 3].map(createSimpleOption),
+    /*mcqItems: [1, 2, 3].map(createSimpleOption),*/
   };
 };
