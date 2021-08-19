@@ -41,7 +41,10 @@ defmodule OliWeb.CollaboratorController do
             {conn, failures} ->
               failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
 
-              Logger.error("Failed to add collaborators: #{Enum.join(failed_emails, ", ")}")
+              Logger.error(
+                "Failed to add collaborators: #{Enum.join(failed_emails, ", ")}",
+                failures
+              )
 
               if Enum.count(failures) == Enum.count(emails) do
                 conn
