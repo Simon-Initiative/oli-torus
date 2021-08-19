@@ -8,7 +8,7 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import { selectCurrentActivityTree, selectCurrentSequenceId, selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
@@ -30,11 +30,13 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import screenSchema, {
+import {
+  getScreenSchema,
   screenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import { findInSequence, getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -54,16 +56,21 @@ const RightMenu: React.FC<any> = () => {
   const [componentSchema, setComponentSchema] = useState<JSONSchema7>(partSchema);
   const [componentUiSchema, setComponentUiSchema] = useState(partUiSchema);
   const [currentComponent, setCurrentComponent] = useState(null);
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
+  const currentSequence = findInSequence(sequence, currentSequenceId);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [screenData, setScreenData] = useState();
+  const [screenSchema, setScreenSchema] = useState<any>();
   useEffect(() => {
     if (!currentActivity) {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
+    setScreenSchema(getScreenSchema(currentSequence));
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
       [],

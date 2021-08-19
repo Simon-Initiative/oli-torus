@@ -1,9 +1,10 @@
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
+import { SequenceEntry, SequenceEntryChild } from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const screenSchema = {
+const schema = {
   type: 'object',
   properties: {
     title: {
@@ -176,4 +177,16 @@ export const transformScreenSchematoModel = (schema: any) => {
   };
 };
 
-export default screenSchema;
+export const getScreenSchema = (seq: SequenceEntry<SequenceEntryChild> | null) => {
+  if(seq?.custom.isBank){
+    return {
+      type: schema.type,
+      properties: {
+        Size: schema.properties.Size,
+        palette: schema.properties.palette,
+
+      }
+    }
+  }
+  return schema;
+};
