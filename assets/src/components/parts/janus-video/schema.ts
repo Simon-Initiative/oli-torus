@@ -1,4 +1,4 @@
-import CustomFieldTemplate from "apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate";
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 
 export const schema = {
   customCssClass: {
@@ -57,9 +57,9 @@ export const schema = {
     title: 'Subtitles',
     type: 'object',
     properties: {
-        default: { type: 'boolean', title: 'Default' },
-        language: { type: 'string', title: 'Language' },
-        src: { type: 'string', title: 'Source' },
+      default: { type: 'boolean', title: 'Default' },
+      language: { type: 'string', title: 'Language' },
+      src: { type: 'string', title: 'Source' },
     },
     required: ['src', 'language'],
   },
@@ -69,7 +69,7 @@ export const uiSchema = {
   subtitles: {
     'ui:title': 'Subtitles',
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
-  }
+  },
 };
 
 export const createSchema = () => ({
