@@ -92,81 +92,6 @@ export const schema = {
     type: 'boolean',
     default: false,
   },
-  content: {
-    type: 'array',
-    items: {
-      oneOf: [
-        {
-          type: 'object',
-          title: 'Text',
-          properties: {
-            insert: {
-              type: 'string',
-              description: 'text portion of the sentence/paragraph',
-            },
-          },
-        },
-        {
-          type: 'object',
-          title: 'Dropdown Reference',
-          properties: {
-            dropdown: {
-              type: 'string',
-              description: 'id ref to a dropdown in elements',
-            },
-          },
-        },
-        {
-          type: 'object',
-          title: 'Text Input Reference',
-          properties: {
-            textInput: {
-              type: 'string',
-              description: 'id ref to a text input in elements',
-            },
-          },
-        },
-      ],
-    },
-  },
-  elements: {
-    type: 'array',
-    description: 'elements used and referenced in content',
-    items: {
-      $ref: '#/definitions/inputElementItem',
-    },
-  },
-  definitions: {
-    keyValue: {
-      type: 'object',
-      properties: {
-        key: { type: 'string' },
-        value: { type: 'string' },
-      },
-    },
-    inputElementItem: {
-      type: 'object',
-      properties: {
-        key: {
-          type: 'string',
-          description: 'element id used to reference elements in content',
-        },
-        correct: {
-          type: 'string',
-        },
-        alternateCorrect: {
-          type: 'string',
-        },
-        options: {
-          type: 'array',
-          description: 'dropdown items',
-          items: {
-            $ref: '#/definitions/keyValue',
-          },
-        },
-      },
-    },
-  },
 };
 
 export const uiSchema = {};
@@ -178,6 +103,4 @@ export const createSchema = () => ({
   showCorrect: false,
   alternateCorrectDelimiter: '',
   caseSensitiveAnswers: false,
-  content: [],
-  elements: [],
 });
