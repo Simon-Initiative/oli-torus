@@ -3,7 +3,6 @@ defmodule Oli.Repo.Migrations.GenerateSub do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-  alias Oli.Accounts.User
 
   def change do
     # generate a sub uuid for all users that have a null sub
