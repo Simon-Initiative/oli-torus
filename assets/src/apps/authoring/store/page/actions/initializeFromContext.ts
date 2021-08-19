@@ -16,27 +16,27 @@ import { savePage } from './savePage';
 
 export const initializeFromContext = createAsyncThunk(
   `${PageSlice}/initializeFromContext`,
-  async (params: PageContext, thunkApi) => {
+  async (params: { context: PageContext; config: any }, thunkApi) => {
     const { dispatch, getState } = thunkApi;
 
     // load the page state properties
     const pageState: Partial<PageState> = {
-      graded: params.graded,
-      authorEmail: params.authorEmail,
-      objectives: params.objectives,
-      title: params.title,
-      revisionSlug: params.resourceSlug,
-      resourceId: params.resourceId,
-      additionalStylesheets: params.content.additionalStylesheets,
-      customCss: params.content.customCss,
-      custom: params.content.custom,
+      graded: params.context.graded,
+      authorEmail: params.context.authorEmail,
+      objectives: params.context.objectives,
+      title: params.context.title,
+      revisionSlug: params.context.resourceSlug,
+      resourceId: params.context.resourceId,
+      additionalStylesheets: params.context.content.additionalStylesheets,
+      customCss: params.context.content.customCss,
+      custom: params.context.content.custom,
     };
     dispatch(loadPage(pageState));
 
-    const children: any[] = Object.keys(params.activities).map((id) => ({
-      ...params.activities[id],
+    const children: any[] = Object.keys(params.context.activities).map((id) => ({
+      ...params.context.activities[id],
     }));
-    let pageModel = params.content.model;
+    let pageModel = params.context.content.model;
     if (!pageModel.length) {
       // this should be a "new" lesson, at no point should we allow the model
       // to be empty while controlled by the authoring tool
@@ -67,13 +67,15 @@ export const initializeFromContext = createAsyncThunk(
       pageModel = [newGroup];
     }
 
+    const activityTypes = params.config.activityTypes;
+
     // set the activities
     const activities = children.map((activity) => {
       return {
         id: activity.activity_id,
         resourceId: activity.activity_id,
         activitySlug: activity.activitySlug,
-        activityType: activity.activityType,
+        activityType: activityTypes.find((at: any) => at.slug === activity.typeSlug),
         content: { ...activity.model, authoring: undefined },
         authoring: activity.model.authoring,
         title: activity.title,
