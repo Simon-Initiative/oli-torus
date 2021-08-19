@@ -97,6 +97,13 @@ config :oli, OliWeb.Endpoint,
 # Configure Mnesia directory (used by pow persistent sessions)
 config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
 
+# Configure logger if LOG_LEVEL is set
+case System.get_env("LOG_LEVEL", nil) do
+  nil ->
+  log_level ->
+    config :logger, level: String.to_atom(log_level)
+end
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

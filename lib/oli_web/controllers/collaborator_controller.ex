@@ -40,24 +40,22 @@ defmodule OliWeb.CollaboratorController do
 
             {conn, failures} ->
               failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
+              error_id = Oli.Utils.generate_error_id()
 
-              Logger.error(
-                "Failed to add collaborators: #{Enum.join(failed_emails, ", ")}",
-                failures
-              )
+              Logger.error("##{error_id} Failed to add collaborators: #{inspect(failures)}")
 
               if Enum.count(failures) == Enum.count(emails) do
                 conn
                 |> put_flash(
                   :error,
-                  "Failed to add collaborators. Please try again or contact support."
+                  "Failed to add collaborators. Please try again or contact support with issue ##{error_id}."
                 )
                 |> redirect(to: Routes.project_path(conn, :overview, project_id))
               else
                 conn
                 |> put_flash(
                   :error,
-                  "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
+                  "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}. Please try again or contact support with issue ##{error_id}."
                 )
                 |> redirect(to: Routes.project_path(conn, :overview, project_id))
               end

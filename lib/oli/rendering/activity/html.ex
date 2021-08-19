@@ -23,15 +23,13 @@ defmodule Oli.Rendering.Activity.Html do
 
     case activity_summary do
       nil ->
-        error_id = Utils.random_string(8)
+        error_id = Utils.generate_error_id()
 
         error_msg =
-          "ActivitySummary with id #{activity_id} missing from activity_map: #{
-            Kernel.inspect({activity, activity_map})
-          }"
+          "ActivitySummary with id #{activity_id} missing from activity_map: #{Kernel.inspect({activity, activity_map})}"
 
         if render_opts.log_errors,
-          do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+          do: Logger.error("##{error_id} Render Error: #{error_msg}"),
           else: nil
 
         if render_opts.render_errors do
@@ -48,11 +46,7 @@ defmodule Oli.Rendering.Activity.Html do
         section_slug = context.section_slug
 
         activity_html = [
-          "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{
-            model_json
-          }\" preview=\"#{preview}\" user_id=\"#{user.id}\" review=\"#{review_mode}\" section_slug=\"#{
-            section_slug
-          }\"></#{tag}>\n"
+          "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" preview=\"#{preview}\" user_id=\"#{user.id}\" review=\"#{review_mode}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
         ]
 
         case purpose do
@@ -76,16 +70,12 @@ defmodule Oli.Rendering.Activity.Html do
     case error do
       {:invalid, error_id, _error_msg} ->
         [
-          "<div class=\"activity invalid alert alert-danger\">Activity error. Please contact support with issue <strong>##{
-            error_id
-          }</strong></div>\n"
+          "<div class=\"activity invalid alert alert-danger\">Activity error. Please contact support with issue <strong>##{error_id}</strong></div>\n"
         ]
 
       {_, error_id, _error_msg} ->
         [
-          "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue <strong>##{
-            error_id
-          }</strong></div>\n"
+          "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue <strong>##{error_id}</strong></div>\n"
         ]
     end
   end
