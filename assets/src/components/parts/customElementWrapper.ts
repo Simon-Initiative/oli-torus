@@ -186,6 +186,7 @@ abstract class ReactCustomElement extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent(eventName, {
           bubbles: true,
+          composed: true,
           detail: { callback, payload },
         }),
       );
