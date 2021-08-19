@@ -3,11 +3,15 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+- Allow for submission of graded pages without answering all questions
 
 ## 0.12.8 (2021-08-11)
 
 ### Bug Fixes
+
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
