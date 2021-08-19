@@ -7,6 +7,8 @@ export interface SequenceEntryChild {
   layerRef?: string;
   isBank?: boolean;
   isLayer?: boolean;
+  bankShowCount: number;
+  bankEndTarget: string;
 }
 
 export interface SequenceLayer extends SequenceEntryChild {

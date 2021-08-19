@@ -1,5 +1,8 @@
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
-import { SequenceEntry, SequenceEntryChild } from 'apps/delivery/store/features/groups/actions/sequence';
+import {
+  SequenceEntry,
+  SequenceEntryChild,
+} from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
@@ -124,7 +127,10 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (activity?: IActivity) => {
+export const transformScreenModeltoSchema = (
+  currentSequence: SequenceEntry<SequenceEntryChild> | null,
+  activity?: IActivity,
+) => {
   if (activity) {
     const data = activity?.content?.custom;
     if (!data) {
@@ -149,7 +155,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
           : '255, 255, 255'
       },${data.palette.fillAlpha || '100'})`,
     };
-    return {
+    let schemaData = {
       ...data,
       title: activity?.title || '',
       Size: { width: data.width, height: data.height },
@@ -157,11 +163,22 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
     };
+    if (currentSequence?.custom.isBank) {
+      schemaData = {
+        ...schemaData,
+        bankShowCount: currentSequence.custom.bankShowCount,
+        bankEndTarget: currentSequence.custom.bankEndTarget,
+      };
+    }
+    return schemaData;
   }
 };
 
-export const transformScreenSchematoModel = (schema: any) => {
-  return {
+export const transformScreenSchematoModel: any = (
+  schema: any,
+  currentSequence: SequenceEntry<SequenceEntryChild> | null,
+) => {
+  const modelData: any = {
     title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
@@ -175,18 +192,24 @@ export const transformScreenSchematoModel = (schema: any) => {
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
   };
+  if (currentSequence?.custom.isBank) {
+    modelData.bankShowCount = schema.bankShowCount;
+    modelData.bankEndTarget = schema.bankEndTarget;
+  }
+  return modelData;
 };
 
 export const getScreenSchema = (seq: SequenceEntry<SequenceEntryChild> | null) => {
-  if(seq?.custom.isBank){
+  if (seq?.custom.isBank) {
     return {
       type: schema.type,
       properties: {
         Size: schema.properties.Size,
         palette: schema.properties.palette,
-
-      }
-    }
+        bankShowCount: { type: 'number', title: 'Randomly selects question(s) from the bank' },
+        bankEndTarget: { type: 'string', title: 'When Completed, proceed to' },
+      },
+    };
   }
   return schema;
 };

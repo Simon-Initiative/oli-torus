@@ -8,10 +8,17 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import { selectCurrentActivityTree, selectCurrentSequenceId, selectSequence } from '../../../delivery/store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import {
+  updateSequenceItem,
+  updateSequenceItemFromActivity,
+} from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -36,7 +43,11 @@ import {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
-import { findInSequence, getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import {
+  findInSequence,
+  getIsBank,
+  getIsLayer,
+} from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -69,7 +80,7 @@ const RightMenu: React.FC<any> = () => {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
-    setScreenData(transformScreenModeltoSchema(currentActivity));
+    setScreenData(transformScreenModeltoSchema(currentSequence, currentActivity));
     setScreenSchema(getScreenSchema(currentSequence));
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
@@ -89,20 +100,26 @@ const RightMenu: React.FC<any> = () => {
   const screenPropertyChangeHandler = useCallback(
     (properties: any) => {
       if (currentActivity) {
-        const modelChanges = transformScreenSchematoModel(properties);
+        const modelChanges = transformScreenSchematoModel(properties, currentSequence);
         console.log('Screen Property Change...', { properties, modelChanges });
-        const title = modelChanges.title;
-        delete modelChanges.title;
+        const { title, bankShowCount, bankEndTarget, ...screenModelChanges } = modelChanges;
         const screenChanges = {
           ...currentActivity?.content?.custom,
-          ...modelChanges,
+          ...screenModelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
         if (title) {
           cloneActivity.title = title;
         }
-        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+        debounceSaveScreenSettings(
+          cloneActivity,
+          currentActivity,
+          currentGroup,
+          currentSequence,
+          bankShowCount,
+          bankEndTarget,
+        );
       }
     },
     [currentActivity],
@@ -110,13 +127,19 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity, currentActivity, group) => {
+      (activity, currentActivity, group, currentSequence, bankShowCount, bankEndTarget) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
 
         if (activity.title !== currentActivity?.title) {
           dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
           dispatch(savePage());
+        }
+        if (currentSequence?.custom.isBank) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
         }
       },
       500,
