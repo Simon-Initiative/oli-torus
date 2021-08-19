@@ -10,7 +10,7 @@
     <title>OliWeb.Api.ActivityController — OLI Torus v0.12.8</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-2a0e868a34.js"></script>
+    <script src="dist/sidebar_items-ecbdc1b7a9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -128,6 +128,15 @@ and delete documents associated with an activity instance.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#bulk_update/2">bulk_update(conn, map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Bulk activity edit endpoint.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#create_secondary/2">create_secondary(conn, map)</a>
 
   </div>
@@ -195,7 +204,7 @@ Functions
     </a>
     <h1 class="signature">bulk_retrieve(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L252" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L280" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -217,7 +226,7 @@ Functions
     </a>
     <h1 class="signature">bulk_retrieve_delivery(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L348" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L376" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -231,6 +240,30 @@ Functions
 documents, for a particular course section.</p>
   </section>
 </section>
+<section class="detail" id="bulk_update/2">
+
+  <div class="detail-header">
+    <a href="#bulk_update/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">bulk_update(conn, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L481" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Bulk activity edit endpoint.</p><p>This operation will update one or more of the top-level document attributes (<code class="inline">title</code>, <code class="inline">objectives</code>, <code class="inline">content</code>, <code class="inline">authoring</code>) for
+a collection of activity documents.</p><p>This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+lock must be specificed via the <code class="inline">lock</code> query parameter.</p>
+  </section>
+</section>
 <section class="detail" id="create_secondary/2">
 
   <div class="detail-header">
@@ -240,7 +273,7 @@ documents, for a particular course section.</p>
     </a>
     <h1 class="signature">create_secondary(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L113" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L141" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,7 +297,7 @@ of the activity implementation.</p>
     </a>
     <h1 class="signature">delete(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L476" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L551" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -287,7 +320,7 @@ lock must be specificed via the <code class="inline">lock</code> query parameter
     </a>
     <h1 class="signature">retrieve(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L218" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L246" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -310,7 +343,7 @@ document.</p>
     </a>
     <h1 class="signature">retrieve_delivery(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L313" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L341" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -333,7 +366,7 @@ document, for a particular course section.</p>
     </a>
     <h1 class="signature">update(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L405" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/api/activity_controller.ex#L433" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

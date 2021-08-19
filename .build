@@ -252,6 +252,7 @@ OliWeb.ActivityView.html
 OliWeb.Api.ActivityBankController.html
 OliWeb.Api.ActivityController.BulkDocumentRequestBody.html
 OliWeb.Api.ActivityController.BulkDocumentResponse.html
+OliWeb.Api.ActivityController.BulkDocuments.html
 OliWeb.Api.ActivityController.DocumentAttributes.html
 OliWeb.Api.ActivityController.html
 OliWeb.Api.AttemptController.ActivityAttemptBody.html
@@ -441,8 +442,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-2d8e51517b.js
-dist/sidebar_items-2a0e868a34.js
+dist/search_items-5dd7fe6649.js
+dist/sidebar_items-ecbdc1b7a9.js
 index.html
 license.html
 readme.html
