@@ -7,7 +7,7 @@ defmodule Oli.Qa.Utils do
 
   def elements_of_type(types, review) do
     project = Course.get_project!(review.project_id)
-    publication_id = Publishing.working_project_publication(project.slug).id
+    publication_id = Publishing.project_working_publication(project.slug).id
     page_id = ResourceType.get_id_by_type("page")
     activity_id = ResourceType.get_id_by_type("activity")
 

@@ -193,7 +193,7 @@ defmodule Oli.PublishingTest do
       assert unpublished_publication.id == published_publication.id
 
       # the unpublished publication for the project should now be a new different publication
-      new_unpublished_publication = Publishing.working_project_publication(project.slug)
+      new_unpublished_publication = Publishing.project_working_publication(project.slug)
       assert new_unpublished_publication.id != unpublished_publication.id
 
       # mappings should be retained in the original published publication
@@ -240,7 +240,7 @@ defmodule Oli.PublishingTest do
         Publishing.publish_project(project, :patch, "some changes")
 
       # publication should succeed even if a resource is "locked"
-      new_unpublished_publication = Publishing.working_project_publication(project.slug)
+      new_unpublished_publication = Publishing.project_working_publication(project.slug)
       assert new_unpublished_publication.id != original_unpublished_publication.id
 
       # further edits to locked resources should occur in newly created revisions. The locks should not
@@ -336,7 +336,7 @@ defmodule Oli.PublishingTest do
           author_id: author.id
         })
 
-      p2 = Publishing.working_project_publication(project.slug)
+      p2 = Publishing.project_working_publication(project.slug)
       Publishing.upsert_published_resource(p2, r4_revision)
 
       # delete a resource

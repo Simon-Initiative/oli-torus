@@ -13,7 +13,7 @@ defmodule Oli.Publishing do
   alias Oli.Publishing
 
   def query_unpublished_revisions_by_type(project_slug, type) do
-    publication_id = working_project_publication(project_slug).id
+    publication_id = project_working_publication(project_slug).id
     resource_type_id = ResourceType.get_id_by_type(type)
 
     from rev in Revision,
@@ -189,13 +189,13 @@ defmodule Oli.Publishing do
   Get unpublished publication for a project from slug. This assumes there is only one unpublished publication per project.
    ## Examples
 
-      iex> working_project_publication("my-project-slug")
+      iex> project_working_publication("my-project-slug")
       %Publication{}
 
-      iex> working_project_publication("invalid-slug")
+      iex> project_working_publication("invalid-slug")
       nil
   """
-  def working_project_publication(project_slug) do
+  def project_working_publication(project_slug) do
     Repo.one(
       from pub in Publication,
         join: proj in Project,
@@ -486,7 +486,7 @@ defmodule Oli.Publishing do
           {:error, String.t()} | {:ok, %Publication{}}
   def publish_project(project, publish_type, description) do
     Repo.transaction(fn ->
-      with active_publication <- working_project_publication(project.slug),
+      with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
              Publishing.get_latest_published_publication_by_slug(project.slug),
            now <- DateTime.utc_now(),

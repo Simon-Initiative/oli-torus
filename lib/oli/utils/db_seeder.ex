@@ -274,7 +274,7 @@ defmodule Oli.Seeder do
     {:ok, pub1} = Publishing.publish_project(map.project, :patch, "some changes")
 
     # Track a series of changes for both resources:
-    pub = Publishing.working_project_publication(map.project.slug)
+    pub = Publishing.project_working_publication(map.project.slug)
 
     latest1 =
       Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
@@ -305,7 +305,7 @@ defmodule Oli.Seeder do
     {:ok, pub2} = Publishing.publish_project(map.project, :patch, "some changes")
 
     # Create a fourth page that is completely unpublished
-    pub = Publishing.working_project_publication(map.project.slug)
+    pub = Publishing.project_working_publication(map.project.slug)
     %{revision: latest4} = create_page("Unpublished", pub, map.project, map.author)
 
     third_map = add_objective(Map.merge(map, %{publication: pub}), "child6", :child6)

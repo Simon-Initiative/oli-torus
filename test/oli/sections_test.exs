@@ -326,7 +326,7 @@ defmodule Oli.SectionsTest do
       assert available_updates |> Enum.count() == 0
 
       # make some changes to project and publish
-      working_pub = Publishing.working_project_publication(project.slug)
+      working_pub = Publishing.project_working_publication(project.slug)
 
       %{resource: p1_new_page1, revision: _revision} =
         Seeder.create_page("P1 New Page one", working_pub, project, author)

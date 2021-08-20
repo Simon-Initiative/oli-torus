@@ -22,7 +22,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           join: rev in Revision,
           on: rev.id == m.revision_id,
           where:
-            m.publication_id in subquery(working_project_publication(project_slug)) and
+            m.publication_id in subquery(project_working_publication(project_slug)) and
               m.resource_id in ^resource_ids,
           select: rev
         )
@@ -44,7 +44,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           join: rev in Revision,
           on: rev.id == m.revision_id,
           where:
-            m.publication_id in subquery(working_project_publication(project_slug)) and
+            m.publication_id in subquery(project_working_publication(project_slug)) and
               m.resource_id == ^resource_id,
           select: rev
       )
@@ -64,7 +64,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: rev2 in Revision,
         on: m.revision_id == rev2.id,
         where:
-          m.publication_id in subquery(working_project_publication(project_slug)) and
+          m.publication_id in subquery(project_working_publication(project_slug)) and
             rev.slug == ^revision_slug,
         limit: 1,
         select: rev2
@@ -102,7 +102,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       from(m in PublishedResource,
         join: rev in Revision,
         on: rev.id == m.revision_id,
-        where: m.publication_id in subquery(working_project_publication(project_slug)),
+        where: m.publication_id in subquery(project_working_publication(project_slug)),
         select: rev
       )
       |> Repo.all()
@@ -121,7 +121,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: rev in Revision,
         on: rev.id == m.revision_id,
         where:
-          m.publication_id in subquery(working_project_publication(project_slug)) and
+          m.publication_id in subquery(project_working_publication(project_slug)) and
             (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id),
         select: rev
       )
@@ -131,7 +131,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
-  defp working_project_publication(project_slug) do
+  defp project_working_publication(project_slug) do
     from(p in Publication,
       join: c in Project,
       on: p.project_id == c.id,

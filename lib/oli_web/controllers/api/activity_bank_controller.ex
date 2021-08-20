@@ -21,7 +21,7 @@ defmodule OliWeb.Api.ActivityBankController do
       with {:ok, %Logic{} = logic} <- Logic.parse(logic),
            {:ok, %Paging{} = paging} <- Paging.parse(paging),
            {:ok, publication} <-
-             Publishing.working_project_publication(project_slug) |> trap_nil(),
+             Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, %Result{} = result} <-
              Query.execute(
                logic,

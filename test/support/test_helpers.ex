@@ -202,7 +202,7 @@ defmodule Oli.TestHelpers do
         }
       )
 
-    publication = Publishing.working_project_publication(project.slug)
+    publication = Publishing.project_working_publication(project.slug)
     Publishing.upsert_published_resource(publication, revision)
 
     %{objective: objective, objective_revision: revision}

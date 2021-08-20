@@ -54,7 +54,7 @@ defmodule Oli.CloneTest do
     end
 
     test "clone_project/2 creates a new publication", %{project: project, duplicated: duplicated} do
-      new_publication = Publishing.working_project_publication(duplicated.slug)
+      new_publication = Publishing.project_working_publication(duplicated.slug)
       base_root_container = AuthoringResolver.root_container(project.slug)
 
       assert new_publication.project_id == duplicated.id
