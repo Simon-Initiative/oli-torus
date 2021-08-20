@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
+import { tagName as unknownTag } from './components/authoring/UnknownComponent';
 import { AdaptiveModelSchema } from './schema';
 
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
@@ -26,7 +27,15 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
-      <div>Parts Layout Render</div>
+      {parts.map((part) => {
+        const partProps = {
+          key: part.id,
+          id: part.id,
+          type: part.type,
+          model: JSON.stringify(part.custom),
+        };
+        return React.createElement(unknownTag, partProps);
+      })}
     </NotificationContext.Provider>
   ) : null;
 };

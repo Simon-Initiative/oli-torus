@@ -6,6 +6,7 @@ import { selectCurrentActivityTree } from '../../../delivery/store/features/grou
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
+import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import KonvaStage from './KonvaStage';
 
 const EditingCanvas: React.FC = () => {
@@ -63,7 +64,7 @@ const EditingCanvas: React.FC = () => {
   return (
     <React.Fragment>
       <section className="aa-stage">
-        {currentActivity && (
+        {/* {currentActivity && (
           <KonvaStage
             key={currentActivity.id}
             selected={[currentPartSelection]}
@@ -73,7 +74,15 @@ const EditingCanvas: React.FC = () => {
             onSelectionChange={handleSelectionChanged}
             onPositionChange={handlePositionChanged}
           />
-        )}
+        )} */}
+        {currentActivityTree &&
+          currentActivityTree.map((activity) => (
+            <AuthoringActivityRenderer
+              key={activity.id}
+              activityModel={activity}
+              editMode={false}
+            />
+          ))}
       </section>
     </React.Fragment>
   );
