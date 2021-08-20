@@ -232,14 +232,10 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   }, [inputNumberValue]);
 
   return ready ? (
-    <div
-      data-janus-type={props.type}
-      className={`number-input ${cssClass}`}
-      style={inputNumberDivStyles}
-    >
+    <div className={`number-input`}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={id} className="inputNumberLabel">
+          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
             {label.length > 0 ? label : ''}
           </label>
           <br />
@@ -249,7 +245,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         type="number"
         disabled={!enabled}
         onChange={handleOnChange}
-        id={id}
+        id={`${id}-number-input`}
         min={minValue}
         max={maxValue}
         className={`${customCssClass} ${showIncrementArrows ? '' : 'hideIncrementArrows'}`}

@@ -190,12 +190,12 @@ const MultiLineTextInput: React.FC<any> = (props) => {
 
   // Set up the styles
   const wrapperStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
   };
   const inputStyles: CSSProperties = {
     width,
@@ -245,7 +245,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
   return ready ? (
     <div
       data-janus-type={props.type}
-      className={`long-text-input ${cssClass}`}
+      className={`long-text-input`}
       style={wrapperStyles}
     >
       <label

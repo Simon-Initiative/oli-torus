@@ -209,12 +209,12 @@ const Popup: React.FC<any> = (props) => {
   }, [props.notify]);
 
   const popupStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
   };
 
   // Toggle popup open/close
@@ -266,8 +266,11 @@ const Popup: React.FC<any> = (props) => {
       },${config?.palette?.fillAlpha})`;
     }
   }
-  popupModalStyles.left = config?.x ? config.x : 0; // adding the previous logic done for Pop-up and feedback.
-  popupModalStyles.top = config?.y ? config.y : 0; // adding the previous logic done for Pop-up and feedback.
+  // position is an offset from the parent element now
+  const modalX = (config?.x || 0) - x;
+  const modalY = (config?.y || 0) - y;
+  popupModalStyles.left = modalX;
+  popupModalStyles.top = modalY;
   popupModalStyles.zIndex = config?.z ? config?.z : 1000;
   popupModalStyles.height = config?.height;
   popupModalStyles.overflow = 'hidden';

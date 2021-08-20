@@ -107,7 +107,6 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           type={multipleSelection ? 'checkbox' : 'radio'}
           value={val}
           disabled={disabled}
-          className="input_30cc60b8-382a-470c-8cd9-908348c58ebe"
           checked={selected}
           onChange={handleChanged}
         />
@@ -409,11 +408,12 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
 
   // Set up the styles
   const styles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
-    zIndex: z,
+    zIndex: z, */
+    width,
   };
   if (overrideHeight) {
     styles.height = height;
@@ -608,12 +608,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
   };
 
   return ready ? (
-    <div
-      data-janus-type={props.type}
-      id={id}
-      style={styles}
-      className={`mcq-input ${customCssClass}`}
-    >
+    <div style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
         <MCQItem
           index={index}

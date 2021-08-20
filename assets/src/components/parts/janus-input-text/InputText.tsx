@@ -223,14 +223,14 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     [],
   );
 
-  // TODO: MUTATE STATE CHANGES
-
   return ready ? (
-    <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
-      <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
+    <div className={`short-text-input`}>
+      <label htmlFor={`${id}-short-text-input`}>
+        {showLabel && label ? label : <span>&nbsp;</span>}
+      </label>
       <input
         name="janus-input-text"
-        id={id}
+        id={`${id}-short-text-input`}
         type="text"
         placeholder={prompt}
         onChange={handleOnChange}

@@ -190,10 +190,10 @@ const TextFlow: React.FC<any> = (props: any) => {
   } = model;
 
   const styles: any = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
-    zIndex: z,
+    zIndex: z, */
     wordWrap: 'break-word',
     lineHeight: 'inherit',
   };
@@ -249,7 +249,7 @@ const TextFlow: React.FC<any> = (props: any) => {
   }
 
   return ready ? (
-    <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
+    <div data-janus-type={props.type} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}

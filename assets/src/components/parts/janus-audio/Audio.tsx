@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import {
   NotificationType,
   subscribeToNotification,
@@ -216,12 +215,12 @@ const Audio: React.FC<any> = (props) => {
   const [audioAutoPlay, setAudioAutoPlay] = useState(autoPlay || false);
   const [audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
   const audioStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
@@ -353,8 +352,6 @@ const Audio: React.FC<any> = (props) => {
 
   return ready ? (
     <audio
-      data-part-component-type={props.type}
-      className={classes}
       style={audioStyles}
       autoPlay={audioAutoPlay}
       loop={audioEnableReplay}

@@ -154,12 +154,12 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   } = model;
 
   const dropdownContainerStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     // height,
-    zIndex: z,
+    zIndex: z, */
   };
   if (palette) {
     dropdownContainerStyles.borderWidth = `${
@@ -345,13 +345,13 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   };
 
   return ready ? (
-    <div data-janus-type={props.type} className="dropdown-input" style={dropdownContainerStyles}>
-      <label htmlFor={id}>{showLabel && label ? label : ''}</label>
+    <div className="dropdown-input" style={dropdownContainerStyles}>
+      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
       <select
         style={dropDownStyle}
-        id={id}
+        id={`${id}-select`}
         value={selection}
-        className={'dropdown ' + cssClass}
+        className={'dropdown '}
         onChange={handleChange}
         disabled={!enabled}
       >

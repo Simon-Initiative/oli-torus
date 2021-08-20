@@ -311,13 +311,7 @@ const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (p
   } = model;
 
   const styles: CSSProperties = {
-    position: 'absolute',
-    top: y,
-    left: x,
-    width,
-    height,
     display: visible ? 'block' : 'none',
-    zIndex: z,
   };
 
   const janusButtonStyle: CSSProperties = {

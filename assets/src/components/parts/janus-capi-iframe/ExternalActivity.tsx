@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -255,9 +254,9 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
 
   const externalActivityStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: frameY,
-    left: frameX,
+    left: frameX, */
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
@@ -896,10 +895,7 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   return initStateReceived ? (
     <iframe
-      data-part-component-type={props.type}
-      id={id}
       ref={frameRef}
-      className={customCssClass}
       style={externalActivityStyles}
       title={title}
       src={frameSrc}

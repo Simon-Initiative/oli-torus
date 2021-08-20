@@ -194,12 +194,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   } = model;
 
   const styles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     width: `${width}px`,
     top: `${y}px`,
     left: `${x}px`,
     height: `${height}px`,
-    zIndex: z,
+    zIndex: z, */
     flexDirection: model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {

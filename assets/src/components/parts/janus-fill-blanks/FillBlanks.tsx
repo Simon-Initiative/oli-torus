@@ -1,4 +1,4 @@
-/* eslint-disable react/prop-types */
+
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
 import { usePrevious } from '../../hooks/usePrevious';
@@ -88,12 +88,12 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   );
   const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
     borderRadius: '5px',
     fontFamily: 'revert',
   };
@@ -465,9 +465,8 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
   );
   return (
     <div
-      data-janus-type={props.type}
       style={wrapperStyles}
-      className={`fib-container ${customCssClass}`}
+      className={`fib-container`}
       ref={fibContainer}
     >
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>

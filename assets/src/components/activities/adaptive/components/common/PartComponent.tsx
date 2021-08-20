@@ -77,15 +77,28 @@ const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
       });
     };
   }, []);
+
   const compStyles: CSSProperties = {
     display: 'block',
   };
+
+  if (props.model) {
+    compStyles.position = 'absolute';
+    compStyles.top = props.model.y;
+    compStyles.left = props.model.x;
+    compStyles.zIndex = props.model.z || 0;
+    compStyles.width = props.model.width;
+
+    // compStyles.height = props.model.height;
+  }
+
   const webComponentProps = {
     ref,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
     style: compStyles,
+    class: props.model.customCssClass || '',
   };
 
   let wcTagName = props.type;
