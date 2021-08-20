@@ -6,8 +6,6 @@ defmodule Oli.PublishingTest do
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ActivityEditor
@@ -182,7 +180,7 @@ defmodule Oli.PublishingTest do
 
       # original publication should now be published
       assert published.id == publication.id
-      assert published.published == true
+      assert published.published != nil
     end
 
     test "publish_project/1 creates a new working unpublished publication for a project",
@@ -283,39 +281,6 @@ defmodule Oli.PublishingTest do
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
       assert pub.id == publication.id
       assert project.slug == project_slug
-    end
-
-    test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
-         %{project: project} do
-      institution = institution_fixture()
-
-      {:ok, original_publication} = Publishing.publish_project(project)
-
-      {:ok, %Section{id: section_id}} =
-        Sections.create_section(%{
-          timezone: "US/Central",
-          title: "title",
-          context_id: "some-context-id",
-          institution_id: institution.id,
-          base_project_id: project.id
-        })
-        |> then(fn {:ok, section} -> section end)
-        |> Sections.create_section_resources(original_publication)
-
-      assert [%Section{id: ^section_id}] =
-               Sections.get_sections_by_publication(original_publication)
-
-      {:ok, original_publication} = Publishing.publish_project(project)
-
-      # update all sections to use the new publication
-      new_publication = Publishing.working_project_publication(project.slug)
-      Publishing.update_all_section_publications(project, new_publication)
-
-      # section associated with new publication...
-      assert [%Section{id: ^section_id}] = Sections.get_sections_by_publication(new_publication)
-
-      # ...and removed from the old one
-      assert [] = Sections.get_sections_by_publication(original_publication)
     end
 
     test "diff_publications/2 returns the changes between 2 publications",

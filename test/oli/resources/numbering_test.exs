@@ -18,7 +18,7 @@ defmodule Oli.Resources.NumberingTest do
         join: c in "projects",
         on: p.project_id == c.id,
         where:
-          p.published == false and
+          is_nil(p.published) and
             (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
             c.slug == ^project_slug,
         select: rev

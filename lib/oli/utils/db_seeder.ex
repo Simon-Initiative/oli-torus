@@ -78,7 +78,6 @@ defmodule Oli.Seeder do
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })
@@ -193,7 +192,6 @@ defmodule Oli.Seeder do
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })
@@ -474,7 +472,6 @@ defmodule Oli.Seeder do
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })

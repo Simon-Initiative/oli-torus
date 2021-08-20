@@ -501,9 +501,11 @@ defmodule Oli.Delivery.Sections do
       inner_lateral_join:
         latest_pub in subquery(
           from(p in Publication,
-            where: p.project_id == parent_as(:spp).project_id and p.published == true,
+            where: p.project_id == parent_as(:spp).project_id and not is_nil(p.published),
             group_by: p.id,
-            order_by: [desc: p.updated_at],
+            # secondary sort by id is required here to guarantee a deterministic latest record
+            # (esp. important in unit tests where subsequent publications can be published instantly)
+            order_by: [desc: p.published, desc: p.id],
             limit: 1
           )
         ),

@@ -3,7 +3,7 @@ defmodule Oli.Publishing.Publication do
   import Ecto.Changeset
 
   schema "publications" do
-    field :published, :boolean, default: false
+    field :published, :utc_datetime
     field :description, :string
     field :major, :integer, default: 0
     field :minor, :integer, default: 0
@@ -19,6 +19,6 @@ defmodule Oli.Publishing.Publication do
   def changeset(publication, attrs \\ %{}) do
     publication
     |> cast(attrs, [:published, :root_resource_id, :project_id])
-    |> validate_required([:root_resource_id, :published, :project_id])
+    |> validate_required([:root_resource_id, :project_id])
   end
 end

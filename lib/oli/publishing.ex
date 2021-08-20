@@ -63,7 +63,7 @@ defmodule Oli.Publishing do
           join: p in Oli.Publishing.Publication,
           on: p.id == m.publication_id,
           where:
-            p.published == false and m.resource_id in ^resource_ids and
+            is_nil(p.published) and m.resource_id in ^resource_ids and
               p.project_id == ^project_id,
           select: rev
       )
@@ -97,17 +97,18 @@ defmodule Oli.Publishing do
   def available_publications() do
     subquery =
       from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-        where: t.published == true,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
         group_by: t.project_id
 
     query =
       from pub in Publication,
         join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: pub.published == true and proj.visibility == :global and proj.status == :active,
+        where:
+          not is_nil(pub.published) and proj.visibility == :global and proj.status == :active,
         preload: [:project],
         distinct: true,
         select: pub
@@ -118,21 +119,21 @@ defmodule Oli.Publishing do
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
       from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-        where: t.published == true,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
         group_by: t.project_id
 
     query =
       from pub in Publication,
         join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
         join: proj in Project,
         on: pub.project_id == proj.id,
         left_join: a in assoc(proj, :authors),
         left_join: v in ProjectVisibility,
         on: proj.id == v.project_id,
         where:
-          pub.published == true and proj.status == :active and
+          not is_nil(pub.published) and proj.status == :active and
             (a.id == ^author.id or proj.visibility == :global or
                (proj.visibility == :selected and
                   (v.author_id == ^author.id or v.institution_id == ^institution.id))),
@@ -156,7 +157,7 @@ defmodule Oli.Publishing do
   def get_unpublished_publication_id!(project_id) do
     Repo.one(
       from p in Publication,
-        where: p.project_id == ^project_id and p.published == false,
+        where: p.project_id == ^project_id and is_nil(p.published),
         select: p.id
     )
   end
@@ -198,7 +199,7 @@ defmodule Oli.Publishing do
       from pub in Publication,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: proj.slug == ^project_slug and pub.published == false,
+        where: proj.slug == ^project_slug and is_nil(pub.published),
         select: pub
     )
   end
@@ -218,8 +219,10 @@ defmodule Oli.Publishing do
       from pub in Publication,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: proj.slug == ^project_slug and pub.published == true,
-        order_by: [desc: pub.updated_at],
+        where: proj.slug == ^project_slug and not is_nil(pub.published),
+        # secondary sort by id is required here to guarantee a deterministic latest record
+        # (esp. important in unit tests where subsequent publications can be published instantly)
+        order_by: [desc: pub.published, desc: pub.id],
         limit: 1,
         select: pub
     )
@@ -485,7 +488,6 @@ defmodule Oli.Publishing do
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
              create_publication(%{
-               published: false,
                root_resource_id: active_publication.root_resource_id,
                project_id: active_publication.project_id
              }),
@@ -497,7 +499,8 @@ defmodule Oli.Publishing do
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
            # set the active publication to published
-           {:ok, publication} <- update_publication(active_publication, %{published: true}) do
+           now <- DateTime.utc_now(),
+           {:ok, publication} <- update_publication(active_publication, %{published: now}) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication

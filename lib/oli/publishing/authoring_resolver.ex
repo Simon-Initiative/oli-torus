@@ -86,7 +86,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: c in Project,
         on: p.project_id == c.id,
         where:
-          p.published == false and m.resource_id == p.root_resource_id and
+          is_nil(p.published) and m.resource_id == p.root_resource_id and
             c.slug == ^project_slug,
         select: rev
       )
@@ -135,7 +135,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     from(p in Publication,
       join: c in Project,
       on: p.project_id == c.id,
-      where: p.published == false and c.slug == ^project_slug,
+      where: is_nil(p.published) and c.slug == ^project_slug,
       select: p.id
     )
   end
@@ -155,7 +155,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       join revisions as rev on rev.id = m.revision_id
       where c.slug = '#{project_slug}'
         and rev.deleted is false
-        and p.published = false
+        and p.published is NULL
         and rev.children && ARRAY[#{ids}]
       """
 

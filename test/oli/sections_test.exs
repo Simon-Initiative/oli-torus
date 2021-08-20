@@ -293,53 +293,95 @@ defmodule Oli.SectionsTest do
       assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
+  end
+
+  describe "section updates" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
 
     test "check_for_available_publication_updates/1 returns a list of available updates", %{
       author: author,
-      section_1: section,
       project: project,
-      project2: project2,
-      project2_map: project2_map,
-      pub2: pub2
+      container: %{resource: container_resource, revision: container_revision},
+      institution: institution
     } do
+      {:ok, initial_pub} = Publishing.publish_project(project)
+
+      # Create a course section using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
       available_updates = Sections.check_for_available_publication_updates(section)
 
-      assert available_updates |> Enum.count() == 1
-      assert available_updates[project.id].id == pub2.id
+      assert available_updates |> Enum.count() == 0
 
-      # mix in some project2 resources
-      Sections.add_source_project(section, project2.id, project2_map.publication.id)
+      # make some changes to project and publish
+      working_pub = Publishing.working_project_publication(project.slug)
 
-      # verify no updates are returned for project2
-      available_updates = Sections.check_for_available_publication_updates(section)
+      %{resource: p1_new_page1, revision: _revision} =
+        Seeder.create_page("P1 New Page one", working_pub, project, author)
 
-      assert available_updates |> Enum.count() == 1
-      assert available_updates[project.id].id == pub2.id
-
-      # make some changes to project2 and publish
-      proj2_working_pub = Publishing.working_project_publication(project2.slug)
-
-      %{resource: new_page1, revision: _new_revision1} =
-        Seeder.create_page("New Page one", proj2_working_pub, project2, author)
-
-      %{resource: new_page2, revision: _new_revision2} =
-        Seeder.create_page("New Page two", proj2_working_pub, project2, author)
+      %{resource: p1_new_page2, revision: _revision} =
+        Seeder.create_page("P1 New Page two", working_pub, project, author)
 
       _container_revision =
         Seeder.attach_pages_to(
-          [new_page1, new_page2],
-          project2_map.container_resource,
-          project2_map.container_revision,
-          proj2_working_pub
+          [p1_new_page1, p1_new_page2],
+          container_resource,
+          container_revision,
+          working_pub
         )
 
-      {:ok, p2_latest_publication} = Publishing.publish_project(project2)
+      {:ok, latest_publication} = Publishing.publish_project(project)
 
-      # verify project2 shows up in list of updates
+      # verify project published changes show up in list of updates
       available_updates = Sections.check_for_available_publication_updates(section)
 
-      assert available_updates |> Enum.count() == 2
-      assert available_updates[project2.id].id == p2_latest_publication.id
+      assert available_updates |> Enum.count() == 1
+      assert available_updates[project.id].id == latest_publication.id
+
+      # # mix in some project2 resources
+      # Sections.add_source_project(section, project2.id, project2_map.publication.id)
+
+      # # verify no updates are returned for project2
+      # available_updates = Sections.check_for_available_publication_updates(section)
+
+      # assert available_updates |> Enum.count() == 0
+
+      # # make some changes to project2 and publish
+      # proj2_working_pub = Publishing.working_project_publication(project2.slug)
+
+      # %{resource: p2_new_page1, revision: _revision} =
+      #   Seeder.create_page("New Page one", proj2_working_pub, project2, author)
+
+      # %{resource: p2_new_page2, revision: _revision} =
+      #   Seeder.create_page("New Page two", proj2_working_pub, project2, author)
+
+      # _container_revision =
+      #   Seeder.attach_pages_to(
+      #     [p2_new_page1, p2_new_page2],
+      #     project2_map.container_resource,
+      #     project2_map.container_revision,
+      #     proj2_working_pub
+      #   )
+
+      # {:ok, proj2_latest_publication} = Publishing.publish_project(project2)
+
+      # # verify project2 published changes show up in list of updates
+      # available_updates = Sections.check_for_available_publication_updates(section)
+
+      # assert available_updates |> Enum.count() == 1
+      # assert available_updates[project2.id].id == proj2_latest_publication.id
     end
   end
 end

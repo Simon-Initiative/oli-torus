@@ -329,7 +329,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project)
+      {:ok, latest_pub} = Oli.Publishing.publish_project(project)
+      Sections.update_section_project_publication(section, project.id, latest_pub.id)
+      Sections.rebuild_section_resources(section: section, publication: latest_pub)
 
       # Now visit the page again, verifying that we are presented with the prologue page
       conn =

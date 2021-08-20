@@ -30,7 +30,7 @@ defmodule OliWeb.ProjectController do
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
   end
 
-  def unpublished(pub), do: pub.published == false
+  def unpublished(pub), do: pub.published == nil
 
   def resource_editor(conn, _project_params) do
     render(conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor)
