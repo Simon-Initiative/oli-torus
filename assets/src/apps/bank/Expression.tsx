@@ -12,7 +12,10 @@ import { CloseButton } from '../../components/misc/CloseButton';
 export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;
   onChange: (expression: Bank.Expression) => void;
-  hideRemove?: boolean;
+
+  // Controls the mode to allow usage wihin a "fixed" UI
+  // context where the user cannot change the fact or remove the expression
+  fixedFact?: boolean;
 }
 
 const baseFacts = [
@@ -57,6 +60,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
     const updated = Object.assign({}, props.expression, { fact });
 
     // As facts are changed, ensure the operator remains valid for that fact
+
     if (
       operatorsByFact[fact].filter((fo) => fo.operator === props.expression.operator).length === 0
     ) {
@@ -77,8 +81,8 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       </option>
     );
   });
-
-  const operators = operatorsByFact[props.expression.operator.toString()].map(
+  console.log(props.expression);
+  const operators = operatorsByFact[props.expression.fact.toString()].map(
     (factOperator: FactOperator) => {
       return (
         <option
@@ -114,7 +118,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           label: e.friendlyName,
         };
       });
-
+      console.log(props.expression);
       return (
         <ActivityTypeSelection
           selected={props.expression.value as number[]}
@@ -144,14 +148,14 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
     }
   };
 
-  const removeButton = props.hideRemove ? null : (
+  const removeButton = props.fixedFact ? null : (
     <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
   );
 
   return (
     <div>
       <Select
-        editMode={props.editMode}
+        editMode={props.editMode && !props.fixedFact}
         value={props.expression.fact.toString()}
         onChange={(v) => onChangeFact(v)}
       >

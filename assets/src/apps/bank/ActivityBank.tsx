@@ -38,7 +38,7 @@ import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
 import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
-import { LogicBuilder } from './LogicBuilder';
+import { LogicFilter } from './LogicFilter';
 
 const PAGE_SIZE = 5;
 
@@ -59,6 +59,7 @@ type ActivityBankState = {
   logic: BankTypes.Logic;
   totalCount: number;
   editedSlug: Maybe<string>;
+  filterExpressions: BankTypes.Expression[];
 };
 
 // Creates a function that when invoked submits a save request
@@ -70,11 +71,54 @@ function prepareSaveFn(
   return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
 }
 
-// The resource editor
+function defaultFilters() {
+  return [
+    { fact: BankTypes.Fact.objectives, operator: BankTypes.ExpressionOperator.contains, value: [] },
+    { fact: BankTypes.Fact.text, operator: BankTypes.ExpressionOperator.contains, value: '' },
+    { fact: BankTypes.Fact.type, operator: BankTypes.ExpressionOperator.contains, value: [] },
+  ];
+}
+
+function defaultPaging() {
+  return { offset: 0, limit: PAGE_SIZE };
+}
+
+// Take the three fixed filter expressions and convert them to the Logic type.
+// The main goal here is to identify and ignore "empty" expressions and not include those
+// in the result logic.  This allows a "fixed" UI/UX with three expressions that the user can
+// edit (but not add or remove) to filter through banked activities.
+function translateFilterToLogic(expressions: BankTypes.Expression[]): BankTypes.Logic {
+  const nonEmptyExpressions = [];
+
+  if (expressions[0].value.length !== 0) {
+    nonEmptyExpressions.push(expressions[0]);
+  }
+  if (expressions[1].value !== '') {
+    nonEmptyExpressions.push(expressions[1]);
+  }
+  if (expressions[2].value.length !== 0) {
+    nonEmptyExpressions.push(expressions[2]);
+  }
+
+  let conditions = null;
+
+  if (nonEmptyExpressions.length === 1) {
+    conditions = nonEmptyExpressions[0];
+  } else if (nonEmptyExpressions.length > 1) {
+    conditions = {
+      operator: BankTypes.ClauseOperator.all,
+      children: nonEmptyExpressions,
+    };
+  }
+
+  return {
+    conditions,
+  };
+}
+
 export class ActivityBank extends React.Component<ActivityBankProps, ActivityBankState> {
   persistence: Maybe<PersistenceStrategy>;
   editorById: { [id: number]: EditorDesc };
-
   constructor(props: ActivityBankProps) {
     super(props);
 
@@ -85,10 +129,11 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       allObjectives: Immutable.List<Objective>(props.allObjectives),
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
-      paging: { offset: 0, limit: PAGE_SIZE },
+      paging: defaultPaging(),
       totalCount: 0,
       editedSlug: Maybe.nothing<string>(),
       logic: BankTypes.defaultLogic(),
+      filterExpressions: defaultFilters(),
     };
 
     this.editorById = Object.keys(props.editorMap)
@@ -414,15 +459,18 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             editorMap={props.editorMap}
             onAdd={this.onActivityAdd}
           />
-          <LogicBuilder
-            logic={this.state.logic}
+          <LogicFilter
+            expressions={this.state.filterExpressions}
             editMode={true}
             allowText={true}
             projectSlug={props.projectSlug}
             editorMap={props.editorMap}
             allObjectives={this.state.allObjectives}
             onRegisterNewObjective={onRegisterNewObjective}
-            onChange={(logic) => this.setState({ logic })}
+            onChange={(filterExpressions) => {
+              this.setState({ filterExpressions, paging: defaultPaging() });
+              this.fetchActivities(translateFilterToLogic(filterExpressions), defaultPaging());
+            }}
             onRemove={() => true}
           />
           {activities}

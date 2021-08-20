@@ -3,11 +3,10 @@ import * as Immutable from 'immutable';
 import { Typeahead } from 'react-bootstrap-typeahead';
 import guid from 'utils/guid';
 
-
 export type ActivityType = {
   id: number;
   label: string;
-}
+};
 
 export type ActivityTypeSelectionProps = {
   activities: ActivityType[];
@@ -36,12 +35,10 @@ export const ActivityTypeSelection = (props: ActivityTypeSelectionProps) => {
         multiple={props.multiple}
         disabled={!editMode}
         onChange={(updated: (ActivityType & { customOption?: boolean })[]) => {
-
           if (updated.length !== selected.length) {
             const updatedObjectives = updated.map((o) => o.id);
             onEdit(updatedObjectives);
           }
-
         }}
         options={activities}
         allowNew={true}
