@@ -131,7 +131,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     %{project: project, institution: institution, revision1: revision1} =
       Oli.Seeder.base_project_with_resource(author)
 
-    {:ok, publication} = Oli.Publishing.publish_project(project)
+    {:ok, publication} = Oli.Publishing.publish_project(project, :patch, "some changes")
 
     section =
       section_fixture(%{

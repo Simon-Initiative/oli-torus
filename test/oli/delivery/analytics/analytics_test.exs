@@ -18,7 +18,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       |> Seeder.create_section_resources()
       |> SnapshotSeeder.setup_csv(context.path)
 
-    Oli.Publishing.publish_project(seeds.project)
+    Oli.Publishing.publish_project(seeds.project, :patch, "some changes")
 
     {:ok,
      %{

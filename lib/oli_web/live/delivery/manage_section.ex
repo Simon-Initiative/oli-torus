@@ -6,21 +6,26 @@ defmodule OliWeb.Delivery.ManageSection do
       user_role: 2
     ]
 
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
 
-  def mount(_params, session, socket) do
-    %{
-      "section" => section,
-      "current_user" => current_user
-    } = session
+  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
+    # only permit instructor level access
+    if ContextRoles.has_role?(
+         current_user,
+         section.slug,
+         ContextRoles.get_role(:context_instructor)
+       ) do
+      socket =
+        socket
+        |> assign(:section, section)
+        |> assign(:current_user, current_user)
 
-    socket =
-      socket
-      |> assign(:section, section)
-      |> assign(:current_user, current_user)
-
-    {:ok, socket}
+      {:ok, socket}
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
   end
 
   def render(assigns) do

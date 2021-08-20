@@ -7,13 +7,43 @@
       el.html('Copied!');
       setTimeout(() => el.html('<i class="lar la-clipboard"></i> Copy'), 5000);
   });
+
+  <%= if @active_publication_changes do %>
+    const major = <%= @latest_published_publication.major %>;
+    const minor = <%= @latest_published_publication.minor %>;
+    const patch = <%= @latest_published_publication.patch %>;
+    function updateVersionNumber(maj, min, pat) {
+      document.getElementById("version-number").innerHTML = `v${maj}.${min}.${pat}`;
+    }
+
+    $(function() {
+      $('input[type="radio"][name="publish_type[option]"]').on('change', function(e) {
+          console.log(e.target.value);
+          switch(e.target.value) {
+            case 'major':
+              updateVersionNumber(major + 1, 0, 0);
+              break;
+            case 'minor':
+              updateVersionNumber(major, minor + 1, 0);
+              break;
+            case 'patch':
+              updateVersionNumber(major, minor, patch + 1);
+              break;
+            default:
+          }
+      });
+
+      // default selection is patch
+      updateVersionNumber(major, minor, patch + 1)
+    });
+  <% end %>
 </script>
 
 <div class="publish container">
 
   <div class="row">
     <div class="col-12">
-      <p>When you are satisfied with your course, publish it to give students and instructors access to the latest changes.</p>
+      <p>Publish your project to give instructors access to the latest changes.</p>
 
       <%= case {@has_changes, @active_publication_changes} do %>
         <% {true, nil} -> %>
@@ -23,12 +53,18 @@
         <% {false, _} -> %>
           <div class="my-3">
             Last published <strong><%= @latest_published_publication.published |> Timex.format!("{relative}", :relative) %></strong>.
-            There are <strong>no changes</strong> since last publish.
+            There are <strong>no changes</strong> since the latest publication
+
+            <%= case @latest_published_publication do
+              %{major: major, minor: minor, patch: patch} ->
+                "v#{major}.#{minor}.#{patch}."
+            end %>
+
           </div>
         <% {true, changes} -> %>
           <div class="my-3">Last published <strong><%= @latest_published_publication.published |> Timex.format!("{relative}", :relative) %></strong>.
           <% change_count =  Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) |> Enum.count %>
-          There <%= if change_count == 1 do "is" else "are" end %> <strong><%= change_count %></strong> <%= if change_count == 1 do "change" else "changes" end %> since last publish.</div>
+            There <%= if change_count == 1 do "is" else "are" end %> <strong><%= change_count %></strong> pending <%= if change_count == 1 do "change" else "changes" end %> since last publish:</div>
           <%= for {status, %{revision: revision}}  <- Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) do %>
             <p>
               <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
@@ -38,13 +74,53 @@
       <% end %>
 
       <div class="my-4">
-        <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn _ -> %>
-          <%# <%= hidden_input f, "project_", value: "" %>
+        <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn f -> %>
+
+          <%= if @has_changes && @active_publication_changes do %>
+            <div class="form-group">
+              <%= textarea f, :description, class: "form-control", required: true, rows: 3, placeholder: "Enter a short description of these changes..." %>
+            </div>
+
+            <div class="form-check form-switch">
+              <div class="form-group">
+                <%= label class: "form-check-label" do %>
+                  <%= radio_button :publish_type, :option, "major", class: "form-check-input" %>
+                  <div class="d-flex align-items-center">
+                    <p>Major</p>
+                  </div>
+                  <small>Changes alter the structure of materials or learning model. Major updates may only be appropriate for new course sections.</small>
+                <% end %>
+              </div>
+              <div class="form-group">
+                <%= label class: "form-check-label" do %>
+                  <%= radio_button :publish_type, :option, "minor", class: "form-check-input" %>
+                  <p>Minor</p>
+                  <small>Changes include small portions of reworked materials. Minor updates can safely be applied to existing course sections.</small>
+                <% end %>
+              </div>
+              <div class="form-group">
+                <%= label class: "form-check-label" do %>
+                  <%= radio_button :publish_type, :option, "patch", class: "form-check-input", checked: true %>
+                  <p>Patch</p>
+                  <small>Changes are minimal, such as grammar and spelling fixes. Patch updates are recommended for all existing course sections.</small>
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <%= if @active_publication_changes == nil do %>
+              <%= hidden_input f, :description, value: "Initial publish" %>
+            <% end %>
+          <% end %>
+
           <%= submit "Publish",
             id: "button-publish",
             class: "btn btn-primary",
             disabled: !@has_changes,
             phx_disable_with: "Publishing..." %>
+
+          <%= if @has_changes && @active_publication_changes do %>
+            <span id="version-number" class="ml-2"><span>
+          <% end %>
         <% end %>
       </div>
 

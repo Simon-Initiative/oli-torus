@@ -1,28 +1,33 @@
 defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
 
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
 
-  def mount(_params, session, socket) do
-    %{
-      "section" => section,
-      "current_user" => current_user
-    } = session
+  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
+    # only permit instructor level access
+    if ContextRoles.has_role?(
+         current_user,
+         section.slug,
+         ContextRoles.get_role(:context_instructor)
+       ) do
+      updates = Sections.check_for_available_publication_updates(section)
 
-    updates = Sections.check_for_available_publication_updates(section)
+      socket =
+        socket
+        |> assign(:section, section)
+        |> assign(:current_user, current_user)
+        |> assign(:updates, updates)
+        |> assign(:modal, nil)
+        |> assign(:selection, nil)
 
-    socket =
-      socket
-      |> assign(:section, section)
-      |> assign(:current_user, current_user)
-      |> assign(:updates, updates)
-      |> assign(:modal, nil)
-      |> assign(:selection, nil)
-
-    {:ok, socket}
+      {:ok, socket}
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
   end
 
   def render(assigns) do
@@ -39,7 +44,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
       <h2><%= dgettext("available_updates", "Available Updates") %></h2>
 
-      <p class="my-2">
+      <p class="my-4">
         <%= case Enum.count(updates) do %>
             <% 0 -> %>
               There are <b>no updates</b> available for this section.
@@ -56,8 +61,10 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
     <%= case @modal do %>
       <% :apply_update -> %>
-        <%= live_component ManualModal, title: "Apply Update", modal_id: "applyUpdate", ok_action: "apply_update", ok_label: "Apply" do %>
-          <p>Are you sure you want to apply this update to your section?</p>
+        <%= live_component ManualModal, title: "Update #{version_number(@selection.current_publication)} to #{version_number(@selection.newest_publication)}", modal_id: "applyUpdate", ok_action: "apply_update", ok_label: "Apply Update" do %>
+          <p>
+            Do you want to apply this update?
+          </p>
 
           <%= case Enum.find(updates, fn {id, _} -> id == @selection.project_id end) do %>
             <% {_, publication} -> %>
@@ -81,7 +88,9 @@ defmodule OliWeb.Delivery.ManageUpdates do
             <% end %>
           </p>
 
-          <p><b>This action cannot be undone.</b></p>
+          <div class="alert alert-warning" role="alert">
+            <b>This action cannot be undone.</b>
+          </div>
         <% end %>
 
       <% _ -> %>
@@ -101,7 +110,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
               <button type="button" class="btn btn-sm btn-primary"
                 phx-click="show_apply_update_modal"
                 phx-value-project-id="<%= project_id %>"
-                phx-value-publication-id="<%= publication.id %>">Apply Update</button>
+                phx-value-publication-id="<%= publication.id %>">View Update</button>
             </div>
           </div>
         <% end) %>
@@ -109,14 +118,28 @@ defmodule OliWeb.Delivery.ManageUpdates do
     """
   end
 
-  defp render_update_details(assigns, %{project: project} = _publication) do
+  defp render_update_details(
+         assigns,
+         %{
+           published: published,
+           description: description,
+           major: major,
+           minor: minor,
+           patch: patch,
+           project: project
+         } = _publication
+       ) do
     ~L"""
     <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1"><%= project.title %> <small>1.1</small></h5>
-      <small>Published 3 days ago</small>
+      <h5 class="mb-1"><%= project.title %> <small><%= "#{major}.#{minor}.#{patch}" %></small></h5>
+      <small>Published <%= Timex.format!(published, "{relative}", :relative) %></small>
     </div>
-    <p class="mb-1"><%= project.description %></p>
+    <p class="mb-1"><%= description %></p>
     """
+  end
+
+  defp version_number(publication) do
+    "#{publication.major}.#{publication.minor}.#{publication.patch}"
   end
 
   # handle any cancel events a modal might generate from being closed
@@ -140,6 +163,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
      assign(socket,
        modal: :apply_update,
        selection: %{
+         current_publication: current_publication,
+         newest_publication: newest_publication,
          project_id: String.to_integer(project_id),
          publication_id: String.to_integer(publication_id),
          changes: changes

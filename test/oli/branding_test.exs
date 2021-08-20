@@ -89,7 +89,7 @@ defmodule Oli.BrandingTest do
       registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
       deployment = deployment_fixture(%{registration_id: registration.id})
 
-      {:ok, publication} = Oli.Publishing.publish_project(project)
+      {:ok, publication} = Oli.Publishing.publish_project(project, :patch, "some changes")
 
       section =
         section_fixture(%{

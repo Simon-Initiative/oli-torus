@@ -130,7 +130,7 @@ defmodule OliWeb.DeliveryControllerTest do
       author: author,
       institution: institution
     } do
-      Publishing.publish_project(project)
+      Publishing.publish_project(project, :patch, "some changes")
 
       delete(conn, Routes.project_path(conn, :delete, project), title: project.title)
 

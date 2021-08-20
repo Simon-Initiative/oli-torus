@@ -18,7 +18,15 @@ defmodule Oli.Publishing.Publication do
   @doc false
   def changeset(publication, attrs \\ %{}) do
     publication
-    |> cast(attrs, [:published, :root_resource_id, :project_id])
+    |> cast(attrs, [
+      :published,
+      :description,
+      :major,
+      :minor,
+      :patch,
+      :root_resource_id,
+      :project_id
+    ])
     |> validate_required([:root_resource_id, :project_id])
   end
 end

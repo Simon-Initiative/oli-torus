@@ -92,6 +92,7 @@ defmodule OliWeb.ProjectController do
       active: :publish,
 
       # publish
+      unpublished: active_publication_changes == nil,
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,
       has_changes: has_changes,
@@ -112,9 +113,24 @@ defmodule OliWeb.ProjectController do
     |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
-  def publish_active(conn, _params) do
+  def publish_active(conn, params) do
     project = conn.assigns.project
-    Publishing.publish_project(project)
+
+    publish_type =
+      case params do
+        %{"publish_type" => %{"option" => "major"}} ->
+          :major
+
+        %{"publish_type" => %{"option" => "minor"}} ->
+          :minor
+
+        %{"publish_type" => %{"option" => "patch"}} ->
+          :patch
+      end
+
+    description = params["description"]
+
+    Publishing.publish_project(project, publish_type, description)
 
     conn
     |> put_flash(:info, "Publish Successful!")

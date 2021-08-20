@@ -10,6 +10,7 @@ defmodule Oli.Publishing do
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
+  alias Oli.Publishing
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = working_project_publication(project_slug).id
@@ -481,26 +482,41 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}) :: {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project) do
+  @spec publish_project(%Project{}, atom(), String.t()) ::
+          {:error, String.t()} | {:ok, %Publication{}}
+  def publish_project(project, publish_type, description) do
     Repo.transaction(fn ->
       with active_publication <- working_project_publication(project.slug),
+           latest_published_publication <-
+             Publishing.get_latest_published_publication_by_slug(project.slug),
+           now <- DateTime.utc_now(),
+           {major, minor, patch} <- uptick_version(latest_published_publication, publish_type),
+
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
              create_publication(%{
                root_resource_id: active_publication.root_resource_id,
                project_id: active_publication.project_id
              }),
+
            # Locks must be released so that users who have acquired a resource lock
            # will be forced to re-acquire the lock with the new publication and
            # create a new revision under that publication
            _ <- Locks.release_all(active_publication.id),
+
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+
            # set the active publication to published
-           now <- DateTime.utc_now(),
-           {:ok, publication} <- update_publication(active_publication, %{published: now}) do
+           {:ok, publication} <-
+             update_publication(active_publication, %{
+               published: now,
+               description: description,
+               major: major,
+               minor: minor,
+               patch: patch
+             }) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -508,6 +524,23 @@ defmodule Oli.Publishing do
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  defp uptick_version(latest_published_publication, publish_type) do
+    case {publish_type, latest_published_publication} do
+      # no previous published publication, initialize version number to 0.0.0
+      {_, nil} ->
+        {0, 0, 0}
+
+      {:major, %{major: major}} ->
+        {major + 1, 0, 0}
+
+      {:minor, %{major: major, minor: minor}} ->
+        {major, minor + 1, 0}
+
+      {:patch, %{major: major, minor: minor, patch: patch}} ->
+        {major, minor, patch + 1}
+    end
   end
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
