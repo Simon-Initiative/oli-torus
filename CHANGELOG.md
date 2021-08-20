@@ -3,6 +3,11 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.12.9 (2021-08-20)
+
+### Bug Fixes
 
 - Fix an issue where unlimited collaborator emails could be sent at once
 
