@@ -32,16 +32,19 @@ const Unknown: React.FC<PartComponentProps<any>> = (props) => {
   );
 };
 
-export const tagName = 'unknown-component-authoring';
+export const tagName = 'unknown-component';
 
-register(Unknown, tagName, ['id', 'type', 'model'], {
-  shadow: true,
-  customEvents: { ...customEvents },
-  attrs: {
-    model: {
-      json: true,
+// only register once since this might be shared with another part component (popup)
+if (!customElements.get(tagName)) {
+  register(Unknown, tagName, ['id', 'type', 'model'], {
+    shadow: true,
+    customEvents: { ...customEvents },
+    attrs: {
+      model: {
+        json: true,
+      },
     },
-  },
-});
+  });
+}
 
 export default Unknown;

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
-import { tagName as unknownTag } from './components/authoring/UnknownComponent';
+import PartComponent from './components/common/PartComponent';
 import { AdaptiveModelSchema } from './schema';
 
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
@@ -29,12 +29,16 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     <NotificationContext.Provider value={pusher}>
       {parts.map((part) => {
         const partProps = {
-          key: part.id,
           id: part.id,
-          type: part.type,
-          model: JSON.stringify(part.custom),
+          type: `${part.type}-foo`,
+          model: part.custom,
+          state: {},
+          onInit: async () => null,
+          onReady: async () => null,
+          onSave: async () => null,
+          onSubmit: async () => null,
         };
-        return React.createElement(unknownTag, partProps);
+        return <PartComponent key={part.id} {...partProps} />;
       })}
     </NotificationContext.Provider>
   ) : null;

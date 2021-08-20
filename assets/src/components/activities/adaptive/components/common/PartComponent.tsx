@@ -1,13 +1,14 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useRef, useState, CSSProperties } from 'react';
+import { PartComponentProps } from 'components/parts/types/parts';
+import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
 } from '../../../../../apps/delivery/components/NotificationContext';
-import Unknown from './UnknownComponent';
+import { tagName as UnknownTag } from './UnknownPart';
 
-const WebComponent: React.FC<any> = (props) => {
+const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
   // TODO: build from configuration instead
@@ -81,22 +82,19 @@ const WebComponent: React.FC<any> = (props) => {
   };
   const webComponentProps = {
     ref,
-    id: props.id,
-    type: props.type,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
     style: compStyles,
   };
 
-  const wcTagName = props.type;
+  let wcTagName = props.type;
   if (!wcTagName || !customElements.get(wcTagName)) {
-    const unknownProps = { ...webComponentProps, ref: undefined };
-    return <Unknown {...unknownProps} />;
+    wcTagName = UnknownTag;
   }
 
   // don't render until we're listening because otherwise the init event will post too fast
   return listening ? React.createElement(wcTagName, webComponentProps) : null;
 };
 
-export default WebComponent;
+export default PartComponent;
