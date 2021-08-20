@@ -89,6 +89,8 @@ const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
     compStyles.zIndex = props.model.z || 0;
     compStyles.width = props.model.width;
 
+    // almost always height is meant to be auto, when not we'll have to let
+    // the component handle it
     // compStyles.height = props.model.height;
   }
 

@@ -61,6 +61,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   disabled,
   index,
   overrideHeight,
+  columns = 1,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -74,7 +75,11 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       ),
     );
     if (hasImages || hasBlankSpans) {
-      mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      if (columns === 1) {
+        mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      } else {
+        mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
+      }
       mcqItemStyles.position = `absolute`;
 
       if (index !== 0) {
@@ -607,6 +612,17 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     return selected;
   };
 
+  let columns = 1;
+  if (customCssClass === 'two-columns') {
+    columns = 2;
+  }
+  if (customCssClass === 'three-columns') {
+    columns = 3;
+  }
+  if (customCssClass === 'four-columns') {
+    columns = 4;
+  }
+
   return ready ? (
     <div style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
@@ -627,6 +643,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
           overrideHeight={overrideHeight}
           disabled={!enabled}
           multipleSelection={multipleSelection}
+          columns={columns}
         />
       ))}
     </div>
