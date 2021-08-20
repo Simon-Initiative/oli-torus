@@ -6,7 +6,6 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
@@ -498,10 +497,7 @@ defmodule Oli.Publishing do
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
            # set the active publication to published
-           {:ok, publication} <- update_publication(active_publication, %{published: true}),
-           # push forward all existing sections to this newly published publication, and
-           # error if a failure occurs with `insert!`
-           _ <- update_all_section_publications(project, active_publication) do
+           {:ok, publication} <- update_publication(active_publication, %{published: true}) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -522,18 +518,6 @@ defmodule Oli.Publishing do
         select: mapping,
         preload: [:publication, :revision]
     )
-  end
-
-  @doc """
-  Updates all sections to use the latest publication for a given project
-  """
-  def update_all_section_publications(%Project{id: project_id}, %Publication{
-        id: publication_id
-      }) do
-    from(spp in SectionsProjectsPublications,
-      where: spp.project_id == ^project_id
-    )
-    |> Repo.update_all(set: [publication_id: publication_id])
   end
 
   def diff_publications(p1, p2) do

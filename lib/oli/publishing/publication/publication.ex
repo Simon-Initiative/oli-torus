@@ -4,6 +4,11 @@ defmodule Oli.Publishing.Publication do
 
   schema "publications" do
     field :published, :boolean, default: false
+    field :description, :string
+    field :major, :integer, default: 0
+    field :minor, :integer, default: 0
+    field :patch, :integer, default: 0
+
     belongs_to :root_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
 

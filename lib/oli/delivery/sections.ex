@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
+  alias Oli.Authoring.Course.Project
 
   @doc """
   Enrolls a user in a course section
@@ -173,18 +174,6 @@ defmodule Oli.Delivery.Sections do
     )
     |> Repo.one!()
   end
-
-  @doc """
-  Gets a section's publication
-  Raises `Ecto.NoResultsError` if the Section does not exist.
-  ## Examples
-      iex> get_section_publication!(123)
-      %Publication{}
-      iex> get_section_publication!(456)
-      ** (Ecto.NoResultsError)
-  """
-  def get_section_publication!(id),
-    do: (Repo.get!(Section, id) |> Repo.preload([:publication])).publication
 
   @doc """
   Gets a single section by query parameter
@@ -412,12 +401,7 @@ defmodule Oli.Delivery.Sections do
     update_section(section, %{root_section_resource_id: root_section_resource_id})
     |> case do
       {:ok, section} ->
-        # create a section project publication association
-        Ecto.build_assoc(section, :section_project_publications, %{
-          project_id: project_id,
-          publication_id: publication_id
-        })
-        |> Repo.insert!()
+        add_source_project(section, project_id, publication_id)
 
         {:ok, Repo.preload(section, [:root_section_resource, :section_project_publications])}
 
@@ -500,5 +484,79 @@ defmodule Oli.Delivery.Sections do
     |> Repo.delete_all()
 
     create_section_resources(section, publication)
+  end
+
+  @doc """
+  Returns a map of project_id to the latest available publication for that project
+  if a newer publication is available.
+  """
+  def check_for_available_publication_updates(%Section{id: section_id}) do
+    from(spp in SectionsProjectsPublications,
+      as: :spp,
+      where: spp.section_id == ^section_id,
+      join: current_pub in Publication,
+      on: current_pub.id == spp.publication_id,
+      join: proj in Project,
+      on: proj.id == spp.project_id,
+      inner_lateral_join:
+        latest_pub in subquery(
+          from(p in Publication,
+            where: p.project_id == parent_as(:spp).project_id and p.published == true,
+            group_by: p.id,
+            order_by: [desc: p.updated_at],
+            limit: 1
+          )
+        ),
+      preload: [:project],
+      select: {spp, current_pub, latest_pub}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {spp, current_pub, latest_pub}, acc ->
+      if current_pub.id != latest_pub.id do
+        latest_pub =
+          latest_pub
+          |> Map.put(:project, spp.project)
+
+        Map.put(acc, spp.project_id, latest_pub)
+      else
+        acc
+      end
+    end)
+  end
+
+  @doc """
+  Adds a source project to the section pinned to the specified publication.
+  """
+  def add_source_project(section, project_id, publication_id) do
+    # create a section project publication association
+    Ecto.build_assoc(section, :section_project_publications, %{
+      project_id: project_id,
+      publication_id: publication_id
+    })
+    |> Repo.insert!()
+  end
+
+  def get_current_publication(section_id, project_id) do
+    from(spp in SectionsProjectsPublications,
+      join: pub in Publication,
+      on: spp.publication_id == pub.id,
+      where: spp.section_id == ^section_id and spp.project_id == ^project_id,
+      select: pub
+    )
+    |> Repo.one!()
+  end
+
+  @doc """
+  Updates a single project in a section to use the specified publication
+  """
+  def update_section_project_publication(
+        %Section{id: section_id},
+        project_id,
+        publication_id
+      ) do
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id == ^section_id and spp.project_id == ^project_id
+    )
+    |> Repo.update_all(set: [publication_id: publication_id])
   end
 end

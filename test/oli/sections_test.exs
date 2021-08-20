@@ -5,6 +5,7 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Publishing
 
   describe "enrollments" do
     @valid_attrs %{
@@ -291,6 +292,54 @@ defmodule Oli.SectionsTest do
       # unpublished items do not have section resources created for them
       assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
+    end
+
+    test "check_for_available_publication_updates/1 returns a list of available updates", %{
+      author: author,
+      section_1: section,
+      project: project,
+      project2: project2,
+      project2_map: project2_map,
+      pub2: pub2
+    } do
+      available_updates = Sections.check_for_available_publication_updates(section)
+
+      assert available_updates |> Enum.count() == 1
+      assert available_updates[project.id].id == pub2.id
+
+      # mix in some project2 resources
+      Sections.add_source_project(section, project2.id, project2_map.publication.id)
+
+      # verify no updates are returned for project2
+      available_updates = Sections.check_for_available_publication_updates(section)
+
+      assert available_updates |> Enum.count() == 1
+      assert available_updates[project.id].id == pub2.id
+
+      # make some changes to project2 and publish
+      proj2_working_pub = Publishing.working_project_publication(project2.slug)
+
+      %{resource: new_page1, revision: _new_revision1} =
+        Seeder.create_page("New Page one", proj2_working_pub, project2, author)
+
+      %{resource: new_page2, revision: _new_revision2} =
+        Seeder.create_page("New Page two", proj2_working_pub, project2, author)
+
+      _container_revision =
+        Seeder.attach_pages_to(
+          [new_page1, new_page2],
+          project2_map.container_resource,
+          project2_map.container_revision,
+          proj2_working_pub
+        )
+
+      {:ok, p2_latest_publication} = Publishing.publish_project(project2)
+
+      # verify project2 shows up in list of updates
+      available_updates = Sections.check_for_available_publication_updates(section)
+
+      assert available_updates |> Enum.count() == 2
+      assert available_updates[project2.id].id == p2_latest_publication.id
     end
   end
 end

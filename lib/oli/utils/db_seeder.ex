@@ -71,8 +71,8 @@ defmodule Oli.Seeder do
         children: [],
         content: %{},
         deleted: false,
-        slug: "example_page",
-        title: "Example Page",
+        slug: "root_container",
+        title: "Curriculum",
         resource_id: container_resource.id
       })
 
@@ -270,7 +270,7 @@ defmodule Oli.Seeder do
       |> add_objective_with_children("parent2", [:child4], :parent2)
 
     # Create another project with resources and revisions
-    another_project(map.author, map.institution)
+    project2_map = another_project(map.author, map.institution)
 
     # Publish the current state of our test project:
     {:ok, pub1} = Publishing.publish_project(map.project)
@@ -371,6 +371,8 @@ defmodule Oli.Seeder do
     |> Map.put(:section_1, section_1)
     |> Map.put(:section_2, section_2)
     |> Map.put(:oaf_section_1, oaf_section_1)
+    |> Map.put(:project2, project2_map.project)
+    |> Map.put(:project2_map, project2_map)
   end
 
   def create_section(map) do
