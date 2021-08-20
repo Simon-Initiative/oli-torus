@@ -4,6 +4,7 @@ import {
   SequenceEntryChild,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
+import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
@@ -125,6 +126,10 @@ export const screenUiSchema = {
       classNames: 'col-12',
     },
   },
+  Bank: {
+    'ui:title': 'Question Bank',
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+  }
 };
 
 export const transformScreenModeltoSchema = (
@@ -166,8 +171,8 @@ export const transformScreenModeltoSchema = (
     if (currentSequence?.custom.isBank) {
       schemaData = {
         ...schemaData,
-        bankShowCount: currentSequence.custom.bankShowCount,
-        bankEndTarget: currentSequence.custom.bankEndTarget,
+        bankShowCount: currentSequence.custom.bankShowCount || 1,
+        bankEndTarget: currentSequence.custom.bankEndTarget || 'Next',
       };
     }
     return schemaData;
@@ -206,8 +211,13 @@ export const getScreenSchema = (seq: SequenceEntry<SequenceEntryChild> | null) =
       properties: {
         Size: schema.properties.Size,
         palette: schema.properties.palette,
-        bankShowCount: { type: 'number', title: 'Randomly selects question(s) from the bank' },
-        bankEndTarget: { type: 'string', title: 'When Completed, proceed to' },
+        Bank: {
+          type:'object',
+          properties: {
+            bankShowCount: { type: 'number', title: 'Randomly selects question(s) from the bank' },
+            bankEndTarget: { type: 'string', title: 'When Completed, proceed to' },
+          }
+        }
       },
     };
   }
