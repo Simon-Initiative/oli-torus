@@ -5,9 +5,20 @@
 ### Bug Fixes
 ### Enhancements
 
+## 0.12.9 (2021-08-20)
+
+### Bug Fixes
+
+- Fix an issue where unlimited collaborator emails could be sent at once
+
+### Enhancements
+
+- Add API support for bulk activity updating
+
 ## 0.12.8 (2021-08-11)
 
 ### Bug Fixes
+
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection

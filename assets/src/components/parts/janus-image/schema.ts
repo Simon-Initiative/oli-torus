@@ -17,14 +17,12 @@ export const schema = {
   scaleContent: {
     title: 'Scale Content',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether the image scales responsively',
     default: true,
   },
   lockAspectRatio: {
     title: 'Lock Aspect Ratio',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether image aspect ratio is locked',
     default: true,
   },

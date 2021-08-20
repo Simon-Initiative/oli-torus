@@ -28,6 +28,10 @@ defmodule OliWeb.Api.ActivityController do
       type: :object,
       properties: %{
         title: %Schema{type: :string, description: "Title of this document"},
+        resource_id: %Schema{
+          type: :integer,
+          description: "Resource id of the document, not editable"
+        },
         objectives: %Schema{type: :object, description: "Per part objective mapping"},
         content: %Schema{type: :object, description: "Delivery specific content"},
         authoring: %Schema{
@@ -40,6 +44,30 @@ defmodule OliWeb.Api.ActivityController do
         "title" => "Adaptive Activity Ensemble C",
         "objectives" => %{},
         "content" => %{"items" => ["1", "2"]}
+      }
+    })
+  end
+
+  defmodule BulkDocuments do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Bulk document attributes",
+      description: "The structure of the body of a request for bulk update",
+      type: :object,
+      properties: %{
+        updates: %Schema{type: :list, description: "An array of DocumentAttribute instances"}
+      },
+      required: [],
+      example: %{
+        "updates" => [
+          %{
+            "title" => "Adaptive Activity Ensemble C",
+            "resource_id" => 43223,
+            "objectives" => %{},
+            "content" => %{"items" => ["1", "2"]}
+          }
+        ]
       }
     })
   end
@@ -412,6 +440,53 @@ defmodule OliWeb.Api.ActivityController do
     update = conn.body_params
 
     case ActivityEditor.edit(project_slug, lock_id, activity_id, author.email, update) do
+      {:ok, _} -> json(conn, %{"result" => "success"})
+      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
+      {:error, {:not_found}} -> error(conn, 404, "not found")
+      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
+      {:error, {:lock_not_acquired}} -> error(conn, 400, "lock not acquired")
+      _ -> error(conn, 500, "server error")
+    end
+  end
+
+  @doc """
+  Bulk activity edit endpoint.
+
+  This operation will update one or more of the top-level document attributes (`title`, `objectives`, `content`, `authoring`) for
+  a collection of activity documents.
+
+  This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
+  lock must be specificed via the `lock` query parameter.
+  """
+  @doc parameters: [
+         project: [
+           in: :url,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The project identifier"
+         ],
+         lock: [
+           in: :query,
+           schema: %OpenApiSpex.Schema{type: :string},
+           required: true,
+           description: "The lock identifier that this operation will be performed within"
+         ]
+       ],
+       request_body:
+         {"Attributes for the document", "application/json",
+          OliWeb.Api.ActivityController.BulkDocuments, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", ApiSchemas.UpdateResponse}
+       }
+  def bulk_update(conn, %{
+        "project" => project_slug,
+        "lock" => lock_id
+      }) do
+    author = conn.assigns[:current_author]
+
+    updates = conn.body_params["updates"]
+
+    case ActivityEditor.bulk_edit(project_slug, lock_id, author.email, updates) do
       {:ok, _} -> json(conn, %{"result" => "success"})
       {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
       {:error, {:not_found}} -> error(conn, 404, "not found")

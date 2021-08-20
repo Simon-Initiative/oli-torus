@@ -24,7 +24,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   return (
     paths && (
       <nav
-        className={`aa-header-nav top-panel${
+        className={`aa-header-nav top-panel overflow-hidden${
           isVisible ? ' open' : ''
         } d-flex aa-panel-section-title-bar`}
         style={{

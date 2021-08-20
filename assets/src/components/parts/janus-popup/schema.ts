@@ -28,7 +28,6 @@ export const schema = {
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -37,8 +36,6 @@ export const schema = {
     type: 'boolean',
     description: 'specifies whether popup should open by default',
     default: false,
-    isVisibleInTrapState: true,
-    format: 'checkbox',
   },
   defaultURL: {
     title: 'Default URL',
@@ -68,7 +65,6 @@ export const schema = {
   useToggleBehavior: {
     title: 'Use Toggle Behaviour',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether popup toggles open/closed on click or on mouse hover',
     default: true,
   },
@@ -77,16 +73,12 @@ export const schema = {
     type: 'boolean',
     description: 'specifies whether popup is opened',
     default: false,
-    isVisibleInTrapState: true,
-    format: 'checkbox',
   },
   visible: {
     title: 'Visible',
     type: 'boolean',
     description: 'specifies whether popup will be visible on the screen',
     default: true,
-    isVisibleInTrapState: true,
-    format: 'checkbox',
   },
 };
 
