@@ -18,6 +18,11 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   const elementProps = {
     model: JSON.stringify(activityModel),
     editMode,
+    style: {
+      position: 'absolute',
+      top: '10%',
+      left: '25%',
+    },
   };
 
   useEffect(() => {

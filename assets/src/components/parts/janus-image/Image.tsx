@@ -23,9 +23,10 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
       responses: [],
     });
     /* console.log('IMAGE INIT', initResult); */
-    // setState??
-    const currentStateSnapshot = initResult.snapshot;
-    setState(currentStateSnapshot);
+    if (initResult) {
+      const currentStateSnapshot = initResult.snapshot;
+      setState(currentStateSnapshot);
+    }
 
     setReady(true);
   }, []);
@@ -112,7 +113,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     /* zIndex: z, */
   };
 
-  return ready ? <img alt={alt} src={src} style={imageStyles} /> : null;
+  return ready ? <img draggable="false" alt={alt} src={src} style={imageStyles} /> : null;
 };
 
 export const tagName = 'janus-image';

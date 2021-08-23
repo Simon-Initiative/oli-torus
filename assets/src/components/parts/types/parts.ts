@@ -27,10 +27,13 @@ export interface PartComponentProps<T extends CustomProperties> {
   model: T;
   state: any;
   notify?: any;
+  editMode?: boolean;
+  className?: string;
   onInit: (payload: any) => Promise<any>;
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+  onClick: (payload: any) => void;
 }
 
 export interface CreationContext {

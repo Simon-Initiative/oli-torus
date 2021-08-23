@@ -157,6 +157,19 @@ abstract class ReactCustomElement extends HTMLElement {
 
     const notify = this._notify;
 
+    // React doesn't do the className magic with custom elements
+    if (this.getAttribute('classname')) {
+      this.setAttribute('class', this.getAttribute('classname') as string);
+    }
+    // special case for other classes since I can't do my own className
+    if (this.getAttribute('customcssclass')) {
+      const customCssClass = this.getAttribute('customcssclass') as string;
+      const currentClasses = this.getAttribute('class') as string;
+      const allClasses = customCssClass.split(' ').concat(currentClasses.split(' '));
+      // TODO: unique?
+      this.setAttribute('class', allClasses.join(' '));
+    }
+
     this._vdom = React.createElement(
       ContextProvider,
       { ...this._props, ...this._customEvents, context, notify },
@@ -172,6 +185,16 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
+    if (name === 'classname') {
+      let className = newValue;
+      if (this.getAttribute('customcssclass')) {
+        const customCssClass = this.getAttribute('customcssclass') as string;
+        const allClasses = customCssClass.split(' ').concat(newValue.split(' '));
+        className = allClasses.join(' ');
+      }
+      this.setAttribute('class', className);
+      return;
+    }
     if (!this._vdom) return;
     // Attributes use `null` as an empty value whereas `undefined` is more
     // common in pure JS components, especially with default parameters.
@@ -239,8 +262,12 @@ const register = (
 ) => {
   // tslint:disable-next-line: max-classes-per-file
   class CustomElement extends ReactCustomElement {
-    static observedAttributes =
-      watchedPropNames || Component.observedAttributes || Object.keys(Component.propTypes || {});
+    static observedAttributes: string[] = [
+      'classname',
+      ...(watchedPropNames ||
+        Component.observedAttributes ||
+        Object.keys(Component.propTypes || {})),
+    ];
 
     constructor() {
       super();
@@ -255,6 +282,10 @@ const register = (
 
       // Keep DOM properties and React props in sync
       CustomElement.observedAttributes.forEach((name: string) => {
+        // React doesn't do its normal className prop for custom elements
+        if (name === 'classname') {
+          return;
+        }
         Object.defineProperty(this, name, {
           get() {
             return this._vdom.props[name];

@@ -9,9 +9,9 @@ const Unknown: React.FC<PartComponentProps<any>> = (props) => {
 
   const { x, y, z, width } = model;
   const styles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
-    left: x,
+    left: x, */
     width,
     // height,
     zIndex: z,

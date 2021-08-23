@@ -94,14 +94,18 @@ const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
     // compStyles.height = props.model.height;
   }
 
-  const webComponentProps = {
+  const webComponentProps: any = {
     ref,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
-    style: compStyles,
-    class: props.model.customCssClass || '',
+    customCssClass: props.model.customCssClass || '',
   };
+
+  // if we pass in style then it will be controlled and so nothing else can use it
+  if (!props.editMode) {
+    webComponentProps.style = compStyles;
+  }
 
   let wcTagName = props.type;
   if (!wcTagName || !customElements.get(wcTagName)) {
