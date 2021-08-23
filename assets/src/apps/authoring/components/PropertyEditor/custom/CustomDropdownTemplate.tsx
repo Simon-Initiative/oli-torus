@@ -20,7 +20,7 @@ interface CustomDropdownProps {
   onChange: (value: string) => void;
 }
 const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
-  const {id, label, uiSchema, description, properties, value, onChange } = props;
+  const { id, label, uiSchema, description, properties, value, onChange } = props;
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
   const [buttonLabel, setButtonLabel] = useState<any>('');
@@ -35,19 +35,19 @@ const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
   };
   return (
     <Fragment>
-      <span className='form-label'>{label}</span>
-      <div className='dropdown'>
+      <span className="form-label">{label}</span>
+      <div className="dropdown">
         <button
-          className='btn btn-secondary dropdown-toggle'
-          type='button'
+          className="btn btn-secondary dropdown-toggle"
+          type="button"
           id={id}
-          data-toggle='dropdown'
-          aria-haspopup='true'
-          aria-expanded='false'
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
         >
           {buttonLabel}
         </button>
-        <div className='dropdown-menu' aria-labelledby={id}>
+        <div className="dropdown-menu" aria-labelledby={id}>
           <SequenceDropdown items={hierarchy} onChange={onChangeHandler} value={props.value} />
         </div>
       </div>
