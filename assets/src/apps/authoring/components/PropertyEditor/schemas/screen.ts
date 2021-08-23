@@ -8,7 +8,7 @@ import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const schema = {
+export const screenSchema = {
   type: 'object',
   properties: {
     title: {
@@ -200,17 +200,4 @@ export const transformScreenSchematoModel: any = (
     modelData.bankEndTarget = schema.Bank.bankEndTarget;
   }
   return modelData;
-};
-
-export const getScreenSchema = (seq: SequenceEntry<SequenceEntryChild> | null) => {
-  if (seq?.custom.isBank) {
-    return {
-      type: schema.type,
-      properties: {
-        Size: schema.properties.Size,
-        palette: schema.properties.palette,
-      },
-    };
-  }
-  return schema;
 };

@@ -37,8 +37,7 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import {
-  getScreenSchema,
+import { screenSchema,
   screenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
@@ -81,7 +80,7 @@ const RightMenu: React.FC<any> = () => {
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentSequence, currentActivity));
-    setScreenSchema(getScreenSchema(currentSequence));
+    setScreenSchema(screenSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
       [],
