@@ -3,11 +3,15 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+- Enable banked activity creation and editing
 
 ## 0.12.8 (2021-08-11)
 
 ### Bug Fixes
+
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
