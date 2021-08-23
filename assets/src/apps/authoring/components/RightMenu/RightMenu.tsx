@@ -118,7 +118,13 @@ const RightMenu: React.FC<any> = () => {
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = bankChanges;
-        debounceSaveBankSettings(cloneActivity, currentGroup, currentSequence, bankShowCount, bankEndTarget);
+        debounceSaveBankSettings(
+          cloneActivity,
+          currentGroup,
+          currentSequence,
+          bankShowCount,
+          bankEndTarget,
+        );
       }
     },
     [currentActivity],
@@ -433,7 +439,10 @@ const RightMenu: React.FC<any> = () => {
           />
         </div>
       </Tab>
-      <Tab eventKey={RightPanelTabs.SCREEN} title={`${currentSequence?.custom.isBank? 'Bank' : 'Screen'}`}>
+      <Tab
+        eventKey={RightPanelTabs.SCREEN}
+        title={`${currentSequence?.custom.isBank ? 'Bank' : 'Screen'}`}
+      >
         <div className="screen-tab p-3 overflow-hidden">
           {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
             <PropertyEditor
