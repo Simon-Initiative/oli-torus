@@ -5,6 +5,8 @@
 ### Bug Fixes
 ### Enhancements
 
+- Add infrastructure for advanced section creation, including the ability to view and apply publication updates
+
 ## 0.12.9 (2021-08-20)
 
 ### Bug Fixes

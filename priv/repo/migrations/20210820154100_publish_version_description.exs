@@ -41,7 +41,6 @@ defmodule Oli.Repo.Migrations.PublishVersionDescription do
 
     flush()
 
-    # Migrate published:boolean to utc_datetime using the updated_at value
     from(p in "publications",
       where: not is_nil(p.published),
       update: [set: [published_tmp: true]]
