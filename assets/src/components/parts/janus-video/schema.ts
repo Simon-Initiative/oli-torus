@@ -1,3 +1,5 @@
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+
 export const schema = {
   customCssClass: {
     title: 'Custom CSS Class',
@@ -24,61 +26,55 @@ export const schema = {
   triggerCheck: {
     title: 'Trigger Check',
     type: 'boolean',
-    format: 'checkbox',
     description: 'if set to true then once audio is played till end, it will fire a check event',
     default: false,
-    isVisibleInTrapState: false,
   },
   autoPlay: {
     title: 'Autoplay',
     type: 'boolean',
-    format: 'checkbox',
     description: 'if set to true then video player will play automatically',
     default: false,
-    isVisibleInTrapState: true,
   },
   startTime: {
     title: 'Starttime',
     type: 'number',
     description: 'specifies the start time of the video',
     default: 0,
-    isVisibleInTrapState: true,
   },
   endTime: {
     title: 'Endtime',
     type: 'number',
     description: 'specifies the end time of the video',
     default: 0,
-    isVisibleInTrapState: true,
   },
   enableReplay: {
     title: 'Enable Replay',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether user can replay the video once its played',
     default: true,
-    isVisibleInTrapState: false,
   },
   subtitles: {
     title: 'Subtitles',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        default: { type: 'boolean' },
-        language: { type: 'string' },
-        src: { type: 'string' },
-      },
-      required: ['src', 'language'],
+    type: 'object',
+    properties: {
+      default: { type: 'boolean', title: 'Default' },
+      language: { type: 'string', title: 'Language' },
+      src: { type: 'string', title: 'Source' },
     },
+    required: ['src', 'language'],
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  subtitles: {
+    'ui:title': 'Subtitles',
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  },
+};
 
 export const createSchema = () => ({
   enabled: true,
-  subtitles: [],
+  subtitles: {},
   enableReplay: true,
   autoPlay: false,
   startTime: 0,

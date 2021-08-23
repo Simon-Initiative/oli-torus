@@ -355,6 +355,7 @@ defmodule OliWeb.Router do
 
     get("/:resource", Api.ActivityController, :retrieve)
     post("/", Api.ActivityController, :bulk_retrieve)
+    put("/", Api.ActivityController, :bulk_update)
     delete("/:resource", Api.ActivityController, :delete)
     put("/:resource", Api.ActivityController, :update)
     post("/:resource", Api.ActivityController, :create_secondary)

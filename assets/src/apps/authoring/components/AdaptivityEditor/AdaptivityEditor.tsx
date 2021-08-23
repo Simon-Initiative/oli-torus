@@ -12,7 +12,7 @@ import {
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
@@ -30,6 +30,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const isLayer = getIsLayer();
+  const isBank = getIsBank();
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'Layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'Question Bank';
+  }
 
   const [isDirty, setIsDirty] = useState(false);
   const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
@@ -228,16 +235,16 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         </div>
       )}
 
-      {currentRule && isLayer && (
+      {currentRule && (isLayer || isBank) && (
         <div className="text-center border rounded">
           <div className="card-body">
-            This sequence item is a layer and does not support adaptivity
+            {`This sequence item is a ${sequenceTypeLabel} and does not support adaptivity`}
           </div>
         </div>
       )}
 
       {/* Has Conditions */}
-      {currentRule && !isLayer && (
+      {currentRule && !isLayer && !isBank && (
         <>
           {!(currentRule.default && !currentRule.correct) && (
             <ConditionsBlockEditor
