@@ -99,7 +99,7 @@ export const transformBankModeltoSchema: any = (
           : '255, 255, 255'
       },${data.palette.fillAlpha || '100'})`,
     };
-    let schemaData = {
+    const schemaData = {
       Size: { width: data.width, height: data.height },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
       Bank: {
