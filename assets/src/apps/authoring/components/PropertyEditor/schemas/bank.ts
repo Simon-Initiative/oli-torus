@@ -1,14 +1,16 @@
+import { UiSchema } from '@rjsf/core';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import {
   SequenceEntry,
   SequenceEntryChild,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
+import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const bankSchema = {
+const bankSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     Size: {
@@ -39,7 +41,7 @@ const bankSchema = {
   },
 };
 
-export const bankUiSchema = {
+export const bankUiSchema: UiSchema = {
   Size: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
@@ -71,7 +73,7 @@ export const bankUiSchema = {
   },
 };
 
-export const transformBankModeltoSchema: any = (
+export const transformBankModeltoSchema = (
   currentSequence: SequenceEntry<SequenceEntryChild> | null,
   activity?: IActivity,
 ) => {
@@ -111,11 +113,10 @@ export const transformBankModeltoSchema: any = (
   }
 };
 
-export const transformBankSchematoModel: any = (
+export const transformBankSchematoModel = (
   schema: any,
-  currentSequence: SequenceEntry<SequenceEntryChild> | null,
 ) => {
-  const modelData: any = {
+  const modelData = {
     width: schema.Size.width,
     height: schema.Size.height,
     palette: { ...schema.palette, useHtmlProps: true },

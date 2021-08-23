@@ -1,7 +1,9 @@
+import { UiSchema } from '@rjsf/core';
+import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const lessonSchema = {
+const lessonSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     Properties: {
@@ -86,7 +88,7 @@ const lessonSchema = {
   },
 };
 
-export const lessonUiSchema = {
+export const lessonUiSchema: UiSchema = {
   Properties: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
     Size: {

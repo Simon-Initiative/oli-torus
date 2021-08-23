@@ -9,8 +9,8 @@ import {
 import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
 interface SeqDropdownProps {
-  items: any;
-  onChange: (item: any) => void;
+  items: SequenceHierarchyItem<SequenceEntryChild>[];
+  onChange: (item: SequenceHierarchyItem<SequenceEntryChild>) => void;
   value: string;
 }
 
@@ -24,7 +24,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
           (
             item: SequenceHierarchyItem<SequenceEntryType>,
             index: number,
-            arr: SequenceHierarchyItem<SequenceEntryType>,
+            arr: SequenceHierarchyItem<SequenceEntryType>[],
           ) => {
             const title = item.custom?.sequenceName || item.activitySlug;
             return (

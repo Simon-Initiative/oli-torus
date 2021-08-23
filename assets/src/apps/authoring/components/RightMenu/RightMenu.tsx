@@ -78,9 +78,9 @@ const RightMenu: React.FC<any> = () => {
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [scrData, setScreenData] = useState();
-  const [scrSchema, setScreenSchema] = useState<any>();
-  const [questionBankData, setBankData] = useState();
-  const [questionBankSchema, setBankSchema] = useState<any>();
+  const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
+  const [questionBankData, setBankData] = useState<any>();
+  const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -107,7 +107,7 @@ const RightMenu: React.FC<any> = () => {
   };
 
   const bankPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       if (currentActivity) {
         const modelChanges = transformBankSchematoModel(properties);
         console.log('Bank Property Change...', { properties, modelChanges });
@@ -149,7 +149,7 @@ const RightMenu: React.FC<any> = () => {
   );
 
   const screenPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       if (currentActivity) {
         const modelChanges = transformScreenSchematoModel(properties);
         console.log('Screen Property Change...', { properties, modelChanges });
@@ -202,7 +202,7 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const lessonPropertyChangeHandler = (properties: any) => {
+  const lessonPropertyChangeHandler = (properties: object) => {
     const modelChanges = transformLessonSchema(properties);
 
     // special consideration for legacy stylesheets
@@ -367,7 +367,7 @@ const RightMenu: React.FC<any> = () => {
   }, [currentPartSelection, currentActivityTree]);
 
   const componentPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,

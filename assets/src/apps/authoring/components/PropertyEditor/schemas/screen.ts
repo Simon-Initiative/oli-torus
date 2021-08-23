@@ -1,9 +1,11 @@
+import { UiSchema } from '@rjsf/core';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
+import { JSONSchema7 } from 'json-schema';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const screenSchema = {
+const screenSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     title: {
@@ -80,7 +82,7 @@ const screenSchema = {
   },
 };
 
-export const screenUiSchema = {
+export const screenUiSchema: UiSchema = {
   Size: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',

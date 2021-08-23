@@ -248,7 +248,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     };
     const itemsToDelete = flatten(item);
     const sequenceItems = [...sequence];
-    itemsToDelete.forEach((item: any) => {
+    itemsToDelete.forEach((item: SequenceEntry<SequenceEntryChild>) => {
       if (item.activitySlug === currentActivity?.activitySlug)
         dispatch(setCurrentRule({ currentRule: undefined }));
       const itemIndex = sequenceItems.findIndex(

@@ -3,19 +3,20 @@ import { SequenceDropdown } from './SequenceDropdown';
 import {
   findInHierarchy,
   getHierarchy,
+  SequenceEntry,
   SequenceEntryChild,
-  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
+import { UiSchema } from '@rjsf/core';
 
 interface CustomDropdownProps {
   id: string;
   label: string;
-  uiSchema: any;
+  uiSchema: UiSchema;
   description: string;
-  properties: any;
+  properties: object;
   value: string;
   onChange: (value: string) => void;
 }
@@ -23,13 +24,13 @@ const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
   const { id, label, uiSchema, description, properties, value, onChange } = props;
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
-  const [buttonLabel, setButtonLabel] = useState<any>('');
+  const [buttonLabel, setButtonLabel] = useState<string>('');
   const [val, setVal] = useState<string>(value);
   useEffect(() => {
     const seq = findInHierarchy(hierarchy, val);
-    setButtonLabel(seq?.custom.sequenceName);
+    setButtonLabel(seq?.custom.sequenceName || 'Next');
   }, [val]);
-  const onChangeHandler = (item: any) => {
+  const onChangeHandler = (item: SequenceEntry<SequenceEntryChild>) => {
     setVal(item.custom.sequenceId);
     onChange(item.custom.sequenceId);
   };
