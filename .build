@@ -70,6 +70,8 @@ Oli.Authoring.Course.ProjectVisibility.html
 Oli.Authoring.Course.html
 Oli.Authoring.Editing.ActivityContext.html
 Oli.Authoring.Editing.ActivityEditor.html
+Oli.Authoring.Editing.BankContext.html
+Oli.Authoring.Editing.BankEditor.html
 Oli.Authoring.Editing.ContainerEditor.html
 Oli.Authoring.Editing.ObjectiveEditor.html
 Oli.Authoring.Editing.PageEditor.html
@@ -245,6 +247,8 @@ Oli.Versioning.RevisionTree.Tree.html
 Oli.html
 OliWeb.Accounts.AccountsLive.html
 OliWeb.Accounts.AccountsModel.html
+OliWeb.ActivityBankController.html
+OliWeb.ActivityBankView.html
 OliWeb.ActivityController.html
 OliWeb.ActivityManageController.html
 OliWeb.ActivityManageView.html
@@ -442,8 +446,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-0d2e7c2619.js
-dist/sidebar_items-1a8124b5f1.js
+dist/search_items-2cb35ba388.js
+dist/sidebar_items-30bf168567.js
 index.html
 license.html
 readme.html
