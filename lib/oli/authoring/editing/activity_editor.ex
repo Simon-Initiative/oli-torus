@@ -68,7 +68,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   @doc """
-  Deletes a secondary activity resource.
+  Deletes an activity document or a secondary activity resource.
 
   Returns:
 
@@ -87,6 +87,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
     secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
+    activity_resource_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
@@ -95,7 +96,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil(),
          {:ok, revision} <- get_latest_revision(publication.id, activity.id) |> trap_nil() do
-      if secondary_id == revision.resource_type_id do
+      if secondary_id == revision.resource_type_id or
+           activity_resource_id == revision.resource_type_id do
         Repo.transaction(fn ->
           update = %{"deleted" => true}
 
@@ -424,7 +426,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         primary_resource_id: previous.primary_resource_id,
         scoring_strategy_id: previous.scoring_strategy_id,
         previous_revision_id: previous.id,
-        activity_type_id: previous.activity_type_id
+        activity_type_id: previous.activity_type_id,
+        scope: previous.scope
       })
 
     Publishing.get_published_resource!(publication.id, activity.id)
@@ -560,7 +563,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives) do
+  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded") do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -576,6 +579,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                objectives: attached_objectives,
                author_id: author.id,
                content: model,
+               scope: scope,
                activity_type_id: activity_type.id
              }),
            {:ok, _} <-

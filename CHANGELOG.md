@@ -3,9 +3,11 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
 
 - Add infrastructure for advanced section creation, including the ability to view and apply publication updates
+- Enable banked activity creation and editing
 
 ## 0.12.9 (2021-08-20)
 
@@ -15,6 +17,7 @@
 
 ### Enhancements
 
+- Allow for submission of graded pages without answering all questions
 - Add API support for bulk activity updating
 
 ## 0.12.8 (2021-08-11)
