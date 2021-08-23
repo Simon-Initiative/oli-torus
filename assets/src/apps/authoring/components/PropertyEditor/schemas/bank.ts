@@ -8,7 +8,7 @@ import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const schema = {
+const bankSchema = {
   type: 'object',
   properties: {
     Size: {
@@ -39,7 +39,7 @@ const schema = {
   },
 };
 
-export const screenUiSchema = {
+export const bankUiSchema = {
   Size: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Dimensions',
@@ -71,7 +71,7 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (
+export const transformBankModeltoSchema: any = (
   currentSequence: SequenceEntry<SequenceEntryChild> | null,
   activity?: IActivity,
 ) => {
@@ -111,7 +111,7 @@ export const transformScreenModeltoSchema = (
   }
 };
 
-export const transformScreenSchematoModel: any = (
+export const transformBankSchematoModel: any = (
   schema: any,
   currentSequence: SequenceEntry<SequenceEntryChild> | null,
 ) => {
@@ -124,3 +124,5 @@ export const transformScreenSchematoModel: any = (
   };
   return modelData;
 };
+
+export default bankSchema;

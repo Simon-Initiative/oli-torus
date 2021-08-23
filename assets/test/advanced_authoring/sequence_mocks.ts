@@ -9,6 +9,8 @@ export const simpleSequence: SequenceEntry<SequenceEntryChild>[] = [
     custom: {
       sequenceId: '1',
       sequenceName: 'Sequence Item 1',
+      bankEndTarget:'Next',
+      bankShowCount: 1
     },
   },
   {
@@ -17,6 +19,8 @@ export const simpleSequence: SequenceEntry<SequenceEntryChild>[] = [
       sequenceId: '2',
       sequenceName: 'Sequence Item 2',
       layerRef: '1',
+      bankEndTarget:'Next',
+      bankShowCount: 1
     },
   },
 ];

@@ -42,6 +42,11 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import bankSchema, {
+  bankUiSchema,
+  transformBankModeltoSchema,
+  transformBankSchematoModel,
+} from '../PropertyEditor/schemas/bank';
 import {
   findInSequence,
   getIsBank,
@@ -72,8 +77,10 @@ const RightMenu: React.FC<any> = () => {
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [screenData, setScreenData] = useState();
-  const [screenSchema, setScreenSchema] = useState<any>();
+  const [scrData, setScreenData] = useState();
+  const [scrSchema, setScreenSchema] = useState<any>();
+  const [questionBankData, setBankData] = useState();
+  const [questionBankSchema, setBankSchema] = useState<any>();
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -81,6 +88,9 @@ const RightMenu: React.FC<any> = () => {
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
     setScreenSchema(screenSchema);
+
+    setBankData(transformBankModeltoSchema(currentSequence, currentActivity));
+    setBankSchema(bankSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
       [],
@@ -95,6 +105,42 @@ const RightMenu: React.FC<any> = () => {
     // TODO: any other saving or whatever
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
+
+  const bankPropertyChangeHandler = useCallback(
+    (properties: any) => {
+      if (currentActivity) {
+        const modelChanges = transformBankSchematoModel(properties);
+        console.log('Bank Property Change...', { properties, modelChanges });
+        const { bankShowCount, bankEndTarget, ...screenModelChanges } = modelChanges;
+        const bankChanges = {
+          ...currentActivity?.content?.custom,
+          ...screenModelChanges,
+        };
+        const cloneActivity = clone(currentActivity);
+        cloneActivity.content.custom = bankChanges;
+        debounceSaveBankSettings(cloneActivity, currentGroup, currentSequence, bankShowCount, bankEndTarget);
+      }
+    },
+    [currentActivity],
+  );
+
+  const debounceSaveBankSettings = useCallback(
+    debounce(
+      (activity, group, currentSequence, bankShowCount, bankEndTarget) => {
+        console.log('SAVING ACTIVITY:', { activity });
+        dispatch(saveActivity({ activity }));
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
+        }
+      },
+      100,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
 
   const screenPropertyChangeHandler = useCallback(
     (properties: any) => {
@@ -111,7 +157,7 @@ const RightMenu: React.FC<any> = () => {
         if (title) {
           cloneActivity.title = title;
         }
-        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup, currentSequence);
+        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
       }
     },
     [currentActivity],
@@ -119,7 +165,7 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity, currentActivity, group, currentSequence) => {
+      (activity, currentActivity, group) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
 
@@ -387,22 +433,22 @@ const RightMenu: React.FC<any> = () => {
           />
         </div>
       </Tab>
-      <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
+      <Tab eventKey={RightPanelTabs.SCREEN} title={`${currentSequence?.custom.isBank? 'Bank' : 'Screen'}`}>
         <div className="screen-tab p-3 overflow-hidden">
-          {currentSequence?.custom.isBank ? (
+          {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
             <PropertyEditor
               key={currentActivity.id}
-              schema={screenSchema as JSONSchema7}
-              uiSchema={screenUiSchema}
-              value={screenData}
-              onChangeHandler={screenPropertyChangeHandler}
+              schema={questionBankSchema as JSONSchema7}
+              uiSchema={bankUiSchema}
+              value={questionBankData}
+              onChangeHandler={bankPropertyChangeHandler}
             />
-          ) : currentActivity && screenData ? (
+          ) : currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
-              schema={screenSchema as JSONSchema7}
+              schema={scrSchema as JSONSchema7}
               uiSchema={screenUiSchema}
-              value={screenData}
+              value={scrData}
               onChangeHandler={screenPropertyChangeHandler}
             />
           ) : null}

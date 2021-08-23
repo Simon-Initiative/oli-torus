@@ -10,16 +10,12 @@ import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
 interface SeqDropdownProps {
   items: any;
-  onChange: (changedJson: any) => void;
+  onChange: (item: any) => void;
   value: string;
 }
 
 export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
   const { items, onChange, value } = props;
-
-  const handleClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
-    console.log();
-  };
 
   return (
     <div className="aa-sequence-editor">
@@ -37,7 +33,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
                   as="li"
                   className={`aa-sequence-item${item.children.length ? ' is-parent' : ''}`}
                   key={`${item.custom.sequenceId}`}
-                  onClick={(e) => handleClick(e, item)}
+                  onClick={(e) => onChange(item)}
                   tabIndex={0}
                 >
                   <div className="aa-sequence-details-wrapper">

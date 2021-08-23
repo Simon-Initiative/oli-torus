@@ -253,6 +253,16 @@ $panel-section-title-bar-color: #e8ebed;
           }
         }
       }
+      .dropdown-menu {
+        transform: translate3d(0px, -504px, 0px) !important;
+        overflow: auto;
+        height: 500px;
+        width: 100%;
+      }
+      .dropdown-toggle{
+        width: 100%;
+        text-align: start;
+      }
     }
     .component-tab {
       .collapse > .col-12 {
