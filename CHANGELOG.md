@@ -13,6 +13,7 @@
 
 ### Enhancements
 
+- Allow for submission of graded pages without answering all questions
 - Add API support for bulk activity updating
 
 ## 0.12.8 (2021-08-11)
