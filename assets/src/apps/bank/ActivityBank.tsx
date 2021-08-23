@@ -94,14 +94,16 @@ export function showFailedToLockMessage(): Promise<boolean> {
         title="Edit Activity"
         onInsert={() => {
           dismiss();
-          resolve(true);
+          resolve(false);
         }}
         onCancel={() => {
           dismiss();
           resolve(false);
         }}
         disableInsert={true}
-        okLabel="Delete"
+        cancelLabel="Ok"
+        hideOkButton={true}
+        hideDialogCloseButton={true}
       >
         <div>
           <h5>Unable to edit activity</h5>
