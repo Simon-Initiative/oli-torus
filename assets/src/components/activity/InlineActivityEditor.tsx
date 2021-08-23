@@ -8,11 +8,13 @@ import { valueOr } from 'utils/common';
 import { Undoable } from 'components/activities/types';
 import { selectImage } from 'components/editing/commands/ImageCmd';
 
-export interface ActivityEditorProps extends ActivityEditContext, ProjectResourceContext {
+export interface ActivityEditorProps extends ActivityEditContext {
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
   editMode: boolean;
+  projectSlug: string;
+  allObjectives: Objective[];
 }
 
 // This is the state of our activity editing that is undoable
@@ -111,9 +113,10 @@ export class InlineActivityEditor extends React.Component<
     };
 
     const webComponentProps = {
+      key: this.props.activityId,
       model: JSON.stringify(this.props.model),
-      editMode: this.props.editMode,
-      projectSlug: this.props.projectSlug,
+      editmode: new Boolean(this.props.editMode).toString(),
+      projectslug: this.props.projectSlug,
     };
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
@@ -131,7 +134,7 @@ export class InlineActivityEditor extends React.Component<
           <PartObjectives
             partIds={partIds}
             editMode={this.props.editMode}
-            projectSlug={webComponentProps.projectSlug}
+            projectSlug={webComponentProps.projectslug}
             objectives={this.props.objectives}
             allObjectives={this.props.allObjectives}
             onRegisterNewObjective={this.props.onRegisterNewObjective}

@@ -3,7 +3,10 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+- Enable banked activity creation and editing
 
 ## 0.12.9 (2021-08-20)
 
