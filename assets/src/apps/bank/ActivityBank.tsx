@@ -1,30 +1,20 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { State, Dispatch } from 'state';
-import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
+import { ProjectSlug } from 'data/types';
 import * as Immutable from 'immutable';
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
-import {
-  ResourceContent,
-  ResourceContext,
-  ActivityMap,
-  createDefaultStructuredContent,
-  StructuredContent,
-  ActivityReference,
-} from 'data/content/resource';
+import { InlineActivityEditor } from 'components/activity/InlineActivityEditor';
+import { ActivityMap } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import * as Persistence from 'data/persistence/resource';
 import * as ActivityPersistence from 'data/persistence/activity';
-import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from 'components/messages/Banner';
 import { ActivityEditContext } from 'data/content/activity';
-import { create } from 'data/persistence/objective';
 import { Undoable as ActivityUndoable } from 'components/activities/types';
 import * as BankTypes from 'data/content/bank';
 import * as BankPersistence from 'data/persistence/bank';
@@ -39,6 +29,9 @@ import { EditingLock } from './EditingLock';
 import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
 import { LogicFilter } from './LogicFilter';
+import { DeleteActivity } from './DeleteActivity';
+import { modalActions } from 'actions/modal';
+import ModalSelection from 'components/modal/ModalSelection';
 
 const PAGE_SIZE = 5;
 
@@ -46,6 +39,7 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
+  totalCount: number;
 }
 
 type ActivityBankState = {
@@ -58,17 +52,66 @@ type ActivityBankState = {
   paging: BankTypes.Paging;
   logic: BankTypes.Logic;
   totalCount: number;
+  totalInBank: number;
   editedSlug: Maybe<string>;
   filterExpressions: BankTypes.Expression[];
+  canBeUpdated: boolean; // tracks whether or not the "Update" button should be enabled
 };
 
-// Creates a function that when invoked submits a save request
-function prepareSaveFn(
-  project: ProjectSlug,
-  resource: ResourceSlug,
-  update: Persistence.ResourceUpdate,
-) {
-  return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
+const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
+const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+
+export function confirmDelete(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const mediaLibrary = (
+      <ModalSelection
+        title="Delete Activity"
+        onInsert={() => {
+          dismiss();
+          resolve(true);
+        }}
+        onCancel={() => {
+          dismiss();
+          resolve(false);
+        }}
+        okLabel="Delete"
+      >
+        <div>
+          <h5>Are you sure you want to delete this Activity?</h5>
+          <p>This is a permanent operation that cannot be undone.</p>
+        </div>
+      </ModalSelection>
+    );
+
+    display(mediaLibrary);
+  });
+}
+
+export function showFailedToLockMessage(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const mediaLibrary = (
+      <ModalSelection
+        title="Edit Activity"
+        onInsert={() => {
+          dismiss();
+          resolve(true);
+        }}
+        onCancel={() => {
+          dismiss();
+          resolve(false);
+        }}
+        disableInsert={true}
+        okLabel="Delete"
+      >
+        <div>
+          <h5>Unable to edit activity</h5>
+          <p>You are unable to edit this activity as there is another user currently editing it.</p>
+        </div>
+      </ModalSelection>
+    );
+
+    display(mediaLibrary);
+  });
 }
 
 function defaultFilters() {
@@ -116,6 +159,14 @@ function translateFilterToLogic(expressions: BankTypes.Expression[]): BankTypes.
   };
 }
 
+function isEmptyFilterLogic(expressions: BankTypes.Expression[]): boolean {
+  return (
+    expressions[0].value.length === 0 &&
+    expressions[1].value === '' &&
+    expressions[2].value.length === 0
+  );
+}
+
 export class ActivityBank extends React.Component<ActivityBankProps, ActivityBankState> {
   persistence: Maybe<PersistenceStrategy>;
   editorById: { [id: number]: EditorDesc };
@@ -130,10 +181,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
       paging: defaultPaging(),
-      totalCount: 0,
       editedSlug: Maybe.nothing<string>(),
       logic: BankTypes.defaultLogic(),
       filterExpressions: defaultFilters(),
+      totalCount: 0,
+      totalInBank: props.totalCount,
+      canBeUpdated: false,
     };
 
     this.editorById = Object.keys(props.editorMap)
@@ -152,6 +205,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
     this.onChangeEditing = this.onChangeEditing.bind(this);
     this.onPageChange = this.onPageChange.bind(this);
+    this.onDelete = this.onDelete.bind(this);
   }
 
   componentDidMount() {
@@ -195,6 +249,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     ].slice(0, PAGE_SIZE);
     this.setState({
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
+      totalInBank: this.state.totalInBank + 1,
+      totalCount: this.state.totalCount + 1,
     });
     this.onChangeEditing(context.activitySlug, true);
   }
@@ -291,6 +347,26 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.fetchActivities(this.state.logic, page);
   }
 
+  onDelete(key: string) {
+    confirmDelete().then((confirmed) => {
+      if (confirmed) {
+        const context = this.state.activityContexts.get(key);
+        if (context !== undefined) {
+          ActivityPersistence.deleteActivity(this.props.projectSlug, context.activityId).then(
+            (result) => {
+              if (result.result === 'success') {
+                // It deleted, so now we force a refresh to make it go away from the display
+                this.fetchActivities(this.state.logic, this.state.paging);
+                this.setState({ totalInBank: this.state.totalInBank - 1 });
+                this.persistence.lift((current) => current.destroy());
+              }
+            },
+          );
+        }
+      }
+    });
+  }
+
   onChangeEditing(key: string, editMode: boolean) {
     if (editMode) {
       this.persistence.lift((current) => current.destroy());
@@ -312,6 +388,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
               });
               resolve(result);
             } else {
+              showFailedToLockMessage();
               resolve(result);
             }
           });
@@ -351,11 +428,16 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         const thisKey = key;
         this.onChangeEditing(thisKey, state);
       };
+      const onDelete = () => {
+        const thisKey = key;
+        this.onDelete(thisKey);
+      };
 
       return (
-        <div key={key} className="d-flex flex-column">
-          <div className="d-flex">
+        <div key={key} className="d-flex justify-content-start">
+          <div>
             <EditingLock editMode={editMode} onChangeEditMode={onChangeEditMode} />
+            <DeleteActivity editMode={editMode} onDelete={onDelete} />
           </div>
           <InlineActivityEditor
             key={key}
@@ -410,13 +492,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
 
   render() {
     const props = this.props;
-    const state = this.state;
-
-    const { projectSlug } = this.props;
-
-    const onAddItem = (a: ActivityEditContext) => {
-      this.setState({ activityContexts: this.state.activityContexts.set(a.activitySlug, a) });
-    };
 
     const onRegisterNewObjective = (objective: Objective) => {
       this.setState({
@@ -424,12 +499,10 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       });
     };
 
-    const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
-
     const activities = this.createActivityEditors();
     const pagingOrPlaceholder =
       this.state.totalCount === 0 ? (
-        'No resuilts'
+        'No results'
       ) : (
         <Paging
           totalResults={this.state.totalCount}
@@ -437,6 +510,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           onPageChange={this.onPageChange}
         />
       );
+
+    const overviewLabel = (
+      <h5>{`There ${this.state.totalInBank === 1 ? 'is' : 'are'} ${this.state.totalInBank} ${
+        this.state.totalInBank === 1 ? 'activity' : 'activities'
+      } in this course project's activity bank`}</h5>
+    );
 
     return (
       <div className="resource-editor row">
@@ -450,15 +529,19 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             executeAction={(message, action) => action.execute(message)}
             messages={this.state.messages}
           />
-          <div className="d-flex justify-content-between">
-            {pagingOrPlaceholder}
+          <div className="d-flex justify-content-end">
             <PersistenceStatus persistence={this.state.persistence} />
           </div>
-          <CreateActivity
-            projectSlug={props.projectSlug}
-            editorMap={props.editorMap}
-            onAdd={this.onActivityAdd}
-          />
+          <div className="d-flex justify-content-between">
+            {overviewLabel}
+            <CreateActivity
+              projectSlug={props.projectSlug}
+              editorMap={props.editorMap}
+              onAdd={this.onActivityAdd}
+            />
+          </div>
+          <hr />
+
           <LogicFilter
             expressions={this.state.filterExpressions}
             editMode={true}
@@ -468,12 +551,43 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             allObjectives={this.state.allObjectives}
             onRegisterNewObjective={onRegisterNewObjective}
             onChange={(filterExpressions) => {
-              this.setState({ filterExpressions, paging: defaultPaging() });
-              this.fetchActivities(translateFilterToLogic(filterExpressions), defaultPaging());
+              this.setState({ filterExpressions, canBeUpdated: true });
             }}
             onRemove={() => true}
           />
+
+          <div className="d-flex justify-content-end">
+            <button
+              className="btn btn-secondary mr-3"
+              disabled={isEmptyFilterLogic(this.state.filterExpressions)}
+              onClick={() => {
+                this.setState({ filterExpressions: defaultFilters(), canBeUpdated: true });
+              }}
+            >
+              Clear all
+            </button>
+            <button
+              className="btn btn-secondary"
+              disabled={!this.state.canBeUpdated}
+              onClick={() => {
+                this.setState({ paging: defaultPaging(), canBeUpdated: false });
+                this.fetchActivities(
+                  translateFilterToLogic(this.state.filterExpressions),
+                  defaultPaging(),
+                );
+              }}
+            >
+              Apply
+            </button>
+          </div>
+
+          <hr className="mb-4" />
+
+          {pagingOrPlaceholder}
+
           {activities}
+
+          {this.state.totalCount > 0 ? pagingOrPlaceholder : null}
         </div>
       </div>
     );

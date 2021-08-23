@@ -33,5 +33,5 @@ export const LogicFilter: React.FC<LogicFilterProps> = (props: LogicFilterProps)
     />
   ));
 
-  return <div>{exp}</div>;
+  return <div className="logic">{exp}</div>;
 };

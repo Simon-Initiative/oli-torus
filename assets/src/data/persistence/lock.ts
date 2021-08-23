@@ -26,8 +26,10 @@ export function releaseLock(project: ProjectSlug, resource: ResourceSlug): Promi
 }
 
 export function acquireLock(
-  project: ProjectSlug, resource: ResourceSlug, withRevision = false): Promise<LockResult> {
-
+  project: ProjectSlug,
+  resource: ResourceSlug,
+  withRevision = false,
+): Promise<LockResult> {
   const url = withRevision
     ? `/project/${project}/lock/${resource}?fetch_revision=true`
     : `/project/${project}/lock/${resource}?fetch_revision=false`;

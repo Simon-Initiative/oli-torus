@@ -116,7 +116,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
       this.destroyed = true;
       return this.flushPendingChanges();
     }
-   return false;
+    return false;
   }
 
   flushPendingChanges(): boolean {

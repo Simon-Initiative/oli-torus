@@ -81,7 +81,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
       </option>
     );
   });
-  console.log(props.expression);
+
   const operators = operatorsByFact[props.expression.fact.toString()].map(
     (factOperator: FactOperator) => {
       return (
@@ -118,7 +118,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           label: e.friendlyName,
         };
       });
-      console.log(props.expression);
+
       return (
         <ActivityTypeSelection
           selected={props.expression.value as number[]}
@@ -149,29 +149,32 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
   };
 
   const removeButton = props.fixedFact ? null : (
-    <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
+    <div className="remove">
+      <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
+    </div>
   );
 
   return (
-    <div>
-      <Select
-        editMode={props.editMode && !props.fixedFact}
-        value={props.expression.fact.toString()}
-        onChange={(v) => onChangeFact(v)}
-      >
-        {facts}
-      </Select>
-
-      <Select
-        editMode={props.editMode}
-        value={props.expression.operator.toString()}
-        onChange={(v) => onChangeOperator(v)}
-      >
-        {operators}
-      </Select>
-
-      {buildValueEditor()}
-
+    <div className="expression">
+      <div className="fact">
+        <Select
+          editMode={props.editMode && !props.fixedFact}
+          value={props.expression.fact.toString()}
+          onChange={(v) => onChangeFact(v)}
+        >
+          {facts}
+        </Select>
+      </div>
+      <div className="operator">
+        <Select
+          editMode={props.editMode}
+          value={props.expression.operator.toString()}
+          onChange={(v) => onChangeOperator(v)}
+        >
+          {operators}
+        </Select>
+      </div>
+      <div className="value">{buildValueEditor()}</div>
       {removeButton}
     </div>
   );

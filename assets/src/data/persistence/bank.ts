@@ -2,11 +2,10 @@ import { Logic, Paging, BankedActivity } from 'data/content/bank';
 import { ProjectSlug } from 'data/types';
 import { makeRequest } from './common';
 
-
 export interface PagedBankRetrieval {
   result: 'success';
   queryResult: PagedBankResult;
-};
+}
 
 export interface PagedBankResult {
   rows: BankedActivity[];
@@ -14,12 +13,7 @@ export interface PagedBankResult {
   totalCount: number;
 }
 
-export function retrieve(
-  project: ProjectSlug,
-  logic: Logic,
-  paging: Paging
-
-) {
+export function retrieve(project: ProjectSlug, logic: Logic, paging: Paging) {
   const params = {
     method: 'POST',
     body: JSON.stringify({ logic, paging }),
@@ -28,4 +22,3 @@ export function retrieve(
 
   return makeRequest<PagedBankRetrieval>(params);
 }
-

@@ -4,6 +4,7 @@ defmodule Oli.Authoring.Editing.BankContext do
     :authorEmail,
     :projectSlug,
     :allObjectives,
-    :editorMap
+    :editorMap,
+    :totalCount
   ]
 end

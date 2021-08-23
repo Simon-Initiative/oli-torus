@@ -94,7 +94,7 @@ defmodule OliWeb.ActivityControllerTest do
   end
 
   describe "create and then delete a secondary resource" do
-    test "fails when attempting to delete an activity primary document", %{
+    test "succeeds when attempting to delete an activity primary document", %{
       conn: conn,
       project: project,
       activity_id: activity_id,
@@ -108,7 +108,7 @@ defmodule OliWeb.ActivityControllerTest do
           })
         )
 
-      assert response(conn, 400)
+      assert response(conn, 200)
     end
 
     test "creates a secondary resource for an activity", %{

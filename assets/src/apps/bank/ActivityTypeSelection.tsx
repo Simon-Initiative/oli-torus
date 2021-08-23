@@ -29,24 +29,22 @@ export const ActivityTypeSelection = (props: ActivityTypeSelectionProps) => {
   const asActivities = selected.map((s) => map.get(s) as ActivityType);
 
   return (
-    <div className="flex-grow-1">
-      <Typeahead
-        id={id}
-        multiple={props.multiple}
-        disabled={!editMode}
-        onChange={(updated: (ActivityType & { customOption?: boolean })[]) => {
-          if (updated.length !== selected.length) {
-            const updatedObjectives = updated.map((o) => o.id);
-            onEdit(updatedObjectives);
-          }
-        }}
-        options={activities}
-        allowNew={true}
-        selectHintOnEnter={true}
-        labelKey="label"
-        selected={asActivities}
-        placeholder="Select activity types..."
-      />
-    </div>
+    <Typeahead
+      id={id}
+      multiple={props.multiple}
+      disabled={!editMode}
+      onChange={(updated: (ActivityType & { customOption?: boolean })[]) => {
+        if (updated.length !== selected.length) {
+          const updatedObjectives = updated.map((o) => o.id);
+          onEdit(updatedObjectives);
+        }
+      }}
+      options={activities}
+      allowNew={true}
+      selectHintOnEnter={true}
+      labelKey="label"
+      selected={asActivities}
+      placeholder="Select activity types..."
+    />
   );
 };

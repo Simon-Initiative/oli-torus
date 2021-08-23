@@ -70,21 +70,28 @@ export const Paging: React.FC<PagingProps> = (props: PagingProps) => {
   const previousPage = { offset: page.offset - page.limit, limit: page.limit };
   const nextPage = { offset: page.offset + page.limit, limit: page.limit };
 
+  const upper = Math.min(page.offset + page.limit, totalResults);
+
+  const label = `Showing result ${page.offset + 1} - ${upper} of ${totalResults} total`;
+
   return (
-    <nav aria-label="Activity Bank Paging">
-      <ul className="pagination">
-        <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
-          <a className="page-link" onClick={() => onPageChange(previousPage)}>
-            Previous
-          </a>
-        </li>
-        {pages}
-        <li className={`page-item ${currentPage === lastPageIndex ? 'disabled' : ''}`}>
-          <a className="page-link" onClick={() => onPageChange(nextPage)}>
-            Next
-          </a>
-        </li>
-      </ul>
-    </nav>
+    <div className="d-flex justify-content-between">
+      <div>{label}</div>
+      <nav aria-label="Activity Bank Paging">
+        <ul className="pagination">
+          <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+            <a className="page-link" onClick={() => onPageChange(previousPage)}>
+              Previous
+            </a>
+          </li>
+          {pages}
+          <li className={`page-item ${currentPage === lastPageIndex ? 'disabled' : ''}`}>
+            <a className="page-link" onClick={() => onPageChange(nextPage)}>
+              Next
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
   );
 };

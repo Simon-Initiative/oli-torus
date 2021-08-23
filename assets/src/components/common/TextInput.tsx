@@ -12,7 +12,6 @@ export interface TextInputProps {
 }
 
 export class TextInput extends React.PureComponent<TextInputProps, Record<string, never>> {
-
   constructor(props: TextInputProps) {
     super(props);
 
@@ -30,12 +29,13 @@ export class TextInput extends React.PureComponent<TextInputProps, Record<string
     return (
       <input
         disabled={!this.props.editMode}
-        style={Object.assign((this.props.style || {}), { width: this.props.width })}
+        style={Object.assign(this.props.style || {}, { width: this.props.width })}
         placeholder={this.props.label}
         onChange={this.onChange}
-        className={`form-control form-control-sm ${this.props.hasError ? 'is-invalid' : ''}`}
+        className={`form-control ${this.props.hasError ? 'is-invalid' : ''}`}
         type={this.props.type}
-        value={this.props.value} />
+        value={this.props.value}
+      />
     );
   }
 }

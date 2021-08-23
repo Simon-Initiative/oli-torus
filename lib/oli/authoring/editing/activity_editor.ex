@@ -68,7 +68,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   @doc """
-  Deletes a secondary activity resource.
+  Deletes an activity document or a secondary activity resource.
 
   Returns:
 
@@ -87,6 +87,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
     secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
+    activity_resource_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
@@ -95,7 +96,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil(),
          {:ok, revision} <- get_latest_revision(publication.id, activity.id) |> trap_nil() do
-      if secondary_id == revision.resource_type_id do
+      if secondary_id == revision.resource_type_id or
+           activity_resource_id == revision.resource_type_id do
         Repo.transaction(fn ->
           update = %{"deleted" => true}
 

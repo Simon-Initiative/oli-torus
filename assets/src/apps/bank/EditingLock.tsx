@@ -13,9 +13,11 @@ export const EditingLock = (props: EditingLockProps) => {
     <button
       onClick={() => onChangeEditMode(!editMode)}
       type="button"
-      className="btn btn-outline-secondary"
-      data-toggle="button"
+      className="btn btn-outline-secondary mb-2"
       aria-pressed="false"
+      data-toggle="tooltip"
+      data-placement="top"
+      title="Enable or disable editing of this activity"
     >
       <i className={`las la-${lockState}`}></i>
     </button>
