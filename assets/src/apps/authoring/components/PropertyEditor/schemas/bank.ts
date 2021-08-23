@@ -11,10 +11,6 @@ import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 const schema = {
   type: 'object',
   properties: {
-    title: {
-      type: 'string',
-      title: 'Title',
-    },
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -33,54 +29,12 @@ const schema = {
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
-    customCssClass: {
-      title: 'Custom CSS Class',
-      type: 'string',
-    },
-    combineFeedback: {
-      title: 'Combine Feedback',
-      type: 'boolean',
-      format: 'checkbox',
-      default: true,
-    },
-    checkButton: {
+    Bank: {
       type: 'object',
       properties: {
-        showCheckBtn: {
-          title: 'Show Check Button',
-          type: 'boolean',
-          format: 'checkbox',
-        },
-        checkButtonLabel: {
-          title: 'Check Button Label',
-          type: 'string',
-        },
+        bankShowCount: { type: 'number', title: 'Randomly selects question(s) from the bank' },
+        bankEndTarget: { type: 'string', title: 'When Completed, proceed to' },
       },
-    },
-    max: {
-      type: 'object',
-      properties: {
-        maxAttempt: {
-          title: 'Max Attempts',
-          type: 'number',
-        },
-        maxScore: {
-          title: 'Max Score',
-          type: 'number',
-        },
-      },
-    },
-    trapStateScoreScheme: {
-      title: 'Trap State Scoring',
-      type: 'boolean',
-      format: 'checkbox',
-      default: true,
-    },
-    negativeScoreAllowed: {
-      title: 'Allow Negative Question Score',
-      type: 'boolean',
-      format: 'checkbox',
-      default: true,
     },
   },
 };
@@ -96,15 +50,6 @@ export const screenUiSchema = {
       classNames: 'col-6',
     },
   },
-  max: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    maxAttempt: {
-      classNames: 'col-6',
-    },
-    maxScore: {
-      classNames: 'col-6',
-    },
-  },
   palette: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Palette',
@@ -117,13 +62,11 @@ export const screenUiSchema = {
     borderStyle: { classNames: 'col-6' },
     borderWidth: { classNames: 'col-6' },
   },
-  checkButton: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    showCheckBtn: {
-      classNames: 'col-12',
-    },
-    checkButtonLabel: {
-      classNames: 'col-12',
+  Bank: {
+    'ui:title': 'Question Bank',
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    bankEndTarget: {
+      'ui:widget': 'DropdownTemplate',
     },
   },
 };
@@ -157,22 +100,13 @@ export const transformScreenModeltoSchema = (
       },${data.palette.fillAlpha || '100'})`,
     };
     let schemaData = {
-      ...data,
-      title: activity?.title || '',
       Size: { width: data.width, height: data.height },
-      checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
-      max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
+      Bank: {
+        bankShowCount: currentSequence?.custom.bankShowCount || 1,
+        bankEndTarget: currentSequence?.custom.bankEndTarget || 'Next',
+      },
     };
-    if (currentSequence?.custom.isBank) {
-      schemaData = {
-        ...schemaData,
-        Bank:{
-          bankShowCount: currentSequence.custom.bankShowCount || 1,
-          bankEndTarget: currentSequence.custom.bankEndTarget || 'Next',
-        }
-      };
-    }
     return schemaData;
   }
 };
@@ -182,35 +116,11 @@ export const transformScreenSchematoModel: any = (
   currentSequence: SequenceEntry<SequenceEntryChild> | null,
 ) => {
   const modelData: any = {
-    title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
-    customCssClass: schema.customCssClass,
-    combineFeedback: schema.combineFeedback,
-    showCheckBtn: schema.checkButton.showCheckBtn,
-    checkButtonLabel: schema.checkButton.checkButtonLabel,
-    maxAttempt: schema.max.maxAttempt,
-    maxScore: schema.max.maxScore,
     palette: { ...schema.palette, useHtmlProps: true },
-    trapStateScoreScheme: schema.trapStateScoreScheme,
-    negativeScoreAllowed: schema.negativeScoreAllowed,
+    bankShowCount: schema.Bank.bankShowCount,
+    bankEndTarget: schema.Bank.bankEndTarget,
   };
-  if (currentSequence?.custom.isBank) {
-    modelData.bankShowCount = schema.Bank.bankShowCount;
-    modelData.bankEndTarget = schema.Bank.bankEndTarget;
-  }
   return modelData;
-};
-
-export const getScreenSchema = (seq: SequenceEntry<SequenceEntryChild> | null) => {
-  if (seq?.custom.isBank) {
-    return {
-      type: schema.type,
-      properties: {
-        Size: schema.properties.Size,
-        palette: schema.properties.palette,
-      },
-    };
-  }
-  return schema;
 };

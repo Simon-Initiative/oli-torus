@@ -403,7 +403,15 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div className="screen-tab p-3 overflow-hidden">
-          {currentActivity && screenData ? (
+          {currentSequence?.custom.isBank ? (
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={screenSchema as JSONSchema7}
+              uiSchema={screenUiSchema}
+              value={screenData}
+              onChangeHandler={screenPropertyChangeHandler}
+            />
+          ) : currentActivity && screenData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
