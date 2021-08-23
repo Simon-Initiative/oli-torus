@@ -577,7 +577,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                 );
               }}
             >
-              Apply
+              Apply Filters
             </button>
           </div>
 
