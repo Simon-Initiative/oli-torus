@@ -8,7 +8,13 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
   alias Oli.Publishing
   alias Oli.Authoring.Course.Project
 
+  @required_app_version "0.13.0"
+
   def up do
+    if Application.fetch_env!(:oli, :build).version != @required_app_version do
+      throw "Migration for advanced_section_creation requires application version #{@required_app_version}"
+    end
+
     section_publication_ids_map =
       from(s in "sections",
         select: {s.id, s.publication_id}
