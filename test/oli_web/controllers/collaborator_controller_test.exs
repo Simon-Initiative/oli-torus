@@ -49,9 +49,9 @@ defmodule OliWeb.CollaboratorControllerTest do
 
                assert html_response(conn, 302) =~ "/project/"
 
-               assert assert get_flash(conn, :error) ==
+               assert assert get_flash(conn, :error) =~
                                "Failed to add some collaborators: notevenan_email"
-             end) =~ "Failed to add collaborators: notevenan_email"
+             end) =~ "Failed to add collaborators"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do

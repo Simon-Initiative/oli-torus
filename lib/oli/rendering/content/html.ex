@@ -322,11 +322,11 @@ defmodule Oli.Rendering.Content.Html do
   defp figure(_attrs, content), do: content
 
   defp missing_media(%Context{render_opts: render_opts} = context, element) do
-    error_id = Utils.random_string(8)
+    error_id = Utils.generate_error_id()
     error_msg = "Rendering error: #{Kernel.inspect(element)}"
 
     if render_opts.log_errors,
-      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
       else: nil
 
     if render_opts.render_errors do
@@ -337,11 +337,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybe_log_error(%Context{render_opts: render_opts}, element) do
-    error_id = Utils.random_string(8)
+    error_id = Utils.generate_error_id()
     error_msg = "Rendering error: #{Kernel.inspect(element)}"
 
     if render_opts.log_errors,
-      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
       else: nil
   end
 end
