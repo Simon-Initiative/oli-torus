@@ -1,14 +1,9 @@
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
-import {
-  SequenceEntry,
-  SequenceEntryChild,
-} from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
-import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-export const screenSchema = {
+const screenSchema = {
   type: 'object',
   properties: {
     title: {
@@ -128,10 +123,7 @@ export const screenUiSchema = {
   },
 };
 
-export const transformScreenModeltoSchema = (
-  currentSequence: SequenceEntry<SequenceEntryChild> | null,
-  activity?: IActivity,
-) => {
+export const transformScreenModeltoSchema = (activity?: IActivity) => {
   if (activity) {
     const data = activity?.content?.custom;
     if (!data) {
@@ -156,7 +148,7 @@ export const transformScreenModeltoSchema = (
           : '255, 255, 255'
       },${data.palette.fillAlpha || '100'})`,
     };
-    let schemaData = {
+    return {
       ...data,
       title: activity?.title || '',
       Size: { width: data.width, height: data.height },
@@ -164,24 +156,11 @@ export const transformScreenModeltoSchema = (
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
     };
-    if (currentSequence?.custom.isBank) {
-      schemaData = {
-        ...schemaData,
-        Bank:{
-          bankShowCount: currentSequence.custom.bankShowCount || 1,
-          bankEndTarget: currentSequence.custom.bankEndTarget || 'Next',
-        }
-      };
-    }
-    return schemaData;
   }
 };
 
-export const transformScreenSchematoModel: any = (
-  schema: any,
-  currentSequence: SequenceEntry<SequenceEntryChild> | null,
-) => {
-  const modelData: any = {
+export const transformScreenSchematoModel = (schema: any) => {
+  return {
     title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
@@ -195,9 +174,6 @@ export const transformScreenSchematoModel: any = (
     trapStateScoreScheme: schema.trapStateScoreScheme,
     negativeScoreAllowed: schema.negativeScoreAllowed,
   };
-  if (currentSequence?.custom.isBank) {
-    modelData.bankShowCount = schema.Bank.bankShowCount;
-    modelData.bankEndTarget = schema.Bank.bankEndTarget;
-  }
-  return modelData;
 };
+
+export default screenSchema;

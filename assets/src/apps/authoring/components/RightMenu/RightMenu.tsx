@@ -37,7 +37,7 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from '../PropertyEditor/schemas/part';
-import { screenSchema,
+import screenSchema, {
   screenUiSchema,
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
@@ -79,7 +79,7 @@ const RightMenu: React.FC<any> = () => {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
-    setScreenData(transformScreenModeltoSchema(currentSequence, currentActivity));
+    setScreenData(transformScreenModeltoSchema(currentActivity));
     setScreenSchema(screenSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
@@ -99,9 +99,9 @@ const RightMenu: React.FC<any> = () => {
   const screenPropertyChangeHandler = useCallback(
     (properties: any) => {
       if (currentActivity) {
-        const modelChanges = transformScreenSchematoModel(properties, currentSequence);
+        const modelChanges = transformScreenSchematoModel(properties);
         console.log('Screen Property Change...', { properties, modelChanges });
-        const { title, bankShowCount, bankEndTarget, ...screenModelChanges } = modelChanges;
+        const { title, ...screenModelChanges } = modelChanges;
         const screenChanges = {
           ...currentActivity?.content?.custom,
           ...screenModelChanges,
@@ -111,14 +111,7 @@ const RightMenu: React.FC<any> = () => {
         if (title) {
           cloneActivity.title = title;
         }
-        debounceSaveScreenSettings(
-          cloneActivity,
-          currentActivity,
-          currentGroup,
-          currentSequence,
-          bankShowCount,
-          bankEndTarget,
-        );
+        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup, currentSequence);
       }
     },
     [currentActivity],
@@ -126,19 +119,13 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity, currentActivity, group, currentSequence, bankShowCount, bankEndTarget) => {
+      (activity, currentActivity, group, currentSequence) => {
         console.log('SAVING ACTIVITY:', { activity });
         dispatch(saveActivity({ activity }));
 
         if (activity.title !== currentActivity?.title) {
           dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
           dispatch(savePage());
-        }
-        if (currentSequence?.custom.isBank) {
-          const cloneSequence = clone(currentSequence);
-          cloneSequence.custom.bankShowCount = bankShowCount;
-          cloneSequence.custom.bankEndTarget = bankEndTarget;
-          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
         }
       },
       500,
