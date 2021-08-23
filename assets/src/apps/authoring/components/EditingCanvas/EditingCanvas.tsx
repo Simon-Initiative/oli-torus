@@ -59,6 +59,13 @@ const EditingCanvas: React.FC = () => {
     [currentActivityTree],
   );
 
+  const handlePartSelect = async (id: string) => {
+    console.log('[handlePartSelect]', { id });
+    dispatch(setCurrentSelection({ selection: id }));
+
+    return true;
+  };
+
   console.log('EC: RENDER', { layers });
 
   return (
@@ -81,6 +88,7 @@ const EditingCanvas: React.FC = () => {
               key={activity.id}
               activityModel={activity}
               editMode={false}
+              onSelectPart={handlePartSelect}
             />
           ))}
       </section>

@@ -8,6 +8,13 @@ import PartComponent from './components/common/PartComponent';
 import { AdaptiveModelSchema } from './schema';
 import Draggable from 'react-draggable';
 
+const defaultHandler = async () => {
+  return {
+    type: 'success',
+    snapshot: {},
+  };
+};
+
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [pusher, _setPusher] = useState(new EventEmitter());
   console.log('adaptive authoring', props);
@@ -19,11 +26,15 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     return { snapshot: {} };
   };
 
-  const handlePartClick = (payload: any) => {
+  const handlePartClick = async (payload: any) => {
     console.log('AUTHOR PART CLICK', payload, props);
     //if (props.editMode) {
     setSelectedPart(payload.id);
     //}
+    if (props.onCustomEvent) {
+      const result = await props.onCustomEvent('selectPart', payload);
+      console.log('got result from onSelect', result);
+    }
   };
 
   const partStyles = parts.map((part) => {
@@ -37,12 +48,19 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     }`;
   });
 
-  const tempWhitelist = ['janus-image'];
+  const tempWhitelist = ['janus-image', 'janus-text-flow'];
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
-      <style>
-        {`
+      <div className="activity-content">
+        <style>
+          {`
+          .activity-content {
+            border: 1px solid #ccc;
+            background-color: ${props.model.content?.custom?.palette.backgroundColor || '#fff'};
+            width: ${props.model.content?.custom?.width || 1000}px;
+            height: ${props.model.content?.custom?.height || 500}px;
+          }
           .react-draggable {
             position: absolute;
             cursor: move;
@@ -59,30 +77,31 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           }
           ${partStyles.join('\n')}
         `}
-      </style>
-      {parts.map((part) => {
-        const partType = tempWhitelist.includes(part.type) ? part.type : `${part.type}-foo`;
-        const partProps = {
-          id: part.id,
-          type: partType,
-          model: part.custom,
-          state: {},
-          editMode: true,
-          onInit: async () => null,
-          onReady: async () => null,
-          onSave: async () => null,
-          onSubmit: async () => null,
-        };
-        return (
-          <Draggable key={part.id} grid={[5, 5]} disabled={selectedPart !== part.id}>
-            <PartComponent
-              {...partProps}
-              className={selectedPart === part.id ? 'selected' : ''}
-              onClick={() => handlePartClick({ id: part.id })}
-            />
-          </Draggable>
-        );
-      })}
+        </style>
+        {parts.map((part) => {
+          const partType = tempWhitelist.includes(part.type) ? part.type : `${part.type}-foo`;
+          const partProps = {
+            id: part.id,
+            type: partType,
+            model: part.custom,
+            state: {},
+            editMode: true,
+            onInit: defaultHandler,
+            onReady: defaultHandler,
+            onSave: defaultHandler,
+            onSubmit: defaultHandler,
+          };
+          return (
+            <Draggable key={part.id} grid={[5, 5]} disabled={selectedPart !== part.id}>
+              <PartComponent
+                {...partProps}
+                className={selectedPart === part.id ? 'selected' : ''}
+                onClick={() => handlePartClick({ id: part.id })}
+              />
+            </Draggable>
+          );
+        })}
+      </div>
     </NotificationContext.Provider>
   ) : null;
 };

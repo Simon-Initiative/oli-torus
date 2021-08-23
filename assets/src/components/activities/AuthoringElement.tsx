@@ -9,6 +9,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   onEdit: (model: T) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
+  onCustomEvent?: (eventName: string, payload: any) => Promise<any>;
   editMode: boolean;
   projectSlug: ProjectSlug;
 }
@@ -45,11 +46,15 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const onRequestMedia = (request: MediaItemRequest) => {
       return this.dispatch('requestMedia', request);
     };
+    const onCustomEvent = (eventName: string, payload: any) => {
+      return this.dispatch('customEvent', { eventName, payload });
+    };
 
     return {
       onEdit,
       onPostUndoable,
       onRequestMedia,
+      onCustomEvent,
       model,
       editMode,
       projectSlug,
