@@ -25,19 +25,55 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { toSimpleText } from 'data/content/text';
+import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
+import { StemAuthoring } from 'components/activities/common/stem/authoring/StemAuthoring';
+import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
+import { MultiInputActions } from 'components/activities/multi_input/actions';
 
 const store = configureStore();
 
 const MultiInput = () => {
-  const { dispatch, model } = useAuthoringElementContext<MultiInputSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();
 
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          <Stem />
+          {model.stems.map((stem, index) => {
+            <StemAuthoring
+              stem={stem}
+              onEdit={(content) =>
+                dispatch(MultiInputActions.editStemAndPreviewText(content, index))
+              }
+            />;
+            {
+              model.inputs[index] && (
+                <InputAuthoring
+                  part={model.authoring.parts[index]}
+                  inputType={model.inputs[index]}
+                />
+              );
+            }
+          })}
 
-          <Choices
+          {/*
+            Add content bar
+              Dropdown
+              Fill in the Blank
+              (Add content after each block inserted, allow author to add spaces or newlines etc to separate questions)
+            Show each question editor as a block instead of <Choices />
+          */}
+
+          <AddResourceContent
+            editMode={editMode}
+            index={0}
+            isLast={props.id === 'last'}
+            onAddItem={}
+          >
+            <div></div>
+          </AddResourceContent>
+
+          {/* <Choices
             icon={(_c, i) => <span>{i + 1}.</span>}
             choices={model.choices}
             addOne={() => dispatch(ChoiceActions.addChoice(ActivityTypes.makeChoice('')))}
@@ -47,9 +83,9 @@ const MultiInput = () => {
             onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
             onRemove={(id) => dispatch(Actions.removeChoice(id))}
             simpleText
-          />
+          /> */}
         </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label="Answer Key">
+        {/* <TabbedNavigation.Tab label="Answer Key">
           <StemDelivery stem={model.stem} context={defaultWriterContext()} />
           <select
             onChange={(e) => dispatch(Actions.toggleChoiceCorrectness(e.target.value))}
@@ -70,11 +106,11 @@ const MultiInput = () => {
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
           />
-        </TabbedNavigation.Tab>
+        </TabbedNavigation.Tab> */}
 
-        <TabbedNavigation.Tab label="Hints">
+        {/* <TabbedNavigation.Tab label="Hints">
           <Hints hintsPath="$.authoring.parts[0].hints" />
-        </TabbedNavigation.Tab>
+        </TabbedNavigation.Tab> */}
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>

@@ -9,7 +9,6 @@ import {
 import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -68,7 +67,7 @@ export const Ordering: React.FC = () => {
 export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
   migrateModelVersion(model: any) {
     return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
+      just: (_v2) => model,
       nothing: () => orderingV1toV2(model),
     });
   }

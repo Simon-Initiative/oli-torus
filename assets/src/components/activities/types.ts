@@ -132,6 +132,7 @@ export interface Stem extends Identifiable, HasContent {}
 export interface HasStem {
   stem: Stem;
 }
+export type HasStems = { stems: Stem[] };
 export const makeStem: (text: string) => Stem = makeContent;
 export interface Hint extends Identifiable, HasContent {}
 export type HasHints = HasParts;

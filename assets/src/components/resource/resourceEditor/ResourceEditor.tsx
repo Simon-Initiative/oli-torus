@@ -25,15 +25,8 @@ import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
 import { Banner } from '../../messages/Banner';
 import { ActivityEditContext } from 'data/content/activity';
-import { create } from 'data/persistence/objective';
 import { Undoable as ActivityUndoable } from 'components/activities/types';
-import {
-  registerUnload,
-  unregisterUnload,
-  unregisterKeydown,
-  unregisterKeyup,
-  unregisterWindowBlur,
-} from './listeners';
+import { registerUnload, unregisterUnload } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Undoables, empty, PageUndoable } from './types';
@@ -167,7 +160,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
         // eslint-disable-next-line
-        () => { },
+        () => {},
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -201,7 +194,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => { },
+          () => {},
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -409,7 +402,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => { },
+          () => {},
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -487,7 +480,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 }
 
 // eslint-disable-next-line
-interface StateProps { }
+interface StateProps {}
 
 interface DispatchProps {
   onLoadPreferences: () => void;

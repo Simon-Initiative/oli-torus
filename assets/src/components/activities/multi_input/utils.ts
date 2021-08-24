@@ -1,16 +1,5 @@
-import { MultiInputSchema } from './schema';
-import {
-  Choice,
-  HasParts,
-  makeChoice,
-  makeHint,
-  makeResponse,
-  makeStem,
-  makeTransformation,
-  Operation,
-  ScoringStrategy,
-} from '../types';
-import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { MultiInputSchema, MultiInput } from './schema';
+import { HasParts, makeStem, makeTransformation, Operation } from '../types';
 import {
   getCorrectResponse,
   getIncorrectResponse,
@@ -18,24 +7,11 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 
 export const defaultModel: () => MultiInputSchema = () => {
-  const choiceA: Choice = makeChoice('Choice A');
-  const choiceB: Choice = makeChoice('Choice B');
-
   return {
-    stem: makeStem(''),
-    choices: [choiceA, choiceB],
+    stems: [makeStem('')],
+    inputs: [] as MultiInput[],
     authoring: {
-      parts: [
-        {
-          id: '1',
-          scoringStrategy: ScoringStrategy.average,
-          responses: [
-            makeResponse(matchRule(choiceA.id), 1, ''),
-            makeResponse(matchRule('.*'), 0, ''),
-          ],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
-      ],
+      parts: [],
       targeted: [],
       transformations: [makeTransformation('choices', Operation.shuffle)],
       previewText: '',
