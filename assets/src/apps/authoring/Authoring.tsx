@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
@@ -34,7 +34,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
 
   const authoringContainer = document.getElementById('advanced-authoring');
-  const isAppVisible = true;
+  const [isAppVisible, setIsAppVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const leftPanelState = useSelector(selectLeftPanel);
   const rightPanelState = useSelector(selectRightPanel);
@@ -102,31 +103,49 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     };
   }, [isAppVisible]);
 
+  useEffect(() => {
+    setTimeout(() => {
+      setIsAppVisible(true);
+    }, 500);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+  }, []);
+
   return (
-    <div id="advanced-authoring" className={`advanced-authoring startup`}>
-      <HeaderNav panelState={panelState} isVisible={panelState.top} />
-      <SidePanel
-        position="left"
-        panelState={panelState}
-        onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-      >
-        <LeftMenu />
-      </SidePanel>
-      <EditingCanvas />
-      <BottomPanel
-        panelState={panelState}
-        onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-      >
-        <AdaptivityEditor />
-      </BottomPanel>
-      <SidePanel
-        position="right"
-        panelState={panelState}
-        onToggle={() => handlePanelStateChange({ right: !panelState.right })}
-      >
-        <RightMenu />
-      </SidePanel>
-    </div>
+    <>
+      {isLoading && (
+        <div id="aa-loading">
+          <div className="loader spinner-border text-primary" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+        </div>
+      )}
+      <div id="advanced-authoring" className={`advanced-authoring d-none`}>
+        <HeaderNav panelState={panelState} isVisible={panelState.top} />
+        <SidePanel
+          position="left"
+          panelState={panelState}
+          onToggle={() => handlePanelStateChange({ left: !panelState.left })}
+        >
+          <LeftMenu />
+        </SidePanel>
+        <EditingCanvas />
+        <BottomPanel
+          panelState={panelState}
+          onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
+        >
+          <AdaptivityEditor />
+        </BottomPanel>
+        <SidePanel
+          position="right"
+          panelState={panelState}
+          onToggle={() => handlePanelStateChange({ right: !panelState.right })}
+        >
+          <RightMenu />
+        </SidePanel>
+      </div>
+    </>
   );
 };
 

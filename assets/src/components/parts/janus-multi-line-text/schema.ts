@@ -21,7 +21,6 @@ export const schema = {
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -38,16 +37,13 @@ export const schema = {
   showCharacterCount: {
     title: 'Show Character Count',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether the character count is visible',
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether textbox is enabled',
     default: true,
-    isVisibleInTrapState: true,
   },
 };
 

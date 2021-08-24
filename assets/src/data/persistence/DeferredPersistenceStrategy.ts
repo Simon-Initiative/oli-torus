@@ -25,6 +25,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     this.flushResolve = null;
     this.inFlight = false;
     this.pending = null;
+    this.destroyed = false;
   }
 
   now() {
@@ -111,7 +112,11 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   doDestroy(): boolean {
-    return this.flushPendingChanges();
+    if (!this.destroyed) {
+      this.destroyed = true;
+      return this.flushPendingChanges();
+    }
+    return false;
   }
 
   flushPendingChanges(): boolean {

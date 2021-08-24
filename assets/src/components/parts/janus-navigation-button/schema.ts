@@ -22,13 +22,11 @@ export const schema = {
   visible: {
     title: 'Visible',
     type: 'boolean',
-    format: 'checkbox',
     default: true,
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     default: true,
   },
   textColor: {
@@ -39,7 +37,6 @@ export const schema = {
   transparent: {
     title: 'Transparent',
     type: 'boolean',
-    format: 'checkbox',
     default: false,
     description: 'specifies if button is transparent',
   },

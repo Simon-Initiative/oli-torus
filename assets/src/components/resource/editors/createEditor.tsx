@@ -79,7 +79,6 @@ export const createEditor = (
       resourceSlug: resourceSlug,
       resourceId: resourceContext.resourceId,
       resourceTitle: resourceContext.title,
-      authoringScript: activity.authoringScript,
       authoringElement: activity.authoringElement,
       friendlyName: activity.friendlyName,
       description: activity.description,

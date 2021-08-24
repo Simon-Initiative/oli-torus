@@ -1,10 +1,10 @@
 import React, { Fragment } from 'react';
 interface CustomFieldProps {
   uiSchema: any;
-  description: any;
-  properties: boolean;
+  description: string;
+  properties: any;
 }
-const CustomFieldTemplate: React.FC<CustomFieldProps> = (props: any) => {
+const CustomFieldTemplate: React.FC<CustomFieldProps> = (props) => {
   return (
     <Fragment>
       {props.uiSchema['ui:title'] ? <h6>{props.uiSchema['ui:title']}</h6> : null}

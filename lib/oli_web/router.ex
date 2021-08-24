@@ -252,6 +252,9 @@ defmodule OliWeb.Router do
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
 
+    # Activity Bank
+    get("/:project_id/bank", ActivityBankController, :index)
+
     # Objectives
     live("/:project_id/objectives", Objectives.Objectives,
       session: {__MODULE__, :with_session, []}
@@ -352,6 +355,7 @@ defmodule OliWeb.Router do
 
     get("/:resource", Api.ActivityController, :retrieve)
     post("/", Api.ActivityController, :bulk_retrieve)
+    put("/", Api.ActivityController, :bulk_update)
     delete("/:resource", Api.ActivityController, :delete)
     put("/:resource", Api.ActivityController, :update)
     post("/:resource", Api.ActivityController, :create_secondary)
