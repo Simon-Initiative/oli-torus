@@ -164,7 +164,6 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
     |> then(fn {_, results} -> Enum.at(results, 0) end)
     |> then(fn section_id ->
         # create a section project publication association
-        now = DateTime.utc_now() |> DateTime.truncate(:second)
         Repo.insert_all("sections_projects_publications", [%{
           section_id: section_id,
           project_id: project_id,
