@@ -3,6 +3,8 @@ import React, { ChangeEvent, CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import { transformModelToSchema } from '../schemas/part';
+import Ajv from 'ajv';
 interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: any) => void;
@@ -28,11 +30,18 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
     const changedVal = event.target.value;
     setValue(changedVal);
     try {
+      const ajv = new Ajv();
+      const valid = ajv.validate(schema, transformModelToSchema(JSON.parse(changedVal)));
       const jsonVal = JSON.parse(changedVal);
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else if (!jsonVal.id) {
         setValidationMsg('ID is required and cannot be empty');
+      } else if (!valid) {
+        ajv.errors?.reduce((acc, error) => {
+          acc.concat(error.message), ''
+        })
+        setValidationMsg('errors');
       } else {
         setValidationMsg('');
       }
