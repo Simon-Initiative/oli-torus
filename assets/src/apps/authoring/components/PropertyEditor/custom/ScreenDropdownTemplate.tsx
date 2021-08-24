@@ -10,13 +10,13 @@ import {
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { useSelector } from 'react-redux';
 
-interface CustomDropdownProps {
+interface ScreenDropdownProps {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
 }
-const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
+const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
   const { id, label, value, onChange } = props;
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
@@ -51,4 +51,4 @@ const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
   );
 };
 
-export default CustomDropdownTemplate;
+export default ScreenDropdownTemplate;

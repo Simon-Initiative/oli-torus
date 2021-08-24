@@ -4,7 +4,7 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import React, { Fragment } from 'react';
 import CustomCheckbox from './custom/CustomCheckbox';
-import CustomDropdownTemplate from './custom/CustomDropdownTemplate';
+import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -15,7 +15,7 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   CheckboxWidget: CustomCheckbox,
-  DropdownTemplate: CustomDropdownTemplate,
+  DropdownTemplate: ScreenDropdownTemplate,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
