@@ -73,7 +73,15 @@ function prepareSaveFn(
   resource: ResourceSlug,
   update: Persistence.ResourceUpdate,
 ) {
-  return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
+  return (releaseLock: boolean) =>
+    Persistence.edit(project, resource, update, releaseLock).then((result) => {
+      // check if the slug has changed as a result of the edit and reload the page if it has
+      if (result.type === 'success' && result.revision_slug !== resource) {
+        window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
+        return result;
+      }
+      return result;
+    });
 }
 
 // Ensures that there is some default content if the initial content

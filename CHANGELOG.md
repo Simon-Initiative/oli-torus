@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where changing the title of a page made the current slug invalid
+
 ### Enhancements
 
 - Enable banked activity creation and editing
