@@ -114,9 +114,7 @@ defmodule OliWeb.PageDeliveryController do
       if page.max_attempts == 0 do
         "You can take this assessment an unlimited number of times"
       else
-        "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{
-          page.max_attempts
-        } total attempt#{plural(page.max_attempts)}."
+        "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
       end
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
@@ -267,10 +265,6 @@ defmodule OliWeb.PageDeliveryController do
         grade_sync_result = send_one_grade(section, user, resource_access)
         after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)
 
-      {:error, {:not_all_answered}} ->
-        put_flash(conn, :error, "You have not answered all questions")
-        |> redirect(to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-
       {:error, {:already_submitted}} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
 
@@ -295,9 +289,7 @@ defmodule OliWeb.PageDeliveryController do
         taken = length(context.resource_attempts)
         remaining = max(context.page.max_attempts - taken, 0)
 
-        "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{
-          plural(remaining)
-        } remaining"
+        "You have taken #{taken} attempt#{plural(taken)} and have #{remaining} more attempt#{plural(remaining)} remaining"
       end
 
     grade_message =

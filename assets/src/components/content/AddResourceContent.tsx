@@ -73,7 +73,6 @@ export const AddResourceContent = ({
 
         const activity: ActivityEditContext = {
           authoringElement: editor.authoringElement as string,
-          authoringScript: '',
           description: editor.description,
           friendlyName: editor.friendlyName,
           activitySlug: result.revisionSlug,

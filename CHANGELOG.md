@@ -3,7 +3,10 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+- Enable banked activity creation and editing
 
 ## 0.12.9 (2021-08-20)
 
@@ -13,6 +16,7 @@
 
 ### Enhancements
 
+- Allow for submission of graded pages without answering all questions
 - Add API support for bulk activity updating
 
 ## 0.12.8 (2021-08-11)

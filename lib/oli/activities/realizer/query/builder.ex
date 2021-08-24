@@ -47,7 +47,7 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       :limit_offset,
       case view_type do
         :random -> "ORDER BY RANDOM() LIMIT #{limit}"
-        :paged -> "LIMIT #{limit} OFFSET #{offset}"
+        :paged -> "ORDER BY revisions.resource_id LIMIT #{limit} OFFSET #{offset}"
       end
     )
   end
