@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { ActivityUpdate, edit } from 'data/persistence/activity';
+import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import {
   selectActivityById,
@@ -69,15 +69,25 @@ export const updateActivityPartInheritance = createAsyncThunk(
       const projectSlug = selectProjectSlug(rootState);
       const resourceId = selectResourceId(rootState);
       // in lieu of bulk edit
-      const updates = activitiesToUpdate.map((activity) => {
-        const changeData: ActivityUpdate = {
+      const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
+        const changeData: BulkActivityUpdate = {
           title: activity.title,
           objectives: activity.objectives,
           content: { ...activity.content, authoring: activity.authoring },
+          resource_id: resourceId,
         };
-        return edit(projectSlug, resourceId, activity.resourceId, changeData, false);
+        const update = Object.assign({}, changeData, false);
+        update.content = Object.assign({}, update.content);
+
+        // Here we pull the "authoring" key out of "content" and elevate it
+        // as a top-level key
+        if (update.content.authoring !== undefined) {
+          update.authoring = update.content.authoring;
+          delete update.content.authoring;
+        }
+        return update;
       });
-      await Promise.all(updates);
+      await bulkEdit(projectSlug, resourceId, updates);
       await dispatch(releaseEditingLock());
       return;
     }
