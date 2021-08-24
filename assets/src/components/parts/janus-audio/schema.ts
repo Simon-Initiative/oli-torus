@@ -30,13 +30,13 @@ export const schema = {
     default: false,
   },
   startTime: {
-    title: 'Start time',
+    title: 'Start time(secs)',
     type: 'number',
     description: 'specifies the start time of the audio',
     default: 0,
   },
   endTime: {
-    title: 'End time',
+    title: 'End time(secs)',
     type: 'number',
     description: 'specifies the end time of the audio',
     default: 0,
