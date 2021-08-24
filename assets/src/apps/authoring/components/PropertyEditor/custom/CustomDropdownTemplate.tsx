@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 import { SequenceDropdown } from './SequenceDropdown';
 import {
   findInHierarchy,
@@ -9,7 +9,6 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { useSelector } from 'react-redux';
-import { useEffect } from 'react';
 
 interface CustomDropdownProps {
   id: string;
@@ -24,16 +23,11 @@ const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
   const seq = findInHierarchy(hierarchy, value);
   const buttonLabel = seq?.custom.sequenceName;
 
-  const onChangeHandler = (e: any, item: SequenceEntry<SequenceEntryChild>) => {
+  const onChangeHandler = (e: React.MouseEvent, item: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
     //setSelectedScreenId(item.custom.sequenceId);
     onChange(item.custom.sequenceId);
   };
-
-  // useEffect(() => {
-  //   const seq = findInHierarchy(hierarchy, selectedScreenId);
-  //   setButtonLabel(seq?.custom.sequenceName || 'next');
-  // }, [selectedScreenId, hierarchy]);
 
   return (
     <Fragment>

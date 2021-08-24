@@ -50,8 +50,6 @@ import bankSchema, {
 } from '../PropertyEditor/schemas/bank';
 import {
   findInSequence,
-  getIsBank,
-  getIsLayer,
   SequenceBank,
   SequenceEntry,
 } from '../../../delivery/store/features/groups/actions/sequence';

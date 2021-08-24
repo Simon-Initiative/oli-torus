@@ -1,10 +1,6 @@
 import { UiSchema } from '@rjsf/core';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
-import {
-  SequenceBank,
-  SequenceEntry,
-  SequenceEntryChild,
-} from 'apps/delivery/store/features/groups/actions/sequence';
+import { SequenceBank, SequenceEntry } from 'apps/delivery/store/features/groups/actions/sequence';
 import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';

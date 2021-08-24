@@ -1,7 +1,6 @@
 import React from 'react';
 import { Accordion, ListGroup } from 'react-bootstrap';
 import {
-  SequenceEntry,
   SequenceEntryChild,
   SequenceHierarchyItem,
   SequenceEntryType,
@@ -10,7 +9,7 @@ import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
 interface SeqDropdownProps {
   items: SequenceHierarchyItem<SequenceEntryChild>[];
-  onChange: (e: any, item: SequenceHierarchyItem<SequenceEntryChild>) => void;
+  onChange: (e: React.MouseEvent, item: SequenceHierarchyItem<SequenceEntryChild>) => void;
   value: string;
 }
 
