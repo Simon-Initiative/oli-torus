@@ -51,13 +51,13 @@ export const Editors = (props: EditorsProps) => {
   }, {});
 
   const {
-    editorMap,
     editMode,
     graded,
     content,
     activityContexts,
     projectSlug,
     resourceSlug,
+    editorMap,
     onEditContentList,
     onAddItem,
     onActivityEdit,
@@ -121,6 +121,7 @@ export const Editors = (props: EditorsProps) => {
       objectivesMap,
       editorProps,
       allObjectives,
+      editorMap,
       onEdit,
       onActivityEdit,
       onPostUndoable,

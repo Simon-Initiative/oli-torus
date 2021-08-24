@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as Bank from 'data/content/bank';
 import { LogicProps } from './common';
 import { Expression } from './Expression';
-import { CloseButton } from '../../components/misc/CloseButton';
+import { CloseButton } from '../misc/CloseButton';
 import guid from 'utils/guid';
 
 export interface ClauseProps extends LogicProps {

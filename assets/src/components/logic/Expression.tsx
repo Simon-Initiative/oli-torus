@@ -6,7 +6,7 @@ import { Fact } from 'data/content/bank';
 
 import { ActivityTypeSelection } from './ActivityTypeSelection';
 import { TextInput } from 'components/common/TextInput';
-import { LogicProps } from './common';
+import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
 
 export interface ExpressionProps extends LogicProps {

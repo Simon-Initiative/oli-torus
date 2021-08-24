@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import ResourceEditor from './resourceEditor/ResourceEditor';
+import PageEditor from './page-editor/PageEditor';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { Maybe } from 'tsmonad';
@@ -14,7 +14,7 @@ let store = configureStore();
 
   ReactDOM.render(
     <Provider store={store}>
-      <ResourceEditor {...params} />
+      <PageEditor {...params} />
       <ModalDisplay />
     </Provider>,
     mountPoint,
