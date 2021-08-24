@@ -15,8 +15,9 @@ const Unknown: React.FC<PartComponentProps<any>> = (props) => {
     width,
     // height,
     zIndex: z,
-    backgroundColor: '#eee',
+    backgroundColor: 'magenta',
     overflow: 'hidden',
+    fontWeight: 'bold',
   };
 
   useEffect(() => {

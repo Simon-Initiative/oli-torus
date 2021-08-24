@@ -165,9 +165,15 @@ abstract class ReactCustomElement extends HTMLElement {
     if (this.getAttribute('customcssclass')) {
       const customCssClass = this.getAttribute('customcssclass') as string;
       const currentClasses = this.getAttribute('class') as string;
-      const allClasses = customCssClass.split(' ').concat(currentClasses.split(' '));
-      // TODO: unique?
-      this.setAttribute('class', allClasses.join(' '));
+      if (customCssClass) {
+        if (!currentClasses) {
+          this.setAttribute('class', customCssClass);
+        } else {
+          const allClasses = customCssClass.split(' ').concat(currentClasses.split(' '));
+          // TODO: unique?
+          this.setAttribute('class', allClasses.join(' '));
+        }
+      }
     }
 
     this._vdom = React.createElement(

@@ -59,8 +59,6 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     }`;
   });
 
-  const tempWhitelist = ['janus-image', 'janus-text-flow'];
-
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div className="activity-content">
@@ -74,7 +72,20 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           }
           .react-draggable {
             position: absolute;
+            cursor: pointer;
+          }
+          .react-draggable.selected {
             cursor: move;
+          }
+          .react-draggable:hover::before{
+            content: "";
+            width: calc(100% + 10px);
+            height: calc(100% + 10px);
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            border: 1px #ccc solid;
+            z-index: -1;
           }
           .react-draggable.selected::before{
             content: "";
@@ -90,10 +101,9 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
         `}
         </style>
         {parts.map((part) => {
-          const partType = tempWhitelist.includes(part.type) ? part.type : `${part.type}-foo`;
           const partProps = {
             id: part.id,
-            type: partType,
+            type: part.type,
             model: part.custom,
             state: {},
             editMode: true,
