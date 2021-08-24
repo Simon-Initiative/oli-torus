@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Properly handle ordering activity submission when no student interaction has taken place
+
 ### Enhancements
 
 - Enable banked activity creation and editing

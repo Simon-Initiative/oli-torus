@@ -39,6 +39,17 @@ export const CheckAllThatApplyComponent: React.FC = () => {
 
   useEffect(() => {
     dispatch(initializeState(activityState, initialSelection(activityState)));
+
+    setTimeout(() => {
+      if (activityState.parts[0].response === null) {
+        onSaveActivity(activityState.attemptGuid, [
+          {
+            attemptGuid: activityState.parts[0].attemptGuid,
+            response: { input: '' },
+          },
+        ]);
+      }
+    }, 0);
   }, []);
 
   // First render initializes state
