@@ -1,6 +1,7 @@
 import { UiSchema } from '@rjsf/core';
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import {
+  SequenceBank,
   SequenceEntry,
   SequenceEntryChild,
 } from 'apps/delivery/store/features/groups/actions/sequence';
@@ -74,7 +75,7 @@ export const bankUiSchema: UiSchema = {
 };
 
 export const transformBankModeltoSchema = (
-  currentSequence: SequenceEntry<SequenceEntryChild> | null,
+  currentSequence: SequenceEntry<SequenceBank> | null,
   activity?: IActivity,
 ) => {
   if (activity) {
@@ -106,16 +107,14 @@ export const transformBankModeltoSchema = (
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
       Bank: {
         bankShowCount: currentSequence?.custom.bankShowCount || 1,
-        bankEndTarget: currentSequence?.custom.bankEndTarget || 'Next',
+        bankEndTarget: currentSequence?.custom.bankEndTarget || 'next',
       },
     };
     return schemaData;
   }
 };
 
-export const transformBankSchematoModel = (
-  schema: any,
-) => {
+export const transformBankSchematoModel = (schema: any) => {
   const modelData = {
     width: schema.Size.width,
     height: schema.Size.height,

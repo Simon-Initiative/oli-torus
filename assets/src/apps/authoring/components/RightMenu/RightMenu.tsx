@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -51,6 +52,8 @@ import {
   findInSequence,
   getIsBank,
   getIsLayer,
+  SequenceBank,
+  SequenceEntry,
 } from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
@@ -89,7 +92,9 @@ const RightMenu: React.FC<any> = () => {
     setScreenData(transformScreenModeltoSchema(currentActivity));
     setScreenSchema(screenSchema);
 
-    setBankData(transformBankModeltoSchema(currentSequence, currentActivity));
+    setBankData(
+      transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>, currentActivity),
+    );
     setBankSchema(bankSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
@@ -140,6 +145,7 @@ const RightMenu: React.FC<any> = () => {
           cloneSequence.custom.bankShowCount = bankShowCount;
           cloneSequence.custom.bankEndTarget = bankEndTarget;
           dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
+          dispatch(savePage());
         }
       },
       100,
@@ -481,7 +487,6 @@ const RightMenu: React.FC<any> = () => {
                   onChange={handleEditComponentJson}
                   jsonValue={currentComponentData}
                   existingPartIds={existingIds}
-                  schema={componentSchema}
                 />
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />

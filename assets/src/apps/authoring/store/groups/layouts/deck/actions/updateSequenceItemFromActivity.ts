@@ -31,18 +31,18 @@ export const updateSequenceItem = createAsyncThunk(
   `${GroupsSlice}/updateSequenceItem`,
   async (
     payload: {
-      sequence?: SequenceEntry<SequenceEntryChild>;
+      sequence?: any;
       group?: any;
     },
     { dispatch },
   ) => {
-    const { sequence, group } = payload;
+    const { sequence = {}, group = {} } = payload;
     const clonedGroup = clone(group);
     const sequenceEntry = clonedGroup.children.find(
-      (entry: any) => entry.resourceId === sequence?.resourceId,
+      (entry: any) => entry.resourceId === sequence.resourceId,
     );
-    sequenceEntry.custom.bankShowCount = sequence?.custom.bankShowCount;
-    sequenceEntry.custom.bankEndTarget = sequence?.custom.bankEndTarget;
+    sequenceEntry.custom.bankShowCount = sequence.custom.bankShowCount;
+    sequenceEntry.custom.bankEndTarget = sequence.custom.bankEndTarget;
     dispatch(upsertGroup({ group: clonedGroup }));
     // TODO: save it to a DB ?
     return group;

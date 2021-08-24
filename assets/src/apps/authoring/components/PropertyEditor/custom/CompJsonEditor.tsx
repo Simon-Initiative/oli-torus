@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { ChangeEvent, CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import React, { Fragment, useState } from 'react';
 import { SequenceDropdown } from './SequenceDropdown';
 import {
@@ -9,31 +10,31 @@ import {
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { UiSchema } from '@rjsf/core';
 
 interface CustomDropdownProps {
   id: string;
   label: string;
-  uiSchema: UiSchema;
-  description: string;
-  properties: object;
   value: string;
   onChange: (value: string) => void;
 }
 const CustomDropdownTemplate: React.FC<CustomDropdownProps> = (props) => {
-  const { id, label, uiSchema, description, properties, value, onChange } = props;
+  const { id, label, value, onChange } = props;
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
-  const [buttonLabel, setButtonLabel] = useState<string>('');
-  const [val, setVal] = useState<string>(value);
-  useEffect(() => {
-    const seq = findInHierarchy(hierarchy, val);
-    setButtonLabel(seq?.custom.sequenceName || 'Next');
-  }, [val]);
-  const onChangeHandler = (item: SequenceEntry<SequenceEntryChild>) => {
-    setVal(item.custom.sequenceId);
+  const seq = findInHierarchy(hierarchy, value);
+  const buttonLabel = seq?.custom.sequenceName;
+
+  const onChangeHandler = (e: any, item: SequenceEntry<SequenceEntryChild>) => {
+    e.stopPropagation();
+    //setSelectedScreenId(item.custom.sequenceId);
     onChange(item.custom.sequenceId);
   };
+
+  // useEffect(() => {
+  //   const seq = findInHierarchy(hierarchy, selectedScreenId);
+  //   setButtonLabel(seq?.custom.sequenceName || 'next');
+  // }, [selectedScreenId, hierarchy]);
+
   return (
     <Fragment>
       <span className="form-label">{label}</span>
