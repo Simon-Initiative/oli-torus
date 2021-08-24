@@ -37,13 +37,24 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     }
   };
 
+  const handlePartDrag = async (payload: any) => {
+    console.log('AUTHOR PART DRAG', payload);
+    // TODO: optimistically update part location and sync with draggable?
+    if (props.onCustomEvent) {
+      const result = await props.onCustomEvent('dragPart', payload);
+      console.log('got result from onDrag', result);
+    }
+    // need to reset the styling applied by react-draggable
+    payload.node.setAttribute('style', '');
+  };
+
   const partStyles = parts.map((part) => {
     return `#${part.id.replace(/:/g, '\\:')} {
       display: block;
       position: absolute;
       width: ${part.custom.width}px;
-      left: ${part.custom.x}px;
       top: ${part.custom.y}px;
+      left: ${part.custom.x}px;
       z-index: ${part.custom.z};
     }`;
   });
@@ -92,7 +103,15 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             onSubmit: defaultHandler,
           };
           return (
-            <Draggable key={part.id} grid={[5, 5]} disabled={selectedPart !== part.id}>
+            <Draggable
+              key={part.id}
+              grid={[5, 5]}
+              disabled={selectedPart !== part.id}
+              onDrag={(e, data) => { console.log('DRAGGING', data); }}
+              onStop={(_, { x, y, node }) => {
+                handlePartDrag({ id: part.id, x, y, node });
+              }}
+            >
               <PartComponent
                 {...partProps}
                 className={selectedPart === part.id ? 'selected' : ''}

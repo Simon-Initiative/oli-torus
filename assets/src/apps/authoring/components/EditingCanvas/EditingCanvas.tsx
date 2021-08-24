@@ -7,7 +7,6 @@ import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
-import KonvaStage from './KonvaStage';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -40,8 +39,8 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = useCallback(
-    (id: string, position: { x: number; y: number }) => {
-      console.log('[handlePositionChanged]', { id, position });
+    async (id: string, deltaX: number, deltaY: number) => {
+      console.log('[handlePositionChanged]', { id, deltaX, deltaY });
       if (!currentActivityTree) {
         return;
       }
@@ -51,8 +50,8 @@ const EditingCanvas: React.FC = () => {
       if (!partDef) {
         return;
       }
-      partDef.custom.x = position.x;
-      partDef.custom.y = position.y;
+      partDef.custom.x += deltaX;
+      partDef.custom.y += deltaY;
 
       dispatch(saveActivity({ activity: currentActivityClone }));
     },
@@ -71,17 +70,6 @@ const EditingCanvas: React.FC = () => {
   return (
     <React.Fragment>
       <section className="aa-stage">
-        {/* {currentActivity && (
-          <KonvaStage
-            key={currentActivity.id}
-            selected={[currentPartSelection]}
-            background={background}
-            size={{ width, height }}
-            layers={layers}
-            onSelectionChange={handleSelectionChanged}
-            onPositionChange={handlePositionChanged}
-          />
-        )} */}
         {currentActivityTree &&
           currentActivityTree.map((activity) => (
             <AuthoringActivityRenderer
@@ -89,6 +77,7 @@ const EditingCanvas: React.FC = () => {
               activityModel={activity}
               editMode={false}
               onSelectPart={handlePartSelect}
+              onPartChangePosition={handlePositionChanged}
             />
           ))}
       </section>
