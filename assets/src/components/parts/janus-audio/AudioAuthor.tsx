@@ -1,7 +1,8 @@
-import { PartComponentProps } from 'components/parts/types/parts';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { AudioModel } from './schema';
 
-const AudioAuthor: React.FC<PartComponentProps<any>> = (props) => {
+const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;
@@ -20,7 +21,7 @@ const AudioAuthor: React.FC<PartComponentProps<any>> = (props) => {
 
   return (
     <div style={styles}>
-      <p>Audio:</p>
+      <p>Audio</p>
     </div>
   );
 };

@@ -4,12 +4,8 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
-
-interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
-  src: string;
-  alt: string;
-}
+import { PartComponentProps } from '../types/parts';
+import { ImageModel } from './schema';
 
 const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

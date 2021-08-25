@@ -1,5 +1,9 @@
 /* eslint-disable react/prop-types */
-import { PartComponentProps } from 'components/parts/types/parts';
+import {
+  AuthorPartComponentProps,
+  CustomProperties,
+  PartComponentProps,
+} from 'components/parts/types/parts';
 import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   NotificationContext,
@@ -8,7 +12,9 @@ import {
 } from '../../../../../apps/delivery/components/NotificationContext';
 import { tagName as UnknownTag } from './UnknownPart';
 
-const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
+const PartComponent: React.FC<
+  AuthorPartComponentProps<CustomProperties> | PartComponentProps<CustomProperties>
+> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
   // TODO: build from configuration instead
@@ -103,7 +109,7 @@ const PartComponent: React.FC<PartComponentProps<any>> = (props) => {
   };
 
   // if we pass in style then it will be controlled and so nothing else can use it
-  if (!props.editMode) {
+  if (!(props as AuthorPartComponentProps<CustomProperties>).editMode) {
     webComponentProps.style = compStyles;
   }
 

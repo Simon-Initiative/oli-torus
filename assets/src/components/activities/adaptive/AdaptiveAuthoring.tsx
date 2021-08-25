@@ -2,11 +2,11 @@ import { NotificationContext } from 'apps/delivery/components/NotificationContex
 import EventEmitter from 'events';
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import Draggable from 'react-draggable';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import PartComponent from './components/common/PartComponent';
 import { AdaptiveModelSchema } from './schema';
-import Draggable from 'react-draggable';
 
 const defaultHandler = async () => {
   return {
@@ -117,7 +117,9 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
               key={part.id}
               grid={[5, 5]}
               disabled={selectedPart !== part.id}
-              onDrag={(e, data) => { console.log('DRAGGING', data); }}
+              onDrag={(e, data) => {
+                console.log('DRAGGING', data);
+              }}
               onStop={(_, { x, y, node }) => {
                 handlePartDrag({ id: part.id, x, y, node });
               }}

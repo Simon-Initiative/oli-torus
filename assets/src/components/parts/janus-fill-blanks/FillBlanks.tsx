@@ -1,20 +1,20 @@
-
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
-import { usePrevious } from '../../hooks/usePrevious';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const css = require('./FillBlanks.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const quill = require('./Quill.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const select2Styles = require('react-select2-wrapper/css/select2.css');
-import { JanusFillBlanksProperties } from './FillBlanksType';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
+import { usePrevious } from '../../hooks/usePrevious';
+import { PartComponentProps } from '../types/parts';
+import { FIBModel } from './schema';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const css = require('./FillBlanks.css');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const quill = require('./Quill.css');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const select2Styles = require('react-select2-wrapper/css/select2.css');
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -25,7 +25,7 @@ interface SelectOption {
   value: string;
 }
 
-const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
+const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : []);
@@ -464,11 +464,7 @@ const FillBlanks: React.FC<JanusFillBlanksProperties> = (props) => {
     },
   );
   return (
-    <div
-      style={wrapperStyles}
-      className={`fib-container`}
-      ref={fibContainer}
-    >
+    <div style={wrapperStyles} className={`fib-container`} ref={fibContainer}>
       <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
       <div className="scene">

@@ -1,4 +1,22 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
+  defaultID: string;
+  palette: any;
+  fontSize?: number;
+  number: number;
+  maxValue: number;
+  minValue: number;
+  showLabel: boolean;
+  label: string;
+  unitsLabel: string;
+  deleteEnabled: boolean;
+  enabled: boolean;
+  showIncrementArrows: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   defaultID: {
     title: 'Default ID',
     type: 'string',
@@ -22,10 +40,6 @@ export const schema = {
     type: 'number',
     default: 12,
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
   number: {
     title: 'Number',
     type: 'number',
@@ -37,16 +51,6 @@ export const schema = {
   minValue: {
     title: 'Min Value',
     type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    default: false,
   },
   showLabel: {
     title: 'Show Label',
@@ -84,7 +88,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema: Partial<InputNumberModel> = () => ({
   enabled: true,
   showIncrementArrows: false,
   showLabel: true,

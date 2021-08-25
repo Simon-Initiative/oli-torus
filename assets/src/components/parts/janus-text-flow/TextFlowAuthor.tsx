@@ -1,6 +1,7 @@
 import chroma from 'chroma-js';
 import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
+import { AuthorPartComponentProps } from '../types/parts';
 import Markup from './Markup';
 
 export interface MarkupTree {
@@ -82,7 +83,7 @@ export const renderFlow = (
   );
 };
 
-const TextFlowAuthor: React.FC<any> = (props: any) => {
+const TextFlowAuthor: React.FC<AuthorPartComponentProps<any>> = (props: any) => {
   const { model } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;

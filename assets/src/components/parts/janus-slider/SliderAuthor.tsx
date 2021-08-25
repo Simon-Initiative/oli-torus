@@ -1,7 +1,7 @@
-import { PartComponentProps } from 'components/parts/types/parts';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
 
-const SliderAuthor: React.FC<PartComponentProps<any>> = (props) => {
+const SliderAuthor: React.FC<AuthorPartComponentProps<any>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

@@ -5,9 +5,11 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
 import { contexts } from '../../../types/applicationContext';
+import { parseBool, parseBoolean } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { CapiIframeModel } from './schema';
 
 const fakeUserStorage: any = {};
 const getFromUserStorage = async (simId: string | number, key: string | number) =>
@@ -30,8 +32,8 @@ const getExternalActivityMap = () => {
 
   return result;
 };
-// TODO: fix typing
-const ExternalActivity: React.FC<any> = (props) => {
+
+const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

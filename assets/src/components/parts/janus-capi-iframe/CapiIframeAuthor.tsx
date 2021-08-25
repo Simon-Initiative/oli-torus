@@ -1,7 +1,8 @@
-import { PartComponentProps } from 'components/parts/types/parts';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { CapiIframeModel } from './schema';
 
-const CapiIframeAuthor: React.FC<PartComponentProps<any>> = (props) => {
+const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

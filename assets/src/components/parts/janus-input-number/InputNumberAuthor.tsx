@@ -1,7 +1,8 @@
-import { PartComponentProps } from 'components/parts/types/parts';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { InputNumberModel } from './schema';
 
-const InputNumberAuthor: React.FC<PartComponentProps<any>> = (props) => {
+const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

@@ -1,7 +1,8 @@
-import { PartComponentProps } from 'components/parts/types/parts';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { FIBModel } from './schema';
 
-const FIBAuthor: React.FC<PartComponentProps<any>> = (props) => {
+const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

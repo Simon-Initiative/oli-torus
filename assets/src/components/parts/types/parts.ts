@@ -27,12 +27,15 @@ export interface PartComponentProps<T extends CustomProperties> {
   model: T;
   state: any;
   notify?: any;
-  editMode?: boolean;
   className?: string;
   onInit: (payload: any) => Promise<any>;
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+}
+
+export interface AuthorPartComponentProps<T extends CustomProperties> extends PartComponentProps<T> {
+  editMode: boolean;
   onClick: (payload: any) => void;
 }
 

@@ -1,13 +1,14 @@
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { PartComponentProps } from '../types/parts';
+import { AudioModel } from './schema';
 
-// TODO: fix typing
-const Audio: React.FC<any> = (props) => {
+const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

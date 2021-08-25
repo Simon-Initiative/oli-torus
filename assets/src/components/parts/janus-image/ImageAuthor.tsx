@@ -1,13 +1,9 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import { AuthorPartComponentProps } from '../types/parts';
+import { ImageModel } from './schema';
 
-interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
-  src: string;
-  alt: string;
-}
-
-const ImageAuthor: React.FC<PartComponentProps<ImageModel>> = (props) => {
+const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   const { model } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;

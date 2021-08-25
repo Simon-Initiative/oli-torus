@@ -1,4 +1,21 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface FIBModel extends JanusAbsolutePositioned, JanusCustomCss {
+  cssClasses: string;
+  fontSize?: number;
+  showHints: boolean;
+  enabled: boolean;
+  alternateCorrectDelimiter: string;
+  showCorrect: boolean;
+  showSolution: boolean;
+  formValidation: boolean;
+  caseSensitiveAnswers: boolean;
+  content: any;
+  elements: any;
+}
+
+export const schema: JSONSchema7Object = {
   cssClasses: {
     title: 'CSS Classes',
     type: 'string',
@@ -11,20 +28,6 @@ export const schema = {
     title: 'Font Size',
     type: 'number',
     default: 12,
-  },
-  showOnAnswersReport: {
-    title: 'Show On Answer Reoprt',
-    type: 'boolean',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    default: false,
-  },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
   },
   showHints: {
     title: 'Show Hints',
@@ -96,7 +99,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema: Partial<FIBModel> = () => ({
   cssClasses: '',
   customCss: '',
   showHints: false,

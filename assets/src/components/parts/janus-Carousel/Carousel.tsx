@@ -1,15 +1,17 @@
 import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
+import SwiperCore, { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import SwiperCore, { Navigation, Pagination, A11y, Keyboard, Zoom } from 'swiper';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusCarouselModes } from './types';
+import { PartComponentProps } from '../types/parts';
 import './Carousel.css';
+import { CarouselModel } from './schema';
+import { JanusCarouselModes } from './types';
 
-const Carousel: React.FC<any> = (props) => {
+const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
