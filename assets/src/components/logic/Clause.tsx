@@ -60,44 +60,44 @@ export const Clause: React.FC<ClauseProps> = (props: ClauseProps) => {
     }
   });
 
+  const onOperatorChange = (e: any) => {
+    onChange(Object.assign({}, clause, { operator: e.currentTarget.value }));
+  };
+
   return (
     <div>
-      <div className="d-flex justify-content-between">
-        <div className="btn-group btn-group-toggle" data-toggle="buttons">
-          <label
-            className={`btn btn-secondary ${
-              clause.operator === Bank.ClauseOperator.all ? 'active' : ''
-            }`}
-          >
+      <div className="d-flex justify-content-between mb-3">
+        <div>
+          <div className="form-check form-check-inline">
             <input
-              onChange={() => {
-                onChange(Object.assign({}, clause, { operator: Bank.ClauseOperator.all }));
-              }}
               disabled={!editMode}
+              onChange={onOperatorChange}
+              className="form-check-input"
               type="radio"
-              name={id}
+              name={'clause_radio_' + id}
+              id={'radio1_' + id}
+              value={Bank.ClauseOperator.all}
               checked={clause.operator === Bank.ClauseOperator.all}
-            >
-              All
-            </input>
-          </label>
-          <label
-            className={`btn btn-secondary ${
-              clause.operator === Bank.ClauseOperator.any ? 'active' : ''
-            }`}
-          >
+            />
+            <label className="form-check-label" htmlFor={'radio1_' + id}>
+              All of the following
+            </label>
+          </div>
+          <div className="form-check form-check-inline">
             <input
-              onChange={() => {
-                onChange(Object.assign({}, clause, { operator: Bank.ClauseOperator.any }));
-              }}
               disabled={!editMode}
+              onChange={onOperatorChange}
+              className="form-check-input"
               type="radio"
-              name={id}
+              name={'clause_radio_' + id}
+              id={'radio2_' + id}
+              value={Bank.ClauseOperator.any}
               checked={clause.operator === Bank.ClauseOperator.any}
-            >
-              Or
-            </input>
-          </label>
+            />
+            <label className="form-check-label" htmlFor={'radio2_' + id}>
+              Any of the following
+            </label>
+          </div>
         </div>
         <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
       </div>

@@ -81,8 +81,7 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
     };
 
-    const purposes =
-      contentValue.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
+    const purposes = contentValue.type === 'content' ? ContentPurposes : ActivityPurposes;
 
     const dragPayload = getDragPayload(contentValue, activityContexts, projectSlug);
     const onDragStart = dragStartHandler(dragPayload, contentValue, setActiveDragId);
