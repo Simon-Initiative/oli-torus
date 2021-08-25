@@ -73,19 +73,11 @@ export const updateActivityPartInheritance = createAsyncThunk(
         const changeData: BulkActivityUpdate = {
           title: activity.title,
           objectives: activity.objectives,
-          content: { ...activity.content, authoring: activity.authoring },
+          content: activity.content,
+          authoring: activity.authoring,
           resource_id: resourceId,
         };
-        const update = Object.assign({}, changeData, false);
-        update.content = Object.assign({}, update.content);
-
-        // Here we pull the "authoring" key out of "content" and elevate it
-        // as a top-level key
-        if (update.content.authoring !== undefined) {
-          update.authoring = update.content.authoring;
-          delete update.content.authoring;
-        }
-        return update;
+        return changeData;
       });
       await bulkEdit(projectSlug, resourceId, updates);
       await dispatch(releaseEditingLock());
