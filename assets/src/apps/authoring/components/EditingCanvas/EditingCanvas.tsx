@@ -62,6 +62,8 @@ const EditingCanvas: React.FC = () => {
     console.log('[handlePartSelect]', { id });
     dispatch(setCurrentSelection({ selection: id }));
 
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+
     return true;
   };
 
