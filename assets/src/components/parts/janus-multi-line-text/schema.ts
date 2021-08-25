@@ -62,7 +62,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<MultiLineTextModel> = () => ({
+export const createSchema = (): Partial<MultiLineTextModel> => ({
   enabled: true,
   customCssClass: '',
   showCharacterCount: true,

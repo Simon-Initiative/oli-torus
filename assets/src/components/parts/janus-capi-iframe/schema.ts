@@ -30,7 +30,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<CapiIframeModel> = () => ({
+export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',
   src: '',
   configData: [],

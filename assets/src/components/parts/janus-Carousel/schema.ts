@@ -62,7 +62,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<CarouselModel> = () => ({
+export const createSchema = (): Partial<CarouselModel> => ({
   customCss: '',
   cssClasses: '',
   zoom: true,

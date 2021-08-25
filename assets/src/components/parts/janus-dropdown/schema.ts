@@ -72,7 +72,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<DropdownModel> = () => ({
+export const createSchema = (): Partial<DropdownModel> => ({
   customCssClass: '',
   showLabel: true,
   label: 'Choose',

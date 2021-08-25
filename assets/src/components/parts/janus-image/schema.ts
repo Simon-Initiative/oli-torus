@@ -50,7 +50,7 @@ export const transformSchemaToModel = (schema: any) => {
   return schema;
 };
 
-export const createSchema: Partial<ImageModel> = (context?: CreationContext) => {
+export const createSchema = (context?: CreationContext): Partial<ImageModel> => {
   // maybe use the context to know the path of the images?
   // or bundle data url?
   const src = '/images/placeholder-image.svg';

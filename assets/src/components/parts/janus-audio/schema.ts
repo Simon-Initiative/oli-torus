@@ -79,7 +79,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<AudioModel> = () => ({
+export const createSchema = (): Partial<AudioModel> => ({
   src: '',
   customCssClass: '',
   triggerCheck: false,

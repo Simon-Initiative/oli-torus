@@ -92,7 +92,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<McqModel> = () => {
+export const createSchema = (): Partial<McqModel> => {
   const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
     nodes: [

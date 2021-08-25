@@ -61,7 +61,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<InputTextModel> = () => ({
+export const createSchema = (): Partial<InputTextModel> => ({
   enabled: true,
   customCssClass: '',
   showLabel: true,

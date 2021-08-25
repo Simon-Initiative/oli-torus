@@ -99,7 +99,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<FIBModel> = () => ({
+export const createSchema = (): Partial<FIBModel> => ({
   cssClasses: '',
   customCss: '',
   showHints: false,

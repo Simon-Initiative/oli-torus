@@ -84,7 +84,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<SliderModel> = () => ({
+export const createSchema = (): Partial<SliderModel> => ({
   enabled: true,
   customCssClass: '',
   showLabel: true,

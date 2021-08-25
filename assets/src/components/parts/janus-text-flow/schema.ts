@@ -34,7 +34,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<TextFlowModel> = (context?: CreationContext) => {
+export const createSchema = (context?: CreationContext): Partial<TextFlowModel> => {
   return {
     overrideWidth: true,
     overrideHeight: false,

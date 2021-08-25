@@ -94,7 +94,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<PopupModel> = () => ({
+export const createSchema = (): Partial<PopupModel> => ({
   customCssClass: '',
   description: '',
   questionFlow: 'LRTB',

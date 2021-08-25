@@ -86,9 +86,8 @@ export const uiSchema = {
   },
 };
 
-export const createSchema: Partial<VideoModel> = () => ({
+export const createSchema = (): Partial<VideoModel> => ({
   enabled: true,
-  subtitles: {},
   enableReplay: true,
   autoPlay: false,
   startTime: 0,

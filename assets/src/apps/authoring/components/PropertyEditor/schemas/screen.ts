@@ -1,9 +1,22 @@
 import { IActivity } from 'apps/delivery/store/features/activities/slice';
 import chroma from 'chroma-js';
+import { JSONSchema7 } from 'json-schema';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
-const screenSchema = {
+export interface ScreenModel {
+  title: string;
+  width: number;
+  height: number;
+  palette: any;
+  customCssClass: string;
+  combineFeedback: boolean;
+  showCheckButton: boolean;
+  checkButtonLabel: string;
+  [key: string]: any; // TODO
+}
+
+const screenSchema: JSONSchema7 = {
   type: 'object',
   properties: {
     title: {
@@ -159,7 +172,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
   }
 };
 
-export const transformScreenSchematoModel = (schema: any) => {
+export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> => {
   return {
     title: schema.title,
     width: schema.Size.width,

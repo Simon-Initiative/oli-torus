@@ -59,7 +59,7 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const createSchema: Partial<NavButtonModel> = () => ({
+export const createSchema = (): Partial<NavButtonModel> => ({
   enabled: true,
   visible: true,
   textColor: '#000',
