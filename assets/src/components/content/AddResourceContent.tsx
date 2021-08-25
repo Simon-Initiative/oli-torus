@@ -140,7 +140,9 @@ export const AddResourceContent = ({
           onClick={() => onAddItem(createDefaultSelection(), index)}
         >
           <div className="type-label">Activity Bank Selection</div>
-          <div className="type-description">Select activities at random according to criteria</div>
+          <div className="type-description">
+            Select different activities at random according to defined criteria
+          </div>
         </a>
       </div>
     </div>
