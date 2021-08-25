@@ -36,13 +36,13 @@ export const schema = {
     default: false,
   },
   startTime: {
-    title: 'Starttime',
+    title: 'Start time(secs)',
     type: 'number',
     description: 'specifies the start time of the video',
     default: 0,
   },
   endTime: {
-    title: 'Endtime',
+    title: 'End time(secs)',
     type: 'number',
     description: 'specifies the end time of the video',
     default: 0,
