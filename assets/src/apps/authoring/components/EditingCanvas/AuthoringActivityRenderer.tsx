@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityModelSchema } from 'components/activities/types';
+import { useSelector } from 'react-redux';
+import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
@@ -19,6 +21,8 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   console.log('AAR', { activityModel });
   const [isReady, setIsReady] = useState(false);
 
+  const selectedPartId = useSelector(selectCurrentSelection);
+
   const elementProps = {
     id: `activity-${activityModel.id}`,
     model: JSON.stringify(activityModel),
@@ -28,6 +32,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       top: '10%',
       left: '25%',
     },
+    authoringContext: JSON.stringify({
+      selectedPartId,
+    }),
   };
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import EventEmitter from 'events';
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -20,6 +21,12 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   console.log('adaptive authoring', props);
   const parts = props.model?.content?.partsLayout || [];
   const [selectedPart, setSelectedPart] = useState('');
+
+  useEffect(() => {
+    if (props.authoringContext) {
+      setSelectedPart(props.authoringContext.selectedPartId);
+    }
+  }, [props.authoringContext]);
 
   const handlePartInit = async (payload: any) => {
     console.log('AUTHOR PART INIT', payload);

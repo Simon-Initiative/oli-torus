@@ -12,6 +12,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   onCustomEvent?: (eventName: string, payload: any) => Promise<any>;
   editMode: boolean;
   projectSlug: ProjectSlug;
+  authoringContext?: any;
 }
 
 // An abstract authoring web component, designed to delegate to
@@ -36,6 +37,10 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     const model = this.migrateModelVersion(getProp('model'));
     const editMode: boolean = this.getAttribute('editmode') === 'true';
     const projectSlug: ProjectSlug = this.getAttribute('projectSlug') as string;
+    let authoringContext: any = {};
+    if (this.getAttribute('authoringcontext')) {
+      authoringContext = getProp('authoringcontext');
+    }
 
     const onEdit = (model: any) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
@@ -58,6 +63,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       model,
       editMode,
       projectSlug,
+      authoringContext,
     };
   }
 
@@ -104,7 +110,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   }
 
   // Lower case here as opposed to camelCase is required
-  static observedAttributes = ['editmode', 'model'];
+  static observedAttributes = ['editmode', 'model', 'authoringcontext'];
 }
 
 export interface AuthoringElementState<T> {
