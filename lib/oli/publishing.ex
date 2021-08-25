@@ -482,15 +482,17 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, atom(), String.t()) ::
+  @spec publish_project(%Project{}, String.t()) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, publish_type, description) do
+  def publish_project(project, description) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
              Publishing.get_latest_published_publication_by_slug(project.slug),
            now <- DateTime.utc_now(),
-           {major, minor, patch} <- uptick_version(latest_published_publication, publish_type),
+
+           # diff publications to determine the new version number
+           {{_, {major, minor}}, _changes} <- diff_publications(latest_published_publication, active_publication),
 
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
@@ -514,8 +516,7 @@ defmodule Oli.Publishing do
                published: now,
                description: description,
                major: major,
-               minor: minor,
-               patch: patch
+               minor: minor
              }) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
@@ -524,23 +525,6 @@ defmodule Oli.Publishing do
         error -> Repo.rollback(error)
       end
     end)
-  end
-
-  defp uptick_version(latest_published_publication, publish_type) do
-    case {publish_type, latest_published_publication} do
-      # no previous published publication, initialize version number to 0.0.0
-      {_, nil} ->
-        {0, 0, 0}
-
-      {:major, %{major: major}} ->
-        {major + 1, 0, 0}
-
-      {:minor, %{major: major, minor: minor}} ->
-        {major, minor + 1, 0}
-
-      {:patch, %{major: major, minor: minor, patch: patch}} ->
-        {major, minor, patch + 1}
-    end
   end
 
   def get_all_mappings_for_resource(resource_id, project_slug) do
@@ -556,6 +540,31 @@ defmodule Oli.Publishing do
     )
   end
 
+  @doc """
+  Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
+  and a map that contains any changes where the key is the resource id which points to a tuple with the
+  first element being the change status (:changed|:added|:deleted) and the second is a
+  map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
+
+  ## Examples
+
+      iex> diff_publications(publication1, publication2)
+      {:major, %{
+        23 => {:changed, %{resource: res1, revision: rev1}}
+        24 => {:added, %{resource: res2, revision: rev2}}
+        24 => {:added, %{resource: res3, revision: rev3}}
+        24 => {:deleted, %{resource: res4, revision: rev4}}
+      }}
+
+      iex> diff_publications(publication2, publication3)
+      {:minor, %{
+        23 => {:changed, %{resource: res1, revision: rev1}}
+        24 => {:changed, %{resource: res2, revision: rev2}}
+      }}
+
+      iex> diff_publications(publication1, publication1)
+      {:no_changes, %{}}
+  """
   def diff_publications(p1, p2) do
     all_resource_revisions_p1 = get_resource_revisions_for_publication(p1)
     all_resource_revisions_p2 = get_resource_revisions_for_publication(p2)
@@ -568,12 +577,12 @@ defmodule Oli.Publishing do
           {_res_p1, rev_p1} = all_resource_revisions_p1[id]
           {res_p2, rev_p2} = all_resource_revisions_p2[id]
 
-          if rev_p1.id == rev_p2.id do
-            {Map.put(visited, id, true),
-             Map.put_new(acc, id, {:identical, %{resource: res_p2, revision: rev_p2}})}
-          else
+          # if the resource revision has changed, add it to the change tracker
+          if rev_p1.id != rev_p2.id do
             {Map.put(visited, id, true),
              Map.put_new(acc, id, {:changed, %{resource: res_p2, revision: rev_p2}})}
+          else
+            {Map.put(visited, id, true), acc}
           end
         else
           {res_p1, rev_p1} = all_resource_revisions_p1[id]
@@ -590,7 +599,37 @@ defmodule Oli.Publishing do
         Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
       end)
 
+    {major, minor} =
+      case p1 do
+        nil ->
+          {0, 0}
+        p1 ->
+          {p1.major, p1.minor}
+      end
+
+    {version_change(changes, {major, minor}), changes}
+  end
+
+  # classify the changes as either :major, :minor, or :no_changes and return the new version number
+  # result e.g. {:major, {1, 0}}
+  defp version_change(changes, {major, minor} = _current_version) do
     changes
+    |> Enum.reduce({:no_changes, {major, minor}}, fn {_id, {change_type, %{resource: _res, revision: rev}}}, acc ->
+      resource_type = Oli.Resources.ResourceType.get_type_by_id(rev.resource_type_id)
+      cond do
+        # if a container resource has changed, return major
+        resource_type == "container" && change_type != :identical ->
+          {:major, {major + 1, 0}}
+
+        # if any other type of change occurred and none of the previous were major
+        change_type != :identical && acc != :major ->
+          {:minor, {major, minor + 1}}
+
+        # otherwise, continue with the existing classification
+        true ->
+          acc
+      end
+    end)
   end
 
   def get_published_revisions(publication) do
@@ -608,13 +647,19 @@ defmodule Oli.Publishing do
       %{124 => [{%Resource{}, %Revision{}}], ...}
   """
   def get_resource_revisions_for_publication(publication) do
-    published_resources = get_published_resources_by_publication(publication.id)
+    case publication do
+      nil ->
+        %{}
 
-    # filter out revisions that are marked as deleted, then convert
-    # to a map of resource_ids to {resource, revision} tuples
-    published_resources
-    |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
-    |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
+      publication ->
+        published_resources = get_published_resources_by_publication(publication.id)
+
+        # filter out revisions that are marked as deleted, then convert
+        # to a map of resource_ids to {resource, revision} tuples
+        published_resources
+        |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
+        |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
+    end
   end
 
   @doc """

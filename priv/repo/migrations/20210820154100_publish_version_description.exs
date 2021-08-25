@@ -26,7 +26,6 @@ defmodule Oli.Repo.Migrations.PublishVersionDescription do
       add :description, :text
       add :major, :integer, default: 0
       add :minor, :integer, default: 0
-      add :patch, :integer, default: 0
     end
 
     flush()
@@ -54,7 +53,6 @@ defmodule Oli.Repo.Migrations.PublishVersionDescription do
       remove :description, :text
       remove :major, :integer, default: 0
       remove :minor, :integer, default: 0
-      remove :patch, :integer, default: 0
     end
 
     rename table(:publications), :published_tmp, to: :published

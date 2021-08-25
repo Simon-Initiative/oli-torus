@@ -177,7 +177,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
          %{publication: publication, project: project} do
       {:ok, %Publication{} = published} =
-        Publishing.publish_project(project, :patch, "some changes")
+        Publishing.publish_project(project, "some changes")
 
       # original publication should now be published
       assert published.id == publication.id
@@ -187,7 +187,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 creates a new working unpublished publication for a project",
          %{publication: unpublished_publication, project: project} do
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, :patch, "some changes")
+        Publishing.publish_project(project, "some changes")
 
       # The published publication should match the original unpublished publication
       assert unpublished_publication.id == published_publication.id
@@ -237,7 +237,7 @@ defmodule Oli.PublishingTest do
 
       # Publish the project
       {:ok, %Publication{} = published_publication} =
-        Publishing.publish_project(project, :patch, "some changes")
+        Publishing.publish_project(project, "some changes")
 
       # publication should succeed even if a resource is "locked"
       new_unpublished_publication = Publishing.project_working_publication(project.slug)
@@ -280,7 +280,7 @@ defmodule Oli.PublishingTest do
 
     test "broadcasting the new publication works when publishing", %{project: project} do
       Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
-      {:ok, publication} = Publishing.publish_project(project, :patch, "some changes")
+      {:ok, publication} = Publishing.publish_project(project, "some changes")
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
       assert pub.id == publication.id
       assert project.slug == project_slug
@@ -313,7 +313,7 @@ defmodule Oli.PublishingTest do
       Publishing.upsert_published_resource(publication, r3_revision)
 
       # create first publication
-      {:ok, %Publication{} = p1} = Publishing.publish_project(project, :patch, "some changes")
+      {:ok, %Publication{} = p1} = Publishing.publish_project(project, "some changes")
 
       # make some edits
       content = %{
@@ -346,10 +346,10 @@ defmodule Oli.PublishingTest do
         PageEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
 
       # generate diff
-      diff = Publishing.diff_publications(p1, p2)
-      assert Map.keys(diff) |> Enum.count() == 6
+      {version_info, diff} = Publishing.diff_publications(p1, p2)
+      assert version_info == {:minor, {0, 2}}
+      assert Map.keys(diff) |> Enum.count() == 3
       assert {:changed, _} = diff[revision.resource_id]
-      assert {:identical, _} = diff[r2_revision.resource_id]
       assert {:deleted, _} = diff[r3_revision.resource_id]
       assert {:added, _} = diff[r4_revision.resource_id]
     end

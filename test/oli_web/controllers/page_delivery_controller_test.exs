@@ -229,7 +229,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project, :patch, "some changes")
+      Oli.Publishing.publish_project(project, "some changes")
 
       # now visit the page again, verifying that we are able to resume the original graded attempt
       # even through the page has been changed to ungraded
@@ -300,7 +300,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project, :patch, "some changes")
+      Oli.Publishing.publish_project(project, "some changes")
 
       # Visit the page in its ungraded state, thus generating a resource attempt
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
@@ -329,7 +329,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      {:ok, latest_pub} = Oli.Publishing.publish_project(project, :patch, "some changes")
+      {:ok, latest_pub} = Oli.Publishing.publish_project(project, "some changes")
       Sections.update_section_project_publication(section, project.id, latest_pub.id)
       Sections.rebuild_section_resources(section: section, publication: latest_pub)
 
@@ -661,7 +661,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
 
-    {:ok, publication} = Oli.Publishing.publish_project(project, :patch, "some changes")
+    {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
 
     section =
       section_fixture(%{

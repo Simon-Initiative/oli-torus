@@ -33,7 +33,7 @@ defmodule OliWeb.ProjectVisibilityTest do
       available_publications = Publishing.available_publications(author, institution)
       assert available_publications == []
 
-      Publishing.publish_project(project, :patch, "some changes")
+      Publishing.publish_project(project, "some changes")
 
       available_publications = Publishing.available_publications(author, institution)
 

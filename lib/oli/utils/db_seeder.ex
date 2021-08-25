@@ -271,7 +271,7 @@ defmodule Oli.Seeder do
     project2_map = another_project(map.author, map.institution)
 
     # Publish the current state of our test project:
-    {:ok, pub1} = Publishing.publish_project(map.project, :patch, "some changes")
+    {:ok, pub1} = Publishing.publish_project(map.project, "some changes")
 
     # Track a series of changes for both resources:
     pub = Publishing.project_working_publication(map.project.slug)
@@ -302,7 +302,7 @@ defmodule Oli.Seeder do
       )
 
     # Publish again
-    {:ok, pub2} = Publishing.publish_project(map.project, :patch, "some changes")
+    {:ok, pub2} = Publishing.publish_project(map.project, "some changes")
 
     # Create a fourth page that is completely unpublished
     pub = Publishing.project_working_publication(map.project.slug)

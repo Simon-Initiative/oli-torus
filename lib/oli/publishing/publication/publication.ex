@@ -7,7 +7,6 @@ defmodule Oli.Publishing.Publication do
     field :description, :string
     field :major, :integer, default: 0
     field :minor, :integer, default: 0
-    field :patch, :integer, default: 0
 
     belongs_to :root_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
@@ -23,7 +22,6 @@ defmodule Oli.Publishing.Publication do
       :description,
       :major,
       :minor,
-      :patch,
       :root_resource_id,
       :project_id
     ])

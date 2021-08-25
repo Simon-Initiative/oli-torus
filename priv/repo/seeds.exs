@@ -159,7 +159,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Collaborators.add_collaborator(admin_author, seeds.project)
 
-    Oli.Publishing.publish_project(seeds.project, :patch, "Initial publish")
+    Oli.Publishing.publish_project(seeds.project, "Initial publish")
 
     # create any registrations defined in registrations.json
     case Utils.read_json_file("./registrations.json") do

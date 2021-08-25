@@ -45,37 +45,34 @@ defmodule OliWeb.ProjectController do
     active_publication = Publishing.project_working_publication(project.slug)
 
     # publish
-    {has_changes, active_publication_changes, parent_pages} =
+    {version_change, active_publication_changes, parent_pages} =
       case latest_published_publication do
         nil ->
           {true, nil, %{}}
 
         _ ->
-          changes =
+          {version_change, changes} =
             Publishing.diff_publications(latest_published_publication, active_publication)
-            |> (&:maps.filter(fn _, v -> v != :identical end, &1)).()
-
-          has_changes =
-            Map.values(changes)
-            |> Enum.any?(fn {status, _} -> status != :identical end)
 
           parent_pages =
-            if has_changes do
-              Map.values(changes)
-              |> Enum.filter(fn {status, _} -> status != :identical end)
-              |> Enum.map(fn {_, %{revision: revision}} -> revision end)
-              |> Enum.filter(fn r ->
-                r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
-              end)
-              |> Enum.map(fn r -> r.resource_id end)
-              |> Oli.Publishing.determine_parent_pages(
-                Oli.Publishing.project_working_publication(project.slug).id
-              )
-            else
-              %{}
+            case version_change do
+              {:no_changes, _} ->
+                %{}
+
+              _ ->
+                Map.values(changes)
+                |> Enum.filter(fn {status, _} -> status != :identical end)
+                |> Enum.map(fn {_, %{revision: revision}} -> revision end)
+                |> Enum.filter(fn r ->
+                  r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+                end)
+                |> Enum.map(fn r -> r.resource_id end)
+                |> Oli.Publishing.determine_parent_pages(
+                  Oli.Publishing.project_working_publication(project.slug).id
+                )
             end
 
-          {has_changes, changes, parent_pages}
+          {version_change, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -86,6 +83,11 @@ defmodule OliWeb.ProjectController do
     public_keyset_url = "#{base_url}/.well-known/jwks.json"
     redirect_uris = "#{base_url}/lti/launch"
 
+    has_changes = case version_change do
+      {:no_changes, _} -> false
+      _ -> true
+    end
+
     render(conn, "publish.html",
       # page
       breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
@@ -95,6 +97,7 @@ defmodule OliWeb.ProjectController do
       unpublished: active_publication_changes == nil,
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,
+      version_change: version_change,
       has_changes: has_changes,
       parent_pages: parent_pages,
       developer_key_url: developer_key_url,
@@ -115,22 +118,9 @@ defmodule OliWeb.ProjectController do
 
   def publish_active(conn, params) do
     project = conn.assigns.project
-
-    publish_type =
-      case params do
-        %{"publish_type" => %{"option" => "major"}} ->
-          :major
-
-        %{"publish_type" => %{"option" => "minor"}} ->
-          :minor
-
-        %{"publish_type" => %{"option" => "patch"}} ->
-          :patch
-      end
-
     description = params["description"]
 
-    Publishing.publish_project(project, publish_type, description)
+    Publishing.publish_project(project, description)
 
     conn
     |> put_flash(:info, "Publish Successful!")

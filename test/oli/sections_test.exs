@@ -306,7 +306,7 @@ defmodule Oli.SectionsTest do
       container: %{resource: container_resource, revision: container_revision},
       institution: institution
     } do
-      {:ok, initial_pub} = Publishing.publish_project(project, :patch, "some changes")
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
 
       # Create a course section using the initial publication
       {:ok, section} =
@@ -342,7 +342,7 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      {:ok, latest_publication} = Publishing.publish_project(project, :patch, "some changes")
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
 
       # verify project published changes show up in list of updates
       available_updates = Sections.check_for_available_publication_updates(section)

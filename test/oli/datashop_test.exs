@@ -440,7 +440,7 @@ defmodule Oli.DatashopTest do
           :sa1
         )
 
-      Publishing.publish_project(map.project, :patch, "some changes")
+      Publishing.publish_project(map.project, "some changes")
 
       page1_attrs = %{
         title: "page1",

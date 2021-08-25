@@ -125,13 +125,12 @@ defmodule OliWeb.Delivery.ManageUpdates do
            description: description,
            major: major,
            minor: minor,
-           patch: patch,
            project: project
          } = _publication
        ) do
     ~L"""
     <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1"><%= project.title %> <small><%= "#{major}.#{minor}.#{patch}" %></small></h5>
+      <h5 class="mb-1"><%= project.title %> <small><%= "#{major}.#{minor}" %></small></h5>
       <small>Published <%= Timex.format!(published, "{relative}", :relative) %></small>
     </div>
     <p class="mb-1"><%= description %></p>
@@ -139,7 +138,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   end
 
   defp version_number(publication) do
-    "#{publication.major}.#{publication.minor}.#{publication.patch}"
+    "#{publication.major}.#{publication.minor}"
   end
 
   # handle any cancel events a modal might generate from being closed
@@ -155,9 +154,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
     current_publication = Sections.get_current_publication(section.id, project_id)
     newest_publication = Publishing.get_publication!(publication_id)
 
-    changes =
+    {version_change, changes} =
       Publishing.diff_publications(current_publication, newest_publication)
-      |> then(&:maps.filter(fn _, {status, _} -> status != :identical end, &1))
 
     {:noreply,
      assign(socket,
@@ -167,6 +165,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
          newest_publication: newest_publication,
          project_id: String.to_integer(project_id),
          publication_id: String.to_integer(publication_id),
+         version_change: version_change,
          changes: changes
        }
      )}
