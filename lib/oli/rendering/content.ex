@@ -161,11 +161,11 @@ defmodule Oli.Rendering.Content do
         writer.a(context, next, element)
 
       _ ->
-        error_id = Utils.random_string(8)
+        error_id = Utils.generate_error_id()
         error_msg = "Content element is not supported: #{Kernel.inspect(element)}"
 
         if render_opts.log_errors,
-          do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+          do: Logger.error("##{error_id} Render Error: #{error_msg}"),
           else: nil
 
         if render_opts.render_errors do
@@ -179,11 +179,11 @@ defmodule Oli.Rendering.Content do
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
-    error_id = Utils.random_string(8)
+    error_id = Utils.generate_error_id()
     error_msg = "Content element is invalid: #{Kernel.inspect(element)}"
 
     if render_opts.log_errors,
-      do: Logger.error("Render Error ##{error_id} #{error_msg}"),
+      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
       else: nil
 
     if render_opts.render_errors do

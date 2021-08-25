@@ -175,7 +175,16 @@ defmodule OliWeb.Api.ActivityController do
       }) do
     author = conn.assigns[:current_author]
 
-    case ActivityEditor.create(project_slug, activity_type_slug, author, model, objectives) do
+    scope = Map.get(conn.body_params, "scope", "embedded")
+
+    case ActivityEditor.create(
+           project_slug,
+           activity_type_slug,
+           author,
+           model,
+           objectives,
+           scope
+         ) do
       {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
         json(conn, %{
           "type" => "success",
@@ -518,9 +527,9 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   @doc """
-  Delete a secondary document for an activity.
+  Delete an activity document or a secondary document for an activity.
 
-  This operation will mark a secondary document as deleted, but only for the current unpublished revision.
+  This operation will mark an activity or secondary document as deleted, but only for the current unpublished revision.
 
   This operation must be performed in the context of an exclusive write lock to avoid concurrent updates. The identifier of the
   lock must be specificed via the `lock` query parameter.
@@ -536,7 +545,7 @@ defmodule OliWeb.Api.ActivityController do
            in: :url,
            schema: %OpenApiSpex.Schema{type: :string},
            required: true,
-           description: "The activity identifier that this document will be secondary to"
+           description: "The activity identifier to delete"
          ],
          lock: [
            in: :query,

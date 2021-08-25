@@ -84,7 +84,7 @@ export const schema = {
 export const uiSchema = {};
 
 export const createSchema = () => {
-  /*const createSimpleOption = (index: number, score = 1) => ({
+  const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
     nodes: [
       {
@@ -104,7 +104,7 @@ export const createSchema = () => {
         ],
       },
     ],
-  });*/
+  });
 
   return {
     overrideHeight: false,
@@ -119,6 +119,6 @@ export const createSchema = () => {
     randomize: false,
     showNumbering: false,
     enabled: true,
-    /*mcqItems: [1, 2, 3].map(createSimpleOption),*/
+    mcqItems: [1, 2, 3].map(createSimpleOption),
   };
 };
