@@ -114,13 +114,33 @@
     display: flex;
     flex-direction: column;
     background-color: $body-bg;
-    padding: 14px;
-    border-radius: 6px;
-    border: 1px solid rgba($color: $body-color, $alpha: 0.2);
+    padding: 6px;
+    border-radius: 2px;
+
+    .list-group {
+      padding-left: 10px;
+    }
+
+    .header {
+      text-transform: uppercase;
+      font-size: 0.9em;
+      color: gray;
+    }
+
+    hr {
+      width: 80%;
+      color: lightgray;
+    }
 
     .type-label {
-      font-size: 1.2em;
+      font-size: 1.1em;
       font-weight: 600;
+      color: black;
+    }
+
+    .list-group a {
+      border: 0 none;
+      padding: 4px 6px;
     }
 
     .type-description {

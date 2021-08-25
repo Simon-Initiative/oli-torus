@@ -113,7 +113,7 @@ export const AddResourceContent = ({
 
   const contentFn = () => (
     <div className="add-resource-popover-content">
-      <h3>Insert</h3>
+      <div className="header">Insert Content</div>
       <div className="list-group">
         <a
           href="#"
@@ -126,9 +126,13 @@ export const AddResourceContent = ({
             Mixed HTML elements including text, tables, images, video
           </div>
         </a>
-
-        {activityEntries}
-
+      </div>
+      <hr />
+      <div className="header">Insert Activity</div>
+      <div className="list-group">{activityEntries}</div>
+      <hr />
+      <div className="header">Insert Other</div>
+      <div className="list-group">
         <a
           href="#"
           key={'static_activity_bank'}
