@@ -24,6 +24,7 @@ defmodule Oli.Repo.Migrations.PublishVersionDescription do
     alter table(:publications) do
       remove :published, :boolean
       add :description, :text
+      add :edition, :integer, default: 0
       add :major, :integer, default: 0
       add :minor, :integer, default: 0
     end
@@ -51,6 +52,7 @@ defmodule Oli.Repo.Migrations.PublishVersionDescription do
     alter table(:publications) do
       remove :published, :boolean
       remove :description, :text
+      remove :edition, :integer, default: 0
       remove :major, :integer, default: 0
       remove :minor, :integer, default: 0
     end

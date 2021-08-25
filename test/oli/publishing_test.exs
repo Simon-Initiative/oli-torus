@@ -347,7 +347,7 @@ defmodule Oli.PublishingTest do
 
       # generate diff
       {version_info, diff} = Publishing.diff_publications(p1, p2)
-      assert version_info == {:minor, {0, 2}}
+      assert version_info == {:minor, {0, 1, 1}}
       assert Map.keys(diff) |> Enum.count() == 3
       assert {:changed, _} = diff[revision.resource_id]
       assert {:deleted, _} = diff[r3_revision.resource_id]

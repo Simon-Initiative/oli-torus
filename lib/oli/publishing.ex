@@ -492,7 +492,7 @@ defmodule Oli.Publishing do
            now <- DateTime.utc_now(),
 
            # diff publications to determine the new version number
-           {{_, {major, minor}}, _changes} <- diff_publications(latest_published_publication, active_publication),
+           {{_, {edition, major, minor}}, _changes} <- diff_publications(latest_published_publication, active_publication),
 
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
@@ -515,6 +515,7 @@ defmodule Oli.Publishing do
              update_publication(active_publication, %{
                published: now,
                description: description,
+               edition: edition,
                major: major,
                minor: minor
              }) do
@@ -599,31 +600,31 @@ defmodule Oli.Publishing do
         Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
       end)
 
-    {major, minor} =
+    {edition, major, minor} =
       case p1 do
         nil ->
-          {0, 0}
+          {0, 0, 0}
         p1 ->
-          {p1.major, p1.minor}
+          {p1.edition, p1.major, p1.minor}
       end
 
-    {version_change(changes, {major, minor}), changes}
+    {version_change(changes, {edition, major, minor}), changes}
   end
 
   # classify the changes as either :major, :minor, or :no_changes and return the new version number
   # result e.g. {:major, {1, 0}}
-  defp version_change(changes, {major, minor} = _current_version) do
+  defp version_change(changes, {edition, major, minor} = _current_version) do
     changes
-    |> Enum.reduce({:no_changes, {major, minor}}, fn {_id, {change_type, %{resource: _res, revision: rev}}}, acc ->
+    |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id, {_type, %{resource: _res, revision: rev}}}, {previous, _} = acc ->
       resource_type = Oli.Resources.ResourceType.get_type_by_id(rev.resource_type_id)
       cond do
         # if a container resource has changed, return major
-        resource_type == "container" && change_type != :identical ->
-          {:major, {major + 1, 0}}
+        resource_type == "container" ->
+          {:major, {edition, major + 1, 0}}
 
         # if any other type of change occurred and none of the previous were major
-        change_type != :identical && acc != :major ->
-          {:minor, {major, minor + 1}}
+        previous != :major ->
+          {:minor, {edition, major, minor + 1}}
 
         # otherwise, continue with the existing classification
         true ->

@@ -15,6 +15,9 @@ defmodule OliWeb.ProjectController do
   def overview(conn, project_params) do
     project = conn.assigns.project
 
+    latest_published_publication =
+      Publishing.get_latest_published_publication_by_slug(project.slug)
+
     params = %{
       breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
       active: :overview,
@@ -24,7 +27,8 @@ defmodule OliWeb.ProjectController do
         Utils.value_or(
           Map.get(project_params, :changeset),
           Project.changeset(project)
-        )
+        ),
+      latest_published_publication: latest_published_publication
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -61,7 +65,6 @@ defmodule OliWeb.ProjectController do
 
               _ ->
                 Map.values(changes)
-                |> Enum.filter(fn {status, _} -> status != :identical end)
                 |> Enum.map(fn {_, %{revision: revision}} -> revision end)
                 |> Enum.filter(fn r ->
                   r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
@@ -161,7 +164,8 @@ defmodule OliWeb.ProjectController do
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
-          changeset: changeset
+          changeset: changeset,
+          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn
@@ -211,9 +215,11 @@ defmodule OliWeb.ProjectController do
         |> redirect(to: Routes.project_path(conn, :overview, project))
 
       {:error, message} ->
+        project = conn.assigns.project
+
         conn
         |> put_flash(:error, "Project could not be copied: " <> message)
-        |> render("overview.html")
+        |> redirect(to: Routes.project_path(conn, :overview, project))
     end
   end
 
@@ -229,7 +235,8 @@ defmodule OliWeb.ProjectController do
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
-          changeset: changeset
+          changeset: changeset,
+          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn

@@ -24,43 +24,67 @@
         <% {false, _} -> %>
           <div class="my-3">
             Last published <strong><%= @latest_published_publication.published |> Timex.format!("{relative}", :relative) %></strong>.
-            There are <strong>no changes</strong> since the latest publication
-
-            <%= case @latest_published_publication do
-              %{major: major, minor: minor} ->
-                "v#{major}.#{minor}."
-            end %>
-
+            There are <strong>no changes</strong> since the latest publication.
           </div>
         <% {true, changes} -> %>
           <div class="my-3">Last published <strong><%= @latest_published_publication.published |> Timex.format!("{relative}", :relative) %></strong>.
-          <% change_count =  Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) |> Enum.count %>
+          <% change_count =  Map.values(changes) |> Enum.count %>
             There <%= if change_count == 1 do "is" else "are" end %> <strong><%= change_count %></strong> pending <%= if change_count == 1 do "change" else "changes" end %> since last publish:</div>
-          <%= for {status, %{revision: revision}}  <- Map.values(changes) |> Enum.filter(fn {status, _} -> status != :identical end) do %>
+          <%= for {status, %{revision: revision}}  <- Map.values(changes) do %>
             <p>
               <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
-              <%= OliWeb.Common.Links.resource_link(revision, @parent_pages, @project) %>
+              <%= case status do %>
+                <% :deleted -> %>
+                  <%= revision.title %>
+
+                <% _ -> %>
+                  <%= OliWeb.Common.Links.resource_link(revision, @parent_pages, @project) %>
+              <% end %>
             </p>
         <% end %>
       <% end %>
 
-      <div class="my-4">
+      <div class="my-4 border-top pt-3">
         <%= form_for @conn, Routes.project_path(@conn, :publish_active, @project), fn f -> %>
 
           <%= if @has_changes && @active_publication_changes do %>
-            <h6>Details</h6>
-            <%= case {@version_change, @latest_published_publication} do %>
-              <% {{:major, {major, minor}}, %{major: current_major, minor: current_minor}} -> %>
-                <div class="border rounded p-2 px-3 my-3">
-                  <p>Major Changes<small class="ml-2"><%= "v#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-2"></i><%= "v#{major}.#{minor}" %></small></p>
-                  <small>Changes alter the structure of materials or learning model. Major updates may only be appropriate for new course sections.</small>
+            <h5>Publication Details</h5>
+
+            <p class="pb-3">The version number is automatically determined by the nature of the changes.</p>
+
+            <%= case @version_change do %>
+              <% {change_type, _} -> %>
+                <div class="form-check form-switch">
+                  <div class="form-group" style="pointer-events: none">
+                    <%= label class: "form-check-label" do %>
+                      <%= radio_button :publish_type, :option, "major", class: "form-check-input", checked: change_type == :major, disabled: change_type != :major %>
+                      <p>Major
+                        <%= case {@version_change, @latest_published_publication} do %>
+                          <% {{:major, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
+                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-2"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
+
+                          <% _ -> %>
+                        <% end %>
+                      </p>
+                      <small>Changes alter the structure of materials such as additions and deletions.</small>
+                    <% end %>
+                  </div>
+                  <div class="form-group" style="pointer-events: none">
+                    <%= label class: "form-check-label" do %>
+                      <%= radio_button :publish_type, :option, "minor", class: "form-check-input", checked: change_type == :minor, disabled: change_type != :minor %>
+                      <p>Minor
+                        <%= case {@version_change, @latest_published_publication} do %>
+                          <% {{:minor, {edition, major, minor}}, %{edition: current_edition, major: current_major, minor: current_minor}} -> %>
+                            <small class="ml-1"><%= "v#{current_edition}.#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-1"></i><%= "v#{edition}.#{major}.#{minor}" %></small>
+
+                          <% _ -> %>
+                        <% end %>
+                      </p>
+                      <small>Changes include small portions of reworked materials, grammar and spelling fixes.</small>
+                    <% end %>
+                  </div>
                 </div>
 
-              <% {{:minor, {major, minor}}, %{major: current_major, minor: current_minor}} -> %>
-                <div class="border rounded p-2 px-3 my-3">
-                  <p>Minor Changes<small class="ml-2"><%= "v#{current_major}.#{current_minor}" %><i class="las la-arrow-right mx-2"></i><%= "v#{major}.#{minor}" %></small></p>
-                  <small>Changes include small portions of reworked materials, grammar and spelling fixes. Minor updates can safely be applied to existing course sections.</small>
-                </div>
             <% end %>
 
             <div class="form-group">
@@ -79,9 +103,15 @@
             disabled: !@has_changes,
             phx_disable_with: "Publishing..." %>
 
-          <%= if @has_changes && @active_publication_changes do %>
-            <span id="version-number" class="ml-2"><span>
+          <%= case @version_change do %>
+            <% {:no_changes, _} -> %>
+
+            <% {_, {edition, major, minor}} -> %>
+              <span class="ml-2"><%= "v#{edition}.#{major}.#{minor}" %></span>
+
+            <% _ -> %>
           <% end %>
+
         <% end %>
       </div>
 

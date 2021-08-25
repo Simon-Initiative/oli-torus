@@ -5,6 +5,7 @@ defmodule Oli.Publishing.Publication do
   schema "publications" do
     field :published, :utc_datetime
     field :description, :string
+    field :edition, :integer, default: 0
     field :major, :integer, default: 0
     field :minor, :integer, default: 0
 
@@ -20,6 +21,7 @@ defmodule Oli.Publishing.Publication do
     |> cast(attrs, [
       :published,
       :description,
+      :edition,
       :major,
       :minor,
       :root_resource_id,

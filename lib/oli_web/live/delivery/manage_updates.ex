@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
+  alias Oli.Publishing.Publication
   alias Oli.Repo
 
   def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
@@ -124,6 +125,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
          %{
            published: published,
            description: description,
+           edition: edition,
            major: major,
            minor: minor,
            project: project
@@ -131,15 +133,15 @@ defmodule OliWeb.Delivery.ManageUpdates do
        ) do
     ~L"""
     <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1"><%= project.title %> <small><%= "#{major}.#{minor}" %></small></h5>
+      <h5 class="mb-1"><%= project.title %> <small><%= "v#{edition}.#{major}.#{minor}" %></small></h5>
       <small>Published <%= Timex.format!(published, "{relative}", :relative) %></small>
     </div>
     <p class="mb-1"><%= description %></p>
     """
   end
 
-  defp version_number(publication) do
-    "#{publication.major}.#{publication.minor}"
+  defp version_number(%Publication{edition: edition, major: major, minor: minor}) do
+    "#{edition}.#{major}.#{minor}"
   end
 
   # handle any cancel events a modal might generate from being closed
