@@ -67,11 +67,21 @@ const EditingCanvas: React.FC = () => {
     return true;
   };
 
+  const handleStageClick = (e) => {
+    if (e.target.className !== 'aa-stage') {
+      return;
+    }
+    console.log('[handleStageClick]', e);
+    dispatch(setCurrentSelection({ selection: '' }));
+
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+  };
+
   console.log('EC: RENDER', { layers });
 
   return (
     <React.Fragment>
-      <section className="aa-stage">
+      <section className="aa-stage" onClick={handleStageClick}>
         {currentActivityTree &&
           currentActivityTree.map((activity) => (
             <AuthoringActivityRenderer
