@@ -1,5 +1,5 @@
-import { JSONSchema7Object } from "json-schema";
-import { JanusAbsolutePositioned, JanusCustomCss } from "../types/parts";
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface McqItem {
   scoreValue: number;
@@ -11,7 +11,7 @@ export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
   palette: any;
   fontSize?: number;
   overrideHeight?: boolean;
-  layoutType: 'horizontalLayout'| 'verticalLayout';
+  layoutType: 'horizontalLayout' | 'verticalLayout';
   verticalGap: number;
   enabled: boolean;
   showLabel: boolean;

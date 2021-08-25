@@ -34,7 +34,8 @@ export interface PartComponentProps<T extends CustomProperties> {
   onSubmit: (payload: any) => Promise<any>;
 }
 
-export interface AuthorPartComponentProps<T extends CustomProperties> extends PartComponentProps<T> {
+export interface AuthorPartComponentProps<T extends CustomProperties>
+  extends PartComponentProps<T> {
   editMode: boolean;
   onClick: (payload: any) => void;
 }
