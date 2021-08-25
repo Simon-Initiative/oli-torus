@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
+  alias Oli.Repo
 
   def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
     # only permit instructor level access
@@ -179,8 +180,10 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
     publication = Publishing.get_publication!(publication_id)
 
-    Sections.update_section_project_publication(section, project_id, publication_id)
-    Sections.rebuild_section_resources(section: section, publication: publication)
+    Repo.transaction(fn ->
+      Sections.update_section_project_publication(section, project_id, publication_id)
+      Sections.rebuild_section_resources(section: section, publication: publication)
+    end)
 
     {:noreply,
      push_redirect(socket,

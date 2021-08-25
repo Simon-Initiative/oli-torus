@@ -8,6 +8,7 @@ defmodule OliWeb.DeliveryController do
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.Repo
 
   import Oli.Utils
 
@@ -295,22 +296,25 @@ defmodule OliWeb.DeliveryController do
 
     publication = Publishing.get_publication!(publication_id)
 
-    {:ok, section} =
-      Sections.create_section(%{
-        timezone: institution.timezone,
-        title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
-        context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-        institution_id: institution.id,
-        base_project_id: publication.project_id,
-        lti_1p3_deployment_id: deployment.id
-      })
+    # create section, section resources and enroll instructor
+    Repo.transaction(fn ->
+      {:ok, section} =
+        Sections.create_section(%{
+          timezone: institution.timezone,
+          title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+          context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
+          institution_id: institution.id,
+          base_project_id: publication.project_id,
+          lti_1p3_deployment_id: deployment.id
+        })
 
-    {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
+      {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
 
-    # Enroll this user with their proper roles (instructor)
-    lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-    Sections.enroll(user.id, section_id, context_roles)
+      # Enroll this user with their proper roles (instructor)
+      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+      Sections.enroll(user.id, section_id, context_roles)
+    end)
 
     conn
     |> redirect(to: Routes.delivery_path(conn, :index))
