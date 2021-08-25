@@ -2,18 +2,17 @@
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { contexts } from '../../../types/applicationContext';
+import { parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import {
-  JanusMultipleChoiceQuestionItemProperties,
-  JanusMultipleChoiceQuestionProperties,
-} from './MultipleChoiceQuestionType';
+import { PartComponentProps } from '../types/parts';
+import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
+import { McqModel } from './schema';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -47,6 +46,7 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
     </div>
   );
 };
+
 const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   nodes,
   state,
@@ -123,7 +123,8 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     </React.Fragment>
   );
 };
-const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
+
+const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);

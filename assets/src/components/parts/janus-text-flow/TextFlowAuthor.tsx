@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import { AuthorPartComponentProps } from '../types/parts';
 import Markup from './Markup';
+import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
   tag: string;
@@ -37,7 +38,7 @@ export const renderFlow = (
   key: string,
   treeNode: MarkupTree,
   styleOverrides: any,
-  state: any[] = [],
+  state: any = {},
   fontSize?: any,
   specialTag?: string,
 ) => {
@@ -83,7 +84,7 @@ export const renderFlow = (
   );
 };
 
-const TextFlowAuthor: React.FC<AuthorPartComponentProps<any>> = (props: any) => {
+const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props: any) => {
   const { model } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;

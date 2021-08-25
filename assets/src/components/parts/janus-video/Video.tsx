@@ -6,17 +6,8 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { PartComponentProps, JanusAbsolutePositioned } from '../types/parts';
-
-interface VideoModel extends JanusAbsolutePositioned {
-  src: string;
-  triggerCheck: boolean;
-  autoPlay?: boolean;
-  startTime?: number;
-  endTime?: number;
-  enableReplay?: boolean;
-  subtitles?: string;
-}
+import { PartComponentProps } from '../types/parts';
+import { VideoModel } from './schema';
 
 const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -465,11 +456,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-  return ready ? (
-    <div>
-      {elementTag}
-    </div>
-  ) : null;
+  return ready ? <div>{elementTag}</div> : null;
 };
 
 export const tagName = 'janus-video';

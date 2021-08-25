@@ -1,24 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import { contexts } from '../../../types/applicationContext';
+import { PartComponentProps } from '../types/parts';
+import { SliderModel } from './schema';
 import './Slider.scss';
-
-interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
-  label: string;
-  maximum: number;
-  minimum: number;
-  snapInterval: number;
-  showDataTip: boolean;
-  showValueLabels: boolean;
-  showLabel: boolean;
-  invertScale: boolean;
-}
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   const [state, setState] = useState<unknown>([]);

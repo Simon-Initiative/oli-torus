@@ -1,7 +1,8 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { VideoModel } from './schema';
 
-const VideoAuthor: React.FC<AuthorPartComponentProps<any>> = (props) => {
+const VideoAuthor: React.FC<AuthorPartComponentProps<VideoModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

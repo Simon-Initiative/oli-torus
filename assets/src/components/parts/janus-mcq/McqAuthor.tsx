@@ -1,7 +1,8 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { McqModel } from './schema';
 
-const McqAuthor: React.FC<AuthorPartComponentProps<any>> = (props) => {
+const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

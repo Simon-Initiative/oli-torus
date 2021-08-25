@@ -1,7 +1,8 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect } from 'react';
+import { PopupModel } from './schema';
 
-const PopupAuthor: React.FC<AuthorPartComponentProps<any>> = (props) => {
+const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { model } = props;
 
   const { x, y, z, width } = model;

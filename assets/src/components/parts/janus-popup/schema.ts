@@ -1,4 +1,20 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface PopupModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  description: string;
+  showLabel: boolean;
+  openByDefault: boolean;
+  defaultURL: string;
+  iconURL: string;
+  useToggleBehavior: boolean;
+  isOpen: boolean;
+  visible: boolean;
+  popup: any; // TODO: layout model
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -18,12 +34,6 @@ export const schema = {
     type: 'string',
     default: 'Additional Information',
     description: 'provides alt text and aria-label content',
-  },
-  questionFlow: {
-    title: 'Question Flow',
-    type: 'string',
-    description: 'specifies the layout of the questions',
-    default: 'LRTB',
   },
   showLabel: {
     title: 'Show Label',
@@ -84,7 +94,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema: Partial<PopupModel> = () => ({
   customCssClass: '',
   description: '',
   questionFlow: 'LRTB',

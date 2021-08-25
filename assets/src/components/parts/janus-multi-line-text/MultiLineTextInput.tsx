@@ -1,14 +1,16 @@
 /* eslint-disable react/prop-types */
+import debounce from 'lodash/debounce';
+import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import debounce from 'lodash/debounce';
-import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { contexts } from '../../../types/applicationContext';
+import { PartComponentProps } from '../types/parts';
+import { MultiLineTextModel } from './schema';
 
-const MultiLineTextInput: React.FC<any> = (props) => {
+const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -243,11 +245,7 @@ const MultiLineTextInput: React.FC<any> = (props) => {
   const initialCharacterCount = text.length || 0;
 
   return ready ? (
-    <div
-      data-janus-type={props.type}
-      className={`long-text-input`}
-      style={wrapperStyles}
-    >
+    <div data-janus-type={props.type} className={`long-text-input`} style={wrapperStyles}>
       <label
         htmlFor={id}
         style={{

@@ -57,7 +57,7 @@ const Markup: React.FC<any> = ({
   style = {},
   text = '',
   children,
-  state = [],
+  state = {},
   displayRawText = false,
 }) => {
   /*eslint-enable */

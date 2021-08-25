@@ -1,4 +1,17 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
+  fontSize?: number;
+  palette: any;
+  showLabel: boolean;
+  label: string;
+  prompt: string;
+  showCharacterCount: boolean;
+  enabled: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   palette: {
     type: 'object',
     properties: {
@@ -49,7 +62,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema: Partial<MultiLineTextModel> = () => ({
   enabled: true,
   customCssClass: '',
   showCharacterCount: true,

@@ -8,9 +8,11 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
-import { getIcon } from './GetIcon';
 import { contexts } from '../../../types/applicationContext';
+import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { PartComponentProps } from '../types/parts';
+import { getIcon } from './GetIcon';
+import { PopupModel } from './schema';
 interface ContextProps {
   currentActivity: string;
   mode: string;
@@ -20,8 +22,7 @@ interface InitResultProps {
   context: ContextProps;
 }
 
-// TODO: fix typing
-const Popup: React.FC<any> = (props) => {
+const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
