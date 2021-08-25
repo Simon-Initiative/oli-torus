@@ -42,7 +42,6 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       const target = e.target as HTMLElement;
       if (target?.id === elementProps.id) {
         const { payload, continuation } = e.detail;
-        console.log('ITS HAPPENING!', e);
         let result = null;
         if (payload.eventName === 'selectPart' && onSelectPart) {
           result = await onSelectPart(payload.payload.id);

@@ -67,7 +67,7 @@ const EditingCanvas: React.FC = () => {
     return true;
   };
 
-  const handleStageClick = (e) => {
+  const handleStageClick = (e: any) => {
     if (e.target.className !== 'aa-stage') {
       return;
     }

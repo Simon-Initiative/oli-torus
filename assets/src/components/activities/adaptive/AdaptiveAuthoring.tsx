@@ -1,7 +1,6 @@
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import EventEmitter from 'events';
-import React, { useState } from 'react';
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
