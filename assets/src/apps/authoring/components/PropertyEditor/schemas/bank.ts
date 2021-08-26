@@ -20,7 +20,7 @@ export const transformBankModeltoSchema = (currentSequence: SequenceEntry<Sequen
   if (currentSequence) {
     const schemaData = {
       bankShowCount: currentSequence?.custom.bankShowCount || 1,
-      bankEndTarget: currentSequence?.custom.bankEndTarget || 'next',
+      bankEndTarget: currentSequence?.custom.bankEndTarget,
     };
     return schemaData;
   }

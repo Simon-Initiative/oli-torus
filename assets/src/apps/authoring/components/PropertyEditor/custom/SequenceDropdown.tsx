@@ -15,7 +15,11 @@ import { useSelector } from 'react-redux';
 
 interface SeqDropdownProps {
   items: SequenceHierarchyItem<SequenceEntryChild>[];
-  onChange: (e: React.MouseEvent, item: null | SequenceHierarchyItem<SequenceEntryChild>) => void;
+  onChange: (
+    e: React.MouseEvent,
+    item: null | SequenceHierarchyItem<SequenceEntryChild>,
+    isNextButton: boolean,
+  ) => void;
   value: string;
   showNextBtn: boolean;
 }
@@ -23,36 +27,7 @@ interface SeqDropdownProps {
 export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
   const { items, onChange, value, showNextBtn } = props;
   const sequence = useSelector(selectSequence);
-  const currentSequenceId = useSelector(selectCurrentSequenceId);
   console.log(sequence);
-  const handleNextClick = (e: React.MouseEvent) => {
-    onChange(e, getNextScreen());
-  };
-  const getNextScreen = () => {
-    const currentIndex = sequence.findIndex(
-      (entry) => entry.custom.sequenceId === currentSequenceId,
-    );
-    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
-    let nextIndex = currentIndex + 1;
-    nextSequenceEntry = sequence[nextIndex];
-    while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
-      // for layers if you try to navigate it should go to first child
-      const firstChild = sequence.find(
-        (entry) =>
-          entry.custom?.layerRef ===
-          (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
-      );
-      if (!firstChild) {
-        continue;
-      }
-      nextSequenceEntry = firstChild;
-    }
-    while (nextSequenceEntry?.custom.layerRef === currentSequenceId) {
-      nextIndex++;
-      nextSequenceEntry = sequence[nextIndex];
-    }
-    return nextSequenceEntry as SequenceHierarchyItem<SequenceEntryChild>;
-  };
 
   const sequenceDropDownItems = (items: any) =>
     items.map((item: SequenceHierarchyItem<SequenceEntryType>, index: number) => {
@@ -67,7 +42,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
             key={`${item.custom.sequenceId}`}
             tabIndex={0}
           >
-            <div className="aa-sequence-details-wrapper" onClick={(e) => onChange(e, item)}>
+            <div className="aa-sequence-details-wrapper" onClick={(e) => onChange(e, item, false)}>
               <div className="details">
                 {item.children.length ? (
                   <ContextAwareToggle eventKey={`${index}`} className={`aa-sequence-item-toggle`} />
@@ -95,7 +70,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
             as="li"
             className={`aa-sequence-item`}
             key="next"
-            onClick={(e) => handleNextClick(e)}
+            onClick={(e) => onChange(e, null, true)}
             tabIndex={0}
           >
             <div className="aa-sequence-details-wrapper">
