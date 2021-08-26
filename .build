@@ -112,6 +112,7 @@ Oli.Delivery.Attempts.PageLifecycle.VisitContext.html
 Oli.Delivery.Attempts.PageLifecycle.html
 Oli.Delivery.Attempts.Scoring.html
 Oli.Delivery.Attempts.html
+Oli.Delivery.DeliveryPolicy.html
 Oli.Delivery.Evaluation.Actions.FeedbackActionResult.html
 Oli.Delivery.Evaluation.Actions.NavigationActionResult.html
 Oli.Delivery.Evaluation.Actions.StateUpdateActionResult.html
@@ -128,9 +129,12 @@ Oli.Delivery.Page.ActivityContext.html
 Oli.Delivery.Page.ModelPruner.html
 Oli.Delivery.Page.ObjectivesRollup.html
 Oli.Delivery.Page.PageContext.html
-Oli.Delivery.Sections.AuthorSection.html
+Oli.Delivery.Sections.AuthorsSections.html
 Oli.Delivery.Sections.Enrollment.html
 Oli.Delivery.Sections.Section.html
+Oli.Delivery.Sections.SectionResource.html
+Oli.Delivery.Sections.SectionsProjectsPublications.html
+Oli.Delivery.Sections.UserGroup.html
 Oli.Delivery.Sections.html
 Oli.Delivery.Snapshots.Snapshot.html
 Oli.Delivery.Snapshots.Utils.html
@@ -186,6 +190,7 @@ Oli.Predefined.html
 Oli.Publishing.AuthoringResolver.html
 Oli.Publishing.ChangeTracker.html
 Oli.Publishing.DeliveryResolver.html
+Oli.Publishing.HierarchyNode.html
 Oli.Publishing.ObjectiveMappingTransfer.html
 Oli.Publishing.Publication.html
 Oli.Publishing.PublishedResource.html
@@ -235,7 +240,6 @@ Oli.UserIdentities.AuthorIdentity.html
 Oli.UserIdentities.UserIdentity.html
 Oli.Utils.Database.html
 Oli.Utils.FlameGraph.html
-Oli.Utils.HierarchyNode.html
 Oli.Utils.LoadTesting.html
 Oli.Utils.Purposes.html
 Oli.Utils.Recaptcha.html
@@ -327,6 +331,7 @@ OliWeb.Curriculum.OptionsModal.html
 OliWeb.Curriculum.Rollup.html
 OliWeb.Curriculum.Utils.html
 OliWeb.Delivery.ManageSection.html
+OliWeb.Delivery.ManageUpdates.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
@@ -446,8 +451,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-2cb35ba388.js
-dist/sidebar_items-30bf168567.js
+dist/search_items-decfbca9c9.js
+dist/sidebar_items-02c51274b1.js
 index.html
 license.html
 readme.html

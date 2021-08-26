@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.23.0">
-    <meta name="project" content="OLI Torus v0.12.9">
+    <meta name="project" content="OLI Torus v0.13.0">
 
-    <title>Oli.Resources.Numbering — OLI Torus v0.12.9</title>
+    <title>Oli.Resources.Numbering — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-30bf168567.js"></script>
+    <script src="dist/sidebar_items-02c51274b1.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -51,7 +51,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.12.9
+        v0.13.0
       </strong>
     </div>
 
@@ -79,7 +79,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.12.9)</small>
+Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.13.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -88,6 +88,39 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.12.9)</small>
 
       </h1>
 
+
+        <section id="moduledoc">
+<p>Numbering module handles number generation for a course hierarchy and contains helper methods
+used in both authoring and delivery.</p><p>Delivery numberings are generated at section resource creation time and authoring numberings
+are generated JIT on resource access. This is because once section resources are generated, they
+are unexpected to change as often as perhaps a course under active development in authoring might.</p><p>Numbering is dictated according to the resource type and level:</p><ul><li>Pages: All pages are numbered sequentially in course globally. Pages across modules can be
+conceptualized (and navigated via previous/next) as a contiguous list of resources like pages in a book.</li><li>Containers: Container numberings are scoped to their level in the hierarchy</li></ul><p>For Example:</p><pre><code class="nohighlight makeup elixir"><span class="w">  </span><span class="o">-</span><span class="w"> </span><span class="nc">Unit</span><span class="w"> </span><span class="mi">1</span><span class="p">:</span><span class="w">
+    </span><span class="o">-</span><span class="w"> </span><span class="nc">Module</span><span class="w"> </span><span class="mi">1</span><span class="w">
+      </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">1</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">1</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">2</span><span class="w">
+      </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">2</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">1</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">3</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">4</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">5</span><span class="w">
+    </span><span class="o">-</span><span class="w"> </span><span class="nc">Module</span><span class="w"> </span><span class="mi">2</span><span class="w">
+      </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">3</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">2</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">6</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">7</span><span class="w">
+  </span><span class="o">-</span><span class="w"> </span><span class="nc">Unit</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="w">
+    </span><span class="o">-</span><span class="w"> </span><span class="nc">Module</span><span class="w"> </span><span class="mi">3</span><span class="w">
+      </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">4</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">8</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">9</span><span class="w">
+      </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">5</span><span class="w">
+        </span><span class="o">-</span><span class="w"> </span><span class="nc">Section</span><span class="w"> </span><span class="mi">1</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">10</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">11</span><span class="w">
+          </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">12</span><span class="w">
+  </span><span class="o">-</span><span class="w"> </span><span class="nc">Page</span><span class="w"> </span><span class="mi">13</span></code></pre>
+        </section>
 
 
         <section id="summary" class="details-list">
@@ -112,16 +145,14 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.12.9)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#full_hierarchy/2">full_hierarchy(resolver, project_or_section_slug)</a>
+    <a href="#init_numberings/0">init_numberings()</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Returns a [%HierarchyNode{}] representing the course's hierarchy structure.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#full_hierarchy_helper/3">full_hierarchy_helper(numberings, revisions_by_id, revision)</a>
+    <a href="#next_index/3">next_index(numberings, level, revision)</a>
 
   </div>
 
@@ -137,7 +168,7 @@ Oli.Resources.Numbering <small class="app-vsn">(OLI Torus v0.12.9)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#number_tree_from/2">number_tree_from(container, resources)</a>
+    <a href="#number_tree_from/2">number_tree_from(revision, revisions)</a>
 
   </div>
 
@@ -182,7 +213,7 @@ Functions
     </a>
     <h1 class="signature">container_type(level)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L11" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L53" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -195,16 +226,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="full_hierarchy/2">
+<section class="detail" id="init_numberings/0">
 
   <div class="detail-header">
-    <a href="#full_hierarchy/2" class="detail-link" title="Link to this function">
+    <a href="#init_numberings/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">full_hierarchy(resolver, project_or_section_slug)</h1>
+    <h1 class="signature">init_numberings()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L224" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -214,36 +245,19 @@ Functions
 
   <section class="docstring">
 
-      <h2>Specs</h2>
-      <div class="specs">
 
-          <pre>full_hierarchy(resolver(), project_or_section_slug()) :: [
-  %Oli.Utils.HierarchyNode{
-    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
-  }
-]</pre>
-
-      </div>
-
-<p>Returns a [%HierarchyNode{}] representing the course's hierarchy structure.</p><h2 id="full_hierarchy/2-parameters" class="section-heading">
-  <a href="#full_hierarchy/2-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Parameters
-</h2>
-<ul><li>resolver</li><li>project_or_section_slug: The project slug or the section slug.</li></ul>
   </section>
 </section>
-<section class="detail" id="full_hierarchy_helper/3">
+<section class="detail" id="next_index/3">
 
   <div class="detail-header">
-    <a href="#full_hierarchy_helper/3" class="detail-link" title="Link to this function">
+    <a href="#next_index/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">full_hierarchy_helper(numberings, revisions_by_id, revision)</h1>
+    <h1 class="signature">next_index(numberings, level, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L51" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L201" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -280,9 +294,9 @@ Functions
 
           <pre>number_full_tree(resolver(), project_or_section_slug()) :: %{
   required(revision_id()) =&gt; %Oli.Resources.Numbering{
-    container: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    index: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 }</pre>
 
@@ -298,7 +312,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">number_tree_from(container, resources)</h1>
+    <h1 class="signature">number_tree_from(revision, revisions)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L165" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -382,9 +396,9 @@ Functions
   ]
 ) :: %{
   required(revision_id()) =&gt; %Oli.Resources.Numbering{
-    container: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    count: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    index: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 }</pre>
 
@@ -477,7 +491,7 @@ Functions
     </a>
     <h1 class="signature">prefix(numbering)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L19" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L61" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
