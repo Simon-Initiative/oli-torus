@@ -19,7 +19,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Page.PageContext
   alias Oli.Authoring.Editing.ActivityEditor
 
@@ -58,7 +57,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
            {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
@@ -134,7 +133,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       case Locks.acquire(project.slug, publication.id, resource.id, author.id) do
         # If we reacquired the lock, we must first create a new revision
@@ -173,7 +172,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil() do
       case Locks.release(project.slug, publication.id, resource.id, author.id) do
         {:error} -> {:error, {:error}}
@@ -192,7 +191,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     editor_map = Activities.create_registered_activity_map(project_slug)
 
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug)
+           Publishing.project_working_publication(project_slug)
            |> Repo.preload(:project)
            |> trap_nil(),
          {:ok, %{content: content} = revision} <-
@@ -203,11 +202,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            construct_parent_references(objectives) |> trap_nil(),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
+      hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
-      [root_container_node] =
-        Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
-
-      hierarchy = root_container_node.children
       {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
 
       activity_ids = activities_from_content(revision.content)
@@ -237,7 +233,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   def render_page_html(project_slug, revision_slug, author, options \\ []) do
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, %{content: content} = _revision} <-
            get_latest_revision(publication, resource) |> trap_nil(),
@@ -345,7 +341,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            typeSlug: Map.get(id_to_slug, activity_type_id),
            activitySlug: slug,
            resourceId: activity_id,
-           activity_id: activity_id, # TODO: remove once all the deps are updated
+           # TODO: remove once all the deps are updated
+           activity_id: activity_id,
            model: content,
            objectives: objectives,
            title: title

@@ -92,9 +92,9 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
       <div class="text-secondary my-1">Time Zone</div>
       <div class="form-label-group">
-        <%= select f, :time_zone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :time_zone, "is-invalid"),
-          required: true, autofocus: focusHelper(f, :time_zone) %>
-        <%= error_tag f, :time_zone %>
+        <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
+          required: true, autofocus: focusHelper(f, :timezone) %>
+        <%= error_tag f, :timezone %>
       </div>
 
       <div class="text-secondary my-2">Brand</div>

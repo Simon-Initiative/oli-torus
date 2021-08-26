@@ -1,13 +1,16 @@
 defmodule Oli.Publishing.AuthoringResolver do
+  import Oli.Timing
+  import Ecto.Query, warn: false
+
+  alias Oli.Repo
+  alias Oli.Publishing.Resolver
   alias Oli.Resources.Resource
   alias Oli.Resources.Revision
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Resolver
-  import Oli.Timing
-  import Ecto.Query, warn: false
-  alias Oli.Repo
+  alias Oli.Publishing.HierarchyNode
+  alias Oli.Resources.Numbering
 
   @behaviour Resolver
 
@@ -19,7 +22,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           join: rev in Revision,
           on: rev.id == m.revision_id,
           where:
-            m.publication_id in subquery(unpublished_publication(project_slug)) and
+            m.publication_id in subquery(project_working_publication(project_slug)) and
               m.resource_id in ^resource_ids,
           select: rev
         )
@@ -41,7 +44,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           join: rev in Revision,
           on: rev.id == m.revision_id,
           where:
-            m.publication_id in subquery(unpublished_publication(project_slug)) and
+            m.publication_id in subquery(project_working_publication(project_slug)) and
               m.resource_id == ^resource_id,
           select: rev
       )
@@ -61,27 +64,12 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: rev2 in Revision,
         on: m.revision_id == rev2.id,
         where:
-          m.publication_id in subquery(unpublished_publication(project_slug)) and
+          m.publication_id in subquery(project_working_publication(project_slug)) and
             rev.slug == ^revision_slug,
         limit: 1,
         select: rev2
       )
       |> Repo.one()
-    end
-    |> run()
-    |> emit([:oli, :resolvers, :authoring], :duration)
-  end
-
-  @impl Resolver
-  def publication(project_slug) do
-    fn ->
-      Repo.one(
-        from p in Publication,
-          join: c in Project,
-          on: p.project_id == c.id,
-          where: p.published == false and c.slug == ^project_slug,
-          select: p
-      )
     end
     |> run()
     |> emit([:oli, :resolvers, :authoring], :duration)
@@ -98,7 +86,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: c in Project,
         on: p.project_id == c.id,
         where:
-          p.published == false and m.resource_id == p.root_resource_id and
+          is_nil(p.published) and m.resource_id == p.root_resource_id and
             c.slug == ^project_slug,
         select: rev
       )
@@ -109,9 +97,21 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
-  @doc """
+  def all_revisions(project_slug) do
+    fn ->
+      from(m in PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where: m.publication_id in subquery(project_working_publication(project_slug)),
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :authoring], :duration)
+  end
 
-  """
+  @impl Resolver
   def all_revisions_in_hierarchy(project_slug) do
     page_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -121,7 +121,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         join: rev in Revision,
         on: rev.id == m.revision_id,
         where:
-          m.publication_id in subquery(unpublished_publication(project_slug)) and
+          m.publication_id in subquery(project_working_publication(project_slug)) and
             (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id),
         select: rev
       )
@@ -129,6 +129,15 @@ defmodule Oli.Publishing.AuthoringResolver do
     end
     |> run()
     |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
+  defp project_working_publication(project_slug) do
+    from(p in Publication,
+      join: c in Project,
+      on: p.project_id == c.id,
+      where: is_nil(p.published) and c.slug == ^project_slug,
+      select: p.id
+    )
   end
 
   @impl Resolver
@@ -146,7 +155,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       join revisions as rev on rev.id = m.revision_id
       where c.slug = '#{project_slug}'
         and rev.deleted is false
-        and p.published = false
+        and p.published is NULL
         and rev.children && ARRAY[#{ids}]
       """
 
@@ -158,12 +167,60 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
-  defp unpublished_publication(project_slug) do
-    from(p in Publication,
-      join: c in Project,
-      on: p.project_id == c.id,
-      where: p.published == false and c.slug == ^project_slug,
-      select: p.id
-    )
+  @impl Resolver
+  def full_hierarchy(project_slug) do
+    revisions_by_resource_id =
+      all_revisions_in_hierarchy(project_slug)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+
+    root_revision = root_container(project_slug)
+    numberings = Numbering.init_numberings()
+    level = 0
+
+    {root_node, _numberings} =
+      hierarchy_node_with_children(root_revision, revisions_by_resource_id, numberings, level)
+
+    root_node
+  end
+
+  def hierarchy_node_with_children(revision, revisions_by_resource_id, numberings, level) do
+    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
+
+    {children, numberings} =
+      Enum.reduce(
+        revision.children,
+        {[], numberings},
+        fn resource_id, {nodes, numberings} ->
+          {node, numberings} =
+            hierarchy_node_with_children(
+              revisions_by_resource_id[resource_id],
+              revisions_by_resource_id,
+              numberings,
+              level + 1
+            )
+
+          {[node | nodes], numberings}
+        end
+      )
+      # it's more efficient to append to list using [node | nodes] and
+      # then reverse than to concat on every reduce call using ++
+      |> then(fn {children, numberings} ->
+        {Enum.reverse(children), numberings}
+      end)
+
+    {
+      %HierarchyNode{
+        numbering: %Numbering{
+          index: numbering_index,
+          level: level,
+          revision: revision
+        },
+        children: children,
+        resource_id: revision.resource_id,
+        revision: revision,
+        section_resource: nil
+      },
+      numberings
+    }
   end
 end

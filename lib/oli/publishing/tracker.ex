@@ -1,6 +1,5 @@
 defmodule Oli.Publishing.ChangeTracker do
   alias Oli.Publishing
-  alias Oli.Publishing.AuthoringResolver
 
   @doc """
   Tracks the creation of a new revision for the current
@@ -21,7 +20,7 @@ defmodule Oli.Publishing.ChangeTracker do
   end
 
   defp process_change(project_slug, revision, processor, changes) do
-    publication = AuthoringResolver.publication(project_slug)
+    publication = Publishing.project_working_publication(project_slug)
 
     {:ok, resultant_revision} =
       case changes do
