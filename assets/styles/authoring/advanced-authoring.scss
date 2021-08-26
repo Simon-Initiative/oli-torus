@@ -254,9 +254,9 @@ $panel-section-title-bar-color: #e8ebed;
         }
       }
       .dropdown-menu {
-        transform: translate3d(0px, -504px, 0px) !important;
+        transform: translate3d(0px, 40px, 0px) !important;
         overflow: auto;
-        height: 500px;
+        max-height: 400px;
         width: 100%;
       }
       .dropdown-toggle{

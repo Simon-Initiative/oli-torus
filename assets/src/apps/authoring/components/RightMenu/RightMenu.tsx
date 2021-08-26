@@ -90,16 +90,14 @@ const RightMenu: React.FC<any> = () => {
     setScreenData(transformScreenModeltoSchema(currentActivity));
     setScreenSchema(screenSchema);
 
-    setBankData(
-      transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>, currentActivity),
-    );
+    setBankData(transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>));
     setBankSchema(bankSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
       [],
     );
     setExistingIds(currentIds);
-  }, [currentActivity]);
+  }, [currentActivity, currentSequence]);
 
   // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
@@ -111,33 +109,26 @@ const RightMenu: React.FC<any> = () => {
 
   const bankPropertyChangeHandler = useCallback(
     (properties: object) => {
-      if (currentActivity) {
+      if (currentSequence) {
         const modelChanges = transformBankSchematoModel(properties);
         console.log('Bank Property Change...', { properties, modelChanges });
-        const { bankShowCount, bankEndTarget, ...screenModelChanges } = modelChanges;
-        const bankChanges = {
-          ...currentActivity?.content?.custom,
-          ...screenModelChanges,
-        };
-        const cloneActivity = clone(currentActivity);
-        cloneActivity.content.custom = bankChanges;
-        debounceSaveBankSettings(
-          cloneActivity,
-          currentGroup,
-          currentSequence,
-          bankShowCount,
-          bankEndTarget,
-        );
+        const { bankShowCount, bankEndTarget } = modelChanges;
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: currentGroup }));
+          dispatch(savePage());
+        }
+        //debounceSaveBankSettings(currentGroup, currentSequence, bankShowCount, bankEndTarget);
       }
     },
-    [currentActivity],
+    [currentSequence],
   );
 
   const debounceSaveBankSettings = useCallback(
     debounce(
-      (activity, group, currentSequence, bankShowCount, bankEndTarget) => {
-        console.log('SAVING ACTIVITY:', { activity });
-        dispatch(saveActivity({ activity }));
+      (group, currentSequence, bankShowCount, bankEndTarget) => {
         if (currentSequence) {
           const cloneSequence = clone(currentSequence);
           cloneSequence.custom.bankShowCount = bankShowCount;
@@ -146,7 +137,7 @@ const RightMenu: React.FC<any> = () => {
           dispatch(savePage());
         }
       },
-      100,
+      0,
       { maxWait: 10000, leading: false },
     ),
     [],
@@ -447,7 +438,9 @@ const RightMenu: React.FC<any> = () => {
         eventKey={RightPanelTabs.SCREEN}
         title={`${currentSequence?.custom.isBank ? 'Bank' : 'Screen'}`}
       >
-        <div className="screen-tab p-3 overflow-hidden">
+        <div
+          className={`screen-tab p-3 ${currentSequence?.custom.isBank ? '' : 'overflow-hidden'}`}
+        >
           {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
             <PropertyEditor
               key={currentActivity.id}

@@ -15,7 +15,7 @@ interface PropertyEditorProps {
 
 const widgets: any = {
   CheckboxWidget: CustomCheckbox,
-  DropdownTemplate: ScreenDropdownTemplate,
+  ScreenDropdownTemplate: ScreenDropdownTemplate,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
