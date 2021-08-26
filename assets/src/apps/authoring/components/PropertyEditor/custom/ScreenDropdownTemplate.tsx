@@ -9,7 +9,10 @@ import {
   SequenceEntryType,
   SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
-import { selectCurrentSequenceId, selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import {
+  selectCurrentSequenceId,
+  selectSequence,
+} from 'apps/delivery/store/features/groups/selectors/deck';
 import { useSelector } from 'react-redux';
 import { Dropdown, DropdownButton } from 'react-bootstrap';
 
@@ -52,16 +55,20 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
     return nextSequenceEntry as SequenceHierarchyItem<SequenceEntryChild>;
   };
 
-  const setButtonLabel = (seq?: SequenceHierarchyItem<SequenceEntryChild>) =>{
+  const setButtonLabel = (seq?: SequenceHierarchyItem<SequenceEntryChild>) => {
     const nextSequenceEntry = getNextScreen();
-    if(seq && seq.custom.sequenceId !== nextSequenceEntry.custom.sequenceId){
+    if (seq && seq.custom.sequenceId !== nextSequenceEntry.custom.sequenceId) {
       return seq.custom.sequenceName;
     }
     return 'Next Screen';
-  }
+  };
 
-  const onChangeHandler = (e: React.MouseEvent, item: SequenceEntry<SequenceEntryChild> | null, isNext: boolean) => {
-    if(isNext){
+  const onChangeHandler = (
+    e: React.MouseEvent,
+    item: SequenceEntry<SequenceEntryChild> | null,
+    isNext: boolean,
+  ) => {
+    if (isNext) {
       item = getNextScreen();
     }
     onChange(item?.custom.sequenceId);
