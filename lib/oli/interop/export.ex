@@ -1,6 +1,5 @@
 defmodule Oli.Interop.Export do
   alias Oli.Publishing
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.ResourceType
   alias Oli.Activities
   alias Oli.Authoring.MediaLibrary
@@ -10,7 +9,7 @@ defmodule Oli.Interop.Export do
   Generates a course digest for an existing course project.
   """
   def export(project) do
-    publication = AuthoringResolver.publication(project.slug)
+    publication = Publishing.project_working_publication(project.slug)
     resources = fetch_all_resources(publication)
 
     ([

@@ -5,7 +5,7 @@ defmodule Oli.Publishing.Resolver do
   """
 
   alias Oli.Resources.Revision
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.HierarchyNode
 
   @doc """
   Resolves a revision from a list of resource ids and a given context slug.
@@ -27,25 +27,33 @@ defmodule Oli.Publishing.Resolver do
   @callback from_revision_slug(String.t(), String.t()) :: %Revision{}
 
   @doc """
-  Returns the publication that is used for resolution.
-  """
-  @callback publication(String.t()) :: %Publication{}
-
-  @doc """
   Resolves the revision of the root container.
   """
   @callback root_container(String.t()) :: %Revision{}
 
   @doc """
-  Resolves the revisions of all containers and pages
+  Resolves all the revisions for a given context slug.
+  """
+  @callback all_revisions(String.t()) :: [%Revision{}]
+
+  @doc """
+  Resolves the revisions of all containers and pages.
   """
   @callback all_revisions_in_hierarchy(String.t()) :: [%Revision{}]
+
+  @doc """
+  Reconstructs the resource hierarchy for a section or project
+  ## Examples
+      iex> full_hierarchy(section_or_project_slug)
+      %HierarchyNode{}
+  """
+  @callback full_hierarchy(String.t()) :: %HierarchyNode{}
 
   @doc """
   Finds the parent objectives for a list of objective resource ids that
   might be child objectives.  Returns a map of the child objective resource id
   to the parent objective.  There will not be an entry in this map if
-  a given objective resource id is a root objective
+  a given objective resource id is a root objective.
   """
   @callback find_parent_objectives(String.t(), [number]) :: map()
 end
