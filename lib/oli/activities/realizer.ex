@@ -10,8 +10,9 @@ defmodule Oli.Activities.Realizer do
   """
 
   alias Oli.Resources.Revision
+  alias Oli.Activities.Realizer.Query.Source
 
-  def realize(%Revision{content: content}) do
+  def realize(%Revision{content: content}, %Source{} = source) do
     Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
       type == "activity-reference"
     end)

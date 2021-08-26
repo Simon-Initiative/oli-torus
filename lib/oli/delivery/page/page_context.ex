@@ -135,6 +135,9 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
 
+    publication_id =
+      Publishing.get_publication_for_resource(section_slug, page_revision.resource_id).id
+
     %PageContext{
       review_mode: false,
       summary: summary,

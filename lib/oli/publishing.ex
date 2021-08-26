@@ -7,10 +7,21 @@ defmodule Oli.Publishing do
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
+
+  def get_publication_for_resource(section_slug, _resource_id) do
+    from(p in Publication,
+      join: s in Section,
+      on: s.publication_id == p.id,
+      where: s.slug == ^section_slug,
+      select: p
+    )
+    |> Repo.one()
+  end
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = get_unpublished_publication_by_slug!(project_slug).id
@@ -621,13 +632,9 @@ defmodule Oli.Publishing do
       FROM published_resources
        WHERE publication_id = #{publication_id})
        AND (
-         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
          OR
-         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
        )
     """
 

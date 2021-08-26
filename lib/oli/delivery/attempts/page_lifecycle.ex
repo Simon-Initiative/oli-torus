@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   alias Oli.Delivery.Snapshots
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Publishing
 
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
@@ -47,7 +48,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
           latest_resource_attempt =
             get_latest_resource_attempt(page_revision.resource_id, section_slug, user_id)
 
+          publication_id =
+            Publishing.get_publication_for_resource(section_slug, page_revision.resource_id).id
+
           context = %VisitContext{
+            publication_id: publication_id,
+            blacklisted_activity_ids: [],
             latest_resource_attempt: latest_resource_attempt,
             page_revision: page_revision,
             section_slug: section_slug,
@@ -99,7 +105,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         get_latest_resource_attempt(page_revision.resource_id, section_slug, user_id)
         |> handle_type_transitions(page_revision)
 
+      publication_id =
+        Publishing.get_publication_for_resource(section_slug, page_revision.resource_id).id
+
       context = %VisitContext{
+        publication_id: publication_id,
+        blacklisted_activity_ids: [],
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
         section_slug: section_slug,
