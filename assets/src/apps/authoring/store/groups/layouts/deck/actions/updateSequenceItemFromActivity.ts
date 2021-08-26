@@ -46,8 +46,7 @@ export const updateSequenceItem = createAsyncThunk(
     const sequenceEntry = clonedGroup.children.find(
       (entry: SequenceEntry<SequenceEntryChild>) => entry.resourceId === sequence?.resourceId,
     );
-    sequenceEntry.custom.bankShowCount = sequence?.custom.bankShowCount;
-    sequenceEntry.custom.bankEndTarget = sequence?.custom.bankEndTarget;
+    sequenceEntry.custom = sequence?.custom;
     dispatch(upsertGroup({ group: clonedGroup }));
     // TODO: save it to a DB ?
     return group;
