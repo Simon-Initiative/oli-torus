@@ -238,6 +238,7 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
     .screen-tab,
+    .bank-tab,
     .component-tab {
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
@@ -253,13 +254,16 @@ $panel-section-title-bar-color: #e8ebed;
           }
         }
       }
-      .dropdown-menu {
+    }
+    .screenDropdown {
+      > .dropdown-menu {
         transform: translate3d(0px, 40px, 0px) !important;
         overflow: auto;
         max-height: 400px;
         width: 100%;
       }
-      .dropdown-toggle{
+
+      > .dropdown-toggle{
         width: 100%;
         text-align: start;
       }

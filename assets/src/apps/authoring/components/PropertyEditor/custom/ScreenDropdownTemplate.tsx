@@ -32,7 +32,7 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
   return (
     <Fragment>
       <span className="form-label">{label}</span>
-      <div className="dropdown">
+      <div className="dropdown screenDropdown">
         <button
           className="btn btn-secondary dropdown-toggle d-flex justify-content-between"
           type="button"
