@@ -456,7 +456,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-  return ready ? <div>{elementTag}</div> : null;
+  return ready ? <div data-janus-type={tagName}>{elementTag}</div> : null;
 };
 
 export const tagName = 'janus-video';

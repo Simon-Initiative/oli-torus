@@ -897,6 +897,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   return initStateReceived ? (
     <iframe
+      data-janus-type={tagName}
       ref={frameRef}
       style={externalActivityStyles}
       title={title}

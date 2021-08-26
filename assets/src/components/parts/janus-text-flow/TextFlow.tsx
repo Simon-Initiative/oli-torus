@@ -251,7 +251,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   }
 
   return ready ? (
-    <div data-janus-type={props.type} style={styles}>
+    <div data-janus-type={tagName} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}

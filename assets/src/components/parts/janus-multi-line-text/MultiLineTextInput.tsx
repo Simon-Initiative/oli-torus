@@ -245,7 +245,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   const initialCharacterCount = text.length || 0;
 
   return ready ? (
-    <div data-janus-type={props.type} className={`long-text-input`} style={wrapperStyles}>
+    <div data-janus-type={tagName} className={`long-text-input`} style={wrapperStyles}>
       <label
         htmlFor={id}
         style={{

@@ -101,15 +101,14 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
   const { x, y, z, width, height, src, alt, customCssClass } = model;
   const imageStyles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x, */
     width,
     height,
     /* zIndex: z, */
   };
 
-  return ready ? <img draggable="false" alt={alt} src={src} style={imageStyles} /> : null;
+  return ready ? (
+    <img data-janus-type={tagName} draggable="false" alt={alt} src={src} style={imageStyles} />
+  ) : null;
 };
 
 export const tagName = 'janus-image';

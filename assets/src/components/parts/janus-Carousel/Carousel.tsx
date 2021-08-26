@@ -271,7 +271,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   };
 
   return ready ? (
-    <div className={`janus-image-carousel`} style={styles}>
+    <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
       {}
       {images.length > 0 && (
         <Swiper

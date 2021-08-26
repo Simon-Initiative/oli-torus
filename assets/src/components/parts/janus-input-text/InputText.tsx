@@ -218,7 +218,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   );
 
   return ready ? (
-    <div className={`short-text-input`}>
+    <div data-janus-type={tagName} className={`short-text-input ${cssClass}`}>
       <label htmlFor={`${id}-short-text-input`}>
         {showLabel && label ? label : <span>&nbsp;</span>}
       </label>

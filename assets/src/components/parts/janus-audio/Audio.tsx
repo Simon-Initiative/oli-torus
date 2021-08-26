@@ -353,6 +353,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
 
   return ready ? (
     <audio
+      data-janus-type={tagName}
       style={audioStyles}
       autoPlay={audioAutoPlay}
       loop={audioEnableReplay}

@@ -371,7 +371,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   };
 
   return ready && buttonVisible ? (
-    <button data-janus-type={props.type} {...buttonProps} style={styles}>
+    <button data-janus-type={tagName} {...buttonProps} style={styles}>
       {title}
     </button>
   ) : null;

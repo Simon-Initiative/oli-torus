@@ -338,7 +338,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   };
 
   return ready ? (
-    <div className="dropdown-input" style={dropdownContainerStyles}>
+    <div data-janus-type={tagName} className="dropdown-input" style={dropdownContainerStyles}>
       <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
       <select
         style={dropDownStyle}

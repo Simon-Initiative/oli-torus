@@ -224,7 +224,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   }, [inputNumberValue]);
 
   return ready ? (
-    <div className={`number-input`}>
+    <div data-janus-type={tagName} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
           <label htmlFor={`${id}-number-input`} className="inputNumberLabel">

@@ -306,8 +306,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     <React.Fragment>
       {popupVisible ? (
         <input
-          data-janus-type={props.type}
-          id={id}
+          data-janus-type={tagName}
           role="button"
           {...(iconSrc
             ? {
