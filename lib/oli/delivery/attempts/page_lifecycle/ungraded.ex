@@ -31,11 +31,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           page_revision: page_revision
         } = context
       ) do
-    IO.inspect(page_revision.id)
-
     if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id do
-      IO.inspect("Detected change")
-
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -44,8 +40,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           error
       end
     else
-      IO.inspect("NOOO change")
-
       {:ok,
        {:in_progress,
         %AttemptState{

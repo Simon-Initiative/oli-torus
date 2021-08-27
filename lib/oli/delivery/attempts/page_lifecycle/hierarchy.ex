@@ -53,8 +53,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        IO.inspect(activity_revisions)
-
         attempt_hierarchy =
           Enum.reduce(activity_revisions, %{}, fn revision, m ->
             case create_full_activity_attempt(resource_attempt, revision) do

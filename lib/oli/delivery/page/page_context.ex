@@ -99,7 +99,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     Attempts.track_access(page_revision.resource_id, section_slug, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.visit(

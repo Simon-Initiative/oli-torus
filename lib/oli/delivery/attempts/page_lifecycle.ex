@@ -100,9 +100,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         user_id,
         activity_provider
       ) do
-    IO.inspect("visit")
-    IO.inspect(page_revision.id)
-
     Repo.transaction(fn ->
       {graded, latest_resource_attempt} =
         get_latest_resource_attempt(page_revision.resource_id, section_slug, user_id)

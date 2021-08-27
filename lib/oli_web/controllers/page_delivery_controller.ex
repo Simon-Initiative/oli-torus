@@ -196,7 +196,7 @@ defmodule OliWeb.PageDeliveryController do
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
     if Sections.is_enrolled?(user.id, section_slug) do
       case PageLifecycle.start(

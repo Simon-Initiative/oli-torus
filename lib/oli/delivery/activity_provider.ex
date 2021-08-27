@@ -7,6 +7,16 @@ defmodule Oli.Delivery.ActivityProvider do
   @doc """
   Realizes and resolves activities in a page.
 
+  Activities are realized in different ways, depending on the type of reference. First, a static
+  reference to an activity (via "activity-reference") is simply resovled to the correct published
+  resource. A second type of reference is a selection from the activity bank (via "selection" element).
+  These are realized by fulfilling the selection (i.e. drawing the required number of activities randomly
+  from the bank according to defined criteria).
+
+  Activity realization can change the content of the page revision. This is true currently only for
+  selections.  The selection element from within the page must be replaced by static activity references
+  (which later then drive rendering).
+
   Returns a three element tuple, with the first element being a list of any errors encountered,
   the second being the revisions of all provided activities, and the third being the transformed
   content of the page revision.
@@ -16,57 +26,66 @@ defmodule Oli.Delivery.ActivityProvider do
         %Source{} = source,
         resolver
       ) do
-    {errors, activities, model} = fulfill(model, source)
+    {errors, activities, model, _} = fulfill(model, source)
 
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
-    IO.inspect(errors)
-    {errors, only_revisions, Map.put(content, "model", model)}
+    {errors, only_revisions, Map.put(content, "model", Enum.reverse(model))}
   end
 
   # Make a pass through the revision content model to gather all statically referenced activity ids
-  # and to fulfill all activity bank selections
+  # and to fulfill all activity bank selections.
+  #
+  # In order to prevent multiple selections on the page potentially realizing the same activity more
+  # than once, we update the blacklististed activity ids within the source as we proceed through the
+  # collection of activity references.
+  #
+  # Note: To optimize performance we preprend all activity ids and revisions as we pass through, and
+  # then do a final Enum.reverse to restore the correct order.  We do the same thing for the elements
+  # within the transformed page model.
   defp fulfill(model, %Source{} = source) do
-    Enum.reduce(model, {[], [], []}, fn e, {errors, activities, model} ->
+    Enum.reduce(model, {[], [], [], source}, fn e, {errors, activities, model, source} ->
       case e["type"] do
         "activity-reference" ->
-          {errors, [e["activity_id"] | activities], [e | model]}
+          {errors, [e["activity_id"] | activities], [e | model], source}
 
         "selection" ->
           {:ok, %Selection{} = selection} = Selection.parse(e)
 
           case Selection.fulfill(selection, source) do
             {:ok, %Result{} = result} ->
-              IO.inspect("success")
-              IO.inspect(result.rows)
-              {errors, Enum.reverse(result.rows) ++ activities, replace_selection(e, result.rows)}
+              reversed = Enum.reverse(result.rows)
+
+              {errors, reversed ++ activities, replace_selection(e, reversed) ++ model,
+               merge_blacklist(source, result.rows)}
 
             {:partial, %Result{} = result} ->
-              IO.inspect("missing")
               missing = selection.count - result.rowCount
 
               error = "Selection failed to fulfill completely with #{missing} missing activities"
 
-              {[error | errors], Enum.reverse(result.rows) ++ activities,
-               replace_selection(e, result.rows)}
+              reversed = Enum.reverse(result.rows)
+
+              {[error | errors], reversed ++ activities, replace_selection(e, reversed) ++ model,
+               merge_blacklist(source, result.rows)}
 
             e ->
               error = "Selection failed to fulfill with error: #{e}"
-
-              {[error | errors], activities, model}
+              {[error | errors], activities, model, source}
           end
 
         _ ->
-          {errors, activities, [e | model]}
+          {errors, activities, [e | model], source}
       end
     end)
   end
 
-  # At this point "activities" is a list of activity_ids and revisions, we must resolve the revisions
-  # of all the activity_ids, while preserving their order in which they appear in the content, including
-  # the interspersed revisions from fulfilled selections.  Returns a list of revisions (where the original)
-  # entries that were ids are replaced by their resolved revisions).
+  # At this point "activities" is a list whose entries are either activity_ids or revisions, now
+  # we must resolve the revisions of all the entires that are simply activity ids,
+  # replacing them in the list with the resolved revision.
+
+  # Returns a list of revisions.
   defp resolve_activity_ids(section_slug, activities, resolver) do
     activity_ids =
       Enum.filter(activities, fn a ->
@@ -88,6 +107,8 @@ defmodule Oli.Delivery.ActivityProvider do
     end)
   end
 
+  # Takes a JSON selection element as a map and returns a list of activity-reference
+  # JSON elements that represent which activities fulfilled the selection.
   defp replace_selection(selection_element, revisions) do
     Enum.map(revisions, fn r ->
       %{
@@ -99,5 +120,14 @@ defmodule Oli.Delivery.ActivityProvider do
         "source-selection" => selection_element["id"]
       }
     end)
+  end
+
+  # Merge the blacklisted activity ids of the given source with the resource ids of the
+  # given list of revisions
+  defp merge_blacklist(%Source{blacklisted_activity_ids: ids} = source, revisions) do
+    %{
+      source
+      | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ ids
+    }
   end
 end

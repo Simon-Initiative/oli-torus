@@ -22,7 +22,7 @@ defmodule OliWeb.Api.ActivityBankController do
            {:ok, %Paging{} = paging} <- Paging.parse(paging),
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
-           {:ok, %Result{} = result} <-
+           {:ok, %Result{rows: rows, rowCount: rowCount, totalCount: totalCount}} <-
              Query.execute(
                logic,
                %Source{
@@ -32,13 +32,31 @@ defmodule OliWeb.Api.ActivityBankController do
                },
                paging
              ) do
-        json(conn, %{"result" => "success", "queryResult" => result})
+        json(conn, %{
+          "result" => "success",
+          "queryResult" => %{
+            rowCount: rowCount,
+            totalCount: totalCount,
+            rows: Enum.map(rows, fn r -> serialize_revision(r) end)
+          }
+        })
       else
         _ -> error(conn, 400, "Error in paging/filtering")
       end
     else
       error(conn, 403, "Forbidden")
     end
+  end
+
+  defp serialize_revision(%Oli.Resources.Revision{} = revision) do
+    %{
+      content: revision.content,
+      title: revision.title,
+      objectives: revision.objectives,
+      resource_id: revision.resource_id,
+      activity_type_id: revision.activity_type_id,
+      slug: revision.slug
+    }
   end
 
   defp error(conn, code, reason) do
