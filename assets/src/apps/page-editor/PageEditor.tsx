@@ -33,6 +33,7 @@ import { Undoables, empty, PageUndoable } from './types';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { applyOperations } from 'utils/undo';
 import './PageEditor.scss';
+import { guaranteeValididty } from 'data/content/bank';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -358,13 +359,40 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.setState(mergedState, () => this.save());
   }
 
+  // Makes any modifications necessary to adhere to a set of constraints that the server
+  // uses to define "valid page content"
+  //
+  // The only adjustment made currently is to manipulate bank selections to ensure that they will be
+  // valid queries.
+  //
+  // Adjustments are made in a way that does not push down the results back to the component
+  // tree as updated props, rather, they are made inline just prior to scheduling an update
+  // of content to be saved.  In this manner, we allow the user interface to display invalid, intermediate
+  // states (as the user is creating a selection, for instance) that will always be saved
+  // as valid states.
+  adjustContentForConstraints(
+    content: Immutable.OrderedMap<string, ResourceContent>,
+  ): ResourceContent[] {
+    const arr = content.toArray();
+
+    return arr.map((v: any) => {
+      const e = v[1];
+      if (e.type === 'selection') {
+        return Object.assign({}, e, { logic: guaranteeValididty(e.logic) });
+      }
+      return e;
+    });
+  }
+
   save() {
     const { projectSlug, resourceSlug } = this.props;
+
+    const model = this.adjustContentForConstraints(this.state.content);
 
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.toArray().map(([k, v]) => v) },
+      content: { model },
       releaseLock: false,
     };
 
