@@ -24,7 +24,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   value,
   onChangeHandler,
 }) => {
-  console.log({ value, uiSchema });
+  /* console.log({ value, uiSchema }); */
   return (
     <Form
       schema={schema}

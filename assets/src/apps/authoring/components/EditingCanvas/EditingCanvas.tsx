@@ -1,5 +1,6 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import React, { useCallback } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
@@ -15,6 +16,16 @@ const EditingCanvas: React.FC = () => {
   const currentPartSelection = useSelector(selectCurrentSelection);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
+
+  const [currentActivityId, setCurrentActivityId] = React.useState<string>('');
+
+  useEffect(() => {
+    let current = null;
+    if (currentActivityTree) {
+      current = currentActivityTree.slice(-1)[0];
+    }
+    setCurrentActivityId(current?.id || '');
+  }, [currentActivityTree]);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)
   const width = currentActivity?.content?.custom?.width || 800;
@@ -79,6 +90,11 @@ const EditingCanvas: React.FC = () => {
 
   console.log('EC: RENDER', { layers });
 
+  useEffect(() => {
+    dispatch(setCurrentSelection({ selection: '' }));
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+  }, [currentActivityId]);
+
   return (
     <React.Fragment>
       <section className="aa-stage" onClick={handleStageClick}>
@@ -87,7 +103,7 @@ const EditingCanvas: React.FC = () => {
             <AuthoringActivityRenderer
               key={activity.id}
               activityModel={activity}
-              editMode={false}
+              editMode={activity.id === currentActivityId}
               onSelectPart={handlePartSelect}
               onPartChangePosition={handlePositionChanged}
             />

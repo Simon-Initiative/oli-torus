@@ -50,10 +50,11 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   };
 
   const handlePartClick = async (payload: any) => {
-    console.log('AUTHOR PART CLICK', payload, props);
-    //if (props.editMode) {
+    console.log('AUTHOR PART CLICK', { payload, props });
+    if (!props.editMode) {
+      return;
+    }
     setSelectedPartId(payload.id);
-    //}
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('selectPart', payload);
       console.log('got result from onSelect', result);
