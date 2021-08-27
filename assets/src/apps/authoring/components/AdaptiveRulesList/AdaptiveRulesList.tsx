@@ -37,14 +37,20 @@ const AdaptiveRulesList: React.FC = () => {
   const isBank = getIsBank();
   let sequenceTypeLabel = '';
   if (isLayer) {
-    sequenceTypeLabel = 'Layer';
+    sequenceTypeLabel = 'layer';
   } else if (isBank) {
-    sequenceTypeLabel = 'Question Bank';
+    sequenceTypeLabel = 'question bank';
   } else {
-    sequenceTypeLabel = 'Screen';
+    sequenceTypeLabel = 'screen';
   }
 
-  const handleSelectRule = (rule: AdaptiveRule) => dispatch(setCurrentRule({ currentRule: rule }));
+  const handleSelectRule = (rule?: AdaptiveRule, isInitState?: boolean) => {
+    if (isInitState) {
+      dispatch(setCurrentRule({ currentRule: 'initState' }));
+    } else {
+      dispatch(setCurrentRule({ currentRule: rule }));
+    }
+  };
 
   const debounceSaveChanges = useCallback(
     debounce(
@@ -168,7 +174,7 @@ const AdaptiveRulesList: React.FC = () => {
     if (currentActivity === undefined) return;
     if (previousActivity?.id !== currentActivity.id) {
       reorderDefaultRules(currentActivity.authoring.rules, true);
-      handleSelectRule(currentActivity.authoring.rules[0]);
+      handleSelectRule(undefined, true);
     }
   }, [currentActivity]);
 
@@ -337,6 +343,23 @@ const AdaptiveRulesList: React.FC = () => {
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
+          {currentRule && !isLayer && !isBank && (
+            <ListGroup.Item
+              className="aa-rules-list-item"
+              as="li"
+              active={currentRule === 'initState'}
+              onClick={() => handleSelectRule(undefined, true)}
+            >
+              <div className="aa-rules-list-details-wrapper">
+                <div className="details">
+                  <span>
+                    <i className="fa fa-info-circle mr-1 text-muted align-middle" />
+                    <span className="title font-italic">Initial State</span>
+                  </span>
+                </div>
+              </div>
+            </ListGroup.Item>
+          )}
           {currentRule &&
             !isLayer &&
             !isBank &&

@@ -316,7 +316,8 @@ $panel-section-title-bar-color: #e8ebed;
       border-right: 1px solid $ui-border-color;
     }
   }
-  .aa-adaptivity-editor {
+  .aa-adaptivity-editor,
+  .aa-initState-editor {
     font-size: 12px;
     padding: 16px;
 
@@ -475,6 +476,7 @@ $panel-section-title-bar-color: #e8ebed;
         padding: 2px 0;
         padding-left: 27px;
         align-items: center;
+        min-height: 30px;
 
         .aa-isLayer {
           color: $secondary;

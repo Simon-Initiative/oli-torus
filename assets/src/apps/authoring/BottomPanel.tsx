@@ -33,8 +33,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
 
   useEffect(() => {
     if (currentRule === undefined) return;
-    setCorrect(currentRule.correct);
-    setIsDisabled(currentRule.disabled);
+    if (currentRule !== 'initState') {
+      setCorrect(currentRule.correct);
+      setIsDisabled(currentRule.disabled);
+    }
   }, [currentRule]);
 
   const handleCorrectChange = () => {
@@ -123,24 +125,31 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule && !isLayer && <span className="ruleName">{currentRule.name}</span>}
+              {currentRule && !isLayer && (
+                <span className="ruleName">
+                  {currentRule === 'initState' ? 'Initial State' : currentRule.name}
+                </span>
+              )}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
-              {currentRule && currentRule.default && currentRule.correct && (
-                <div className="disable-state-toggle pr-3 mr-0 d-flex justify-content-center align-items-center form-check form-check-inline">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="disable-state-toggle"
-                    checked={isDisabled}
-                    onChange={() => handleDisabledChange()}
-                  />
-                  <label className="form-check-label" htmlFor="disable-state-toggle">
-                    Disable State
-                  </label>
-                </div>
-              )}
-              {currentRule && !isLayer && !currentRule.default && (
+              {currentRule &&
+                currentRule.default &&
+                currentRule.correct &&
+                currentRule !== 'initState' && (
+                  <div className="disable-state-toggle pr-3 mr-0 d-flex justify-content-center align-items-center form-check form-check-inline">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="disable-state-toggle"
+                      checked={isDisabled}
+                      onChange={() => handleDisabledChange()}
+                    />
+                    <label className="form-check-label" htmlFor="disable-state-toggle">
+                      Disable State
+                    </label>
+                  </div>
+                )}
+              {currentRule && !isLayer && !currentRule.default && currentRule !== 'initState' && (
                 <>
                   <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
                     <i className="fa fa-times mr-2" />
