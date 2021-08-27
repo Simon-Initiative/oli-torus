@@ -210,8 +210,10 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 9999;
           }
-          .part-config-container-inner {
-            margin-left: auto;
+          .part-config-container-inner > :first-child {
+            position: absolute;
+            top: 15%;
+            left: 25%;
             background-color: #fff;
           }
           ${partStyles.join('\n')}
