@@ -4,6 +4,8 @@ import {
   findInHierarchy,
   flattenHierarchy,
   getHierarchy,
+  SequenceEntry,
+  SequenceEntryChild,
 } from '../../../../../../delivery/store/features/groups/actions/sequence';
 import { GroupsSlice, upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
 
@@ -11,7 +13,7 @@ export const addSequenceItem = createAsyncThunk(
   `${GroupsSlice}/addSequenceItem`,
   async (
     payload: {
-      sequence?: any[];
+      sequence?: SequenceEntry<SequenceEntryChild>[];
       group?: any;
       item?: any;
       parentId?: number | string;

@@ -46,7 +46,7 @@
 
       <tr>
         <td><strong>Timezone:</strong></td>
-        <td><%= @section.time_zone %></td>
+        <td><%= @section.timezone %></td>
       </tr>
 
       <tr>

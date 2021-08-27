@@ -229,7 +229,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project)
+      Oli.Publishing.publish_project(project, "some changes")
 
       # now visit the page again, verifying that we are able to resume the original graded attempt
       # even through the page has been changed to ungraded
@@ -300,7 +300,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project)
+      Oli.Publishing.publish_project(project, "some changes")
 
       # Visit the page in its ungraded state, thus generating a resource attempt
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
@@ -329,7 +329,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map.author.email
       )
 
-      Oli.Publishing.publish_project(project)
+      {:ok, latest_pub} = Oli.Publishing.publish_project(project, "some changes")
+      Sections.update_section_project_publication(section, project.id, latest_pub.id)
+      Sections.rebuild_section_resources(section: section, publication: latest_pub)
 
       # Now visit the page again, verifying that we are presented with the prologue page
       conn =
@@ -625,18 +627,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
       map.publication
     )
 
-    section =
-      section_fixture(%{
-        context_id: "some-context-id",
-        project_id: map.project.id,
-        publication_id: map.publication.id,
-        institution_id: map.institution.id,
-        open_and_free: false
-      })
+    map =
+      map
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
 
     lti_params =
       Oli.Lti_1p3.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
 
     cache_lti_params("params-key", lti_params)
 
@@ -653,7 +651,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
      user: user,
      project: map.project,
      publication: map.publication,
-     section: section,
+     section: map.section,
      revision: map.revision1,
      page_revision: map.page.revision}
   end
@@ -663,17 +661,18 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
 
-    {:ok, publication} = Oli.Publishing.publish_project(project)
+    {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
 
     section =
       section_fixture(%{
         institution_id: institution.id,
-        project_id: project.id,
-        publication_id: publication.id,
+        base_project_id: project.id,
         context_id: UUID.uuid4(),
         open_and_free: true,
         registration_open: true
       })
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
 
     %{section: section, project: project, publication: publication}
   end

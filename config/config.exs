@@ -7,6 +7,8 @@
 # General application configuration
 use Mix.Config
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
 world_universities_and_domains_json =
   case File.read("./priv/data/world_universities_and_domains.json") do
     {:ok, body} ->
@@ -103,6 +105,9 @@ if Mix.env() == :dev do
   config :mix_test_watch,
     clear: true
 end
+
+# Configure Mnesia directory (used by pow persistent sessions)
+config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

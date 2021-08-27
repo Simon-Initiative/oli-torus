@@ -62,6 +62,7 @@ defmodule Oli.Delivery.HintsTest do
       }
 
       Seeder.add_page(map, attrs, :page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(%{attempt_number: 1}, :user1, :page, :attempt1)
       |> Seeder.create_activity_attempt(
         %{attempt_number: 1, transformed_model: content},
