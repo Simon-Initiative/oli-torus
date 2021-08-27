@@ -3,17 +3,17 @@ defmodule Oli.SectionsTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.Publication
+  alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Publishing
 
   describe "enrollments" do
     @valid_attrs %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: true,
       registration_open: true,
-      start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
+      timezone: "some timezone",
       title: "some title",
       context_id: "context_id"
     }
@@ -23,12 +23,10 @@ defmodule Oli.SectionsTest do
 
       institution = Map.get(map, :institution)
       project = Map.get(map, :project)
-      publication = Map.get(map, :publication)
 
       valid_attrs =
         Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:project_id, project.id)
-        |> Map.put(:publication_id, publication.id)
+        |> Map.put(:base_project_id, project.id)
 
       user1 = user_fixture()
       user2 = user_fixture()
@@ -102,20 +100,20 @@ defmodule Oli.SectionsTest do
 
   describe "sections" do
     @valid_attrs %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: true,
       registration_open: true,
-      start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
+      timezone: "some timezone",
       title: "some title",
       context_id: "some context_id"
     }
     @update_attrs %{
-      end_date: ~D[2011-05-18],
+      end_date: ~U[2011-05-18 00:00:00.000000Z],
       open_and_free: false,
       registration_open: false,
-      start_date: ~D[2011-05-18],
-      time_zone: "some updated time_zone",
+      start_date: ~U[2011-05-18 00:00:00.000000Z],
+      timezone: "some updated timezone",
       title: "some updated title",
       context_id: "some updated context_id"
     }
@@ -124,7 +122,7 @@ defmodule Oli.SectionsTest do
       open_and_free: nil,
       registration_open: nil,
       start_date: nil,
-      time_zone: nil,
+      timezone: nil,
       title: nil,
       context_id: nil
     }
@@ -138,10 +136,11 @@ defmodule Oli.SectionsTest do
 
       valid_attrs =
         Map.put(@valid_attrs, :institution_id, institution.id)
-        |> Map.put(:project_id, project.id)
-        |> Map.put(:publication_id, publication.id)
+        |> Map.put(:base_project_id, project.id)
 
       {:ok, section} = valid_attrs |> Sections.create_section()
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
 
       {:ok,
        Map.merge(map, %{section: section, institution: institution, valid_attrs: valid_attrs})}
@@ -149,19 +148,19 @@ defmodule Oli.SectionsTest do
 
     test "create_section/1 with valid data creates a section", %{valid_attrs: valid_attrs} do
       assert {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
-      assert section.end_date == ~D[2010-04-17]
+      assert section.end_date == ~U[2010-04-17 00:00:00Z]
       assert section.registration_open == true
-      assert section.start_date == ~D[2010-04-17]
-      assert section.time_zone == "some time_zone"
+      assert section.start_date == ~U[2010-04-17 00:00:00Z]
+      assert section.timezone == "some timezone"
       assert section.title == "some title"
     end
 
     test "list_sections/0 returns all sections", %{section: section} do
-      assert Sections.list_sections() == [section]
+      assert Enum.map(Sections.list_sections(), & &1.id) == [section.id]
     end
 
     test "get_section!/1 returns the section with given id", %{section: section} do
-      assert Sections.get_section!(section.id) == section
+      assert Sections.get_section!(section.id).id == section.id
     end
 
     test "get_section_by!/1 returns the section and preloaded associations using the criteria", %{
@@ -169,8 +168,15 @@ defmodule Oli.SectionsTest do
     } do
       found_section = Sections.get_section_by(slug: section.slug)
       assert found_section.id == section.id
-      {%Project{} = _project} = {found_section.project}
-      {%Publication{} = _publication} = {found_section.publication}
+    end
+
+    test "get_sections_by_publication/1 returns the sections which use the specified publication",
+         %{
+           section: section,
+           publication: publication
+         } do
+      assert [section.id] ==
+               Sections.get_sections_by_publication(publication) |> Enum.map(& &1.id)
     end
 
     test "get_section_from_lti_params/1 returns the section from the given lti params", %{
@@ -188,7 +194,7 @@ defmodule Oli.SectionsTest do
         |> put_in(["aud"], registration.client_id)
         |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
 
-      assert Sections.get_section_from_lti_params(lti_params) == section
+      assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
     test "create_section/1 with invalid data returns error changeset" do
@@ -197,16 +203,16 @@ defmodule Oli.SectionsTest do
 
     test "update_section/2 with valid data updates the section", %{section: section} do
       assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
-      assert section.end_date == ~D[2011-05-18]
+      assert section.end_date == ~U[2011-05-18 00:00:00Z]
       assert section.registration_open == false
-      assert section.start_date == ~D[2011-05-18]
-      assert section.time_zone == "some updated time_zone"
+      assert section.start_date == ~U[2011-05-18 00:00:00Z]
+      assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
 
     test "update_section/2 with invalid data returns error changeset", %{section: section} do
       assert {:error, %Ecto.Changeset{}} = Sections.update_section(section, @invalid_attrs)
-      assert section == Sections.get_section!(section.id)
+      assert section.id == Sections.get_section!(section.id).id
     end
 
     test "soft_delete_section/1 marks the section as deleted", %{section: section} do
@@ -216,6 +222,133 @@ defmodule Oli.SectionsTest do
 
     test "change_section/1 returns a section changeset", %{section: section} do
       assert %Ecto.Changeset{} = Sections.change_section(section)
+    end
+  end
+
+  describe "section resources" do
+    setup do
+      Seeder.base_project_with_resource4()
+    end
+
+    test "create_section_resources/1 creates a hierarchy of section resources", %{
+      section_1: section,
+      container: %{resource: root_resource},
+      unit1_container: %{resource: unit1_resource},
+      page1: page1,
+      page2: page2,
+      nested_page1: nested_page1,
+      nested_page2: nested_page2,
+      child1: %{resource: child1},
+      parent2: %{resource: parent2},
+      latest4: latest4,
+      parent4: %{resource: parent4}
+    } do
+      section_resources =
+        from(sr in SectionResource,
+          as: :sr,
+          join: s in Section,
+          as: :s,
+          on: s.id == sr.section_id,
+          where: s.slug == ^section.slug,
+          select: sr
+        )
+        |> Repo.all()
+
+      assert Enum.count(section_resources) == 12
+
+      root_sr = Enum.find(section_resources, &(&1.resource_id == root_resource.id))
+      assert root_sr.numbering_index == 1
+      assert root_sr.numbering_level == 0
+
+      page1_sr = Enum.find(section_resources, &(&1.resource_id == page1.id))
+      assert page1_sr.numbering_index == 1
+      assert page1_sr.numbering_level == 1
+
+      page2_sr = Enum.find(section_resources, &(&1.resource_id == page2.id))
+      assert page2_sr.numbering_index == 2
+      assert page2_sr.numbering_level == 1
+
+      unit1_resource_sr = Enum.find(section_resources, &(&1.resource_id == unit1_resource.id))
+      assert unit1_resource_sr.numbering_index == 1
+      assert unit1_resource_sr.numbering_level == 1
+
+      nested_page1_sr = Enum.find(section_resources, &(&1.resource_id == nested_page1.id))
+      assert nested_page1_sr.numbering_index == 3
+      assert nested_page1_sr.numbering_level == 2
+
+      nested_page2_sr = Enum.find(section_resources, &(&1.resource_id == nested_page2.id))
+      assert nested_page2_sr.numbering_index == 4
+      assert nested_page2_sr.numbering_level == 2
+
+      # objectives and other non-structural items are not numbered
+      child1_sr = Enum.find(section_resources, &(&1.resource_id == child1.id))
+      assert child1_sr.numbering_index == nil
+      assert child1_sr.numbering_level == nil
+
+      parent2_sr = Enum.find(section_resources, &(&1.resource_id == parent2.id))
+      assert parent2_sr.numbering_index == nil
+      assert parent2_sr.numbering_level == nil
+
+      # unpublished items do not have section resources created for them
+      assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
+      assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
+    end
+  end
+
+  describe "section updates" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "check_for_available_publication_updates/1 returns a list of available updates", %{
+      author: author,
+      project: project,
+      container: %{resource: container_resource, revision: container_revision},
+      institution: institution
+    } do
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+
+      # Create a course section using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
+      available_updates = Sections.check_for_available_publication_updates(section)
+
+      assert available_updates |> Enum.count() == 0
+
+      # make some changes to project and publish
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      %{resource: p1_new_page1, revision: _revision} =
+        Seeder.create_page("P1 New Page one", working_pub, project, author)
+
+      %{resource: p1_new_page2, revision: _revision} =
+        Seeder.create_page("P1 New Page two", working_pub, project, author)
+
+      _container_revision =
+        Seeder.attach_pages_to(
+          [p1_new_page1, p1_new_page2],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+
+      # verify project published changes show up in list of updates
+      available_updates = Sections.check_for_available_publication_updates(section)
+
+      assert available_updates |> Enum.count() == 1
+      assert available_updates[project.id].id == latest_publication.id
     end
   end
 end

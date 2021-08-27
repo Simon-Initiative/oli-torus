@@ -1,9 +1,11 @@
 defmodule Oli.Seeder do
+  import Ecto.Query, warn: false
+  import Oli.Delivery.Attempts.Core
+
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Author}
   alias Oli.Institutions.Institution
-  import Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Activities
   alias Oli.Activities.Model.Part
@@ -13,6 +15,8 @@ defmodule Oli.Seeder do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
@@ -67,14 +71,13 @@ defmodule Oli.Seeder do
         children: [],
         content: %{},
         deleted: false,
-        slug: "example_page",
-        title: "Example Page",
+        slug: "root_container",
+        title: "Curriculum",
         resource_id: container_resource.id
       })
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })
@@ -189,7 +192,6 @@ defmodule Oli.Seeder do
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })
@@ -255,23 +257,170 @@ defmodule Oli.Seeder do
     })
   end
 
+  def base_project_with_resource4() do
+    map =
+      base_project_with_resource3()
+      |> add_objective("child1", :child1)
+      |> add_objective("child2", :child2)
+      |> add_objective("child3", :child3)
+      |> add_objective("child4", :child4)
+      |> add_objective_with_children("parent1", [:child1, :child2, :child3], :parent1)
+      |> add_objective_with_children("parent2", [:child4], :parent2)
+
+    # Create another project with resources and revisions
+    project2_map = another_project(map.author, map.institution)
+
+    # Publish the current state of our test project:
+    {:ok, pub1} = Publishing.publish_project(map.project, "some changes")
+
+    # Track a series of changes for both resources:
+    pub = Publishing.project_working_publication(map.project.slug)
+
+    latest1 =
+      Publishing.publish_new_revision(map.revision1, %{title: "1"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "2"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "3"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "4"}, pub, map.author.id)
+
+    latest2 =
+      Publishing.publish_new_revision(map.revision2, %{title: "A"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "B"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "C"}, pub, map.author.id)
+      |> Publishing.publish_new_revision(%{title: "D"}, pub, map.author.id)
+
+    # Create a new page that wasn't present during the first publication
+    %{revision: latest3} = create_page("New To Pub2", pub, map.project, map.author)
+
+    second_map = add_objective(Map.merge(map, %{publication: pub}), "child5", :child5)
+
+    second_map =
+      add_objective_with_children(
+        Map.merge(second_map, %{publication: pub}),
+        "parent3",
+        [:child5],
+        :parent3
+      )
+
+    # Publish again
+    {:ok, pub2} = Publishing.publish_project(map.project, "some changes")
+
+    # Create a fourth page that is completely unpublished
+    pub = Publishing.project_working_publication(map.project.slug)
+    %{revision: latest4} = create_page("Unpublished", pub, map.project, map.author)
+
+    third_map = add_objective(Map.merge(map, %{publication: pub}), "child6", :child6)
+
+    third_map =
+      add_objective_with_children(
+        Map.merge(third_map, %{publication: pub}),
+        "parent4",
+        [:child6],
+        :parent4
+      )
+
+    # Create a course section, one for each publication
+    {:ok, section_1} =
+      Sections.create_section(%{
+        title: "1",
+        timezone: "1",
+        registration_open: true,
+        context_id: "1",
+        institution_id: map.institution.id,
+        base_project_id: map.project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub1)
+
+    {:ok, section_2} =
+      Sections.create_section(%{
+        title: "2",
+        timezone: "1",
+        registration_open: true,
+        context_id: "2",
+        institution_id: map.institution.id,
+        base_project_id: map.project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub2)
+
+    {:ok, oaf_section_1} =
+      Sections.create_section(%{
+        title: "3",
+        timezone: "1",
+        registration_open: true,
+        open_and_free: true,
+        context_id: "3",
+        institution_id: map.institution.id,
+        base_project_id: map.project.id
+      })
+      |> then(fn {:ok, section} -> section end)
+      |> Sections.create_section_resources(pub2)
+
+    Map.put(map, :latest1, latest1)
+    |> Map.put(:latest2, latest2)
+    |> Map.put(:pub1, pub1)
+    |> Map.put(:pub2, pub2)
+    |> Map.put(:latest3, latest3)
+    |> Map.put(:latest4, latest4)
+    |> Map.put(:child5, Map.get(second_map, :child5))
+    |> Map.put(:parent3, Map.get(second_map, :parent3))
+    |> Map.put(:child6, Map.get(third_map, :child6))
+    |> Map.put(:parent4, Map.get(third_map, :parent4))
+    |> Map.put(:section_1, section_1)
+    |> Map.put(:section_2, section_2)
+    |> Map.put(:oaf_section_1, oaf_section_1)
+    |> Map.put(:project2, project2_map.project)
+    |> Map.put(:project2_map, project2_map)
+  end
+
   def create_section(map) do
     params = %{
-      end_date: ~D[2010-04-17],
+      end_date: ~U[2010-04-17 00:00:00.000000Z],
       open_and_free: false,
       registration_open: true,
-      start_date: ~D[2010-04-17],
-      time_zone: "some time_zone",
+      start_date: ~U[2010-04-17 00:00:00.000000Z],
+      timezone: "some timezone",
       title: "some title",
       context_id: "context_id",
-      project_id: map.project.id,
-      publication_id: map.publication.id,
+      base_project_id: map.project.id,
       institution_id: map.institution.id
     }
 
     {:ok, section} =
       Section.changeset(%Section{}, params)
       |> Repo.insert()
+
+    Map.put(map, :section, section)
+  end
+
+  def create_section_resources(%{section: section, publication: publication} = map) do
+    {:ok, section} =
+      section
+      |> Sections.create_section_resources(publication)
+
+    Map.put(map, :section, section)
+  end
+
+  def rebuild_section_resources(
+        %{section: %Section{id: section_id} = section, publication: publication} = map
+      ) do
+    section
+    |> Section.changeset(%{root_section_resource_id: nil})
+    |> Repo.update!()
+
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    from(spp in SectionsProjectsPublications,
+      where: spp.section_id == ^section_id
+    )
+    |> Repo.delete_all()
+
+    {:ok, section} =
+      section
+      |> Sections.create_section_resources(publication)
 
     Map.put(map, :section, section)
   end
@@ -323,7 +472,6 @@ defmodule Oli.Seeder do
 
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
-        published: false,
         root_resource_id: container_resource.id,
         project_id: project.id
       })
