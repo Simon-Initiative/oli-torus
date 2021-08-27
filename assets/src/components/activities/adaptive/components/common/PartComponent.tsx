@@ -108,14 +108,14 @@ const PartComponent: React.FC<
     customCssClass: props.model.customCssClass || '',
   };
 
-  // if we pass in style then it will be controlled and so nothing else can use it
-  if (!(props as AuthorPartComponentProps<CustomProperties>).editMode) {
-    webComponentProps.style = compStyles;
-  }
-
   let wcTagName = props.type;
   if (!wcTagName || !customElements.get(wcTagName)) {
     wcTagName = UnknownTag;
+  }
+
+  // if we pass in style then it will be controlled and so nothing else can use it
+  if (!(props as AuthorPartComponentProps<CustomProperties>).editMode) {
+    webComponentProps.style = compStyles;
   }
 
   // don't render until we're listening because otherwise the init event will post too fast

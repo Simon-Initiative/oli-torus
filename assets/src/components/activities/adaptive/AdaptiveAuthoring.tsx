@@ -1,8 +1,10 @@
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import EventEmitter from 'events';
 import React, { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
+import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import PartComponent from './components/common/PartComponent';
@@ -19,11 +21,26 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [pusher, _setPusher] = useState(new EventEmitter());
   console.log('adaptive authoring', props);
   const parts = props.model?.content?.partsLayout || [];
-  const [selectedPart, setSelectedPart] = useState('');
+  const [selectedPartId, setSelectedPartId] = useState('');
+  const [configurePartId, setConfigurePartId] = useState('');
+  const [selectedPart, setSelectedPart] = useState<any>(null);
+
+  useEffect(() => {
+    if (selectedPartId) {
+      const part = parts.find((p) => p.id === selectedPartId);
+      if (part) {
+        setSelectedPart(part);
+      }
+    } else {
+      setSelectedPart(null);
+    }
+    // any time selection changes we need to stop editing
+    setConfigurePartId('');
+  }, [selectedPartId, parts]);
 
   useEffect(() => {
     if (props.authoringContext) {
-      setSelectedPart(props.authoringContext.selectedPartId);
+      setSelectedPartId(props.authoringContext.selectedPartId);
     }
   }, [props.authoringContext]);
 
@@ -35,7 +52,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const handlePartClick = async (payload: any) => {
     console.log('AUTHOR PART CLICK', payload, props);
     //if (props.editMode) {
-    setSelectedPart(payload.id);
+    setSelectedPartId(payload.id);
     //}
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('selectPart', payload);
@@ -64,6 +81,45 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       z-index: ${part.custom.z};
     }`;
   });
+
+  const handlePartEdit = useCallback(async () => {
+    console.log('AUTHOR PART EDIT', { selectedPart });
+  }, [selectedPart]);
+
+  const handlePartConfigure = useCallback(async () => {
+    console.log('AUTHOR PART CONFIGURE', { selectedPart, configurePartId });
+    if (configurePartId === selectedPart.id) {
+      setConfigurePartId('');
+    } else {
+      setConfigurePartId(selectedPart?.id);
+    }
+  }, [selectedPart, configurePartId]);
+
+  const handlePartDelete = useCallback(async () => {
+    console.log('AUTHOR PART DELETE', { selectedPart });
+    const modelClone = clone(props.model);
+    modelClone.content.partsLayout = parts.filter((part) => part.id !== selectedPart.id);
+    modelClone.authoring.parts = modelClone.authoring.parts.filter(
+      (part: any) => part.id !== selectedPart.id,
+    );
+    props.onEdit(modelClone);
+  }, [selectedPart]);
+
+  const handlePartMoveForward = useCallback(async () => {
+    console.log('AUTHOR PART MOVE FWD', { selectedPart });
+    const modelClone = clone(props.model);
+    const part = modelClone.content.partsLayout.find((p: any) => p.id === selectedPart.id);
+    part.custom.z = part.custom.z + 1;
+    props.onEdit(modelClone);
+  }, [selectedPart]);
+
+  const handlePartMoveBack = useCallback(async () => {
+    console.log('AUTHOR PART MOVE BACK', { selectedPart });
+    const modelClone = clone(props.model);
+    const part = modelClone.content.partsLayout.find((p: any) => p.id === selectedPart.id);
+    part.custom.z = part.custom.z - 1;
+    props.onEdit(modelClone);
+  }, [selectedPart]);
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
@@ -103,15 +159,67 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             border: 2px #00ff00 dashed;
             z-index: -1;
           }
+          .active-selection-toolbar {
+            position: absolute;
+            z-index: 999;
+          }
+          .part-config-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+          }
+          .part-config-container-inner {
+            width: 80%;
+            height: 80%;
+            margin-left: auto;
+            background-color: #fff;
+          }
           ${partStyles.join('\n')}
         `}
         </style>
+        <div
+          className="part-config-container"
+          style={{ display: configurePartId ? 'block' : 'none' }}
+        >
+          <div id={`part-portal-${props.model.id}`} className="part-config-container-inner">
+            CONFIGURE {configurePartId}
+          </div>
+        </div>
+        <div
+          className="active-selection-toolbar"
+          style={{
+            display: selectedPart ? 'block' : 'none',
+            top: (selectedPart?.custom.y || 0) - 36,
+            left: (selectedPart?.custom.x || 0) + 4,
+          }}
+        >
+          <button title="Edit" onClick={handlePartEdit}>
+            <i className="las la-edit"></i>
+          </button>
+          <button title="Configure" onClick={handlePartConfigure}>
+            <i className="las la-cog"></i>
+          </button>
+          <button title="Move Forward" onClick={handlePartMoveForward}>
+            <i className="las la-plus"></i>
+          </button>
+          <button title="Move Back" onClick={handlePartMoveBack}>
+            <i className="las la-minus"></i>
+          </button>
+          <button title="Delete" onClick={handlePartDelete}>
+            <i className="las la-trash"></i>
+          </button>
+        </div>
         {parts.map((part) => {
           const partProps = {
             id: part.id,
             type: part.type,
             model: part.custom,
             state: {},
+            configureMode: part.id === configurePartId,
             editMode: true,
             onInit: defaultHandler,
             onReady: defaultHandler,
@@ -122,17 +230,14 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             <Draggable
               key={part.id}
               grid={[5, 5]}
-              disabled={selectedPart !== part.id}
-              onDrag={(e, data) => {
-                console.log('DRAGGING', data);
-              }}
+              disabled={selectedPartId !== part.id || part.id === configurePartId}
               onStop={(_, { x, y, node }) => {
                 handlePartDrag({ id: part.id, x, y, node });
               }}
             >
               <PartComponent
                 {...partProps}
-                className={selectedPart === part.id ? 'selected' : ''}
+                className={selectedPartId === part.id ? 'selected' : ''}
                 onClick={() => handlePartClick({ id: part.id })}
               />
             </Draggable>

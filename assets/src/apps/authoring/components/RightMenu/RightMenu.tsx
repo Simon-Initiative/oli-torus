@@ -374,6 +374,7 @@ const RightMenu: React.FC<any> = () => {
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
         <div className="screen-tab p-3 overflow-hidden">
           {currentActivity && screenData ? (
+            <React.Fragment>
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
@@ -381,6 +382,14 @@ const RightMenu: React.FC<any> = () => {
               value={screenData}
               onChangeHandler={screenPropertyChangeHandler}
             />
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={screenSchema as JSONSchema7}
+              uiSchema={screenUiSchema}
+              value={screenData}
+              onChangeHandler={screenPropertyChangeHandler}
+            />
+            </React.Fragment>
           ) : null}
         </div>
       </Tab>

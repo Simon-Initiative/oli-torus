@@ -1,8 +1,13 @@
 import chroma from 'chroma-js';
+import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import ReactQuill from 'react-quill';
+import { parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
 import { AuthorPartComponentProps } from '../types/parts';
 import Markup from './Markup';
+import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
@@ -84,8 +89,8 @@ export const renderFlow = (
   );
 };
 
-const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props: any) => {
-  const { model } = props;
+const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
+  const { model, configuremode } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
 
@@ -166,21 +171,64 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  return ready ? (
+  const Editor = () => (
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+      style={{ minWidth: 400, minHeight: 400, backgroundColor: '#fff' }}
+    >
+      <ReactQuill
+        modules={{
+          toolbar: [
+            ['bold', 'italic', 'underline', 'strike'], // toggled buttons
+            ['blockquote', 'code-block'],
+
+            [{ header: 1 }, { header: 2 }], // custom button values
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
+            [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
+            [{ direction: 'rtl' }], // text direction
+
+            [{ size: ['small', false, 'large', 'huge'] }], // custom dropdown
+            [{ header: [1, 2, 3, 4, 5, 6, false] }],
+
+            [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+            [{ font: [] }],
+            [{ align: [] }],
+
+            ['clean'], // remove formatting button
+          ],
+        }}
+        defaultValue={convertJanusToQuill(tree) as any}
+        onChange={(content, delta, source, editor) => {
+          console.log('quill changes', { content, delta, source, editor });
+          const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
+          console.log('JANUS TEXT', janusText);
+        }}
+      />
+    </div>
+  );
+
+  const renderIt = parseBoolean(configuremode) ? (
+    ReactDOM.createPortal(<Editor />, document.getElementById('part-portal-47') as Element)
+  ) : (
     <React.Fragment>
       <style>
         {/*
-          note these custom styles are for dealing with KIP / legacy content * that are applied
-          we may need to do something else for the new theme and/or the themeless?
-        */}
+        note these custom styles are for dealing with KIP / legacy content * that are applied
+        we may need to do something else for the new theme and/or the themeless?
+      */}
         {`
-          .text-flow-authoring-preview {
-            font-size: 13px;
-          }
-          .text-flow-authoring-preview p {
-            margin: 0;
-          }
-        `}
+        <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
+
+        .text-flow-authoring-preview {
+          font-size: 13px;
+        }
+        .text-flow-authoring-preview p {
+          margin: 0;
+        }
+      `}
       </style>
       <div className="text-flow-authoring-preview" style={styles}>
         {tree?.map((subtree: MarkupTree) =>
@@ -188,7 +236,13 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         )}
       </div>
     </React.Fragment>
-  ) : null;
+  );
+
+  useEffect(() => {
+    console.log('TF CONFIGURE MODE CHANGE', { configuremode });
+  }, [configuremode]);
+
+  return ready ? renderIt : null;
 };
 
 export const tagName = 'janus-text-flow';

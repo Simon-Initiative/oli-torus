@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import { setRightPanelActiveTab } from 'apps/authoring/store/app/slice';
+import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { ActivityModelSchema } from 'components/activities/types';
-import { useSelector } from 'react-redux';
-import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
@@ -19,6 +22,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   onPartChangePosition,
 }) => {
   console.log('AAR', { activityModel });
+  const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
 
   const selectedPartId = useSelector(selectCurrentSelection);
@@ -60,12 +64,25 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     };
     // for now just do this, todo we need to setup events and listen
     document.addEventListener('customEvent', customEventHandler);
+
+    const handleActivityEdit = async (e: any) => {
+      const target = e.target as HTMLElement;
+      if (target?.id === elementProps.id) {
+        const { model } = e.detail;
+        console.log('AAR handleActivityEdit', { model });
+        dispatch(saveActivity({ activity: model }));
+        dispatch(setCurrentSelection({ selection: '' }));
+        dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+      }
+    };
+    document.addEventListener('modelUpdated', handleActivityEdit);
     setIsReady(true);
 
     return () => {
       document.removeEventListener('customEvent', customEventHandler);
+      document.removeEventListener('modelUpdated', handleActivityEdit);
     };
-  }, [activityModel]);
+  }, []);
 
   return isReady
     ? React.createElement(activityModel.activityType?.authoring_element, elementProps, null)
