@@ -26,10 +26,9 @@ const ComponentSearchContextMenu: React.FC = () => {
   };
 
   // TODO: tag parent items so that we can mark them instead?
-  const allParts = (currentActivityTree || []).slice(-1).reduce(
-    (acc, activity) => acc.concat(activity.content.partsLayout || []),
-    [],
-  );
+  const allParts = (currentActivityTree || [])
+    .slice(-1)
+    .reduce((acc, activity) => acc.concat(activity.content.partsLayout || []), []);
 
   const handlePartClick = useCallback(
     (part: any) => {

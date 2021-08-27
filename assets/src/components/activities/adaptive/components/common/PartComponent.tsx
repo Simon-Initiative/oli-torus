@@ -12,7 +12,9 @@ import {
 } from '../../../../../apps/delivery/components/NotificationContext';
 import { tagName as UnknownTag } from './UnknownPart';
 
-const stubHandler = async () => {};
+const stubHandler = async () => {
+  return;
+};
 
 type AuthorProps = AuthorPartComponentProps<CustomProperties>;
 type DeliveryProps = PartComponentProps<CustomProperties>;

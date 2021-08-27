@@ -271,7 +271,9 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
               key={part.id}
               grid={[5, 5]}
               disabled={selectedPartId !== part.id || part.id === configurePartId}
-              onStart={() => { setIsDragging(true); }}
+              onStart={() => {
+                setIsDragging(true);
+              }}
               onStop={(_, { x, y, node }) => {
                 setIsDragging(false);
                 handlePartDrag({ id: part.id, x, y, node });
