@@ -13,8 +13,7 @@ interface JsonEditorProps {
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   const { jsonValue, onChange, existingPartIds, schema } = props;
-  let val = { id: jsonValue.id, custom: jsonValue.custom };
-  const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
+  const [value, setValue] = useState<string>(JSON.stringify(jsonValue, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>();
   const currentPartSelection = useSelector(selectCurrentSelection);
   const [displayEditor, setDisplayEditor] = useState<boolean>(false);
@@ -22,10 +21,12 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
     width: '100%',
   };
   useEffect(() => {
-    val = { id: jsonValue.id, custom: jsonValue.custom };
-    setValue(JSON.stringify(val, null, 4));
+    setValue(JSON.stringify(jsonValue, null, 4));
   }, [jsonValue]);
-
+  const addRequiredFields = (schema: any) => {
+    schema.required = ['id', 'type'];
+    schema.properties.custom.properties.palette.required = ['backgroundColor', 'borderColor'];
+  };
   const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const changedVal = event.target.value;
     setValue(changedVal);
@@ -38,7 +39,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       } else if (!jsonVal.id) {
         setValidationMsg('ID is required');
       } else if (!valid) {
-        const errors = ajv.errors?.reduce((acc, error) => acc.concat(error.message || ''), '');
+        const errors = ajv.errors?.reduce((acc, error) => acc.concat(getErrorMsg(error)), '');
         setValidationMsg(errors);
       } else {
         setValidationMsg('');
@@ -47,6 +48,13 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       setValidationMsg('Please make sure the JSON is in proper format.');
     }
   };
+  const getErrorMsg = (error: any) => {
+    if (error) {
+      return `${error.params.missingProperty} is required`;
+    }
+    return '';
+  };
+  addRequiredFields(schema);
   return (
     <Fragment>
       <Button onClick={() => setDisplayEditor(true)}>

@@ -18,7 +18,6 @@ export const schema = {
       borderStyle: { type: 'string', title: 'Border Style' },
       borderWidth: { type: 'string', title: 'Border Width' },
     },
-    required: ['backgroundColor'],
   },
   fontSize: {
     title: 'Font Size',
