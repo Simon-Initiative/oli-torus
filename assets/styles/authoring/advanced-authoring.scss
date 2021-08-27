@@ -238,6 +238,7 @@ $panel-section-title-bar-color: #e8ebed;
       }
     }
     .screen-tab,
+    .bank-tab,
     .component-tab {
       .container-fluid > .row {
         border-bottom: 1px solid $ui-border-color;
@@ -245,13 +246,26 @@ $panel-section-title-bar-color: #e8ebed;
         .col-4.inner input[type='number'] {
           padding: 0.375rem 0.45rem;
         }
-        .accordion {
+        .accordion.aa-properties-editor {
           margin: -10px -15px auto -15px;
 
           .collapse.show {
             margin-top: 10px;
           }
         }
+      }
+    }
+    .screenDropdown {
+      > .dropdown-menu {
+        transform: translate3d(0px, 40px, 0px) !important;
+        overflow: auto;
+        max-height: 400px;
+        width: 100%;
+      }
+
+      > .dropdown-toggle{
+        width: 100%;
+        text-align: start;
       }
     }
     .component-tab {
