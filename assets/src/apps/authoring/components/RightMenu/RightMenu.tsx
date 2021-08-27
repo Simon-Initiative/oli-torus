@@ -435,17 +435,6 @@ const RightMenu: React.FC<any> = () => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
-        <div className="screen-tab p-3 overflow-hidden">
-          {currentActivity && scrData ? (
-            <PropertyEditor
-              key={currentActivity.id}
-              schema={screenSchema as JSONSchema7}
-              uiSchema={screenUiSchema}
-              value={scrData}
-              onChangeHandler={screenPropertyChangeHandler}
-            />
-          ) : null}
-        </div>
         {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
           <div className="bank-tab p-3">
             <PropertyEditor
@@ -457,6 +446,17 @@ const RightMenu: React.FC<any> = () => {
             />
           </div>
         ) : null}
+        <div className="screen-tab p-3 overflow-hidden">
+          {currentActivity && scrData ? (
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={screenSchema as JSONSchema7}
+              uiSchema={screenUiSchema}
+              value={scrData}
+              onChangeHandler={screenPropertyChangeHandler}
+            />
+          ) : null}
+        </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && currentComponentData && (
