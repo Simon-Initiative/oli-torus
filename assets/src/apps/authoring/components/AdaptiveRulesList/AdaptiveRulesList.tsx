@@ -46,6 +46,7 @@ const AdaptiveRulesList: React.FC = () => {
 
   const handleSelectRule = (rule?: AdaptiveRule, isInitState?: boolean) => {
     if (isInitState) {
+      // TODO: refactor initState string to enum
       dispatch(setCurrentRule({ currentRule: 'initState' }));
     } else {
       dispatch(setCurrentRule({ currentRule: rule }));
