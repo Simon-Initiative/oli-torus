@@ -73,8 +73,7 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
     section =
       section_fixture(%{
         context_id: "some-context-id",
-        project_id: map.project.id,
-        publication_id: map.publication.id,
+        base_project_id: map.project.id,
         institution_id: map.institution.id,
         open_and_free: false
       })

@@ -6,14 +6,14 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
-  alias Oli.Delivery.Sections
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
+  alias Oli.Publishing
 
   def query_unpublished_revisions_by_type(project_slug, type) do
-    publication_id = get_unpublished_publication_by_slug!(project_slug).id
+    publication_id = project_working_publication(project_slug).id
     resource_type_id = ResourceType.get_id_by_type(type)
 
     from rev in Revision,
@@ -64,7 +64,7 @@ defmodule Oli.Publishing do
           join: p in Oli.Publishing.Publication,
           on: p.id == m.publication_id,
           where:
-            p.published == false and m.resource_id in ^resource_ids and
+            is_nil(p.published) and m.resource_id in ^resource_ids and
               p.project_id == ^project_id,
           select: rev
       )
@@ -98,17 +98,18 @@ defmodule Oli.Publishing do
   def available_publications() do
     subquery =
       from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-        where: t.published == true,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
         group_by: t.project_id
 
     query =
       from pub in Publication,
         join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: pub.published == true and proj.visibility == :global and proj.status == :active,
+        where:
+          not is_nil(pub.published) and proj.visibility == :global and proj.status == :active,
         preload: [:project],
         distinct: true,
         select: pub
@@ -119,21 +120,21 @@ defmodule Oli.Publishing do
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
       from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.updated_at)},
-        where: t.published == true,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
         group_by: t.project_id
 
     query =
       from pub in Publication,
         join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.updated_at,
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
         join: proj in Project,
         on: pub.project_id == proj.id,
         left_join: a in assoc(proj, :authors),
         left_join: v in ProjectVisibility,
         on: proj.id == v.project_id,
         where:
-          pub.published == true and proj.status == :active and
+          not is_nil(pub.published) and proj.status == :active and
             (a.id == ^author.id or proj.visibility == :global or
                (proj.visibility == :selected and
                   (v.author_id == ^author.id or v.institution_id == ^institution.id))),
@@ -157,7 +158,7 @@ defmodule Oli.Publishing do
   def get_unpublished_publication_id!(project_id) do
     Repo.one(
       from p in Publication,
-        where: p.project_id == ^project_id and p.published == false,
+        where: p.project_id == ^project_id and is_nil(p.published),
         select: p.id
     )
   end
@@ -188,18 +189,18 @@ defmodule Oli.Publishing do
   Get unpublished publication for a project from slug. This assumes there is only one unpublished publication per project.
    ## Examples
 
-      iex> get_unpublished_publication_by_slug!("my-project-slug")
+      iex> project_working_publication("my-project-slug")
       %Publication{}
 
-      iex> get_unpublished_publication_by_slug!("invalid-slug")
-      ** (Ecto.NoResultsError)
+      iex> project_working_publication("invalid-slug")
+      nil
   """
-  def get_unpublished_publication_by_slug!(project_slug) do
+  def project_working_publication(project_slug) do
     Repo.one(
       from pub in Publication,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: proj.slug == ^project_slug and pub.published == false,
+        where: proj.slug == ^project_slug and is_nil(pub.published),
         select: pub
     )
   end
@@ -208,19 +209,21 @@ defmodule Oli.Publishing do
   Gets the latest published publication for a project from slug.
    ## Examples
 
-      iex> get_latest_published_publication_by_slug!("my-project-slug")
+      iex> get_latest_published_publication_by_slug("my-project-slug")
       %Publication{}
 
-      iex> get_latest_published_publication_by_slug!("invalid-slug")
-      ** (Ecto.NoResultsError)
+      iex> get_latest_published_publication_by_slug("invalid-slug")
+      nil
   """
-  def get_latest_published_publication_by_slug!(project_slug) do
+  def get_latest_published_publication_by_slug(project_slug) do
     Repo.one(
       from pub in Publication,
         join: proj in Project,
         on: pub.project_id == proj.id,
-        where: proj.slug == ^project_slug and pub.published == true,
-        order_by: [desc: pub.updated_at],
+        where: proj.slug == ^project_slug and not is_nil(pub.published),
+        # secondary sort by id is required here to guarantee a deterministic latest record
+        # (esp. important in unit tests where subsequent publications can be published instantly)
+        order_by: [desc: pub.published, desc: pub.id],
         limit: 1,
         select: pub
     )
@@ -479,29 +482,43 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}) :: {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project) do
+  @spec publish_project(%Project{}, String.t()) ::
+          {:error, String.t()} | {:ok, %Publication{}}
+  def publish_project(project, description) do
     Repo.transaction(fn ->
-      with active_publication <- get_unpublished_publication_by_slug!(project.slug),
+      with active_publication <- project_working_publication(project.slug),
+           latest_published_publication <-
+             Publishing.get_latest_published_publication_by_slug(project.slug),
+           now <- DateTime.utc_now(),
+
+           # diff publications to determine the new version number
+           {{_, {edition, major, minor}}, _changes} <- diff_publications(latest_published_publication, active_publication),
+
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
              create_publication(%{
-               published: false,
                root_resource_id: active_publication.root_resource_id,
                project_id: active_publication.project_id
              }),
+
            # Locks must be released so that users who have acquired a resource lock
            # will be forced to re-acquire the lock with the new publication and
            # create a new revision under that publication
            _ <- Locks.release_all(active_publication.id),
+
            # clone mappings for resources, activities, and objectives. This removes
            # all active locks, forcing the user to refresh the page to re-acquire the lock.
            _ <- Clone.clone_all_published_resources(active_publication.id, new_publication.id),
+
            # set the active publication to published
-           {:ok, publication} <- update_publication(active_publication, %{published: true}),
-           # push forward all existing sections to this newly published publication, and
-           # error if a failure occurs with `insert!`
-           _ <- update_all_section_publications(project, active_publication) do
+           {:ok, publication} <-
+             update_publication(active_publication, %{
+               published: now,
+               description: description,
+               edition: edition,
+               major: major,
+               minor: minor
+             }) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -524,12 +541,31 @@ defmodule Oli.Publishing do
     )
   end
 
-  # Uses dangerous `update!` to fail the transaction as soon as any update fails
-  def update_all_section_publications(project, publication) do
-    Sections.get_sections_by_project(project)
-    |> Enum.map(&Repo.update!(Sections.change_section(&1, %{publication_id: publication.id})))
-  end
+  @doc """
+  Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
+  and a map that contains any changes where the key is the resource id which points to a tuple with the
+  first element being the change status (:changed|:added|:deleted) and the second is a
+  map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
 
+  ## Examples
+
+      iex> diff_publications(publication1, publication2)
+      {:major, %{
+        23 => {:changed, %{resource: res1, revision: rev1}}
+        24 => {:added, %{resource: res2, revision: rev2}}
+        24 => {:added, %{resource: res3, revision: rev3}}
+        24 => {:deleted, %{resource: res4, revision: rev4}}
+      }}
+
+      iex> diff_publications(publication2, publication3)
+      {:minor, %{
+        23 => {:changed, %{resource: res1, revision: rev1}}
+        24 => {:changed, %{resource: res2, revision: rev2}}
+      }}
+
+      iex> diff_publications(publication1, publication1)
+      {:no_changes, %{}}
+  """
   def diff_publications(p1, p2) do
     all_resource_revisions_p1 = get_resource_revisions_for_publication(p1)
     all_resource_revisions_p2 = get_resource_revisions_for_publication(p2)
@@ -542,12 +578,12 @@ defmodule Oli.Publishing do
           {_res_p1, rev_p1} = all_resource_revisions_p1[id]
           {res_p2, rev_p2} = all_resource_revisions_p2[id]
 
-          if rev_p1.id == rev_p2.id do
-            {Map.put(visited, id, true),
-             Map.put_new(acc, id, {:identical, %{resource: res_p2, revision: rev_p2}})}
-          else
+          # if the resource revision has changed, add it to the change tracker
+          if rev_p1.id != rev_p2.id do
             {Map.put(visited, id, true),
              Map.put_new(acc, id, {:changed, %{resource: res_p2, revision: rev_p2}})}
+          else
+            {Map.put(visited, id, true), acc}
           end
         else
           {res_p1, rev_p1} = all_resource_revisions_p1[id]
@@ -564,7 +600,37 @@ defmodule Oli.Publishing do
         Map.put_new(acc, id, {:added, %{resource: res_p2, revision: rev_p2}})
       end)
 
+    {edition, major, minor} =
+      case p1 do
+        nil ->
+          {0, 0, 0}
+        p1 ->
+          {p1.edition, p1.major, p1.minor}
+      end
+
+    {version_change(changes, {edition, major, minor}), changes}
+  end
+
+  # classify the changes as either :major, :minor, or :no_changes and return the new version number
+  # result e.g. {:major, {1, 0}}
+  defp version_change(changes, {edition, major, minor} = _current_version) do
     changes
+    |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id, {_type, %{resource: _res, revision: rev}}}, {previous, _} = acc ->
+      resource_type = Oli.Resources.ResourceType.get_type_by_id(rev.resource_type_id)
+      cond do
+        # if a container resource has changed, return major
+        resource_type == "container" ->
+          {:major, {edition, major + 1, 0}}
+
+        # if any other type of change occurred and none of the previous were major
+        previous != :major ->
+          {:minor, {edition, major, minor + 1}}
+
+        # otherwise, continue with the existing classification
+        true ->
+          acc
+      end
+    end)
   end
 
   def get_published_revisions(publication) do
@@ -582,13 +648,19 @@ defmodule Oli.Publishing do
       %{124 => [{%Resource{}, %Revision{}}], ...}
   """
   def get_resource_revisions_for_publication(publication) do
-    published_resources = get_published_resources_by_publication(publication.id)
+    case publication do
+      nil ->
+        %{}
 
-    # filter out revisions that are marked as deleted, then convert
-    # to a map of resource_ids to {resource, revision} tuples
-    published_resources
-    |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
-    |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
+      publication ->
+        published_resources = get_published_resources_by_publication(publication.id)
+
+        # filter out revisions that are marked as deleted, then convert
+        # to a map of resource_ids to {resource, revision} tuples
+        published_resources
+        |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
+        |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
+    end
   end
 
   @doc """
@@ -621,13 +693,9 @@ defmodule Oli.Publishing do
       FROM published_resources
        WHERE publication_id = #{publication_id})
        AND (
-         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{activity_id} AND revisions.objectives->part @> '[#{resource_id}]')
          OR
-         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{
-      resource_id
-    }]')
+         (revisions.resource_type_id = #{page_id} AND revisions.objectives->'attached' @> '[#{resource_id}]')
        )
     """
 

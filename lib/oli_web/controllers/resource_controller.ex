@@ -8,9 +8,8 @@ defmodule OliWeb.ResourceController do
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Resources.Numbering
-  alias Oli.Delivery.Page.PageContext
   alias Oli.PartComponents
+  alias Oli.Publishing.HierarchyNode
 
   plug :fetch_project
   plug :authorize_project
@@ -104,11 +103,9 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug}) do
     # find the first page of the course and redirect to there. NOTE: this is not the most efficient method,
     # but it should suffice for now until an improved preview landing page is added
-    [root_container_node] =
-      Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
-
-    hierarchy = root_container_node.children
-    [first | _t] = PageContext.flatten_hierarchy(hierarchy)
+    [first | _] =
+      AuthoringResolver.full_hierarchy(project_slug)
+      |> HierarchyNode.flatten_pages()
 
     conn
     |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))

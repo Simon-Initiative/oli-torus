@@ -1,5 +1,4 @@
-
-<div class="my-3">
+<div class="container my-3">
 
   <div class="alert alert-danger" role="alert">
     <h4 class="alert-heading">Not authorized</h4>
