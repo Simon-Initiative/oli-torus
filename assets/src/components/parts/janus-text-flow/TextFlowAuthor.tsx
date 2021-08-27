@@ -60,6 +60,15 @@ export const renderFlow = (
   } else if (styles?.baselineShift === 'subscript') {
     customTag = 'sub';
   }
+
+  // disable hyperlinks and replace with a faux hyperlink
+  // because we don't want to navigate in authoring mode
+  if (treeNode.tag === 'a') {
+    specialTag = 'span';
+    styles.color = '#0000ff';
+    styles.textDecoration = 'underline';
+  }
+
   return (
     <Markup
       key={key}

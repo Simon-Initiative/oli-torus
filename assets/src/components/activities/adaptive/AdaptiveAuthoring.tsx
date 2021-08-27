@@ -24,6 +24,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePartId, setConfigurePartId] = useState('');
   const [selectedPart, setSelectedPart] = useState<any>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (selectedPartId) {
@@ -230,7 +231,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
         <div
           className="active-selection-toolbar"
           style={{
-            display: selectedPart ? 'block' : 'none',
+            display: selectedPart && !isDragging ? 'block' : 'none',
             top: (selectedPart?.custom.y || 0) - 36,
             left: (selectedPart?.custom.x || 0) + 4,
           }}
@@ -270,7 +271,9 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
               key={part.id}
               grid={[5, 5]}
               disabled={selectedPartId !== part.id || part.id === configurePartId}
+              onStart={() => { setIsDragging(true); }}
               onStop={(_, { x, y, node }) => {
+                setIsDragging(false);
                 handlePartDrag({ id: part.id, x, y, node });
               }}
             >
