@@ -15,7 +15,7 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
   const { jsonValue, onChange, existingPartIds, schema } = props;
   let val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
-  const [validationMsg, setValidationMsg] = useState<string>('');
+  const [validationMsg, setValidationMsg] = useState<string>();
   const currentPartSelection = useSelector(selectCurrentSelection);
   const [displayEditor, setDisplayEditor] = useState<boolean>(false);
   const textAreaStyle: CSSProperties = {
@@ -36,12 +36,10 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
       if (existingPartIds.indexOf(jsonVal.id) !== -1 && currentPartSelection !== jsonVal.id) {
         setValidationMsg('ID you have used is already exist in the current Activity.');
       } else if (!jsonVal.id) {
-        setValidationMsg('ID is required and cannot be empty');
+        setValidationMsg('ID is required');
       } else if (!valid) {
-        ajv.errors?.reduce((acc, error) => {
-          acc.concat(error.message), ''
-        })
-        setValidationMsg('errors');
+        const errors = ajv.errors?.reduce((acc, error) => acc.concat(error.message || ''), '');
+        setValidationMsg(errors);
       } else {
         setValidationMsg('');
       }
