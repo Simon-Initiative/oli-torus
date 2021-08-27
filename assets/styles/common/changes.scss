@@ -1,0 +1,14 @@
+.badge {
+  &.badge-identical {
+    background-color: #95a5a6;
+  }
+  &.badge-added {
+    background-color: #27ae60;
+  }
+  &.badge-deleted {
+    background-color: #c0392b;
+  }
+  &.badge-changed {
+    background-color: #f1c40f;
+  }
+}

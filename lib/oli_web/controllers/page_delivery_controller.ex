@@ -154,7 +154,8 @@ defmodule OliWeb.PageDeliveryController do
       activity_map: context.activities
     }
 
-    page_model = Map.get(context.page.content, "model")
+    this_attempt = context.resource_attempts |> hd
+    page_model = Map.get(this_attempt.content, "model")
     html = Page.render(render_context, page_model, Page.Html)
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})

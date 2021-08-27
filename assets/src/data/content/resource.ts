@@ -77,6 +77,7 @@ export const createDefaultSelection = () => {
     id: guid(),
     count: 1,
     logic: { conditions: null },
+    purpose: 'none',
   } as ActivityBankSelection;
 };
 
@@ -93,6 +94,7 @@ export interface ActivityBankSelection {
   id: string;
   logic: Bank.Logic;
   count: number;
+  purpose: string;
 }
 
 export interface ActivityReference {

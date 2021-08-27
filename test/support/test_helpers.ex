@@ -31,7 +31,7 @@ defmodule Oli.TestHelpers do
       |> Enum.into(%{
         open_and_free: false,
         registration_open: true,
-        time_zone: "US/Eastern",
+        timezone: "US/Eastern",
         title: "some title",
         context_id: "context_id"
       })
@@ -202,7 +202,7 @@ defmodule Oli.TestHelpers do
         }
       )
 
-    publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    publication = Publishing.project_working_publication(project.slug)
     Publishing.upsert_published_resource(publication, revision)
 
     %{objective: objective, objective_revision: revision}

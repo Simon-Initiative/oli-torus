@@ -146,7 +146,10 @@ defmodule OliWeb.Router do
   end
 
   def with_section_user(conn) do
-    %{"section" => conn.assigns.section, "current_user" => conn.assigns.current_user}
+    %{
+      "section" => conn.assigns.section,
+      "current_user" => conn.assigns.current_user
+    }
   end
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -522,6 +525,10 @@ defmodule OliWeb.Router do
     live("/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []})
 
     live("/:section_slug/manage", Delivery.ManageSection,
+      session: {__MODULE__, :with_section_user, []}
+    )
+
+    live("/:section_slug/updates", Delivery.ManageUpdates,
       session: {__MODULE__, :with_section_user, []}
     )
 

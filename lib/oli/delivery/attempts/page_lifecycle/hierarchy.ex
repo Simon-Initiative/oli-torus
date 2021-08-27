@@ -8,7 +8,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   }
 
   import Oli.Delivery.Attempts.Core
-
+  alias Oli.Activities.Realizer.Query.Source
   alias Oli.Resources.Revision
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
@@ -33,15 +33,28 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
-    activity_revisions = context.activity_provider.(context.section_slug, context.page_revision)
+    {errors, activity_revisions, transformed_content} =
+      context.activity_provider.(
+        context.page_revision,
+        %Source{
+          blacklisted_activity_ids: [],
+          section_slug: context.section_slug,
+          publication_id: context.publication_id
+        },
+        Oli.Publishing.DeliveryResolver
+      )
 
     case create_resource_attempt(%{
+           content: transformed_content,
+           errors: errors,
            attempt_guid: UUID.uuid4(),
            resource_access_id: resource_access_id,
            attempt_number: next_attempt_number,
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
+        IO.inspect(activity_revisions)
+
         attempt_hierarchy =
           Enum.reduce(activity_revisions, %{}, fn revision, m ->
             case create_full_activity_attempt(resource_attempt, revision) do

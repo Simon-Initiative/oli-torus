@@ -30,7 +30,10 @@ defmodule Oli.Activities.Realizer.Query.Executor do
   end
 
   defp to_record(row, columns) do
-    Enum.zip(columns, row)
-    |> Map.new()
+    kvs =
+      Enum.zip(columns, row)
+      |> Enum.map(fn {k, v} -> {String.to_existing_atom(k), v} end)
+
+    struct!(Oli.Resources.Revision, kvs)
   end
 end

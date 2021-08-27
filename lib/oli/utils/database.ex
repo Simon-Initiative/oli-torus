@@ -32,12 +32,12 @@ defmodule Oli.Utils.Database do
   Use this inline for development on a query by query basis like:
   ```
   from(s in Section,
-        join: p in Publication,
-        on: p.id == s.publication_id,
-        join: m in PublishedResource,
-        on: m.publication_id == p.id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: rev in Revision,
-        on: rev.id == m.revision_id,
+        on: rev.id == pr.revision_id,
         where:
           (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id) and
             s.slug == ^section_slug,

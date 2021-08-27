@@ -64,6 +64,12 @@ defmodule OliWeb.Grades.GradesLive do
       end
 
     ~L"""
+    <div class="mb-2">
+      <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
+        <i class="las la-arrow-left"></i> Back
+      <% end %>
+    </div>
+
     <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
     <p>
