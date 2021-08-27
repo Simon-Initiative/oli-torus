@@ -40,6 +40,9 @@ export interface AuthorPartComponentProps<T extends CustomProperties>
   configuremode: boolean; // TODO fix case in custom element wrapper
   portal: string;
   onClick: (payload: any) => void;
+  onConfigure: (payload: any) => Promise<any>; // part wants to initiate configuration
+  onSaveConfigure: (payload: any) => Promise<any>;
+  onCancelConfigure: (payload: any) => Promise<any>;
 }
 
 export interface CreationContext {

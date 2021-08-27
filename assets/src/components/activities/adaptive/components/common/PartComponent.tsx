@@ -12,17 +12,23 @@ import {
 } from '../../../../../apps/delivery/components/NotificationContext';
 import { tagName as UnknownTag } from './UnknownPart';
 
-const PartComponent: React.FC<
-  AuthorPartComponentProps<CustomProperties> | PartComponentProps<CustomProperties>
-> = (props) => {
+const stubHandler = async () => {};
+
+type AuthorProps = AuthorPartComponentProps<CustomProperties>;
+type DeliveryProps = PartComponentProps<CustomProperties>;
+
+const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
-  // TODO: build from configuration instead
-  const wcEvents: any = {
+  const wcEvents: Record<string, any> = {
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
     submit: props.onSubmit,
+    // authoring
+    configure: (props as AuthorProps).onConfigure || stubHandler,
+    saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
+    cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
   };
 
   const ref = useRef<any>(null);
@@ -67,6 +73,7 @@ const PartComponent: React.FC<
       }
       const handler = wcEvents[e.type];
       if (handler) {
+        // TODO: refactor all handlers to take ID and send it here
         const result = await handler(payload);
         if (callback) {
           callback(result);
@@ -114,7 +121,7 @@ const PartComponent: React.FC<
   }
 
   // if we pass in style then it will be controlled and so nothing else can use it
-  if (!(props as AuthorPartComponentProps<CustomProperties>).editMode) {
+  if (!(props as AuthorProps).editMode) {
     webComponentProps.style = compStyles;
   }
 

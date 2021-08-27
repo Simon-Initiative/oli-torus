@@ -9,7 +9,12 @@ import TextFlowAuthor from './TextFlowAuthor';
 const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
-const customEvents: any = { ...apiCustomEvents };
+const customEvents: any = {
+  ...apiCustomEvents,
+  onConfigure: 'configure',
+  onSaveConfigure: 'saveconfigure',
+  onCancelConfigure: 'cancelconfigure',
+};
 
 register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,

@@ -21,8 +21,18 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, onChange, onSave, onCan
   return (
     <React.Fragment>
       <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
-      <div style={{ maxWidth: 520, maxHeight: 400, backgroundColor: '#fff' }}>
+      <div
+        style={{
+          maxWidth: 520,
+          height: '100%',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#fff',
+        }}
+      >
         <ReactQuill
+          style={{ maxHeight: '100%' }}
           modules={{
             toolbar: [
               ['bold', 'italic', 'underline', 'strike'], // toggled buttons

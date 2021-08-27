@@ -121,6 +121,44 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     props.onEdit(modelClone);
   }, [selectedPart]);
 
+  const handlePartCancelConfigure = useCallback(
+    async ({ id }: { id: string }) => {
+      console.log('AUTHOR PART CANCEL CONFIGURE', { id, configurePartId });
+      if (!configurePartId) {
+        // why is this necessary?
+        setConfigurePartId('');
+        return true;
+      }
+      if (id === configurePartId) {
+        setConfigurePartId('');
+        return true;
+      }
+      console.warn(`Part ${id} asked to cancel configure but ${configurePartId} is the one.`);
+      return false;
+    },
+    [configurePartId],
+  );
+
+  const handlePartSaveConfigure = useCallback(
+    async ({ id, snapshot }: { id: string; snapshot: any }) => {
+      console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot });
+      const modelClone = clone(props.model);
+      const part = modelClone.content.partsLayout.find((p: any) => p.id === id);
+      if (part) {
+        part.custom = snapshot;
+        props.onEdit(modelClone);
+      }
+      setConfigurePartId('');
+    },
+    [],
+  );
+
+  const handlePortalBgClick = (e: any) => {
+    if (e.target.getAttribute('class') === 'part-config-container') {
+      setConfigurePartId('');
+    }
+  };
+
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div className="activity-content">
@@ -181,7 +219,8 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
         </style>
         <div
           className="part-config-container"
-          style={{ display: configurePartId ? 'block' : 'none' }}
+          style={{ display: configurePartId.trim() ? 'block' : 'none' }}
+          onClick={handlePortalBgClick}
         >
           <div id={`part-portal-${props.model.id}`} className="part-config-container-inner"></div>
         </div>
@@ -236,6 +275,8 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
                 {...partProps}
                 className={selectedPartId === part.id ? 'selected' : ''}
                 onClick={() => handlePartClick({ id: part.id })}
+                onSaveConfigure={handlePartSaveConfigure}
+                onCancelConfigure={handlePartCancelConfigure}
               />
             </Draggable>
           );

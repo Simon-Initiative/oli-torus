@@ -1,15 +1,12 @@
 import chroma from 'chroma-js';
-import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import ReactQuill from 'react-quill';
-import { parseBoolean } from 'utils/common';
+import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
 import { AuthorPartComponentProps } from '../types/parts';
 import Markup from './Markup';
-import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
-import { TextFlowModel } from './schema';
 import { registerEditor, tagName as quillEditorTagName } from './QuillEditor';
+import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
   tag: string;
@@ -91,9 +88,14 @@ export const renderFlow = (
 };
 
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
-  const { model, configuremode } = props;
+  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+  const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+
+  useEffect(() => {
+    setInConfigureMode(parseBoolean(configuremode));
+  }, [configuremode]);
 
   const initialize = useCallback(async (pModel) => {
     setReady(true);
@@ -177,25 +179,30 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, []);
 
   useEffect(() => {
-    const isConfigureMode = parseBoolean(configuremode);
-    console.log('TF CONFIGURE MODE CHANGE', { isConfigureMode });
-
     const handleEditorSave = (e: any) => {
-      if (!isConfigureMode) {
+      if (!inConfigureMode) {
         return;
       } // not mine
       const { payload, callback } = e.detail;
-      console.log('TF EDITOR SAVE', { payload, callback });
+      console.log('TF EDITOR SAVE', { payload, callback, props });
+      const modelClone = clone(model);
+      modelClone.nodes = payload;
+      onSaveConfigure({
+        id,
+        snapshot: modelClone,
+      });
     };
 
     const handleEditorCancel = () => {
-      if (!isConfigureMode) {
+      if (!inConfigureMode) {
         return;
       } // not mine
       console.log('TF EDITOR CANCEL');
+      setInConfigureMode(false);
+      onCancelConfigure({ id });
     };
 
-    if (isConfigureMode) {
+    if (inConfigureMode) {
       document.addEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.addEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     }
@@ -204,14 +211,14 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
-  }, [ready, configuremode]);
+  }, [ready, inConfigureMode]);
 
   const Editor = () =>
     React.createElement(quillEditorTagName, {
       tree: JSON.stringify(tree),
     });
 
-  const renderIt = parseBoolean(configuremode) ? (
+  const renderIt = inConfigureMode ? (
     ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)
   ) : (
     <React.Fragment>
