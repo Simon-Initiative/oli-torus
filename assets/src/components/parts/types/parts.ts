@@ -38,6 +38,7 @@ export interface AuthorPartComponentProps<T extends CustomProperties>
   extends PartComponentProps<T> {
   editMode: boolean;
   configuremode: boolean; // TODO fix case in custom element wrapper
+  portal: string;
   onClick: (payload: any) => void;
 }
 

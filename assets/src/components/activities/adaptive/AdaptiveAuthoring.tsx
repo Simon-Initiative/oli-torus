@@ -173,8 +173,6 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             z-index: 9999;
           }
           .part-config-container-inner {
-            width: 80%;
-            height: 80%;
             margin-left: auto;
             background-color: #fff;
           }
@@ -185,9 +183,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           className="part-config-container"
           style={{ display: configurePartId ? 'block' : 'none' }}
         >
-          <div id={`part-portal-${props.model.id}`} className="part-config-container-inner">
-            CONFIGURE {configurePartId}
-          </div>
+          <div id={`part-portal-${props.model.id}`} className="part-config-container-inner"></div>
         </div>
         <div
           className="active-selection-toolbar"
@@ -221,6 +217,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             state: {},
             configureMode: part.id === configurePartId,
             editMode: true,
+            portal: `part-portal-${props.model.id}`,
             onInit: defaultHandler,
             onReady: defaultHandler,
             onSave: defaultHandler,

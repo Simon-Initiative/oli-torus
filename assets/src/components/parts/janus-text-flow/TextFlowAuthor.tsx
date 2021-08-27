@@ -9,6 +9,7 @@ import { AuthorPartComponentProps } from '../types/parts';
 import Markup from './Markup';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 import { TextFlowModel } from './schema';
+import { registerEditor, tagName as quillEditorTagName } from './QuillEditor';
 
 export interface MarkupTree {
   tag: string;
@@ -171,47 +172,47 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     styleOverrides.fontSize = `${fontSize}px`;
   }
 
-  const Editor = () => (
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-      }}
-      style={{ minWidth: 400, minHeight: 400, backgroundColor: '#fff' }}
-    >
-      <ReactQuill
-        modules={{
-          toolbar: [
-            ['bold', 'italic', 'underline', 'strike'], // toggled buttons
-            ['blockquote', 'code-block'],
+  useEffect(() => {
+    registerEditor();
+  }, []);
 
-            [{ header: 1 }, { header: 2 }], // custom button values
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
-            [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
-            [{ direction: 'rtl' }], // text direction
+  useEffect(() => {
+    const isConfigureMode = parseBoolean(configuremode);
+    console.log('TF CONFIGURE MODE CHANGE', { isConfigureMode });
 
-            [{ size: ['small', false, 'large', 'huge'] }], // custom dropdown
-            [{ header: [1, 2, 3, 4, 5, 6, false] }],
+    const handleEditorSave = (e: any) => {
+      if (!isConfigureMode) {
+        return;
+      } // not mine
+      const { payload, callback } = e.detail;
+      console.log('TF EDITOR SAVE', { payload, callback });
+    };
 
-            [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-            [{ font: [] }],
-            [{ align: [] }],
+    const handleEditorCancel = () => {
+      if (!isConfigureMode) {
+        return;
+      } // not mine
+      console.log('TF EDITOR CANCEL');
+    };
 
-            ['clean'], // remove formatting button
-          ],
-        }}
-        defaultValue={convertJanusToQuill(tree) as any}
-        onChange={(content, delta, source, editor) => {
-          console.log('quill changes', { content, delta, source, editor });
-          const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
-          console.log('JANUS TEXT', janusText);
-        }}
-      />
-    </div>
-  );
+    if (isConfigureMode) {
+      document.addEventListener(`${quillEditorTagName}-save`, handleEditorSave);
+      document.addEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
+    }
+
+    return () => {
+      document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
+      document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
+    };
+  }, [ready, configuremode]);
+
+  const Editor = () =>
+    React.createElement(quillEditorTagName, {
+      tree: JSON.stringify(tree),
+    });
 
   const renderIt = parseBoolean(configuremode) ? (
-    ReactDOM.createPortal(<Editor />, document.getElementById('part-portal-47') as Element)
+    ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)
   ) : (
     <React.Fragment>
       <style>
@@ -220,8 +221,6 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         we may need to do something else for the new theme and/or the themeless?
       */}
         {`
-        <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
-
         .text-flow-authoring-preview {
           font-size: 13px;
         }
@@ -237,10 +236,6 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       </div>
     </React.Fragment>
   );
-
-  useEffect(() => {
-    console.log('TF CONFIGURE MODE CHANGE', { configuremode });
-  }, [configuremode]);
 
   return ready ? renderIt : null;
 };
