@@ -445,7 +445,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             key={key}
             projectSlug={this.props.projectSlug}
             editMode={editMode}
-            allObjectives={this.props.allObjectives}
+            allObjectives={this.state.allObjectives.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}
