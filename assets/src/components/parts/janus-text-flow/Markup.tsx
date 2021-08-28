@@ -57,7 +57,8 @@ const Markup: React.FC<any> = ({
   style = {},
   text = '',
   children,
-  state = [],
+  state = {},
+  displayRawText = false,
 }) => {
   /*eslint-enable */
   const el = useRef<any>(null);
@@ -90,7 +91,12 @@ const Markup: React.FC<any> = ({
     // seems that SS does not apply backgroundColor if the values is transparent
     renderStyles.backgroundColor = '';
   }
-  let processedText = templatizeText(text, state);
+
+  let processedText = text;
+  // allow (authoring usually) skipping the template processing
+  if (!displayRawText) {
+    processedText = templatizeText(text, state);
+  }
 
   // eslint-disable-next-line
   if (!children.length && !processedText.trim()) {

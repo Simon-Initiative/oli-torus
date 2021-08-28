@@ -4,12 +4,8 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
-
-interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
-  src: string;
-  alt: string;
-}
+import { PartComponentProps } from '../types/parts';
+import { ImageModel } from './schema';
 
 const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -23,9 +19,10 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
       responses: [],
     });
     /* console.log('IMAGE INIT', initResult); */
-    // setState??
-    const currentStateSnapshot = initResult.snapshot;
-    setState(currentStateSnapshot);
+    if (initResult) {
+      const currentStateSnapshot = initResult.snapshot;
+      setState(currentStateSnapshot);
+    }
 
     setReady(true);
   }, []);
@@ -104,22 +101,13 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
   const { x, y, z, width, height, src, alt, customCssClass } = model;
   const imageStyles: CSSProperties = {
-    position: 'absolute',
-    top: y,
-    left: x,
     width,
     height,
-    zIndex: z,
+    /* zIndex: z, */
   };
 
   return ready ? (
-    <img
-      data-janus-type={tagName}
-      alt={alt}
-      src={src}
-      className={customCssClass}
-      style={imageStyles}
-    />
+    <img data-janus-type={tagName} draggable="false" alt={alt} src={src} style={imageStyles} />
   ) : null;
 };
 

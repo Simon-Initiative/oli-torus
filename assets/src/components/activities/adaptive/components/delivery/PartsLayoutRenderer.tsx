@@ -1,7 +1,6 @@
-/* eslint-disable react/prop-types */
 import { ActivityState, PartComponentDefinition } from 'components/activities/types';
 import React from 'react';
-import PartComponent from './PartComponent';
+import PartComponent from '../common/PartComponent';
 
 interface PartsLayoutRendererProps {
   parts: PartComponentDefinition[];

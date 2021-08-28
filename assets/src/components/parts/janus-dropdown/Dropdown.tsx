@@ -1,21 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
-
-interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
-  showLabel: boolean;
-  label: string;
-  prompt: string;
-  optionLabels: any;
-  palette: any;
-}
+import { contexts } from '../../../types/applicationContext';
+import { parseBool } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
+import { DropdownModel } from './schema';
 
 const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -154,12 +147,12 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   } = model;
 
   const dropdownContainerStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     // height,
-    zIndex: z,
+    zIndex: z, */
   };
   if (palette) {
     dropdownContainerStyles.borderWidth = `${
@@ -345,13 +338,13 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   };
 
   return ready ? (
-    <div data-janus-type={props.type} className="dropdown-input" style={dropdownContainerStyles}>
-      <label htmlFor={id}>{showLabel && label ? label : ''}</label>
+    <div data-janus-type={tagName} className="dropdown-input" style={dropdownContainerStyles}>
+      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
       <select
         style={dropDownStyle}
-        id={id}
+        id={`${id}-select`}
         value={selection}
-        className={'dropdown ' + cssClass}
+        className={'dropdown '}
         onChange={handleChange}
         disabled={!enabled}
       >

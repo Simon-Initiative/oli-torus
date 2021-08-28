@@ -1,4 +1,19 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface NavButtonModel extends JanusAbsolutePositioned, JanusCustomCss {
+  title: string;
+  ariaLabel: string;
+  palette: string;
+  visible: boolean;
+  enabled: boolean;
+  textColor: string;
+  buttonColor: string;
+  transparent: boolean;
+  selected: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   title: {
     type: 'string',
   },
@@ -44,7 +59,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<NavButtonModel> => ({
   enabled: true,
   visible: true,
   textColor: '#000',

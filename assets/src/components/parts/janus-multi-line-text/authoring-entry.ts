@@ -5,15 +5,20 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import MultiLineTextInput from './MultiLineTextInput';
+import MultiLineTextInputAuthor from './MultiLineTextInputAuthor';
 import { createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(MultiLineTextInput, manifest.authoring.element, observedAttributes, {
+register(MultiLineTextInputAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
