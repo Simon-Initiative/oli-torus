@@ -1,4 +1,13 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
+  src: string;
+  palette: any;
+  configData: any;
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS class',
     type: 'string',
@@ -21,7 +30,8 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',
   src: '',
+  configData: [],
 });

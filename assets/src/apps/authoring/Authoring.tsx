@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
+import { InitStateEditor } from './components/AdaptivityEditor/InitStateEditor';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
@@ -10,6 +11,7 @@ import { SidePanel } from './components/SidePanel';
 import store from './store';
 import {
   selectBottomPanel,
+  selectCurrentRule,
   selectLeftPanel,
   selectRightPanel,
   selectTopPanel,
@@ -37,6 +39,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const [isAppVisible, setIsAppVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const currentRule = useSelector(selectCurrentRule);
   const leftPanelState = useSelector(selectLeftPanel);
   const rightPanelState = useSelector(selectRightPanel);
   const topPanelState = useSelector(selectTopPanel);
@@ -73,7 +76,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     dispatch(setInitialConfig(appConfig));
 
     if (props.content) {
-      dispatch(initializeFromContext(props.content));
+      dispatch(initializeFromContext({ context: props.content, config: appConfig }));
     }
   }, [props]);
 
@@ -135,7 +138,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           panelState={panelState}
           onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
         >
-          <AdaptivityEditor />
+          {currentRule === 'initState' && <InitStateEditor />}
+          {currentRule !== 'initState' && <AdaptivityEditor />}
         </BottomPanel>
         <SidePanel
           position="right"

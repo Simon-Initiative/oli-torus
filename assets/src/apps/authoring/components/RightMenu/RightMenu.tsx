@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -8,10 +9,17 @@ import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import {
+  updateSequenceItem,
+  updateSequenceItemFromActivity,
+} from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -35,6 +43,16 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import bankSchema, {
+  bankUiSchema,
+  transformBankModeltoSchema,
+  transformBankSchematoModel,
+} from '../PropertyEditor/schemas/bank';
+import {
+  findInSequence,
+  SequenceBank,
+  SequenceEntry,
+} from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -54,22 +72,32 @@ const RightMenu: React.FC<any> = () => {
   const [componentSchema, setComponentSchema] = useState<JSONSchema7>(partSchema);
   const [componentUiSchema, setComponentUiSchema] = useState(partUiSchema);
   const [currentComponent, setCurrentComponent] = useState(null);
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
+  const currentSequence = findInSequence(sequence, currentSequenceId);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [screenData, setScreenData] = useState();
+  const [scrData, setScreenData] = useState();
+  const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
+  const [questionBankData, setBankData] = useState<any>();
+  const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   useEffect(() => {
     if (!currentActivity) {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
+    setScreenSchema(screenSchema);
+
+    setBankData(transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>));
+    setBankSchema(bankSchema);
     const currentIds = currentActivityTree?.reduce(
       (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
       [],
     );
     setExistingIds(currentIds);
-  }, [currentActivity]);
+  }, [currentActivity, currentSequence]);
 
   // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
@@ -79,16 +107,51 @@ const RightMenu: React.FC<any> = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
 
+  const bankPropertyChangeHandler = useCallback(
+    (properties: object) => {
+      if (currentSequence) {
+        const modelChanges = transformBankSchematoModel(properties);
+        console.log('Bank Property Change...', { properties, modelChanges });
+        const { bankShowCount, bankEndTarget } = modelChanges;
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: currentGroup }));
+          dispatch(savePage());
+        }
+        //debounceSaveBankSettings(currentGroup, currentSequence, bankShowCount, bankEndTarget);
+      }
+    },
+    [currentSequence],
+  );
+
+  const debounceSaveBankSettings = useCallback(
+    debounce(
+      (group, currentSequence, bankShowCount, bankEndTarget) => {
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
+          dispatch(savePage());
+        }
+      },
+      0,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
+
   const screenPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       if (currentActivity) {
         const modelChanges = transformScreenSchematoModel(properties);
         console.log('Screen Property Change...', { properties, modelChanges });
-        const title = modelChanges.title;
-        delete modelChanges.title;
+        const { title, ...screenModelChanges } = modelChanges;
         const screenChanges = {
           ...currentActivity?.content?.custom,
-          ...modelChanges,
+          ...screenModelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
@@ -134,7 +197,7 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const lessonPropertyChangeHandler = (properties: any) => {
+  const lessonPropertyChangeHandler = (properties: object) => {
     const modelChanges = transformLessonSchema(properties);
 
     // special consideration for legacy stylesheets
@@ -299,7 +362,7 @@ const RightMenu: React.FC<any> = () => {
   }, [currentPartSelection, currentActivityTree]);
 
   const componentPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,
@@ -372,13 +435,24 @@ const RightMenu: React.FC<any> = () => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
+        {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
+          <div className="bank-tab p-3">
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={questionBankSchema as JSONSchema7}
+              uiSchema={bankUiSchema}
+              value={questionBankData}
+              onChangeHandler={bankPropertyChangeHandler}
+            />
+          </div>
+        ) : null}
         <div className="screen-tab p-3 overflow-hidden">
-          {currentActivity && screenData ? (
+          {currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
               uiSchema={screenUiSchema}
-              value={screenData}
+              value={scrData}
               onChangeHandler={screenPropertyChangeHandler}
             />
           ) : null}
@@ -402,7 +476,6 @@ const RightMenu: React.FC<any> = () => {
                   onChange={handleEditComponentJson}
                   jsonValue={currentComponentData}
                   existingPartIds={existingIds}
-                  schema={componentSchema}
                 />
                 <Button variant="danger" onClick={handleDeleteComponent}>
                   <i className="fas fa-trash mr-2" />

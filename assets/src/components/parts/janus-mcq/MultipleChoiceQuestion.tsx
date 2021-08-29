@@ -2,18 +2,17 @@
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { contexts } from '../../../types/applicationContext';
+import { parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import {
-  JanusMultipleChoiceQuestionItemProperties,
-  JanusMultipleChoiceQuestionProperties,
-} from './MultipleChoiceQuestionType';
+import { PartComponentProps } from '../types/parts';
+import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
+import { McqModel } from './schema';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -47,6 +46,7 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
     </div>
   );
 };
+
 const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   nodes,
   state,
@@ -61,6 +61,7 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   disabled,
   index,
   overrideHeight,
+  columns = 1,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -74,7 +75,11 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       ),
     );
     if (hasImages || hasBlankSpans) {
-      mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      if (columns === 1) {
+        mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+      } else {
+        mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
+      }
       mcqItemStyles.position = `absolute`;
 
       if (index !== 0) {
@@ -107,7 +112,6 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           type={multipleSelection ? 'checkbox' : 'radio'}
           value={val}
           disabled={disabled}
-          className="input_30cc60b8-382a-470c-8cd9-908348c58ebe"
           checked={selected}
           onChange={handleChanged}
         />
@@ -119,7 +123,8 @@ const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     </React.Fragment>
   );
 };
-const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties> = (props) => {
+
+const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -409,11 +414,12 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
 
   // Set up the styles
   const styles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
-    zIndex: z,
+    zIndex: z, */
+    width,
   };
   if (overrideHeight) {
     styles.height = height;
@@ -607,13 +613,19 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
     return selected;
   };
 
+  let columns = 1;
+  if (customCssClass === 'two-columns') {
+    columns = 2;
+  }
+  if (customCssClass === 'three-columns') {
+    columns = 3;
+  }
+  if (customCssClass === 'four-columns') {
+    columns = 4;
+  }
+
   return ready ? (
-    <div
-      data-janus-type={props.type}
-      id={id}
-      style={styles}
-      className={`mcq-input ${customCssClass}`}
-    >
+    <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
         <MCQItem
           index={index}
@@ -632,6 +644,7 @@ const MultipleChoiceQuestion: React.FC<JanusMultipleChoiceQuestionItemProperties
           overrideHeight={overrideHeight}
           disabled={!enabled}
           multipleSelection={multipleSelection}
+          columns={columns}
         />
       ))}
     </div>

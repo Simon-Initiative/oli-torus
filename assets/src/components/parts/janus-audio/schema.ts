@@ -1,4 +1,19 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
+  src: string;
+  customCssClass: string;
+  palette: any;
+  triggerCheck: boolean;
+  autoPlay: boolean;
+  startTime: number;
+  endTime: number;
+  enableReplay: boolean;
+  subtitles: any;
+}
+
+export const schema: JSONSchema7Object = {
   src: {
     title: 'Source',
     type: 'string',
@@ -64,7 +79,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<AudioModel> => ({
   src: '',
   customCssClass: '',
   triggerCheck: false,

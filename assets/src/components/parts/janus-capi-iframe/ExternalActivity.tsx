@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -6,9 +5,11 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
 import { contexts } from '../../../types/applicationContext';
+import { parseBool, parseBoolean } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { CapiIframeModel } from './schema';
 
 const fakeUserStorage: any = {};
 const getFromUserStorage = async (simId: string | number, key: string | number) =>
@@ -31,8 +32,8 @@ const getExternalActivityMap = () => {
 
   return result;
 };
-// TODO: fix typing
-const ExternalActivity: React.FC<any> = (props) => {
+
+const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -255,9 +256,9 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
 
   const externalActivityStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: frameY,
-    left: frameX,
+    left: frameX, */
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
@@ -896,10 +897,8 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   return initStateReceived ? (
     <iframe
-      data-part-component-type={props.type}
-      id={id}
+      data-janus-type={tagName}
       ref={frameRef}
-      className={customCssClass}
       style={externalActivityStyles}
       title={title}
       src={frameSrc}

@@ -1,4 +1,27 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface McqItem {
+  scoreValue: number;
+  nodes: any[]; // TODO: a text flow node
+  // TODO: rest of typing
+  [key: string]: any;
+}
+export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  fontSize?: number;
+  overrideHeight?: boolean;
+  layoutType: 'horizontalLayout' | 'verticalLayout';
+  verticalGap: number;
+  enabled: boolean;
+  showLabel: boolean;
+  showNumbering: boolean;
+  multipleSelection: boolean;
+  randomize: boolean;
+  mcqItems: McqItem[];
+}
+
+export const schema: JSONSchema7Object = {
   overrideHeight: {
     title: 'Override Height',
     type: 'boolean',
@@ -35,20 +58,6 @@ export const schema = {
     title: 'Vertical Gap',
     type: 'number',
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
@@ -83,8 +92,8 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => {
-  /*const createSimpleOption = (index: number, score = 1) => ({
+export const createSchema = (): Partial<McqModel> => {
+  const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
     nodes: [
       {
@@ -104,7 +113,7 @@ export const createSchema = () => {
         ],
       },
     ],
-  });*/
+  });
 
   return {
     overrideHeight: false,
@@ -119,6 +128,6 @@ export const createSchema = () => {
     randomize: false,
     showNumbering: false,
     enabled: true,
-    /*mcqItems: [1, 2, 3].map(createSimpleOption),*/
+    mcqItems: [1, 2, 3].map(createSimpleOption),
   };
 };
