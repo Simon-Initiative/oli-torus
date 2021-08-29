@@ -43,7 +43,7 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
   }
 
   saveImmediate(saveFn: any) {
-    this.save(saveFn)
+    this.save(saveFn);
     this.flushPendingChanges();
   }
 
