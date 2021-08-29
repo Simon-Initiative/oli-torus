@@ -373,6 +373,11 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.setState(mergedState, () => this.save());
   }
 
+  updateImmediate(update: Partial<EditorUpdate>) {
+    const mergedState = Object.assign({}, this.state, update);
+    this.setState(mergedState, () => this.saveImmediate());
+  }
+
   save() {
     const { projectSlug, resourceSlug } = this.props;
 
@@ -386,6 +391,19 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
   }
 
+  saveImmediate() {
+    const { projectSlug, resourceSlug } = this.props;
+
+    const toSave: Persistence.ResourceUpdate = {
+      objectives: { attached: this.state.objectives.toArray() },
+      title: this.state.title,
+      content: { model: this.state.content.toArray().map(([k, v]) => v) },
+      releaseLock: false,
+    };
+
+    this.persistence.saveImmediate(prepareSaveFn(projectSlug, resourceSlug, toSave));
+  }
+
   render() {
     const props = this.props;
     const state = this.state;
@@ -397,7 +415,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     };
 
     const onTitleEdit = (title: string) => {
-      this.update({ title });
+      this.updateImmediate({ title });
     };
 
     const onAddItem = (
