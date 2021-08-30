@@ -67,7 +67,8 @@ defmodule OliWeb.OpenAndFreeController do
 
   def show(conn, %{"id" => id}) do
     section = Sections.get_section_preloaded!(id)
-    render_workspace_page(conn, "show.html", section: section)
+    updates = Sections.check_for_available_publication_updates(section)
+    render_workspace_page(conn, "show.html", section: section, updates: updates)
   end
 
   def edit(conn, %{"id" => id}) do

@@ -8,28 +8,27 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.Publication
   alias Oli.Repo
+  alias Oli.Accounts
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
-    # only permit instructor level access
-    if ContextRoles.has_role?(
-         current_user,
-         section.slug,
-         ContextRoles.get_role(:context_instructor)
-       ) do
-      updates = Sections.check_for_available_publication_updates(section)
-
-      socket =
+  def mount(
+        _params,
+        %{
+          "section" => section,
+          "redirect_after_apply" => redirect_after_apply
+        },
         socket
-        |> assign(:section, section)
-        |> assign(:current_user, current_user)
-        |> assign(:updates, updates)
-        |> assign(:modal, nil)
-        |> assign(:selection, nil)
+      ) do
+    updates = Sections.check_for_available_publication_updates(section)
 
-      {:ok, socket}
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
+    socket =
+      socket
+      |> assign(:section, section)
+      |> assign(:updates, updates)
+      |> assign(:modal, nil)
+      |> assign(:selection, nil)
+      |> assign(:redirect_after_apply, redirect_after_apply)
+
+    {:ok, socket}
   end
 
   def render(assigns) do
@@ -38,14 +37,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
     } = assigns
 
     ~L"""
-      <div class="mb-2">
-        <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
-          <i class="las la-arrow-left"></i> Back
-        <% end %>
-      </div>
-
-      <h2><%= dgettext("available_updates", "Available Updates") %></h2>
-
       <p class="my-4">
         <%= case Enum.count(updates) do %>
             <% 0 -> %>
@@ -90,7 +81,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
             <% end %>
           </p>
 
-          <div class="alert alert-warning" role="alert">
+          <div class="alert alert-warning my-2" role="alert">
             <b>This action cannot be undone.</b>
           </div>
         <% end %>
@@ -177,7 +168,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      selection: %{project_id: project_id, publication_id: publication_id}
+      selection: %{project_id: project_id, publication_id: publication_id},
+      redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
     publication = Publishing.get_publication!(publication_id)
@@ -189,7 +181,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
     {:noreply,
      push_redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)
+       to: redirect_after_apply
      )}
   end
 end

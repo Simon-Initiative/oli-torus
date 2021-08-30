@@ -17,7 +17,7 @@
     <% end %>
 
     <div>
-      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section_slug), class: "btn btn-link btn-sm" do %>
+      <%= link to: Routes.page_delivery_path(@conn, :updates, @section_slug), class: "btn btn-link btn-sm" do %>
         <%= case Enum.count(@summary.updates) do %>
           <% 0 -> %>
             Updates
