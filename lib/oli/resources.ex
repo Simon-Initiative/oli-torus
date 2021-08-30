@@ -19,7 +19,8 @@ defmodule Oli.Resources do
     {:ok, resource} = create_new_resource()
 
     with_type =
-      Map.put(attrs, :resource_type_id, resource_type_id)
+      convert_strings_to_atoms(attrs)
+      |> Map.put(:resource_type_id, resource_type_id)
       |> Map.put(:resource_id, resource.id)
 
     create_revision(with_type)

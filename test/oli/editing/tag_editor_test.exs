@@ -1,4 +1,4 @@
-defmodule Oli.ActivityEditingTest do
+defmodule Oli.TagEditorTest do
   use Oli.DataCase
 
   alias Oli.Authoring.Editing.TagEditor
