@@ -22,6 +22,7 @@ defmodule Oli.Resources.Revision do
     # fields that apply to only a subset of the types
     field :content, :map, default: %{}
     field :children, {:array, :id}, default: []
+    field :tags, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
     field :max_attempts, :integer, default: 0
@@ -51,6 +52,7 @@ defmodule Oli.Resources.Revision do
       :resource_type_id,
       :content,
       :children,
+      :tags,
       :objectives,
       :graded,
       :max_attempts,

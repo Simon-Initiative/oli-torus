@@ -7,7 +7,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   import Oli.Authoring.Editing.Utils
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias Oli.Resources.Activity
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
   alias Oli.Publishing
@@ -573,15 +572,18 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
            {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
            {:ok, %{content: content} = activity} <-
-             Activity.create_new(%{
-               title: activity_type.title,
-               scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-               objectives: attached_objectives,
-               author_id: author.id,
-               content: model,
-               scope: scope,
-               activity_type_id: activity_type.id
-             }),
+             Resources.create_new(
+               %{
+                 title: activity_type.title,
+                 scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
+                 objectives: attached_objectives,
+                 author_id: author.id,
+                 content: model,
+                 scope: scope,
+                 activity_type_id: activity_type.id
+               },
+               Oli.Resources.ResourceType.get_id_by_type("activity")
+             ),
            {:ok, _} <-
              Course.create_project_resource(%{
                project_id: project.id,

@@ -11,6 +11,21 @@ defmodule Oli.Resources do
   alias Oli.Resources.ResourceType
 
   @doc """
+  Create a new resource with given attributes of a specific resource tyoe.
+
+  Returns {:ok, revision}
+  """
+  def create_new(attrs, resource_type_id) do
+    {:ok, resource} = create_new_resource()
+
+    with_type =
+      Map.put(attrs, :resource_type_id, resource_type_id)
+      |> Map.put(:resource_id, resource.id)
+
+    create_revision(with_type)
+  end
+
+  @doc """
   Returns the list of resources.
   ## Examples
       iex> list_resources()
@@ -267,8 +282,7 @@ defmodule Oli.Resources do
       {:error, %Ecto.Changeset{}}
   """
   def update_revision(revision, attrs) do
-    Oli.Resources.Utils.to_revision(revision)
-    |> Revision.changeset(attrs)
+    Revision.changeset(revision, attrs)
     |> Repo.update()
   end
 
@@ -293,7 +307,8 @@ defmodule Oli.Resources do
           max_attempts: previous_revision.max_attempts,
           recommended_attempts: previous_revision.recommended_attempts,
           time_limit: previous_revision.time_limit,
-          scope: previous_revision.scope
+          scope: previous_revision.scope,
+          tags: previous_revision.tags
         },
         attrs
       )
@@ -308,7 +323,6 @@ defmodule Oli.Resources do
       %Ecto.Changeset{source: %Revision{}}
   """
   def change_revision(revision, params \\ %{}) do
-    Oli.Resources.Utils.to_revision(revision)
-    |> Revision.changeset(params)
+    Revision.changeset(revision, params)
   end
 end
