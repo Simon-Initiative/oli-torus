@@ -2,9 +2,9 @@ import { ModelElement, Selection } from './model';
 import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 import { ActivityEditContext } from './activity';
-
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
+import * as Bank from 'data/content/bank';
 
 export type PageContent = {
   model: ResourceContent[];
@@ -17,7 +17,11 @@ export type AttachedObjectives = {
 
 // The types of things that can be present as top level
 // entries in a resource content array
-export type ResourceContent = GroupContent | StructuredContent | ActivityReference;
+export type ResourceContent =
+  | GroupContent
+  | StructuredContent
+  | ActivityReference
+  | ActivityBankSelection;
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
@@ -67,12 +71,30 @@ export const createDefaultStructuredContent = () => {
   } as StructuredContent;
 };
 
+export const createDefaultSelection = () => {
+  return {
+    type: 'selection',
+    id: guid(),
+    count: 1,
+    logic: { conditions: null },
+    purpose: 'none',
+  } as ActivityBankSelection;
+};
+
 export interface StructuredContent {
   type: 'content';
   id: string;
   children: ModelElement[];
   purpose: string;
   selection: Selection;
+}
+
+export interface ActivityBankSelection {
+  type: 'selection';
+  id: string;
+  logic: Bank.Logic;
+  count: number;
+  purpose: string;
 }
 
 export interface ActivityReference {

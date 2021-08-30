@@ -29,7 +29,11 @@ defmodule Oli.Authoring.Editing.BankEditor do
          {:ok, %Result{totalCount: totalCount}} <-
            Query.execute(
              %Logic{conditions: nil},
-             %Source{publication_id: publication.id, blacklisted_activity_ids: []},
+             %Source{
+               publication_id: publication.id,
+               blacklisted_activity_ids: [],
+               section_slug: ""
+             },
              %Paging{limit: 1, offset: 0}
            ) do
       editor_map = Activities.create_registered_activity_map(project_slug)

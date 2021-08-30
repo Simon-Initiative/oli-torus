@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.ManageSection do
 
   import OliWeb.ViewHelpers,
     only: [
+      is_admin?: 1,
       user_role: 2
     ]
 
@@ -12,11 +13,12 @@ defmodule OliWeb.Delivery.ManageSection do
 
   def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
     # only permit instructor level access
-    if ContextRoles.has_role?(
-         current_user,
-         section.slug,
-         ContextRoles.get_role(:context_instructor)
-       ) do
+    if is_admin?(%{assigns: %{current_author: current_user}}) or
+         ContextRoles.has_role?(
+           current_user,
+           section.slug,
+           ContextRoles.get_role(:context_instructor)
+         ) do
       socket =
         socket
         |> assign(:section, section)
@@ -24,6 +26,7 @@ defmodule OliWeb.Delivery.ManageSection do
 
       {:ok, socket}
     else
+      IO.inspect("REDDDDD")
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end

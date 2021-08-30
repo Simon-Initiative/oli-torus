@@ -17,6 +17,8 @@ import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
 import { Undoable } from 'components/activities/types';
+import { ActivityBankSelection } from './ActivityBankSelection';
+import { ActivityEditorMap } from 'data/content/editors';
 
 // content or referenced activities
 export const createEditor = (
@@ -31,11 +33,29 @@ export const createEditor = (
   objectivesMap: any,
   editorProps: any,
   allObjectives: Objective[],
+  editorMap: ActivityEditorMap,
   onEdit: (content: ResourceContent) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
 ): JSX.Element => {
+  if (content.type === 'selection') {
+    return (
+      <ContentBlock {...editorProps} contentItem={content} index={index}>
+        <ActivityBankSelection
+          editorMap={editorMap}
+          key={content.id}
+          editMode={editMode}
+          selection={content}
+          onChange={onEdit}
+          projectSlug={projectSlug}
+          allObjectives={Immutable.List<Objective>(allObjectives)}
+          onRegisterNewObjective={onRegisterNewObjective}
+        />
+      </ContentBlock>
+    );
+  }
+
   if (content.type === 'content') {
     return (
       <ContentBlock {...editorProps} contentItem={content} index={index}>

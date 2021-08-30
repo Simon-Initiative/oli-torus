@@ -6,7 +6,7 @@ import { Fact } from 'data/content/bank';
 
 import { ActivityTypeSelection } from './ActivityTypeSelection';
 import { TextInput } from 'components/common/TextInput';
-import { LogicProps } from './common';
+import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
 
 export interface ExpressionProps extends LogicProps {
@@ -47,8 +47,6 @@ const operatorsByFact: { [id: string]: FactOperator[] } = {
       label: 'Does Not Contain',
       input: 'multiple',
     },
-    { operator: Bank.ExpressionOperator.doesNotEqual, label: 'Does Not Equal', input: 'single' },
-    { operator: Bank.ExpressionOperator.equals, label: 'Equals', input: 'single' },
   ],
   text: [{ operator: Bank.ExpressionOperator.contains, label: 'Contains Text', input: 'text' }],
 };

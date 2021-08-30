@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityEditContext, ProjectResourceContext, ObjectiveMap } from 'data/content/activity';
+import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { ActivityModelSchema } from 'components/activities/types';
@@ -79,6 +79,7 @@ export class InlineActivityEditor extends React.Component<
       },
       syncedUpdate,
     );
+
     this.props.onEdit(combined);
   }
 
