@@ -310,7 +310,7 @@ defmodule Oli.Resources do
           scope: previous_revision.scope,
           tags: previous_revision.tags
         },
-        attrs
+        convert_strings_to_atoms(attrs)
       )
 
     create_revision(attrs)
@@ -324,5 +324,15 @@ defmodule Oli.Resources do
   """
   def change_revision(revision, params \\ %{}) do
     Revision.changeset(revision, params)
+  end
+
+  defp convert_strings_to_atoms(attrs) do
+    Map.keys(attrs)
+    |> Enum.reduce(%{}, fn k, m ->
+      case k do
+        s when is_binary(s) -> Map.put(m, String.to_existing_atom(s), Map.get(attrs, s))
+        atom -> Map.put(m, atom, Map.get(attrs, atom))
+      end
+    end)
   end
 end
