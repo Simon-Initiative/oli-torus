@@ -231,12 +231,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  def render_page_html(project_slug, revision_slug, author, options \\ []) do
+  def render_page_html(project_slug, content, author, options \\ []) do
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-         {:ok, %{content: content} = _revision} <-
-           get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{
            user: author,

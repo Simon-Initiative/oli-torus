@@ -13,8 +13,8 @@
       },
       {
         "fact": "type",
-        "operator": "doesNotEqual",
-        "value": 3
+        "operator": "doesNotContain",
+        "value": [3]
       },
       {
         "fact": "text",

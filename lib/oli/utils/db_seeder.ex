@@ -513,7 +513,9 @@ defmodule Oli.Seeder do
       Map.merge(attrs, %{
         resource_access_id: id,
         revision_id: revision.id,
-        attempt_guid: UUID.uuid4()
+        attempt_guid: UUID.uuid4(),
+        errors: [],
+        content: revision.content
       })
 
     {:ok, attempt} = create_resource_attempt(attrs)
@@ -536,7 +538,9 @@ defmodule Oli.Seeder do
       Map.merge(attrs, %{
         resource_access_id: id,
         revision_id: revision.id,
-        attempt_guid: UUID.uuid4()
+        attempt_guid: UUID.uuid4(),
+        errors: [],
+        content: revision.content
       })
 
     {:ok, attempt} = create_resource_attempt(attrs)

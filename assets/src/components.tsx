@@ -4,11 +4,9 @@ import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
 import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
-import ResourceEditor from 'components/resource/resourceEditor/ResourceEditor';
 
 export const registry = {
   Editor,
-  ResourceEditor,
 } as any;
 
 export type ComponentName = keyof typeof registry;
