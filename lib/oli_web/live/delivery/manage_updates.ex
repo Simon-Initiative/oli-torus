@@ -1,14 +1,11 @@
 defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
 
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.Publication
   alias Oli.Repo
-  alias Oli.Accounts
 
   def mount(
         _params,
