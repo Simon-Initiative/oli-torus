@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.PageLifecycle.Lifecycle — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-02c51274b1.js"></script>
+    <script src="dist/sidebar_items-38f26f6e33.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -266,8 +266,10 @@ been finalized</p>
 
           <pre>start(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{
   activity_provider: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  blacklisted_activity_ids: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   latest_resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   page_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  publication_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   user_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }) ::
@@ -309,8 +311,10 @@ if there is already an existing attempt present.  On success, returns the tuple:
 
           <pre>visit(%Oli.Delivery.Attempts.PageLifecycle.VisitContext{
   activity_provider: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  blacklisted_activity_ids: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   latest_resource_attempt: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   page_revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+  publication_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
   user_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
 }) ::

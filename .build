@@ -31,7 +31,6 @@ Oli.Activities.Realizer.Query.Result.html
 Oli.Activities.Realizer.Query.Source.html
 Oli.Activities.Realizer.Query.html
 Oli.Activities.Realizer.Selection.html
-Oli.Activities.Realizer.html
 Oli.Activities.State.ActivityState.html
 Oli.Activities.State.PartState.html
 Oli.Activities.State.html
@@ -451,8 +450,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-decfbca9c9.js
-dist/sidebar_items-02c51274b1.js
+dist/search_items-2e6dd30cf8.js
+dist/sidebar_items-38f26f6e33.js
 index.html
 license.html
 readme.html

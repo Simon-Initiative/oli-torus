@@ -10,7 +10,7 @@
     <title>Oli.Delivery.ActivityProvider — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-02c51274b1.js"></script>
+    <script src="dist/sidebar_items-38f26f6e33.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -105,11 +105,11 @@ Oli.Delivery.ActivityProvider <small class="app-vsn">(OLI Torus v0.13.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#provide/2">provide(section_slug, revision)</a>
+    <a href="#provide/3">provide(revision, source, resolver)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Realizes and resolves activities.</p></div>
+    <div class="summary-synopsis"><p>Realizes and resolves activities in a page.</p></div>
 
 </div>
 
@@ -127,16 +127,16 @@ Oli.Delivery.ActivityProvider <small class="app-vsn">(OLI Torus v0.13.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="provide/2">
+<section class="detail" id="provide/3">
 
   <div class="detail-header">
-    <a href="#provide/2" class="detail-link" title="Link to this function">
+    <a href="#provide/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">provide(section_slug, revision)</h1>
+    <h1 class="signature">provide(revision, source, resolver)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L9" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -146,7 +146,15 @@ Functions
 
   <section class="docstring">
 
-<p>Realizes and resolves activities.</p>
+<p>Realizes and resolves activities in a page.</p><p>Activities are realized in different ways, depending on the type of reference. First, a static
+reference to an activity (via &quot;activity-reference&quot;) is simply resovled to the correct published
+resource. A second type of reference is a selection from the activity bank (via &quot;selection&quot; element).
+These are realized by fulfilling the selection (i.e. drawing the required number of activities randomly
+from the bank according to defined criteria).</p><p>Activity realization can change the content of the page revision. This is true currently only for
+selections.  The selection element from within the page must be replaced by static activity references
+(which later then drive rendering).</p><p>Returns a three element tuple, with the first element being a list of any errors encountered,
+the second being the revisions of all provided activities, and the third being the transformed
+content of the page revision.</p>
   </section>
 </section>
 
