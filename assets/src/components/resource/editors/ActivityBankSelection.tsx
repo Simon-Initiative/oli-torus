@@ -29,7 +29,7 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
       count = 1;
     }
 
-    if (isNaN(count)) {
+    if (isNaN(count) || count <= 0) {
       count = 1;
     }
 
