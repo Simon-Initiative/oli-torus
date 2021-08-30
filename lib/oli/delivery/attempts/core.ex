@@ -120,6 +120,18 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_resource_access(resource_access_id) do
+    Repo.one(
+      from(a in ResourceAccess,
+        join: s in Section,
+        on: a.section_id == s.id,
+        where:
+          a.id == ^resource_access_id,
+        select: a
+      )
+    )
+  end
+
   def get_part_attempts_and_users_for_publication(publication_id) do
     student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
 

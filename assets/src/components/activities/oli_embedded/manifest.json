@@ -1,0 +1,18 @@
+{
+  "id": "oli_embedded",
+  "friendlyName": "OLI Embedded",
+  "description": "OLI Embedded activity",
+  "allowClientEvaluation": true,
+  "delivery": {
+    "element": "oli-embedded-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-embedded-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
