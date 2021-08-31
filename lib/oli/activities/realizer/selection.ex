@@ -43,10 +43,29 @@ defmodule Oli.Activities.Realizer.Selection do
 
   Returns {:error, e} on a failure to execute the query.
   """
-  def fulfill(%Selection{count: count, logic: logic}, %Source{} = source) do
-    case Builder.build(logic, source, %Paging{limit: count, offset: 0}, :random)
+  def fulfill(%Selection{count: count} = selection, %Source{} = source) do
+    run(selection, source, %Paging{limit: count, offset: 0})
+  end
+
+  @doc """
+  Tests the fulfillment of a selection by querying the database for matching activities, but
+  only returning one result to save bandwidth.
+
+  Returns {:ok, %Result{}} when the selection is filled.
+
+  Returns {:partial, %Result{}} when the query succeeds but less than the requested
+  count of activities is returned.  This includes the case where zero activities are returned.
+
+  Returns {:error, e} on a failure to execute the query.
+  """
+  def test(%Selection{} = selection, %Source{} = source) do
+    run(selection, source, %Paging{limit: 1, offset: 0})
+  end
+
+  defp run(%Selection{count: count, logic: logic}, %Source{} = source, %Paging{} = paging) do
+    case Builder.build(logic, source, paging, :random)
          |> Executor.execute() do
-      {:ok, %Result{rowCount: ^count} = result} ->
+      {:ok, %Result{totalCount: ^count} = result} ->
         {:ok, result}
 
       {:ok, result} ->

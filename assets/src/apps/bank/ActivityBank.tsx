@@ -40,7 +40,7 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
-  allTags: Tag[]; // All objectives
+  allTags: Tag[]; // All tags
   totalCount: number;
 }
 
