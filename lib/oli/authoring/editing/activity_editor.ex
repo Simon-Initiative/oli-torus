@@ -513,7 +513,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp validate_request(update) do
     # Ensure that only these top-level keys are present
-    allowed = MapSet.new(~w"objectives title content authoring releaseLock resource_id")
+    allowed = MapSet.new(~w"objectives title content authoring releaseLock resource_id tags")
 
     case Map.keys(update)
          |> Enum.all?(fn k -> MapSet.member?(allowed, k) end) do
@@ -642,7 +642,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, %{id: activity_id}} <-
            Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok,
-          %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <-
+          %{
+            activity_type: activity_type,
+            content: model,
+            title: title,
+            objectives: objectives,
+            tags: tags
+          }} <-
            get_latest_revision(publication.id, activity_id) |> trap_nil() do
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -660,7 +666,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: model,
         objectives: objectives,
         allObjectives: PageEditor.construct_parent_references(all_objectives),
-        typeSlug: activity_type.slug
+        typeSlug: activity_type.slug,
+        tags: tags
       }
 
       {:ok, context}
@@ -688,7 +695,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: r.title,
         model: r.content,
         objectives: r.objectives,
-        typeSlug: activity_type.slug
+        typeSlug: activity_type.slug,
+        tags: r.tags
       }
     end)
   end

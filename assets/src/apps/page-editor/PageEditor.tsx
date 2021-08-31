@@ -32,6 +32,7 @@ import guid from 'utils/guid';
 import { Undoables, empty, PageUndoable } from './types';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { applyOperations } from 'utils/undo';
+import { Tag } from 'data/content/tags';
 import './PageEditor.scss';
 import { guaranteeValididty } from 'data/content/bank';
 
@@ -55,6 +56,7 @@ type PageEditorState = {
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
   allObjectives: Immutable.List<Objective>;
+  allTags: Immutable.List<Tag>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   editMode: boolean;
   persistence: 'idle' | 'pending' | 'inflight';
@@ -120,7 +122,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   constructor(props: PageEditorProps) {
     super(props);
 
-    const { title, objectives, allObjectives, content, activities } = props;
+    const { title, objectives, allObjectives, content, allTags } = props;
 
     const activityContexts = Immutable.OrderedMap<string, ActivityEditContext>(
       this.props.activityContexts.map((c) => {
@@ -133,6 +135,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       messages: [],
       editMode: true,
       title,
+      allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
       content: Immutable.OrderedMap<string, ResourceContent>(
         withDefaultContent(content.model as any),
@@ -251,6 +254,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       title: update.title !== undefined ? update.title : undefined,
       model: update.content !== undefined ? update.content : undefined,
       objectives: update.objectives !== undefined ? update.objectives : undefined,
+      tags: update.tags !== undefined ? update.tags : undefined,
     };
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
@@ -331,6 +335,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
             content: model,
             title: context.title,
             objectives: context.objectives,
+            tags: context.tags,
           });
         }
       }
@@ -450,6 +455,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       });
     };
 
+    const onRegisterNewTag = (tag: Tag) => {
+      this.setState({
+        allTags: this.state.allTags.push(tag),
+      });
+    };
+
     const isSaving = this.state.persistence === 'inflight' || this.state.persistence === 'pending';
 
     const PreviewButton = () => (
@@ -488,8 +499,10 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
               {...props}
               editMode={this.state.editMode}
               objectives={this.state.allObjectives}
+              allTags={this.state.allTags}
               childrenObjectives={this.state.childrenObjectives}
               onRegisterNewObjective={onRegisterNewObjective}
+              onRegisterNewTag={onRegisterNewTag}
               activityContexts={this.state.activityContexts}
               onRemove={(key: string) => this.onRemove(key)}
               onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}

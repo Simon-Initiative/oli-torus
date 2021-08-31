@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.AddTags do
 
   def change do
     alter table(:revisions) do
-      add :tags, {:array, :id}
+      add :tags, {:array, :id}, default: [], null: false
     end
   end
 

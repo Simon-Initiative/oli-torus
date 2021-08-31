@@ -1,5 +1,5 @@
-import { Objectives } from 'components/resource/Objectives';
 import { ObjectiveMap } from './activity';
+import { ResourceId } from 'data/types';
 
 export interface Logic {
   conditions: null | Expression | Clause;
@@ -44,6 +44,7 @@ export interface BankedActivity {
   content: any;
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   resource_id: number;
   activity_type_id: number;
   slug: string;

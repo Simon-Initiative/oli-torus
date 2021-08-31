@@ -3,7 +3,7 @@ import * as Bank from 'data/content/bank';
 import { Select } from 'components/common/Selection';
 import { Objectives } from 'components/resource/Objectives';
 import { Fact } from 'data/content/bank';
-
+import { Tags } from 'components/resource/Tags';
 import { ActivityTypeSelection } from './ActivityTypeSelection';
 import { TextInput } from 'components/common/TextInput';
 import { LogicProps } from '../../components/logic/common';
@@ -21,6 +21,7 @@ export interface ExpressionProps extends LogicProps {
 const baseFacts = [
   { value: 'objectives', label: 'Objectives' },
   { value: 'type', label: 'Item Type' },
+  { value: 'tags', label: 'Tags' },
 ];
 
 type FactOperator = {
@@ -31,6 +32,16 @@ type FactOperator = {
 
 const operatorsByFact: { [id: string]: FactOperator[] } = {
   objectives: [
+    { operator: Bank.ExpressionOperator.contains, label: 'Contains', input: 'multiple' },
+    {
+      operator: Bank.ExpressionOperator.doesNotContain,
+      label: 'Does Not Contain',
+      input: 'multiple',
+    },
+    { operator: Bank.ExpressionOperator.doesNotEqual, label: 'Does Not Equal', input: 'multiple' },
+    { operator: Bank.ExpressionOperator.equals, label: 'Equals', input: 'multiple' },
+  ],
+  tags: [
     { operator: Bank.ExpressionOperator.contains, label: 'Contains', input: 'multiple' },
     {
       operator: Bank.ExpressionOperator.doesNotContain,
@@ -143,6 +154,19 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           onEdit={(value) => {
             props.onChange(Object.assign({}, props.expression, { value }));
           }}
+        />
+      );
+    } else if (props.expression.fact === Fact.tags) {
+      return (
+        <Tags
+          onRegisterNewTag={props.onRegisterNewTag}
+          selected={props.expression.value as number[]}
+          onEdit={(value) => {
+            props.onChange(Object.assign({}, props.expression, { value }));
+          }}
+          tags={props.allTags.toArray()}
+          editMode={props.editMode}
+          projectSlug={props.projectSlug}
         />
       );
     }
