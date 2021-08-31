@@ -210,6 +210,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
 
     this.persistence = Maybe.nothing<PersistenceStrategy>();
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
+    this.onRegisterNewTag = this.onRegisterNewTag.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
@@ -273,8 +274,10 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       objectives: update.objectives !== undefined ? update.objectives : undefined,
       tags: update.tags !== undefined ? update.tags : undefined,
     };
+
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
+
     const activityContexts = this.state.activityContexts.set(key, merged);
 
     this.setState({ activityContexts }, () => {
