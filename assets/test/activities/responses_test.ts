@@ -1,6 +1,7 @@
 import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
   HasChoices,
@@ -21,7 +22,7 @@ describe('responses', () => {
       targeted: [[[choice.id], response.id]],
       parts: [
         {
-          id: '1',
+          id: DEFAULT_PART_ID,
           responses: [response, makeResponse(matchRule('.*'), 0, '')],
           hints: [],
           scoringStrategy: {} as ScoringStrategy,

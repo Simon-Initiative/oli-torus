@@ -1,4 +1,4 @@
-import { SubmitButton } from 'components/activities/common/delivery/submitButton/SubmitButton';
+import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
 import { ActivityDeliveryState, isEvaluated, submit } from 'data/content/activities/DeliveryState';
 import React from 'react';

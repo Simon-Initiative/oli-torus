@@ -11,15 +11,16 @@ import { Maybe } from 'tsmonad';
 import {
   getChoiceIds,
   getCorrectResponse,
-  getResponse,
+  getResponseBy,
   getResponseId,
   getResponses,
   getTargetedResponses,
 } from 'components/activities/common/responses/authoring/responseUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { matchListRule, matchRule } from 'components/activities/common/responses/authoring/rules';
 import { CATASchemaV1 } from 'components/activities/check_all_that_apply/transformations/v1';
-import { createRuleForIdsCATA } from 'components/activities/check_all_that_apply/utils';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
+// Support targeted feedback the way other activities do
 export interface CATASchemaV2 extends ActivityModelSchema {
   stem: Stem;
   choices: Choice[];
@@ -50,7 +51,7 @@ export const cataV1toV2 = (model: CATASchemaV1): CATASchemaV2 => {
 
   if (getChoiceIds(newModel.authoring.correct).length !== newModel.choices.length) {
     newModel.authoring.correct[0] = newModel.choices.map((c) => c.id);
-    getCorrectResponse(newModel).rule = createRuleForIdsCATA(
+    getCorrectResponse(newModel, DEFAULT_PART_ID).rule = matchListRule(
       newModel.choices.map((c) => c.id),
       newModel.authoring.correct[0],
     );
@@ -61,7 +62,7 @@ export const cataV1toV2 = (model: CATASchemaV1): CATASchemaV2 => {
       const choiceIds = getChoiceIds(assoc);
       if (choiceIds.length !== newModel.choices.length) {
         assoc[0] = newModel.choices.map((c) => c.id);
-        getResponse(newModel, getResponseId(assoc)).rule = createRuleForIdsCATA(
+        getResponseBy(newModel, (r) => r.id === getResponseId(assoc)).rule = matchListRule(
           newModel.choices.map((c) => c.id),
           choiceIds,
         );
@@ -72,7 +73,7 @@ export const cataV1toV2 = (model: CATASchemaV1): CATASchemaV2 => {
   Maybe.maybe(
     getResponses(newModel).find(
       (response) =>
-        response !== getCorrectResponse(newModel) &&
+        response !== getCorrectResponse(newModel, DEFAULT_PART_ID) &&
         !getTargetedResponses(newModel).includes(response),
     ),
   ).caseOf({

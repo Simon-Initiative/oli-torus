@@ -13,6 +13,7 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { MCSchemaV1 } from 'components/activities/multiple_choice/transformations/v1';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export interface MCSchemaV2 extends ActivityModelSchema {
   stem: Stem;
@@ -41,7 +42,7 @@ export const mcV1toV2 = (model: MCSchemaV1): MCSchemaV2 => {
 
   if (!getResponses(newModel).find((r) => r.rule === matchRule('.*'))) {
     newModel.authoring.parts[0].responses = [
-      getCorrectResponse(newModel),
+      getCorrectResponse(newModel, DEFAULT_PART_ID),
       makeResponse(matchRule('.*'), 0, ''),
     ];
   }

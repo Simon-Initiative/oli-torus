@@ -5,10 +5,7 @@ import { getToolbarForResourceType } from 'components/editing/toolbars/insertion
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { classNames } from 'utils/classNames';
-import {
-  AuthoringElementState,
-  useAuthoringElementContext,
-} from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 
 type Props = {
   projectSlug: ProjectSlug;

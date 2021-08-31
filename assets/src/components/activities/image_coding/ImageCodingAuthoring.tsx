@@ -22,6 +22,8 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import guid from 'utils/guid';
 import { MediaItemRequest } from '../types';
 import { configureStore } from 'state/store';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
@@ -35,7 +37,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     onRequestMedia,
   };
 
-  function selectImage(projectSlug: string, model: ContentModel.Image): Promise<string> {
+  function selectImage(_projectSlug: string, _model: ContentModel.Image): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -54,8 +56,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   }
 
   function selectSpreadsheet(
-    projectSlug: string,
-    model: ContentModel.Image,
+    _projectSlug: string,
+    _model: ContentModel.Image,
   ): Promise<ContentModel.Image> {
     return new Promise((resolve, reject) => {
       const request = {
@@ -192,7 +194,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         <div>
           {solutionParameters()}
 
-          <Hints hintsPath="$.authoring.parts[0].hints" />
+          <Hints partId={DEFAULT_PART_ID} hintsByPart={hintsByPart(DEFAULT_PART_ID)} />
 
           <Feedback
             {...sharedProps}

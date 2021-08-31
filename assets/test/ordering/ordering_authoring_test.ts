@@ -10,6 +10,7 @@ import {
   getTargetedResponses,
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Actions } from 'components/activities/ordering/actions';
 import { defaultOrderingModel } from 'components/activities/ordering/utils';
 import { dispatch } from 'utils/test_utils';
@@ -49,11 +50,11 @@ describe('ordering question', () => {
   });
 
   it('has one correct response', () => {
-    expect(getCorrectResponse(model)).toBeTruthy();
+    expect(getCorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('has one incorrect response', () => {
-    expect(getIncorrectResponse(model)).toBeTruthy();
+    expect(getIncorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('can add a targeted feedback', () => {
@@ -74,6 +75,6 @@ describe('ordering question', () => {
   });
 
   it('has at least 3 hints', () => {
-    expect(getHints(model).length).toBeGreaterThanOrEqual(3);
+    expect(getHints(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
   });
 });

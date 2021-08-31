@@ -3,7 +3,6 @@ import { Popover } from 'react-tiny-popover';
 import { classNames } from 'utils/classNames';
 import { ResourceContent } from 'data/content/resource';
 import { ActivityEditContext } from 'data/content/activity';
-import './AddResourceContent.scss';
 
 export type AddCallback = (
   content: ResourceContent,
@@ -16,7 +15,6 @@ export type AddCallback = (
 interface AddResourceContentProps {
   editMode: boolean;
   index: number;
-  onAddItem: AddCallback;
   isLast: boolean;
 }
 export const AddResourceContent: React.FC<AddResourceContentProps> = ({

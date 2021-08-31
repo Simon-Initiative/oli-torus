@@ -10,12 +10,13 @@ import {
   Operation,
   ScoringStrategy,
 } from '../types';
-import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import {
   getCorrectResponse,
   getIncorrectResponse,
   getResponses,
 } from 'components/activities/common/responses/authoring/responseUtils';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultModel: () => DropdownModelSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
@@ -27,7 +28,7 @@ export const defaultModel: () => DropdownModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: '1',
+          id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
           responses: [
             makeResponse(matchRule(choiceA.id), 1, ''),
@@ -46,5 +47,6 @@ export const defaultModel: () => DropdownModelSchema = () => {
 export const getTargetedResponses = (model: HasParts) =>
   getResponses(model).filter(
     (response) =>
-      response !== getCorrectResponse(model) && response !== getIncorrectResponse(model),
+      response !== getCorrectResponse(model, DEFAULT_PART_ID) &&
+      response !== getIncorrectResponse(model, DEFAULT_PART_ID),
   );

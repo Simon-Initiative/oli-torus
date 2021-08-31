@@ -7,18 +7,9 @@ import {
   Operation,
   ScoringStrategy,
 } from 'components/activities/types';
-import {
-  andRules,
-  invertRule,
-  matchRule,
-} from 'components/activities/common/responses/authoring/rules';
+import { matchListRule, matchRule } from 'components/activities/common/responses/authoring/rules';
 import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
-import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
-import { ID } from 'data/content/model';
-import { setDifference } from 'components/activities/common/utils';
-
-export const incorrectChoiceIds = (model: CATA) =>
-  model.choices.map((c) => c.id).filter((id) => !getCorrectChoiceIds(model).includes(id));
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 // Model creation
 export const defaultCATAModel = (): CATA => {
@@ -26,7 +17,7 @@ export const defaultCATAModel = (): CATA => {
   const incorrectChoice = makeChoice('Choice 2');
 
   const correctResponse = makeResponse(
-    createRuleForIdsCATA([correctChoice.id, incorrectChoice.id], [correctChoice.id]),
+    matchListRule([correctChoice.id, incorrectChoice.id], [correctChoice.id]),
     1,
     '',
   );
@@ -39,7 +30,7 @@ export const defaultCATAModel = (): CATA => {
       version: 2,
       parts: [
         {
-          id: '1', // a only has one part, so it is safe to hardcode the id
+          id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
           responses: [correctResponse, incorrectResponse],
           hints: [makeHint(''), makeHint(''), makeHint('')],
@@ -51,11 +42,4 @@ export const defaultCATAModel = (): CATA => {
       previewText: '',
     },
   };
-};
-
-export const createRuleForIdsCATA = (allChoiceIds: ID[], toMatch: ID[]) => {
-  const notToMatch = setDifference(allChoiceIds, toMatch);
-  return andRules(
-    ...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))),
-  );
 };

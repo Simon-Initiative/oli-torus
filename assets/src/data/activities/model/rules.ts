@@ -1,5 +1,5 @@
+import { setDifference } from 'components/activities/common/utils';
 import { Response } from 'components/activities/types';
-import { ID } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
 export const invertRule = (rule: string) => `(!(${rule}))`;
@@ -146,3 +146,14 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
       throw new Error('Operator could not be found in rule ' + rule);
   }
 };
+
+// Explicitly match all ids in `toMatch` and do not match any ids in `allChoiceIds` \ `toMatch`
+export const matchListRule = (all: string[], toMatch: string[]) => {
+  const notToMatch = setDifference(all, toMatch);
+  return andRules(
+    ...toMatch.map(matchRule).concat(notToMatch.map((id) => invertRule(matchRule(id)))),
+  );
+};
+
+// Match the `ordered` list in exactly that order
+export const matchInOrderRule = (ordered: string[]) => `input like {${ordered.join(' ')}}`;

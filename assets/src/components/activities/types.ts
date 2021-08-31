@@ -1,8 +1,8 @@
 import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
-import { UndoOperation } from 'utils/undo';
 import guid from 'utils/guid';
+import { PathOperation } from 'utils/pathOperations';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
@@ -14,10 +14,10 @@ export type MediaItemRequest = {
 export type Undoable = {
   type: 'Undoable';
   description: string;
-  operations: UndoOperation[];
+  operations: PathOperation[];
 };
 
-export function makeUndoable(description: string, operations: UndoOperation[]): Undoable {
+export function makeUndoable(description: string, operations: PathOperation[]): Undoable {
   return {
     type: 'Undoable',
     description,
@@ -158,10 +158,8 @@ export const makeTransformation = (path: string, operation: Operation): Transfor
 export interface Response extends Identifiable {
   // see `parser.ex` and `rule.ex`
   rule: string;
-
   // `score >= 0` indicates the feedback corresponds to a correct choice
   score: number;
-
   feedback: Feedback;
 }
 export const makeResponse = (rule: string, score: number, text: ''): Response => ({
@@ -230,6 +228,19 @@ export interface Part extends Identifiable {
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
 }
+
+export const makePart = (
+  responses: Response[],
+  // By default, parts have 3 hints (deer in headlights, cognitive, bottom out)
+  // Multiinput activity parts start with just one hint
+  hints = [makeHint(''), makeHint(''), makeHint('')],
+): Part => ({
+  id: guid(),
+  scoringStrategy: ScoringStrategy.average,
+  responses,
+  hints,
+});
+
 export interface HasParts {
   authoring: {
     parts: Part[];

@@ -1,12 +1,8 @@
-import { ResetButton } from 'components/activities/common/delivery/resetButton/ResetButton';
+import { ResetButton } from 'components/activities/common/delivery/reset_button/ResetButton';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import {
-  ActivityDeliveryState,
-  isEvaluated,
-  resetAction,
-} from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated } from 'data/content/activities/DeliveryState';
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 interface Props {
   onReset: () => void;

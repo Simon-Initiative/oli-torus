@@ -1,18 +1,23 @@
 import {
+  Choice,
+  HasParts,
+  makeChoice,
+  makeHint,
+  makeResponse,
+  makeStem,
+  makeTransformation,
   Operation,
   ScoringStrategy,
-  Choice,
-  makeHint,
-  makeChoice,
-  makeStem,
-  makeResponse,
-  makeTransformation,
-} from '../types';
+} from 'components/activities/types';
 import { Maybe } from 'tsmonad';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
+import {
+  CHOICES_PATH,
+  getChoice,
+} from 'components/activities/common/choices/authoring/choiceUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
@@ -25,7 +30,7 @@ export const defaultMCModel: () => MCSchema = () => {
       version: 2,
       parts: [
         {
-          id: '1', // an MCQ only has one part, so it is safe to hardcode the id
+          id: DEFAULT_PART_ID, // an MCQ only has one part, so it is safe to hardcode the id
           scoringStrategy: ScoringStrategy.average,
           responses: [
             makeResponse(matchRule(choiceA.id), 1, ''),
@@ -41,10 +46,14 @@ export const defaultMCModel: () => MCSchema = () => {
   };
 };
 
-export const getCorrectChoice = (model: MCSchema) => {
-  const responseIdMatch = Maybe.maybe(getCorrectResponse(model).rule.match(/{(.*)}/)).valueOrThrow(
-    new Error('Could not find choice id in correct response'),
-  );
+export const getCorrectChoice = (
+  model: HasParts,
+  partId = DEFAULT_PART_ID,
+  choicesPath = CHOICES_PATH,
+) => {
+  const responseIdMatch = Maybe.maybe(
+    getCorrectResponse(model, partId).rule.match(/{(.*)}/),
+  ).valueOrThrow(new Error('Could not find choice id in correct response'));
 
-  return getChoice(model, responseIdMatch[1]);
+  return getChoice(model, responseIdMatch[1], choicesPath);
 };

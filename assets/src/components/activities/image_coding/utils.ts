@@ -2,6 +2,7 @@ import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
 import { ImageCodingModelSchema } from './schema';
 import { RichText, ScoringStrategy } from '../types';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
   return {
@@ -20,7 +21,7 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: '1', // an IC only has one part, so it is safe to hardcode the id
+          id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
           responses: [],
           hints: [fromText(''), fromText(''), fromText('')],

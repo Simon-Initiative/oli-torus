@@ -1,4 +1,4 @@
-import { GradedPoints } from 'components/activities/common/delivery/gradedPoints/GradedPoints';
+import { GradedPoints } from 'components/activities/common/delivery/graded_points/GradedPoints';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';

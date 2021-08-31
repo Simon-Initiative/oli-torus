@@ -1,8 +1,8 @@
-import { createRuleForIdsCATA } from 'components/activities/check_all_that_apply/utils';
 import {
   andRules,
   btwRule,
   containsRule,
+  matchListRule,
   eqRule,
   gteRule,
   gtRule,
@@ -14,8 +14,8 @@ import {
   neqRule,
   notContainsRule,
   orRules,
+  matchInOrderRule,
 } from 'components/activities/common/responses/authoring/rules';
-import { createRuleForIdsOrdering } from 'components/activities/ordering/utils';
 
 describe('rules', () => {
   it('match rule', () => {
@@ -85,14 +85,14 @@ describe('rules', () => {
   it('can create rules to match ordering questions', () => {
     const ordering1 = ['id1', 'id2', 'id3'];
     const ordering2 = ['id3', 'id2', 'id1'];
-    expect(createRuleForIdsOrdering(ordering1)).toEqual('input like {id1 id2 id3}');
-    expect(createRuleForIdsOrdering(ordering2)).toEqual('input like {id3 id2 id1}');
+    expect(matchInOrderRule(ordering1)).toEqual('input like {id1 id2 id3}');
+    expect(matchInOrderRule(ordering2)).toEqual('input like {id3 id2 id1}');
   });
 
   it('can create rules to match certain ids and not match others', () => {
     const toMatch = ['id1', 'id2'];
     const allChoiceIds = [...toMatch, 'id3'];
-    expect(createRuleForIdsCATA(allChoiceIds, toMatch)).toEqual(
+    expect(matchListRule(allChoiceIds, toMatch)).toEqual(
       '(!(input like {id3})) && (input like {id2} && (input like {id1}))',
     );
   });

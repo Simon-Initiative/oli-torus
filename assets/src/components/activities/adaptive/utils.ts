@@ -1,7 +1,8 @@
 import guid from 'utils/guid';
 import * as ContentModel from 'data/content/model';
 import { AdaptiveModelSchema } from './schema';
-import { RichText, Operation, ScoringStrategy } from '../types';
+import { RichText, ScoringStrategy } from '../types';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultModel: () => AdaptiveModelSchema = () => {
   return {
@@ -9,7 +10,7 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: '1', // One part for now
+          id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
           responses: [],
           outcomes: [

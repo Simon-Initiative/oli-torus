@@ -12,6 +12,7 @@ import {
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { dispatch } from 'utils/test_utils';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 const testDefaultModel = defaultCATAModel;
 
@@ -61,11 +62,11 @@ describe('check all that apply question functionality', () => {
   });
 
   it('has one correct response', () => {
-    expect(getCorrectResponse(model)).toBeTruthy();
+    expect(getCorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('has one incorrect response', () => {
-    expect(getIncorrectResponse(model)).toBeTruthy();
+    expect(getIncorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('can add a targeted feedback', () => {
@@ -86,6 +87,6 @@ describe('check all that apply question functionality', () => {
   });
 
   it('has at least 3 hints', () => {
-    expect(getHints(model).length).toBeGreaterThanOrEqual(3);
+    expect(getHints(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
   });
 });

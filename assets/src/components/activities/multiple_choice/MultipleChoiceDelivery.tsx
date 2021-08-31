@@ -22,9 +22,9 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialSelection, isCorrect } from 'data/content/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 

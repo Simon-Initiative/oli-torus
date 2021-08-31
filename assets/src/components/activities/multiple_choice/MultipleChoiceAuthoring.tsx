@@ -25,11 +25,14 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { Maybe } from 'tsmonad';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
 
 const store = configureStore();
 
 const MultipleChoice: React.FC = () => {
   const { dispatch, model } = useAuthoringElementContext<MCSchema>();
+  console.log('model', model);
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -54,7 +57,7 @@ const MultipleChoice: React.FC = () => {
             unselectedIcon={<Radio.Unchecked />}
             onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
           />
-          <SimpleFeedback />
+          <SimpleFeedback partId={DEFAULT_PART_ID} />
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {
               dispatch(Actions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
@@ -66,7 +69,7 @@ const MultipleChoice: React.FC = () => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <Hints hintsPath="$.authoring.parts[0].hints" />
+          <Hints partId={DEFAULT_PART_ID} hintsByPart={hintsByPart(DEFAULT_PART_ID)} />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>

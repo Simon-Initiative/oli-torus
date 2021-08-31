@@ -16,9 +16,9 @@ import {
   activityDeliverySlice,
   resetAction,
 } from 'data/content/activities/DeliveryState';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';

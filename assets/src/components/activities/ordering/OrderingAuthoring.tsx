@@ -25,6 +25,7 @@ import { getChoice } from 'components/activities/common/choices/authoring/choice
 import { Maybe } from 'tsmonad';
 import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 const store = configureStore();
 
@@ -51,12 +52,12 @@ export const Ordering: React.FC = () => {
           choices={getCorrectChoiceIds(model).map((id) => getChoice(model, id))}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
-        <SimpleFeedback />
+        <SimpleFeedback partId={DEFAULT_PART_ID} />
         <TargetedFeedback />
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">
-        <Hints hintsPath="$.authoring.parts[0].hints" />
+        <Hints partId={DEFAULT_PART_ID} hintsByPart="$.authoring.parts[0].hints" />
       </TabbedNavigation.Tab>
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />

@@ -25,6 +25,8 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { toSimpleText } from 'data/content/text';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
 
 const store = configureStore();
 
@@ -61,7 +63,7 @@ const Dropdown = () => {
               </option>
             ))}
           </select>
-          <SimpleFeedback />
+          <SimpleFeedback partId={DEFAULT_PART_ID} />
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {
               dispatch(Actions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
@@ -73,7 +75,7 @@ const Dropdown = () => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <Hints hintsPath="$.authoring.parts[0].hints" />
+          <Hints partId={DEFAULT_PART_ID} hintsByPart={hintsByPart(DEFAULT_PART_ID)} />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>

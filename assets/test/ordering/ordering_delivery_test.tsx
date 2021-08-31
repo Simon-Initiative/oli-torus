@@ -11,7 +11,6 @@ import { configureStore } from 'state/store';
 import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
-import { dispatch } from 'utils/test_utils';
 
 describe('ordering delivery', () => {
   it('renders ungraded correctly', async () => {

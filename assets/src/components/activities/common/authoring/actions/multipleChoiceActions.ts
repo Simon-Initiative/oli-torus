@@ -1,7 +1,6 @@
 import {
   ChoiceId,
   ChoiceIdsToResponseId,
-  HasChoices,
   HasParts,
   makeResponse,
   makeUndoable,
@@ -9,70 +8,79 @@ import {
   ResponseId,
 } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
+import {
+  CHOICES_PATH,
+  getChoice,
+  getChoices,
+} from 'components/activities/common/choices/authoring/choiceUtils';
 import { matchRule } from 'components/activities/common/responses/authoring/rules';
 import {
   getCorrectResponse,
-  getResponse,
+  getResponseBy,
   getResponseId,
-  getResponses,
 } from 'components/activities/common/responses/authoring/responseUtils';
 import { clone } from 'utils/common';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { Operations } from 'utils/pathOperations';
 
 export const MCActions = {
-  removeChoice(id: string) {
-    return (model: HasChoices & HasParts, post: PostUndoable) => {
-      const choice = getChoice(model, id);
-      const index = getChoices(model).findIndex((c) => c.id === id);
-      ChoiceActions.removeChoice(id)(model, post);
+  removeChoice(id: string, partId = DEFAULT_PART_ID, choicesPath = CHOICES_PATH) {
+    return (model: any & HasParts, post: PostUndoable) => {
+      const choice = getChoice(model, id, choicesPath);
+      const index = getChoices(model, choicesPath).findIndex((c) => c.id === id);
+      ChoiceActions.removeChoice(id, choicesPath)(model, post);
 
       // if the choice being removed is the correct choice, a new correct choice
       // must be set
-      if (getCorrectResponse(model).rule === matchRule(id)) {
-        MCActions.toggleChoiceCorrectness(model.choices[0].id)(model, post);
+      const authoringClone = clone(model.authoring);
+      if (getCorrectResponse(model, partId).rule === matchRule(id)) {
+        const firstChoice = getChoices(model, choicesPath)[0];
+        MCActions.toggleChoiceCorrectness(firstChoice.id, partId)(model, post);
       }
 
       const undoable = makeUndoable('Removed a choice', [
-        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
-        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice) },
+        Operations.replace('$.authoring', authoringClone),
+        Operations.insert(choicesPath, clone(choice), index),
       ]);
       post(undoable);
     };
   },
 
-  toggleChoiceCorrectness(id: string) {
-    return (model: HasParts, post: PostUndoable) => {
-      getCorrectResponse(model).rule = matchRule(id);
+  toggleChoiceCorrectness(id: string, partId = DEFAULT_PART_ID) {
+    return (model: HasParts, _post: PostUndoable) => {
+      getCorrectResponse(model, partId).rule = matchRule(id);
     };
   },
 
   editTargetedFeedbackChoice(responseId: ResponseId, choiceId: ChoiceId) {
     return (
       model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } },
-      post: PostUndoable,
+      _post: PostUndoable,
     ) => {
       const assoc = model.authoring.targeted.find(
         (assoc: any) => getResponseId(assoc) === responseId,
       );
       if (!assoc) return;
       assoc[0] = [choiceId];
-      getResponse(model, getResponseId(assoc)).rule = matchRule(choiceId);
+      getResponseBy(model, (r) => r.id === getResponseId(assoc)).rule = matchRule(choiceId);
     };
   },
 
-  addTargetedFeedback() {
+  // TODO: Add this to tests, maybe merge with other `addTargetedFeedback` methods
+  addTargetedFeedback(partId = DEFAULT_PART_ID, choicesPath = CHOICES_PATH) {
     return (
-      model: HasParts & HasChoices & { authoring: { targeted: ChoiceIdsToResponseId[] } },
-      post: PostUndoable,
+      model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } },
+      _post: PostUndoable,
     ) => {
-      const firstChoiceId = model.choices[0].id;
-      const response = makeResponse(matchRule(firstChoiceId), 0, '');
+      const firstChoice = getChoices(model, choicesPath)[0];
+      const response = makeResponse(matchRule(firstChoice.id), 0, '');
 
       // Insert new targeted response before the last response, which is the
       // catch-all incorrect response. Response rules are evaluated in-order,
       // so the catch-all should be the last response.
-      getResponses(model).splice(getResponses(model).length - 1, 0, response);
-      model.authoring.targeted.push([[firstChoiceId], response.id]);
+      ResponseActions.addResponse(response, partId)(model);
+      model.authoring.targeted.push([[firstChoice.id], response.id]);
     };
   },
 };

@@ -8,7 +8,6 @@ import {
 } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { CATAActions } from './actions';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
@@ -26,6 +25,8 @@ import { getCorrectChoiceIds } from 'components/activities/common/responses/auth
 import { Maybe } from 'tsmonad';
 import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
 
 const store = configureStore();
 
@@ -54,7 +55,7 @@ const CheckAllThatApply = () => {
           unselectedIcon={<Checkbox.Unchecked />}
           onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
         />
-        <SimpleFeedback />
+        <SimpleFeedback partId={DEFAULT_PART_ID} />
         <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(
@@ -73,7 +74,7 @@ const CheckAllThatApply = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">
-        <Hints hintsPath="$.authoring.parts[0].hints" />
+        <Hints partId={DEFAULT_PART_ID} hintsByPart={hintsByPart(DEFAULT_PART_ID)} />
       </TabbedNavigation.Tab>
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
@@ -84,7 +85,7 @@ const CheckAllThatApply = () => {
 export class CheckAllThatApplyAuthoring extends AuthoringElement<CATASchema> {
   migrateModelVersion(model: any): CATASchema {
     return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
+      just: (_v2) => model,
       nothing: () => cataV1toV2(model),
     });
   }

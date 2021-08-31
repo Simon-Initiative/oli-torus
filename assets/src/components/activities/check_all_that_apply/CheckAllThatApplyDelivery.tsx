@@ -19,11 +19,11 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';

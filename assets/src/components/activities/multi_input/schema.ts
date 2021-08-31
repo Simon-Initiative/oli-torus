@@ -1,3 +1,4 @@
+import { MultiInput } from 'components/activities/multi_input/utils';
 import {
   Stem,
   ActivityModelSchema,
@@ -6,7 +7,6 @@ import {
   Transformation,
 } from 'components/activities/types';
 
-export type MultiInput = 'dropdown' | 'text' | 'numeric';
 export interface MultiInputSchema extends ActivityModelSchema {
   // Has one more stem than the number of parts/inputs.
   // Stems are interspersed with parts when rendered

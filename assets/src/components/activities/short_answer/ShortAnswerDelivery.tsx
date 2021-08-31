@@ -1,18 +1,10 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
-import { InputType, ShortAnswerModelSchema } from './schema';
-import * as ActivityTypes from '../types';
-import { valueOr } from 'utils/common';
+import { assertNever, valueOr } from 'utils/common';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -25,6 +17,17 @@ import {
 } from 'data/content/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { safelySelectInput } from 'data/content/activities/utils';
+import { TextInput } from 'components/activities/common/delivery/short_answer/TextInput';
+import { TextareaInput } from 'components/activities/common/delivery/short_answer/TextareaInput';
+import { NumericInput } from 'components/activities/common/delivery/short_answer/NumericInput';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  DeliveryElementProvider,
+  useDeliveryElementContext,
+} from 'components/activities/DeliveryElement';
+import { Manifest } from 'components/activities/types';
+import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 
 type InputProps = {
   input: string;
@@ -34,43 +37,22 @@ type InputProps = {
 };
 
 const Input = (props: InputProps) => {
-  const input = valueOr(props.input, '');
+  const shared = {
+    onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
+    value: valueOr(props.input, ''),
+    disabled: props.isEvaluated,
+  };
 
-  if (props.inputType === 'numeric') {
-    return (
-      <input
-        type="number"
-        aria-label="answer submission textbox"
-        className="form-control"
-        onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}
-        disabled={props.isEvaluated}
-      />
-    );
+  switch (props.inputType) {
+    case 'numeric':
+      return <NumericInput {...shared} />;
+    case 'text':
+      return <TextInput {...shared} />;
+    case 'textarea':
+      return <TextareaInput {...shared} />;
+    default:
+      assertNever(props.inputType);
   }
-  if (props.inputType === 'text') {
-    return (
-      <input
-        type="text"
-        aria-label="answer submission textbox"
-        className="form-control"
-        onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}
-        disabled={props.isEvaluated}
-      />
-    );
-  }
-  return (
-    <textarea
-      aria-label="answer submission textbox"
-      rows={5}
-      cols={80}
-      className="form-control"
-      onChange={(e: any) => props.onChange(e.target.value)}
-      value={input}
-      disabled={props.isEvaluated}
-    ></textarea>
-  );
 };
 
 export const ShortAnswerComponent: React.FC = () => {
@@ -152,5 +134,5 @@ export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema>
 
 // Register the web component:
 // eslint-disable-next-line
-const manifest = require('./manifest.json') as ActivityTypes.Manifest;
+const manifest = require('./manifest.json') as Manifest;
 window.customElements.define(manifest.delivery.element, ShortAnswerDelivery);

@@ -59,7 +59,7 @@ export const activityDeliverySlice = createSlice({
     setHints(state, action: PayloadAction<Hint[]>) {
       state.hints = action.payload;
     },
-    addHint(state, action: PayloadAction<Hint>) {
+    addCognitiveHint(state, action: PayloadAction<Hint>) {
       state.hints.push(action.payload);
     },
     setHasMoreHints(state, action: PayloadAction<boolean>) {
@@ -81,7 +81,7 @@ export const requestHint =
       getState().attemptState.attemptGuid,
       getState().attemptState.parts[0].attemptGuid,
     );
-    Maybe.maybe(response.hint).lift((hint) => dispatch(slice.actions.addHint(hint)));
+    Maybe.maybe(response.hint).lift((hint) => dispatch(slice.actions.addCognitiveHint(hint)));
     dispatch(slice.actions.setHasMoreHints(response.hasMoreHints));
   };
 
@@ -121,7 +121,7 @@ export const submit =
 
 export const initializeState =
   (state: ActivityState, initialSelection: string[]): AppThunk =>
-  async (dispatch, getState) => {
+  async (dispatch, _getState) => {
     dispatch(slice.actions.setHints(state.parts[0].hints));
     dispatch(slice.actions.setAttemptState(state));
     dispatch(slice.actions.setHasMoreHints(state.parts[0].hasMoreHints));

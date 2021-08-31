@@ -7,110 +7,268 @@ import {
   useAuthoringElementContext,
 } from '../AuthoringElement';
 import { MultiInputSchema } from './schema';
-import * as ActivityTypes from '../types';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
-import { Radio } from 'components/misc/icons/radio/Radio';
-import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
-import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { toSimpleText } from 'data/content/text';
 import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
-import { StemAuthoring } from 'components/activities/common/stem/authoring/StemAuthoring';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
+import { QuestionPartEditor } from 'components/activities/multi_input/sections/authoring/QuestionPartEditor';
+import { zip } from 'utils/common';
+import {
+  MultiInput,
+  MultiInputType,
+  multiInputTypeFriendly,
+  multiInputTypes,
+} from 'components/activities/multi_input/utils';
+import { getPartById, getParts } from 'components/activities/common/authoring/utils';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { Card } from 'components/misc/Card';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
+import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
+import { makeHint, Manifest } from 'components/activities/types';
+import { MultiInputStem } from 'components/activities/multi_input/sections/delivery/MultiInputStem';
+import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 
 const store = configureStore();
 
 const MultiInput = () => {
   const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();
 
+  console.log('model', model);
+
+  // Always display model.stems[0]
+  // then zip stems.slice(1) with model.inputs => the sizes should match, because we insert a stem after each input
+
+  const addResourceContent = (index: number) => (
+    <div className="activities">
+      {multiInputTypes.map((type) => {
+        return (
+          <button
+            className="btn btn-sm insert-activity-btn"
+            key={type}
+            onClick={(_e) => dispatch(MultiInputActions.addPart(type, index))}
+          >
+            {multiInputTypeFriendly(type)}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const friendlyType = (type: MultiInputType) => {
+    if (type === 'dropdown') {
+      return 'Dropdown';
+    }
+    return 'Fill in the blank';
+  };
+
+  const inputNumberings = (inputs: MultiInput[]): { type: string; number: number }[] => {
+    return inputs.reduce(
+      (acc, input) => {
+        const type = friendlyType(input.type);
+
+        if (!acc.seenCount[type]) {
+          acc.seenCount[type] = 1;
+          acc.numberings.push({ type, number: 1 });
+          return acc;
+        }
+        acc.seenCount[type] = acc.seenCount[type] + 1;
+        acc.numberings.push({ type, number: acc.seenCount[type] });
+        return acc;
+      },
+      { seenCount: {}, numberings: [] } as any,
+    ).numberings;
+    // as Record<MultiInputType, number>, numberings: [] as { type: MultiInputType, number: number}[]});
+  };
+
+  const friendlyTitle = (numbering: any) => {
+    return numbering.type + ' ' + numbering.number;
+  };
+
+  const title = (inputs: MultiInput[], input: MultiInput, index: number) => {
+    const numbering = inputNumberings(inputs)[index];
+    //   const label = <div
+    //   style={{
+    //     fontWeight: 500,
+    //   }}
+    // >
+    //   {numbering.type} {numbering.number}
+    // </div>
+
+    if (input.type === 'dropdown') {
+      return (
+        <select
+          disabled
+          className="custom-select"
+          style={{ color: 'black', fontWeight: 500, flexBasis: '160px' }}
+        >
+          <option selected key={1} value={numbering.type}>
+            {numbering.type} {numbering.number}
+          </option>
+        </select>
+      );
+    }
+
+    // TODO: Remember to take out inline styles and remove hard-coded colors in place of variables
+    return (
+      <input
+        style={{
+          fontWeight: 500,
+          flexBasis: '160px',
+        }}
+        className="form-control"
+        disabled
+        placeholder={numbering.type + ' ' + numbering.number}
+      />
+    );
+  };
+
   return (
     <>
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
-          {model.stems.map((stem, index) => {
-            <StemAuthoring
-              stem={stem}
+          <div className="flex-grow-1 mb-3">
+            <RichTextEditorConnected
+              text={model.stems[0].content}
               onEdit={(content) =>
-                dispatch(MultiInputActions.editStemAndPreviewText(content, index))
+                dispatch(MultiInputActions.editStemAndPreviewText(content, model.stems[0].id))
               }
-            />;
-            {
-              model.inputs[index] && (
-                <InputAuthoring
-                  part={model.authoring.parts[index]}
-                  inputType={model.inputs[index]}
+              placeholder="Question before your first input..."
+            />
+          </div>
+          {zip(model.stems.slice(1), model.inputs).map(([stem, input], index) => (
+            <>
+              {/* <div
+                style={{
+                  // padding: '0.8rem 0.5rem',
+                  // boxShadow: '1px 1px 8px 1px rgb(206 212 218 / 33%)',
+                }}
+                className="pl-2"
+              > */}
+
+              <Card.Card>
+                <Card.Title>
+                  <div className="d-flex justify-content-between w-100">
+                    <div>
+                      <div className="text-muted">Part {index + 1}</div>
+                    </div>
+                    <select className="custom-select" style={{ flexBasis: '160px' }}>
+                      {multiInputTypes.map((input) => (
+                        <option key={input}>{input}</option>
+                      ))}
+                    </select>
+                    {/* {title(model.inputs, input, index)} */}
+                    <div className="flex-grow-1"></div>
+                    {index > 0 && (
+                      <div className="choicesAuthoring__removeButtonContainer">
+                        <RemoveButtonConnected
+                          onClick={() => dispatch(MultiInputActions.removePart(input.partId))}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </Card.Title>
+                <Card.Content>
+                  <QuestionPartEditor
+                    part={getPartById(model, input.partId)}
+                    input={input}
+                    onRemove={() => {}}
+                  />
+                </Card.Content>
+              </Card.Card>
+              <div className="flex-grow-1">
+                <RichTextEditorConnected
+                  text={stem.content}
+                  onEdit={(content) =>
+                    dispatch(MultiInputActions.editStemAndPreviewText(content, stem.id))
+                  }
+                  placeholder="Question continued..."
                 />
-              );
-            }
-          })}
-
-          {/*
-            Add content bar
-              Dropdown
-              Fill in the Blank
-              (Add content after each block inserted, allow author to add spaces or newlines etc to separate questions)
-            Show each question editor as a block instead of <Choices />
-          */}
-
-          <AddResourceContent
-            editMode={editMode}
-            index={0}
-            isLast={props.id === 'last'}
-            onAddItem={}
-          >
-            <div></div>
+              </div>
+              {index < model.inputs.length - 1 && (
+                <AddResourceContent editMode={editMode} index={0} isLast={false}>
+                  {addResourceContent(index)}
+                </AddResourceContent>
+              )}
+            </>
+          ))}
+          <AddResourceContent editMode={editMode} index={model.stems.length - 1} isLast={true}>
+            {addResourceContent(model.stems.length - 1)}
           </AddResourceContent>
-
-          {/* <Choices
-            icon={(_c, i) => <span>{i + 1}.</span>}
-            choices={model.choices}
-            addOne={() => dispatch(ChoiceActions.addChoice(ActivityTypes.makeChoice('')))}
-            setAll={(choices: ActivityTypes.Choice[]) =>
-              dispatch(ChoiceActions.setAllChoices(choices))
-            }
-            onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
-            onRemove={(id) => dispatch(Actions.removeChoice(id))}
-            simpleText
-          /> */}
         </TabbedNavigation.Tab>
-        {/* <TabbedNavigation.Tab label="Answer Key">
-          <StemDelivery stem={model.stem} context={defaultWriterContext()} />
-          <select
-            onChange={(e) => dispatch(Actions.toggleChoiceCorrectness(e.target.value))}
-            className="custom-select mb-3"
-          >
-            {model.choices.map((c) => (
-              <option selected={getCorrectChoice(model).id === c.id} key={c.id} value={c.id}>
-                {toSimpleText({ children: c.content.model })}
-              </option>
-            ))}
-          </select>
-          <SimpleFeedback />
-          <TargetedFeedback
-            toggleChoice={(choiceId, mapping) => {
-              dispatch(Actions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
-            }}
-            addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
-            unselectedIcon={<Radio.Unchecked />}
-            selectedIcon={<Radio.Checked />}
-          />
-        </TabbedNavigation.Tab> */}
+        <TabbedNavigation.Tab label="Answer Key">
+          <MultiInputStem model={model} />
+          {getParts(model).map((part, i) => {
+            return (
+              <>
+                {/* <FeedbackCard
+                title="Feedback for correct answer"
+                feedback={correctResponse.feedback}
+                update={(_id, content) => update(correctResponse.id, content)}
+                placeholder="Encourage students or explain why the answer is correct"
+              /> */}
+                <SimpleFeedback partId={part.id} key={part.id}>
+                  {({ correctResponse, incorrectResponse, updateFeedback }) => (
+                    <Card.Card>
+                      <Card.Title>
+                        {'Feedback for ' + friendlyTitle(inputNumberings(model.inputs)[i])}
+                      </Card.Title>
+                      <Card.Content>
+                        <div>
+                          Correct answer feedback
+                          <RichTextEditorConnected
+                            text={correctResponse.feedback.content}
+                            onEdit={(content) =>
+                              updateFeedback(correctResponse.feedback.id, content)
+                            }
+                          />
+                        </div>
+                        <div>
+                          Incorrect answer feedback
+                          <RichTextEditorConnected
+                            text={incorrectResponse.feedback.content}
+                            onEdit={(content) =>
+                              updateFeedback(incorrectResponse.feedback.id, content)
+                            }
+                          />
+                        </div>
+                      </Card.Content>
+                    </Card.Card>
+                  )}
+                </SimpleFeedback>
 
-        {/* <TabbedNavigation.Tab label="Hints">
-          <Hints hintsPath="$.authoring.parts[0].hints" />
-        </TabbedNavigation.Tab> */}
+                {/* <TargetedFeedback
+                toggleChoice={(choiceId, mapping) => {
+                  dispatch(Actions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
+                }}
+                addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
+                unselectedIcon={<Radio.Unchecked />}
+                selectedIcon={<Radio.Checked />}
+              /> */}
+              </>
+            );
+          })}
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Hints">
+          <MultiInputStem model={model} />
+          {getParts(model).map((part, i) => (
+            <CognitiveHints
+              key={part.id}
+              hints={part.hints}
+              updateOne={(id, content) => dispatch(HintActions.editHint(id, content, part.id))}
+              addOne={() => dispatch(HintActions.addCognitiveHint(makeHint(''), part.id))}
+              removeOne={(id) =>
+                dispatch(HintActions.removeHint(id, hintsByPart(part.id), part.id))
+              }
+              placeholder="Hint"
+              title={'Hints for ' + friendlyTitle(inputNumberings(model.inputs)[i])}
+            />
+          ))}
+        </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>
@@ -130,5 +288,5 @@ export class MultiInputAuthoring extends AuthoringElement<MultiInputSchema> {
   }
 }
 // eslint-disable-next-line
-const manifest = require('./manifest.json') as ActivityTypes.Manifest;
+const manifest = require('./manifest.json') as Manifest;
 window.customElements.define(manifest.authoring.element, MultiInputAuthoring);
