@@ -21,6 +21,9 @@ export interface MarkupTree {
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
   const style: any = {};
+  if (!node.style) {
+    return style;
+  }
   if (
     (node.style.styleName === 'Heading' || node.style.styleName === 'Title') &&
     node.children?.length === 1 &&
