@@ -236,12 +236,12 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             left: (selectedPart?.custom.x || 0) + 4,
           }}
         >
-          <button title="Edit" onClick={handlePartEdit}>
+          <button title="Edit" onClick={handlePartConfigure}>
             <i className="las la-edit"></i>
           </button>
-          <button title="Configure" onClick={handlePartConfigure}>
+          {/* <button title="Configure" onClick={handlePartConfigure}>
             <i className="las la-cog"></i>
-          </button>
+          </button> */}
           <button title="Move Forward" onClick={handlePartMoveForward}>
             <i className="las la-plus"></i>
           </button>
