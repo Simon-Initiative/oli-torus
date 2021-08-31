@@ -41,37 +41,53 @@ const getCssForFonts = (fonts: string[]) => {
     .join('\n');
 };
 
+const fontStyles = getCssForFonts(supportedFonts);
+
+const customHandlers = {
+  adaptivity: function (value: string) {
+    const range = this.quill.getSelection();
+    let selectionValue = '';
+    if (range && range.length > 0) {
+      selectionValue = this.quill.getText(range.index, range.length);
+      if (selectionValue.charAt(0) === '{') {
+        selectionValue = selectionValue.substring(1, selectionValue.length - 1);
+      }
+    }
+    const expression = prompt('Enter the Expression', selectionValue);
+    if (expression) {
+      this.quill.insertText(range.index, `{${expression}}`);
+      this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
+    }
+  },
+};
+
 const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave, onCancel }) => {
   const [contents, setContents] = React.useState<any>(tree);
 
   console.log('[QuillEditor]', { tree, html });
 
   const handleSave = React.useCallback(() => {
+    if (!contents) {
+      return;
+    }
     onSave(contents);
   }, [onSave, contents]);
 
-  const customHandlers = {
-    adaptivity: function (value: string) {
-      const range = this.quill.getSelection();
-      let selectionValue = '';
-      if (range && range.length > 0) {
-        selectionValue = this.quill.getText(range.index, range.length);
-        if (selectionValue.charAt(0) === '{') {
-          selectionValue = selectionValue.substring(1, selectionValue.length - 1);
-        }
-      }
-      const expression = prompt('Enter the Expression', selectionValue);
-      if (expression) {
-        this.quill.insertText(range.index, `{${expression}}`);
-        this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
-      }
+  const handleQuillChange = React.useCallback(
+    (content, delta, source, editor) => {
+      console.log('quill changes', { content, delta, source, editor });
+      const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
+      console.log('JANUS TEXT', janusText);
+      setContents(janusText);
+      onChange({ value: janusText });
     },
-  };
+    [onChange],
+  );
 
   return (
     <React.Fragment>
       <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.6/quill.snow.css" />
-      <style>{getCssForFonts(supportedFonts)}</style>
+      <style>{fontStyles}</style>
       <div
         style={{
           maxWidth: 520,
@@ -97,7 +113,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
                 [{ header: [1, 2, 3, 4, 5, 6, false] }],
 
                 [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-                [{ font: supportedFonts.map(getFontName) }],
+                [{ font: FontAttributor.whitelist }],
                 [{ align: [] }],
 
                 ['link', 'adaptivity'],
@@ -108,13 +124,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
             },
           }}
           defaultValue={html}
-          onChange={(content, delta, source, editor) => {
-            console.log('quill changes', { content, delta, source, editor });
-            const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
-            console.log('JANUS TEXT', janusText);
-            setContents(janusText);
-            onChange({ value: janusText });
-          }}
+          onChange={handleQuillChange}
         />
         <button onClick={handleSave}>Save</button>
         <button onClick={onCancel}>Cancel</button>
