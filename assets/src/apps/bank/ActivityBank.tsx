@@ -468,6 +468,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}
             onRegisterNewTag={this.onRegisterNewTag}
+            banked={true}
             {...context}
           />
         </div>

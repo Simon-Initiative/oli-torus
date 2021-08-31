@@ -20,6 +20,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   projectSlug: string;
   allObjectives: Objective[];
   allTags: Tag[];
+  banked: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -129,6 +130,22 @@ export class InlineActivityEditor extends React.Component<
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 
+    const maybeTags = this.props.banked ? (
+      <div className="card">
+        <div className="card-body">
+          <div className="card-title">Tags</div>
+          <Tags
+            selected={this.props.tags}
+            editMode={this.props.editMode}
+            projectSlug={webComponentProps.projectslug}
+            tags={this.props.allTags}
+            onRegisterNewTag={this.props.onRegisterNewTag}
+            onEdit={(tags) => this.update({ tags })}
+          />
+        </div>
+      </div>
+    ) : null;
+
     return (
       <div className="col-12">
         <div className="activity-editor">
@@ -148,14 +165,7 @@ export class InlineActivityEditor extends React.Component<
             onRegisterNewObjective={this.props.onRegisterNewObjective}
             onEdit={(objectives) => this.update({ objectives })}
           />
-          <Tags
-            selected={this.props.tags}
-            editMode={this.props.editMode}
-            projectSlug={webComponentProps.projectslug}
-            tags={this.props.allTags}
-            onRegisterNewTag={this.props.onRegisterNewTag}
-            onEdit={(tags) => this.update({ tags })}
-          />
+          {maybeTags}
           <div ref={this.ref}>
             {React.createElement(authoringElement, webComponentProps as any)}
           </div>

@@ -117,6 +117,7 @@ export const createEditor = (
       onPostUndoable: (undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable),
       onRegisterNewObjective,
       onRegisterNewTag,
+      banked: false,
     };
 
     return (

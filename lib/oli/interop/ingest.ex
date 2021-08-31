@@ -53,14 +53,29 @@ defmodule Oli.Interop.Ingest do
 
         with {:ok, %{project: project, resource_revision: root_revision}} <-
                create_project(project_details, as_author),
-             {:ok, objective_map} <- create_objectives(project, resource_map, as_author),
+             {:ok, tag_map} <- create_tags(project, resource_map, as_author),
+             {:ok, objective_map} <- create_objectives(project, resource_map, tag_map, as_author),
              {:ok, {activity_map, _}} <-
-               create_activities(project, resource_map, objective_map, as_author),
+               create_activities(project, resource_map, objective_map, tag_map, as_author),
              {:ok, {page_map, _}} <-
-               create_pages(project, resource_map, activity_map, objective_map, as_author),
+               create_pages(
+                 project,
+                 resource_map,
+                 activity_map,
+                 objective_map,
+                 tag_map,
+                 as_author
+               ),
              {:ok, _} <- create_media(project, media_details),
              {:ok, _} <-
-               create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author),
+               create_hierarchy(
+                 project,
+                 root_revision,
+                 page_map,
+                 tag_map,
+                 hierarchy_details,
+                 as_author
+               ),
              {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
           project
         else
@@ -85,7 +100,26 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp create_activities(project, resource_map, _, as_author) do
+  defp create_tags(project, resource_map, as_author) do
+    tags =
+      Map.keys(resource_map)
+      |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
+      |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Tag" end)
+
+    Repo.transaction(fn ->
+      case Enum.reduce_while(tags, %{}, fn {id, tag}, map ->
+             case create_tag(project, tag, as_author) do
+               {:ok, revision} -> {:cont, Map.put(map, id, revision)}
+               {:error, e} -> {:halt, {:error, e}}
+             end
+           end) do
+        {:error, e} -> Repo.rollback(e)
+        map -> map
+      end
+    end)
+  end
+
+  defp create_activities(project, resource_map, _, tag_map, as_author) do
     registration_map = get_registration_map()
 
     {changes, activities} =
@@ -96,7 +130,7 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(activities, %{}, fn {id, activity}, map ->
-             case create_activity(project, activity, as_author, registration_map) do
+             case create_activity(project, activity, as_author, registration_map, tag_map) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -108,7 +142,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Process each resource file of type "Page" to create pages
-  defp create_pages(project, resource_map, activity_map, objective_map, as_author) do
+  defp create_pages(project, resource_map, activity_map, objective_map, tag_map, as_author) do
     {changes, pages} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
@@ -117,7 +151,7 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
-             case create_page(project, page, activity_map, objective_map, as_author) do
+             case create_page(project, page, activity_map, objective_map, tag_map, as_author) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -142,7 +176,7 @@ defmodule Oli.Interop.Ingest do
     |> Enum.unzip()
   end
 
-  defp create_objectives(project, resource_map, as_author) do
+  defp create_objectives(project, resource_map, tag_map, as_author) do
     objectives =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
@@ -150,7 +184,7 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(objectives, %{}, fn {id, o}, map ->
-             case create_objective(project, o, as_author) do
+             case create_objective(project, o, tag_map, as_author) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -186,12 +220,13 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Create one page
-  defp create_page(project, page, activity_map, objective_map, as_author) do
+  defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     content =
       Map.get(page, "content")
       |> rewire_activity_references(activity_map)
 
     %{
+      tags: transform_tags(page, tag_map),
       title: Map.get(page, "title"),
       content: content,
       author_id: as_author.id,
@@ -212,7 +247,7 @@ defmodule Oli.Interop.Ingest do
     |> create_resource(project)
   end
 
-  defp create_activity(project, activity, as_author, registration_by_subtype) do
+  defp create_activity(project, activity, as_author, registration_by_subtype, tag_map) do
     objectives =
       activity["content"]["authoring"]["parts"]
       |> Enum.map(fn %{"id" => id} -> id end)
@@ -226,6 +261,7 @@ defmodule Oli.Interop.Ingest do
       end
 
     %{
+      tags: transform_tags(activity, tag_map),
       title: title,
       content: Map.get(activity, "content"),
       author_id: as_author.id,
@@ -237,7 +273,19 @@ defmodule Oli.Interop.Ingest do
     |> create_resource(project)
   end
 
-  defp create_objective(project, objective, as_author) do
+  defp create_tag(project, tag, as_author) do
+    %{
+      tags: [],
+      title: Map.get(tag, "title", "empty tag"),
+      content: %{},
+      author_id: as_author.id,
+      objectives: %{},
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("tag")
+    }
+    |> create_resource(project)
+  end
+
+  defp create_objective(project, objective, tag_map, as_author) do
     title =
       case Map.get(objective, "title") do
         nil -> "Empty"
@@ -246,6 +294,7 @@ defmodule Oli.Interop.Ingest do
       end
 
     %{
+      tags: transform_tags(objective, tag_map),
       title: title,
       content: %{},
       author_id: as_author.id,
@@ -285,7 +334,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   # create the course hierarchy
-  defp create_hierarchy(project, root_revision, page_map, hierarchy_details, as_author) do
+  defp create_hierarchy(project, root_revision, page_map, tag_map, hierarchy_details, as_author) do
     # Process top-level items and containers, add recursively add containers
     children =
       Map.get(hierarchy_details, "children")
@@ -293,7 +342,7 @@ defmodule Oli.Interop.Ingest do
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
           "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, c)
+          "container" -> create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 
@@ -303,7 +352,7 @@ defmodule Oli.Interop.Ingest do
 
   # This is the recursive container creation routine.  It processes a hierarchy by
   # descending through the tree and processing the leaves first, and then back upwards.
-  defp create_container(project, page_map, as_author, container) do
+  defp create_container(project, page_map, as_author, tag_map, container) do
     # recursively visit item container in the hierarchy, and via bottom
     # up approach create resource and revisions for each container, while
     # substituting page references for resource ids and container references
@@ -314,11 +363,12 @@ defmodule Oli.Interop.Ingest do
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
           "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, c)
+          "container" -> create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 
     attrs = %{
+      tags: transform_tags(container, tag_map),
       title: Map.get(container, "title"),
       children: children_ids,
       author_id: as_author.id,
@@ -329,6 +379,17 @@ defmodule Oli.Interop.Ingest do
     {:ok, %{revision: revision}} = Oli.Authoring.Course.create_and_attach_resource(project, attrs)
     {:ok, _} = ChangeTracker.track_revision(project.slug, revision)
     revision.resource_id
+  end
+
+  defp transform_tags(value, tag_map) do
+    Map.get(value, "tags", [])
+    |> Enum.map(fn id ->
+      case Map.get(tag_map, id) do
+        nil -> nil
+        rev -> rev.resource_id
+      end
+    end)
+    |> Enum.filter(fn id -> !is_nil(id) end)
   end
 
   # Convert the list of tuples of unzipped entries into a map
