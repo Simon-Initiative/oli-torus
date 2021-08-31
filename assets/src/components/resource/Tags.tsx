@@ -29,57 +29,62 @@ export const Tags = (props: TagsProps) => {
   const asTags = selected.map((s) => map.get(s) as Tag);
 
   return (
-    <div className="flex-grow-1 tags">
-      <Typeahead
-        id={id}
-        multiple={true}
-        disabled={!editMode}
-        onChange={(updated: (Tag & { customOption?: boolean })[]) => {
-          // we can safely assume that only one objective will ever be selected at a time
-          const createdTag = updated.find((o) => o.customOption);
-          if (createdTag) {
-            create(props.projectSlug, createdTag.title)
-              .then((result) => {
-                if (result.result === 'success') {
-                  onRegisterNewTag({
-                    id: result.tag.id,
-                    title: createdTag.title,
-                  });
+    <div className="card">
+      <div className="card-body">
+        <div className="card-title">Tags</div>
+        <div className="d-flex flex-row align-items-baseline">
+          <Typeahead
+            id={id}
+            multiple={true}
+            disabled={!editMode}
+            onChange={(updated: (Tag & { customOption?: boolean })[]) => {
+              // we can safely assume that only one objective will ever be selected at a time
+              const createdTag = updated.find((o) => o.customOption);
+              if (createdTag) {
+                create(props.projectSlug, createdTag.title)
+                  .then((result) => {
+                    if (result.result === 'success') {
+                      onRegisterNewTag({
+                        id: result.tag.id,
+                        title: createdTag.title,
+                      });
 
-                  // Use the newly created resource id instead of the id of
-                  // item created for us by the Typeahead
-                  const updatedTags = updated.map((o) => {
-                    if (o.customOption) {
-                      return result.tag.id;
+                      // Use the newly created resource id instead of the id of
+                      // item created for us by the Typeahead
+                      const updatedTags = updated.map((o) => {
+                        if (o.customOption) {
+                          return result.tag.id;
+                        }
+                        return o.id;
+                      });
+
+                      onEdit(updatedTags);
+                    } else {
+                      throw result;
                     }
-                    return o.id;
+                  })
+                  .catch((e) => {
+                    console.error('tag creation failed', e);
                   });
-
+              } else {
+                // This check handles some weirdness where Typeahead fires onChange when
+                // there really isn't a change.
+                if (updated.length !== selected.length) {
+                  const updatedTags = updated.map((o) => o.id);
                   onEdit(updatedTags);
-                } else {
-                  throw result;
                 }
-              })
-              .catch((e) => {
-                console.error('tag creation failed', e);
-              });
-          } else {
-            // This check handles some weirdness where Typeahead fires onChange when
-            // there really isn't a change.
-            if (updated.length !== selected.length) {
-              const updatedTags = updated.map((o) => o.id);
-              onEdit(updatedTags);
-            }
-          }
-        }}
-        options={props.tags}
-        allowNew={true}
-        newSelectionPrefix="Create new tag: "
-        selectHintOnEnter={true}
-        labelKey="title"
-        selected={asTags}
-        placeholder="Attach tags..."
-      />
+              }
+            }}
+            options={props.tags}
+            allowNew={true}
+            newSelectionPrefix="Create new tag: "
+            selectHintOnEnter={true}
+            labelKey="title"
+            selected={asTags}
+            placeholder="Attach tags..."
+          />
+        </div>
+      </div>
     </div>
   );
 };
