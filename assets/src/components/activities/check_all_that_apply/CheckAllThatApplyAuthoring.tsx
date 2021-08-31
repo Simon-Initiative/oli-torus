@@ -21,12 +21,12 @@ import { Hints } from 'components/activities/common/hints/authoring/HintsAuthori
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectChoiceIds } from 'data/activities/model/responseUtils';
 import { Maybe } from 'tsmonad';
 import { cataV1toV2 } from 'components/activities/check_all_that_apply/transformations/v2';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 
 const store = configureStore();
 

@@ -14,9 +14,9 @@ import {
   isEvaluated,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
-import { safelySelectInput } from 'data/content/activities/utils';
+import { safelySelectInput } from 'data/activities/utils';
 import { TextInput } from 'components/activities/common/delivery/short_answer/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/short_answer/TextareaInput';
 import { NumericInput } from 'components/activities/common/delivery/short_answer/NumericInput';

@@ -8,7 +8,7 @@ import { defaultModel } from 'components/activities/short_answer/utils';
 import { ShortAnswerComponent } from 'components/activities/short_answer/ShortAnswerDelivery';
 import { makeHint } from 'components/activities/types';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 

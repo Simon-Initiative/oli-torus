@@ -10,14 +10,11 @@ import {
   ScoringStrategy,
 } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
-import {
-  CHOICES_PATH,
-  getChoice,
-} from 'components/activities/common/choices/authoring/choiceUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
-import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { matchRule } from 'data/activities/model/rules';
+import { getCorrectResponse } from 'data/activities/model/responseUtils';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { CHOICES_PATH, getChoice } from 'data/activities/model/choiceUtils';
 
 export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');

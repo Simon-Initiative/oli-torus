@@ -1,15 +1,14 @@
-import { getByUnsafe } from 'components/activities/common/authoring/utils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { getByUnsafe } from 'data/activities/model/utils1';
+import { matchRule } from 'data/activities/model/rules';
 import { ChoiceId, ChoiceIdsToResponseId, HasParts, Response } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
-import jp from 'jsonpath';
 import { Operations } from 'utils/pathOperations';
 
 // Responses
 
 export const RESPONSES_PATH = '$..responses';
 export const getResponses = (model: HasParts, path = RESPONSES_PATH): Response[] =>
-  jp.query(model, path).reduce((acc, partResponses) => acc.concat(partResponses), []);
+  Operations.apply(model, Operations.find(path));
 
 export const RESPONSES_BY_PART_ID_PATH = (partId: string) =>
   `$..parts[?(@.id==${partId})].responses`;

@@ -1,5 +1,5 @@
-import { CHOICES_PATH } from 'components/activities/common/choices/authoring/choiceUtils';
 import { Choice, PostUndoable, RichText } from 'components/activities/types';
+import { CHOICES_PATH } from 'data/activities/model/choiceUtils';
 import { Operations } from 'utils/pathOperations';
 
 export const ChoiceActions = {

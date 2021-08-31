@@ -231,7 +231,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.connected = true;
   }
 
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
+  attributeChangedCallback(_name: any, _oldValue: any, _newValue: any) {
     if (this.connected) {
       this.render(this.mountPoint, this.props());
     }

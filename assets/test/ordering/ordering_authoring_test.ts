@@ -1,4 +1,4 @@
-import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
+import { getHints } from 'data/activities/model/hintUtils';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
@@ -8,7 +8,7 @@ import {
   getResponses,
   getTargetedChoiceIds,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Actions } from 'components/activities/ordering/actions';

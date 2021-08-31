@@ -14,14 +14,10 @@ import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
-import {
-  containsRule,
-  eqRule,
-  parseInputFromRule,
-} from 'components/activities/common/responses/authoring/rules';
+import { containsRule, eqRule, parseInputFromRule } from 'data/activities/model/rules';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
-import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse } from 'data/activities/model/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
@@ -32,7 +28,7 @@ import { getTargetedResponses, shortAnswerOptions } from 'components/activities/
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { makeResponse, Manifest, Response } from 'components/activities/types';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 
 const store = configureStore();
 

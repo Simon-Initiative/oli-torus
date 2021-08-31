@@ -2,16 +2,12 @@ import { defaultCATAModel } from 'components/activities/check_all_that_apply/uti
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice, setSelection } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice, setSelection } from 'data/activities/DeliveryState';
 import { defaultState } from 'phoenix/activity_bridge';
 import { makeHint } from 'components/activities/types';
 import { Dispatch, Store } from 'redux';
-import { ActivityDeliveryState, initializeState } from 'data/content/activities/DeliveryState';
-import {
-  initialSelection,
-  inputToSelection,
-  selectionToInput,
-} from 'data/content/activities/utils';
+import { ActivityDeliveryState, initializeState } from 'data/activities/DeliveryState';
+import { initialSelection, inputToSelection, selectionToInput } from 'data/activities/utils';
 
 describe('activity delivery state management', () => {
   const model = defaultCATAModel();

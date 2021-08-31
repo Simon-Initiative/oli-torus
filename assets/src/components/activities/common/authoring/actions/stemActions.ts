@@ -1,4 +1,4 @@
-import { PREVIEW_TEXT_PATH, STEM_PATH } from 'components/activities/common/authoring/actions/utils';
+import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
 import { HasPreviewText, RichText } from 'components/activities/types';
 import { toSimpleText } from 'data/content/text';
 import { Operations } from 'utils/pathOperations';

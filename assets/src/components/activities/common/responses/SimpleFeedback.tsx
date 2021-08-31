@@ -1,8 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import {
-  getCorrectResponse,
-  getIncorrectResponse,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responseUtils';
 import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HasParts, RichText } from 'components/activities/types';
@@ -10,7 +7,7 @@ import React from 'react';
 
 interface Props {
   partId: string;
-  children: React.ReactNode | ((xs: ReturnType<typeof useSimpleFeedback>) => React.ReactNode);
+  children?: React.ReactNode | ((xs: ReturnType<typeof useSimpleFeedback>) => React.ReactNode);
 }
 
 export const useSimpleFeedback = (partId: string) => {

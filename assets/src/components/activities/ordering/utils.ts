@@ -2,10 +2,7 @@ import { DEFAULT_PART_ID } from './../common/utils';
 import guid from 'utils/guid';
 import { OrderingSchema as Ordering } from './schema';
 import { Operation, ScoringStrategy, makeStem, makeHint, makeChoice, makeResponse } from '../types';
-import {
-  matchInOrderRule,
-  matchRule,
-} from 'components/activities/common/responses/authoring/rules';
+import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
 
 // Model creation
 export const defaultOrderingModel = (): Ordering => {

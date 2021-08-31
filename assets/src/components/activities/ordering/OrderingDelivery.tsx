@@ -15,16 +15,16 @@ import {
   initializeState,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { initialSelection, selectionToInput } from 'data/content/activities/utils';
+import { initialSelection, selectionToInput } from 'data/activities/utils';
+import { getChoice } from 'data/activities/model/choiceUtils';
 
 export const OrderingComponent: React.FC = () => {
   const {

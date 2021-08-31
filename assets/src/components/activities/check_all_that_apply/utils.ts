@@ -7,7 +7,7 @@ import {
   Operation,
   ScoringStrategy,
 } from 'components/activities/types';
-import { matchListRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { matchListRule, matchRule } from 'data/activities/model/rules';
 import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 

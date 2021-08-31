@@ -1,7 +1,7 @@
 import { CATAActions } from 'components/activities/check_all_that_apply/actions';
 import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { makeChoice } from 'components/activities/types';
-import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
+import { getHints } from 'data/activities/model/hintUtils';
 import {
   getChoiceIds,
   getCorrectResponse,
@@ -9,7 +9,7 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { dispatch } from 'utils/test_utils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';

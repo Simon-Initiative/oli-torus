@@ -1,4 +1,4 @@
-import { getByUnsafe, getPartById } from 'components/activities/common/authoring/utils';
+import { getByUnsafe, getPartById } from 'data/activities/model/utils1';
 import { HasHints } from 'components/activities/types';
 import { ID } from 'data/content/model';
 

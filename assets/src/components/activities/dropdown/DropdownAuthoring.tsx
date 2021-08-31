@@ -26,7 +26,7 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { toSimpleText } from 'data/content/text';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 
 const store = configureStore();
 

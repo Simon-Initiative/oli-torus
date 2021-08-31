@@ -1,8 +1,4 @@
-import {
-  getHint,
-  getHints,
-  hintsByPart,
-} from 'components/activities/common/hints/authoring/hintUtils';
+import { getHint, getHints, hintsByPart } from 'data/activities/model/hintUtils';
 import { HasHints, Hint, PostUndoable, RichText, makeUndoable } from 'components/activities/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';

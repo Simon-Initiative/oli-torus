@@ -2,8 +2,8 @@ import { GradedPoints } from 'components/activities/common/delivery/graded_point
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
-import { isCorrect } from 'data/content/activities/utils';
-import { ActivityDeliveryState } from 'data/content/activities/DeliveryState';
+import { isCorrect } from 'data/activities/utils';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
 

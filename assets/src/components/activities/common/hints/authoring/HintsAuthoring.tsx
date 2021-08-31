@@ -5,7 +5,6 @@ import { Hint, RichText } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { Card } from 'components/misc/Card';
-import { Tooltip } from 'components/misc/Tooltip';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
 
 interface HintsAuthoringProps {

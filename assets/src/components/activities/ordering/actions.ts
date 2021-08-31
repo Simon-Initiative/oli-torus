@@ -1,4 +1,4 @@
-import { RESPONSES_PATH } from './../common/responses/authoring/responseUtils';
+import { RESPONSES_PATH } from '../../../data/activities/model/responseUtils';
 import { OrderingSchema as Ordering } from './schema';
 import {
   Choice,
@@ -16,14 +16,14 @@ import {
   getResponseBy,
   getResponseId,
   getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
-import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { clone } from 'utils/common';
 import jp from 'jsonpath';
-import { matchInOrderRule } from 'components/activities/common/responses/authoring/rules';
+import { matchInOrderRule } from 'data/activities/model/rules';
 import { Operations } from 'utils/pathOperations';
+import { getChoice, getChoices } from 'data/activities/model/choiceUtils';
 
 export class Actions {
   static addChoice(choice: Choice) {

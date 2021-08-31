@@ -15,8 +15,8 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { matchListRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+} from 'data/activities/model/responseUtils';
+import { matchListRule, matchRule } from 'data/activities/model/rules';
 import { CATASchemaV1 } from 'components/activities/check_all_that_apply/transformations/v1';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 

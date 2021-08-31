@@ -7,7 +7,7 @@ import { defaultMCModel } from 'components/activities/multiple_choice/utils';
 import { MultipleChoiceComponent } from 'components/activities/multiple_choice/MultipleChoiceDelivery';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 import { defaultState } from 'phoenix/activity_bridge';
 import { makeHint } from 'components/activities/types';

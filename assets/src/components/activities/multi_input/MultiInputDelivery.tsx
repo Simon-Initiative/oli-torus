@@ -8,8 +8,8 @@ import {
   setSelection,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
-import { initialSelection } from 'data/content/activities/utils';
+} from 'data/activities/DeliveryState';
+import { initialSelection } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';

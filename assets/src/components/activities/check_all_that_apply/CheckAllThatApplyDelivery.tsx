@@ -1,6 +1,6 @@
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { Manifest } from 'components/activities/types';
-import { initialSelection, isCorrect } from 'data/content/activities/utils';
+import { initialSelection, isCorrect } from 'data/activities/utils';
 import {
   ActivityDeliveryState,
   initializeState,
@@ -8,7 +8,7 @@ import {
   setSelection,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';

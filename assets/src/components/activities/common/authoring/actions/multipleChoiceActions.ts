@@ -8,21 +8,17 @@ import {
   ResponseId,
 } from 'components/activities/types';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import {
-  CHOICES_PATH,
-  getChoice,
-  getChoices,
-} from 'components/activities/common/choices/authoring/choiceUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { matchRule } from 'data/activities/model/rules';
 import {
   getCorrectResponse,
   getResponseBy,
   getResponseId,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { clone } from 'utils/common';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { Operations } from 'utils/pathOperations';
+import { CHOICES_PATH, getChoice, getChoices } from 'data/activities/model/choiceUtils';
 
 export const MCActions = {
   removeChoice(id: string, partId = DEFAULT_PART_ID, choicesPath = CHOICES_PATH) {

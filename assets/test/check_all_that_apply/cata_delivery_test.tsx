@@ -6,7 +6,7 @@ import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 import { defaultState } from 'phoenix/activity_bridge';

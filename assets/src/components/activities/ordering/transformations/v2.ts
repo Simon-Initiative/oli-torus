@@ -16,9 +16,8 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { matchInOrderRule } from 'components/activities/ordering/utils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+} from 'data/activities/model/responseUtils';
+import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export interface OrderingSchemaV2 extends ActivityModelSchema {

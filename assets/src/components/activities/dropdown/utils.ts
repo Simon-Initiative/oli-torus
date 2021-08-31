@@ -10,12 +10,12 @@ import {
   Operation,
   ScoringStrategy,
 } from '../types';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { matchRule } from 'data/activities/model/rules';
 import {
   getCorrectResponse,
   getIncorrectResponse,
   getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultModel: () => DropdownModelSchema = () => {

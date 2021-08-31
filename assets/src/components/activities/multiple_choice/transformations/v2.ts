@@ -7,11 +7,8 @@ import {
   Stem,
   Transformation,
 } from 'components/activities/types';
-import {
-  getCorrectResponse,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { getCorrectResponse, getResponses } from 'data/activities/model/responseUtils';
+import { matchRule } from 'data/activities/model/rules';
 import { MCSchemaV1 } from 'components/activities/multiple_choice/transformations/v1';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 

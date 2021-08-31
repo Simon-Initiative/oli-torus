@@ -20,12 +20,12 @@ import { ResponseChoices } from 'components/activities/ordering/sections/Respons
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
-import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
+import { getCorrectChoiceIds } from 'data/activities/model/responseUtils';
 import { Maybe } from 'tsmonad';
 import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { getChoice } from 'data/activities/model/choiceUtils';
 
 const store = configureStore();
 

@@ -1,5 +1,5 @@
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
-import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
+import { getHints } from 'data/activities/model/hintUtils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { makeHint, ScoringStrategy } from 'components/activities/types';
 import { dispatch } from 'utils/test_utils';

@@ -1,10 +1,10 @@
 import { HasParts, makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
-import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { containsRule, matchRule } from 'data/activities/model/rules';
 import {
   getCorrectResponse,
   getIncorrectResponse,
   getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+} from 'data/activities/model/responseUtils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';

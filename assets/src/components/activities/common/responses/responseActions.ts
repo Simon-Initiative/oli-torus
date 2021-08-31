@@ -1,10 +1,6 @@
-import { getResponsesByPartId } from './authoring/responseUtils';
+import { getResponsesByPartId } from '../../../../data/activities/model/responseUtils';
 import jp from 'jsonpath';
-import {
-  getResponseBy,
-  getResponseId,
-  RESPONSES_PATH,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getResponseBy, getResponseId, RESPONSES_PATH } from 'data/activities/model/responseUtils';
 import { remove } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
@@ -22,6 +18,7 @@ export const ResponseActions = {
   addResponse(response: Response, partId: string, path = RESPONSES_PATH) {
     return (model: HasParts) => {
       // Insert a new reponse just before the last response (which is the catch-all response)
+      Operations.apply(model, Operations.insert(path, response));
       jp.apply(model, path, (responses: Response[]) => {
         responses.splice(getResponsesByPartId(model, partId).length - 1, 0, response);
         return responses;

@@ -1,6 +1,6 @@
 import { ResetButton } from 'components/activities/common/delivery/reset_button/ResetButton';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import { ActivityDeliveryState, isEvaluated } from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
 

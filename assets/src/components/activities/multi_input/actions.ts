@@ -1,5 +1,5 @@
-import { eqRule, containsRule } from './../common/responses/authoring/rules';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { eqRule, containsRule } from '../../../data/activities/model/rules';
+import { matchRule } from 'data/activities/model/rules';
 import {
   MultiInputType,
   MultiInput,
@@ -24,7 +24,7 @@ import { assertNever, clone } from 'utils/common';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { current } from '@reduxjs/toolkit';
 import { Operations } from 'utils/pathOperations';
-import { getPartById, getParts } from 'components/activities/common/authoring/utils';
+import { getPartById, getParts } from 'data/activities/model/utils1';
 import { create, p } from 'data/content/model';
 
 export const MultiInputActions = {

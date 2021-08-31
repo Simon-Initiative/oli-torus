@@ -1,10 +1,7 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
-import {
-  getTargetedResponseMappings,
-  ResponseMapping,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getTargetedResponseMappings, ResponseMapping } from 'data/activities/model/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { ChoiceId, ChoiceIdsToResponseId, HasChoices, HasParts } from 'components/activities/types';
@@ -17,18 +14,27 @@ interface Props {
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
 }
+
+export const useTargetedFeedback = () => {
+  const { model, dispatch } = useAuthoringElementContext<
+    HasChoices & HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } }
+  >();
+  const choices = model.choices;
+
+  return {
+    targetedMappings: getTargetedResponseMappings(model),
+    updateFeedback: (id, content) =>
+      dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content)),
+    removeTargetedFeedback: (id) => dispatch(ResponseActions.removeTargetedFeedback(id)),
+  };
+};
+
 export const TargetedFeedback: React.FC<Props> = ({
   toggleChoice,
   addTargetedResponse,
   selectedIcon,
   unselectedIcon,
 }) => {
-  const { model, dispatch } = useAuthoringElementContext<
-    HasChoices & HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } }
-  >();
-  const choices = model.choices;
-  const targetedMappings = getTargetedResponseMappings(model);
-
   return (
     <>
       {targetedMappings.map((mapping) => (

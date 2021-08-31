@@ -17,9 +17,9 @@ import {
   activityDeliverySlice,
   isEvaluated,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { initialSelection, isCorrect } from 'data/content/activities/utils';
+import { initialSelection, isCorrect } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';

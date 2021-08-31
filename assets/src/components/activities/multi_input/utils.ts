@@ -10,7 +10,7 @@ import {
 } from 'components/activities/types';
 import { assertNever } from 'utils/common';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { containsRule, matchRule } from 'data/activities/model/rules';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 
 export type MultiInput = MultiDropdownInput | MultiTextInput;

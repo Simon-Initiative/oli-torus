@@ -11,7 +11,7 @@ import {
   PartResponse,
   Success,
 } from 'components/activities/types';
-import { selectionToInput } from 'data/content/activities/utils';
+import { selectionToInput } from 'data/activities/utils';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<

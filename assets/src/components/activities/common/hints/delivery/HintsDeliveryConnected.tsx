@@ -1,11 +1,7 @@
 import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
 import { HasHints } from 'components/activities/types';
-import {
-  ActivityDeliveryState,
-  isEvaluated,
-  requestHint,
-} from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated, requestHint } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 

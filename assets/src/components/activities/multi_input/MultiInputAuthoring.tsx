@@ -22,11 +22,11 @@ import {
   multiInputTypeFriendly,
   multiInputTypes,
 } from 'components/activities/multi_input/utils';
-import { getPartById, getParts } from 'components/activities/common/authoring/utils';
+import { getPartById, getParts } from 'data/activities/model/utils1';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { Card } from 'components/misc/Card';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
 import { makeHint, Manifest } from 'components/activities/types';

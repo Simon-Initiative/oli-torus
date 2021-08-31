@@ -92,7 +92,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.connected = true;
   }
 
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
+  attributeChangedCallback(_name: any, _oldValue: any, _newValue: any) {
     if (this.connected) {
       this.render(this.mountPoint, this.props());
     }

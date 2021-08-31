@@ -2,9 +2,8 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
@@ -15,6 +14,7 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { toSimpleText } from 'data/content/text';
 import React from 'react';
+import { getChoices } from 'data/activities/model/choiceUtils';
 
 interface Props {
   part: Part;

@@ -1,13 +1,13 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { getTargetedResponseMappings } from 'components/activities/common/responses/authoring/responseUtils';
+import { getTargetedResponseMappings } from 'data/activities/model/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { Actions } from 'components/activities/ordering/actions';
 import { OrderingSchema } from 'components/activities/ordering/schema';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import React from 'react';
+import { getChoice } from 'data/activities/model/choiceUtils';
 
 export const TargetedFeedback: React.FC = () => {
   const { model, dispatch } = useAuthoringElementContext<OrderingSchema>();

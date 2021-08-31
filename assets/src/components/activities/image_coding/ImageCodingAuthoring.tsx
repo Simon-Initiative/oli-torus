@@ -23,7 +23,7 @@ import guid from 'utils/guid';
 import { MediaItemRequest } from '../types';
 import { configureStore } from 'state/store';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();

@@ -1,7 +1,7 @@
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
 import { ChoiceId, HasChoices } from 'components/activities/types';
-import { ActivityDeliveryState, isEvaluated } from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
 

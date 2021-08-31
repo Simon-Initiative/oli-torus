@@ -1,6 +1,6 @@
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import { ActivityDeliveryState, isEvaluated, submit } from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated, submit } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 

@@ -15,7 +15,7 @@ import {
   notContainsRule,
   orRules,
   matchInOrderRule,
-} from 'components/activities/common/responses/authoring/rules';
+} from 'data/activities/model/rules';
 
 describe('rules', () => {
   it('match rule', () => {

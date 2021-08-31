@@ -5,7 +5,7 @@ import {
   getBottomOutHint,
   getCognitiveHints,
   getDeerInHeadlightsHint,
-} from 'components/activities/common/hints/authoring/hintUtils';
+} from 'data/activities/model/hintUtils';
 import { HasParts, makeHint } from 'components/activities/types';
 import React from 'react';
 

@@ -1,5 +1,5 @@
-import { getResponses } from 'components/activities/common/responses/authoring/responseUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
+import { getResponses } from 'data/activities/model/responseUtils';
+import { matchRule } from 'data/activities/model/rules';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {

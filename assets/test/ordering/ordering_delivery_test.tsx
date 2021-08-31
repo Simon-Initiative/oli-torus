@@ -8,7 +8,7 @@ import { defaultOrderingModel } from 'components/activities/ordering/utils';
 import { OrderingComponent } from 'components/activities/ordering/OrderingDelivery';
 import { makeHint } from 'components/activities/types';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
 

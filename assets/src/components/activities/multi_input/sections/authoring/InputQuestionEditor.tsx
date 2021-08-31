@@ -6,15 +6,12 @@ import { InputTypeDropdown } from 'components/activities/common/authoring/InputT
 import { makeResponse, Part, Response } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import React from 'react';
-import {
-  getCorrectResponse,
-  getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+import { getCorrectResponse, getTargetedResponses } from 'data/activities/model/responseUtils';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { containsRule, eqRule } from 'components/activities/common/responses/authoring/rules';
+import { containsRule, eqRule } from 'data/activities/model/rules';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 
 interface Props {

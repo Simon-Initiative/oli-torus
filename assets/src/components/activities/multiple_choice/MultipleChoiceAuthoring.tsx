@@ -26,7 +26,7 @@ import { Maybe } from 'tsmonad';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { hintsByPart } from 'components/activities/common/hints/authoring/hintUtils';
+import { hintsByPart } from 'data/activities/model/hintUtils';
 
 const store = configureStore();
 

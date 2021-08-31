@@ -8,14 +8,10 @@ import {
   getCorrectResponse,
   getResponseBy,
   getResponseId,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import {
-  CHOICES_PATH,
-  getChoices,
-} from 'components/activities/common/choices/authoring/choiceUtils';
+} from 'data/activities/model/responseUtils';
 import { clone } from 'utils/common';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { matchListRule } from 'components/activities/common/responses/authoring/rules';
+import { matchListRule } from 'data/activities/model/rules';
 import { Operations } from 'utils/pathOperations';
 
 export const CATAActions = {
