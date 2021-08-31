@@ -38,20 +38,16 @@ defmodule OliWeb.DeliveryController do
 
     section = Sections.get_section_from_lti_params(lti_params)
 
-    case {user.author, section} do
+    case section do
       # author account has not been linked
-      {nil, nil} when allow_configure_section ->
+      nil when allow_configure_section ->
         render_getting_started(conn)
 
-      # section has not been configured
-      {author, nil} when allow_configure_section ->
-        render_configure_section(conn, author)
-
-      {_author, nil} ->
+      nil ->
         render_course_not_configured(conn)
 
       # section has been configured
-      {_author, section} ->
+      section ->
         if user.research_opt_out === nil do
           render_research_consent(conn)
         else
@@ -82,7 +78,8 @@ defmodule OliWeb.DeliveryController do
     |> render("research_consent.html")
   end
 
-  defp render_configure_section(conn, author) do
+  def configure_section(conn, _params) do
+    user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
@@ -91,10 +88,20 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    publications = Publishing.available_publications(author, institution)
-    my_publications = publications |> Enum.filter(fn p -> p.published end)
+    available_publications =
+      case user.author do
+        nil ->
+          []
 
-    render(conn, "configure_section.html", author: author, my_publications: my_publications)
+        author ->
+          Publishing.available_publications(author, institution)
+          |> Enum.filter(fn p -> p.published end)
+      end
+
+    render(conn, "configure_section.html",
+      author: user.author,
+      available_publications: available_publications
+    )
   end
 
   defp redirect_to_page_delivery(conn, section) do

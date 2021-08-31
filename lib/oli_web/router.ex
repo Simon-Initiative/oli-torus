@@ -559,6 +559,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
     get("/", DeliveryController, :index)
+    get("/configure_section", DeliveryController, :configure_section)
 
     get("/link_account", DeliveryController, :link_account)
     post("/link_account", DeliveryController, :process_link_account_user)
