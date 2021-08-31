@@ -19,11 +19,6 @@
                         </table>
                     </td>
                 </tr>
-                <tr>
-                    <td style="padding: 20px; text-align: center; max-width: 500px; overflow: hidden; overflow-wrap: anywhere; font-size:.8em;">
-                        <p><%= link @url, to: @url %></p>
-                    </td>
-                </tr>
             </table>
         </td>
     </tr>

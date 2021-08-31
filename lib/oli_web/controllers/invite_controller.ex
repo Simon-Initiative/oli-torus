@@ -25,8 +25,8 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author, view} <- get_or_invite_author(conn, email),
-         {:ok, _mail} <- deliver_invitation_email(conn, author, view) do
+    with {:ok, author} <- get_or_invite_author(conn, email),
+         {:ok, _mail} <- deliver_invitation_email(conn, author) do
       conn
       |> put_flash(:info, "Author invitation sent successfully.")
       |> redirect(to: Routes.invite_path(conn, :index))
@@ -43,7 +43,7 @@ defmodule OliWeb.InviteController do
     |> case do
       nil ->
         case PowInvitation.Plug.create_user(conn, %{email: email}) do
-          {:ok, user, _conn} -> {:ok, user, :invitation_new_user}
+          {:ok, user, _conn} -> {:ok, user}
           {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
         end
 
@@ -56,7 +56,7 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp deliver_invitation_email(conn, user, view) do
+  defp deliver_invitation_email(conn, user) do
     invited_by = Pow.Plug.current_user(conn)
     token = PowInvitation.Plug.sign_invitation_token(conn, user)
     url = Routes.pow_invitation_invitation_path(conn, :edit, token)
@@ -66,7 +66,7 @@ defmodule OliWeb.InviteController do
     email =
       Oli.Email.invitation_email(
         user.email,
-        view,
+        :author_invitation,
         %{
           invited_by: invited_by,
           invited_by_user_id: invited_by_user_id,
