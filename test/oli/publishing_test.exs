@@ -6,8 +6,6 @@ defmodule Oli.PublishingTest do
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ActivityEditor
@@ -178,22 +176,24 @@ defmodule Oli.PublishingTest do
 
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
          %{publication: publication, project: project} do
-      {:ok, %Publication{} = published} = Publishing.publish_project(project)
+      {:ok, %Publication{} = published} =
+        Publishing.publish_project(project, "some changes")
 
       # original publication should now be published
       assert published.id == publication.id
-      assert published.published == true
+      assert published.published != nil
     end
 
     test "publish_project/1 creates a new working unpublished publication for a project",
          %{publication: unpublished_publication, project: project} do
-      {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
+      {:ok, %Publication{} = published_publication} =
+        Publishing.publish_project(project, "some changes")
 
       # The published publication should match the original unpublished publication
       assert unpublished_publication.id == published_publication.id
 
       # the unpublished publication for the project should now be a new different publication
-      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      new_unpublished_publication = Publishing.project_working_publication(project.slug)
       assert new_unpublished_publication.id != unpublished_publication.id
 
       # mappings should be retained in the original published publication
@@ -236,10 +236,11 @@ defmodule Oli.PublishingTest do
         PageEditor.acquire_lock(project.slug, revision_with_activity.slug, author.email)
 
       # Publish the project
-      {:ok, %Publication{} = published_publication} = Publishing.publish_project(project)
+      {:ok, %Publication{} = published_publication} =
+        Publishing.publish_project(project, "some changes")
 
       # publication should succeed even if a resource is "locked"
-      new_unpublished_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      new_unpublished_publication = Publishing.project_working_publication(project.slug)
       assert new_unpublished_publication.id != original_unpublished_publication.id
 
       # further edits to locked resources should occur in newly created revisions. The locks should not
@@ -279,42 +280,10 @@ defmodule Oli.PublishingTest do
 
     test "broadcasting the new publication works when publishing", %{project: project} do
       Oli.Authoring.Broadcaster.Subscriber.subscribe_to_new_publications(project.slug)
-      {:ok, publication} = Publishing.publish_project(project)
+      {:ok, publication} = Publishing.publish_project(project, "some changes")
       {:messages, [{:new_publication, pub, project_slug}]} = Process.info(self(), :messages)
       assert pub.id == publication.id
       assert project.slug == project_slug
-    end
-
-    test "update_all_section_publications/2 updates all existing sections using the project to the latest publication",
-         %{project: project} do
-      institution = institution_fixture()
-
-      {:ok, original_publication} = Publishing.publish_project(project)
-
-      {:ok, %Section{id: section_id}} =
-        Sections.create_section(%{
-          time_zone: "US/Central",
-          title: "title",
-          context_id: "some-context-id",
-          institution_id: institution.id,
-          project_id: project.id,
-          publication_id: original_publication.id
-        })
-
-      assert [%Section{id: ^section_id}] =
-               Sections.get_sections_by_publication(original_publication)
-
-      {:ok, original_publication} = Publishing.publish_project(project)
-
-      # update all sections to use the new publication
-      new_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
-      Publishing.update_all_section_publications(project, new_publication)
-
-      # section associated with new publication...
-      assert [%Section{id: ^section_id}] = Sections.get_sections_by_publication(new_publication)
-
-      # ...and removed from the old one
-      assert [] = Sections.get_sections_by_publication(original_publication)
     end
 
     test "diff_publications/2 returns the changes between 2 publications",
@@ -344,7 +313,7 @@ defmodule Oli.PublishingTest do
       Publishing.upsert_published_resource(publication, r3_revision)
 
       # create first publication
-      {:ok, %Publication{} = p1} = Publishing.publish_project(project)
+      {:ok, %Publication{} = p1} = Publishing.publish_project(project, "some changes")
 
       # make some edits
       content = %{
@@ -367,7 +336,7 @@ defmodule Oli.PublishingTest do
           author_id: author.id
         })
 
-      p2 = Publishing.get_unpublished_publication_by_slug!(project.slug)
+      p2 = Publishing.project_working_publication(project.slug)
       Publishing.upsert_published_resource(p2, r4_revision)
 
       # delete a resource
@@ -377,10 +346,10 @@ defmodule Oli.PublishingTest do
         PageEditor.edit(project.slug, r3_revision.slug, author.email, %{deleted: true})
 
       # generate diff
-      diff = Publishing.diff_publications(p1, p2)
-      assert Map.keys(diff) |> Enum.count() == 6
+      {version_info, diff} = Publishing.diff_publications(p1, p2)
+      assert version_info == {:minor, {0, 1, 1}}
+      assert Map.keys(diff) |> Enum.count() == 3
       assert {:changed, _} = diff[revision.resource_id]
-      assert {:identical, _} = diff[r2_revision.resource_id]
       assert {:deleted, _} = diff[r3_revision.resource_id]
       assert {:added, _} = diff[r4_revision.resource_id]
     end

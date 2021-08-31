@@ -38,6 +38,7 @@ defmodule Oli.Accounts.User do
     field :independent_learner, :boolean, default: true
     field :research_opt_out, :boolean
     field :state, :map, default: %{}
+    field :locked_at, :utc_datetime
 
     has_many :user_identities,
              Oli.UserIdentities.UserIdentity,
@@ -55,6 +56,10 @@ defmodule Oli.Accounts.User do
 
     many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole,
       join_through: "users_platform_roles",
+      on_replace: :delete
+
+    many_to_many :users, Oli.Delivery.Sections.UserGroup,
+      join_through: "user_groups_users",
       on_replace: :delete
 
     timestamps(type: :utc_datetime)
@@ -89,7 +94,9 @@ defmodule Oli.Accounts.User do
       :guest,
       :independent_learner,
       :research_opt_out,
-      :state
+      :state,
+      :locked_at,
+      :email_confirmed_at
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
@@ -128,7 +135,9 @@ defmodule Oli.Accounts.User do
       :guest,
       :independent_learner,
       :research_opt_out,
-      :state
+      :state,
+      :locked_at,
+      :email_confirmed_at
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()
@@ -141,6 +150,17 @@ defmodule Oli.Accounts.User do
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
     |> maybe_create_unique_sub()
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
+  end
+
+  @spec lock_changeset(Ecto.Schema.t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
+  def lock_changeset(user_or_changeset) do
+    changeset = Ecto.Changeset.change(user_or_changeset)
+    locked_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    case Ecto.Changeset.get_field(changeset, :locked_at) do
+      nil -> Ecto.Changeset.change(changeset, locked_at: locked_at)
+      _any -> Ecto.Changeset.add_error(changeset, :locked_at, "already set")
+    end
   end
 
   def is_independent_learner_not_guest(changeset) do

@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
@@ -54,10 +55,12 @@ defmodule Oli.Delivery.Attempts.Core do
       from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
-        join: p in PublishedResource,
-        on: s.publication_id == p.publication_id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: r in Revision,
-        on: p.revision_id == r.id,
+        on: pr.revision_id == r.id,
         where: s.slug == ^section_slug and s.status != :deleted and r.graded == true,
         select: a
       )
@@ -74,10 +77,12 @@ defmodule Oli.Delivery.Attempts.Core do
       from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
-        join: p in PublishedResource,
-        on: s.publication_id == p.publication_id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: r in Revision,
-        on: p.revision_id == r.id,
+        on: pr.revision_id == r.id,
         where:
           s.slug == ^section_slug and s.status != :deleted and r.graded == true and
             r.resource_id == ^resource_id,
@@ -96,10 +101,12 @@ defmodule Oli.Delivery.Attempts.Core do
       from(a in ResourceAccess,
         join: s in Section,
         on: a.section_id == s.id,
-        join: p in PublishedResource,
-        on: s.publication_id == p.publication_id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: r in Revision,
-        on: p.revision_id == r.id,
+        on: pr.revision_id == r.id,
         where: s.slug == ^section_slug and s.status != :deleted and a.user_id == ^user_id,
         distinct: a.id,
         select: a
@@ -149,10 +156,12 @@ defmodule Oli.Delivery.Attempts.Core do
         on: rattempt.id == aattempt.resource_attempt_id,
         join: pattempt in PartAttempt,
         on: aattempt.id == pattempt.activity_attempt_id,
-        where: section.publication_id == ^publication_id and
-          # Only look at evaluated part attempts -> date evaluated not nil
-          not is_nil(pattempt.date_evaluated),
-
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == section.id,
+        # Only look at evaluated part attempts -> date evaluated not nil
+        where:
+          spp.publication_id == ^publication_id and
+            not is_nil(pattempt.date_evaluated),
         # only fetch records for users enrolled as students
         left_join: er in "enrollments_context_roles",
         on: enrollment.id == er.enrollment_id,

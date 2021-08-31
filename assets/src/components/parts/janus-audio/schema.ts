@@ -1,4 +1,19 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
+  src: string;
+  customCssClass: string;
+  palette: any;
+  triggerCheck: boolean;
+  autoPlay: boolean;
+  startTime: number;
+  endTime: number;
+  enableReplay: boolean;
+  subtitles: any;
+}
+
+export const schema: JSONSchema7Object = {
   src: {
     title: 'Source',
     type: 'string',
@@ -22,35 +37,30 @@ export const schema = {
     type: 'boolean',
     description: 'if set to true then once audio is played till end, it will fire a check event',
     default: false,
-    isVisibleInTrapState: false,
   },
   autoPlay: {
     title: 'Auto Play',
     type: 'boolean',
     description: 'if set to true then audio player will play automatically',
     default: false,
-    isVisibleInTrapState: true,
   },
   startTime: {
-    title: 'Start time',
+    title: 'Start time(secs)',
     type: 'number',
     description: 'specifies the start time of the audio',
     default: 0,
-    isVisibleInTrapState: true,
   },
   endTime: {
-    title: 'End time',
+    title: 'End time(secs)',
     type: 'number',
     description: 'specifies the end time of the audio',
     default: 0,
-    isVisibleInTrapState: true,
   },
   enableReplay: {
     title: 'Enable Replay',
     type: 'boolean',
     description: "specifies whether user can replay the audio once it's played",
     default: true,
-    isVisibleInTrapState: false,
   },
   subtitles: {
     title: 'Subtitles',
@@ -69,7 +79,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<AudioModel> => ({
   src: '',
   customCssClass: '',
   triggerCheck: false,

@@ -75,8 +75,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
           graded: true
         },
+        :container,
         :graded_page
       )
+      |> Seeder.create_section_resources()
     end
 
     test "graded page : determine_resource_attempt_state works with 2 users after user1 has started a page and user2 has not",
@@ -92,10 +94,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # Open the graded page as user 1 to get the prologue
       user1_page_context = PageContext.create_for_visit(section.slug, revision.slug, user1)
       assert user1_page_context.progress_state == :not_started
-      assert Enum.count(user1_page_context.resource_attempts) == 0
+      assert Enum.empty?(user1_page_context.resource_attempts)
 
       # Start the attempt and go into the assessment
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       {:ok,
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
@@ -263,6 +265,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         },
         :graded_page
       )
+      |> Seeder.create_section_resources()
 
       # Ungraded page ("page1" / :page1) attempts
       |> Seeder.create_resource_attempt(
@@ -365,7 +368,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_activity_attempt1: activity_attempt,
       graded_page_user1_attempt1: resource_attempt1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
@@ -406,7 +409,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_part1_attempt1: part_attempt,
       user1_activity_attempt1: activity_attempt
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
@@ -446,7 +449,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
            graded_page_user2_attempt1: user2_resource_attempt1,
            user2: user2
          } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =
@@ -696,6 +699,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       }
 
       Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,
@@ -862,6 +866,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       }
 
       Seeder.add_page(map, attrs, :ungraded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,

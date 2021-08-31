@@ -1,4 +1,13 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface CarouselModel extends JanusAbsolutePositioned, JanusCustomCss {
+  cssClasses: string;
+  images: { url: string; caption: string; alt: string }[];
+  zoom: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   customCss: {
     title: 'Custom CSS',
     type: 'string',
@@ -27,7 +36,6 @@ export const schema = {
   },
   zoom: {
     type: 'boolean',
-    format: 'checkbox',
     description: 'Enables image zoom on double-click',
     default: false,
   },
@@ -54,7 +62,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<CarouselModel> => ({
   customCss: '',
   cssClasses: '',
   zoom: true,

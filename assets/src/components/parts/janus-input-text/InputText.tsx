@@ -1,20 +1,14 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
-import { parseBool } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, PartComponentProps } from '../types/parts';
-
-interface InputTextModel extends JanusAbsolutePositioned {
-  showLabel: boolean;
-  label: string;
-  prompt: string;
-}
+import { contexts } from '../../../types/applicationContext';
+import { parseBool } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
+import { InputTextModel } from './schema';
 
 const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -223,14 +217,14 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     [],
   );
 
-  // TODO: MUTATE STATE CHANGES
-
   return ready ? (
-    <div data-janus-type={props.type} style={styles} className={`short-text-input ${cssClass}`}>
-      <label htmlFor={id}>{showLabel && label ? label : <span>&nbsp;</span>}</label>
+    <div data-janus-type={tagName} className={`short-text-input ${cssClass}`}>
+      <label htmlFor={`${id}-short-text-input`}>
+        {showLabel && label ? label : <span>&nbsp;</span>}
+      </label>
       <input
         name="janus-input-text"
-        id={id}
+        id={`${id}-short-text-input`}
         type="text"
         placeholder={prompt}
         onChange={handleOnChange}

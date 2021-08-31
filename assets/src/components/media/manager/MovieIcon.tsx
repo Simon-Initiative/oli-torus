@@ -13,9 +13,5 @@ export const MovieIcon: React.StatelessComponent<MovieIconProps> = ({
   // eslint-disable-next-line
   children,
 }) => {
-  return (
-    <div className={`example-component ${className || ''}`}>
-      {children}
-    </div>
-  );
+  return <div className={`example-component ${className || ''}`}>{children}</div>;
 };

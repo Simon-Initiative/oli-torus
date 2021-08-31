@@ -1,4 +1,20 @@
-export const schema = {
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  src: string;
+  alt: string;
+  triggerCheck: boolean;
+  autoPlay: boolean;
+  startTime: number;
+  endTime: number;
+  enableReplay: boolean;
+  subtitles: { default: boolean; language: string; src: string };
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -24,61 +40,54 @@ export const schema = {
   triggerCheck: {
     title: 'Trigger Check',
     type: 'boolean',
-    format: 'checkbox',
     description: 'if set to true then once audio is played till end, it will fire a check event',
     default: false,
-    isVisibleInTrapState: false,
   },
   autoPlay: {
     title: 'Autoplay',
     type: 'boolean',
-    format: 'checkbox',
     description: 'if set to true then video player will play automatically',
     default: false,
-    isVisibleInTrapState: true,
   },
   startTime: {
-    title: 'Starttime',
+    title: 'Start time(secs)',
     type: 'number',
     description: 'specifies the start time of the video',
     default: 0,
-    isVisibleInTrapState: true,
   },
   endTime: {
-    title: 'Endtime',
+    title: 'End time(secs)',
     type: 'number',
     description: 'specifies the end time of the video',
     default: 0,
-    isVisibleInTrapState: true,
   },
   enableReplay: {
     title: 'Enable Replay',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether user can replay the video once its played',
     default: true,
-    isVisibleInTrapState: false,
   },
   subtitles: {
     title: 'Subtitles',
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        default: { type: 'boolean' },
-        language: { type: 'string' },
-        src: { type: 'string' },
-      },
-      required: ['src', 'language'],
+    type: 'object',
+    properties: {
+      default: { type: 'boolean', title: 'Default' },
+      language: { type: 'string', title: 'Language' },
+      src: { type: 'string', title: 'Source' },
     },
+    required: ['src', 'language'],
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  subtitles: {
+    'ui:title': 'Subtitles',
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+  },
+};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<VideoModel> => ({
   enabled: true,
-  subtitles: [],
   enableReplay: true,
   autoPlay: false,
   startTime: 0,

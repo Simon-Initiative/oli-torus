@@ -15,6 +15,14 @@ export type ActivityUpdate = {
   authoring?: any;
 };
 
+export type BulkActivityUpdate = {
+  resource_id: number;
+  title: string;
+  objectives: ObjectiveMap;
+  content: ActivityModelSchema;
+  authoring?: any;
+};
+
 export type Created = {
   result: 'success';
   revisionSlug: string;
@@ -24,6 +32,10 @@ export type Created = {
 export type Updated = {
   result: 'success';
   revisionSlug: string;
+};
+
+export type Deleted = {
+  result: 'success';
 };
 
 export type Transformed = {
@@ -132,14 +144,47 @@ export function create(
   activityTypeSlug: ActivityTypeSlug,
   model: ActivityModelSchema,
   objectives: ResourceId[],
+  scope = 'embedded',
 ) {
   const params = {
     method: 'POST',
-    body: JSON.stringify({ model, objectives }),
+    body: JSON.stringify({ model, objectives, scope }),
     url: `/project/${project}/activity/${activityTypeSlug}`,
   };
 
   return makeRequest<Created>(params);
+}
+
+export function deleteActivity(project: ProjectSlug, resourceId: ResourceId) {
+  const params = {
+    method: 'DELETE',
+    url: `/storage/project/${project}/resource/${resourceId}?lock=${resourceId}`,
+  };
+
+  return makeRequest<Deleted>(params);
+}
+
+export function createBanked(
+  project: ProjectSlug,
+  activityTypeSlug: ActivityTypeSlug,
+  model: ActivityModelSchema,
+  objectives: ResourceId[],
+) {
+  return create(project, activityTypeSlug, model, objectives, 'banked');
+}
+
+export function bulkEdit(
+  project: ProjectSlug,
+  resource: ResourceId,
+  updates: BulkActivityUpdate[],
+) {
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+    url: `/storage/project/${project}/resource?lock=${resource}`,
+  };
+
+  return makeRequest<Updated>(params);
 }
 
 export function edit(

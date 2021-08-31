@@ -3,8 +3,8 @@ import { TextEditor } from '../TextEditor';
 import { classNames } from 'utils/classNames';
 
 export type TitleBarProps = {
-  title: string,                  // The title of the resource
-  editMode: boolean,              // Whether or not the user is editing
+  title: string; // The title of the resource
+  editMode: boolean; // Whether or not the user is editing
   onTitleEdit: (title: string) => void;
   children: any;
   className?: string;
@@ -13,7 +13,6 @@ export type TitleBarProps = {
 // Title bar component that allows title bar editing and displays
 // any collection of child components
 export const TitleBar = (props: TitleBarProps) => {
-
   const { editMode, className, title, onTitleEdit, children } = props;
 
   return (

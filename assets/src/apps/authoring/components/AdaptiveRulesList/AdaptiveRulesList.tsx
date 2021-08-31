@@ -9,21 +9,49 @@ import {
   IActivity,
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { getIsLayer, getIsBank } from '../../../delivery/store/features/groups/actions/sequence';
 import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 
+export interface AdaptiveRule {
+  id?: string;
+  name: string;
+  disabled: boolean;
+  additionalScore?: number;
+  forceProgress?: boolean;
+  default: boolean;
+  correct: boolean;
+  conditions: Record<string, unknown>;
+  event: Record<string, unknown>;
+}
+
 const AdaptiveRulesList: React.FC = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
   const currentRule = useSelector(selectCurrentRule);
-  const isLayer = getIsLayer();
   const rules = currentActivity?.authoring.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
+  const isLayer = getIsLayer();
+  const isBank = getIsBank();
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'question bank';
+  } else {
+    sequenceTypeLabel = 'screen';
+  }
 
-  const handleSelectRule = (rule: any) => dispatch(setCurrentRule({ currentRule: rule }));
+  const handleSelectRule = (rule?: AdaptiveRule, isInitState?: boolean) => {
+    if (isInitState) {
+      // TODO: refactor initState string to enum
+      dispatch(setCurrentRule({ currentRule: 'initState' }));
+    } else {
+      dispatch(setCurrentRule({ currentRule: rule }));
+    }
+  };
 
   const debounceSaveChanges = useCallback(
     debounce(
@@ -41,9 +69,13 @@ const AdaptiveRulesList: React.FC = () => {
       createCorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newCorrectRule);
-    handleSelectRule(newCorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newCorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     debounceSaveChanges(activityClone);
+    handleSelectRule(newCorrectRule);
   };
 
   const handleAddIncorrectRule = async () => {
@@ -51,26 +83,48 @@ const AdaptiveRulesList: React.FC = () => {
       createIncorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newIncorrectRule);
-    handleSelectRule(newIncorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newIncorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     debounceSaveChanges(activityClone);
+    handleSelectRule(newIncorrectRule);
   };
 
-  const handleDeleteRule = (rule: any) => {
+  const handleDeleteRule = (rule: AdaptiveRule) => {
     const activityClone: IActivity = clone(currentActivity);
-    const indexToDelete = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    const indexToDelete = activityClone.authoring.rules.findIndex(
+      (r: AdaptiveRule) => r.id === rule.id,
+    );
     const isActiveRule: boolean = rule.id === currentRule.id;
 
     if (indexToDelete !== -1) {
       activityClone.authoring.rules.splice(indexToDelete, 1);
       const prevRule = activityClone.authoring.rules[indexToDelete - 1];
       const nextRule = activityClone.authoring.rules[indexToDelete + 1];
-      handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
       debounceSaveChanges(activityClone);
+      handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
     }
   };
 
-  const handleRenameRule = (rule: any) => {
+  const handleMoveRule = (ruleIndex: number, direction: string) => {
+    const activityClone: IActivity = clone(currentActivity);
+    const ruleToMove = activityClone.authoring.rules.splice(ruleIndex, 1)[0];
+    switch (direction) {
+      case 'down':
+        activityClone.authoring.rules.splice(ruleIndex + 1, 0, ruleToMove);
+        break;
+      case 'up':
+        activityClone.authoring.rules.splice(ruleIndex - 1, 0, ruleToMove);
+        break;
+      default:
+        break;
+    }
+    debounceSaveChanges(activityClone);
+  };
+
+  const handleRenameRule = (rule: AdaptiveRule) => {
     if (ruleToEdit.name.trim() === '') {
       setRuleToEdit(undefined);
       return;
@@ -80,7 +134,9 @@ const AdaptiveRulesList: React.FC = () => {
       return;
     }
     const activityClone: IActivity = clone(currentActivity);
-    const indexToRename = activityClone.authoring.rules.findIndex((r: any) => r.id === rule.id);
+    const indexToRename = activityClone.authoring.rules.findIndex(
+      (r: AdaptiveRule) => r.id === rule.id,
+    );
     activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
     debounceSaveChanges(activityClone);
     setRuleToEdit(undefined);
@@ -89,11 +145,38 @@ const AdaptiveRulesList: React.FC = () => {
     );
   };
 
+  const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {
+    // process the rules to make a defaultRule sandwich before displaying them
+    const defaultCorrectIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && rule.correct,
+    );
+    const defaultWrongIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && !rule.correct,
+    );
+
+    if (defaultCorrectIndex === 0 && defaultWrongIndex === rules.length - 1) return rules;
+    const rulesClone = clone(rules);
+
+    // set the defaultCorrect to the first position
+    rulesClone.unshift(rulesClone.splice(defaultCorrectIndex, 1)[0]);
+
+    // set the defaultWrong rule to the last position
+    rulesClone.push(rulesClone.splice(defaultWrongIndex, 1)[0]);
+
+    if (saveChanges) {
+      const activityClone: IActivity = clone(currentActivity);
+      activityClone.authoring.rules = rulesClone;
+      debounceSaveChanges(activityClone);
+    } else return rulesClone;
+  };
+
   const previousActivity = usePrevious(currentActivity);
   useEffect(() => {
     if (currentActivity === undefined) return;
-    if (previousActivity?.id !== currentActivity.id)
-      handleSelectRule(currentActivity.authoring.rules[0]);
+    if (previousActivity?.id !== currentActivity.id) {
+      reorderDefaultRules(currentActivity.authoring.rules, true);
+      handleSelectRule(undefined, true);
+    }
   }, [currentActivity]);
 
   useEffect(() => {
@@ -102,8 +185,13 @@ const AdaptiveRulesList: React.FC = () => {
     if (inputToFocus) inputToFocus.focus();
   }, [ruleToEdit]);
 
-  const RuleItemContextMenu = (props: { id: string; item: any; index: number; arr: any[] }) => {
-    const { id, item } = props;
+  const RuleItemContextMenu = (props: {
+    id: string;
+    item: AdaptiveRule;
+    index: number;
+    arr: AdaptiveRule[];
+  }) => {
+    const { id, item, index, arr } = props;
 
     return (
       <div key={id} className="dropdown aa-sequence-item-context-menu">
@@ -149,7 +237,32 @@ const AdaptiveRulesList: React.FC = () => {
               >
                 <i className="fas fa-trash mr-2" /> Delete
               </button>
+              <div className="dropdown-divider"></div>
             </>
+          )}
+          {index > 1 && !item.default && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveRule(index, 'up');
+                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              }}
+            >
+              <i className="fas fa-arrow-up mr-2" /> Move Up
+            </button>
+          )}
+          {index < arr.length - 2 && !item.default && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveRule(index, 'down');
+                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              }}
+            >
+              <i className="fas fa-arrow-down mr-2" /> Move Down
+            </button>
           )}
         </div>
       </div>
@@ -179,7 +292,7 @@ const AdaptiveRulesList: React.FC = () => {
           <ContextAwareToggle eventKey="0" />
           <span className="title">Adaptivity</span>
         </div>
-        {currentRule && !isLayer && (
+        {currentRule && !isLayer && !isBank && (
           <OverlayTrigger
             placement="right"
             delay={{ show: 150, hide: 150 }}
@@ -231,9 +344,27 @@ const AdaptiveRulesList: React.FC = () => {
       </div>
       <Accordion.Collapse eventKey="0">
         <ListGroup className="aa-rules-list" as="ol">
+          {currentRule && !isLayer && !isBank && (
+            <ListGroup.Item
+              className="aa-rules-list-item"
+              as="li"
+              active={currentRule === 'initState'}
+              onClick={() => handleSelectRule(undefined, true)}
+            >
+              <div className="aa-rules-list-details-wrapper">
+                <div className="details">
+                  <span>
+                    <i className="fa fa-info-circle mr-1 text-muted align-middle" />
+                    <span className="title font-italic">Initial State</span>
+                  </span>
+                </div>
+              </div>
+            </ListGroup.Item>
+          )}
           {currentRule &&
             !isLayer &&
-            rules.map((rule: any, index: any, arr: any) => (
+            !isBank &&
+            rules.map((rule: AdaptiveRule, index: number, arr: AdaptiveRule[]) => (
               <ListGroup.Item
                 className="aa-rules-list-item"
                 as="li"
@@ -279,11 +410,11 @@ const AdaptiveRulesList: React.FC = () => {
               </div>
             </div>
           )}
-          {currentRule && isLayer && (
+          {currentRule && (isLayer || isBank) && (
             <div className="text-center border rounded m-3">
               <div className="card-body">
                 <p>
-                  <small>This sequence item is a layer and does not support adaptivity</small>
+                  <small>{`This sequence item is a ${sequenceTypeLabel} and does not support adaptivity`}</small>
                 </p>
               </div>
             </div>

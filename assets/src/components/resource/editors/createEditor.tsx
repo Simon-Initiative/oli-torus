@@ -8,17 +8,17 @@ import {
   ResourceType,
 } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
-import { EditorDesc } from 'data/content/editors';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
-import { UnsupportedActivity } from '../UnsupportedActivity';
 import * as Immutable from 'immutable';
 import { defaultState } from '../TestModeHandler';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
 import { Undoable } from 'components/activities/types';
+import { ActivityBankSelection } from './ActivityBankSelection';
+import { ActivityEditorMap } from 'data/content/editors';
 
 // content or referenced activities
 export const createEditor = (
@@ -33,11 +33,29 @@ export const createEditor = (
   objectivesMap: any,
   editorProps: any,
   allObjectives: Objective[],
+  editorMap: ActivityEditorMap,
   onEdit: (content: ResourceContent) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
 ): JSX.Element => {
+  if (content.type === 'selection') {
+    return (
+      <ContentBlock {...editorProps} contentItem={content} index={index}>
+        <ActivityBankSelection
+          editorMap={editorMap}
+          key={content.id}
+          editMode={editMode}
+          selection={content}
+          onChange={onEdit}
+          projectSlug={projectSlug}
+          allObjectives={Immutable.List<Objective>(allObjectives)}
+          onRegisterNewObjective={onRegisterNewObjective}
+        />
+      </ContentBlock>
+    );
+  }
+
   if (content.type === 'content') {
     return (
       <ContentBlock {...editorProps} contentItem={content} index={index}>
@@ -81,7 +99,6 @@ export const createEditor = (
       resourceSlug: resourceSlug,
       resourceId: resourceContext.resourceId,
       resourceTitle: resourceContext.title,
-      authoringScript: activity.authoringScript,
       authoringElement: activity.authoringElement,
       friendlyName: activity.friendlyName,
       description: activity.description,

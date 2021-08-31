@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { ActivityUpdate, edit } from 'data/persistence/activity';
+import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import {
   selectActivityById,
@@ -69,15 +69,17 @@ export const updateActivityPartInheritance = createAsyncThunk(
       const projectSlug = selectProjectSlug(rootState);
       const resourceId = selectResourceId(rootState);
       // in lieu of bulk edit
-      const updates = activitiesToUpdate.map((activity) => {
-        const changeData: ActivityUpdate = {
+      const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
+        const changeData: BulkActivityUpdate = {
           title: activity.title,
           objectives: activity.objectives,
-          content: {...activity.content, authoring: activity.authoring},
+          content: activity.content,
+          authoring: activity.authoring,
+          resource_id: resourceId,
         };
-        return edit(projectSlug, resourceId, activity.resourceId, changeData, false);
+        return changeData;
       });
-      await Promise.all(updates);
+      await bulkEdit(projectSlug, resourceId, updates);
       await dispatch(releaseEditingLock());
       return;
     }

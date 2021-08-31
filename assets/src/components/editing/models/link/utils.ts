@@ -14,15 +14,14 @@ export const internalLinkPrefix = '/course/link';
 
 export const isInternalLink = (href: string) => href.startsWith(internalLinkPrefix);
 
-export const isValidHref = (href: string) => href.startsWith('https://')
-  || href.startsWith('http://')
-  || href.startsWith('mailto://')
-  || href.startsWith('ftp://');
+export const isValidHref = (href: string) =>
+  href.startsWith('https://') ||
+  href.startsWith('http://') ||
+  href.startsWith('mailto://') ||
+  href.startsWith('ftp://');
 
 // Add a default protocol to the href to force links to resolve to an absolute path
-export const addProtocol = (href: string) => isValidHref(href)
-  ? href
-  : 'http://' + href;
+export const addProtocol = (href: string) => (isValidHref(href) ? href : 'http://' + href);
 
 // Helper function to turn a Page into a link url
 export const toInternalLink = (p: any) => `${internalLinkPrefix}/${p.id}`;

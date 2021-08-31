@@ -5,7 +5,6 @@ export function toSimpleText(node: Node): string {
 }
 
 function toSimpleTextHelper(node: Node, text: string): string {
-
   return (node.children as any).reduce((p: string, c: any) => {
     let updatedText = p;
     if (c.text) {

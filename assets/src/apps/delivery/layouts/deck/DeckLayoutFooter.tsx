@@ -320,11 +320,17 @@ const DeckLayoutFooter: React.FC = () => {
 
     // if (isGoodFeedback && canProceed) {
     if (isGoodFeedback) {
-      dispatch(
-        nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
-      );
+      if (nextActivityId && nextActivityId.trim()) {
+        dispatch(
+          nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+        );
+      } else {
+        // if there is no navigation, then keep checking
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
+      }
       dispatch(setIsGoodFeedback({ isGood: false }));
       dispatch(setNextActivityId({ nextActivityId: '' }));
+      setIsLoading(false);
     } else if (
       (!isLegacyTheme || !currentActivity?.custom?.showCheckBtn) &&
       !isGoodFeedback &&
@@ -381,6 +387,7 @@ const DeckLayoutFooter: React.FC = () => {
   useEffect(() => {
     if (hasOnlyMutation) {
       setIsLoading(false);
+      setHasOnlyMutation(false);
     }
   }, [hasOnlyMutation]);
 

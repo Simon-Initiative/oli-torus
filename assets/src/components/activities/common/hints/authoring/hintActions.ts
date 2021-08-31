@@ -24,9 +24,11 @@ export const HintActions = {
       const index = getHints(model).findIndex((h) => h.id === id);
       model.authoring.parts[0].hints = getHints(model).filter((h) => h.id !== id);
 
-      post(makeUndoable('Removed a hint',
-        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
-
+      post(
+        makeUndoable('Removed a hint', [
+          { type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint) },
+        ]),
+      );
     };
   },
 };

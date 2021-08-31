@@ -43,14 +43,12 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
 
   onInsert = (e: any) => {
     e.preventDefault();
-    if (this.props.onInsert)
-      this.props.onInsert();
+    if (this.props.onInsert) this.props.onInsert();
   };
 
   onCancel = (e: any) => {
     e.preventDefault();
-    if (this.props.onCancel)
-      this.props.onCancel();
+    if (this.props.onCancel) this.props.onCancel();
   };
 
   render() {
@@ -73,7 +71,12 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
             <div className="modal-header">
               <h5 className="modal-title">{this.props.title}</h5>
               {this.props.hideDialogCloseButton === true ? null : (
-                <button type="button" className="close" onClick={this.onCancel} data-dismiss="modal">
+                <button
+                  type="button"
+                  className="close"
+                  onClick={this.onCancel}
+                  data-dismiss="modal"
+                >
                   <span aria-hidden="true">&times;</span>
                 </button>
               )}
@@ -86,7 +89,9 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
               )}
             </div>
             <div className="modal-footer">
-              {this.props.footer ? this.props.footer : (
+              {this.props.footer ? (
+                this.props.footer
+              ) : (
                 <>
                   <button
                     type="button"

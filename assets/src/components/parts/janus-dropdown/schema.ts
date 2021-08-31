@@ -1,4 +1,17 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface DropdownModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  showLabel: boolean;
+  label: string;
+  enabled: boolean;
+  prompt: string;
+  optionLabels: string[];
+  fontSize?: number;
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -18,26 +31,9 @@ export const schema = {
     type: 'number',
     default: 12,
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Show on Answer Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -62,9 +58,7 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether dropdown is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
   definitions: {
@@ -78,7 +72,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<DropdownModel> => ({
   customCssClass: '',
   showLabel: true,
   label: 'Choose',

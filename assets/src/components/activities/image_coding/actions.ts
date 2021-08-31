@@ -51,11 +51,13 @@ export class ICActions {
 
   static removeResourceURL(value: string) {
     return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
-
       const index = draftState.resourceURLs.findIndex((url) => url === value);
       const item = draftState.resourceURLs[index];
-      post(makeUndoable('Removed a file',
-        [{ type: 'InsertOperation', path: '$.resourceURLs', index, item: clone(item)}]));
+      post(
+        makeUndoable('Removed a file', [
+          { type: 'InsertOperation', path: '$.resourceURLs', index, item: clone(item) },
+        ]),
+      );
 
       draftState.resourceURLs = draftState.resourceURLs.filter((url) => url !== value);
     };
@@ -97,11 +99,13 @@ export class ICActions {
 
   static removeHint(id: string) {
     return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
-
       const hint = draftState.authoring.parts[0].hints.find((h) => h.id === id);
       const index = draftState.authoring.parts[0].hints.findIndex((h) => h.id === id);
-      post(makeUndoable('Removed a hint',
-        [{ type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint)}]));
+      post(
+        makeUndoable('Removed a hint', [
+          { type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint) },
+        ]),
+      );
 
       draftState.authoring.parts[0].hints = draftState.authoring.parts[0].hints.filter(
         (h) => h.id !== id,

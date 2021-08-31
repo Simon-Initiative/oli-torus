@@ -8,11 +8,8 @@ import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
-import {
-  selectCurrentActivity,
-  upsertActivity,
-} from '../../../delivery/store/features/activities/slice';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
@@ -30,6 +27,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const isLayer = getIsLayer();
+  const isBank = getIsBank();
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'question bank';
+  }
 
   const [isDirty, setIsDirty] = useState(false);
   const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
@@ -228,16 +232,16 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         </div>
       )}
 
-      {currentRule && isLayer && (
+      {currentRule && (isLayer || isBank) && (
         <div className="text-center border rounded">
           <div className="card-body">
-            This sequence item is a layer and does not support adaptivity
+            {`This sequence item is a ${sequenceTypeLabel} and does not support adaptivity`}
           </div>
         </div>
       )}
 
       {/* Has Conditions */}
-      {currentRule && !isLayer && (
+      {currentRule && !isLayer && !isBank && (
         <>
           {!(currentRule.default && !currentRule.correct) && (
             <ConditionsBlockEditor

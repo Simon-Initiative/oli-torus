@@ -24,7 +24,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   return (
     paths && (
       <nav
-        className={`aa-header-nav top-panel${
+        className={`aa-header-nav top-panel overflow-hidden${
           isVisible ? ' open' : ''
         } d-flex aa-panel-section-title-bar`}
         style={{
@@ -34,8 +34,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
         }}
       >
         <div className="btn-toolbar" role="toolbar">
-          <AddComponentToolbar />
           <div className="btn-group px-3 border-right align-items-center" role="group">
+            <AddComponentToolbar />
             <ComponentSearchContextMenu />
           </div>
           <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">

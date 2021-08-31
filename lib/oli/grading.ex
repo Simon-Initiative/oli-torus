@@ -14,11 +14,11 @@ defmodule Oli.Grading do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
-  alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   @doc """
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
@@ -198,6 +198,7 @@ defmodule Oli.Grading do
 
     # return gradebook
     column_labels = Enum.map(graded_pages, fn revision -> revision.title end)
+
     {gradebook, column_labels}
   end
 
@@ -244,18 +245,20 @@ defmodule Oli.Grading do
 
     Repo.all(
       from(s in Section,
-        join: p in Publication,
-        on: p.id == s.publication_id,
-        join: m in PublishedResource,
-        on: m.publication_id == p.id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
         join: rev in Revision,
-        on: rev.id == m.revision_id,
+        on: rev.id == pr.revision_id,
         where:
           rev.deleted == false and
             rev.graded == true and
             rev.resource_type_id == ^resource_type_id and
             s.slug == ^section_slug and
             s.status != :deleted,
+        order_by: [rev.inserted_at, rev.id],
+        distinct: true,
         select: rev
       )
     )

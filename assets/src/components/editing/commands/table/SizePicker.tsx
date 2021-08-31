@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 
 type Size = {
@@ -92,7 +91,9 @@ export const SizePicker = (props: SizePickerProps) => {
   return (
     <div className="table-size-picker" style={gridStyle}>
       {rows.map(mapRow)}
-      <div className="table-size-picker-label" style={labelStyle}>{sizeLabel}</div>
+      <div className="table-size-picker-label" style={labelStyle}>
+        {sizeLabel}
+      </div>
     </div>
   );
 };

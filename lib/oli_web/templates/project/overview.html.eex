@@ -19,6 +19,15 @@
         <%= label f, :description, "Course Description", class: "control-label" %>
         <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
       </div>
+      <div class="form-label-group mb-3">
+        <%= label f, :description, "Latest Publication", class: "control-label" %>
+        <%= case @latest_published_publication do %>
+          <% %{edition: edition, major: major, minor: minor} -> %>
+            <p class="text-secondary"><%= "v#{edition}.#{major}.#{minor}" %></p>
+          <% _ -> %>
+            <p class="text-secondary">This project has not been published</p>
+        <% end %>
+      </div>
       <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
     <% end %>
   </div>
@@ -39,6 +48,7 @@
             placeholder: "collaborator@example.edu",
             id: "input-title",
             required: true,
+            autocomplete: "off",
             autofocus: focusHelper(f, :collaborator_emails, default: false) %>
         <%= error_tag f, :collaborator_emails %>
         <div class="input-group-append">
@@ -92,7 +102,7 @@
       <span>Download this project and its contents.</span>
     </div>
     <div class="d-flex align-items-center">
-      <%= case Oli.Publishing.get_latest_published_publication_by_slug!(@project.slug) do %>
+      <%= case Oli.Publishing.get_latest_published_publication_by_slug(@project.slug) do %>
         <% nil -> %>
         <button disabled class="btn btn-link action-button"  data-toggle="tooltip" data-placement="top" title="Project must be published to generate a datashop export file.">Download</button>
         <% _pub -> %>

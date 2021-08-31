@@ -63,12 +63,20 @@ defmodule Oli.Delivery.AttemptsTest do
       }
 
       Seeder.add_page(map, attrs, :p1)
+      |> Seeder.create_section_resources()
     end
 
-    test "create the attempt tree", %{p1: p1, user1: user, section: section, a1: a1, a2: a2} do
+    test "create the attempt tree", %{
+      p1: p1,
+      user1: user,
+      section: section,
+      a1: a1,
+      a2: a2,
+      publication: pub
+    } do
       Attempts.track_access(p1.resource.id, section.slug, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       # verify that creating the attempt tree returns both activity attempts
       {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
@@ -77,7 +85,9 @@ defmodule Oli.Delivery.AttemptsTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           user_id: user.id,
-          activity_provider: activity_provider
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: pub.id
         })
 
       assert Map.has_key?(attempts, a1.resource.id)
@@ -125,7 +135,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 
@@ -160,7 +170,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
       PageContext.create_for_visit(section.slug, revision.slug, user2)
@@ -220,6 +230,7 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.add_user(%{}, :user2)
       |> Seeder.add_activity(%{}, :publication, :project, :author, :activity_a)
       |> Seeder.add_page(%{graded: true}, :graded_page)
+      |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
         %{attempt_number: 1},
         :user1,
@@ -295,7 +306,7 @@ defmodule Oli.Delivery.AttemptsTest do
       graded_page: %{revision: revision},
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 
@@ -362,8 +373,8 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       activity_attempt1: activity_attempt1
     } do
-      assert section ==
-               Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid)
+      assert section.id ==
+               Attempts.get_section_by_activity_attempt_guid(activity_attempt1.attempt_guid).id
     end
 
     test "resource attempt history", %{
@@ -371,7 +382,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 
