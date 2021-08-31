@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -6,9 +5,11 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
 import { contexts } from '../../../types/applicationContext';
+import { parseBool, parseBoolean } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
+import { CapiIframeModel } from './schema';
 
 const fakeUserStorage: any = {};
 const getFromUserStorage = async (simId: string | number, key: string | number) =>
@@ -31,12 +32,11 @@ const getExternalActivityMap = () => {
 
   return result;
 };
-// TODO: fix typing
-const ExternalActivity: React.FC<any> = (props) => {
+
+const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
-  const [activityChanged, setActivityChanged] = useState(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
@@ -52,7 +52,6 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
-
   // these rely on being set every render and the "model" useState value being set
   const { src, title, customCssClass, configData } = model;
 
@@ -131,6 +130,9 @@ const ExternalActivity: React.FC<any> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
     const currentStateSnapshot = initResult.snapshot;
+    if (initResult.context.currentActivity) {
+      simLife.ownerActivityId = initResult.context.currentActivity;
+    }
     if (initResult.context.mode) {
       context = initResult.context.mode;
     }
@@ -254,9 +256,9 @@ const ExternalActivity: React.FC<any> = (props) => {
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
 
   const externalActivityStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: frameY,
-    left: frameX,
+    left: frameX, */
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
@@ -287,6 +289,7 @@ const ExternalActivity: React.FC<any> = (props) => {
     init: false, // initial setup complete; this might be init state?
     ready: false,
     currentState: [],
+    ownerActivityId: 0,
   });
   const [simLife, setSimLife] = useState(getCleanSimLife());
   const [internalState, setInternalState] = useState(state || []);
@@ -326,7 +329,7 @@ const ExternalActivity: React.FC<any> = (props) => {
       if (!isMine) {
         return false;
       }
-      const internalValue = externalActivityMap.get(ms);
+      const internalValue = externalActivityMap.get(`${simLife.ownerActivityId}|${ms}`);
       // mineValue is the value that was passed on to this part component
       // internalVal is the value that is stored locally in key-value pair for value changes comparions
       let mineValue = vars[ms];
@@ -433,7 +436,10 @@ const ExternalActivity: React.FC<any> = (props) => {
               const currentMutateStateSnapshot = payload.mutateChanges;
               //udpate the local key-value pair when variables changed by mutation i.e. from outside
               Object.keys(currentMutateStateSnapshot).forEach((key) => {
-                externalActivityMap.set(key, currentMutateStateSnapshot[key]);
+                externalActivityMap.set(
+                  `${simLife.ownerActivityId}|${key}`,
+                  currentMutateStateSnapshot[key],
+                );
               });
               processInitStateVariable(currentMutateStateSnapshot);
               setSimIsInitStatePassedOnce(false);
@@ -492,7 +498,7 @@ const ExternalActivity: React.FC<any> = (props) => {
         setInternalState(mutableState);
         mutableState.forEach((element) => {
           if (element.id.indexOf(`stage.${id}.`) === 0) {
-            externalActivityMap.set(element.id, element);
+            externalActivityMap.set(`${simLife.ownerActivityId}|${element.id}`, element);
           }
         });
       }
@@ -891,10 +897,8 @@ const ExternalActivity: React.FC<any> = (props) => {
 
   return initStateReceived ? (
     <iframe
-      data-part-component-type={props.type}
-      id={id}
+      data-janus-type={tagName}
       ref={frameRef}
-      className={customCssClass}
       style={externalActivityStyles}
       title={title}
       src={frameSrc}

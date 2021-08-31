@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectPageContent, selectScore, setScore } from '../../store/features/page/slice';
+import { selectScore } from '../../store/features/page/slice';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;

@@ -1,29 +1,28 @@
-import { selectCookieConsent } from "components/cookies/CookieConsent";
+import { selectCookieConsent } from 'components/cookies/CookieConsent';
 
 export type CookieDetails = {
-  name: string,
-  value: string,
-  duration?: number,
-  durationUtc?: string,
-  expiresIso?: string,
-  expiration?: string
+  name: string;
+  value: string;
+  duration?: number;
+  durationUtc?: string;
+  expiresIso?: string;
+  expiration?: string;
 };
 
 export const setCookies = (cookies: CookieDetails[]) => {
   cookies.forEach((cookie) => {
     const d = new Date();
-    if (cookie.duration)
-      d.setTime(d.getTime() + cookie.duration);
+    if (cookie.duration) d.setTime(d.getTime() + cookie.duration);
 
     cookie.durationUtc = d.toUTCString();
     cookie.expiresIso = d.toISOString();
 
-    console.log("the cookie " + JSON.stringify(cookie));
+    console.log('the cookie ' + JSON.stringify(cookie));
 
     setCookie(cookie.name, cookie.value, cookie.durationUtc);
-  })
+  });
   persistCookie(cookies);
-}
+};
 
 export const consentOptions = () => {
   const optSetCookie = getCookie('_cky_opt_choices');
@@ -31,21 +30,21 @@ export const consentOptions = () => {
     necessary: true,
     functionality: true,
     analytics: true,
-    targeting: false
-  }
-  if (optSetCookie !== "") {
+    targeting: false,
+  };
+  if (optSetCookie !== '') {
     userOptions = JSON.parse(optSetCookie);
   }
   return userOptions;
-}
+};
 
 const setCookie = (cname: string, cvalue: string, duration: string) => {
-  const expires = "expires=" + duration;
-  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=None; Secure";
-}
+  const expires = 'expires=' + duration;
+  document.cookie = cname + '=' + cvalue + ';' + expires + ';path=/;SameSite=None; Secure';
+};
 
 const getCookie = (cname: string) => {
-  const name = cname + "=";
+  const name = cname + '=';
   const decodedCookie = decodeURIComponent(document.cookie);
   const ca = decodedCookie.split(';');
   for (let i = 0; i < ca.length; i++) {
@@ -57,52 +56,54 @@ const getCookie = (cname: string) => {
       return c.substring(name.length, c.length);
     }
   }
-  return "";
-}
+  return '';
+};
 
 const processConsent = () => {
   let optInCookie = getCookie('_cky_opt_in');
   const dismissOptIn = getCookie('_cky_opt_in_dismiss');
-  if (optInCookie === "") {
+  if (optInCookie === '') {
     const days = 365 * 24 * 60 * 60 * 1000;
-    setCookies([{ name: "_cky_opt_in", value: "false", duration: days }]);
-    optInCookie = "false";
+    setCookies([{ name: '_cky_opt_in', value: 'false', duration: days }]);
+    optInCookie = 'false';
   }
 
-  if (optInCookie === "false" && dismissOptIn === "") {
+  if (optInCookie === 'false' && dismissOptIn === '') {
     const minutes = 60 * 60 * 1000;
-    setCookies([{ name: "_cky_opt_in_dismiss", value: "true", duration: minutes }]);
+    setCookies([{ name: '_cky_opt_in_dismiss', value: 'true', duration: minutes }]);
     selectCookieConsent();
   }
-}
+};
 
 const persistCookie = (cookies: CookieDetails[]) => {
   fetch('/consent/cookie', {
     method: 'POST',
     headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({ cookies: cookies }),
-  }).then((response) => response.json())
+  })
+    .then((response) => response.json())
     .then((json) => {
-      return json
+      return json;
     })
     .catch((error) => {
-      return error
+      return error;
     });
-}
+};
 
 export const retrieveCookies = (url: string) => {
   const optInCookie = getCookie('_cky_opt_in');
-  if (optInCookie === "") {
+  if (optInCookie === '') {
     fetch(url, {
       method: 'GET',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    }).then((response) => response.json())
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((response) => response.json())
       .then((json) => {
         if (!json.result) {
           const dateNow = new Date();
@@ -114,13 +115,13 @@ export const retrieveCookies = (url: string) => {
                 setCookie(c.name, c.value, c.durationUtc);
               }
             }
-          })
+          });
         }
         processConsent();
-        return json
+        return json;
       })
       .catch((error) => {
-        return error
+        return error;
       });
   }
-}
+};

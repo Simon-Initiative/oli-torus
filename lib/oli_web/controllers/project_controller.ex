@@ -15,6 +15,9 @@ defmodule OliWeb.ProjectController do
   def overview(conn, project_params) do
     project = conn.assigns.project
 
+    latest_published_publication =
+      Publishing.get_latest_published_publication_by_slug(project.slug)
+
     params = %{
       breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
       active: :overview,
@@ -24,13 +27,14 @@ defmodule OliWeb.ProjectController do
         Utils.value_or(
           Map.get(project_params, :changeset),
           Project.changeset(project)
-        )
+        ),
+      latest_published_publication: latest_published_publication
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
   end
 
-  def unpublished(pub), do: pub.published == false
+  def unpublished(pub), do: pub.published == nil
 
   def resource_editor(conn, _project_params) do
     render(conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor)
@@ -40,42 +44,38 @@ defmodule OliWeb.ProjectController do
     project = conn.assigns.project
 
     latest_published_publication =
-      Publishing.get_latest_published_publication_by_slug!(project.slug)
+      Publishing.get_latest_published_publication_by_slug(project.slug)
 
-    active_publication = Publishing.get_unpublished_publication_by_slug!(project.slug)
+    active_publication = Publishing.project_working_publication(project.slug)
 
     # publish
-    {has_changes, active_publication_changes, parent_pages} =
+    {version_change, active_publication_changes, parent_pages} =
       case latest_published_publication do
         nil ->
           {true, nil, %{}}
 
         _ ->
-          changes =
+          {version_change, changes} =
             Publishing.diff_publications(latest_published_publication, active_publication)
-            |> (&:maps.filter(fn _, v -> v != :identical end, &1)).()
-
-          has_changes =
-            Map.values(changes)
-            |> Enum.any?(fn {status, _} -> status != :identical end)
 
           parent_pages =
-            if has_changes do
-              Map.values(changes)
-              |> Enum.filter(fn {status, _} -> status != :identical end)
-              |> Enum.map(fn {_, %{revision: revision}} -> revision end)
-              |> Enum.filter(fn r ->
-                r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
-              end)
-              |> Enum.map(fn r -> r.resource_id end)
-              |> Oli.Publishing.determine_parent_pages(
-                Oli.Publishing.AuthoringResolver.publication(project.slug).id
-              )
-            else
-              %{}
+            case version_change do
+              {:no_changes, _} ->
+                %{}
+
+              _ ->
+                Map.values(changes)
+                |> Enum.map(fn {_, %{revision: revision}} -> revision end)
+                |> Enum.filter(fn r ->
+                  r.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("activity")
+                end)
+                |> Enum.map(fn r -> r.resource_id end)
+                |> Oli.Publishing.determine_parent_pages(
+                  Oli.Publishing.project_working_publication(project.slug).id
+                )
             end
 
-          {has_changes, changes, parent_pages}
+          {version_change, changes, parent_pages}
       end
 
     base_url = Oli.Utils.get_base_url()
@@ -86,14 +86,21 @@ defmodule OliWeb.ProjectController do
     public_keyset_url = "#{base_url}/.well-known/jwks.json"
     redirect_uris = "#{base_url}/lti/launch"
 
+    has_changes = case version_change do
+      {:no_changes, _} -> false
+      _ -> true
+    end
+
     render(conn, "publish.html",
       # page
       breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
       active: :publish,
 
       # publish
+      unpublished: active_publication_changes == nil,
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,
+      version_change: version_change,
       has_changes: has_changes,
       parent_pages: parent_pages,
       developer_key_url: developer_key_url,
@@ -112,9 +119,11 @@ defmodule OliWeb.ProjectController do
     |> redirect(to: Routes.project_path(conn, :publish, project))
   end
 
-  def publish_active(conn, _params) do
+  def publish_active(conn, params) do
     project = conn.assigns.project
-    Publishing.publish_project(project)
+    description = params["description"]
+
+    Publishing.publish_project(project, description)
 
     conn
     |> put_flash(:info, "Publish Successful!")
@@ -155,7 +164,8 @@ defmodule OliWeb.ProjectController do
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
-          changeset: changeset
+          changeset: changeset,
+          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn
@@ -205,9 +215,11 @@ defmodule OliWeb.ProjectController do
         |> redirect(to: Routes.project_path(conn, :overview, project))
 
       {:error, message} ->
+        project = conn.assigns.project
+
         conn
         |> put_flash(:error, "Project could not be copied: " <> message)
-        |> render("overview.html")
+        |> redirect(to: Routes.project_path(conn, :overview, project))
     end
   end
 
@@ -223,7 +235,8 @@ defmodule OliWeb.ProjectController do
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
-          changeset: changeset
+          changeset: changeset,
+          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn

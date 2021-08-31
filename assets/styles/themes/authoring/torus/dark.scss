@@ -183,11 +183,31 @@ $workspace-breadcrumb-bg: $gray-800;
 // This import is required and must always be after the last variable
 // declaration and before any custom styles in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
-@import "authoring.scss";
+@import 'authoring.scss';
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Theme-specific custom styles **/
 html.authoring {
+  .add-resource-popover {
+    .add-resource-popover-content {
+      .header {
+        color: darkgray;
+      }
+
+      hr {
+        color: darkgray;
+      }
+
+      .type-label {
+        color: white;
+      }
+
+      .type-description {
+        color: lightgray;
+      }
+    }
+  }
+
   /** Theme-specific custom styles for authoring **/
   .objectives {
     .objective {

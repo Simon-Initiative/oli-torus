@@ -11,11 +11,12 @@ defmodule Oli.Activities.Realizer.Query.Source do
   attempts".
   """
 
-  @enforce_keys [:publication_id, :blacklisted_activity_ids]
-  defstruct [:publication_id, :blacklisted_activity_ids]
+  @enforce_keys [:publication_id, :blacklisted_activity_ids, :section_slug]
+  defstruct [:publication_id, :blacklisted_activity_ids, :section_slug]
 
   @type t() :: %__MODULE__{
           publication_id: integer(),
-          blacklisted_activity_ids: [integer()]
+          blacklisted_activity_ids: [integer()],
+          section_slug: String.t()
         }
 end

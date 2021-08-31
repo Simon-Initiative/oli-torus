@@ -94,7 +94,7 @@ defmodule OliWeb.ActivityControllerTest do
   end
 
   describe "create and then delete a secondary resource" do
-    test "fails when attempting to delete an activity primary document", %{
+    test "succeeds when attempting to delete an activity primary document", %{
       conn: conn,
       project: project,
       activity_id: activity_id,
@@ -108,7 +108,7 @@ defmodule OliWeb.ActivityControllerTest do
           })
         )
 
-      assert response(conn, 400)
+      assert response(conn, 200)
     end
 
     test "creates a secondary resource for an activity", %{
@@ -217,6 +217,50 @@ defmodule OliWeb.ActivityControllerTest do
 
       r = AuthoringResolver.from_resource_id(project.slug, activity_id)
       assert r.title == "updated title"
+      assert r.content["1"] == "2"
+      assert length(r.content["authoring"]["parts"]) == 1
+    end
+
+    test "bulk update", %{
+      conn: conn,
+      project: project,
+      activity_id: activity_id,
+      activity_id2: activity_id2,
+      revision1: revision
+    } do
+      updates = %{
+        "updates" => [
+          %{
+            "resource_id" => activity_id,
+            "title" => "updated title1",
+            "content" => %{"1" => "2"}
+          },
+          %{
+            "resource_id" => activity_id2,
+            "title" => "updated title2",
+            "content" => %{"1" => "2"}
+          }
+        ]
+      }
+
+      conn =
+        put(
+          conn,
+          Routes.activity_path(conn, :bulk_update, project.slug, %{
+            "lock" => revision.resource_id
+          }),
+          updates
+        )
+
+      assert %{"result" => "success"} = json_response(conn, 200)
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert r.title == "updated title1"
+      assert r.content["1"] == "2"
+      assert length(r.content["authoring"]["parts"]) == 1
+
+      r = AuthoringResolver.from_resource_id(project.slug, activity_id2)
+      assert r.title == "updated title2"
       assert r.content["1"] == "2"
       assert length(r.content["authoring"]["parts"]) == 1
     end
@@ -337,7 +381,10 @@ defmodule OliWeb.ActivityControllerTest do
     {:ok, {%{slug: slug, resource_id: activity_id}, _}} =
       ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
-    seeds = Map.put(seeds, :activity_id, activity_id)
+    {:ok, {%{slug: slug2, resource_id: activity_id2}, _}} =
+      ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+    seeds = Map.put(seeds, :activity_id, activity_id) |> Map.put(:activity_id2, activity_id2)
 
     update = %{
       "content" => %{
@@ -346,6 +393,12 @@ defmodule OliWeb.ActivityControllerTest do
             "type" => "activity-reference",
             "id" => 1,
             "activitySlug" => slug,
+            "purpose" => "none"
+          },
+          %{
+            "type" => "activity-reference",
+            "id" => 2,
+            "activitySlug" => slug2,
             "purpose" => "none"
           }
         ]

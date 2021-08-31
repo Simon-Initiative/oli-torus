@@ -1,2 +1,1 @@
-
 export { ShortAnswerDelivery } from './ShortAnswerDelivery';

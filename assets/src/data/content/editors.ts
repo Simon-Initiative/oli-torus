@@ -9,10 +9,10 @@ export type EditorDesc = {
   friendlyName: string;
   globallyAvailable: boolean;
   enabledForProject: boolean;
+  id: number;
 };
 
 export interface ActivityEditorMap {
-
   // Index signature
   [prop: string]: EditorDesc;
 }

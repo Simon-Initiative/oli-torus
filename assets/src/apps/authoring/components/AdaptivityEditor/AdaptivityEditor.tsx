@@ -8,11 +8,8 @@ import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
-import {
-  selectCurrentActivity,
-  upsertActivity,
-} from '../../../delivery/store/features/activities/slice';
-import { getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
+import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
@@ -30,6 +27,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const isLayer = getIsLayer();
+  const isBank = getIsBank();
+  let sequenceTypeLabel = '';
+  if (isLayer) {
+    sequenceTypeLabel = 'layer';
+  } else if (isBank) {
+    sequenceTypeLabel = 'question bank';
+  }
 
   const [isDirty, setIsDirty] = useState(false);
   const [isDisabled, setIsDisabled] = useState(!!currentRule?.disabled);
@@ -139,6 +143,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
       case 'navigation':
@@ -149,6 +154,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
       case 'mutateState':
@@ -159,6 +165,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
+            onDelete={handleDeleteAction}
           />
         );
     }
@@ -209,6 +216,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
     }
   };
 
+  const handleDeleteAction = async (action: any) => {
+    // TODO: get rid of orphaned feedback ensembles!
+    const temp = actions.filter((a: any) => a !== action);
+    setActions(temp);
+    debounceNotifyChanges();
+  };
+
   return (
     <div className="aa-adaptivity-editor">
       {/* No Conditions */}
@@ -218,25 +232,29 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         </div>
       )}
 
-      {currentRule && isLayer && (
+      {currentRule && (isLayer || isBank) && (
         <div className="text-center border rounded">
           <div className="card-body">
-            This sequence item is a layer and does not support adaptivity
+            {`This sequence item is a ${sequenceTypeLabel} and does not support adaptivity`}
           </div>
         </div>
       )}
 
       {/* Has Conditions */}
-      {currentRule && !isLayer && (
+      {currentRule && !isLayer && !isBank && (
         <>
-          <ConditionsBlockEditor
-            id="root"
-            type={rootConditionIsAll ? 'all' : 'any'}
-            rootConditions={conditions}
-            onChange={handleConditionsEditorChange}
-            index={-1}
-          />
-          <p className="mt-3 mb-0">Perform the following actions:</p>
+          {!(currentRule.default && !currentRule.correct) && (
+            <ConditionsBlockEditor
+              id="root"
+              type={rootConditionIsAll ? 'all' : 'any'}
+              rootConditions={conditions}
+              onChange={handleConditionsEditorChange}
+              index={-1}
+            />
+          )}
+          <p className={`${currentRule.default && !currentRule.correct ? '' : 'mt-3'} mb-0`}>
+            Perform the following actions:
+          </p>
           <div className="aa-actions pt-3 mt-2 d-flex w-100">
             <OverlayTrigger
               placement="top"
@@ -281,7 +299,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
               </button>
             </div>
             <div className="d-flex flex-column w-100">
-              {actions.length === 0 && <div>No actions. This rule will not do anything.</div>}
+              {actions.length === 0 && (
+                <div className="text-danger">No actions. This rule will not do anything.</div>
+              )}
               {actions.length > 0 && actions.map((action: any) => getActionEditor(action))}
             </div>
           </div>

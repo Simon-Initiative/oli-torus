@@ -13,8 +13,12 @@ import {
 
 import { OrderedMediaLibrary } from 'components/media/OrderedMediaLibrary';
 
-export type ActionTypes = FetchMediaPageAction | ResetMediaAction | ReceiveMediaPageAction
-  | SideloadDataAction | LoadMediaReferencesAction;
+export type ActionTypes =
+  | FetchMediaPageAction
+  | ResetMediaAction
+  | ReceiveMediaPageAction
+  | SideloadDataAction
+  | LoadMediaReferencesAction;
 
 export type MediaState = OrderedMediaLibrary;
 
@@ -24,10 +28,7 @@ export function initMediaState(json: any) {
 
 const initialState = new OrderedMediaLibrary();
 
-export const media = (
-  state: MediaState = initialState,
-  action: ActionTypes,
-): MediaState => {
+export const media = (state: MediaState = initialState, action: ActionTypes): MediaState => {
   switch (action.type) {
     case FETCH_MEDIA_PAGE: {
       const { reqId } = action;

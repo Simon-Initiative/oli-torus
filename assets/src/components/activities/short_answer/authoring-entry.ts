@@ -1,4 +1,3 @@
-
 export { ShortAnswerDelivery } from './ShortAnswerDelivery';
 export { ShortAnswerAuthoring } from './ShortAnswerAuthoring';
 

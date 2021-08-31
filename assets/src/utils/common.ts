@@ -72,7 +72,7 @@ export const isStringArray = (s: unknown): boolean =>
 // otherwise we could just parse
 export const parseArray = (val: unknown): unknown[] => {
   if (Array.isArray(val)) {
-    return val;
+    return val.map((item: string) => parseNumString(item));
   }
 
   if (isStringArray(val)) {
@@ -99,7 +99,7 @@ export const parseArray = (val: unknown): unknown[] => {
         .split(/,\n/g);
       return innerEls.map(parseArray);
     } else {
-      const elements = inner.split(',');
+      const elements = inner.split(',').map((item: string) => parseNumString(item));
       const isEmpty = elements.length === 1 && elements[0] === '';
       const parsedArray = isEmpty ? [] : elements;
       if (isNested) {
@@ -107,6 +107,7 @@ export const parseArray = (val: unknown): unknown[] => {
       }
 
       return parsedArray.map((element) => {
+        if (typeof element !== 'string') return element;
         if (element.match(/^\s+$/)) {
           return element;
         } else {
@@ -118,8 +119,11 @@ export const parseArray = (val: unknown): unknown[] => {
 
   if (!val) {
     return [];
+  } else if (typeof val === 'string') {
+    //if the val = 'abc' or val = '3,1,8' then it does not go in any of the above conditions and was throwing error. Since this fn will be used in contains operator as well, we need to return something
+    // because there could be a rules saying val.contains('abc'). it's not an array but it is valid condition
+    return val.split(',').map((item: string) => parseNumString(item));
   }
-
   // if we hit this, it was something WAY off
   const err = new Error('not a valid array');
   // console.error(err, { val });
@@ -133,4 +137,9 @@ export const parseBool = (val: any) => {
   const num: number = +val;
   // have to ignore the false searchValue in 'replace'
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
+};
+
+export const parseNumString = (item: string): string | number => {
+  // check if items are strings or numbers and converts if number
+  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item;
 };

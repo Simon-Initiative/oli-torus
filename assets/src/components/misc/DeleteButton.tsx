@@ -1,8 +1,8 @@
 import React from 'react';
 
 export type DeleteButtonProps = {
-  onClick: () => void,
-  editMode: boolean,
+  onClick: () => void;
+  editMode: boolean;
 };
 
 export const DeleteButton = (props: DeleteButtonProps) => (
@@ -14,7 +14,10 @@ export const DeleteButton = (props: DeleteButtonProps) => (
     type="button"
     className="p-0 mr-2 d-flex align-items-center justify-content-center btn btn-sm btn-delete"
     aria-label="delete"
-    onClick={props.onClick}>
-    <span className="material-icons" aria-hidden="true">delete</span>
+    onClick={props.onClick}
+  >
+    <span className="material-icons" aria-hidden="true">
+      delete
+    </span>
   </button>
 );

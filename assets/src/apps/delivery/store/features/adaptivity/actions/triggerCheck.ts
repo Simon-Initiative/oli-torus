@@ -115,7 +115,7 @@ export const triggerCheck = createAsyncThunk(
       const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
       const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
 
-      const treeActivityIds = currentActivityTree.map((a) => a.id);
+      const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
       const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
 
       const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
@@ -158,7 +158,7 @@ export const triggerCheck = createAsyncThunk(
       // because the server doesn't know the current sequence id and will strip out
       // all sequence ids from the path for these only
 
-      const treeActivityIds = currentActivityTree.map((a) => a.id);
+      const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
       const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

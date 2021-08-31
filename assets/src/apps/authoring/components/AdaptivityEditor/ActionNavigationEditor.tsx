@@ -6,10 +6,11 @@ import guid from 'utils/guid';
 interface ActionNavigationEditorProps {
   action: NavigationAction;
   onChange: (changes: NavigationActionParams) => void;
+  onDelete: (changes: NavigationAction) => void;
 }
 
 const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
-  const { action, onChange } = props;
+  const { action, onChange, onDelete } = props;
   const [target, setTarget] = useState(action?.params?.target || '');
   const uuid = guid();
 
@@ -52,7 +53,7 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1">
+          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>

@@ -50,7 +50,7 @@ export class Evaluator {
     for (let i = 0; i < args.length; i += 1) {
       // add space between arguments
       if (i > 0) {
-        this.printOne(' ', ctx)
+        this.printOne(' ', ctx);
       }
       this.printOne(args[i], ctx);
     }

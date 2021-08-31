@@ -1,24 +1,16 @@
 /* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
-import { parseBool } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import { contexts } from '../../../types/applicationContext';
+import { parseBool } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
-
-interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
-  minValue: number;
-  maxValue: number;
-  unitsLabel: string;
-  label: string;
-  showLabel: boolean;
-  showIncrementArrows: boolean;
-}
+import { InputNumberModel } from './schema';
 
 const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -232,14 +224,10 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   }, [inputNumberValue]);
 
   return ready ? (
-    <div
-      data-janus-type={props.type}
-      className={`number-input ${cssClass}`}
-      style={inputNumberDivStyles}
-    >
+    <div data-janus-type={tagName} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
-          <label htmlFor={id} className="inputNumberLabel">
+          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
             {label.length > 0 ? label : ''}
           </label>
           <br />
@@ -249,7 +237,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         type="number"
         disabled={!enabled}
         onChange={handleOnChange}
-        id={id}
+        id={`${id}-number-input`}
         min={minValue}
         max={maxValue}
         className={`${customCssClass} ${showIncrementArrows ? '' : 'hideIncrementArrows'}`}

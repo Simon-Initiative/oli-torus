@@ -81,7 +81,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
         case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
-          {:ok, _} -> {:ok, decodedResults}
+          {:ok, _} ->
+            {:ok, decodedResults}
+
           {:error, err} ->
             Logger.debug("Error in apply client results! #{err}")
             {:error, err}
@@ -169,7 +171,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                       # part_inputs are assumed to be from the current activity only
                       # so we strip out the sequence id from the path to get our "local"
                       # values for the rules
-                      local_path = Enum.at(Enum.take(String.split(path, "|"), -1), 0, path)
+                      # might look like this "q:1465253111364:752|stage.dragdrop.Drag and Drop.Body Fossil | Direct Evidence.Count"
+                      path_parts = String.split(path, "|stage")
+                      path_interested = List.last(path_parts)
+
+                      local_path =
+                        if String.starts_with?(path_interested, ".") do
+                          "stage" <> path_interested
+                        else
+                          path_interested
+                        end
+
                       value = Map.get(input, "value")
                       Map.put(acc1, local_path, value)
                     end
@@ -278,29 +290,31 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   def evaluate_from_stored_input(activity_attempt_guid) do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-    if Enum.all?(part_attempts, fn pa -> pa.response != nil end) do
-      roll_up_fn = fn result ->
-        rollup_part_attempt_evaluations(activity_attempt_guid)
-        result
-      end
+    roll_up_fn = fn result ->
+      rollup_part_attempt_evaluations(activity_attempt_guid)
+      result
+    end
 
-      # derive the part_attempts from the currently saved state that we expect
-      # to find in the part_attempts
-      part_inputs =
-        Enum.map(part_attempts, fn p ->
-          %{
-            attempt_guid: p.attempt_guid,
-            input: %StudentInput{input: Map.get(p.response, "input")}
-          }
-        end)
+    # derive the part_attempts from the currently saved state that we expect
+    # to find in the part_attempts
+    part_inputs =
+      Enum.map(part_attempts, fn p ->
+        input =
+          case p.response do
+            nil -> nil
+            map -> Map.get(map, "input")
+          end
 
-      case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-           |> persist_evaluations(part_inputs, roll_up_fn) do
-        {:ok, _} -> part_attempts
-        {:error, error} -> Repo.rollback(error)
-      end
-    else
-      Repo.rollback({:not_all_answered})
+        %{
+          attempt_guid: p.attempt_guid,
+          input: %StudentInput{input: input}
+        }
+      end)
+
+    case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
+         |> persist_evaluations(part_inputs, roll_up_fn) do
+      {:ok, _} -> part_attempts
+      {:error, error} -> Repo.rollback(error)
     end
   end
 

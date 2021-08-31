@@ -9,20 +9,17 @@
 //
 import 'phoenix_html';
 
-import { Socket } from 'phoenix'
+import { Socket } from 'phoenix';
 import NProgress from 'nprogress';
 import { LiveSocket } from 'phoenix_live_view';
 import { Hooks } from 'hooks';
-import {
-  initActivityBridge,
-  initPreviewActivityBridge,
-} from './activity_bridge';
+import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
-import {selectCookieConsent} from "components/cookies/CookieConsent";
-import {selectCookiePreferences} from "components/cookies/CookiePreferences";
-import {retrieveCookies} from "components/cookies/utils";
+import { selectCookieConsent } from 'components/cookies/CookieConsent';
+import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
+import { retrieveCookies } from 'components/cookies/utils';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
 
 import * as React from 'react';
@@ -53,9 +50,8 @@ window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
 
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
-
   ReactDOM.render(React.createElement(Component, context), element);
-};
+}
 
 // Global functions and objects:
 (window as any).OLI = {
@@ -67,7 +63,7 @@ function mount(Component: any, element: HTMLElement, context: any = {}) {
   selectCookiePreferences,
   retrieveCookies,
   onReady,
-  CreateAccountPopup:  (node: any, props: any) => mount(CreateAccountPopup, node, props),
+  CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
 
 // connect if there are any LiveViews on the page

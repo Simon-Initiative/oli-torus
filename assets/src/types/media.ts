@@ -19,7 +19,7 @@ export type MediaRef = {
 };
 
 export type PaginatedResponse<T> = {
-  type: 'success',
+  type: 'success';
   offset: number;
   limit: number;
   order: string;

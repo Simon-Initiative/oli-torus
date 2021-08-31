@@ -51,13 +51,13 @@ export const Editors = (props: EditorsProps) => {
   }, {});
 
   const {
-    editorMap,
     editMode,
     graded,
     content,
     activityContexts,
     projectSlug,
     resourceSlug,
+    editorMap,
     onEditContentList,
     onAddItem,
     onActivityEdit,
@@ -81,8 +81,7 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
     };
 
-    const purposes =
-      contentValue.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
+    const purposes = contentValue.type === 'content' ? ContentPurposes : ActivityPurposes;
 
     const dragPayload = getDragPayload(contentValue, activityContexts, projectSlug);
     const onDragStart = dragStartHandler(dragPayload, contentValue, setActiveDragId);
@@ -121,6 +120,7 @@ export const Editors = (props: EditorsProps) => {
       objectivesMap,
       editorProps,
       allObjectives,
+      editorMap,
       onEdit,
       onActivityEdit,
       onPostUndoable,

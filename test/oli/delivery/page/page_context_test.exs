@@ -47,6 +47,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
       }
 
       Seeder.add_page(map, attrs, :p1)
+      |> Seeder.create_section_resources()
     end
 
     test "create_context/2 returns the activities mapped correctly",
@@ -67,6 +68,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         container_revision,
         publication
       )
+
+      Seeder.rebuild_section_resources(%{section: section, publication: publication})
 
       context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
 
@@ -89,6 +92,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
+      Seeder.rebuild_section_resources(%{section: section, publication: publication})
+
       context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page == nil
       assert context.next_page.resource_id == page2.id
@@ -100,6 +105,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         publication
       )
 
+      Seeder.rebuild_section_resources(%{section: section, publication: publication})
+
       context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page.resource_id == page2.id
       assert context.next_page == nil
@@ -110,6 +117,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         container_revision,
         publication
       )
+
+      Seeder.rebuild_section_resources(%{section: section, publication: publication})
 
       context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
       assert context.previous_page == nil

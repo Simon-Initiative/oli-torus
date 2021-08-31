@@ -10,7 +10,7 @@ defmodule OliWeb.RevisionHistory.Table do
         <span class="badge badge-success">Currently Published</span>
         """
 
-      %{publication: %{published: true}} ->
+      %{publication: %{published: published}} when not is_nil(published) ->
         ~L"""
         <span class="badge badge-info">Previously Published</span>
         """

@@ -1,7 +1,9 @@
 {
     "id": "janus_mcq",
-    "friendlyName": "MultipleChoiceQuestion",
+    "friendlyName": "Multiple Choice Question",
     "description": "Displays a Multiple Choice Question",
+    "icon": "icon-part-mcq.svg",
+    "author": "Project Janus Team",
     "global": true,
     "delivery": {
         "element": "janus-mcq",

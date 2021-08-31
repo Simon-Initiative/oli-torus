@@ -44,9 +44,9 @@ export class Actions {
       updateResponseRules(model);
 
       const undoable = makeUndoable('Removed a choice', [
-        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring)},
-        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice)}
-      ])
+        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice) },
+      ]);
       post(undoable);
     };
   }
@@ -66,7 +66,9 @@ export class Actions {
 
   static editTargetedFeedbackChoices(responseId: ResponseId, choiceIds: ChoiceId[]) {
     return (model: Ordering) => {
-      const assoc = model.authoring.targeted.find((assoc: any) => getResponseId(assoc) === responseId);
+      const assoc = model.authoring.targeted.find(
+        (assoc: any) => getResponseId(assoc) === responseId,
+      );
       if (!assoc) return;
       assoc[0] = choiceIds;
       updateResponseRules(model);

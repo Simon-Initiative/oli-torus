@@ -56,7 +56,7 @@ defmodule OliWeb.Accounts.AccountsLive do
         }
       ],
       event_suffix: "_authors",
-      id_field: :email
+      id_field: ["author", :id]
     )
     |> then(fn {:ok, authors_model} -> authors_model end)
     |> Map.put(:author, current_author)
@@ -90,7 +90,7 @@ defmodule OliWeb.Accounts.AccountsLive do
         }
       ],
       event_suffix: "_users",
-      id_field: :email
+      id_field: ["user", :id]
     )
   end
 
@@ -194,6 +194,7 @@ defmodule OliWeb.Accounts.AccountsLive do
             <% end %>
 
             <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_user" phx-value-id="<%= id %>">Delete</button>
+
           </div>
         </div>
       """
@@ -267,6 +268,7 @@ defmodule OliWeb.Accounts.AccountsLive do
             <% end %>
 
             <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_author" phx-value-id="<%= id %>">Delete</button>
+
           </div>
         </div>
       """

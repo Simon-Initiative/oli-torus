@@ -58,6 +58,10 @@ defmodule Oli.Accounts.User do
       join_through: "users_platform_roles",
       on_replace: :delete
 
+    many_to_many :users, Oli.Delivery.Sections.UserGroup,
+      join_through: "user_groups_users",
+      on_replace: :delete
+
     timestamps(type: :utc_datetime)
   end
 
@@ -144,6 +148,7 @@ defmodule Oli.Accounts.User do
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
+    |> maybe_create_unique_sub()
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 

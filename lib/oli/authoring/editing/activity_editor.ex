@@ -68,7 +68,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   @doc """
-  Deletes a secondary activity resource.
+  Deletes an activity document or a secondary activity resource.
 
   Returns:
 
@@ -87,15 +87,17 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_applicable}}
   def delete(project_slug, lock_id, activity_id, author) do
     secondary_id = Oli.Resources.ResourceType.get_id_by_type("secondary")
+    activity_resource_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
          {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil(),
          {:ok, revision} <- get_latest_revision(publication.id, activity.id) |> trap_nil() do
-      if secondary_id == revision.resource_type_id do
+      if secondary_id == revision.resource_type_id or
+           activity_resource_id == revision.resource_type_id do
         Repo.transaction(fn ->
           update = %{"deleted" => true}
 
@@ -150,7 +152,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            {:ok, _} <-
              AuthoringResolver.from_resource_id(project_slug, activity_id) |> trap_nil(),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, secondary_revision} <-
              create_secondary_revision(activity_id, author.id, validated_update),
            {:ok, _} <-
@@ -184,6 +186,130 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     Resources.create_revision(with_type)
   end
 
+  defp authorize_edit(project_slug, author_email, updates) do
+    with {:ok, _} <- validate_request(updates),
+         {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
+         {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil() do
+      {:ok, {author, project, publication}}
+    else
+      error -> error
+    end
+  end
+
+  @doc """
+  Attempts to process a collection of edits for an activity specified by a given
+  project and revision slug and activity slug for the author specified by email.
+
+  The updates parameter is a list of maps containing key-value pairs of the
+  attributes of a Revision that are to be edited, including the resource id. It can
+  contain any number of key-value pairs, but the keys must match
+  the schema of `%Revision{}` struct.
+
+  Not acquiring the lock here is considered a failure, as it is
+  not an expected condition that a client would encounter. The client
+  should have first acquired the lock via `acquire_lock`.
+
+  Returns:
+
+  .`{:ok, [%Revision{}]}` when the edit processes successfully
+  .`{:error, {:lock_not_acquired, {user_email, updated_at}}}` if the lock could not be acquired or updated
+  .`{:error, {:not_found}}` if the project, resource, activity, or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to edit this activity
+  .`{:error, {:invalid_update_field}}` if the update contains an invalid field
+  .`{:error, {:error}}` unknown error
+  """
+  @spec bulk_edit(String.t(), String.t(), String.t(), %{}) ::
+          {:ok, %Revision{}}
+          | {:error, {:not_found}}
+          | {:error, {:error}}
+          | {:error, {:lock_not_acquired, any()}}
+          | {:error, {:not_authorized}}
+  def bulk_edit(project_slug, lock_id, author_email, updates) do
+    result =
+      with {:ok, {author, project, publication}} <-
+             authorize_edit(project_slug, author_email, updates),
+           {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil() do
+        Repo.transaction(fn ->
+          case Locks.update(project.slug, publication.id, resource.id, author.id) do
+            # If we acquired the lock, we must first create a new revision
+            {:acquired} ->
+              case process_with_new_revision(updates, publication, author, project) do
+                {:ok, revisions} -> revisions
+                {:error, e} -> Repo.rollback(e)
+              end
+
+            # A successful lock update means we can safely edit the existing revision
+            # unless, that is, if the update would change the corresponding slug.
+            # In that case we need to create a new revision. Otherwise, future attempts
+            # to resolve this activity via the historical slugs would fail.
+            {:updated} ->
+              case process_with_maybe_new_revision(updates, publication, author, project) do
+                {:ok, revisions} -> revisions
+                {:error, e} -> Repo.rollback(e)
+              end
+
+            # error or not able to lock results in a failed edit
+            result ->
+              Repo.rollback(result)
+          end
+        end)
+      else
+        error -> error
+      end
+
+    case result do
+      {:ok, revisions} ->
+        Enum.each(revisions, fn r -> Broadcaster.broadcast_revision(r, project_slug) end)
+        {:ok, revisions}
+
+      e ->
+        e
+    end
+  end
+
+  defp process_with_new_revision(updates, publication, author, project) do
+    results =
+      Enum.map(updates, fn update ->
+        case Resources.get_resource(Map.get(update, "resource_id")) do
+          nil ->
+            nil
+
+          activity ->
+            get_latest_revision(publication.id, activity.id)
+            |> create_new_revision(publication, activity, author.id)
+            |> update_revision(update, project.slug)
+        end
+      end)
+
+    case Enum.all?(results, fn r -> r != nil end) do
+      true -> {:ok, results}
+      false -> {:error, {:not_found}}
+    end
+  end
+
+  defp process_with_maybe_new_revision(updates, publication, author, project) do
+    results =
+      Enum.map(updates, fn update ->
+        case Resources.get_resource(Map.get(update, "resource_id")) do
+          nil ->
+            nil
+
+          activity ->
+            get_latest_revision(publication.id, activity.id)
+            |> maybe_create_new_revision(publication, activity, author.id, update)
+            |> update_revision(update, project.slug)
+        end
+      end)
+
+    case Enum.all?(results, fn r -> r != nil end) do
+      true -> {:ok, results}
+      false -> {:error, {:not_found}}
+    end
+  end
+
   @doc """
   Attempts to process an edit for an activity specified by a given
   project and revision slug and activity slug for the author specified by email.
@@ -214,13 +340,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_authorized}}
   def edit(project_slug, lock_id, activity_id, author_email, update) do
     result =
-      with {:ok, _} <- validate_request(update),
-           {:ok, author} <- Accounts.get_author_by_email(author_email) |> trap_nil(),
-           {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
-           {:ok} <- authorize_user(author, project),
+      with {:ok, {author, project, _publication}} <-
+             authorize_edit(project_slug, author_email, update),
            {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource(lock_id) |> trap_nil() do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
@@ -302,7 +426,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         primary_resource_id: previous.primary_resource_id,
         scoring_strategy_id: previous.scoring_strategy_id,
         previous_revision_id: previous.id,
-        activity_type_id: previous.activity_type_id
+        activity_type_id: previous.activity_type_id,
+        scope: previous.scope
       })
 
     Publishing.get_published_resource!(publication.id, activity.id)
@@ -361,15 +486,35 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     parts = update["content"]["authoring"]["parts"]
     update = sync_objectives_to_parts(objectives, update, parts)
 
+    # do not allow resource_id, if present, to be editable.  resource_id is only allowed to be
+    # present in bulk update situations so that the server knows which resource we are editing
+    update = Map.delete(update, "resource_id")
+
     {:ok, updated} = Resources.update_revision(revision, update)
 
     updated
   end
 
   # Check to see if this update is valid
+  defp validate_request(update) when is_list(update) do
+    all_valid? =
+      Enum.map(update, fn u -> validate_request(u) end)
+      |> Enum.all?(fn result ->
+        case result do
+          {:ok, _} -> true
+          _ -> false
+        end
+      end)
+
+    case all_valid? do
+      true -> {:ok, update}
+      _ -> {:error, {:invalid_update_field}}
+    end
+  end
+
   defp validate_request(update) do
     # Ensure that only these top-level keys are present
-    allowed = MapSet.new(~w"objectives title content authoring releaseLock")
+    allowed = MapSet.new(~w"objectives title content authoring releaseLock resource_id")
 
     case Map.keys(update)
          |> Enum.all?(fn k -> MapSet.member?(allowed, k) end) do
@@ -418,12 +563,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives) do
+  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded") do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
            {:ok, publication} <-
-             Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+             Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
            {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
@@ -434,6 +579,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                objectives: attached_objectives,
                author_id: author.id,
                content: model,
+               scope: scope,
                activity_type_id: activity_type.id
              }),
            {:ok, _} <-
@@ -485,7 +631,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   """
   def create_context(project_slug, revision_slug, activity_slug, author) do
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug) |> trap_nil(),
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
          {:ok, all_objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),

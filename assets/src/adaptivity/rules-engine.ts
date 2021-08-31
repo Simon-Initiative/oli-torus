@@ -16,7 +16,7 @@ import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
-import { bulkApplyState, evalScript, getAssignScript, getValue } from './scripting';
+import { bulkApplyState, evalAssignScript, evalScript, getValue } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;
@@ -226,12 +226,10 @@ export const check = async (
 ): Promise<CheckResult | string> => {
   // load the std lib
   const { env } = evalScript(janus_std);
-  // setup script env context
-  const assignScript = getAssignScript(state);
-  // $log.info('assign: ', assignScript);
-  const stateEvalResult = evalScript(assignScript, env);
-  // TODO: check result for errors
-  console.log('CHECK', { assignScript, stateEvalResult });
+
+  const { result: assignResults } = evalAssignScript(state, env);
+  console.log('RULES ENGINE STATE ASSIGN', { assignResults, state, env });
+
   // evaluate all rule conditions against context
   const enabledRules = rules.filter((r) => !r.disabled);
   if (enabledRules.length === 0 || !enabledRules.find((r) => r.default && !r.correct)) {

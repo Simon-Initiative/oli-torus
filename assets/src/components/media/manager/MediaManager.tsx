@@ -150,12 +150,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
   }
 
   componentDidMount() {
-    const {
-      mimeFilter,
-      initialSelectionPaths,
-      onLoadCourseMediaNextPage,
-      onLoadMediaItemByPath,
-    } = this.props;
+    const { mimeFilter, initialSelectionPaths, onLoadCourseMediaNextPage, onLoadMediaItemByPath } =
+      this.props;
     const { searchText, orderBy, order } = this.state;
 
     onLoadCourseMediaNextPage(
@@ -270,9 +266,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           .then((mediaItems) => {
             mediaItems.lift((files) => {
               if (files.size > 0) {
-                Maybe.maybe(
-                  files.find((f) => f.url === (result[0] && result[0].url)),
-                ).lift((file) => this.onSelect(file.guid));
+                Maybe.maybe(files.find((f) => f.url === (result[0] && result[0].url))).lift(
+                  (file) => this.onSelect(file.guid),
+                );
               }
             });
           })

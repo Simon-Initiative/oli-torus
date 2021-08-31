@@ -1,14 +1,16 @@
 {
-    "id": "janus_input_number",
-    "friendlyName": "InputNumber",
-    "description": "Displays an number input",
-    "global": true,
-    "delivery": {
-        "element": "janus-input-number",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-input-number",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_input_number",
+  "friendlyName": "Number Input",
+  "description": "Displays an number input",
+  "icon": "icon-part-numberInput.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-input-number",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-input-number",
+    "entry": "./authoring-entry.ts"
+  }
 }

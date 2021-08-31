@@ -2,4 +2,4 @@
 export const showModal = (elementId: string) => {
   const modal = document.getElementById(elementId) as any;
   (window as any).$(modal).modal('show');
-}
+};

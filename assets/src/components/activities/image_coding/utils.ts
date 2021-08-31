@@ -4,7 +4,6 @@ import { ImageCodingModelSchema } from './schema';
 import { RichText, ScoringStrategy } from '../types';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
-
   return {
     stem: fromText(''),
     isExample: false,
@@ -12,28 +11,27 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
     solutionCode: 'Sample Solution Code',
     resourceURLs: [],
     tolerance: 1.0,
-    regex: '',  // from original, not clear how used or if needed
-    feedback: [ // order matters: feedback[score] is used for score in {0, 1}
+    regex: '', // from original, not clear how used or if needed
+    feedback: [
+      // order matters: feedback[score] is used for score in {0, 1}
       fromText('Incorrect'),
       fromText('Correct'),
     ],
     authoring: {
-      parts: [{
-        id: '1', // an IC only has one part, so it is safe to hardcode the id
-        scoringStrategy: ScoringStrategy.average,
-        responses: [],
-        hints: [
-          fromText(''),
-          fromText(''),
-          fromText(''),
-        ],
-      }],
+      parts: [
+        {
+          id: '1', // an IC only has one part, so it is safe to hardcode the id
+          scoringStrategy: ScoringStrategy.average,
+          responses: [],
+          hints: [fromText(''), fromText(''), fromText('')],
+        },
+      ],
       previewText: '',
     },
   };
 };
 
-export function fromText(text: string): { id: string, content: RichText } {
+export function fromText(text: string): { id: string; content: RichText } {
   return {
     id: guid() + '',
     content: {

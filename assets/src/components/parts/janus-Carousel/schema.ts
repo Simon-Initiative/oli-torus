@@ -1,8 +1,13 @@
-export const schema = {
-  src: {
-    title: 'Source',
-    type: 'string',
-  },
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface CarouselModel extends JanusAbsolutePositioned, JanusCustomCss {
+  cssClasses: string;
+  images: { url: string; caption: string; alt: string }[];
+  zoom: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   customCss: {
     title: 'Custom CSS',
     type: 'string',
@@ -21,24 +26,6 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-  showOnAnswersReport: {
-    title: 'Show on Answer Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  mode: {
-    title: 'Mode',
-    type: 'string',
-    enum: ['Config', 'Student'],
-    default: 'Student',
-  },
   images: {
     title: 'Images',
     type: 'array',
@@ -49,7 +36,6 @@ export const schema = {
   },
   zoom: {
     type: 'boolean',
-    format: 'checkbox',
     description: 'Enables image zoom on double-click',
     default: false,
   },
@@ -75,3 +61,10 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = (): Partial<CarouselModel> => ({
+  customCss: '',
+  cssClasses: '',
+  zoom: true,
+  images: [{ url: '/images/placeholder-image.svg', caption: 'an image at night', alt: 'an image' }],
+});

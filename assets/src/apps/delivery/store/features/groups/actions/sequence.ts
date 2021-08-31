@@ -113,6 +113,17 @@ export const findInSequence = (
   return found;
 };
 
+export const findInSequenceByResourceId = (
+  sequence: SequenceEntry<SequenceEntryChild>[],
+  resourceId: number,
+): SequenceEntry<SequenceEntryChild> | null => {
+  const found = sequence.find((entry) => entry.resourceId === resourceId);
+  if (!found) {
+    return null;
+  }
+  return found;
+};
+
 export const getSequenceLineage = (
   sequence: SequenceEntry<SequenceEntryChild>[],
   childId: string | number,
@@ -128,9 +139,17 @@ export const getSequenceLineage = (
   return lineage;
 };
 
-export const getIsLayer = () => {
+export const getSequenceInstance = () => {
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
-  const placeInSequence = findInSequence(sequence, currentSequenceId);
-  return placeInSequence?.custom.isLayer;
+  return findInSequence(sequence, currentSequenceId);
+};
+export const getIsLayer = () => {
+  const seq = getSequenceInstance();
+  return seq?.custom.isLayer;
+};
+
+export const getIsBank = () => {
+  const seq = getSequenceInstance();
+  return seq?.custom.isBank;
 };

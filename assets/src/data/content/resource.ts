@@ -2,36 +2,39 @@ import { ModelElement, Selection } from './model';
 import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 import { ActivityEditContext } from './activity';
-
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
-
+import * as Bank from 'data/content/bank';
 
 export type PageContent = {
-  model: ResourceContent[],
-  [key: string]: any,
+  model: ResourceContent[];
+  [key: string]: any;
 };
 
 export type AttachedObjectives = {
-  attached: ResourceId[],
+  attached: ResourceId[];
 };
 
 // The types of things that can be present as top level
 // entries in a resource content array
-export type ResourceContent = GroupContent | StructuredContent | ActivityReference;
+export type ResourceContent =
+  | GroupContent
+  | StructuredContent
+  | ActivityReference
+  | ActivityBankSelection;
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
-  graded: boolean,                // Page or assessment?
-  authorEmail: string,            // The current author
-  projectSlug: ProjectSlug,       // The current project
-  resourceSlug: ResourceSlug,     // The current resource
-  resourceId: ResourceId,         // The resource id
-  title: string,                  // The title of the resource
-  content: PageContent,           // Content of the resource
-  objectives: AttachedObjectives, // Attached objectives
-  allObjectives: Objective[],     // All objectives
-  activityContexts: ActivityEditContext[],  // Contexts for inline activity editing
+  graded: boolean; // Page or assessment?
+  authorEmail: string; // The current author
+  projectSlug: ProjectSlug; // The current project
+  resourceSlug: ResourceSlug; // The current resource
+  resourceId: ResourceId; // The resource id
+  title: string; // The title of the resource
+  content: PageContent; // Content of the resource
+  objectives: AttachedObjectives; // Attached objectives
+  allObjectives: Objective[]; // All objectives
+  activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
 };
 
 export enum ResourceType {
@@ -40,8 +43,8 @@ export enum ResourceType {
 }
 
 export type Purpose = {
-  value: string,
-  label: string,
+  value: string;
+  label: string;
 };
 
 export const ActivityPurposes: Purpose[] = [
@@ -58,18 +61,24 @@ export const ContentPurposes: Purpose[] = [
   { value: 'learnmore', label: 'Learn more' },
 ];
 
-
-
 export const createDefaultStructuredContent = () => {
   return {
     type: 'content',
     id: guid(),
-    children: [
-      { type: 'p', id: guid(), children: [{ text: '' }] },
-    ],
+    children: [{ type: 'p', id: guid(), children: [{ text: '' }] }],
     purpose: 'none',
     selection: null,
   } as StructuredContent;
+};
+
+export const createDefaultSelection = () => {
+  return {
+    type: 'selection',
+    id: guid(),
+    count: 1,
+    logic: { conditions: null },
+    purpose: 'none',
+  } as ActivityBankSelection;
 };
 
 export interface StructuredContent {
@@ -78,6 +87,14 @@ export interface StructuredContent {
   children: ModelElement[];
   purpose: string;
   selection: Selection;
+}
+
+export interface ActivityBankSelection {
+  type: 'selection';
+  id: string;
+  logic: Bank.Logic;
+  count: number;
+  purpose: string;
 }
 
 export interface ActivityReference {

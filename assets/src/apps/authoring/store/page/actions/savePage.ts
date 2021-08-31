@@ -34,7 +34,7 @@ export const savePage = createAsyncThunk(
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
       content: {
-        model: (model as ResourceContent[]),
+        model: model as ResourceContent[],
         advancedAuthoring,
         advancedDelivery,
         displayApplicationChrome,

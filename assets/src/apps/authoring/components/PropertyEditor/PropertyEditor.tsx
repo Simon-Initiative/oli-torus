@@ -4,6 +4,7 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import React, { Fragment } from 'react';
 import CustomCheckbox from './custom/CustomCheckbox';
+import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -12,8 +13,9 @@ interface PropertyEditorProps {
   value: unknown;
 }
 
-const widgets = {
+const widgets: any = {
   CheckboxWidget: CustomCheckbox,
+  ScreenDropdownTemplate: ScreenDropdownTemplate,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
@@ -22,7 +24,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   value,
   onChangeHandler,
 }) => {
-  console.log({value,uiSchema});
+  /* console.log({ value, uiSchema }); */
   return (
     <Form
       schema={schema}

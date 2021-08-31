@@ -2,6 +2,8 @@
   "id": "janus_video",
   "friendlyName": "Video",
   "description": "Displays an video from a url.",
+  "icon": "icon-part-video.svg",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-video",

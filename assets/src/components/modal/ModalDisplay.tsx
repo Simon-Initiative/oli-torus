@@ -8,21 +8,17 @@ type ModalDisplayProps = {
 };
 
 const ModalDisplay = (props: ModalDisplayProps): JSX.Element => {
-
   const modals = props.modal
     .toArray()
     .reverse()
     .map((component, i) => <div key={i}>{component}</div>);
 
-  return (
-    <div>
-      {modals}
-    </div>
-  );
-
+  return <div>{modals}</div>;
 };
 
-interface StateProps { modal: ModalState; }
+interface StateProps {
+  modal: ModalState;
+}
 // eslint-disable-next-line
 interface OwnProps { }
 // eslint-disable-next-line
@@ -37,12 +33,9 @@ const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
 };
 
 const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
-
   (window as any).oliDispatch = dispatch;
 
-  return {
-
-  };
+  return {};
 };
 
 export const controller = connect<StateProps, DispatchProps, OwnProps>(

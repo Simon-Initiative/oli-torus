@@ -1,14 +1,14 @@
-/* eslint-disable react/prop-types */
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { parseBool } from 'utils/common';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
-import { CapiVariableTypes } from '../../../adaptivity/capi';
+import { PartComponentProps } from '../types/parts';
+import { AudioModel } from './schema';
 
-// TODO: fix typing
-const Audio: React.FC<any> = (props) => {
+const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -216,12 +216,12 @@ const Audio: React.FC<any> = (props) => {
   const [audioAutoPlay, setAudioAutoPlay] = useState(autoPlay || false);
   const [audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
   const audioStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
@@ -353,8 +353,7 @@ const Audio: React.FC<any> = (props) => {
 
   return ready ? (
     <audio
-      data-part-component-type={props.type}
-      className={classes}
+      data-janus-type={tagName}
       style={audioStyles}
       autoPlay={audioAutoPlay}
       loop={audioEnableReplay}

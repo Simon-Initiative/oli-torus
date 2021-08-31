@@ -164,7 +164,7 @@ defmodule Oli.CourseTest do
     test "project should always have an unpublished, 'active' publication", %{project: project} do
       assert Enum.find(
                Oli.Repo.preload(project, [:publications]).publications,
-               &(&1.published == false)
+               &(&1.published == nil)
              )
     end
 

@@ -1,25 +1,16 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBoolean } from '../../../utils/common';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import { contexts } from '../../../types/applicationContext';
+import { parseBoolean } from '../../../utils/common';
+import { PartComponentProps } from '../types/parts';
+import { NavButtonModel } from './schema';
 
-interface NavigationButtonModel extends JanusAbsolutePositioned, JanusCustomCss {
-  textColor?: string;
-  buttonColor?: string;
-  visible?: boolean;
-  enabled?: boolean;
-  ariaLabel?: string;
-  transparent?: boolean;
-  selected?: boolean;
-}
-
-const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (props) => {
+const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -311,13 +302,7 @@ const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (p
   } = model;
 
   const styles: CSSProperties = {
-    position: 'absolute',
-    top: y,
-    left: x,
-    width,
-    height,
     display: visible ? 'block' : 'none',
-    zIndex: z,
   };
 
   const janusButtonStyle: CSSProperties = {
@@ -386,7 +371,7 @@ const NavigationButton: React.FC<PartComponentProps<NavigationButtonModel>> = (p
   };
 
   return ready && buttonVisible ? (
-    <button data-janus-type={props.type} {...buttonProps} style={styles}>
+    <button data-janus-type={tagName} {...buttonProps} style={styles}>
       {title}
     </button>
   ) : null;

@@ -151,11 +151,15 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
     setConditions([...conditions, block]);
   };
 
-  const handleDeleteCondition = (condition: Partial<JanusNestedCondition>) => {
+  const handleDeleteCondition = (condition: Partial<JanusNestedCondition>, loopIndex?: number) => {
     if (condition.id === 'root') {
       const empty: JanusNestedCondition[] = [];
       setConditions(empty);
-      return onChange({ [blockType]: empty });
+      if (loopIndex && loopIndex > 0) {
+        return onChange({});
+      } else {
+        return onChange({ [blockType]: empty });
+      }
     }
 
     const updatedConditions = deleteConditionById(condition.id as string, conditions);
@@ -279,7 +283,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   <span>
                     <button
                       className="btn btn-link p-0"
-                      onClick={() => handleDeleteCondition({ id: 'root' })}
+                      onClick={() => handleDeleteCondition({ id: 'root' }, loopIndex)}
                     >
                       <i className="fa fa-trash-alt" />
                     </button>
