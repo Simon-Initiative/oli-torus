@@ -115,7 +115,10 @@ export const convertQuillToJanus = (delta: Delta) => {
           ],
         };
         if (style.fontFamily) {
-          child.customCssClass = appendToStringProperty(`ql-font-${op.attributes?.font}`, child.customCssClass);
+          child.customCssClass = appendToStringProperty(
+            `ql-font-${op.attributes?.font}`,
+            child.customCssClass,
+          );
         }
         if (op.attributes?.script) {
           if (op.attributes.script === 'sub') {

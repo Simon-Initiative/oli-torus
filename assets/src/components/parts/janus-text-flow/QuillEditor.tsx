@@ -56,11 +56,15 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
       let selectionValue = '';
       if (range && range.length > 0) {
         selectionValue = this.quill.getText(range.index, range.length);
+        if (selectionValue.charAt(0) === '{') {
+          selectionValue = selectionValue.substring(1, selectionValue.length - 1);
+        }
       }
       const expression = prompt('Enter the Expression', selectionValue);
-      this.quill.setSelection(range.index, range.length);
-      this.quill.deleteText(range.index, range.length);
-      this.quill.insertText(range.index, `{${expression}}`);
+      if (expression) {
+        this.quill.insertText(range.index, `{${expression}}`);
+        this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
+      }
     },
   };
 
