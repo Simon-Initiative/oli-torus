@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { create, Created } from 'data/persistence/activity';
 import { ActivitiesSlice } from '../../../../delivery/store/features/activities/slice';
 import { selectState as selectPageState } from '../../../../authoring/store/page/slice';
-import { selectProjectSlug } from '../../app/slice';
+import { selectActivityTypes, selectProjectSlug } from '../../app/slice';
 import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
 import { RootState } from 'apps/delivery/store/rootReducer';
@@ -13,6 +13,7 @@ export const createNew = createAsyncThunk(
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     // how to choose activity type? for now hard code to oli_adaptive?
+    const activityTypes = selectActivityTypes(rootState);
     const currentLesson = selectPageState(rootState);
     const {
       activityTypeSlug = 'oli_adaptive',
@@ -91,6 +92,8 @@ export const createNew = createAsyncThunk(
     activity.activityId = activity.activity_id;
     activity.resourceId = activity.activity_id;
     activity.activitySlug = (createResults as Created).revisionSlug;
+
+    activity.activityType = activityTypes.find((type: any) => type.slug === activityTypeSlug);
 
     return activity;
   },
