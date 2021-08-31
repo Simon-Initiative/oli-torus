@@ -1,12 +1,13 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import React, { useCallback } from 'react';
+import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
-import KonvaStage from './KonvaStage';
+import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -15,6 +16,16 @@ const EditingCanvas: React.FC = () => {
   const currentPartSelection = useSelector(selectCurrentSelection);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
+
+  const [currentActivityId, setCurrentActivityId] = React.useState<string>('');
+
+  useEffect(() => {
+    let current = null;
+    if (currentActivityTree) {
+      current = currentActivityTree.slice(-1)[0];
+    }
+    setCurrentActivityId(current?.id || '');
+  }, [currentActivityTree]);
 
   // TODO: pull from currentActivity with these defaults? (or lesson defaults)
   const width = currentActivity?.content?.custom?.width || 800;
@@ -39,8 +50,8 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = useCallback(
-    (id: string, position: { x: number; y: number }) => {
-      console.log('[handlePositionChanged]', { id, position });
+    async (id: string, deltaX: number, deltaY: number) => {
+      console.log('[handlePositionChanged]', { id, deltaX, deltaY });
       if (!currentActivityTree) {
         return;
       }
@@ -50,30 +61,53 @@ const EditingCanvas: React.FC = () => {
       if (!partDef) {
         return;
       }
-      partDef.custom.x = position.x;
-      partDef.custom.y = position.y;
+      partDef.custom.x += deltaX;
+      partDef.custom.y += deltaY;
 
       dispatch(saveActivity({ activity: currentActivityClone }));
     },
     [currentActivityTree],
   );
 
+  const handlePartSelect = async (id: string) => {
+    console.log('[handlePartSelect]', { id });
+    dispatch(setCurrentSelection({ selection: id }));
+
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+
+    return true;
+  };
+
+  const handleStageClick = (e: any) => {
+    if (e.target.className !== 'aa-stage') {
+      return;
+    }
+    console.log('[handleStageClick]', e);
+    dispatch(setCurrentSelection({ selection: '' }));
+
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+  };
+
   console.log('EC: RENDER', { layers });
+
+  useEffect(() => {
+    dispatch(setCurrentSelection({ selection: '' }));
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+  }, [currentActivityId]);
 
   return (
     <React.Fragment>
-      <section className="aa-stage">
-        {currentActivity && (
-          <KonvaStage
-            key={currentActivity.id}
-            selected={[currentPartSelection]}
-            background={background}
-            size={{ width, height }}
-            layers={layers}
-            onSelectionChange={handleSelectionChanged}
-            onPositionChange={handlePositionChanged}
-          />
-        )}
+      <section className="aa-stage" onClick={handleStageClick}>
+        {currentActivityTree &&
+          currentActivityTree.map((activity) => (
+            <AuthoringActivityRenderer
+              key={activity.id}
+              activityModel={activity}
+              editMode={activity.id === currentActivityId}
+              onSelectPart={handlePartSelect}
+              onPartChangePosition={handlePositionChanged}
+            />
+          ))}
       </section>
     </React.Fragment>
   );

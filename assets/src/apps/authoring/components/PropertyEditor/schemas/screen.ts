@@ -5,6 +5,18 @@ import { JSONSchema7 } from 'json-schema';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
+export interface ScreenModel {
+  title: string;
+  width: number;
+  height: number;
+  palette: any;
+  customCssClass: string;
+  combineFeedback: boolean;
+  showCheckButton: boolean;
+  checkButtonLabel: string;
+  [key: string]: any; // TODO
+}
+
 const screenSchema: JSONSchema7 = {
   type: 'object',
   properties: {
@@ -161,7 +173,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
   }
 };
 
-export const transformScreenSchematoModel = (schema: any) => {
+export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> => {
   return {
     title: schema.title,
     width: schema.Size.width,

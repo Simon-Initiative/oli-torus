@@ -8,10 +8,7 @@ import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
-import {
-  selectCurrentActivity,
-  upsertActivity,
-} from '../../../delivery/store/features/activities/slice';
+import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
@@ -33,9 +30,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const isBank = getIsBank();
   let sequenceTypeLabel = '';
   if (isLayer) {
-    sequenceTypeLabel = 'Layer';
+    sequenceTypeLabel = 'layer';
   } else if (isBank) {
-    sequenceTypeLabel = 'Question Bank';
+    sequenceTypeLabel = 'question bank';
   }
 
   const [isDirty, setIsDirty] = useState(false);

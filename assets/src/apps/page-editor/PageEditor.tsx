@@ -69,7 +69,15 @@ function prepareSaveFn(
   resource: ResourceSlug,
   update: Persistence.ResourceUpdate,
 ) {
-  return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
+  return (releaseLock: boolean) =>
+    Persistence.edit(project, resource, update, releaseLock).then((result) => {
+      // check if the slug has changed as a result of the edit and reload the page if it has
+      if (result.type === 'success' && result.revision_slug !== resource) {
+        window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
+        return result;
+      }
+      return result;
+    });
 }
 
 // Ensures that there is some default content if the initial content
@@ -364,6 +372,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.setState(mergedState, () => this.save());
   }
 
+  updateImmediate(update: Partial<EditorUpdate>) {
+    const mergedState = Object.assign({}, this.state, update);
+    this.setState(mergedState, () => this.saveImmediate());
+  }
+
   // Makes any modifications necessary to adhere to a set of constraints that the server
   // uses to define "valid page content"
   //
@@ -404,6 +417,19 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
   }
 
+  saveImmediate() {
+    const { projectSlug, resourceSlug } = this.props;
+
+    const toSave: Persistence.ResourceUpdate = {
+      objectives: { attached: this.state.objectives.toArray() },
+      title: this.state.title,
+      content: { model: this.state.content.toArray().map(([k, v]) => v) },
+      releaseLock: false,
+    };
+
+    this.persistence.saveImmediate(prepareSaveFn(projectSlug, resourceSlug, toSave));
+  }
+
   render() {
     const props = this.props;
     const state = this.state;
@@ -415,7 +441,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     };
 
     const onTitleEdit = (title: string) => {
-      this.update({ title });
+      this.updateImmediate({ title });
     };
 
     const onAddItem = (

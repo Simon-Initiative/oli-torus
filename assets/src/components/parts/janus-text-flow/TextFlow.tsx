@@ -1,11 +1,13 @@
 import chroma from 'chroma-js';
 import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
-import Markup from './Markup';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
+import { PartComponentProps } from '../types/parts';
+import Markup from './Markup';
+import { TextFlowModel } from './schema';
 
 export interface MarkupTree {
   tag: string;
@@ -85,7 +87,7 @@ export const renderFlow = (
   );
 };
 
-const TextFlow: React.FC<any> = (props: any) => {
+const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -190,10 +192,10 @@ const TextFlow: React.FC<any> = (props: any) => {
   } = model;
 
   const styles: any = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
-    zIndex: z,
+    zIndex: z, */
     wordWrap: 'break-word',
     lineHeight: 'inherit',
   };
@@ -249,7 +251,7 @@ const TextFlow: React.FC<any> = (props: any) => {
   }
 
   return ready ? (
-    <div id={props.id} data-janus-type={props.type} className={customCssClass} style={styles}>
+    <div data-janus-type={tagName} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
         renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
       )}

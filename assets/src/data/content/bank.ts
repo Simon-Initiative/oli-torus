@@ -1,3 +1,4 @@
+import { Objectives } from 'components/resource/Objectives';
 import { ObjectiveMap } from './activity';
 import { ResourceId } from 'data/types';
 

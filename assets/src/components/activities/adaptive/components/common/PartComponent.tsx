@@ -1,21 +1,36 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useRef, useState, CSSProperties } from 'react';
+import {
+  AuthorPartComponentProps,
+  CustomProperties,
+  PartComponentProps,
+} from 'components/parts/types/parts';
+import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   NotificationContext,
   NotificationType,
   subscribeToNotification,
-} from './NotificationContext';
-import Unknown from './UnknownComponent';
+} from '../../../../../apps/delivery/components/NotificationContext';
+import { tagName as UnknownTag } from './UnknownPart';
 
-const WebComponent: React.FC<any> = (props) => {
+const stubHandler = async () => {
+  return;
+};
+
+type AuthorProps = AuthorPartComponentProps<CustomProperties>;
+type DeliveryProps = PartComponentProps<CustomProperties>;
+
+const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
-  // TODO: build from configuration instead
-  const wcEvents: any = {
+  const wcEvents: Record<string, any> = {
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
     submit: props.onSubmit,
+    // authoring
+    configure: (props as AuthorProps).onConfigure || stubHandler,
+    saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
+    cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
   };
 
   const ref = useRef<any>(null);
@@ -60,6 +75,7 @@ const WebComponent: React.FC<any> = (props) => {
       }
       const handler = wcEvents[e.type];
       if (handler) {
+        // TODO: refactor all handlers to take ID and send it here
         const result = await handler(payload);
         if (callback) {
           callback(result);
@@ -76,27 +92,43 @@ const WebComponent: React.FC<any> = (props) => {
       });
     };
   }, []);
+
   const compStyles: CSSProperties = {
     display: 'block',
   };
-  const webComponentProps = {
+
+  if (props.model) {
+    compStyles.position = 'absolute';
+    compStyles.top = props.model.y;
+    compStyles.left = props.model.x;
+    compStyles.zIndex = props.model.z || 0;
+    compStyles.width = props.model.width;
+
+    // almost always height is meant to be auto, when not we'll have to let
+    // the component handle it
+    // compStyles.height = props.model.height;
+  }
+
+  const webComponentProps: any = {
     ref,
-    id: props.id,
-    type: props.type,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
-    style: compStyles,
+    customCssClass: props.model.customCssClass || '',
   };
 
-  const wcTagName = props.type;
+  let wcTagName = props.type;
   if (!wcTagName || !customElements.get(wcTagName)) {
-    const unknownProps = { ...webComponentProps, ref: undefined };
-    return <Unknown {...unknownProps} />;
+    wcTagName = UnknownTag;
+  }
+
+  // if we pass in style then it will be controlled and so nothing else can use it
+  if (!(props as AuthorProps).editMode) {
+    webComponentProps.style = compStyles;
   }
 
   // don't render until we're listening because otherwise the init event will post too fast
   return listening ? React.createElement(wcTagName, webComponentProps) : null;
 };
 
-export default WebComponent;
+export default PartComponent;

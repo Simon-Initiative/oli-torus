@@ -3,17 +3,27 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import { schema, uiSchema, createSchema } from './schema';
-import TextFlow from './TextFlow';
+import { createSchema, schema, uiSchema } from './schema';
+import TextFlowAuthor from './TextFlowAuthor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
 
-const observedAttributes: string[] = [...apiObservedAttributes];
-const customEvents: any = { ...apiCustomEvents };
+const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
+const customEvents: any = {
+  ...apiCustomEvents,
+  onConfigure: 'configure',
+  onSaveConfigure: 'saveconfigure',
+  onCancelConfigure: 'cancelconfigure',
+};
 
-register(TextFlow, manifest.authoring.element, observedAttributes, {
+register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
-  shadow: false,
+  shadow: true,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,

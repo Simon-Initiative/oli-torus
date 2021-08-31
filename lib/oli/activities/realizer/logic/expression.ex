@@ -88,12 +88,6 @@ defmodule Oli.Activities.Realizer.Logic.Expression do
       {"text", "contains"} when is_binary(value) ->
         {:ok, %Expression{fact: :text, operator: :contains, value: value}}
 
-      {"type", "equals"} ->
-        {:ok, %Expression{fact: :type, operator: :equals, value: value}}
-
-      {"type", "doesNotEqual"} ->
-        {:ok, %Expression{fact: :type, operator: :does_not_equal, value: value}}
-
       _ ->
         {:error, "invalid expression"}
     end

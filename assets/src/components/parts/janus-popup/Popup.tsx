@@ -8,9 +8,11 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
-import { getIcon } from './GetIcon';
 import { contexts } from '../../../types/applicationContext';
+import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { PartComponentProps } from '../types/parts';
+import { getIcon } from './GetIcon';
+import { PopupModel } from './schema';
 interface ContextProps {
   currentActivity: string;
   mode: string;
@@ -20,8 +22,7 @@ interface InitResultProps {
   context: ContextProps;
 }
 
-// TODO: fix typing
-const Popup: React.FC<any> = (props) => {
+const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -209,12 +210,12 @@ const Popup: React.FC<any> = (props) => {
   }, [props.notify]);
 
   const popupStyles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     top: y,
     left: x,
     width,
     height,
-    zIndex: z,
+    zIndex: z, */
   };
 
   // Toggle popup open/close
@@ -266,8 +267,11 @@ const Popup: React.FC<any> = (props) => {
       },${config?.palette?.fillAlpha})`;
     }
   }
-  popupModalStyles.left = config?.x ? config.x : 0; // adding the previous logic done for Pop-up and feedback.
-  popupModalStyles.top = config?.y ? config.y : 0; // adding the previous logic done for Pop-up and feedback.
+  // position is an offset from the parent element now
+  const modalX = (config?.x || 0) - x;
+  const modalY = (config?.y || 0) - y;
+  popupModalStyles.left = modalX;
+  popupModalStyles.top = modalY;
   popupModalStyles.zIndex = config?.z ? config?.z : 1000;
   popupModalStyles.height = config?.height;
   popupModalStyles.overflow = 'hidden';
@@ -302,8 +306,7 @@ const Popup: React.FC<any> = (props) => {
     <React.Fragment>
       {popupVisible ? (
         <input
-          data-janus-type={props.type}
-          id={id}
+          data-janus-type={tagName}
           role="button"
           {...(iconSrc
             ? {
