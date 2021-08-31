@@ -58,6 +58,7 @@ const Markup: React.FC<any> = ({
   text = '',
   children,
   state = {},
+  customCssClass = '',
   displayRawText = false,
 }) => {
   /*eslint-enable */
@@ -144,14 +145,21 @@ const Markup: React.FC<any> = ({
   switch (renderTag) {
     case 'a':
       return (
-        <a ref={el} href={href} target={target} style={{ ...renderStyles, display: 'inline' }}>
+        <a
+          ref={el}
+          key={key}
+          className={customCssClass}
+          href={href}
+          target={target}
+          style={{ ...renderStyles, display: 'inline' }}
+        >
           {processedText}
           {children}
         </a>
       );
     case 'span':
       return (
-        <span ref={el} key={key} style={renderStyles}>
+        <span ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </span>
@@ -159,7 +167,7 @@ const Markup: React.FC<any> = ({
     case 'strong':
     case 'b':
       return (
-        <strong ref={el} key={key} style={renderStyles}>
+        <strong ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </strong>
@@ -167,14 +175,14 @@ const Markup: React.FC<any> = ({
     case 'em':
     case 'i':
       return (
-        <em ref={el} key={key} style={renderStyles}>
+        <em ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </em>
       );
     case 'div':
       return (
-        <div ref={el} key={key} style={renderStyles}>
+        <div ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </div>
@@ -186,42 +194,42 @@ const Markup: React.FC<any> = ({
         renderStyles.display = 'block';
       }
       return (
-        <h1 ref={el} key={key} style={renderStyles}>
+        <h1 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h1>
       );
     case 'h2':
       return (
-        <h2 ref={el} key={key} style={renderStyles}>
+        <h2 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h2>
       );
     case 'h3':
       return (
-        <h3 ref={el} key={key} style={renderStyles}>
+        <h3 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h3>
       );
     case 'h4':
       return (
-        <h4 ref={el} key={key} style={renderStyles}>
+        <h4 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h4>
       );
     case 'h5':
       return (
-        <h5 ref={el} key={key} style={renderStyles}>
+        <h5 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h5>
       );
     case 'h6':
       return (
-        <h6 ref={el} key={key} style={renderStyles}>
+        <h6 ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </h6>
@@ -237,42 +245,42 @@ const Markup: React.FC<any> = ({
         renderStyles.fontSize = '0px';
       } */
       return (
-        <p ref={el} key={key} style={renderStyles}>
+        <p ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </p>
       );
     case 'sub':
       return (
-        <sub ref={el} key={key} style={renderStyles}>
+        <sub ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </sub>
       );
     case 'sup':
       return (
-        <sup ref={el} key={key} style={renderStyles}>
+        <sup ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </sup>
       );
     case 'small':
       return (
-        <small ref={el} key={key} style={renderStyles}>
+        <small ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </small>
       );
     case 'code':
       return (
-        <code ref={el} key={key} style={renderStyles}>
+        <code ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </code>
       );
     case 'ol':
       return (
-        <ol ref={el} key={key} style={renderStyles}>
+        <ol ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
           {children}
         </ol>
@@ -280,7 +288,12 @@ const Markup: React.FC<any> = ({
     case 'ul':
       delete renderStyles.width;
       return (
-        <ul ref={el} key={key} style={{ ...renderStyles, paddingLeft: '40px' }}>
+        <ul
+          ref={el}
+          key={key}
+          className={customCssClass}
+          style={{ ...renderStyles, paddingLeft: '40px' }}
+        >
           {processedText}
           {children}
         </ul>
@@ -289,13 +302,13 @@ const Markup: React.FC<any> = ({
       // eslint-disable-next-line
       const listStyle = { ...renderStyles, display: 'list-item' };
       return (
-        <li ref={el} key={key} style={listStyle}>
+        <li ref={el} key={key} className={customCssClass} style={listStyle}>
           {processedText}
           {children}
         </li>
       );
     case 'br':
-      return <br />;
+      return <br ref={el} key={key} className={customCssClass} />;
     case 'img':
       if (renderStyles?.width === 'auto') {
         renderStyles.width = '';
@@ -303,7 +316,7 @@ const Markup: React.FC<any> = ({
       if (renderStyles?.height === 'auto') {
         renderStyles.height = '';
       }
-      return <img src={src} ref={el} key={key} style={renderStyles} />;
+      return <img src={src} ref={el} key={key} className={customCssClass} style={renderStyles} />;
     case 'text':
       // this is a special case similar to xml text nodes
       // not expected to have children
