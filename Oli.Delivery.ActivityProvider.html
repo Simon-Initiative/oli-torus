@@ -136,7 +136,7 @@ Functions
     </a>
     <h1 class="signature">provide(revision, source, resolver)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L24" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L28" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -146,7 +146,9 @@ Functions
 
   <section class="docstring">
 
-<p>Realizes and resolves activities in a page.</p><p>Activities are realized in different ways, depending on the type of reference. First, a static
+<p>Realizes and resolves activities in a page.</p><p>For advanced delivery pages this impl finds all activity-reference instances from within the entire
+nested tree of the content model.  For basic delivery, we only need to look at the top-level model
+collection, but do need to look for selections as well as static activity-reference instances.</p><p>Activities are realized in different ways, depending on the type of reference. First, a static
 reference to an activity (via &quot;activity-reference&quot;) is simply resovled to the correct published
 resource. A second type of reference is a selection from the activity bank (via &quot;selection&quot; element).
 These are realized by fulfilling the selection (i.e. drawing the required number of activities randomly
