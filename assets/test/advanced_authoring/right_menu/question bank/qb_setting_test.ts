@@ -1,4 +1,3 @@
-import { getNextScreen } from 'apps/authoring/components/PropertyEditor/custom/ScreenDropdownTemplate';
 import {
   transformBankModeltoSchema,
   transformBankSchematoModel,
