@@ -17,6 +17,7 @@ defmodule Oli.Interop.Export do
        create_media_manifest_file(project),
        create_hierarchy_file(resources, publication)
      ] ++
+       tags(resources) ++
        objectives(resources) ++
        activities(resources) ++
        pages(resources))
@@ -35,6 +36,26 @@ defmodule Oli.Interop.Export do
     data
   end
 
+  defp tags(resources) do
+    Enum.filter(resources, fn r ->
+      r.resource_type_id == ResourceType.get_id_by_type("tag")
+    end)
+    |> Enum.map(fn r ->
+      %{
+        type: "Tag",
+        id: Integer.to_string(r.resource_id, 10),
+        originalFile: "",
+        title: r.title,
+        tags: [],
+        unresolvedReferences: [],
+        content: %{},
+        objectives: [],
+        children: []
+      }
+      |> entry("#{r.resource_id}.json")
+    end)
+  end
+
   # create entries for all objectives
   defp objectives(resources) do
     Enum.filter(resources, fn r ->
@@ -46,7 +67,7 @@ defmodule Oli.Interop.Export do
         id: Integer.to_string(r.resource_id, 10),
         originalFile: "",
         title: r.title,
-        tags: [],
+        tags: transform_tags(r),
         unresolvedReferences: [],
         content: %{},
         objectives: [],
@@ -71,7 +92,7 @@ defmodule Oli.Interop.Export do
         id: Integer.to_string(r.resource_id, 10),
         originalFile: "",
         title: r.title,
-        tags: [],
+        tags: transform_tags(r),
         unresolvedReferences: [],
         content: r.content,
         objectives: to_string_ids(r.objectives),
@@ -100,7 +121,7 @@ defmodule Oli.Interop.Export do
         id: Integer.to_string(r.resource_id, 10),
         originalFile: "",
         title: r.title,
-        tags: [],
+        tags: transform_tags(r),
         unresolvedReferences: [],
         content: r.content,
         objectives: Map.get(r.objectives, "attached", []) |> Enum.map(fn id -> "#{id}" end),
@@ -161,7 +182,7 @@ defmodule Oli.Interop.Export do
       id: "",
       originalFile: "",
       title: "",
-      tags: [],
+      tags: transform_tags(root),
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_id, id) end)
     }
     |> entry("_hierarchy.json")
@@ -188,6 +209,7 @@ defmodule Oli.Interop.Export do
           type: "container",
           id: "#{resource_id}",
           title: revision.title,
+          tags: transform_tags(revision),
           children: Enum.map(revision.children, fn id -> full_hierarchy(revisions_by_id, id) end)
         }
 
@@ -198,5 +220,9 @@ defmodule Oli.Interop.Export do
           idref: "#{resource_id}"
         }
     end
+  end
+
+  defp transform_tags(revision) do
+    Enum.map(revision.tags, fn id -> Integer.to_string(id, 10) end)
   end
 end

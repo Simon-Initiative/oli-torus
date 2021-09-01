@@ -23,6 +23,7 @@ export const saveActivity = createAsyncThunk(
       title: activity.title as string,
       objectives: activity.objectives as ObjectiveMap,
       content: { ...activity.content, authoring: activity.authoring },
+      tags: activity.tags,
     };
     console.log('going to save acivity: ', { changeData, activity });
     const editResults = await edit(

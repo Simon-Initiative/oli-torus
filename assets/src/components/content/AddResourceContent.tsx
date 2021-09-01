@@ -82,6 +82,7 @@ export const AddResourceContent = ({
           title: editor.friendlyName,
           model,
           objectives,
+          tags: [],
         };
 
         onAddItem(resourceContent, index, activity);

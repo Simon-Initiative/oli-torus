@@ -3,6 +3,7 @@ import * as Immutable from 'immutable';
 import { ActivityBankSelection as Selection } from 'data/content/resource';
 import { LogicBuilder } from 'components/logic/LogicBuilder';
 import { TextInput } from 'components/common/TextInput';
+import { Tag } from 'data/content/tags';
 import * as Bank from 'data/content/bank';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -12,8 +13,10 @@ export type ActivityBankSelectionProps = {
   onChange: (selection: Selection) => void;
   editMode: boolean;
   allObjectives: Immutable.List<Objective>;
+  allTags: Immutable.List<Tag>;
   projectSlug: string;
   onRegisterNewObjective: (objective: Objective) => void;
+  onRegisterNewTag: (tag: Tag) => void;
   editorMap: ActivityEditorMap;
 };
 
@@ -94,7 +97,7 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
   };
 
   return (
-    <div className="activity-bank-selection">
+    <div id={props.selection.id} className="activity-bank-selection">
       <div className="label mb-3">Activity Bank Selection</div>
       <div className="d-flex justify-items-start mb-4">
         <div className="mr-3">Number to select:</div>
@@ -115,7 +118,9 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
         logic={selection.logic}
         onChange={onChangeLogic}
         onRegisterNewObjective={props.onRegisterNewObjective}
+        onRegisterNewTag={props.onRegisterNewTag}
         allObjectives={props.allObjectives}
+        allTags={props.allTags}
         projectSlug={props.projectSlug}
         editorMap={props.editorMap}
         onRemove={() => true}

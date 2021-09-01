@@ -3,7 +3,7 @@
     "operator": "all",
     "children": [{
         "fact": "tags",
-        "operator": "doesNotContain",
+        "operator": "does_not_contain",
         "value": [1]
       },
       {
@@ -13,7 +13,7 @@
       },
       {
         "fact": "type",
-        "operator": "doesNotContain",
+        "operator": "does_not_contain",
         "value": [3]
       },
       {
