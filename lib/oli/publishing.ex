@@ -6,11 +6,30 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Accounts.Author
   alias Oli.Authoring.Locks
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.{Revision, ResourceType}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
   alias Oli.Publishing
+  alias Oli.Delivery.Sections.SectionsProjectsPublications
+
+  def get_publication_id_for_resource(section_slug, resource_id) do
+    spp =
+      from(s in Section,
+        join: spp in SectionsProjectsPublications,
+        on: spp.section_id == s.id,
+        join: pr in ProjectResource,
+        on: pr.project_id == spp.project_id,
+        where: s.slug == ^section_slug and pr.resource_id == ^resource_id,
+        select: spp
+      )
+      |> Repo.all()
+      |> hd
+
+    spp.publication_id
+  end
 
   def query_unpublished_revisions_by_type(project_slug, type) do
     publication_id = project_working_publication(project_slug).id
@@ -492,7 +511,8 @@ defmodule Oli.Publishing do
            now <- DateTime.utc_now(),
 
            # diff publications to determine the new version number
-           {{_, {edition, major, minor}}, _changes} <- diff_publications(latest_published_publication, active_publication),
+           {{_, {edition, major, minor}}, _changes} <-
+             diff_publications(latest_published_publication, active_publication),
 
            # create a new publication to capture all further edits
            {:ok, new_publication} <-
@@ -604,6 +624,7 @@ defmodule Oli.Publishing do
       case p1 do
         nil ->
           {0, 0, 0}
+
         p1 ->
           {p1.edition, p1.major, p1.minor}
       end
@@ -615,8 +636,12 @@ defmodule Oli.Publishing do
   # result e.g. {:major, {1, 0}}
   defp version_change(changes, {edition, major, minor} = _current_version) do
     changes
-    |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id, {_type, %{resource: _res, revision: rev}}}, {previous, _} = acc ->
+    |> Enum.reduce({:no_changes, {edition, major, minor}}, fn {_id,
+                                                               {_type,
+                                                                %{resource: _res, revision: rev}}},
+                                                              {previous, _} = acc ->
       resource_type = Oli.Resources.ResourceType.get_type_by_id(rev.resource_type_id)
+
       cond do
         # if a container resource has changed, return major
         resource_type == "container" ->
@@ -659,7 +684,9 @@ defmodule Oli.Publishing do
         # to a map of resource_ids to {resource, revision} tuples
         published_resources
         |> Enum.filter(fn mapping -> mapping.revision.deleted == false end)
-        |> Enum.reduce(%{}, fn m, acc -> Map.put_new(acc, m.resource_id, {m.resource, m.revision}) end)
+        |> Enum.reduce(%{}, fn m, acc ->
+          Map.put_new(acc, m.resource_id, {m.resource, m.revision})
+        end)
     end
   end
 

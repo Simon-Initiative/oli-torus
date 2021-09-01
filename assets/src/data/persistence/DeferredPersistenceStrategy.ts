@@ -42,6 +42,11 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     this.queueSave();
   }
 
+  saveImmediate(saveFn: any) {
+    this.save(saveFn);
+    this.flushPendingChanges();
+  }
+
   queueSave() {
     const startTimer = () =>
       setTimeout(() => {

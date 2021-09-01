@@ -146,7 +146,10 @@ defmodule OliWeb.Router do
   end
 
   def with_section_user(conn) do
-    %{"section" => conn.assigns.section, "current_user" => conn.assigns.current_user}
+    %{
+      "section" => conn.assigns.section,
+      "current_user" => conn.assigns.current_user
+    }
   end
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)

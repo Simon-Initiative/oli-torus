@@ -62,6 +62,7 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
   }
 
   abstract save(saveFn: any): void;
+  abstract saveImmediate(saveFn: any): void;
 
   /**
    * Method to that child classes must implement to allow an async

@@ -20,8 +20,8 @@ import * as BankTypes from 'data/content/bank';
 import * as BankPersistence from 'data/persistence/bank';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
-import { ActivityUndoables, ActivityUndoAction } from 'components/resource/resourceEditor/types';
-import { UndoToasts } from 'components/resource/resourceEditor/UndoToasts';
+import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { applyOperations } from 'utils/undo';
 import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
@@ -445,7 +445,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             key={key}
             projectSlug={this.props.projectSlug}
             editMode={editMode}
-            allObjectives={this.props.allObjectives}
+            allObjectives={this.state.allObjectives.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}

@@ -45,5 +45,5 @@ export const LogicBuilder: React.FC<LogicBuilderProps> = (props: LogicBuilderPro
       );
   }
 
-  return <div>{rootNode}</div>;
+  return <div className="logic">{rootNode}</div>;
 };

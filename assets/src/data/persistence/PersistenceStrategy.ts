@@ -27,6 +27,11 @@ export interface PersistenceStrategy {
   save: (saveFn: any) => void;
 
   /**
+   * Method called to request that the persistence strategy saves the document immediately.
+   */
+  saveImmediate: (saveFn: any) => void;
+
+  /**
    * Indicate to the persistence strategy that it is being shutdown and that it
    * should clean up any resources and flush any pending changes immediately.
    */

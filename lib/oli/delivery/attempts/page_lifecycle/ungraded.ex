@@ -55,6 +55,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   @impl Lifecycle
+  @spec review(Oli.Delivery.Attempts.PageLifecycle.ReviewContext.t()) ::
+          {:ok,
+           {:finalized, Oli.Delivery.Attempts.PageLifecycle.AttemptState.t()}
+           | {:in_progress, Oli.Delivery.Attempts.PageLifecycle.AttemptState.t()}}
   def review(%ReviewContext{} = context) do
     Common.review(context)
   end

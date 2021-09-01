@@ -15,33 +15,27 @@ import {
 } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
-import { Editors } from '../editors/Editors';
-import { TitleBar } from '../../content/TitleBar';
+import { Editors } from 'components/resource/editors/Editors';
+import { TitleBar } from 'components/content/TitleBar';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
 import * as Persistence from 'data/persistence/resource';
 import * as ActivityPersistence from 'data/persistence/activity';
 import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
 import { Message, Severity, createMessage } from 'data/messages/messages';
-import { Banner } from '../../messages/Banner';
+import { Banner } from 'components/messages/Banner';
 import { ActivityEditContext } from 'data/content/activity';
-import { create } from 'data/persistence/objective';
 import { Undoable as ActivityUndoable } from 'components/activities/types';
-import {
-  registerUnload,
-  unregisterUnload,
-  unregisterKeydown,
-  unregisterKeyup,
-  unregisterWindowBlur,
-} from './listeners';
+import { registerUnload, unregisterUnload } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Undoables, empty, PageUndoable } from './types';
-import { UndoToasts } from './UndoToasts';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { applyOperations } from 'utils/undo';
-import './ResourceEditor.scss';
+import './PageEditor.scss';
+import { guaranteeValididty } from 'data/content/bank';
 
-export interface ResourceEditorProps extends ResourceContext {
+export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   activities: ActivityMap;
   onLoadPreferences: () => void;
@@ -54,7 +48,7 @@ type EditorUpdate = {
   objectives: Immutable.List<ResourceId>;
 };
 
-type ResourceEditorState = {
+type PageEditorState = {
   messages: Message[];
   title: string;
   content: Immutable.OrderedMap<string, ResourceContent>;
@@ -73,7 +67,15 @@ function prepareSaveFn(
   resource: ResourceSlug,
   update: Persistence.ResourceUpdate,
 ) {
-  return (releaseLock: boolean) => Persistence.edit(project, resource, update, releaseLock);
+  return (releaseLock: boolean) =>
+    Persistence.edit(project, resource, update, releaseLock).then((result) => {
+      // check if the slug has changed as a result of the edit and reload the page if it has
+      if (result.type === 'success' && result.revision_slug !== resource) {
+        window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
+        return result;
+      }
+      return result;
+    });
 }
 
 // Ensures that there is some default content if the initial content
@@ -112,7 +114,7 @@ function mapChildrenObjectives(
 }
 
 // The resource editor
-export class ResourceEditor extends React.Component<ResourceEditorProps, ResourceEditorState> {
+export class PageEditor extends React.Component<PageEditorProps, PageEditorState> {
   persistence: PersistenceStrategy;
   activityPersistence: { [id: string]: PersistenceStrategy };
   windowUnloadListener: any;
@@ -123,7 +125,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
   mouseupListener: any;
   windowBlurListener: any;
 
-  constructor(props: ResourceEditorProps) {
+  constructor(props: PageEditorProps) {
     super(props);
 
     const { title, objectives, allObjectives, content, activities } = props;
@@ -167,7 +169,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
         acquireLock.bind(undefined, projectSlug, resourceSlug),
         releaseLock.bind(undefined, projectSlug, resourceSlug),
         // eslint-disable-next-line
-        () => { },
+        () => {},
         (failure) => this.publishErrorMessage(failure),
         (persistence) => this.setState({ persistence }),
       )
@@ -201,7 +203,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => { },
+          () => {},
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -365,7 +367,52 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     this.setState(mergedState, () => this.save());
   }
 
+  updateImmediate(update: Partial<EditorUpdate>) {
+    const mergedState = Object.assign({}, this.state, update);
+    this.setState(mergedState, () => this.saveImmediate());
+  }
+
+  // Makes any modifications necessary to adhere to a set of constraints that the server
+  // uses to define "valid page content"
+  //
+  // The only adjustment made currently is to manipulate bank selections to ensure that they will be
+  // valid queries.
+  //
+  // Adjustments are made in a way that does not push down the results back to the component
+  // tree as updated props, rather, they are made inline just prior to scheduling an update
+  // of content to be saved.  In this manner, we allow the user interface to display invalid, intermediate
+  // states (as the user is creating a selection, for instance) that will always be saved
+  // as valid states.
+  adjustContentForConstraints(
+    content: Immutable.OrderedMap<string, ResourceContent>,
+  ): ResourceContent[] {
+    const arr = content.toArray();
+
+    return arr.map((v: any) => {
+      const e = v[1];
+      if (e.type === 'selection') {
+        return Object.assign({}, e, { logic: guaranteeValididty(e.logic) });
+      }
+      return e;
+    });
+  }
+
   save() {
+    const { projectSlug, resourceSlug } = this.props;
+
+    const model = this.adjustContentForConstraints(this.state.content);
+
+    const toSave: Persistence.ResourceUpdate = {
+      objectives: { attached: this.state.objectives.toArray() },
+      title: this.state.title,
+      content: { model },
+      releaseLock: false,
+    };
+
+    this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
+  }
+
+  saveImmediate() {
     const { projectSlug, resourceSlug } = this.props;
 
     const toSave: Persistence.ResourceUpdate = {
@@ -375,7 +422,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
       releaseLock: false,
     };
 
-    this.persistence.save(prepareSaveFn(projectSlug, resourceSlug, toSave));
+    this.persistence.saveImmediate(prepareSaveFn(projectSlug, resourceSlug, toSave));
   }
 
   render() {
@@ -389,7 +436,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
     };
 
     const onTitleEdit = (title: string) => {
-      this.update({ title });
+      this.updateImmediate({ title });
     };
 
     const onAddItem = (
@@ -409,7 +456,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           () => Promise.resolve({ type: 'acquired' }),
           () => Promise.resolve({ type: 'acquired' }),
           // eslint-disable-next-line
-          () => { },
+          () => {},
           (failure) => this.publishErrorMessage(failure),
           (persistence) => this.setState({ persistence }),
         );
@@ -451,10 +498,10 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
           <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
           <Banner
-            dismissMessage={(msg) =>
+            dismissMessage={(msg: any) =>
               this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
             }
-            executeAction={(message, action) => action.execute(message)}
+            executeAction={(message: any, action: any) => action.execute(message)}
             messages={this.state.messages}
           />
           <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
@@ -470,8 +517,8 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
               childrenObjectives={this.state.childrenObjectives}
               onRegisterNewObjective={onRegisterNewObjective}
               activityContexts={this.state.activityContexts}
-              onRemove={(key) => this.onRemove(key)}
-              onEdit={(c, key) => onEdit(this.state.content.set(key, c))}
+              onRemove={(key: string) => this.onRemove(key)}
+              onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}
               onEditContentList={onEdit}
               onActivityEdit={this.onActivityEdit}
               onPostUndoable={this.onPostUndoable}
@@ -487,7 +534,7 @@ export class ResourceEditor extends React.Component<ResourceEditorProps, Resourc
 }
 
 // eslint-disable-next-line
-interface StateProps { }
+interface StateProps {}
 
 interface DispatchProps {
   onLoadPreferences: () => void;
@@ -511,4 +558,4 @@ const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchPro
 export default connect<StateProps, DispatchProps, OwnProps>(
   mapStateToProps,
   mapDispatchToProps,
-)(ResourceEditor);
+)(PageEditor);

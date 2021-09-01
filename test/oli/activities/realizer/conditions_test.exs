@@ -30,8 +30,8 @@ defmodule Oli.Activities.ConditionsTest do
     assert Enum.at(parsed.conditions.children, 1).value == [2]
 
     assert Enum.at(parsed.conditions.children, 2).fact == :type
-    assert Enum.at(parsed.conditions.children, 2).operator == :does_not_equal
-    assert Enum.at(parsed.conditions.children, 2).value == 3
+    assert Enum.at(parsed.conditions.children, 2).operator == :does_not_contain
+    assert Enum.at(parsed.conditions.children, 2).value == [3]
 
     assert Enum.at(parsed.conditions.children, 3).fact == :text
     assert Enum.at(parsed.conditions.children, 3).operator == :contains

@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+- Fix an issue where changing the title of a page made the current slug invalid
 - Properly handle ordering activity submission when no student interaction has taken place
 
 ### Enhancements
