@@ -861,17 +861,19 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     writeCapiLog('INIT STATE APPLIED', 3);
-    Object.keys(initState).forEach((key: any) => {
-      const formatted: Record<string, unknown> = {};
-      const baseKey = key.replace(`stage.${id}.`, '');
-      const value = initState[key];
-      const cVar = new CapiVariable({
-        key: baseKey,
-        value,
+    Object.keys(initState)
+      .reverse()
+      .forEach((key: any) => {
+        const formatted: Record<string, unknown> = {};
+        const baseKey = key.replace(`stage.${id}.`, '');
+        const value = initState[key];
+        const cVar = new CapiVariable({
+          key: baseKey,
+          value,
+        });
+        formatted[baseKey] = cVar;
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
-      formatted[baseKey] = cVar;
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
-    });
     if (!simLife.init) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       simLife.init = true;
