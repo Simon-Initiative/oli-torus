@@ -75,6 +75,7 @@ Oli.Authoring.Editing.ContainerEditor.html
 Oli.Authoring.Editing.ObjectiveEditor.html
 Oli.Authoring.Editing.PageEditor.html
 Oli.Authoring.Editing.ResourceContext.html
+Oli.Authoring.Editing.TagEditor.html
 Oli.Authoring.Editing.Utils.html
 Oli.Authoring.Locks.html
 Oli.Authoring.MediaLibrary.ItemOptions.html
@@ -197,6 +198,7 @@ Oli.Publishing.Resolver.html
 Oli.Publishing.html
 Oli.Qa.Review.html
 Oli.Qa.Reviewers.Accessibility.html
+Oli.Qa.Reviewers.Content.SelectionWorker.html
 Oli.Qa.Reviewers.Content.html
 Oli.Qa.Reviewers.Equity.html
 Oli.Qa.Reviewers.Pedagogy.html
@@ -219,17 +221,12 @@ Oli.Rendering.Page.Html.html
 Oli.Rendering.Page.html
 Oli.Rendering.html
 Oli.Repo.html
-Oli.Resources.Activity.html
-Oli.Resources.Container.html
 Oli.Resources.Numbering.html
-Oli.Resources.Objective.html
-Oli.Resources.Page.html
 Oli.Resources.PageContent.html
 Oli.Resources.Resource.html
 Oli.Resources.ResourceType.html
 Oli.Resources.Revision.html
 Oli.Resources.ScoringStrategy.html
-Oli.Resources.Utils.html
 Oli.Resources.html
 Oli.Seeder.html
 Oli.Slack.html
@@ -294,6 +291,7 @@ OliWeb.Api.State.ReadResponse.html
 OliWeb.Api.State.UpsertBody.html
 OliWeb.Api.State.UpsertDeleteResponse.html
 OliWeb.Api.State.html
+OliWeb.Api.TagController.html
 OliWeb.ApiSchemas.CreationResponse.html
 OliWeb.ApiSchemas.UpdateResponse.html
 OliWeb.ApiSchemas.html
@@ -450,8 +448,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-2e6dd30cf8.js
-dist/sidebar_items-38f26f6e33.js
+dist/search_items-e93c80174b.js
+dist/sidebar_items-6647384ff3.js
 index.html
 license.html
 readme.html

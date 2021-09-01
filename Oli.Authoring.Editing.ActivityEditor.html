@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Editing.ActivityEditor — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-38f26f6e33.js"></script>
+    <script src="dist/sidebar_items-6647384ff3.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -221,7 +221,7 @@ Functions
     </a>
     <h1 class="signature">bulk_edit(project_slug, lock_id, author_email, updates)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L230" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L229" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -263,6 +263,7 @@ Functions
      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -300,7 +301,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">create(project_slug, activity_type_slug, author, model, objectives, scope \\ &quot;embedded&quot;)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L566" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L565" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -325,7 +326,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">create_context(project_slug, revision_slug, activity_slug, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L632" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L634" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -356,6 +357,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
        resourceId: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
        resourceSlug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
        resourceTitle: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
+       tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
        title: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(),
        typeSlug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
      }}</pre>
@@ -376,7 +378,7 @@ referenced from a resource.</p>
     </a>
     <h1 class="signature">create_contexts(project_slug, activity_ids)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L670" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L679" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -398,7 +400,7 @@ referenced from a resource.</p>
     </a>
     <h1 class="signature">create_secondary(project_slug, activity_id, author, update)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L147" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L146" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -474,6 +476,7 @@ referenced from a resource.</p>
      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -502,7 +505,7 @@ referenced from a resource.</p>
     </a>
     <h1 class="signature">delete(project_slug, lock_id, activity_id, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L88" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L87" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -541,7 +544,7 @@ referenced from a resource.</p>
     </a>
     <h1 class="signature">edit(project_slug, lock_id, activity_id, author_email, update)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L341" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L340" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -583,6 +586,7 @@ referenced from a resource.</p>
      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -618,7 +622,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">get_latest_revision(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L696" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L706" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -640,7 +644,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">retrieve(project_slug, activity_id, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L57" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -682,6 +686,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -704,7 +709,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
     </a>
     <h1 class="signature">retrieve_bulk(project_slug, activity_ids, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L36" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/editing/activity_editor.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -746,6 +751,7 @@ should have first acquired the lock via <code class="inline">acquire_lock</code>
      scoring_strategy: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      scoring_strategy_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+     tags: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      time_limit: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      title: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
      updated_at: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),

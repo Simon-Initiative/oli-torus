@@ -10,7 +10,7 @@
     <title>OliWeb.Qa.State — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-38f26f6e33.js"></script>
+    <script src="dist/sidebar_items-6647384ff3.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -154,6 +154,13 @@ OliWeb.Qa.State <small class="app-vsn">(OLI Torus v0.13.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#warning_arrived/2">warning_arrived(state, warning)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#warning_dismissed/2">warning_dismissed(state, warning_id)</a>
 
   </div>
@@ -205,7 +212,7 @@ Functions
     </a>
     <h1 class="signature">initialize_state(author, project, initial_review)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L51" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -227,7 +234,7 @@ Functions
     </a>
     <h1 class="signature">new_review_ran(state, arg)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L65" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L66" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -249,7 +256,7 @@ Functions
     </a>
     <h1 class="signature">selection_changed(state, warning_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L100" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L101" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -271,7 +278,7 @@ Functions
     </a>
     <h1 class="signature">set_filters(state, filters)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L84" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L85" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -293,7 +300,7 @@ Functions
     </a>
     <h1 class="signature">to_params(filters, selected)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L44" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L45" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,6 +309,13 @@ Functions
   </div>
 
   <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>to_params(<a href="https://hexdocs.pm/elixir/MapSet.html#t:t/1">MapSet.t</a>(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()) :: %{filters: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(), selected: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
 
 
   </section>
@@ -315,7 +329,29 @@ Functions
     </a>
     <h1 class="signature">toggle_filter(state, filter_type)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L76" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L77" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="warning_arrived/2">
+
+  <div class="detail-header">
+    <a href="#warning_arrived/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">warning_arrived(state, warning)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L126" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -337,7 +373,7 @@ Functions
     </a>
     <h1 class="signature">warning_dismissed(state, warning_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L107" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/qa/state.ex#L108" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

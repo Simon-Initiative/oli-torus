@@ -10,7 +10,7 @@
     <title>Oli.Authoring.Broadcaster — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-38f26f6e33.js"></script>
+    <script src="dist/sidebar_items-6647384ff3.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -138,6 +138,16 @@ that is a specific project or a specific resource type.</p>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#broadcast_new_warning/2">broadcast_new_warning(warning_id, project_slug)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Broadcasts that a warning has been created for a project. Only broadcasted
+for warnings that can be generated async.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#broadcast_publication/2">broadcast_publication(publication, project_slug)</a>
 
   </div>
@@ -218,7 +228,7 @@ Functions
     </a>
     <h1 class="signature">broadcast_lock_acquired(project_slug, publication_id, resource_id, author_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L99" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -240,7 +250,7 @@ Functions
     </a>
     <h1 class="signature">broadcast_lock_released(project_slug, publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L98" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L110" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -251,6 +261,29 @@ Functions
   <section class="docstring">
 
 <p>Broadcasts that a lock has been released on a resource</p>
+  </section>
+</section>
+<section class="detail" id="broadcast_new_warning/2">
+
+  <div class="detail-header">
+    <a href="#broadcast_new_warning/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">broadcast_new_warning(warning_id, project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/broadcasting/broadcaster.ex#L88" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Broadcasts that a warning has been created for a project. Only broadcasted
+for warnings that can be generated async.</p>
   </section>
 </section>
 <section class="detail" id="broadcast_publication/2">
