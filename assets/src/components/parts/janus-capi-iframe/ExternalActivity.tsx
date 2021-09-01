@@ -383,7 +383,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       return collect;
     }, {});
   };
-
+  /*
+   * Notify clients that configuration is updated. (eg. the question has changed)
+   */
+  const notifyConfigChange = () => {
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.CONFIG_CHANGE, []);
+  };
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -452,7 +457,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife,
                 payload,
               });
-              simLife.handshake.config = { context: payload.mode };
+              simLife.handshake.config = {
+                context: payload.mode,
+                questionId: payload.currentActivityId,
+              };
+              notifyConfigChange();
               const currentStateSnapshot = payload.snapshot;
               //send only those variables whose values are changes
               const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
@@ -850,48 +859,17 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     writeCapiLog('INIT STATE APPLIED', 3);
-
-    // This will send inital data when we navigate to next screen inside that layer
-    /* const filterVars = createCapiObjectFromStateVars(initState); */
-    const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
+    Object.keys(initState).forEach((key: any) => {
+      const formatted: Record<string, unknown> = {};
       const baseKey = key.replace(`stage.${id}.`, '');
       const value = initState[key];
       const cVar = new CapiVariable({
         key: baseKey,
         value,
       });
-      if (baseKey.indexOf('Settings') === -1) formatted[baseKey] = cVar;
-      return formatted;
-    }, {});
-    if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
-    }
-    // for some reason when trap state variable contains 'Settings' then SIM does not behave properly so it needs to be
-    // handled different i.e. on first value change filter the 'Settings' variables and send them in another value_change event
-    const initStateVarsWithSettingsVariable = Object.keys(initState).reduce(
-      (formatted: any, key) => {
-        const baseKey = key.replace(`stage.${id}.`, '');
-        const value = initState[key];
-        const cVar = new CapiVariable({
-          key: baseKey,
-          value,
-        });
-        if (baseKey.indexOf('Settings') !== -1) formatted[baseKey] = cVar;
-        return formatted;
-      },
-      {},
-    );
-    if (
-      initStateVarsWithSettingsVariable &&
-      Object.keys(initStateVarsWithSettingsVariable)?.length !== 0
-    ) {
-      sendFormedResponse(
-        simLife.handshake,
-        {},
-        JanusCAPIRequestTypes.VALUE_CHANGE,
-        initStateVarsWithSettingsVariable,
-      );
-    }
+      formatted[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    });
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
 
