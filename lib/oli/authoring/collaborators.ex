@@ -59,15 +59,15 @@ defmodule Oli.Authoring.Collaborators do
     |> case do
       nil ->
         case PowInvitation.Plug.create_user(conn, %{email: email}) do
-          {:ok, user, _conn} -> {:ok, user, :invitation_new_user}
+          {:ok, user, _conn} -> {:ok, user, :new_user}
           {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
         end
 
       author ->
         if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:ok, author, :invitation_new_user}
+          {:ok, author, :new_user}
         else
-          {:ok, author, :invitation_existing_user}
+          {:ok, author, :existing_user}
         end
     end
   end
@@ -135,16 +135,16 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  defp deliver_invitation_email(conn, user, project, view) do
+  defp deliver_invitation_email(conn, user, project, status) do
     invited_by = Pow.Plug.current_user(conn)
 
     url =
-      case view do
-        :invitation_new_user ->
+      case status do
+        :new_user ->
           token = PowInvitation.Plug.sign_invitation_token(conn, user)
           Routes.pow_invitation_invitation_path(conn, :edit, token)
 
-        :invitation_existing_user ->
+        :existing_user ->
           Routes.project_path(conn, :overview, project.slug)
       end
 
@@ -153,7 +153,7 @@ defmodule Oli.Authoring.Collaborators do
     email =
       Oli.Email.invitation_email(
         user.email,
-        view,
+        :collaborator_invitation,
         %{
           invited_by: invited_by,
           invited_by_user_id: invited_by_user_id,

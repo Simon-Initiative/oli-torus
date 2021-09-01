@@ -42,21 +42,6 @@
     border-color: $choice-selected-border-color;
   }
 }
-.choices__choice-index {
-  background-color: initial;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #e5e5e5;
-  height: 30px;
-  width: 30px;
-  font-weight: bold;
-  margin-right: 16px;
-
-  &:hover {
-    background-color: $white;
-  }
-}
 
 .evaluated {
   .choice__choice {
@@ -69,14 +54,6 @@
         background-color: $choice-selected-bg;
       }
     }
-  }
-}
-
-.selected {
-  .choices__choice-index {
-    // background-color: $choice-selected-color;
-    // border: 2px solid $choice-selected-color;
-    // color: $white;
   }
 }
 

@@ -37,8 +37,8 @@
   padding: 4px 8px;
   font-weight: 200;
   text-transform: uppercase;
-  background-color: orangered;
   color: white;
+  border-radius: 4px;
 
   &.checkpoint {
     background-color: $activity-purpose-checkpoint-color;

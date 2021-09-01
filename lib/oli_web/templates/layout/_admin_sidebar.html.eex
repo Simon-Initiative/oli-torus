@@ -1,6 +1,6 @@
 
 <div class="btn-group dropright hoverdriven">
-  <button type="button" class="btn btn-light my-1 " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  <button type="button" class="sidebar-item btn my-1 " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
     <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
     <div class="label mt-1">Admin</div>
   </button>

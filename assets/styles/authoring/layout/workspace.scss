@@ -170,6 +170,14 @@ $workspace-sidebar-width: 65px;
       margin-right: 2px;
       margin-left: 0px;
       z-index: 202;
+
+      a {
+        // display: flex;
+        // flex-direction: columns;
+        // margin: 10px 0;
+        color: $workspace-sidebar-link-color;
+      }
+
     }
 
     .dropdown-item {
@@ -190,7 +198,7 @@ $workspace-sidebar-width: 65px;
       border-color: transparent;
     }
 
-    .btn {
+    .sidebar-item {
       width: $workspace-sidebar-width;
       background-color: transparent;
       border-color: transparent;
@@ -198,29 +206,17 @@ $workspace-sidebar-width: 65px;
       padding-top: 8px;
     }
 
-    .btn:hover {
+    .sidebar-item:hover {
       background-color: $gray-500;
     }
 
-    .btn-group:focus {
-      outline: none !important;
-      box-shadow: none;
-    }
-
-    .btn:focus {
+    .sidebar-item:focus {
       outline: none !important;
       box-shadow: none;
     }
 
     .label {
       font-size: 0.65em;
-    }
-
-    a {
-      display: flex;
-      flex-direction: columns;
-      margin: 10px 0;
-      color: $workspace-sidebar-link-color;
     }
 
     .account-link {

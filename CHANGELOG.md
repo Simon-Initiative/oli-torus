@@ -6,6 +6,7 @@
 
 - Fix an issue where changing the title of a page made the current slug invalid
 - Properly handle ordering activity submission when no student interaction has taken place
+- Fix various UI issues such as showing outline in LMS iframe, email templates and dark mode feedback
 - Fix an issue where the manage grades page displayed an incorrect grade book link
 
 ### Enhancements
