@@ -12,10 +12,4 @@ describe('convert sequence to bank schema and revert back to sequence data', () 
     const changes = transformBankSchematoModel(model);
     expect(changes).toMatchObject(transformedSchema);
   });
-  it('check next sequence in case of question bank', () => {
-    const model = getNextScreen();
-    console.log(model);
-    const changes = transformBankSchematoModel(model);
-    expect(changes).toMatchObject(transformedSchema);
-  });
 });
