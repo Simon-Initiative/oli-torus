@@ -22,9 +22,9 @@ SOFTWARE.
 
 // tslint:disable: max-classes-per-file
 
+import EventEmitter from 'events';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import EventEmitter from 'events';
 
 function toCamelCase(str: string) {
   return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''));
@@ -80,7 +80,7 @@ class Slot extends React.Component {
   }
 }
 
-function toVdom(element: any, nodeName: any) {
+function toVdom(element: any, nodeName: any, attrConfig: Record<string, AttrConfig> = {}) {
   if (element.nodeType === 3) return element.data;
   if (element.nodeType !== 1) return null;
   const children: any[] = [];
@@ -90,13 +90,22 @@ function toVdom(element: any, nodeName: any) {
   const cn = element.childNodes;
   for (i = a.length; i--; ) {
     if (a[i].name !== 'slot') {
-      props[a[i].name] = a[i].value;
-      props[toCamelCase(a[i].name)] = a[i].value;
+      const attrName = a[i].name;
+      let attrValue = a[i].value;
+      if (attrConfig[attrName] && attrConfig[attrName].json) {
+        try {
+          attrValue = JSON.parse(attrValue);
+        } catch (e) {
+          console.warn('Could not parse attribute', attrName, attrValue);
+        }
+      }
+      props[attrName] = attrValue;
+      props[toCamelCase(attrName)] = attrValue;
     }
   }
 
   for (i = cn.length; i--; ) {
-    const vnode = toVdom(cn[i], null);
+    const vnode = toVdom(cn[i], null, attrConfig);
     // Move slots correctly
     const name = cn[i].slot;
     if (name) {
@@ -120,6 +129,7 @@ abstract class ReactCustomElement extends HTMLElement {
   protected _props: any;
   protected _customEvents: any;
   protected _notify: any;
+  protected _attrConfig: Record<string, AttrConfig>;
 
   constructor() {
     super();
@@ -130,6 +140,7 @@ abstract class ReactCustomElement extends HTMLElement {
     this._props = {};
     this._customEvents = {};
     this._notify = new EventEmitter();
+    this._attrConfig = {};
   }
 
   connectedCallback() {
@@ -146,10 +157,29 @@ abstract class ReactCustomElement extends HTMLElement {
 
     const notify = this._notify;
 
+    // React doesn't do the className magic with custom elements
+    if (this.getAttribute('classname')) {
+      this.setAttribute('class', this.getAttribute('classname') as string);
+    }
+    // special case for other classes since I can't do my own className
+    if (this.getAttribute('customcssclass')) {
+      const customCssClass = this.getAttribute('customcssclass') as string;
+      const currentClasses = this.getAttribute('class') as string;
+      if (customCssClass) {
+        if (!currentClasses) {
+          this.setAttribute('class', customCssClass);
+        } else {
+          const allClasses = customCssClass.split(' ').concat(currentClasses.split(' '));
+          // TODO: unique?
+          this.setAttribute('class', allClasses.join(' '));
+        }
+      }
+    }
+
     this._vdom = React.createElement(
       ContextProvider,
       { ...this._props, ...this._customEvents, context, notify },
-      toVdom(this, this._vdomComponent),
+      toVdom(this, this._vdomComponent, this._attrConfig),
     );
     ReactDOM.render(this._vdom, this._root);
   }
@@ -161,6 +191,16 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
+    if (name === 'classname') {
+      let className = newValue;
+      if (this.getAttribute('customcssclass')) {
+        const customCssClass = this.getAttribute('customcssclass') as string;
+        const allClasses = customCssClass.split(' ').concat(newValue.split(' '));
+        className = allClasses.join(' ');
+      }
+      this.setAttribute('class', className);
+      return;
+    }
     if (!this._vdom) return;
     // Attributes use `null` as an empty value whereas `undefined` is more
     // common in pure JS components, especially with default parameters.
@@ -168,6 +208,15 @@ abstract class ReactCustomElement extends HTMLElement {
     // value. See issue #50.
     newValue = newValue == null ? undefined : newValue;
     const props: any = {};
+    if (this._attrConfig[name]) {
+      if (this._attrConfig[name].json) {
+        try {
+          newValue = JSON.parse(newValue);
+        } catch (e) {
+          console.warn(`expected ${name} to contain JSON, failed to parse`, newValue);
+        }
+      }
+    }
     props[name] = newValue;
     props[toCamelCase(name)] = newValue;
     this._vdom = React.cloneElement(this._vdom, props);
@@ -186,6 +235,7 @@ abstract class ReactCustomElement extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent(eventName, {
           bubbles: true,
+          composed: true,
           detail: { callback, payload },
         }),
       );
@@ -199,11 +249,31 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 }
 
-const register = (Component: any, tagName?: string, watchedPropNames?: string[], options?: any) => {
+interface AttrConfig {
+  watched?: boolean;
+  json?: boolean;
+}
+interface RegistrationOptions {
+  shadow?: boolean;
+  customEvents?: Record<string, string>;
+  customApi?: Record<string, any>;
+  attrs?: Record<string, AttrConfig>;
+}
+
+const register = (
+  Component: any,
+  tagName?: string,
+  watchedPropNames?: string[],
+  options?: RegistrationOptions,
+) => {
   // tslint:disable-next-line: max-classes-per-file
   class CustomElement extends ReactCustomElement {
-    static observedAttributes =
-      watchedPropNames || Component.observedAttributes || Object.keys(Component.propTypes || {});
+    static observedAttributes: string[] = [
+      'classname',
+      ...(watchedPropNames ||
+        Component.observedAttributes ||
+        Object.keys(Component.propTypes || {})),
+    ];
 
     constructor() {
       super();
@@ -211,8 +281,17 @@ const register = (Component: any, tagName?: string, watchedPropNames?: string[],
       this._vdomComponent = Component;
       this._root = options && options.shadow ? this.attachShadow({ mode: 'open' }) : this;
 
+      if (options && options.attrs) {
+        this._attrConfig = options.attrs;
+        // TODO: add / include to observedAttributes based on watched property
+      }
+
       // Keep DOM properties and React props in sync
       CustomElement.observedAttributes.forEach((name: string) => {
+        // React doesn't do its normal className prop for custom elements
+        if (name === 'classname') {
+          return;
+        }
         Object.defineProperty(this, name, {
           get() {
             return this._vdom.props[name];
@@ -222,7 +301,16 @@ const register = (Component: any, tagName?: string, watchedPropNames?: string[],
               this.attributeChangedCallback(name, null, v);
             } else {
               if (!this._props) this._props = {};
-              this._props[name] = v;
+              if (this._attrConfig[name] && this._attrConfig[name].json) {
+                try {
+                  this._props[name] = JSON.parse(v);
+                } catch (e) {
+                  console.warn(`expected ${name} to contain JSON, failed to parse`, v);
+                  this._props[name] = v;
+                }
+              } else {
+                this._props[name] = v;
+              }
               // this.connectedCallback();
             }
 

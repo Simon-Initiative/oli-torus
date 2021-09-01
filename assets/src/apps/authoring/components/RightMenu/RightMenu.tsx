@@ -1,23 +1,32 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
+import { Button, ButtonGroup, ButtonToolbar, Tab, Tabs } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import {
   selectRightPanelActiveTab,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
-import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectCurrentSequenceId,
+  selectSequence,
+} from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import { updateSequenceItemFromActivity } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import {
+  updateSequenceItem,
+  updateSequenceItemFromActivity,
+} from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
 import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
 import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
+import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import lessonSchema, {
   lessonUiSchema,
@@ -34,6 +43,16 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
+import bankSchema, {
+  bankUiSchema,
+  transformBankModeltoSchema,
+  transformBankSchematoModel,
+} from '../PropertyEditor/schemas/bank';
+import {
+  findInSequence,
+  SequenceBank,
+  SequenceEntry,
+} from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -50,20 +69,35 @@ const RightMenu: React.FC<any> = () => {
   const currentPartSelection = useSelector(selectCurrentSelection);
 
   // TODO: dynamically load schema from Part Component configuration
-  const [componentSchema, setComponentSchema]: any = useState<any>(partSchema);
-  const [componentUiSchema, setComponentUiSchema]: any = useState<any>(partUiSchema);
-  const [currentComponent, setCurrentComponent] = useState<any>(null);
+  const [componentSchema, setComponentSchema] = useState<JSONSchema7>(partSchema);
+  const [componentUiSchema, setComponentUiSchema] = useState(partUiSchema);
+  const [currentComponent, setCurrentComponent] = useState(null);
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const sequence = useSelector(selectSequence);
+  const currentSequence = findInSequence(sequence, currentSequenceId);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [screenData, setScreenData] = useState();
+  const [scrData, setScreenData] = useState();
+  const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
+  const [questionBankData, setBankData] = useState<any>();
+  const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   useEffect(() => {
     if (!currentActivity) {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
     setScreenData(transformScreenModeltoSchema(currentActivity));
-  }, [currentActivity]);
+    setScreenSchema(screenSchema);
+
+    setBankData(transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>));
+    setBankSchema(bankSchema);
+    const currentIds = currentActivityTree?.reduce(
+      (acc, activity) => acc.concat(activity.content.partsLayout.map((p: any) => p.id)),
+      [],
+    );
+    setExistingIds(currentIds);
+  }, [currentActivity, currentSequence]);
 
   // should probably wrap this in state too, but it doesn't change really
   const lessonData = transformLessonModel(currentLesson);
@@ -73,16 +107,51 @@ const RightMenu: React.FC<any> = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
 
+  const bankPropertyChangeHandler = useCallback(
+    (properties: object) => {
+      if (currentSequence) {
+        const modelChanges = transformBankSchematoModel(properties);
+        console.log('Bank Property Change...', { properties, modelChanges });
+        const { bankShowCount, bankEndTarget } = modelChanges;
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: currentGroup }));
+          dispatch(savePage());
+        }
+        //debounceSaveBankSettings(currentGroup, currentSequence, bankShowCount, bankEndTarget);
+      }
+    },
+    [currentSequence],
+  );
+
+  const debounceSaveBankSettings = useCallback(
+    debounce(
+      (group, currentSequence, bankShowCount, bankEndTarget) => {
+        if (currentSequence) {
+          const cloneSequence = clone(currentSequence);
+          cloneSequence.custom.bankShowCount = bankShowCount;
+          cloneSequence.custom.bankEndTarget = bankEndTarget;
+          dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
+          dispatch(savePage());
+        }
+      },
+      0,
+      { maxWait: 10000, leading: false },
+    ),
+    [],
+  );
+
   const screenPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       if (currentActivity) {
         const modelChanges = transformScreenSchematoModel(properties);
         console.log('Screen Property Change...', { properties, modelChanges });
-        const title = modelChanges.title;
-        delete modelChanges.title;
+        const { title, ...screenModelChanges } = modelChanges;
         const screenChanges = {
           ...currentActivity?.content?.custom,
-          ...modelChanges,
+          ...screenModelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
@@ -128,7 +197,7 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const lessonPropertyChangeHandler = (properties: any) => {
+  const lessonPropertyChangeHandler = (properties: object) => {
     const modelChanges = transformLessonSchema(properties);
 
     // special consideration for legacy stylesheets
@@ -161,7 +230,7 @@ const RightMenu: React.FC<any> = () => {
       (properties, partInstance, origActivity, origId) => {
         let modelChanges = properties;
         if (partInstance && partInstance.transformSchemaToModel) {
-          modelChanges.custom = partInstance.transformSchemaToModel(properties);
+          modelChanges.custom = partInstance.transformSchemaToModel(properties.custom);
         }
         modelChanges = transformPartSchemaToModel(modelChanges);
         console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
@@ -177,6 +246,14 @@ const RightMenu: React.FC<any> = () => {
         }
         if (modelChanges.id !== ogPart.id) {
           ogPart.id = modelChanges.id;
+          // also need to update the authoring.parts
+          const authoringPart = cloneActivity.authoring?.parts?.find(
+            (p: any) => p.id === ogPart.id,
+          );
+          // TODO: if that isn't found, then it's a problem. maybe should write it new?
+          if (authoringPart) {
+            authoringPart.id = modelChanges.id;
+          }
           // in case the id changes, update the selection
           dispatch(setCurrentSelection({ selection: modelChanges.id }));
         }
@@ -192,8 +269,9 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const [currentComponentData, setCurrentComponentData] = useState<any>(null);
-  const [currentPartInstance, setCurrentPartInstance] = useState<any>(null);
+  const [currentComponentData, setCurrentComponentData] = useState(null);
+  const [currentPartInstance, setCurrentPartInstance] = useState(null);
+  const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
     if (!currentPartSelection || !currentActivityTree) {
       return;
@@ -215,7 +293,7 @@ const RightMenu: React.FC<any> = () => {
 
         setCurrentPartInstance(instance);
 
-        let data = partDef;
+        let data = clone(partDef);
         if (instance.transformModelToSchema) {
           // because the part schema below only knows about the "custom" block
           data.custom = instance.transformModelToSchema(partDef.custom);
@@ -284,7 +362,7 @@ const RightMenu: React.FC<any> = () => {
   }, [currentPartSelection, currentActivityTree]);
 
   const componentPropertyChangeHandler = useCallback(
-    (properties: any) => {
+    (properties: object) => {
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,
@@ -294,6 +372,51 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
+  const handleEditComponentJson = (newJson: any) => {
+    const cloneActivity = clone(currentActivity);
+    const ogPart = cloneActivity.content?.partsLayout.find(
+      (part: any) => part.id === currentPartSelection,
+    );
+    if (!ogPart) {
+      console.warn(
+        'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
+      );
+      return;
+    }
+    if (newJson.id !== '' && newJson.id !== ogPart.id) {
+      ogPart.id = newJson.id;
+      // in case the id changes, update the selection
+      dispatch(setCurrentSelection({ selection: newJson.id }));
+    }
+    ogPart.custom = newJson.custom;
+    if (!isEqual(cloneActivity, currentActivity)) {
+      dispatch(saveActivity({ activity: cloneActivity }));
+    }
+  };
+  const handleDeleteComponent = useCallback(() => {
+    // only allow delete of "owned" parts
+    // TODO: disable/hide button if that is not owned
+    if (!currentActivity || !currentPartSelection) {
+      return;
+    }
+    const partDef = currentActivity.content?.partsLayout.find(
+      (part: any) => part.id === currentPartSelection,
+    );
+    if (!partDef) {
+      console.warn(`Part with id ${currentPartSelection} not found on this screen`);
+      return;
+    }
+    const cloneActivity = clone(currentActivity);
+    cloneActivity.authoring.parts = cloneActivity.authoring.parts.filter(
+      (part: any) => part.id !== currentPartSelection,
+    );
+    cloneActivity.content.partsLayout = cloneActivity.content.partsLayout.filter(
+      (part: any) => part.id !== currentPartSelection,
+    );
+    dispatch(saveActivity({ activity: cloneActivity }));
+    dispatch(setCurrentSelection({ selection: '' }));
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+  }, [currentPartSelection, currentActivity]);
 
   return (
     <Tabs
@@ -302,7 +425,7 @@ const RightMenu: React.FC<any> = () => {
       onSelect={handleSelectTab}
     >
       <Tab eventKey={RightPanelTabs.LESSON} title="Lesson">
-        <div className="lesson-tab">
+        <div className="lesson-tab overflow-hidden">
           <PropertyEditor
             schema={lessonSchema as JSONSchema7}
             uiSchema={lessonUiSchema}
@@ -312,13 +435,24 @@ const RightMenu: React.FC<any> = () => {
         </div>
       </Tab>
       <Tab eventKey={RightPanelTabs.SCREEN} title="Screen">
-        <div className="screen-tab p-3">
-          {currentActivity && screenData ? (
+        {currentActivity && currentSequence && currentSequence?.custom.isBank ? (
+          <div className="bank-tab p-3">
+            <PropertyEditor
+              key={currentActivity.id}
+              schema={questionBankSchema as JSONSchema7}
+              uiSchema={bankUiSchema}
+              value={questionBankData}
+              onChangeHandler={bankPropertyChangeHandler}
+            />
+          </div>
+        ) : null}
+        <div className="screen-tab p-3 overflow-hidden">
+          {currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
               schema={screenSchema as JSONSchema7}
               uiSchema={screenUiSchema}
-              value={screenData}
+              value={scrData}
               onChangeHandler={screenPropertyChangeHandler}
             />
           ) : null}
@@ -326,7 +460,28 @@ const RightMenu: React.FC<any> = () => {
       </Tab>
       <Tab eventKey={RightPanelTabs.COMPONENT} title="Component" disabled={!currentComponent}>
         {currentComponent && currentComponentData && (
-          <div className="component-tab p-3">
+          <div className="component-tab p-3 overflow-hidden">
+            <ButtonToolbar aria-label="Component Tools">
+              <ButtonGroup className="me-2" aria-label="First group">
+                <Button>
+                  <i className="fas fa-wrench mr-2" />
+                </Button>
+                <Button>
+                  <i className="fas fa-cog mr-2" />
+                </Button>
+                <Button>
+                  <i className="fas fa-copy mr-2" />
+                </Button>
+                <CompJsonEditor
+                  onChange={handleEditComponentJson}
+                  jsonValue={currentComponentData}
+                  existingPartIds={existingIds}
+                />
+                <Button variant="danger" onClick={handleDeleteComponent}>
+                  <i className="fas fa-trash mr-2" />
+                </Button>
+              </ButtonGroup>
+            </ButtonToolbar>
             <PropertyEditor
               schema={componentSchema}
               uiSchema={componentUiSchema}

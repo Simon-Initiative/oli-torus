@@ -6,6 +6,10 @@ defmodule Oli.Utils do
     :crypto.strong_rand_bytes(length) |> Base.encode16() |> binary_part(0, length)
   end
 
+  def generate_error_id() do
+    random_string(8)
+  end
+
   @doc """
   Returns the specified value if not nil, otherwise returns the default value
   """

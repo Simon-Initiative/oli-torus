@@ -2,10 +2,10 @@ import { ReactEditor } from 'slate-react';
 
 // For toolbar buttons
 export type CommandDesc = {
-  type: 'CommandDesc',
-  icon: (editor: ReactEditor) => string,
-  command: Command,
-  description: (editor: ReactEditor) => string,
+  type: 'CommandDesc';
+  icon: (editor: ReactEditor) => string;
+  command: Command;
+  description: (editor: ReactEditor) => string;
   // active: is the item in the cursor's selection
   active?: (editor: ReactEditor) => boolean;
 };
@@ -17,7 +17,7 @@ export interface CommandContext {
 export type Command = {
   // precondition: must be satisfied for the command to be enabled
   // (prevents commands from violating model constraints)
-  precondition: (editor: ReactEditor) => boolean,
+  precondition: (editor: ReactEditor) => boolean;
   // execute: run when the command is called (usually to create an element and insert it)
   // eslint-disable-next-line
   execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void,
@@ -29,11 +29,11 @@ export type Command = {
     editor: ReactEditor,
     onDone: (params: any) => void,
     onCancel: () => void,
-  ) => JSX.Element,
+  ) => JSX.Element;
 };
 
 export type GroupDivider = {
-  type: 'GroupDivider',
+  type: 'GroupDivider';
 };
 
 export type ToolbarItem = CommandDesc | GroupDivider;

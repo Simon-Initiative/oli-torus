@@ -21,15 +21,8 @@ type Props = {
   setSelectedPage: React.Dispatch<React.SetStateAction<Persistence.Page | null>>;
 };
 export const DisplayLink = (props: Props) => {
-  const {
-    href,
-    pages,
-    setPages,
-    selectedPage,
-    setSelectedPage,
-    setEditLink,
-    commandContext,
-  } = props;
+  const { href, pages, setPages, selectedPage, setSelectedPage, setEditLink, commandContext } =
+    props;
 
   const onCopy = (href: string) => {
     navigator.clipboard.writeText(

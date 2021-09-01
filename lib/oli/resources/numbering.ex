@@ -1,12 +1,54 @@
 defmodule Oli.Resources.Numbering do
+  @moduledoc """
+  Numbering module handles number generation for a course hierarchy and contains helper methods
+  used in both authoring and delivery.
+
+  Delivery numberings are generated at section resource creation time and authoring numberings
+  are generated JIT on resource access. This is because once section resources are generated, they
+  are unexpected to change as often as perhaps a course under active development in authoring might.
+
+  Numbering is dictated according to the resource type and level:
+    - Pages: All pages are numbered sequentially in course globally. Pages across modules can be
+      conceptualized (and navigated via previous/next) as a contiguous list of resources like pages in a book.
+    - Containers: Container numberings are scoped to their level in the hierarchy
+
+  For Example:
+  ```
+    - Unit 1:
+      - Module 1
+        - Section 1
+          - Page 1
+          - Page 2
+        - Section 2
+          - Section 1
+            - Page 3
+            - Page 4
+            - Page 5
+      - Module 2
+        - Section 3
+          - Section 2
+            - Page 6
+            - Page 7
+    - Unit 2:
+      - Module 3
+        - Section 4
+          - Page 8
+          - Page 9
+        - Section 5
+          - Section 1
+            - Page 10
+            - Page 11
+            - Page 12
+    - Page 13
+  ```
+  """
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
-  alias Oli.Utils.HierarchyNode
 
   defstruct level: 0,
-            count: 0,
-            container: nil
+            index: 0,
+            revision: nil
 
   def container_type(level) do
     case level do
@@ -17,7 +59,7 @@ defmodule Oli.Resources.Numbering do
   end
 
   def prefix(numbering) do
-    container_type(numbering.level) <> " #{numbering.count}"
+    container_type(numbering.level) <> " #{numbering.index}"
   end
 
   @typep project_or_section_slug :: String.t()
@@ -25,48 +67,6 @@ defmodule Oli.Resources.Numbering do
   @typep resource_id :: Number.t()
   @typep revision_id :: Number.t()
   @typep resolver :: Resolver.t()
-
-  @doc """
-  Returns a [%HierarchyNode{}] representing the course's hierarchy structure.
-
-  ## Parameters
-
-    - resolver
-    - project_or_section_slug: The project slug or the section slug.
-
-  """
-  @spec full_hierarchy(resolver, project_or_section_slug) :: [%HierarchyNode{}]
-  def full_hierarchy(resolver, project_or_section_slug) do
-    revisions_by_id =
-      resolver.all_revisions_in_hierarchy(project_or_section_slug)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
-
-    full_hierarchy_helper(
-      number_full_tree(resolver, project_or_section_slug),
-      revisions_by_id,
-      resolver.root_container(project_or_section_slug)
-    )
-  end
-
-  def full_hierarchy_helper(numberings, revisions_by_id, revision) do
-    [
-      %HierarchyNode{
-        revision: revision,
-        children:
-          Enum.flat_map(
-            revision.children,
-            fn resource_id ->
-              full_hierarchy_helper(
-                numberings,
-                revisions_by_id,
-                Map.get(revisions_by_id, resource_id)
-              )
-            end
-          ),
-        numbering: Map.get(numberings, revision.id)
-      }
-    ]
-  end
 
   @doc """
   Returns the path from a project's root container to a requested revision slug.
@@ -162,37 +162,66 @@ defmodule Oli.Resources.Numbering do
   end
 
   @spec number_tree_from(%Revision{}, [%Revision{}]) :: %{revision_id => %__MODULE__{}}
-  def number_tree_from(container, resources) do
-    # for all resources, map them by their ids
+  def number_tree_from(revision, revisions) do
+    # for all revisions, map them by their ids
     by_id =
-      Enum.filter(resources, fn r ->
-        r.resource_type_id == ResourceType.get_id_by_type("container")
+      Enum.filter(revisions, fn r ->
+        r.resource_type_id == ResourceType.get_id_by_type("page") or
+          r.resource_type_id == ResourceType.get_id_by_type("container")
       end)
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e) end)
 
-    numberings = %{}
-
     # now recursively walk the tree structure, tracking level based numbering as we go
-    level_counts = %{}
-    {_, numberings} = number_helper(container, by_id, 1, level_counts, numberings)
+    numberings = init_numberings()
+    level = 0
+    numberings_by_id = %{}
+    {_, numberings_by_id} = number_helper(revision, by_id, level, numberings, numberings_by_id)
 
-    numberings
+    numberings_by_id
   end
 
   # recursive helper to assemble the full hierarchy numberings
-  defp number_helper(container, by_id, level, level_counts, numberings) do
-    Enum.filter(container.children, fn id -> Map.has_key?(by_id, id) end)
+  defp number_helper(revision, by_id, level, numberings, numberings_by_id) do
+    revision.children
     |> Enum.map(fn id -> Map.get(by_id, id) end)
-    |> Enum.reduce({level_counts, numberings}, fn container, {counts, nums} ->
-      {counts, count} = increment_count(counts, level)
-      numbering = %__MODULE__{level: level, count: count, container: container}
+    |> Enum.reduce({numberings, numberings_by_id}, fn child, {numberings, numberings_by_id} ->
+      {index, numberings} = next_index(numberings, level, child)
+      numbering = %__MODULE__{level: level, index: index, revision: child}
 
-      number_helper(container, by_id, level + 1, counts, Map.put(nums, container.id, numbering))
+      number_helper(
+        child,
+        by_id,
+        level + 1,
+        numberings,
+        Map.put(numberings_by_id, child.id, numbering)
+      )
     end)
   end
 
-  defp increment_count(level_counts, level) do
-    count = Map.get(level_counts, level, 0) + 1
-    {Map.put(level_counts, level, count), count}
+  def next_index(numberings, level, revision) do
+    page = ResourceType.get_id_by_type("page")
+    container = ResourceType.get_id_by_type("container")
+
+    case revision.resource_type_id do
+      ^page ->
+        get_and_update_in(numberings, [:pages], &increment_or_init/1)
+
+      ^container ->
+        get_and_update_in(numberings, [:containers, level], &increment_or_init/1)
+    end
+  end
+
+  defp increment_or_init(value) do
+    case value do
+      nil ->
+        {1, 2}
+
+      value ->
+        {value, value + 1}
+    end
+  end
+
+  def init_numberings() do
+    %{pages: 1, containers: %{}}
   end
 end

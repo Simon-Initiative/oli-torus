@@ -2,15 +2,14 @@ defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
   import OliWeb.ProjectPlugs
-
+  alias Oli.Activities.Realizer.Query.Source
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Accounts
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Resources.Numbering
-  alias Oli.Delivery.Page.PageContext
   alias Oli.PartComponents
+  alias Oli.Publishing.HierarchyNode
 
   plug :fetch_project
   plug :authorize_project
@@ -19,6 +18,7 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
+    project = conn.assigns.project
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} ->
@@ -31,7 +31,9 @@ defmodule OliWeb.ResourceController do
           scripts: Activities.get_activity_scripts(:authoring_script),
           part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
           project_slug: project_slug,
-          revision_slug: revision_slug
+          revision_slug: revision_slug,
+          activity_types: Activities.activities_for_project(project),
+          part_component_types: PartComponents.part_components_for_project(project)
         )
 
       {:error, :not_found} ->
@@ -69,11 +71,17 @@ defmodule OliWeb.ResourceController do
           preview_mode: true
         )
 
-      %{content: content} ->
-        activity_ids =
-          Oli.Authoring.Editing.Utils.activity_references(content) |> MapSet.to_list()
-
-        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+      revision ->
+        {_, activity_revisions, transformed_content} =
+          Oli.Delivery.ActivityProvider.provide(
+            revision,
+            %Source{
+              blacklisted_activity_ids: [],
+              section_slug: project_slug,
+              publication_id: Oli.Publishing.project_working_publication(project_slug).id
+            },
+            Oli.Publishing.AuthoringResolver
+          )
 
         case PageEditor.create_context(project_slug, revision_slug, author) do
           {:ok, context} ->
@@ -86,7 +94,9 @@ defmodule OliWeb.ResourceController do
                   project_slug
                 ),
               content_html:
-                PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
+                PageEditor.render_page_html(project_slug, transformed_content, author,
+                  preview: true
+                ),
               context: context,
               scripts: Activities.get_activity_scripts(),
               preview_mode: true
@@ -101,17 +111,15 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug}) do
     # find the first page of the course and redirect to there. NOTE: this is not the most efficient method,
     # but it should suffice for now until an improved preview landing page is added
-    [root_container_node] =
-      Numbering.full_hierarchy(Oli.Publishing.AuthoringResolver, project_slug)
-
-    hierarchy = root_container_node.children
-    [first | _t] = PageContext.flatten_hierarchy(hierarchy)
+    [first | _] =
+      AuthoringResolver.full_hierarchy(project_slug)
+      |> HierarchyNode.flatten_pages()
 
     conn
     |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
   end
 
-  defp render_not_found(conn, project_slug) do
+  def render_not_found(conn, project_slug) do
     conn
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",

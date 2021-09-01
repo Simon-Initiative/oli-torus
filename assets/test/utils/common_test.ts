@@ -91,6 +91,12 @@ describe('common parseArray', () => {
     expect(parseArray(str)).toEqual(expected);
   });
 
+  it('should parse an array-like decimal string into a valid number array', () => {
+    const str = '[.000025,.000015,.000006,.000008]';
+    const expected = [0.000025, 0.000015, 0.000006, 0.000008];
+    expect(parseArray(str)).toEqual(expected);
+  });
+
   it('should parse an array-like string into a valid array', () => {
     const str = '["some", "thing", "silly"]';
     const expected = ['some', 'thing', 'silly'];

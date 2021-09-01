@@ -151,6 +151,7 @@ const DeckLayoutFooter: React.FC = () => {
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
   const [displayFeedbackHeader, setDisplayFeedbackHeader] = useState<boolean>(false);
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
@@ -266,7 +267,9 @@ const DeckLayoutFooter: React.FC = () => {
     }
 
     // after any mutations applied, and just in case
-    dispatch(setScore({ score: getValue('session.tutorialScore', defaultGlobalEnv) || 0 }));
+    const tutScore = getValue('session.tutorialScore', defaultGlobalEnv) || 0;
+    const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
+    dispatch(setScore({ score: tutScore + curScore }));
 
     if (hasFeedback) {
       dispatch(
@@ -305,6 +308,10 @@ const DeckLayoutFooter: React.FC = () => {
         }
       }
     }
+
+    if (!hasFeedback && !hasNavigation) {
+      setHasOnlyMutation(true);
+    }
   }, [lastCheckResults]);
 
   const checkHandler = () => {
@@ -313,11 +320,17 @@ const DeckLayoutFooter: React.FC = () => {
 
     // if (isGoodFeedback && canProceed) {
     if (isGoodFeedback) {
-      dispatch(
-        nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
-      );
+      if (nextActivityId && nextActivityId.trim()) {
+        dispatch(
+          nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+        );
+      } else {
+        // if there is no navigation, then keep checking
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
+      }
       dispatch(setIsGoodFeedback({ isGood: false }));
       dispatch(setNextActivityId({ nextActivityId: '' }));
+      setIsLoading(false);
     } else if (
       (!isLegacyTheme || !currentActivity?.custom?.showCheckBtn) &&
       !isGoodFeedback &&
@@ -370,6 +383,13 @@ const DeckLayoutFooter: React.FC = () => {
     setCheckInProgress(true);
     setIsLoading(true);
   }, [lastCheckTriggered]);
+
+  useEffect(() => {
+    if (hasOnlyMutation) {
+      setIsLoading(false);
+      setHasOnlyMutation(false);
+    }
+  }, [hasOnlyMutation]);
 
   useEffect(() => {
     if (checkInProgress && lastCheckResults) {

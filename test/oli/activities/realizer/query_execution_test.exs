@@ -53,7 +53,12 @@ defmodule Oli.Activities.Query.ExecutorTest do
     end
 
     test "queries for selection via objectives", %{publication: publication} do
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :objectives, operator: :contains, value: [2]}}
 
@@ -61,11 +66,16 @@ defmodule Oli.Activities.Query.ExecutorTest do
         Builder.build(logic, source, paging, :paged)
         |> Executor.execute()
 
-      assert Map.get(hd(rows), "title") == "2"
+      assert Map.get(hd(rows), :title) == "2"
     end
 
     test "queries for paging", %{publication: publication} do
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :objectives, operator: :contains, value: [1]}}
 
@@ -75,7 +85,12 @@ defmodule Oli.Activities.Query.ExecutorTest do
     end
 
     test "queries for exact objectives via lateral join", %{publication: publication} do
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :objectives, operator: :equals, value: [1]}}
 
@@ -85,7 +100,12 @@ defmodule Oli.Activities.Query.ExecutorTest do
     end
 
     test "queries for full text", %{publication: publication} do
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :text, operator: :contains, value: "question"}}
 
@@ -98,7 +118,12 @@ defmodule Oli.Activities.Query.ExecutorTest do
       id = Oli.Activities.get_registration_by_slug("oli_multiple_choice").id
 
       # Verify the IN operator works
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
 
       logic = %Logic{
@@ -110,7 +135,12 @@ defmodule Oli.Activities.Query.ExecutorTest do
         |> Executor.execute()
 
       # Verify the exact match operator works, matching none
-      source = %Source{publication_id: publication.id, blacklisted_activity_ids: []}
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
       paging = %Paging{limit: 1, offset: 0}
 
       logic = %Logic{

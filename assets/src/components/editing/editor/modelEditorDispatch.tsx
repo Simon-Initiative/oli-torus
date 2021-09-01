@@ -18,8 +18,8 @@ export function editorFor(
   element: ContentModel.ModelElement,
   props: any,
   editor: any,
-  commandContext: CommandContext): JSX.Element {
-
+  commandContext: CommandContext,
+): JSX.Element {
   const { attributes, children } = props;
 
   const editorProps = {

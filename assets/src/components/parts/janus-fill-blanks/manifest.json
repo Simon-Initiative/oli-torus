@@ -1,7 +1,9 @@
 {
     "id": "janus_fill_blanks",
-    "friendlyName": "FillBlanks",
-    "description": "Displays a fill in the blanks element",
+    "friendlyName": "Fill in the Blanks",
+    "description": "A configurable Fill in the Blanks component.",
+    "icon": "icon-part-fib.svg",
+    "author": "Project Janus Team",
     "global": true,
     "delivery": {
         "element": "janus-fill-blanks",

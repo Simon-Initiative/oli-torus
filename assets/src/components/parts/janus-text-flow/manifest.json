@@ -2,6 +2,8 @@
   "id": "janus_text_flow",
   "friendlyName": "Text",
   "description": "Displays static text that can render portions of adaptive state.",
+  "icon": "icon-part-text.svg",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-text-flow",

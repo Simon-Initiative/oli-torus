@@ -3,6 +3,7 @@ defmodule Oli.Activities.ActivityMapEntry do
 
   @derive Jason.Encoder
   defstruct [
+    :id,
     :deliveryElement,
     :authoringElement,
     :icon,
@@ -14,6 +15,7 @@ defmodule Oli.Activities.ActivityMapEntry do
   ]
 
   def from_registration(%ActivityRegistration{
+        id: id,
         slug: slug,
         description: description,
         icon: icon,
@@ -23,6 +25,7 @@ defmodule Oli.Activities.ActivityMapEntry do
         globally_available: globally_available
       }) do
     %Oli.Activities.ActivityMapEntry{
+      id: id,
       slug: slug,
       friendlyName: title,
       description: description,

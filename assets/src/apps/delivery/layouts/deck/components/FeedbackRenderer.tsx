@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import PartsLayoutRenderer from '../../../components/PartsLayoutRenderer';
+import PartsLayoutRenderer from '../../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 
 interface FeedbackRendererProps {
   feedbacks: any[];

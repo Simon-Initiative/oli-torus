@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 117.17262 118.39531"
+   height="118.39531mm"
+   width="117.17262mm">
+  <defs
+     id="defs2" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(-42.333332,-91.380951)"
+     id="layer1">
+    <g
+       transform="matrix(1.0129032,0,0,1.019155,-0.54623653,-1.7503982)"
+       id="g3730">
+      <rect
+         id="rect3713"
+         width="117.17262"
+         height="117.17262"
+         x="42.333332"
+         y="91.380951"
+         style="fill:#cccccc;stroke-width:0.26458332" />
+      <path
+         style="fill:#333333;stroke-width:0.26458332"
+         id="path3717"
+         d="M 159.50595,208.55358 36.408816,210.07613 96.638815,102.70961 Z"
+         transform="matrix(0.42273616,0,0,0.4860174,92.077018,107.19291)" />
+      <path
+         transform="matrix(0.33061959,0,0,0.31703682,71.996349,142.6917)"
+         d="M 159.50595,208.55358 36.408816,210.07613 96.638815,102.70961 Z"
+         id="path3719"
+         style="fill:#333333;stroke-width:0.26458332" />
+      <path
+         style="fill:#333333;stroke-width:0.26458332"
+         id="path3721"
+         d="M 159.50595,208.55358 36.408816,210.07613 96.638815,102.70961 Z"
+         transform="matrix(0.39817174,0,0,0.39448625,43.957579,126.90412)" />
+      <circle
+         style="fill:#333333;stroke-width:0.26458332"
+         id="path3723"
+         cx="73.327377"
+         cy="127.66666"
+         r="15.875" />
+    </g>
+  </g>
+</svg>

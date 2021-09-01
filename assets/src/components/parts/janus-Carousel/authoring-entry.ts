@@ -5,17 +5,23 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import Carousel from './Carousel';
-import { schema, uiSchema } from './schema';
+import CarouselAuthor from './CarouselAuthor';
+import { createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(Carousel, manifest.authoring.element, observedAttributes, {
+register(CarouselAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    createSchema,
   },
 });

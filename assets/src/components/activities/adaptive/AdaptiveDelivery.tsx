@@ -6,7 +6,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import PartsLayoutRenderer from '../../../apps/delivery/components/PartsLayoutRenderer';
+import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import * as ActivityTypes from '../types';
 import { AdaptiveModelSchema } from './schema';

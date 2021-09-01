@@ -11,9 +11,7 @@ interface DisplayedHintProps {
 
 const DisplayedHint = ({ hint, context, index }: DisplayedHintProps) => {
   return (
-    <div key={hint.id}
-      aria-label={`hint ${index + 1}`}
-      className="hint mb-2 d-flex">
+    <div key={hint.id} aria-label={`hint ${index + 1}`} className="hint mb-2 d-flex">
       <i className="fas fa-lightbulb"></i>
       <div className="flex-fill ml-2">
         <HtmlContentModelRenderer text={hint.content} context={context} />
@@ -44,14 +42,20 @@ export const Hints = (props: HintsProps) => {
       <div className="hints-adornment"></div>
       <h6>Hints</h6>
       <div className="hints-list">
-        {props.hints.map((hint, index) =>
-          <DisplayedHint index={index} key={hint.id} hint={hint} context={props.context} />)}
+        {props.hints.map((hint, index) => (
+          <DisplayedHint index={index} key={hint.id} hint={hint} context={props.context} />
+        ))}
       </div>
-      {props.hasMoreHints && <button
-        aria-label="request hint"
-        onClick={props.onClick}
-        disabled={props.isEvaluated || !props.hasMoreHints}
-        className="btn btn-sm btn-primary muted mt-2">Request Hint</button>}
+      {props.hasMoreHints && (
+        <button
+          aria-label="request hint"
+          onClick={props.onClick}
+          disabled={props.isEvaluated || !props.hasMoreHints}
+          className="btn btn-sm btn-primary muted mt-2"
+        >
+          Request Hint
+        </button>
+      )}
     </div>
   );
 };

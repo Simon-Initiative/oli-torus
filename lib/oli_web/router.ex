@@ -96,6 +96,8 @@ defmodule OliWeb.Router do
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
@@ -110,6 +112,8 @@ defmodule OliWeb.Router do
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
   end
 
   # Ensure that the user logged in is an admin user
@@ -142,7 +146,10 @@ defmodule OliWeb.Router do
   end
 
   def with_section_user(conn) do
-    %{"section" => conn.assigns.section, "current_user" => conn.assigns.current_user}
+    %{
+      "section" => conn.assigns.section,
+      "current_user" => conn.assigns.current_user
+    }
   end
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -248,6 +255,9 @@ defmodule OliWeb.Router do
     put("/:project_id", ProjectController, :update)
     delete("/:project_id", ProjectController, :delete)
 
+    # Activity Bank
+    get("/:project_id/bank", ActivityBankController, :index)
+
     # Objectives
     live("/:project_id/objectives", Objectives.Objectives,
       session: {__MODULE__, :with_session, []}
@@ -348,6 +358,7 @@ defmodule OliWeb.Router do
 
     get("/:resource", Api.ActivityController, :retrieve)
     post("/", Api.ActivityController, :bulk_retrieve)
+    put("/", Api.ActivityController, :bulk_update)
     delete("/:resource", Api.ActivityController, :delete)
     put("/:resource", Api.ActivityController, :update)
     post("/:resource", Api.ActivityController, :create_secondary)
@@ -517,6 +528,10 @@ defmodule OliWeb.Router do
       session: {__MODULE__, :with_section_user, []}
     )
 
+    live("/:section_slug/updates", Delivery.ManageUpdates,
+      session: {__MODULE__, :with_section_user, []}
+    )
+
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
   end
 
@@ -567,7 +582,15 @@ defmodule OliWeb.Router do
   end
 
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authoring, :admin])
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring,
+      :admin,
+      :pow_email_layout
+    ])
+
     live("/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []})
     live("/features", Features.FeaturesLive)
 
@@ -595,6 +618,22 @@ defmodule OliWeb.Router do
 
     # Branding
     resources("/brands", BrandController)
+
+    post("/accounts/resend_user_confirmation_link", PowController, :resend_user_confirmation_link)
+
+    post(
+      "/accounts/resend_author_confirmation_link",
+      PowController,
+      :resend_author_confirmation_link
+    )
+
+    post("/accounts/send_user_password_reset_link", PowController, :send_user_password_reset_link)
+
+    post(
+      "/accounts/send_author_password_reset_link",
+      PowController,
+      :send_author_password_reset_link
+    )
   end
 
   scope "/project", OliWeb do

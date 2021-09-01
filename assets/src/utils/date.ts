@@ -22,37 +22,42 @@ function convertHour(hour: number, isPM: boolean): number {
 }
 
 export function parseDate(value: string): Date {
-
   const p = value.split(' ');
   const t = p[3].split(':');
 
-  return new Date(Date.UTC(
-    parseInt(p[2], 10), monthsToOrdinal[p[0]],
-    parseInt(p[1].substr(0, p[1].indexOf(',')), 10),
-    convertHour(parseInt(t[0], 10), p[4] === 'PM'),
-    parseInt(t[1], 10),
-    parseInt(t[2], 10),
-  ));
+  return new Date(
+    Date.UTC(
+      parseInt(p[2], 10),
+      monthsToOrdinal[p[0]],
+      parseInt(p[1].substr(0, p[1].indexOf(',')), 10),
+      convertHour(parseInt(t[0], 10), p[4] === 'PM'),
+      parseInt(t[1], 10),
+      parseInt(t[2], 10),
+    ),
+  );
 }
 
 const dateOptions = {
-  month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
 };
 
-export const dateFormatted = (date: Date): string =>
-  date.toLocaleDateString('en-US', dateOptions);
+export const dateFormatted = (date: Date): string => date.toLocaleDateString('en-US', dateOptions);
 
-export function compareDates(a: Date, b: Date) : number {
+export function compareDates(a: Date, b: Date): number {
   return a.valueOf() - b.valueOf();
 }
 
-export function relativeToNow(a: Date) : string {
+export function relativeToNow(a: Date): string {
   return relativeTo(a, new Date());
 }
 
 // Take a date and return a new date taking into account
 // some amount of time skew
-export function adjustForSkew(a: Date, skewInMs: number) : Date {
+export function adjustForSkew(a: Date, skewInMs: number): Date {
   return new Date(a.getTime() + skewInMs);
 }
 
@@ -62,8 +67,7 @@ export function adjustForSkew(a: Date, skewInMs: number) : Date {
  * @param dateFrom the date to compare against
  * @param dateNow the date to compare
  */
-export function relativeTo(dateFrom: Date, dateNow: Date) : string {
-
+export function relativeTo(dateFrom: Date, dateNow: Date): string {
   const delta = dateNow.getTime() - dateFrom.getTime();
 
   const MS_IN_SECOND = 1000;
@@ -74,21 +78,20 @@ export function relativeTo(dateFrom: Date, dateNow: Date) : string {
   const MS_IN_MONTH = 30.5 * MS_IN_DAY;
   const MS_IN_YEAR = 365 * MS_IN_DAY;
 
-
-  if (delta >= (MS_IN_YEAR * 2)) {
-    return  Math.floor(delta / MS_IN_YEAR) + ' years ago';
+  if (delta >= MS_IN_YEAR * 2) {
+    return Math.floor(delta / MS_IN_YEAR) + ' years ago';
   }
-  if (delta >= (MS_IN_YEAR - MS_IN_MONTH)) {
+  if (delta >= MS_IN_YEAR - MS_IN_MONTH) {
     return 'a year ago';
   }
-  if (delta >= (MS_IN_MONTH * 2)) {
+  if (delta >= MS_IN_MONTH * 2) {
     return Math.floor(delta / MS_IN_MONTH) + ' months ago';
   }
-  if (delta >= (MS_IN_MONTH)) {
+  if (delta >= MS_IN_MONTH) {
     return 'a month ago';
   }
-  if (delta >= (MS_IN_WEEK * 2)) {
-    return  Math.floor(delta / MS_IN_WEEK) + ' weeks ago';
+  if (delta >= MS_IN_WEEK * 2) {
+    return Math.floor(delta / MS_IN_WEEK) + ' weeks ago';
   }
   if (delta >= MS_IN_WEEK - MS_IN_DAY) {
     return 'a week ago';

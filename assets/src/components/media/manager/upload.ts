@@ -4,21 +4,18 @@ import * as persistence from 'data/persistence/media';
 // time. This factory function returns a new promise to upload a file
 // recursively until files is empty
 export const uploadFiles = async (projectSlug: string, files: File[]) => {
-
   const results: any[] = [];
 
   const uploadFile = async (file: File): Promise<any> =>
-    persistence.createMedia(projectSlug, file)
-      .then((result) => {
+    persistence.createMedia(projectSlug, file).then((result) => {
+      results.push(result);
 
-        results.push(result);
+      if (files.length > 0) {
+        return uploadFile(files.pop() as File);
+      }
 
-        if (files.length > 0) {
-          return uploadFile(files.pop() as File);
-        }
-
-        return results;
-      });
+      return results;
+    });
 
   return uploadFile(files.pop() as File);
 };

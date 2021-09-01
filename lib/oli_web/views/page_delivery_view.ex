@@ -4,6 +4,7 @@ defmodule OliWeb.PageDeliveryView do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
+  alias Oli.Publishing.HierarchyNode
 
   def is_instructor?(conn, section_slug) do
     user = conn.assigns.current_user
@@ -14,8 +15,14 @@ defmodule OliWeb.PageDeliveryView do
     ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 
-  def container_title(hierarchy_node) do
-    Numbering.prefix(hierarchy_node.numbering) <> ": " <> hierarchy_node.revision.title
+  def container_title(%HierarchyNode{
+        numbering: %Numbering{
+          level: level,
+          index: index,
+          revision: revision
+        }
+      }) do
+    Numbering.container_type(level) <> " #{index}: #{revision.title}"
   end
 
   def has_submitted_attempt?(resource_access) do
@@ -30,8 +37,8 @@ defmodule OliWeb.PageDeliveryView do
   end
 
   def encode_pages(conn, section_slug, hierarchy) do
-    Oli.Utils.HierarchyNode.flatten_pages(hierarchy)
-    |> Enum.map(fn revision ->
+    Oli.Publishing.HierarchyNode.flatten_pages(hierarchy)
+    |> Enum.map(fn %{revision: revision} ->
       %{
         slug: revision.slug,
         url: Routes.page_delivery_path(conn, :page, section_slug, revision.slug),

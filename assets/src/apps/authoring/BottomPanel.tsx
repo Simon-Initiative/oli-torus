@@ -12,6 +12,7 @@ import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
+import { AdaptiveRule } from './components/AdaptiveRulesList/AdaptiveRulesList';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -27,22 +28,38 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
   const [correct, setCorrect] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
   const isLayer = getIsLayer();
 
   useEffect(() => {
     if (currentRule === undefined) return;
-    setCorrect(currentRule.correct);
+    if (currentRule !== 'initState') {
+      setCorrect(currentRule.correct);
+      setIsDisabled(currentRule.disabled);
+    }
   }, [currentRule]);
 
   const handleCorrectChange = () => {
     const activityClone: IActivity = clone(currentActivity);
     const updatedRule = { ...currentRule, correct: !correct };
     const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
-      (rule: any) => rule.id === updatedRule.id,
+      (rule: AdaptiveRule) => rule.id === updatedRule.id,
     );
     ruleToUpdate.correct = !correct;
     dispatch(setCurrentRule({ currentRule: updatedRule }));
     setCorrect(!correct);
+    debounceSaveChanges(activityClone);
+  };
+
+  const handleDisabledChange = () => {
+    const activityClone: IActivity = clone(currentActivity);
+    const updatedRule = { ...currentRule, disabled: !isDisabled };
+    const ruleToUpdate: IActivity = activityClone.authoring.rules.find(
+      (rule: AdaptiveRule) => rule.id === updatedRule.id,
+    );
+    ruleToUpdate.disabled = !isDisabled;
+    dispatch(setCurrentRule({ currentRule: updatedRule }));
+    setIsDisabled(!isDisabled);
     debounceSaveChanges(activityClone);
   };
 
@@ -80,7 +97,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const handleDeleteRule = () => {
     const activityClone: IActivity = clone(currentActivity);
     const indexToDelete = activityClone.authoring.rules.findIndex(
-      (rule: any) => rule.id === currentRule.id,
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
     );
     if (indexToDelete !== -1) {
       activityClone.authoring.rules.splice(indexToDelete, 1);
@@ -108,10 +125,31 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           <div className="aa-panel-section-title-bar">
             <div className="aa-panel-section-title pl-2">
               <span className="title">rule editor</span>
-              {currentRule && !isLayer && <span className="ruleName">{currentRule.name}</span>}
+              {currentRule && !isLayer && (
+                <span className="ruleName">
+                  {currentRule === 'initState' ? 'Initial State' : currentRule.name}
+                </span>
+              )}
             </div>
             <div className="aa-panel-section-controls d-flex justify-content-center align-items-center">
-              {currentRule && !isLayer && (
+              {currentRule &&
+                currentRule.default &&
+                currentRule.correct &&
+                currentRule !== 'initState' && (
+                  <div className="disable-state-toggle pr-3 mr-0 d-flex justify-content-center align-items-center form-check form-check-inline">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="disable-state-toggle"
+                      checked={isDisabled}
+                      onChange={() => handleDisabledChange()}
+                    />
+                    <label className="form-check-label" htmlFor="disable-state-toggle">
+                      Disable State
+                    </label>
+                  </div>
+                )}
+              {currentRule && !isLayer && !currentRule.default && currentRule !== 'initState' && (
                 <>
                   <div className="correct-toggle pr-3 d-flex justify-content-center align-items-center">
                     <i className="fa fa-times mr-2" />
@@ -127,26 +165,21 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     </div>
                     <i className="fa fa-check" />
                   </div>
-                  {!currentRule.default && (
-                    <OverlayTrigger
-                      placement="top"
-                      delay={{ show: 150, hide: 150 }}
-                      overlay={
-                        <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                          Delete Rule
-                        </Tooltip>
-                      }
-                    >
-                      <span>
-                        <button
-                          className="btn btn-link p-0 ml-3"
-                          onClick={() => handleDeleteRule()}
-                        >
-                          <i className="fa fa-trash-alt" />
-                        </button>
-                      </span>
-                    </OverlayTrigger>
-                  )}
+                  <OverlayTrigger
+                    placement="top"
+                    delay={{ show: 150, hide: 150 }}
+                    overlay={
+                      <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                        Delete Rule
+                      </Tooltip>
+                    }
+                  >
+                    <span>
+                      <button className="btn btn-link p-0 ml-3" onClick={() => handleDeleteRule()}>
+                        <i className="fa fa-trash-alt" />
+                      </button>
+                    </span>
+                  </OverlayTrigger>
                 </>
               )}
               {currentRule && !isLayer && (

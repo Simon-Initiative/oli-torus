@@ -9,7 +9,7 @@ interface AccordionProps {
 
 const AccordionTemplate: React.FC<AccordionProps> = (props) => {
   return (
-    <Accordion className="aa-lesson-properties-editor" defaultActiveKey="0">
+    <Accordion className="aa-properties-editor" defaultActiveKey="0">
       <div className="aa-panel-section-title-bar">
         <div className="d-flex align-items-center">
           <ContextAwareToggle eventKey="0" />

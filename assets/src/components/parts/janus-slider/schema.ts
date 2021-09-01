@@ -1,4 +1,22 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  showLabel: boolean;
+  label: string;
+  showDataTip: boolean;
+  showValueLabels: boolean;
+  showTicks: boolean;
+  showThumbByDefault: boolean;
+  invertScale: boolean;
+  minimum: number;
+  maximum: number;
+  snapInterval: number;
+  enabled: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   palette: {
     type: 'object',
     properties: {
@@ -9,35 +27,13 @@ export const schema = {
       borderWidth: { type: 'string', title: 'Border Width' },
     },
   },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -49,27 +45,22 @@ export const schema = {
   showDataTip: {
     title: 'Show Data Tip',
     type: 'boolean',
-    format: 'checkbox',
   },
   showValueLabels: {
     title: 'Show Value Labels',
     type: 'boolean',
-    format: 'checkbox',
   },
   showTicks: {
     title: 'Show Ticks',
     type: 'boolean',
-    format: 'checkbox',
   },
   showThumbByDefault: {
     title: 'Thumb By Default',
     type: 'boolean',
-    format: 'checkbox',
   },
   invertScale: {
     title: 'Invert Scale',
     type: 'boolean',
-    format: 'checkbox',
   },
   minimum: {
     title: 'Min',
@@ -86,11 +77,24 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether slider is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
 };
 
 export const uiSchema = {};
+
+export const createSchema = (): Partial<SliderModel> => ({
+  enabled: true,
+  customCssClass: '',
+  showLabel: true,
+  showDataTip: true,
+  showValueLabels: true,
+  showTicks: true,
+  showThumbByDefault: true,
+  invertScale: false,
+  minimum: 0,
+  maximum: 100,
+  snapInterval: 1,
+  label: 'Slider',
+});

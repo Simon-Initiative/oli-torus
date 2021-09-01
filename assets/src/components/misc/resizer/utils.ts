@@ -31,40 +31,40 @@ export const cursor = (position: 'border' | Position): { [k: string]: string } =
   }
 };
 
-const positions = ({ left, top, width, height }: BoundingRect) => (
-  position: 'border' | Position,
-): Point | BoundingRect => {
-  switch (position) {
-    case 'border':
-      return { left, top, width, height };
-    case 'nw':
-      return { left, top };
-    case 'n':
-      return { left: left + width / 2, top };
-    case 'ne':
-      return { left: left + width, top };
-    case 'w':
-      return { left, top: top + height / 2 };
-    case 'e':
-      return { left: left + width, top: top + height / 2 };
-    case 'sw':
-      return { left, top: top + height };
-    case 's':
-      return { left: left + width / 2, top: top + height };
-    case 'se':
-      return { left: left + width, top: top + height };
-  }
-};
+const positions =
+  ({ left, top, width, height }: BoundingRect) =>
+  (position: 'border' | Position): Point | BoundingRect => {
+    switch (position) {
+      case 'border':
+        return { left, top, width, height };
+      case 'nw':
+        return { left, top };
+      case 'n':
+        return { left: left + width / 2, top };
+      case 'ne':
+        return { left: left + width, top };
+      case 'w':
+        return { left, top: top + height / 2 };
+      case 'e':
+        return { left: left + width, top: top + height / 2 };
+      case 'sw':
+        return { left, top: top + height };
+      case 's':
+        return { left: left + width / 2, top: top + height };
+      case 'se':
+        return { left: left + width, top: top + height };
+    }
+  };
 
-export const resizeHandleStyles = (boundingRect: BoundingRect): any => (
-  position: 'border' | Position,
-) =>
-  Object.assign(
-    position === 'border'
-      ? positions(boundingRect)(position)
-      : offsetByResizeHandleSize(positions(boundingRect)(position)),
-    cursor(position),
-  );
+export const resizeHandleStyles =
+  (boundingRect: BoundingRect): any =>
+  (position: 'border' | Position) =>
+    Object.assign(
+      position === 'border'
+        ? positions(boundingRect)(position)
+        : offsetByResizeHandleSize(positions(boundingRect)(position)),
+      cursor(position),
+    );
 
 export const clientBoundingRect = (element: HTMLElement): BoundingRect => {
   const { left, top, width, height } = element.getBoundingClientRect();

@@ -3,14 +3,41 @@
 ## Unreleased
 
 ### Bug Fixes
+
+- Fix an issue where changing the title of a page made the current slug invalid
+- Properly handle ordering activity submission when no student interaction has taken place
+
+### Enhancements
+
+- Add infrastructure for advanced section creation, including the ability to view and apply publication updates
+- Enable banked activity creation and editing
+
+## 0.12.9 (2021-08-20)
+
+### Bug Fixes
+
+- Fix an issue where unlimited collaborator emails could be sent at once
+
+### Enhancements
+
+- Allow for submission of graded pages without answering all questions
+- Add API support for bulk activity updating
+
+## 0.12.8 (2021-08-11)
+
+### Bug Fixes
+
 - Fix iframe rendering when elements contain captions (webpage, youtube)
 - Fix iframe rendering in activities
 - Fix an issue where mod key changes current selection
 - Standardize padding and headers across all pages
+- Fix an issue where users with social logins have null sub
+- Fix an issue where Update Line Items was failing
 
 ### Enhancements
 
 - Redesign overview page, change language
+- Allow multiple comma-separated collaborators to be added at once
 
 ## 0.12.7 (2021-08-02)
 

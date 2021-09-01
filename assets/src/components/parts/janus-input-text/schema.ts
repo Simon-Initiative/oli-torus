@@ -1,4 +1,17 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface InputTextModel extends JanusAbsolutePositioned, JanusCustomCss {
+  enabled: boolean;
+  prompt: string;
+  defaultID: string;
+  palette: any;
+  fontSize?: number;
+  showLabel: boolean;
+  label: string;
+}
+
+export const schema: JSONSchema7Object = {
   defaultID: {
     title: 'Default ID',
     type: 'string',
@@ -22,26 +35,9 @@ export const schema = {
     type: 'number',
     default: 12,
   },
-  maxManualGrade: {
-    title: 'Manual Grade',
-    type: 'number',
-  },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -58,11 +54,20 @@ export const schema = {
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether textbox is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
 };
 
 export const uiSchema = {};
+
+export const createSchema = (): Partial<InputTextModel> => ({
+  enabled: true,
+  customCssClass: '',
+  showLabel: true,
+  label: 'Input',
+  prompt: 'enter some text',
+  maxManualGrade: 0,
+  showOnAnswersReport: false,
+  requireManualGrading: false,
+});

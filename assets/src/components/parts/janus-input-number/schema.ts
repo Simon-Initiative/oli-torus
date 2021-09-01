@@ -1,4 +1,22 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
+  defaultID: string;
+  palette: any;
+  fontSize?: number;
+  number: number;
+  maxValue: number;
+  minValue: number;
+  showLabel: boolean;
+  label: string;
+  unitsLabel: string;
+  deleteEnabled: boolean;
+  enabled: boolean;
+  showIncrementArrows: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   defaultID: {
     title: 'Default ID',
     type: 'string',
@@ -22,10 +40,6 @@ export const schema = {
     type: 'number',
     default: 12,
   },
-  maxManualGrade: {
-    title: 'Max Manual Grade',
-    type: 'number',
-  },
   number: {
     title: 'Number',
     type: 'number',
@@ -38,22 +52,9 @@ export const schema = {
     title: 'Min Value',
     type: 'number',
   },
-  showOnAnswersReport: {
-    title: 'Answers Report',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
-  requireManualGrading: {
-    title: 'Require Manual Grading',
-    type: 'boolean',
-    format: 'checkbox',
-    default: false,
-  },
   showLabel: {
     title: 'Show Label',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether label is visible',
     default: true,
   },
@@ -70,14 +71,11 @@ export const schema = {
   deleteEnabled: {
     title: 'Delete Enabled',
     type: 'boolean',
-    format: 'checkbox',
   },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
-    format: 'checkbox',
     description: 'specifies whether number input textbox is enabled',
-    isVisibleInTrapState: true,
     default: true,
   },
   showIncrementArrows: {
@@ -89,3 +87,16 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = (): Partial<InputNumberModel> => ({
+  enabled: true,
+  showIncrementArrows: false,
+  showLabel: true,
+  label: 'How many?',
+  unitsLabel: 'quarks',
+  deleteEnabled: true,
+  requireManualGrading: false,
+  maxManualGrade: 0,
+  maxValue: 1,
+  minValue: 0,
+});

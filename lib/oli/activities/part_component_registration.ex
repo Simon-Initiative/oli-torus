@@ -10,6 +10,7 @@ defmodule Oli.PartComponents.PartComponentRegistration do
     field :authoring_element, :string
     field :delivery_element, :string
     field :icon, :string
+    field :author, :string
     field :title, :string
     field :globally_available, :boolean, default: false
 
@@ -27,6 +28,7 @@ defmodule Oli.PartComponents.PartComponentRegistration do
       :title,
       :icon,
       :description,
+      :author,
       :delivery_element,
       :authoring_element,
       :delivery_script,
@@ -38,6 +40,7 @@ defmodule Oli.PartComponents.PartComponentRegistration do
       :title,
       :icon,
       :description,
+      :author,
       :delivery_element,
       :authoring_element,
       :delivery_script,

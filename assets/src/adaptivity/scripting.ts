@@ -40,7 +40,23 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     try {
-      evalScript(`let foo = ${val};`);
+      const evalResult = evalScript(`let foo = ${val};`);
+      // when evalScript is executed successfully, evalResult.result is null.
+      // evalScript does not trigger catch block even though there is error and add the error in stack property.
+      if (evalResult?.result !== null) {
+        try {
+          //trying to check if it is a CSS string.This might not handle any advance CSS string.
+          const matchingCssElements = val.match(
+            /^(([a-z0-9\\[\]=:]+\s?)|((div|span|body.*|.box-sizing:*|.columns-container.*|background-color.*)?(#|\.){1}[a-z0-9\-_\s?:]+\s?)+)(\{[\s\S][^}]*})$/im,
+          );
+          //matchingCssElements !== null then it means it's a CSS string so set actuallyAString=true so that it can be wrapped in ""
+          if (matchingCssElements) {
+            actuallyAString = true;
+          }
+        } catch (e) {
+          actuallyAString = true;
+        }
+      }
     } catch (e) {
       // if we have parsing error then we're guessing it's CSS
       actuallyAString = true;
@@ -104,14 +120,26 @@ export const evalScript = (
   const program = parser.parseProgram();
   if (parser.errors.length) {
     /* console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors }); */
-    throw new Error(parser.errors.join('\n'));
+    throw new Error(`Error in script: ${script}\n${parser.errors.join('\n')}`);
   }
   const result = evaluator.eval(program, globalEnv);
   const jsResult = result.toJS();
   return { env: globalEnv, result: jsResult };
 };
 
-export const getAssignScript = (state: Record<string, any>): string => {
+export const evalAssignScript = (
+  state: Record<string, any>,
+  env?: Environment,
+): { env: Environment; result: any } => {
+  const globalEnv = env || new Environment();
+  const assignStatements = getAssignStatements(state);
+  const results = assignStatements.map((assignStatement) => {
+    return evalScript(assignStatement, globalEnv).result;
+  });
+  return { env: globalEnv, result: results };
+};
+
+export const getAssignStatements = (state: Record<string, any>): string[] => {
   const vars = Object.keys(state).map((key) => {
     const val = state[key];
     let writeVal = { key, value: val, type: 0 };
@@ -130,6 +158,11 @@ export const getAssignScript = (state: Record<string, any>): string => {
     return writeVal;
   });
   const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
+  return letStatements;
+};
+
+export const getAssignScript = (state: Record<string, any>): string => {
+  const letStatements = getAssignStatements(state);
   return letStatements.join('');
 };
 

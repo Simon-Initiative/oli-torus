@@ -12,10 +12,12 @@ html.authoring body {
 }
 
 html.authoring {
-  @import "authoring/variables";
-  @import "bootstrap";
-  @import "common/**/*.scss";
-  @import "components/**/*.scss";
-  @import "authoring/**/*.scss";
-  @import "display.scss";
+  @import 'authoring/variables';
+  @import 'bootstrap';
+  @import 'common/**/*.scss';
+  @import 'components/**/*.scss';
+  @import 'authoring/**/*.scss';
+  @import 'apps/bank/**/*.scss';
+  @import 'apps/page-editor/**/*.scss';
+  @import 'display.scss';
 }

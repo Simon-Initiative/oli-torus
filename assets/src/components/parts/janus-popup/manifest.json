@@ -1,7 +1,9 @@
 {
   "id": "janus_popup",
   "friendlyName": "Popup",
-  "description": "Displays an popup from a url.",
+  "description": "Displays a customizable popup window and launch icon.",
+  "icon": "icon-part-popup.svg",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-popup",

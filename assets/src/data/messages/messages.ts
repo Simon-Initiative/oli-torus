@@ -16,8 +16,8 @@ export enum Priority {
 }
 
 export type MessageAction = {
-  label: string,
-  enabled: boolean,
+  label: string;
+  enabled: boolean;
   execute: (message: Message) => void;
   btnClass?: string;
 };

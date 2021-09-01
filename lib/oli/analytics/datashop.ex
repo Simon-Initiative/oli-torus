@@ -51,7 +51,7 @@ defmodule Oli.Analytics.Datashop do
 
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
-    publication = Publishing.get_latest_published_publication_by_slug!(project.slug)
+    publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
     Attempts.get_part_attempts_and_users_for_publication(publication.id)
     |> group_part_attempts_by_user_and_part

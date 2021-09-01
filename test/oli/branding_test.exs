@@ -89,13 +89,12 @@ defmodule Oli.BrandingTest do
       registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
       deployment = deployment_fixture(%{registration_id: registration.id})
 
-      {:ok, publication} = Oli.Publishing.publish_project(project)
+      {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
 
       section =
         section_fixture(%{
           context_id: "some-context-id",
-          project_id: project.id,
-          publication_id: publication.id,
+          base_project_id: project.id,
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id
         })
@@ -103,13 +102,17 @@ defmodule Oli.BrandingTest do
       oaf_section =
         section_fixture(%{
           context_id: UUID.uuid4(),
-          project_id: project.id,
-          publication_id: publication.id,
+          base_project_id: project.id,
           open_and_free: true,
           registration_open: true
         })
 
-      %{section: section, oaf_section: oaf_section, registration: registration}
+      %{
+        section: section,
+        oaf_section: oaf_section,
+        registration: registration,
+        publication: publication
+      }
     end
 
     @tag capture_log: true

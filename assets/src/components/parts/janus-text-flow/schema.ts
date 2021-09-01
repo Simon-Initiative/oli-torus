@@ -1,7 +1,14 @@
-import ColorPickerWidget from '../../../apps/authoring/components/PropertyEditor/custom/ColorPickerWidget';
-import CustomFieldTemplate from '../../../apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { JSONSchema7Object } from 'json-schema';
+import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export const schema = {
+export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
+  overrideWidth?: boolean;
+  overrideHeight?: boolean;
+  nodes: any[]; // TODO
+  palette: any;
+}
+
+export const schema: JSONSchema7Object = {
   overrideHeight: {
     type: 'boolean',
     default: false,
@@ -26,3 +33,31 @@ export const schema = {
 };
 
 export const uiSchema = {};
+
+export const createSchema = (context?: CreationContext): Partial<TextFlowModel> => {
+  return {
+    overrideWidth: true,
+    overrideHeight: false,
+    customCssClass: '',
+    nodes: [
+      {
+        tag: 'p',
+        style: {},
+        children: [
+          {
+            tag: 'span',
+            style: {},
+            children: [
+              {
+                tag: 'text',
+                style: {},
+                text: 'Static Text',
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+};

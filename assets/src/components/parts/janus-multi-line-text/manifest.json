@@ -1,7 +1,9 @@
 {
     "id": "janus_multi_line_text",
-    "friendlyName": "MultiLineTextInput",
-    "description": "Displays a Multiline input text",
+    "friendlyName": "MultiLine Text Input",
+    "description": "An input for longer text supporting multiple lines.",
+    "icon": "icon-part-longText.svg",
+    "author": "Project Janus Team",
     "global": true,
     "delivery": {
         "element": "janus-multi-line-text",

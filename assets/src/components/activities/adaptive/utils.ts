@@ -3,36 +3,32 @@ import * as ContentModel from 'data/content/model';
 import { AdaptiveModelSchema } from './schema';
 import { RichText, Operation, ScoringStrategy } from '../types';
 
-
 export const defaultModel: () => AdaptiveModelSchema = () => {
-
   return {
     content: {},
     authoring: {
-      parts: [{
-        id: '1', // One part for now
-        scoringStrategy: ScoringStrategy.average,
-        responses: [],
-        outcomes: [{
-          id: 'outcome1',
-          rule: [],
-          actions: [
-            { id: 'action1', type: 'StateUpdateActionDesc', update: {} },
+      parts: [
+        {
+          id: '1', // One part for now
+          scoringStrategy: ScoringStrategy.average,
+          responses: [],
+          outcomes: [
+            {
+              id: 'outcome1',
+              rule: [],
+              actions: [{ id: 'action1', type: 'StateUpdateActionDesc', update: {} }],
+            },
           ],
-        }],
-        hints: [
-          fromText(''),
-          fromText(''),
-          fromText(''),
-        ],
-      }],
+          hints: [fromText(''), fromText(''), fromText('')],
+        },
+      ],
       transformations: [],
       previewText: '',
     },
   };
 };
 
-export function fromText(text: string): { id: string, content: RichText } {
+export function fromText(text: string): { id: string; content: RichText } {
   return {
     id: guid() + '',
     content: {

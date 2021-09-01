@@ -18,7 +18,9 @@
     content: "<%= Base.encode64(@context) %>",
     paths: {
       images: "<%= Routes.static_path(@conn, "/images") %>"
-    }
+    },
+    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
+    partComponentTypes: "<%= Jason.encode!(@part_component_types) |> Base.encode64() %>",
   };
 
   window.oliMountApplication(document.getElementById('editor'), params);
