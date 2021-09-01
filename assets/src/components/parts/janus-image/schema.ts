@@ -1,6 +1,14 @@
-import { CreationContext } from '../types/parts';
+import { JSONSchema7Object } from 'json-schema';
+import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export const schema = {
+export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
+  src: string;
+  alt: string;
+  scaleContent: boolean;
+  lockAspectRatio: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -30,7 +38,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const transformModelToSchema = (model: any) => {
+export const transformModelToSchema = (model: Partial<ImageModel>) => {
   console.log('Image Model -> Schema transformer', model);
   // nothing to do for now
   return model;
@@ -42,7 +50,7 @@ export const transformSchemaToModel = (schema: any) => {
   return schema;
 };
 
-export const createSchema = (context?: CreationContext) => {
+export const createSchema = (context?: CreationContext): Partial<ImageModel> => {
   // maybe use the context to know the path of the images?
   // or bundle data url?
   const src = '/images/placeholder-image.svg';

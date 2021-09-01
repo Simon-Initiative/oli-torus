@@ -15,6 +15,14 @@ export type ActivityUpdate = {
   authoring?: any;
 };
 
+export type BulkActivityUpdate = {
+  resource_id: number;
+  title: string;
+  objectives: ObjectiveMap;
+  content: ActivityModelSchema;
+  authoring?: any;
+};
+
 export type Created = {
   result: 'success';
   revisionSlug: string;
@@ -163,6 +171,20 @@ export function createBanked(
   objectives: ResourceId[],
 ) {
   return create(project, activityTypeSlug, model, objectives, 'banked');
+}
+
+export function bulkEdit(
+  project: ProjectSlug,
+  resource: ResourceId,
+  updates: BulkActivityUpdate[],
+) {
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify({ updates }),
+    url: `/storage/project/${project}/resource?lock=${resource}`,
+  };
+
+  return makeRequest<Updated>(params);
 }
 
 export function edit(

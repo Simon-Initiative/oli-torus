@@ -8,14 +8,22 @@ interface Props {
 }
 export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
   return (
-    <div className="content">
-      <button className="btn insert-content-btn" onClick={(_e) => addContent(onAddItem, index)}>
-        <div className="content-icon">
-          <span className="material-icons">format_align_left</span>
-        </div>
-        <div className="content-label">Content</div>
-      </button>
-    </div>
+    <>
+      <div className="header">Insert Content</div>
+      <div className="list-group">
+        <a
+          href="#"
+          key={'static_html_content'}
+          className="list-group-item list-group-item-action flex-column align-items-start"
+          onClick={(_e) => addContent(onAddItem, index)}
+        >
+          <div className="type-label">HTML</div>
+          <div className="type-description">
+            Mixed HTML elements including text, tables, images, video
+          </div>
+        </a>
+      </div>
+    </>
   );
 };
 

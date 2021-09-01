@@ -19,7 +19,7 @@ interface Props {
   addTargetedResponse: () => void;
   selectedIcon: React.ReactNode;
   unselectedIcon: React.ReactNode;
-  children?: React.ReactNode | ((xs: ReturnType<typeof useTargetedFeedback>) => React.ReactNode);
+  children?: (xs: ReturnType<typeof useTargetedFeedback>) => React.ReactElement;
 }
 
 export const useTargetedFeedback = () => {

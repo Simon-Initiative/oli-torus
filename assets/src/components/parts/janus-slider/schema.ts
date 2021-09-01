@@ -1,4 +1,22 @@
-export const schema = {
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+
+export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  showLabel: boolean;
+  label: string;
+  showDataTip: boolean;
+  showValueLabels: boolean;
+  showTicks: boolean;
+  showThumbByDefault: boolean;
+  invertScale: boolean;
+  minimum: number;
+  maximum: number;
+  snapInterval: number;
+  enabled: boolean;
+}
+
+export const schema: JSONSchema7Object = {
   palette: {
     type: 'object',
     properties: {
@@ -66,7 +84,7 @@ export const schema = {
 
 export const uiSchema = {};
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<SliderModel> => ({
   enabled: true,
   customCssClass: '',
   showLabel: true,

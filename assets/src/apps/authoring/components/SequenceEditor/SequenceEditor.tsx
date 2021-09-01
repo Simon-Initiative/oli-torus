@@ -71,7 +71,7 @@ const SequenceEditor: React.FC<any> = (props) => {
       }),
     );
 
-    const newSequenceEntry = {
+    const newSequenceEntry: any = {
       type: 'activity-reference',
       resourceId: newActivity.resourceId,
       activitySlug: newActivity.activitySlug,
@@ -83,6 +83,11 @@ const SequenceEditor: React.FC<any> = (props) => {
         sequenceName: newTitle,
       },
     };
+
+    if (isBank) {
+      newSequenceEntry.custom.bankEndTarget = 'next';
+      newSequenceEntry.custom.bankShowCount = 3;
+    }
 
     // maybe should set in the create?
     const reduxActivity = {
@@ -248,7 +253,7 @@ const SequenceEditor: React.FC<any> = (props) => {
     };
     const itemsToDelete = flatten(item);
     const sequenceItems = [...sequence];
-    itemsToDelete.forEach((item: any) => {
+    itemsToDelete.forEach((item: SequenceEntry<SequenceEntryChild>) => {
       if (item.activitySlug === currentActivity?.activitySlug)
         dispatch(setCurrentRule({ currentRule: undefined }));
       const itemIndex = sequenceItems.findIndex(

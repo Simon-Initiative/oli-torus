@@ -5,15 +5,20 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import MultipleChoiceQuestion from './MultipleChoiceQuestion';
+import McqAuthor from './McqAuthor';
 import { createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(MultipleChoiceQuestion, manifest.authoring.element, observedAttributes, {
+register(McqAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,

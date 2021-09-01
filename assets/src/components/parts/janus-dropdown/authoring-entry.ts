@@ -5,15 +5,20 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import Dropdown from './Dropdown';
+import DropdownAuthor from './DropdownAuthor';
 import { createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(Dropdown, manifest.authoring.element, observedAttributes, {
+register(DropdownAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,

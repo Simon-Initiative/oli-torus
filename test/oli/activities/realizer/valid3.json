@@ -18,8 +18,8 @@
         "children": [
           {
             "fact": "type",
-            "operator": "equals",
-            "value": 3
+            "operator": "contains",
+            "value": [3]
           },
           {
             "fact": "text",

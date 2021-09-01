@@ -79,6 +79,7 @@ export class InlineActivityEditor extends React.Component<
       },
       syncedUpdate,
     );
+
     this.props.onEdit(combined);
   }
 

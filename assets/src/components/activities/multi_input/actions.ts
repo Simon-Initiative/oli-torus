@@ -50,7 +50,9 @@ export const MultiInputActions = {
     };
   },
 
-  addDropdown() {},
+  addDropdown() {
+    return (model: MultiInputSchema, _post: PostUndoable) => {};
+  },
 
   addPart(type: MultiInputType, index: number) {
     return (model: MultiInputSchema, _post: PostUndoable) => {
@@ -66,7 +68,7 @@ export const MultiInputActions = {
             [makeResponse(matchRule(choiceA.id), 1, ''), makeResponse(matchRule('.*'), 0, '')],
             [makeHint('')],
           );
-          input = makeMultiDropdownInput([choiceA, choiceB], part.id);
+          input = makeMultiDropdownInput(part.id);
           break;
 
         case 'numeric':

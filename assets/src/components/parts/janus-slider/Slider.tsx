@@ -1,24 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { contexts } from '../../../types/applicationContext';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import { JanusAbsolutePositioned, JanusCustomCss, PartComponentProps } from '../types/parts';
+import { contexts } from '../../../types/applicationContext';
+import { PartComponentProps } from '../types/parts';
+import { SliderModel } from './schema';
 import './Slider.scss';
-
-interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
-  label: string;
-  maximum: number;
-  minimum: number;
-  snapInterval: number;
-  showDataTip: boolean;
-  showValueLabels: boolean;
-  showLabel: boolean;
-  invertScale: boolean;
-}
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   const [state, setState] = useState<unknown>([]);
@@ -194,12 +184,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   } = model;
 
   const styles: CSSProperties = {
-    position: 'absolute',
+    /* position: 'absolute',
     width: `${width}px`,
     top: `${y}px`,
     left: `${x}px`,
     height: `${height}px`,
-    zIndex: z,
+    zIndex: z, */
     flexDirection: model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
@@ -260,7 +250,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   });
 
   return ready ? (
-    <div data-part-component-type={props.type} style={styles} className={`slider ${cssClass}`}>
+    <div data-janus-type={tagName} style={styles} className={`slider ${cssClass}`}>
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">

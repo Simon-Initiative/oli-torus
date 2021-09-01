@@ -9,11 +9,23 @@
     <div>
       <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
     </div>
+
     <%= if user_role(@section, @current_user) == :administrator do %>
       <div>
         <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm" %>
       </div>
     <% end %>
+
+    <div>
+      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section_slug), class: "btn btn-link btn-sm" do %>
+        <%= case Enum.count(@summary.updates) do %>
+          <% 0 -> %>
+            Updates
+          <% num_updates -> %>
+            Updates <span class="badge badge-primary"><%= num_updates %></span>
+        <% end %>
+      <% end %>
+    </div>
   </div>
 
   <% end %>
@@ -21,27 +33,10 @@
   <div id="index-container" class="course-outline list-group">
     <h5 class="text-primary border-bottom border-primary">Course Overview</h5>
 
-    <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy, active_page: nil %>
+    <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy.children, active_page: nil %>
   </div>
 
 </div>
-
-<script>
-
-  const isInIframe = !(window === window.parent);
-
-  if (isInIframe) {
-    const button = document.createElement("button");
-    button.onclick = (_e) =>
-      window.open(window.location.href, "_blank");
-    button.innerHTML = "Open in new window <i class='fas fa-external-link-alt'></i>";
-    button.className = "btn btn-primary"
-    const container = document.getElementById("index-container");
-    container.innerHTML = "";
-    container.appendChild(button);
-  }
-
-</script>
 
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--

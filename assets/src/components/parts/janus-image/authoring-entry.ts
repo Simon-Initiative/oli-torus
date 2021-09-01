@@ -5,7 +5,7 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import Image from './Image';
+import ImageAuthor from './ImageAuthor';
 import {
   createSchema,
   schema,
@@ -17,9 +17,14 @@ import {
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
 
-register(Image, manifest.authoring.element, observedAttributes, {
+register(ImageAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,

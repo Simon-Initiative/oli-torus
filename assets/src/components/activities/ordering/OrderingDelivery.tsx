@@ -57,6 +57,22 @@ export const OrderingComponent: React.FC = () => {
         ),
       ),
     );
+
+    // Ensure when the initial state is null that we set the state to match
+    // the initial choice ordering.  This allows submissions without student interaction
+    // to be evaluated correctly.
+    setTimeout(() => {
+      if (activityState.parts[0].response === null) {
+        const selection = model.choices.map((choice) => choice.id);
+        const input = selectionToInput(selection);
+        onSaveActivity(activityState.attemptGuid, [
+          {
+            attemptGuid: activityState.parts[0].attemptGuid,
+            response: { input },
+          },
+        ]);
+      }
+    }, 0);
   }, []);
 
   // First render initializes state

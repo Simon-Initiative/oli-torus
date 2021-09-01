@@ -20,7 +20,7 @@ defmodule Oli.Authoring.Editing.BankEditor do
   """
   def create_context(project_slug, author) do
     with {:ok, publication} <-
-           Publishing.get_unpublished_publication_by_slug!(project_slug)
+           Publishing.project_working_publication(project_slug)
            |> trap_nil(),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
@@ -29,7 +29,11 @@ defmodule Oli.Authoring.Editing.BankEditor do
          {:ok, %Result{totalCount: totalCount}} <-
            Query.execute(
              %Logic{conditions: nil},
-             %Source{publication_id: publication.id, blacklisted_activity_ids: []},
+             %Source{
+               publication_id: publication.id,
+               blacklisted_activity_ids: [],
+               section_slug: ""
+             },
              %Paging{limit: 1, offset: 0}
            ) do
       editor_map = Activities.create_registered_activity_map(project_slug)

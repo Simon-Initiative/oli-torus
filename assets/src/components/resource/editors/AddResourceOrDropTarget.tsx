@@ -9,6 +9,7 @@ import { DropTarget } from './dragndrop/DropTarget';
 import { ActivityEditContext } from 'data/content/activity';
 import { AddContent } from 'components/content/add_resource_content/AddContent';
 import { AddActivity } from 'components/content/add_resource_content/AddActivity';
+import { AddOther } from 'components/content/add_resource_content/AddOther';
 
 export type AddResourceOrDropTargetProps = {
   isReorderMode: boolean;
@@ -31,13 +32,11 @@ export const AddResourceOrDropTarget = (props: AddResourceOrDropTargetProps) => 
 
   return (
     <AddResourceContent {...props} isLast={props.id === 'last'}>
-      <AddContent onAddItem={props.onAddItem} index={props.index} />
-      <AddActivity
-        editorMap={props.editorMap}
-        onAddItem={props.onAddItem}
-        index={props.index}
-        resourceContext={props.resourceContext}
-      />
+      <AddContent {...props} />
+      <hr />
+      <AddActivity {...props} />
+      <hr />
+      <AddOther {...props} />
     </AddResourceContent>
   );
 };

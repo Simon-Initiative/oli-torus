@@ -1,6 +1,20 @@
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import { JSONSchema7Object } from 'json-schema';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
-export const schema = {
+export interface VideoModel extends JanusAbsolutePositioned, JanusCustomCss {
+  palette: any;
+  src: string;
+  alt: string;
+  triggerCheck: boolean;
+  autoPlay: boolean;
+  startTime: number;
+  endTime: number;
+  enableReplay: boolean;
+  subtitles: { default: boolean; language: string; src: string };
+}
+
+export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -72,9 +86,8 @@ export const uiSchema = {
   },
 };
 
-export const createSchema = () => ({
+export const createSchema = (): Partial<VideoModel> => ({
   enabled: true,
-  subtitles: {},
   enableReplay: true,
   autoPlay: false,
   startTime: 0,

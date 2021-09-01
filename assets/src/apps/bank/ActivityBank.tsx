@@ -20,9 +20,8 @@ import * as BankTypes from 'data/content/bank';
 import * as BankPersistence from 'data/persistence/bank';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
-import { ActivityUndoables, ActivityUndoAction } from 'components/resource/resourceEditor/types';
-import { UndoToasts } from 'components/resource/resourceEditor/UndoToasts';
-import { applyOperations } from 'utils/undo';
+import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
 import { EditingLock } from './EditingLock';
@@ -32,6 +31,7 @@ import { LogicFilter } from './LogicFilter';
 import { DeleteActivity } from './DeleteActivity';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
+import { Operations } from 'utils/pathOperations';
 
 const PAGE_SIZE = 5;
 
@@ -62,7 +62,7 @@ const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     const mediaLibrary = (
       <ModalSelection
         title="Delete Activity"
@@ -88,7 +88,7 @@ export function confirmDelete(): Promise<boolean> {
 }
 
 export function showFailedToLockMessage(): Promise<boolean> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     const mediaLibrary = (
       <ModalSelection
         title="Edit Activity"
@@ -312,7 +312,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         const model = JSON.parse(JSON.stringify(context.model));
 
         // Apply the undo operations to the model
-        applyOperations(model as any, item.undoable.operations);
+        Operations.applyAll(model as any, item.undoable.operations);
 
         // Now save the change and push it down to the activity editor
         this.onActivityEdit(item.contentKey, {
@@ -326,7 +326,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.setState({ undoables: this.state.undoables.delete(guid) });
   }
 
-  createObjectiveErrorMessage(failure: any) {
+  createObjectiveErrorMessage(_failure: any) {
     const message = createMessage({
       guid: 'objective-error',
       canUserDismiss: true,
@@ -375,7 +375,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       const persistence = new DeferredPersistenceStrategy();
 
       const lockFn = (): Promise<Lock.LockResult> => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
           Lock.acquireLock(this.props.projectSlug, key, true).then((result) => {
             if (result.type === 'acquired') {
               // Update our local context given the latest from the server
@@ -445,7 +445,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             key={key}
             projectSlug={this.props.projectSlug}
             editMode={editMode}
-            allObjectives={this.props.allObjectives}
+            allObjectives={this.state.allObjectives.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}
@@ -608,11 +608,11 @@ type OwnProps = {
   activities: ActivityMap;
 };
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (_state: State, _ownProps: OwnProps): StateProps => {
   return {};
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   return {
     onLoadPreferences: () => dispatch(loadPreferences()),
   };

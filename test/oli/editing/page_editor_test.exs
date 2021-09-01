@@ -367,7 +367,7 @@ defmodule Oli.EditingTest do
       revision2: revision,
       author: author
     } do
-      html = PageEditor.render_page_html(project.slug, revision.slug, author)
+      html = PageEditor.render_page_html(project.slug, revision.content, author)
 
       assert html == [["<p>", [[[[], "Here" | "&#39;"] | "s some test content"]], "</p>\n"]]
     end

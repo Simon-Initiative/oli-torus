@@ -13,6 +13,7 @@ import { clone } from 'utils/common';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { matchListRule } from 'data/activities/model/rules';
 import { Operations } from 'utils/pathOperations';
+import { CHOICES_PATH, getChoices } from 'data/activities/model/choiceUtils';
 
 export const CATAActions = {
   addChoice(choice: Choice, choicesPath = CHOICES_PATH) {

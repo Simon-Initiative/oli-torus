@@ -27,10 +27,22 @@ export interface PartComponentProps<T extends CustomProperties> {
   model: T;
   state: any;
   notify?: any;
+  className?: string;
   onInit: (payload: any) => Promise<any>;
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+}
+
+export interface AuthorPartComponentProps<T extends CustomProperties>
+  extends PartComponentProps<T> {
+  editMode: boolean;
+  configuremode: boolean; // TODO fix case in custom element wrapper
+  portal: string;
+  onClick: (payload: any) => void;
+  onConfigure: (payload: any) => Promise<any>; // part wants to initiate configuration
+  onSaveConfigure: (payload: any) => Promise<any>;
+  onCancelConfigure: (payload: any) => Promise<any>;
 }
 
 export interface CreationContext {

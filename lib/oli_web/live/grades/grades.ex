@@ -47,7 +47,6 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def render(assigns) do
-    iss = assigns.registration.issuer
     has_tasks? = length(assigns.task_queue) > 0
 
     progress_visible =
@@ -64,10 +63,16 @@ defmodule OliWeb.Grades.GradesLive do
       end
 
     ~L"""
+    <div class="mb-2">
+      <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
+        <i class="las la-arrow-left"></i> Back
+      <% end %>
+    </div>
+
     <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
     <p>
-      <%= dgettext("grades", "Grades for OLI graded pages for this course are accessed by students and instructors from the LMS gradebook at") %> <a href="<%= iss %>"><%= iss %></a>.
+      <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
     </p>
 
     <div class="card-group">

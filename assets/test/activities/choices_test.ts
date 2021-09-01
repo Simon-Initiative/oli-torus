@@ -1,6 +1,6 @@
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
 import { makeChoice } from 'components/activities/types';
+import { getChoices } from 'data/activities/model/choiceUtils';
 import { dispatch } from 'utils/test_utils';
 
 describe('choices actions', () => {

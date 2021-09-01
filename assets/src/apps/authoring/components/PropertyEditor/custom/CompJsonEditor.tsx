@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { ChangeEvent, CSSProperties, Fragment, useState } from 'react';
 import { useEffect } from 'react';
@@ -5,12 +6,11 @@ import { Button, Modal } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 interface JsonEditorProps {
   jsonValue: any;
-  onChange: (changedJson: any) => void;
-  schema: any;
+  onChange: (changedJson: object) => void;
   existingPartIds: string[];
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
-  const { jsonValue, onChange, existingPartIds, schema } = props;
+  const { jsonValue, onChange, existingPartIds } = props;
   let val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');

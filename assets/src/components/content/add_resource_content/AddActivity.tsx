@@ -15,28 +15,30 @@ interface Props {
   index: number;
 }
 export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, editorMap, index }) => {
+  const activityEntries = Object.keys(editorMap)
+    .map((k: string) => {
+      const editorDesc: EditorDesc = editorMap[k];
+      const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
+
+      return enabled ? (
+        <a
+          href="#"
+          key={editorDesc.slug}
+          className="list-group-item list-group-item-action flex-column align-items-start"
+          onClick={(_e) => addActivity(editorDesc, resourceContext, onAddItem, editorMap, index)}
+        >
+          <div className="type-label"> {editorDesc.friendlyName}</div>
+          <div className="type-description"> {editorDesc.description}</div>
+        </a>
+      ) : null;
+    })
+    .filter((e) => e !== null);
+
   return (
-    <div className="activities">
-      {Object.keys(editorMap).map((k: string) => {
-        const editorDesc: EditorDesc = editorMap[k];
-        const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
-        return (
-          <React.Fragment key={editorDesc.slug}>
-            {enabled && (
-              <button
-                className="btn btn-sm insert-activity-btn"
-                key={editorDesc.slug}
-                onClick={(_e) =>
-                  addActivity(editorDesc, resourceContext, onAddItem, editorMap, index)
-                }
-              >
-                {editorDesc.friendlyName}
-              </button>
-            )}
-          </React.Fragment>
-        );
-      })}
-    </div>
+    <>
+      <div className="header">Insert Activity</div>
+      <div className="list-group">{activityEntries}</div>
+    </>
   );
 };
 

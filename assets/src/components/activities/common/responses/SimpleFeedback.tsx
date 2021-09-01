@@ -7,7 +7,7 @@ import React from 'react';
 
 interface Props {
   partId: string;
-  children?: React.ReactNode | ((xs: ReturnType<typeof useSimpleFeedback>) => React.ReactNode);
+  children?: (xs: ReturnType<typeof useSimpleFeedback>) => React.ReactElement;
 }
 
 export const useSimpleFeedback = (partId: string) => {
@@ -42,7 +42,6 @@ export const SimpleFeedback: React.FC<Props> = ({ children, partId }) => {
         update={(_id, content) => updateFeedback(incorrectResponse.id, content)}
         placeholder="Enter catch-all feedback for incorrect answers"
       />
-      {children}
     </>
   );
 };

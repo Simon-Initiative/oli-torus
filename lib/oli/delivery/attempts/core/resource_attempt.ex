@@ -9,6 +9,8 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
     field(:score, :float)
     field(:out_of, :float)
     field(:state, :map, default: %{})
+    field(:content, :map)
+    field(:errors, {:array, :string}, default: [])
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
     belongs_to(:revision, Oli.Resources.Revision)
@@ -26,10 +28,18 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
       :score,
       :out_of,
       :state,
+      :content,
+      :errors,
       :date_evaluated,
       :resource_access_id,
       :revision_id
     ])
-    |> validate_required([:attempt_guid, :attempt_number, :resource_access_id, :revision_id])
+    |> validate_required([
+      :attempt_guid,
+      :attempt_number,
+      :resource_access_id,
+      :revision_id,
+      :content
+    ])
   end
 end

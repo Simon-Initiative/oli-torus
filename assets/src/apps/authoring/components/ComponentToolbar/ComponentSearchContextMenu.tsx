@@ -6,6 +6,7 @@ import {
 import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { useState } from 'react';
+import { useCallback } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
@@ -24,16 +25,25 @@ const ComponentSearchContextMenu: React.FC = () => {
     setTarget(event.target);
   };
 
-  const allParts = (currentActivityTree || []).reduce(
-    (acc, activity) => acc.concat(activity.content.partsLayout || []),
-    [],
-  );
+  // TODO: tag parent items so that we can mark them instead?
+  const allParts = (currentActivityTree || [])
+    .slice(-1)
+    .reduce((acc, activity) => acc.concat(activity.content.partsLayout || []), []);
 
-  const handlePartClick = (part: any) => {
-    setShow(!show);
-    dispatch(setCurrentSelection({ selection: part.id }));
-    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
-  };
+  const handlePartClick = useCallback(
+    (part: any) => {
+      const [currentActivity] = currentActivityTree?.slice(-1) || [];
+      if (!currentActivity) {
+        return;
+      }
+      if (currentActivity.content.partsLayout.find((p: any) => p.id === part.id)) {
+        setShow(!show);
+        dispatch(setCurrentSelection({ selection: part.id }));
+        dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+      }
+    },
+    [currentActivityTree],
+  );
 
   const getPartIcon = (type: string) => {
     const part = availablePartComponents.find((part) => part.delivery_element === type);

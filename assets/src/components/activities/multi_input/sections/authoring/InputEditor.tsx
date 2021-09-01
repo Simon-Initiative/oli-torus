@@ -58,7 +58,7 @@ export const InputEditor: React.FC<Props> = ({ part, input }) => {
                 updateFeedback={(id, content) =>
                   dispatch(ResponseActions.editResponseFeedback(response.id, content))
                 }
-                onRemove={(id) => dispatch(ResponseActions.removeResponse(id))}
+                removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
                 key={response.id}
               >
                 <InputEntry
