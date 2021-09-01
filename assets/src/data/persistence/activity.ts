@@ -11,6 +11,7 @@ import { makeRequest } from './common';
 export type ActivityUpdate = {
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   content: ActivityModelSchema;
   authoring?: any;
 };

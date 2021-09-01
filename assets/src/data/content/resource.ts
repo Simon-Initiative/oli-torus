@@ -2,6 +2,7 @@ import { ModelElement, Selection } from './model';
 import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
 import { Objective } from 'data/content/objective';
 import { ActivityEditContext } from './activity';
+import { Tag } from 'data/content/tags';
 import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
@@ -34,6 +35,7 @@ export type ResourceContext = {
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives
   allObjectives: Objective[]; // All objectives
+  allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
 };
 

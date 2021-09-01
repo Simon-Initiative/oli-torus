@@ -31,6 +31,10 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
     PubSub.subscribe(Oli.PubSub, message_dismiss_warning(project_slug))
   end
 
+  def subscribe_to_warning_new(project_slug) do
+    PubSub.subscribe(Oli.PubSub, message_new_warning(project_slug))
+  end
+
   def subscribe_to_locks_acquired(project_slug, resource_id) do
     PubSub.subscribe(Oli.PubSub, message_lock_acquired(project_slug, resource_id))
   end
@@ -66,6 +70,10 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
 
   def unsubscribe_to_warning_dismissals(project_slug) do
     PubSub.unsubscribe(Oli.PubSub, message_dismiss_warning(project_slug))
+  end
+
+  def unsubscribe_to_warning_new(project_slug) do
+    PubSub.unsubscribe(Oli.PubSub, message_new_warning(project_slug))
   end
 
   def unsubscribe_to_locks_acquired(project_slug, resource_id) do

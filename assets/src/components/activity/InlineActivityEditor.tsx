@@ -4,17 +4,23 @@ import { Objective } from 'data/content/objective';
 import { TitleBar } from '../content/TitleBar';
 import { ActivityModelSchema } from 'components/activities/types';
 import { PartObjectives } from 'components/activity/PartObjectives';
+import { Tags } from 'components/resource/Tags';
 import { valueOr } from 'utils/common';
 import { Undoable } from 'components/activities/types';
+import { Tag } from 'data/content/tags';
 import { selectImage } from 'components/editing/commands/ImageCmd';
+import { ResourceId } from 'data/types';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
+  onRegisterNewTag: (o: Tag) => void;
   editMode: boolean;
   projectSlug: string;
   allObjectives: Objective[];
+  allTags: Tag[];
+  banked: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -22,6 +28,7 @@ export type EditorUpdate = {
   title: string;
   content: ActivityModelSchema;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
 };
 
 // The activity editor
@@ -76,6 +83,7 @@ export class InlineActivityEditor extends React.Component<
         title: this.props.title,
         content: this.props.model,
         objectives: this.props.objectives,
+        tags: this.props.tags,
       },
       syncedUpdate,
     );
@@ -136,6 +144,22 @@ export class InlineActivityEditor extends React.Component<
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 
+    const maybeTags = this.props.banked ? (
+      <div className="card">
+        <div className="card-body">
+          <div className="card-title">Tags</div>
+          <Tags
+            selected={this.props.tags}
+            editMode={this.props.editMode}
+            projectSlug={webComponentProps.projectslug}
+            tags={this.props.allTags}
+            onRegisterNewTag={this.props.onRegisterNewTag}
+            onEdit={(tags) => this.update({ tags })}
+          />
+        </div>
+      </div>
+    ) : null;
+
     return (
       <div className="col-12">
         <div className="activity-editor">
@@ -155,6 +179,7 @@ export class InlineActivityEditor extends React.Component<
             onRegisterNewObjective={this.props.onRegisterNewObjective}
             onEdit={(objectives) => this.update({ objectives })}
           />
+          {maybeTags}
           <div ref={this.ref}>
             {React.createElement(authoringElement, webComponentProps as any)}
           </div>

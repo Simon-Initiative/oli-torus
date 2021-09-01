@@ -29,6 +29,7 @@ import { Paging } from './Paging';
 import * as Lock from 'data/persistence/lock';
 import { LogicFilter } from './LogicFilter';
 import { DeleteActivity } from './DeleteActivity';
+import { Tag } from 'data/content/tags';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { Operations } from 'utils/pathOperations';
@@ -39,6 +40,7 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
+  allTags: Tag[]; // All tags
   totalCount: number;
 }
 
@@ -46,6 +48,7 @@ type ActivityBankState = {
   messages: Message[];
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   allObjectives: Immutable.List<Objective>;
+  allTags: Immutable.List<Tag>;
   persistence: 'idle' | 'pending' | 'inflight';
   metaModifier: boolean;
   undoables: ActivityUndoables;
@@ -121,6 +124,7 @@ function defaultFilters() {
     { fact: BankTypes.Fact.objectives, operator: BankTypes.ExpressionOperator.contains, value: [] },
     { fact: BankTypes.Fact.text, operator: BankTypes.ExpressionOperator.contains, value: '' },
     { fact: BankTypes.Fact.type, operator: BankTypes.ExpressionOperator.contains, value: [] },
+    { fact: BankTypes.Fact.tags, operator: BankTypes.ExpressionOperator.contains, value: [] },
   ];
 }
 
@@ -144,6 +148,9 @@ function translateFilterToLogic(expressions: BankTypes.Expression[]): BankTypes.
   if (expressions[2].value.length !== 0) {
     nonEmptyExpressions.push(expressions[2]);
   }
+  if (expressions[3].value.length !== 0) {
+    nonEmptyExpressions.push(expressions[3]);
+  }
 
   let conditions = null;
 
@@ -165,7 +172,8 @@ function isEmptyFilterLogic(expressions: BankTypes.Expression[]): boolean {
   return (
     expressions[0].value.length === 0 &&
     expressions[1].value === '' &&
-    expressions[2].value.length === 0
+    expressions[2].value.length === 0 &&
+    expressions[3].value.length === 0
   );
 }
 
@@ -180,6 +188,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       messages: [],
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(props.allObjectives),
+      allTags: Immutable.List<Tag>(props.allTags),
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
       paging: defaultPaging(),
@@ -201,6 +210,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
 
     this.persistence = Maybe.nothing<PersistenceStrategy>();
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
+    this.onRegisterNewTag = this.onRegisterNewTag.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
@@ -262,9 +272,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       title: update.title !== undefined ? update.title : undefined,
       model: update.content !== undefined ? update.content : undefined,
       objectives: update.objectives !== undefined ? update.objectives : undefined,
+      tags: update.tags !== undefined ? update.tags : undefined,
     };
+
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
+
     const activityContexts = this.state.activityContexts.set(key, merged);
 
     this.setState({ activityContexts }, () => {
@@ -319,6 +332,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           content: model,
           title: context.title,
           objectives: context.objectives,
+          tags: context.tags,
         });
       }
     }
@@ -339,6 +353,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   onRegisterNewObjective(objective: Objective) {
     this.setState({
       allObjectives: this.state.allObjectives.push(objective),
+    });
+  }
+
+  onRegisterNewTag(tag: Tag) {
+    this.setState({
+      allTags: this.state.allTags.push(tag),
     });
   }
 
@@ -446,9 +466,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             projectSlug={this.props.projectSlug}
             editMode={editMode}
             allObjectives={this.state.allObjectives.toArray()}
+            allTags={this.state.allTags.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}
+            onRegisterNewTag={this.onRegisterNewTag}
+            banked={true}
             {...context}
           />
         </div>
@@ -473,6 +496,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
               title: r.title,
               model: r.content,
               objectives: r.objectives,
+              tags: r.tags,
             } as ActivityEditContext;
           })
           .map((c) => [c.activitySlug, c]);
@@ -498,6 +522,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     const onRegisterNewObjective = (objective: Objective) => {
       this.setState({
         allObjectives: this.state.allObjectives.push(objective),
+      });
+    };
+
+    const onRegisterNewTag = (tag: Tag) => {
+      this.setState({
+        allTags: this.state.allTags.push(tag),
       });
     };
 
@@ -551,7 +581,9 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             projectSlug={props.projectSlug}
             editorMap={props.editorMap}
             allObjectives={this.state.allObjectives}
+            allTags={this.state.allTags}
             onRegisterNewObjective={onRegisterNewObjective}
+            onRegisterNewTag={onRegisterNewTag}
             onChange={(filterExpressions) => {
               this.setState({ filterExpressions, canBeUpdated: true });
             }}
