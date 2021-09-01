@@ -20,7 +20,7 @@ export const TargetedFeedback: React.FC = () => {
           updateFeedback={(id, content) =>
             dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
           }
-          onRemove={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
+          removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           key={mapping.response.id}
         >
           <ResponseChoices

@@ -40,6 +40,6 @@ export const getTargetedResponses = (model: HasParts, partId: string) =>
 
 export const shortAnswerOptions: SelectOption<InputType>[] = [
   { value: 'numeric', displayValue: 'Number' },
-  { value: 'text', displayValue: 'Short Answer' },
+  { value: 'text', displayValue: 'Short Text' },
   { value: 'textarea', displayValue: 'Paragraph' },
 ];

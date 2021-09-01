@@ -6,7 +6,7 @@ import {
   makeResponse,
   makeStem,
   makeTransformation,
-  Operation,
+  Transform,
   ScoringStrategy,
 } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
@@ -37,7 +37,7 @@ export const defaultMCModel: () => MCSchema = () => {
         },
       ],
       targeted: [],
-      transformations: [makeTransformation('choices', Operation.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: '',
     },
   };

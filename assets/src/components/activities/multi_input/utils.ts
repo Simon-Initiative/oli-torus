@@ -2,7 +2,7 @@ import { MultiInputSchema } from './schema';
 import {
   makeStem,
   makeTransformation,
-  Operation,
+  Transform,
   Choice,
   ScoringStrategy,
   makeResponse,
@@ -18,18 +18,16 @@ export type MultiInput = MultiDropdownInput | MultiTextInput;
 export type MultiDropdownInput = {
   type: 'dropdown';
   partId: string;
-  choices: Choice[];
 };
-export const makeMultiDropdownInput = (choices: Choice[], partId: string): MultiDropdownInput => ({
+export const makeMultiDropdownInput = (partId: string): MultiDropdownInput => ({
   type: 'dropdown',
   partId,
-  choices,
 });
 export type MultiTextInput = {
   type: 'text' | 'numeric';
   partId: string;
 };
-export const makeMultiTextInput = (type: 'text' | 'numeric', partId: string): MultiTextInput => ({
+export const makeInput = (type: 'text' | 'numeric', partId: string): MultiTextInput => ({
   type,
   partId,
 });
@@ -59,7 +57,8 @@ export const multiInputChoicesPath = (partId: string) => `$.inputs[?(@.partId==$
 export const defaultModel = (): MultiInputSchema => {
   return {
     stems: [makeStem(''), makeStem('')],
-    inputs: [makeMultiTextInput('text', DEFAULT_PART_ID)],
+    choices: [],
+    inputs: [makeInput('text', DEFAULT_PART_ID)],
     authoring: {
       parts: [
         {
@@ -73,10 +72,8 @@ export const defaultModel = (): MultiInputSchema => {
         },
       ],
       targeted: [],
-      transformations: [makeTransformation('choices', Operation.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: '',
     },
   };
 };
-
-// export const joinStems = (model: MultiInputSchema)

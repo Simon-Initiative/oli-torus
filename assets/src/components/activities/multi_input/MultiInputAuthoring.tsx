@@ -14,7 +14,6 @@ import { ActivitySettings } from 'components/activities/common/authoring/setting
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
-import { QuestionPartEditor } from 'components/activities/multi_input/sections/authoring/QuestionPartEditor';
 import { zip } from 'utils/common';
 import {
   MultiInput,
@@ -32,6 +31,8 @@ import { HintActions } from 'components/activities/common/hints/authoring/hintAc
 import { makeHint, Manifest } from 'components/activities/types';
 import { MultiInputStem } from 'components/activities/multi_input/sections/delivery/MultiInputStem';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/authoring/DropdownQuestionEditor';
+import { InputQuestionEditor } from 'components/activities/multi_input/sections/authoring/InputQuestionEditor';
 
 const store = configureStore();
 
@@ -82,49 +83,10 @@ const MultiInput = () => {
       },
       { seenCount: {}, numberings: [] } as any,
     ).numberings;
-    // as Record<MultiInputType, number>, numberings: [] as { type: MultiInputType, number: number}[]});
   };
 
   const friendlyTitle = (numbering: any) => {
     return numbering.type + ' ' + numbering.number;
-  };
-
-  const title = (inputs: MultiInput[], input: MultiInput, index: number) => {
-    const numbering = inputNumberings(inputs)[index];
-    //   const label = <div
-    //   style={{
-    //     fontWeight: 500,
-    //   }}
-    // >
-    //   {numbering.type} {numbering.number}
-    // </div>
-
-    if (input.type === 'dropdown') {
-      return (
-        <select
-          disabled
-          className="custom-select"
-          style={{ color: 'black', fontWeight: 500, flexBasis: '160px' }}
-        >
-          <option selected key={1} value={numbering.type}>
-            {numbering.type} {numbering.number}
-          </option>
-        </select>
-      );
-    }
-
-    // TODO: Remember to take out inline styles and remove hard-coded colors in place of variables
-    return (
-      <input
-        style={{
-          fontWeight: 500,
-          flexBasis: '160px',
-        }}
-        className="form-control"
-        disabled
-        placeholder={numbering.type + ' ' + numbering.number}
-      />
-    );
   };
 
   return (
@@ -142,14 +104,6 @@ const MultiInput = () => {
           </div>
           {zip(model.stems.slice(1), model.inputs).map(([stem, input], index) => (
             <>
-              {/* <div
-                style={{
-                  // padding: '0.8rem 0.5rem',
-                  // boxShadow: '1px 1px 8px 1px rgb(206 212 218 / 33%)',
-                }}
-                className="pl-2"
-              > */}
-
               <Card.Card>
                 <Card.Title>
                   <div className="d-flex justify-content-between w-100">
@@ -157,8 +111,10 @@ const MultiInput = () => {
                       <div className="text-muted">Part {index + 1}</div>
                     </div>
                     <select className="custom-select" style={{ flexBasis: '160px' }}>
-                      {multiInputTypes.map((input) => (
-                        <option key={input}>{input}</option>
+                      {multiInputTypes.map((type) => (
+                        <option selected={input.type === type} key={type}>
+                          {multiInputTypeFriendly(type)}
+                        </option>
                       ))}
                     </select>
                     {/* {title(model.inputs, input, index)} */}
@@ -173,11 +129,12 @@ const MultiInput = () => {
                   </div>
                 </Card.Title>
                 <Card.Content>
-                  <QuestionPartEditor
-                    part={getPartById(model, input.partId)}
-                    input={input}
-                    onRemove={() => {}}
-                  />
+                  {input.type === 'dropdown' && (
+                    <DropdownQuestionEditor part={getPartById(model, input.partId)} input={input} />
+                  )}
+                  {(input.type === 'numeric' || input.type === 'text') && (
+                    <InputQuestionEditor part={getPartById(model, input.partId)} input={input} />
+                  )}
                 </Card.Content>
               </Card.Card>
               <div className="flex-grow-1">
@@ -205,12 +162,6 @@ const MultiInput = () => {
           {getParts(model).map((part, i) => {
             return (
               <>
-                {/* <FeedbackCard
-                title="Feedback for correct answer"
-                feedback={correctResponse.feedback}
-                update={(_id, content) => update(correctResponse.id, content)}
-                placeholder="Encourage students or explain why the answer is correct"
-              /> */}
                 <SimpleFeedback partId={part.id} key={part.id}>
                   {({ correctResponse, incorrectResponse, updateFeedback }) => (
                     <Card.Card>

@@ -35,7 +35,7 @@ export const MultiInputActions = {
   },
 
   removeStem(id: string) {
-    return (model: HasStems, post: PostUndoable) => {
+    return (model: HasStems, _post: PostUndoable) => {
       Operations.apply(model, Operations.filter('$..stems', `[?(@.id!=${id})]`));
     };
   },
@@ -50,11 +50,12 @@ export const MultiInputActions = {
     };
   },
 
+  addDropdown() {},
+
   addPart(type: MultiInputType, index: number) {
     return (model: MultiInputSchema, _post: PostUndoable) => {
       let part: Part;
       let input: MultiInput;
-      console.log('index', index);
 
       switch (type) {
         case 'dropdown':

@@ -13,7 +13,6 @@ import { configureStore } from 'state/store';
 import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { AnswerKey } from 'components/activities/common/authoring/answerKey/AnswerKey';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
@@ -27,6 +26,9 @@ import { cataV1toV2 } from 'components/activities/check_all_that_apply/transform
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { hintsByPart } from 'data/activities/model/hintUtils';
+import { defaultWriterContext } from 'data/content/writers/context';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 
 const store = configureStore();
 
@@ -49,14 +51,19 @@ const CheckAllThatApply = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
-        <AnswerKey
-          selectedChoiceIds={getCorrectChoiceIds(model)}
-          selectedIcon={<Checkbox.Correct />}
+        <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+
+        <ChoicesDelivery
           unselectedIcon={<Checkbox.Unchecked />}
-          onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
+          selectedIcon={<Checkbox.Correct />}
+          choices={model.choices}
+          selected={getCorrectChoiceIds(model)}
+          onSelect={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
+          isEvaluated={false}
+          context={defaultWriterContext()}
         />
         <SimpleFeedback partId={DEFAULT_PART_ID} />
-        <TargetedFeedback
+        {/* <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(
               CATAActions.editTargetedFeedbackChoices(
@@ -70,7 +77,17 @@ const CheckAllThatApply = () => {
           addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
           unselectedIcon={<Checkbox.Unchecked />}
           selectedIcon={<Checkbox.Checked />}
-        />
+        >{({targetedMappings, removeFeedback, updateFeedback}) => }
+          <ChoicesDelivery
+            unselectedIcon={unselectedIcon}
+            selectedIcon={selectedIcon}
+            choices={choices}
+            selected={mapping.choiceIds}
+            onSelect={(id) => toggleChoice(id, mapping)}
+            isEvaluated={false}
+            context={defaultWriterContext()}
+          />
+        </TargetedFeedback> */}
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">

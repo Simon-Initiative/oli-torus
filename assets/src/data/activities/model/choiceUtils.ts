@@ -1,3 +1,6 @@
+import { Choice } from 'components/activities/types';
+import { Operations } from 'utils/pathOperations';
+
 export const CHOICES_PATH = '$..choices';
 export const choicePathById = (id: string, path = CHOICES_PATH) => path + `[?(@.id==${id})]`;
 

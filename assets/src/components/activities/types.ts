@@ -141,7 +141,7 @@ export interface Feedback extends Identifiable, HasContent {}
 export const makeFeedback: (text: string) => Feedback = makeContent;
 export interface Transformation extends Identifiable {
   path: string;
-  operation: Operation;
+  operation: Transform;
 }
 export interface HasTransformations {
   authoring: {
@@ -149,9 +149,9 @@ export interface HasTransformations {
   };
 }
 
-export const makeTransformation = (path: string, operation: Operation): Transformation => ({
+export const makeTransformation = (path: string, operation: Transform): Transformation => ({
   id: guid(),
-  path: 'choices',
+  path,
   operation,
 });
 
@@ -259,7 +259,7 @@ export enum EvaluationStrategy {
   'none' = 'none',
 }
 
-export enum Operation {
+export enum Transform {
   'shuffle' = 'shuffle',
 }
 // eslint-disable-next-line

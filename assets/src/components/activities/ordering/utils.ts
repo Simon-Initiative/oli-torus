@@ -1,7 +1,7 @@
 import { DEFAULT_PART_ID } from './../common/utils';
 import guid from 'utils/guid';
 import { OrderingSchema as Ordering } from './schema';
-import { Operation, ScoringStrategy, makeStem, makeHint, makeChoice, makeResponse } from '../types';
+import { Transform, ScoringStrategy, makeStem, makeHint, makeChoice, makeResponse } from '../types';
 import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
 
 // Model creation
@@ -27,7 +27,7 @@ export const defaultOrderingModel = (): Ordering => {
       ],
       targeted: [],
       correct: [[choice1.id, choice2.id], correctResponse.id],
-      transformations: [{ id: guid(), path: 'choices', operation: Operation.shuffle }],
+      transformations: [{ id: guid(), path: 'choices', operation: Transform.shuffle }],
       previewText: '',
     },
   };

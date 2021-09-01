@@ -4,7 +4,7 @@ import {
   makeResponse,
   makeStem,
   makeTransformation,
-  Operation,
+  Transform,
   ScoringStrategy,
 } from 'components/activities/types';
 import { matchListRule, matchRule } from 'data/activities/model/rules';
@@ -38,7 +38,7 @@ export const defaultCATAModel = (): CATA => {
       ],
       correct: [[correctChoice.id], correctResponse.id],
       targeted: [],
-      transformations: [makeTransformation('choices', Operation.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: '',
     },
   };
