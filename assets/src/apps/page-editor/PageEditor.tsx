@@ -186,6 +186,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.editingLockedMessage(notAcquired.user);
         }
       });
+
+    if (window.location.hash !== '') {
+      const e = document.getElementById(window.location.hash.substr(1));
+      if (e !== null) {
+        e.scrollIntoView();
+      }
+    }
   }
 
   componentWillUnmount() {

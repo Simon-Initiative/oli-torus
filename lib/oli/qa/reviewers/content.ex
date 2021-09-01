@@ -44,6 +44,7 @@ defmodule Oli.Qa.Reviewers.Content do
       %{
         review_id: review.id,
         publication_id: publication_id,
+        project_slug: project_slug,
         selection: selection,
         revision_id: id
       }

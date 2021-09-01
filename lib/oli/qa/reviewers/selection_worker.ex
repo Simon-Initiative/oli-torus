@@ -16,11 +16,14 @@ defmodule Oli.Qa.Reviewers.Content.SelectionWorker do
     |> do_perform(args)
   end
 
+  # This handles the case that if by the time this job executes
+  # the original review no longer exists, then we simply do nothing
   defp do_perform(nil, _), do: :ok
 
   defp do_perform(review, %{
          "selection" => selection,
          "revision_id" => revision_id,
+         "project_slug" => project_slug,
          "publication_id" => publication_id,
          "review_id" => review_id
        }) do
@@ -35,28 +38,36 @@ defmodule Oli.Qa.Reviewers.Content.SelectionWorker do
             :ok
 
           {:partial, %Result{totalCount: total}} ->
-            num_missing = selection.count - total
-
             create_warning(
               review_id,
               revision_id,
+              project_slug,
               selection,
-              "#{num_missing} of #{selection.count} selection(s) could not be fulfilled for bank selection"
+              "Activity bank selection only returned #{total} of #{selection.count} activities"
             )
         end
 
       _ ->
-        create_warning(review.id, revision_id, selection, "Invalid bank selection logic")
+        create_warning(
+          review.id,
+          revision_id,
+          project_slug,
+          selection,
+          "Invalid bank selection logic"
+        )
     end
   end
 
-  defp create_warning(review_id, revision_id, selection, problem) do
-    Warnings.create_warning(%{
-      review_id: review_id,
-      revision_id: revision_id,
-      subtype: problem,
-      content: selection
-    })
+  defp create_warning(review_id, revision_id, project_slug, selection, problem) do
+    {:ok, warning} =
+      Warnings.create_warning(%{
+        review_id: review_id,
+        revision_id: revision_id,
+        subtype: problem,
+        content: Map.put(selection, :type, "selection")
+      })
+
+    Oli.Authoring.Broadcaster.broadcast_new_warning(warning.id, project_slug)
 
     :ok
   end

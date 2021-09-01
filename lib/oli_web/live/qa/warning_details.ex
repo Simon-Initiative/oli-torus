@@ -1,6 +1,7 @@
 defmodule OliWeb.Qa.WarningDetails do
   use Phoenix.LiveComponent
   import OliWeb.Qa.Utils
+  alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
     ~L"""
@@ -30,7 +31,25 @@ defmodule OliWeb.Qa.WarningDetails do
         <strong>Action item</strong> <%= action_item(@selected.subtype, %{ graded: @selected.revision.graded }) %>
         <%= if @selected.content do %>
           <div class="delivery-container">
-            <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
+            <%= if @selected.content["type"] == "selection" do %>
+              <p></p>
+              <p>
+                This page contains an activity bank selection whose logic, when tested by this QA Review run,
+                did not yield enough activities to satisfy the specified count in the selection.
+              </p>
+              <p>
+                Fix this issue by one of two ways:
+              </p>
+              <ol>
+                <li>Edit the <a href="<%= Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug) %>#<%= @selected.content["id"] %>">
+                  selection logic in the page</a> to allow it to select more activities</li>
+                <li>Create more banked activities to allow the selection to fill the specified count</li>
+              </ol>
+
+            <% else %>
+              <%= Phoenix.HTML.raw(Oli.Rendering.Content.render(%Oli.Rendering.Context{user: @author}, @selected.content, Oli.Rendering.Content.Html)) %>
+            <% end %>
+
           </div>
           <% end %>
       </div>

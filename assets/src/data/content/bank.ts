@@ -24,9 +24,9 @@ export enum ClauseOperator {
 
 export enum ExpressionOperator {
   contains = 'contains',
-  doesNotContain = 'doesNotContain',
+  doesNotContain = 'does_not_contain',
   equals = 'equals',
-  doesNotEqual = 'doesNotEqual',
+  doesNotEqual = 'does_not_equal',
 }
 
 export enum Fact {

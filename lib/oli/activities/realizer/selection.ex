@@ -4,8 +4,8 @@ defmodule Oli.Activities.Realizer.Selection do
   """
 
   @derive Jason.Encoder
-  @enforce_keys [:id, :count, :logic, :purpose]
-  defstruct [:id, :count, :logic, :purpose]
+  @enforce_keys [:id, :count, :logic, :purpose, :type]
+  defstruct [:id, :count, :logic, :purpose, :type]
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Selection
@@ -19,13 +19,17 @@ defmodule Oli.Activities.Realizer.Selection do
           id: String.t(),
           count: integer(),
           logic: %Logic{},
-          purpose: String.t()
+          purpose: String.t(),
+          type: String.t()
         }
 
   def parse(%{"count" => count, "id" => id, "logic" => logic, "purpose" => purpose}) do
     case Logic.parse(logic) do
-      {:ok, logic} -> {:ok, %Selection{id: id, count: count, logic: logic, purpose: purpose}}
-      e -> e
+      {:ok, logic} ->
+        {:ok, %Selection{id: id, count: count, logic: logic, purpose: purpose, type: "selection"}}
+
+      e ->
+        e
     end
   end
 

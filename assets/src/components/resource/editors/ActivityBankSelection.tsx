@@ -97,7 +97,7 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
   };
 
   return (
-    <div className="activity-bank-selection">
+    <div id={props.selection.id} className="activity-bank-selection">
       <div className="label mb-3">Activity Bank Selection</div>
       <div className="d-flex justify-items-start mb-4">
         <div className="mr-3">Number to select:</div>
