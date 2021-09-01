@@ -387,7 +387,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
    * Notify clients that configuration is updated. (eg. the question has changed)
    */
   const notifyConfigChange = () => {
-    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.CONFIG_CHANGE, []);
+    if (simLife.ready)
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.CONFIG_CHANGE, []);
   };
   useEffect(() => {
     if (!props.notify) {
@@ -563,11 +564,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (simLife.ready) {
       return;
     }
-    simLife.init = true;
     simLife.ready = true;
     const updateSimLife = { ...simLife };
     updateSimLife.ready = true;
-    updateSimLife.init = true;
     setSimLife(updateSimLife);
     // should / will sim send onReady more than once??
     const filterVars = createCapiObjectFromStateVars(simLife.currentState);
@@ -575,8 +574,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       handleIFrameSpecificProperties(simLife.currentState);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
     }
-    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, []);
-
+    //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
+    if (!initState && !Object.keys(initState)?.length) {
+      simLife.init = true;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+    }
     return;
   };
 
@@ -870,6 +872,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       formatted[baseKey] = cVar;
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
     });
+    if (!simLife.init) {
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+      simLife.init = true;
+    }
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
 
