@@ -323,67 +323,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
   };
 
-  const getInterestedVars = (vars: any) => {
-    const interested = Object.keys(vars).filter((ms: any) => {
-      const isMine = ms.indexOf(`stage.${id}.`) === 0;
-      if (!isMine) {
-        return false;
-      }
-      const internalValue = externalActivityMap.get(`${simLife.ownerActivityId}|${ms}`);
-      // mineValue is the value that was passed on to this part component
-      // internalVal is the value that is stored locally in key-value pair for value changes comparions
-      let mineValue = vars[ms];
-      let internalVal = internalValue?.value;
-      const typeOfMS = typeof vars[ms];
-      const typeofInternalVal = typeof internalVal;
-
-      // if the variables is not an array just return it true. It seems that currently, we do not need to compare other values because it impacts the "resume mode in Open and Free"
-      if (!Array.isArray(mineValue)) {
-        return true;
-      }
-
-      //handle case where internalVal = 'true' and mineValue =true
-      if (ms.type === CapiVariableTypes.BOOLEAN && typeofInternalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      if (ms.type === CapiVariableTypes.NUMBER && typeofInternalVal === 'string') {
-        mineValue = JSON.stringify(mineValue);
-      }
-      // there are cases where mineValue is an array [38] and InternalVal is also array but it is a string array i.e. "[38]"
-      // if this is the case then convert it and check if the values are matching and we are done for this key
-      if (typeOfMS === 'object' && Array.isArray(vars[ms]) && typeofInternalVal === 'string') {
-        internalVal = new CapiVariable({
-          key: ms.key,
-          type: ms.type,
-          value: internalVal,
-        });
-        if (Array.isArray(internalVal.value) && Array.isArray(mineValue)) {
-          return JSON.stringify(internalVal.value) !== JSON.stringify(mineValue);
-        }
-      }
-
-      // if it reaches here then check if both mineValue and InternalVal are arrays. If Yes then compare and return;
-      if (
-        typeOfMS === 'object' &&
-        Array.isArray(vars[ms]) &&
-        typeofInternalVal === 'object' &&
-        Array.isArray(internalVal)
-      ) {
-        return JSON.stringify(internalVal) !== JSON.stringify(mineValue);
-      }
-      // finally make sure that the values are not blank & null as some time SIM may return null value and it gets saved as blank ('') but in external map it is null
-      if (mineValue == '' && internalVal == null) return false;
-
-      return !internalValue || internalVal != mineValue;
-    });
-
-    // Now we have filtered list of variables that have changed and  will return the collection
-    return interested?.reduce((collect: any, key: string) => {
-      collect[key] = vars[key];
-      return collect;
-    }, {});
+  /*
+   * Notify clients that configuration is updated. (eg. the question has changed)
+   */
+  const notifyConfigChange = () => {
+    if (simLife.ready)
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.CONFIG_CHANGE, []);
   };
-
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -452,15 +398,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife,
                 payload,
               });
-              simLife.handshake.config = { context: payload.mode };
-              const currentStateSnapshot = payload.snapshot;
-              //send only those variables whose values are changes
-              const finalCurrentStateSnapshot = getInterestedVars(currentStateSnapshot);
-              if (payload.mode === contexts.REVIEW) {
-                processInitStateVariable(currentStateSnapshot);
-              } else {
-                processInitStateVariable(finalCurrentStateSnapshot);
-              }
+              simLife.handshake.config = {
+                context: payload.mode,
+                questionId: payload.currentActivityId,
+              };
+              notifyConfigChange();
+              // we only send the Init state variables.
+              const currentStateSnapshot = payload.initStateFacts;
+              processInitStateVariable(currentStateSnapshot);
+
               setSimIsInitStatePassedOnce(false);
             }
             break;
@@ -554,11 +500,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (simLife.ready) {
       return;
     }
-    simLife.init = true;
     simLife.ready = true;
     const updateSimLife = { ...simLife };
     updateSimLife.ready = true;
-    updateSimLife.init = true;
     setSimLife(updateSimLife);
     // should / will sim send onReady more than once??
     const filterVars = createCapiObjectFromStateVars(simLife.currentState);
@@ -566,8 +510,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       handleIFrameSpecificProperties(simLife.currentState);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
     }
-    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, []);
-
+    //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
+    if (!initState && !Object.keys(initState)?.length) {
+      simLife.init = true;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+    }
     return;
   };
 
@@ -850,47 +797,30 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     writeCapiLog('INIT STATE APPLIED', 3);
-
-    // This will send inital data when we navigate to next screen inside that layer
-    /* const filterVars = createCapiObjectFromStateVars(initState); */
-    const initStateVars = Object.keys(initState).reduce((formatted: any, key) => {
-      const baseKey = key.replace(`stage.${id}.`, '');
-      const value = initState[key];
-      const cVar = new CapiVariable({
-        key: baseKey,
-        value,
-      });
-      if (baseKey.indexOf('Settings') === -1) formatted[baseKey] = cVar;
-      return formatted;
-    }, {});
-    if (initStateVars && Object.keys(initStateVars)?.length !== 0) {
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, initStateVars);
-    }
-    // for some reason when trap state variable contains 'Settings' then SIM does not behave properly so it needs to be
-    // handled different i.e. on first value change filter the 'Settings' variables and send them in another value_change event
-    const initStateVarsWithSettingsVariable = Object.keys(initState).reduce(
-      (formatted: any, key) => {
+    Object.keys(initState)
+      .reverse()
+      .forEach((key: any) => {
+        const formatted: Record<string, unknown> = {};
         const baseKey = key.replace(`stage.${id}.`, '');
         const value = initState[key];
         const cVar = new CapiVariable({
           key: baseKey,
           value,
         });
-        if (baseKey.indexOf('Settings') !== -1) formatted[baseKey] = cVar;
-        return formatted;
-      },
-      {},
-    );
-    if (
-      initStateVarsWithSettingsVariable &&
-      Object.keys(initStateVarsWithSettingsVariable)?.length !== 0
-    ) {
-      sendFormedResponse(
-        simLife.handshake,
-        {},
-        JanusCAPIRequestTypes.VALUE_CHANGE,
-        initStateVarsWithSettingsVariable,
-      );
+        formatted[baseKey] = cVar;
+        //hack for Small world type SIMs
+        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
+          const mFormatted: Record<string, unknown> = {};
+          const updatedVar = { ...cVar };
+          updatedVar.value = !parseBool(cVar.value);
+          mFormatted[baseKey] = updatedVar;
+          sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
+        }
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+      });
+    if (!simLife.init) {
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+      simLife.init = true;
     }
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
