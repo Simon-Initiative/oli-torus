@@ -36,12 +36,28 @@
 
       <tr>
         <td><strong>Start Date:</strong></td>
-        <td><%= @section.start_date %></td>
+        <td>
+          <%= case  @section.start_date do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+
+            <% start_date -> %>
+              <%= start_date %>
+          <% end %>
+        </td>
       </tr>
 
       <tr>
         <td><strong>End Date:</strong></td>
-        <td><%= @section.end_date %></td>
+        <td>
+          <%= case  @section.end_date do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+
+            <% end_date -> %>
+              <%= end_date %>
+          <% end %>
+        </td>
       </tr>
 
       <tr>

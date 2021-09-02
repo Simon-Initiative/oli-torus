@@ -64,28 +64,56 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         <%= error_tag f, :title %>
       </div>
 
-      <div class="form-row">
-        <div class="form-label-group col-md-6">
-          <%= text_input f, :start_date, class: "form-control " <> error_class(f, :start_date, "is-invalid"),
-            autofocus: focusHelper(f, :start_date) %>
-          <%= label f, :start_date, "Start Date", class: "control-label" %>
+      <div class="form-row" phx-update="ignore">
+        <div class="form-group col-md-6">
+          <div class="text-secondary my-1">Start Date</div>
+          <div class="input-group date">
+            <%= text_input f, :start_date, class: "form-control datetimepicker-input " <> error_class(f, :start_date, "is-invalid"),
+              data_target: "#section_start_date",
+              autofocus: focusHelper(f, :start_date) %>
+            <div class="input-group-append" data-target="#section_start_date" data-toggle="datetimepicker">
+                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+            </div>
+          </div>
           <%= error_tag f, :start_date %>
         </div>
-        <div class="form-label-group col-md-6">
-          <%= text_input f, :end_date, class: "form-control " <> error_class(f, :end_date, "is-invalid"),
-            autofocus: focusHelper(f, :end_date) %>
-          <%= label f, :end_date, "End Date", class: "control-label" %>
+        <div class="form-group col-md-6">
+          <div class="text-secondary my-1">End Date</div>
+          <div class="input-group date">
+            <%= text_input f, :end_date, class: "form-control datetimepicker-input " <> error_class(f, :end_date, "is-invalid"),
+              data_target: "#section_end_date",
+              autofocus: focusHelper(f, :end_date) %>
+            <div class="input-group-append" data-target="#section_end_date" data-toggle="datetimepicker">
+                <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+            </div>
+          </div>
           <%= error_tag f, :end_date %>
         </div>
       </div>
 
       <script>
         $(function() {
-          $('#section_start_date, #section_end_date').datepicker({
-            format: "yyyy-mm-dd",
-            todayBtn: "linked",
-            todayHighlight: true,
-            orientation: "bottom",
+          $('#section_start_date, #section_end_date').datetimepicker({
+            format: "MM/DD/YYYY h:mm A",
+            parseInputDate: function(input) {
+              const isISORegex = new RegExp('^\\d{4}-\\d{2}-\\d{2}');
+              if (isISORegex.test(input)) {
+                // value was rendered on server in basic ISO format
+                return moment(input, "YYYY-MM-DD hh:mm:ss");
+              }
+
+              return moment(input, "MM/DD/YYYY h:mm A");
+            },
+            icons: {
+              time: 'las la-clock',
+              previous: 'las la-angle-left',
+              next: 'las la-angle-right',
+              today: 'las la-calendar-check'
+            },
+            widgetPositioning: {
+              vertical: 'bottom'
+            },
+            allowInputToggle: true
           });
         });
       </script>
