@@ -136,8 +136,8 @@ defmodule OliWeb.OpenAndFreeController do
 
     utc_start_date =
       case start_date do
-        "" ->
-          ""
+        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
+          start_date
 
         start_date ->
           start_date
@@ -148,8 +148,8 @@ defmodule OliWeb.OpenAndFreeController do
 
     utc_end_date =
       case end_date do
-        "" ->
-          ""
+        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
+          end_date
 
         end_date ->
           end_date
@@ -168,13 +168,13 @@ defmodule OliWeb.OpenAndFreeController do
 
     start_date =
       case start_date do
-        nil -> nil
+        start_date when start_date == nil or start_date == "" -> start_date
         start_date -> Timex.Timezone.convert(start_date, timezone)
       end
 
     end_date =
       case end_date do
-        nil -> nil
+        end_date when end_date == nil or end_date == "" -> start_date
         end_date -> Timex.Timezone.convert(end_date, timezone)
       end
 
