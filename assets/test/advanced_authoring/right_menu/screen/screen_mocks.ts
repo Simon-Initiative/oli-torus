@@ -1,4 +1,4 @@
-import { IActivity } from "apps/delivery/store/features/activities/slice";
+import { IActivity } from 'apps/delivery/store/features/activities/slice';
 
 export const transformedSchema = {
   title: 'Customize Avatar',
@@ -18,6 +18,7 @@ export const transformedSchema = {
 export const screen: IActivity = {
   id: 29,
   resourceId: 29,
+  tags: [],
   activitySlug: 'customize_avatar_5we6z',
   content: {
     custom: {
@@ -29,17 +30,17 @@ export const screen: IActivity = {
       mainBtnLabel: '',
       negativeScoreAllowed: false,
       palette: {
-        backgroundColor: "rgba(255,255,255,1)",
-        borderColor: "rgba(255,255,255,1)",
-        borderStyle: "solid",
-        borderWidth: "0.1px",
+        backgroundColor: 'rgba(255,255,255,1)',
+        borderColor: 'rgba(255,255,255,1)',
+        borderStyle: 'solid',
+        borderWidth: '0.1px',
         fillAlpha: 1,
         fillColor: 0,
         lineAlpha: 1,
         lineColor: 0,
         lineStyle: 0,
         lineThickness: 0.1,
-        borderRadius: "10px",
+        borderRadius: '10px',
         useHtmlProps: false,
       },
       panelHeaderColor: 0,
@@ -64,6 +65,7 @@ export const screen: IActivity = {
 export const screen1: IActivity = {
   id: 29,
   resourceId: 29,
+  tags: [],
   activitySlug: 'customize_avatar_5we6z',
   content: {
     custom: {
@@ -75,17 +77,17 @@ export const screen1: IActivity = {
       mainBtnLabel: '',
       negativeScoreAllowed: false,
       palette: {
-        backgroundColor: "rgba(255,255,255,1)",
-        borderColor: "rgba(255,255,255,1)",
-        borderStyle: "solid",
-        borderWidth: "0.1px",
+        backgroundColor: 'rgba(255,255,255,1)',
+        borderColor: 'rgba(255,255,255,1)',
+        borderStyle: 'solid',
+        borderWidth: '0.1px',
         fillAlpha: 1,
         fillColor: 0,
         lineAlpha: 1,
         lineColor: 0,
         lineStyle: 0,
         lineThickness: 0.1,
-        borderRadius: "10px",
+        borderRadius: '10px',
         useHtmlProps: true,
       },
       panelHeaderColor: 0,

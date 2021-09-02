@@ -27,7 +27,7 @@ defmodule Oli.Interop.IngestTest do
   end
 
   def verify_export(entries) do
-    assert length(entries) == 9
+    assert length(entries) == 11
 
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
@@ -92,6 +92,10 @@ defmodule Oli.Interop.IngestTest do
 
       refute is_nil(access)
 
+      # verify that the tags were created
+      tags = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "tag")
+      assert length(tags) == 2
+
       # verify correct number of hierarchy elements were created
       containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")
       # 4 defined in the course, plus 1 for the root
@@ -143,6 +147,11 @@ defmodule Oli.Interop.IngestTest do
       # verify that all the activities were created correctly
       activities = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
       assert length(activities) == 3
+
+      # verify the one activity that had a tag had the tag applied properly
+      tag = Enum.filter(tags, fn p -> p.title == "Easy" end) |> hd
+      tagged_activity = Enum.filter(activities, fn p -> p.title == "CATA" end) |> hd
+      assert tagged_activity.tags == [tag.resource_id]
     end
   end
 end

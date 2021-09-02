@@ -23,6 +23,7 @@ export interface IActivity {
   activityType?: any;
   title?: string;
   objectives?: ObjectiveMap;
+  tags: number[];
   [key: string]: any;
 }
 
