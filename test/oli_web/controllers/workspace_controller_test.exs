@@ -1,6 +1,7 @@
 defmodule OliWeb.WorkspaceControllerTest do
   use OliWeb.ConnCase
   alias Oli.Repo
+  alias Oli.Seeder
 
   describe "projects" do
     test "displays the projects page", %{conn: conn} do
@@ -31,6 +32,28 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, conn: conn, author: _author} = author_conn(%{conn: conn})
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 200) =~ "action=\"/authoring/project\""
+    end
+
+    test "login fails if author is deleted", %{conn: conn} do
+      {:ok, conn: conn, author: author} = author_conn(%{conn: conn})
+
+      {:ok, _} = Oli.Accounts.delete_author(author)
+
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      assert html_response(conn, 302) =~ "You are being <a href=\"/authoring/session/new"
+    end
+
+    test "can still access the projects page if an author is deleted", %{conn: conn} do
+      %{author: author, author2: author2} = Seeder.base_project_with_resource2()
+
+      {:ok, _} = Oli.Accounts.delete_author(author)
+
+      conn =
+        Pow.Plug.assign_current_user(conn, author2, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+      assert html_response(conn, 200) =~ "Projects"
+      assert html_response(conn, 200) =~ "Example Open and Free Course"
     end
   end
 
