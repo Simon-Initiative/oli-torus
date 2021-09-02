@@ -395,6 +395,14 @@ defmodule OliWeb.Router do
     put("/objective/:objective", Api.ObjectivesController, :update)
   end
 
+  # Tags Service
+  scope "/api/v1/tags/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.TagController, :new)
+    get("/", Api.TagController, :index)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])

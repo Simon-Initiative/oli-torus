@@ -9,11 +9,13 @@
 - Fix various UI issues such as showing outline in LMS iframe, email templates and dark mode feedback
 - Fix an issue where the manage grades page displayed an incorrect grade book link
 - Removed unecessary and failing javascript from project listing view
+- Restore ability to realize deeply nested activity references within adaptive page content
 
 ### Enhancements
 
 - Add infrastructure for advanced section creation, including the ability to view and apply publication updates
 - Enable banked activity creation and editing
+- Add user-defined tag infrastructure and incorporate in banked activity editing
 
 ## 0.12.9 (2021-08-20)
 

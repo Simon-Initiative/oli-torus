@@ -29,6 +29,10 @@ defmodule Oli.Authoring.Broadcaster.Messages do
     ["dismiss_warning", project(project_slug)] |> join
   end
 
+  def message_new_warning(project_slug) do
+    ["new_warning", project(project_slug)] |> join
+  end
+
   def message_lock_acquired(project_slug, resource_id) do
     ["lock_acquired", project(project_slug), resource(resource_id)] |> join
   end

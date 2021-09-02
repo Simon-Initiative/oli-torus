@@ -67,7 +67,7 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oban,
   repo: Oli.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, snapshots: 20]
+  queues: [default: 10, snapshots: 20, selections: 2]
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

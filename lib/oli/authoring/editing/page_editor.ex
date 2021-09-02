@@ -200,6 +200,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
+         {:ok, tags} <- Oli.Authoring.Editing.TagEditor.list(project_slug, author),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
@@ -217,6 +218,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
+         allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
          title: revision.title,
          graded: revision.graded,
          content: convert_to_activity_slugs(revision.content, publication.id),

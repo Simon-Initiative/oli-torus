@@ -55,6 +55,7 @@ defmodule OliWeb.Api.ActivityBankController do
       objectives: revision.objectives,
       resource_id: revision.resource_id,
       activity_type_id: revision.activity_type_id,
+      tags: revision.tags,
       slug: revision.slug
     }
   end
