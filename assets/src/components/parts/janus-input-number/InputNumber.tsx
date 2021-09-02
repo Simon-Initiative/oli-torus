@@ -179,7 +179,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     width,
   };
   const inputNumberCompStyles: CSSProperties = {
-    width,
+    width: '100%',
   };
 
   const debouncetime = 300;

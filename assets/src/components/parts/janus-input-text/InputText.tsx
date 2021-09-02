@@ -218,7 +218,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   );
 
   return ready ? (
-    <div data-janus-type={tagName} className={`short-text-input ${cssClass}`}>
+    <div data-janus-type={tagName} className={`short-text-input`} style={{ width: '100%' }}>
       <label htmlFor={`${id}-short-text-input`}>
         {showLabel && label ? label : <span>&nbsp;</span>}
       </label>
@@ -230,6 +230,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
         onChange={handleOnChange}
         disabled={!enabled}
         value={text}
+        style={{ width: '100%' }}
       />
     </div>
   ) : null;
