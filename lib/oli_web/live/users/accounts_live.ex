@@ -11,7 +11,11 @@ defmodule OliWeb.Accounts.AccountsLive do
   alias OliWeb.Pow.UserContext
   alias OliWeb.Pow.AuthorContext
 
-  def mount(_, %{"current_author_id" => current_author_id}, socket) do
+  def mount(
+        _params,
+        %{"current_author_id" => current_author_id, "csrf_token" => csrf_token},
+        socket
+      ) do
     current_author = Repo.get(Author, current_author_id)
 
     {:ok, authors_model} = load_authors_model(current_author)
@@ -26,6 +30,7 @@ defmodule OliWeb.Accounts.AccountsLive do
 
     {:ok,
      assign(socket,
+       csrf_token: csrf_token,
        model: model,
        title: "Manage Accounts",
        active: :accounts,
@@ -149,7 +154,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   def render_user_actions_column(
-        assigns,
+        %{csrf_token: csrf_token} = assigns,
         %{
           id: id,
           email_confirmed_at: email_confirmed_at,
@@ -165,25 +170,27 @@ defmodule OliWeb.Accounts.AccountsLive do
 
     if independent_learner do
       ~L"""
+        <form id="resend-confirmation-<%= id %>" method="post" action="<%= resend_confirmation_link_path %>">
+          <input type="hidden" name="_csrf_token" value="<%= csrf_token %>" />
+          <input type="hidden" name="id" value="<%= id %>" />
+        </form>
+        <form id="reset-password-<%= id %>" method="post" action="<%= reset_password_link_path %>">
+        <input type="hidden" name="_csrf_token" value="<%= csrf_token %>" />
+          <input type="hidden" name="id" value="<%= id %>" />
+        </form>
         <div class="dropdown">
-          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="user-actions-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="las la-tools"></i> Manage
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <%= if email_confirmed_at == nil do %>
-              <form method="post" action="<%= resend_confirmation_link_path %>">
-                <input type="hidden" name="id" value="<%= id %>" />
-                <button type="submit" class="dropdown-item">Resend confirmation link</button>
-              </form>
+              <button type="submit" class="dropdown-item" form="resend-confirmation-<%= id %>">Resend confirmation link</button>
               <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_user" phx-value-id="<%= id %>">Confirm email</button>
 
               <div class="dropdown-divider"></div>
             <% end %>
 
-            <form method="post" action="<%= reset_password_link_path %>">
-              <input type="hidden" name="id" value="<%= id %>" />
-              <button type="submit" class="dropdown-item">Send password reset link</button>
-            </form>
+            <button type="submit" class="dropdown-item" form="reset-password-<%= id %>">Send password reset link</button>
 
             <div class="dropdown-divider"></div>
 
@@ -208,7 +215,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   def render_author_actions_column(
-        assigns,
+        %{csrf_token: csrf_token} = assigns,
         %{
           id: id,
           email_confirmed_at: email_confirmed_at,
@@ -227,26 +234,27 @@ defmodule OliWeb.Accounts.AccountsLive do
     if row != assigns.model.author and
          row.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do
       ~L"""
+        <form id="resend-confirmation-<%= id %>" method="post" action="<%= resend_confirmation_link_path %>">
+        <input type="hidden" name="_csrf_token" value="<%= csrf_token %>" />
+          <input type="hidden" name="id" value="<%= id %>" />
+        </form>
+        <form id="reset-password-<%= id %>" method="post" action="<%= reset_password_link_path %>">
+        <input type="hidden" name="_csrf_token" value="<%= csrf_token %>" />
+          <input type="hidden" name="id" value="<%= id %>" />
+        </form>
         <div class="dropdown">
-          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="author-actions-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="las la-tools"></i> Manage
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
             <%= if email_confirmed_at == nil do %>
-              <form method="post" action="<%= resend_confirmation_link_path %>">
-                <input type="hidden" name="id" value="<%= id %>" />
-                <button type="submit" class="dropdown-item">Resend confirmation link</button>
-              </form>
+              <button type="submit" class="dropdown-item" form="resend-confirmation-<%= id %>">Resend confirmation link</button>
               <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_author" phx-value-id="<%= id %>">Confirm email</button>
 
               <div class="dropdown-divider"></div>
             <% end %>
 
-            <form method="post" action="<%= reset_password_link_path %>">
-              <input type="hidden" name="id" value="<%= id %>" />
-              <button type="submit" class="dropdown-item">Send password reset link</button>
-            </form>
-
+            <button type="submit" class="dropdown-item" form="reset-password-<%= id %>">Send password reset link</button>
 
             <div class="dropdown-divider"></div>
 
@@ -501,7 +509,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   end
 
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
-  def render(assigns) do
+  def render(%{csrf_token: csrf_token} = assigns) do
     ~L"""
     <div class="container">
       <div class="row">
@@ -517,7 +525,7 @@ defmodule OliWeb.Accounts.AccountsLive do
             </li>
           </ul>
           <div class="mt-4 ml-1 mr-2">
-            <%= live_component SortableTable, model: (if @model.active_tab == :users do @model.users_model else @model.authors_model end) %>
+            <%= live_component SortableTable, model: (if @model.active_tab == :users do @model.users_model else @model.authors_model end), csrf_token: csrf_token %>
           </div>
         </div>
       </div>
