@@ -1,4 +1,4 @@
-defmodule Oli.Repo.Migrations.DeleteUsersAuthors do
+defmodule Oli.Repo.Migrations.DeleteAuthorsUsers do
   use Ecto.Migration
 
   def up do
@@ -36,12 +36,6 @@ defmodule Oli.Repo.Migrations.DeleteUsersAuthors do
     drop(constraint(:consent_cookies, "consent_cookies_user_id_fkey"))
     alter table(:consent_cookies) do
       modify(:user_id, references(:users, on_delete: :delete_all))
-    end
-
-    # authors
-    drop(constraint(:author_identities, "author_identities_user_id_fkey"))
-    alter table(:author_identities) do
-      modify :user_id, references(:authors, on_delete: :delete_all)
     end
 
     drop(constraint(:users, "users_author_id_fkey"))
@@ -101,12 +95,6 @@ defmodule Oli.Repo.Migrations.DeleteUsersAuthors do
     drop(constraint(:consent_cookies, "consent_cookies_user_id_fkey"))
     alter table(:consent_cookies) do
       modify(:user_id, references(:users, on_delete: :nothing))
-    end
-
-    # authors
-    drop(constraint(:author_identities, "author_identities_user_id_fkey"))
-    alter table(:author_identities) do
-      modify :user_id, references(:authors, on_delete: :nothing)
     end
 
     drop(constraint(:users, "users_author_id_fkey"))
