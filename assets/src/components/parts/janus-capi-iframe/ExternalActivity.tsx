@@ -300,7 +300,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -404,7 +404,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               };
               notifyConfigChange();
               // we only send the Init state variables.
-              //TODO - Need to figure out the Open & free settings because it expects everything i guess?
               const currentStateSnapshot = payload.initStateFacts;
               processInitStateVariable(currentStateSnapshot);
 
@@ -809,6 +808,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           value,
         });
         formatted[baseKey] = cVar;
+        //hack for Small world type SIMs
+        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
+          const mFormatted: Record<string, unknown> = {};
+          const updatedVar = { ...cVar };
+          updatedVar.value = !parseBool(cVar.value);
+          mFormatted[baseKey] = updatedVar;
+          sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
+        }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
     if (!simLife.init) {
