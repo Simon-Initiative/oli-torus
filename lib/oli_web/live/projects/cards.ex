@@ -14,7 +14,9 @@ defmodule OliWeb.Projects.Cards do
           <% else %>
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4">
               <%= for project <- @projects do %>
-                <%= live_component Card, project: project, author_count: length(Map.get(@authors, project.id)) %>
+                <%= if project.status == :active or @show_deleted do %>
+                  <%= live_component Card, project: project, author_count: length(Map.get(@authors, project.id)) %>
+                <% end %>
               <% end %>
             </div>
           <% end %>
