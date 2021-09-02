@@ -1,3 +1,4 @@
+import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import EventEmitter from 'events';
 import React, { useEffect, useState } from 'react';
@@ -25,6 +26,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [configurePartId, setConfigurePartId] = useState('');
   const [selectedPart, setSelectedPart] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedPartId) {
@@ -84,6 +86,10 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     }`;
   });
 
+  const DeleteComponentHandler = () => {
+    handlePartDelete();
+    setShowConfirmDelete(false);
+  };
   const handlePartEdit = useCallback(async () => {
     console.log('AUTHOR PART EDIT', { selectedPart });
   }, [selectedPart]);
@@ -248,9 +254,18 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           <button title="Move Back" onClick={handlePartMoveBack}>
             <i className="las la-minus"></i>
           </button>
-          <button title="Delete" onClick={handlePartDelete}>
+          <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
             <i className="las la-trash"></i>
           </button>
+          <ConfirmDelete
+            show={showConfirmDelete}
+            elementType="Component"
+            elementName={selectedPart?.id}
+            DeleteHandler={DeleteComponentHandler}
+            cancelHandler={() => {
+              setShowConfirmDelete(false);
+            }}
+          />
         </div>
         {parts.map((part) => {
           const partProps = {
