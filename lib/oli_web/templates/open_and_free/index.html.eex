@@ -53,8 +53,6 @@
             <td class="text-nowrap">
               <%= link "Details", to: Routes.open_and_free_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
               <%= link "Edit", to: Routes.open_and_free_path(@conn, :edit, section), class: "btn btn-sm btn-outline-primary" %>
-              <%= link "Manage", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, section.slug), class: "btn btn-sm btn-outline-primary" %>
-              <%= link "Updates", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug), class: "btn btn-sm btn-outline-primary" %>
             </td>
           </tr>
         <% end %>
