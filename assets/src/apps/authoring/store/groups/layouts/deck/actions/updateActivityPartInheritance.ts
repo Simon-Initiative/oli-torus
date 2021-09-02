@@ -68,7 +68,6 @@ export const updateActivityPartInheritance = createAsyncThunk(
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);
       const pageResourceId = selectResourceId(rootState);
-      // in lieu of bulk edit
       const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
         const changeData: BulkActivityUpdate = {
           title: activity.title,
