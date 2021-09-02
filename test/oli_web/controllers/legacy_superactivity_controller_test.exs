@@ -52,7 +52,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
       )
 
-      IO.inspect conn.resp_body
+      IO.write conn.resp_body
 
       conn =
         recycle(conn)
@@ -71,7 +71,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
       )
 
-      IO.inspect conn.resp_body
+      IO.write conn.resp_body
 
       conn =
         recycle(conn)
@@ -90,7 +90,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
       )
 
-      IO.inspect conn.resp_body
+      IO.write conn.resp_body
     end
 
   end
@@ -149,18 +149,22 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       map.publication
     )
 
-    section =
-      section_fixture(%{
-        context_id: "some-context-id",
-        project_id: map.project.id,
-        publication_id: map.publication.id,
-        institution_id: map.institution.id,
-        open_and_free: false
-      })
+    map =
+      map
+      |> Seeder.create_section()
+      |> Seeder.create_section_resources()
+#    section =
+#      section_fixture(%{
+#        context_id: "some-context-id",
+#        project_id: map.project.id,
+#        publication_id: map.publication.id,
+#        institution_id: map.institution.id,
+#        open_and_free: false
+#      })
 
     lti_params =
       Oli.Lti_1p3.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
 
     cache_lti_params("params-key", lti_params)
 
@@ -177,7 +181,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       user: user,
       project: map.project,
       publication: map.publication,
-      section: section,
+      section: map.section,
       revision: map.revision1,
       page_revision: map.page.revision,
       activity_id: Map.get(map, :activity).resource.id

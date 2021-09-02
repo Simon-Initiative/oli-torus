@@ -13,7 +13,7 @@ defmodule Oli.Interop.CustomActivities.ItemInfo do
       %{
         guid: context.resource_access.id,
         id: context.resource_access.id,
-        organization_guid: context.section.publication.id,
+        organization_guid: "multiple",
         purpose: "none",
         scoring_mode: context.activity_attempt.revision.scoring_strategy.type
       },

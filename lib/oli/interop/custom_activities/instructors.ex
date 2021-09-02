@@ -1,7 +1,7 @@
 defmodule Oli.Interop.CustomActivities.Instructors do
 
-  alias Oli.Interop.CustomActivities.{User}
   import XmlBuilder
+  alias Oli.Interop.CustomActivities.{User}
 
   def setup(
         %{
@@ -12,11 +12,11 @@ defmodule Oli.Interop.CustomActivities.Instructors do
       :instructors,
       context.instructors
       |> Enum.map(
-           fn e ->
+           fn user ->
              User.setup(
                %{
                  context: %{
-                   user: e
+                   user: user
                  }
                }
              )

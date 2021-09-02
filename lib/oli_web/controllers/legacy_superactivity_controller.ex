@@ -11,31 +11,7 @@ defmodule OliWeb.LegacySuperactivityController do
   def process(conn,  %{"commandName" => command_name, "attempt_guid" => attempt_guid} = params) do
     user = conn.assigns.current_user
 
-    activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
-                       |> Repo.preload([revision: [:scoring_strategy]])
-
-    resource_attempt = Attempts.get_resource_attempt_by(id: activity_attempt.resource_attempt_id)
-    IO.inspect resource_attempt
-
-    resource_access = Attempts.get_resource_access(activity_attempt.resource_attempt.resource_access_id)
-
-    section = Sections.get_section_preloaded!(resource_access.section_id) |> Repo.preload([:institution, :publication])
-
-    instructors = Grading.fetch_instructors(section.slug)
-
-    enrollment = Sections.get_enrollment(section.slug, user.id)
-                 |> Repo.preload([:context_roles])
-
-    context = %{
-      server_time_zone: get_timezone(),
-      user: user,
-      section: section,
-      activity_attempt: activity_attempt,
-      resource_attempt: resource_attempt,
-      resource_access: resource_access,
-      instructors: instructors,
-      enrollment: enrollment
-    }
+    context = fetch_context(user, attempt_guid)
 
     xml_response = process_command(command_name, context, params)
     case xml_response do
@@ -51,6 +27,35 @@ defmodule OliWeb.LegacySuperactivityController do
 
   end
 
+  defp fetch_context(user, attempt_guid) do
+    activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
+                       |> Repo.preload([revision: [:scoring_strategy]])
+
+    resource_attempt = Attempts.get_resource_attempt_by(id: activity_attempt.resource_attempt_id)
+
+    resource_access = Attempts.get_resource_access(resource_attempt.resource_access_id)
+
+    section = Sections.get_section_preloaded!(resource_access.section_id)
+              |> Repo.preload([:institution, :section_project_publications])
+
+    instructors = Grading.fetch_instructors(section.slug)
+
+    enrollment = Sections.get_enrollment(section.slug, user.id)
+                 |> Repo.preload([:context_roles])
+
+    %{
+      server_time_zone: get_timezone(),
+      user: user,
+      section: section,
+      activity_attempt: activity_attempt,
+      resource_attempt: resource_attempt,
+      resource_access: resource_access,
+      instructors: instructors,
+      enrollment: enrollment
+    }
+
+  end
+
   defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
     xml = SuperActivityClient.setup(%{
       context: context
@@ -59,7 +64,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "beginSession" do
-#    IO.inspect context
+#    IO.inspect(context, limit: :infinity)
     xml = SuperActivitySession.setup(%{
       context: context
     }) |> XmlBuilder.document |> XmlBuilder.generate

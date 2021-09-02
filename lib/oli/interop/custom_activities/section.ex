@@ -22,7 +22,7 @@ defmodule Oli.Interop.CustomActivities.Section do
         institution: context.section.institution.name,
         registration_closed: context.section.registration_open,
         start_date: context.section.start_date,
-        time_zone: context.section.time_zone,
+        time_zone: context.section.timezone,
         title: context.section.title
       },
       [
