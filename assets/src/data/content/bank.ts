@@ -1,5 +1,6 @@
 import { Objectives } from 'components/resource/Objectives';
 import { ObjectiveMap } from './activity';
+import { ResourceId } from 'data/types';
 
 export interface Logic {
   conditions: null | Expression | Clause;
@@ -23,9 +24,9 @@ export enum ClauseOperator {
 
 export enum ExpressionOperator {
   contains = 'contains',
-  doesNotContain = 'doesNotContain',
+  doesNotContain = 'does_not_contain',
   equals = 'equals',
-  doesNotEqual = 'doesNotEqual',
+  doesNotEqual = 'does_not_equal',
 }
 
 export enum Fact {
@@ -44,6 +45,7 @@ export interface BankedActivity {
   content: any;
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   resource_id: number;
   activity_type_id: number;
   slug: string;

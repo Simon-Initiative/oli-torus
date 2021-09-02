@@ -54,10 +54,10 @@ defmodule Oli.Activities.Realizer.Logic.Expression do
       {"objectives", "equals"} ->
         {:ok, %Expression{fact: :objectives, operator: :equals, value: value}}
 
-      {"objectives", "doesNotEqual"} ->
+      {"objectives", "does_not_equal"} ->
         {:ok, %Expression{fact: :objectives, operator: :does_not_equal, value: value}}
 
-      {"objectives", "doesNotContain"} ->
+      {"objectives", "does_not_contain"} ->
         {:ok, %Expression{fact: :objectives, operator: :does_not_contain, value: value}}
 
       {"tags", "contains"} ->
@@ -66,16 +66,16 @@ defmodule Oli.Activities.Realizer.Logic.Expression do
       {"tags", "equals"} ->
         {:ok, %Expression{fact: :tags, operator: :equals, value: value}}
 
-      {"tags", "doesNotContain"} ->
+      {"tags", "does_not_contain"} ->
         {:ok, %Expression{fact: :tags, operator: :does_not_contain, value: value}}
 
-      {"tags", "doesNotEqual"} ->
+      {"tags", "does_not_equal"} ->
         {:ok, %Expression{fact: :tags, operator: :does_not_equal, value: value}}
 
       {"type", "contains"} ->
         {:ok, %Expression{fact: :type, operator: :contains, value: value}}
 
-      {"type", "doesNotContain"} ->
+      {"type", "does_not_contain"} ->
         {:ok, %Expression{fact: :type, operator: :does_not_contain, value: value}}
 
       _ ->

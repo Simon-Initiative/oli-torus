@@ -18,6 +18,7 @@ export const transformedSchema = {
 export const screen: IActivity = {
   id: 29,
   resourceId: 29,
+  tags: [],
   activitySlug: 'customize_avatar_5we6z',
   content: {
     custom: {
@@ -64,6 +65,7 @@ export const screen: IActivity = {
 export const screen1: IActivity = {
   id: 29,
   resourceId: 29,
+  tags: [],
   activitySlug: 'customize_avatar_5we6z',
   content: {
     custom: {

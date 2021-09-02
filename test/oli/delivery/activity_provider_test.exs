@@ -4,6 +4,113 @@ defmodule Oli.Delivery.ActivityProviderTest do
   alias Oli.Delivery.ActivityProvider
   alias Oli.Activities.Realizer.Query.Source
 
+  describe "fulfilling static activity references with adaptive page" do
+    setup do
+      content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [
+                %{
+                  "rule" => "input like {a}",
+                  "score" => 10,
+                  "id" => "r1",
+                  "feedback" => %{"id" => "1", "content" => "yes"}
+                }
+              ],
+              "hints" => [],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_section()
+        |> Seeder.add_objective("objective one", :o1)
+
+      attached = %{"1" => [map.o1.revision.resource_id]}
+
+      # Create banked activities
+      map =
+        Seeder.add_activity(
+          map,
+          %{title: "one", content: content, objectives: attached, scope: "embedded"},
+          :activity1
+        )
+        |> Seeder.add_activity(
+          %{title: "two", content: content, objectives: attached, scope: "embedded"},
+          :activity2
+        )
+        |> Seeder.add_user(%{}, :user1)
+
+      attrs = %{
+        title: "page1",
+        content: %{
+          "advancedDelivery" => true,
+          "model" => [
+            %{
+              "type" => "group",
+              "id" => "1",
+              "children" => [
+                %{
+                  "type" => "activity-reference",
+                  "activity_id" => map.activity1.revision.resource_id,
+                  "id" => "2"
+                },
+                %{
+                  "type" => "group",
+                  "children" => [
+                    %{
+                      "type" => "activity-reference",
+                      "activity_id" => map.activity2.revision.resource_id,
+                      "id" => "4"
+                    }
+                  ],
+                  "id" => "3"
+                }
+              ]
+            }
+          ]
+        }
+      }
+
+      Seeder.add_page(map, attrs, :page)
+      |> Seeder.create_section_resources()
+    end
+
+    test "fulfills static references below groups", %{
+      activity1: activity1,
+      activity2: activity2,
+      page: page,
+      publication: publication,
+      section: section
+    } do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      {errors, activity_revisions, _} =
+        ActivityProvider.provide(
+          page.revision,
+          source,
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 0
+
+      assert length(activity_revisions) == 2
+      assert Enum.at(activity_revisions, 0).resource_id == activity1.revision.resource_id
+      assert Enum.at(activity_revisions, 1).resource_id == activity2.revision.resource_id
+    end
+  end
+
   describe "fulfilling selections" do
     defp assert_one_of(resource_id, tag_collection) do
       present =
