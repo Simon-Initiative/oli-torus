@@ -5,7 +5,7 @@ import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import {
   selectActivityById,
-  upsertActivities
+  upsertActivities,
 } from '../../../../../../delivery/store/features/activities/slice';
 import { GroupsSlice } from '../../../../../../delivery/store/features/groups/slice';
 import { acquireEditingLock, releaseEditingLock } from '../../../../app/actions/locking';
