@@ -8,6 +8,7 @@
 - Properly handle ordering activity submission when no student interaction has taken place
 - Fix various UI issues such as showing outline in LMS iframe, email templates and dark mode feedback
 - Fix an issue where the manage grades page displayed an incorrect grade book link
+- Removed unecessary and failing javascript from project listing view
 - Restore ability to realize deeply nested activity references within adaptive page content
 
 ### Enhancements
