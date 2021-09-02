@@ -41,6 +41,7 @@ defmodule OliWeb.Qa.State do
     set_filters(state, filters)
   end
 
+  @spec to_params(MapSet.t(any), any) :: %{filters: binary, selected: any}
   def to_params(filters, selected) do
     %{
       filters: MapSet.to_list(filters) |> Enum.join(","),
@@ -120,6 +121,16 @@ defmodule OliWeb.Qa.State do
       ],
       update_warnings(state, warnings)
     )
+  end
+
+  def warning_arrived(state, warning) do
+    warnings =
+      case Enum.find(state.warnings, nil, fn %{id: id} -> id == warning.id end) do
+        nil -> state.warnings
+        _ -> [warning | state.warnings]
+      end
+
+    update_warnings(state, warnings)
   end
 
   defp filter_warnings(filters, warnings) do
