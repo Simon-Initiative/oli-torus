@@ -192,12 +192,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
 
   // Set up the styles
   const wrapperStyles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
     width,
-    height,
-    zIndex: z, */
   };
   const inputStyles: CSSProperties = {
     width,
