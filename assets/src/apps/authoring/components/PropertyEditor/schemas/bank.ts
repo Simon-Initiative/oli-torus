@@ -33,6 +33,9 @@ export const transformBankModeltoSchema = (currentSequence: SequenceEntry<Sequen
         bankEndTarget: currentSequence?.custom.bankEndTarget,
       },
     };
+    if (schemaData.Bank.bankEndTarget.toLowerCase() === 'next') {
+      schemaData.Bank.bankEndTarget = schemaData.Bank.bankEndTarget.toLowerCase();
+    }
     return schemaData;
   }
 };

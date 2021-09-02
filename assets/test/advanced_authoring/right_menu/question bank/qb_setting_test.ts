@@ -7,7 +7,6 @@ import { bank, transformedSchema } from './bank_mocks';
 describe('convert sequence to bank schema and revert back to sequence data', () => {
   it('convert sequence to bank schema and revert back to sequence data', () => {
     const model = transformBankModeltoSchema(bank);
-    console.log(model);
     const changes = transformBankSchematoModel(model);
     expect(changes).toMatchObject(transformedSchema);
   });

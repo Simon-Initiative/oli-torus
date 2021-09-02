@@ -1,7 +1,7 @@
 import { SequenceBank, SequenceEntry } from 'apps/delivery/store/features/groups/actions/sequence';
 export const transformedSchema = {
   bankShowCount: 3,
-  bankEndTarget: 'Next',
+  bankEndTarget: 'next',
 };
 
 export const bank: SequenceEntry<SequenceBank> = {
