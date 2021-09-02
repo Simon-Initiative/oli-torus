@@ -6,6 +6,6 @@ defmodule Oli.Utils.Purposes do
   def label_for("manystudentswonder"), do: "Many students wonder"
   def label_for("example"), do: "Example"
   def label_for("learnmore"), do: "Learn More"
-
+  def label_for(nil), do: "None"
   def label_for(purpose), do: String.capitalize(purpose)
 end

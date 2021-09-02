@@ -1,4 +1,6 @@
+import { Objectives } from 'components/resource/Objectives';
 import { ObjectiveMap } from './activity';
+import { ResourceId } from 'data/types';
 
 export interface Logic {
   conditions: null | Expression | Clause;
@@ -22,9 +24,9 @@ export enum ClauseOperator {
 
 export enum ExpressionOperator {
   contains = 'contains',
-  doesNotContain = 'doesNotContain',
+  doesNotContain = 'does_not_contain',
   equals = 'equals',
-  doesNotEqual = 'doesNotEqual',
+  doesNotEqual = 'does_not_equal',
 }
 
 export enum Fact {
@@ -43,6 +45,7 @@ export interface BankedActivity {
   content: any;
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   resource_id: number;
   activity_type_id: number;
   slug: string;
@@ -59,4 +62,59 @@ export function paging(offset: number, limit: number): Paging {
     offset,
     limit,
   };
+}
+
+function isEmptyValue(value: any) {
+  if (value === null) {
+    return true;
+  } else if (typeof value === 'string') {
+    return value.trim() === '';
+  } else if (value.length === 0) {
+    return true;
+  }
+  return false;
+}
+
+// The idea here is to take a logic expression and adjust it to guarantee that it
+// will not produce an error when executed on the server.  Any expression whose value
+// is empty (an empty array or zero length string) will cause an erorr, so this impl
+// seeks to find them and adjust to account for their removal.
+//
+// We leverage the fact that the UI is restricting logic to only contain one
+// clause, so to guarantee validity we do not need a recursive solution.
+//
+// Here are the cases we check:
+// 1. If the logic conditions are null, they are valid and we are done
+// 2. If the logic conditions is a clause, then filter to leave only
+//    expressions whose values are not empty
+//    a. If there are no expressions left, return a logic with null conditions.
+//    b. If there is only one expression, return a logic that has the outer clause removed, leaving
+//       just the single expression.
+//    b. Otherwise, return the logic with the clause in place with the filtered children.
+// 3. If the logic conditions is just an expression and that expression value is empty,
+//    return logic with null conditions.
+// 4. All other cases, return the logic as-is
+export function guaranteeValididty(logic: Logic) {
+  if (logic.conditions === null) {
+    return logic;
+  }
+  if (
+    logic.conditions.operator === ClauseOperator.all ||
+    logic.conditions.operator === ClauseOperator.any
+  ) {
+    const children = (logic.conditions.children as any).filter((e: any) => !isEmptyValue(e.value));
+    if (children.length === 0) {
+      return { conditions: null };
+    } else if (children.length === 1) {
+      return { conditions: children[0] };
+    } else {
+      return { conditions: Object.assign({}, logic.conditions, { children }) };
+    }
+  } else {
+    if (isEmptyValue((logic.conditions as any).value)) {
+      return { conditions: null };
+    }
+  }
+
+  return logic;
 }

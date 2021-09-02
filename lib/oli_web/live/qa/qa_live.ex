@@ -30,6 +30,7 @@ defmodule OliWeb.Qa.QaLive do
   defp subscribe(project_slug) do
     Subscriber.subscribe_to_new_reviews(project_slug)
     Subscriber.subscribe_to_warning_dismissals(project_slug)
+    Subscriber.subscribe_to_warning_new(project_slug)
   end
 
   def read_current_review(project) do
@@ -193,5 +194,10 @@ defmodule OliWeb.Qa.QaLive do
 
   def handle_info({:dismiss_warning, warning_id, _}, socket) do
     {:noreply, assign(socket, State.warning_dismissed(socket.assigns, warning_id))}
+  end
+
+  def handle_info({:new_warning, warning_id, _}, socket) do
+    warning = Oli.Qa.Warnings.get_warning!(warning_id) |> Repo.preload([:review, :revision])
+    {:noreply, assign(socket, State.warning_arrived(socket.assigns, warning))}
   end
 end

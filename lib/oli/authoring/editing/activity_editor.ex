@@ -7,7 +7,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   import Oli.Authoring.Editing.Utils
   alias Oli.Resources
   alias Oli.Resources.Revision
-  alias Oli.Resources.Activity
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Editing.ActivityContext
   alias Oli.Publishing
@@ -514,7 +513,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   defp validate_request(update) do
     # Ensure that only these top-level keys are present
-    allowed = MapSet.new(~w"objectives title content authoring releaseLock resource_id")
+    allowed = MapSet.new(~w"objectives title content authoring releaseLock resource_id tags")
 
     case Map.keys(update)
          |> Enum.all?(fn k -> MapSet.member?(allowed, k) end) do
@@ -573,15 +572,18 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
            {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
            {:ok, %{content: content} = activity} <-
-             Activity.create_new(%{
-               title: activity_type.title,
-               scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-               objectives: attached_objectives,
-               author_id: author.id,
-               content: model,
-               scope: scope,
-               activity_type_id: activity_type.id
-             }),
+             Resources.create_new(
+               %{
+                 title: activity_type.title,
+                 scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
+                 objectives: attached_objectives,
+                 author_id: author.id,
+                 content: model,
+                 scope: scope,
+                 activity_type_id: activity_type.id
+               },
+               Oli.Resources.ResourceType.get_id_by_type("activity")
+             ),
            {:ok, _} <-
              Course.create_project_resource(%{
                project_id: project.id,
@@ -640,7 +642,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok, %{id: activity_id}} <-
            Resources.get_resource_from_slug(activity_slug) |> trap_nil(),
          {:ok,
-          %{activity_type: activity_type, content: model, title: title, objectives: objectives}} <-
+          %{
+            activity_type: activity_type,
+            content: model,
+            title: title,
+            objectives: objectives,
+            tags: tags
+          }} <-
            get_latest_revision(publication.id, activity_id) |> trap_nil() do
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -658,7 +666,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         model: model,
         objectives: objectives,
         allObjectives: PageEditor.construct_parent_references(all_objectives),
-        typeSlug: activity_type.slug
+        typeSlug: activity_type.slug,
+        tags: tags
       }
 
       {:ok, context}
@@ -686,7 +695,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         title: r.title,
         model: r.content,
         objectives: r.objectives,
-        typeSlug: activity_type.slug
+        typeSlug: activity_type.slug,
+        tags: r.tags
       }
     end)
   end

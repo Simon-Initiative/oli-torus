@@ -4,6 +4,7 @@ import {
   ResourceContext,
   ActivityReference,
   createDefaultStructuredContent,
+  createDefaultSelection,
 } from 'data/content/resource';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import { ActivityModelSchema } from 'components/activities/types';
@@ -81,6 +82,7 @@ export const AddResourceContent = ({
           title: editor.friendlyName,
           model,
           objectives,
+          tags: [],
         };
 
         onAddItem(resourceContent, index, activity);
@@ -91,38 +93,59 @@ export const AddResourceContent = ({
       });
   };
 
-  const activityEntries = Object.keys(editorMap).map((k: string) => {
-    const editorDesc: EditorDesc = editorMap[k];
-    const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
-    return (
-      <React.Fragment key={editorDesc.slug}>
-        {enabled && (
-          <button
-            className="btn btn-sm insert-activity-btn"
-            key={editorDesc.slug}
-            onClick={handleAdd.bind(this, editorDesc)}
-          >
-            {editorDesc.friendlyName}
-          </button>
-        )}
-      </React.Fragment>
-    );
-  });
+  const activityEntries = Object.keys(editorMap)
+    .map((k: string) => {
+      const editorDesc: EditorDesc = editorMap[k];
+      const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
+
+      return enabled ? (
+        <a
+          href="#"
+          key={editorDesc.slug}
+          className="list-group-item list-group-item-action flex-column align-items-start"
+          onClick={handleAdd.bind(this, editorDesc)}
+        >
+          <div className="type-label"> {editorDesc.friendlyName}</div>
+          <div className="type-description"> {editorDesc.description}</div>
+        </a>
+      ) : null;
+    })
+    .filter((e) => e !== null);
 
   const contentFn = () => (
     <div className="add-resource-popover-content">
-      <div className="content">
-        <button
-          className="btn insert-content-btn"
+      <div className="header">Insert Content</div>
+      <div className="list-group">
+        <a
+          href="#"
+          key={'static_html_content'}
+          className="list-group-item list-group-item-action flex-column align-items-start"
           onClick={() => onAddItem(createDefaultStructuredContent(), index)}
         >
-          <div className="content-icon">
-            <span className="material-icons">format_align_left</span>
+          <div className="type-label">HTML</div>
+          <div className="type-description">
+            Mixed HTML elements including text, tables, images, video
           </div>
-          <div className="content-label">Content</div>
-        </button>
+        </a>
       </div>
-      <div className="activities">{activityEntries}</div>
+      <hr />
+      <div className="header">Insert Activity</div>
+      <div className="list-group">{activityEntries}</div>
+      <hr />
+      <div className="header">Insert Other</div>
+      <div className="list-group">
+        <a
+          href="#"
+          key={'static_activity_bank'}
+          className="list-group-item list-group-item-action flex-column align-items-start"
+          onClick={() => onAddItem(createDefaultSelection(), index)}
+        >
+          <div className="type-label">Activity Bank Selection</div>
+          <div className="type-description">
+            Select different activities at random according to defined criteria
+          </div>
+        </a>
+      </div>
     </div>
   );
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Undoables } from './types';
+import { Undoables } from '../../../apps/page-editor/types';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
 export type UndoToastsProps = {

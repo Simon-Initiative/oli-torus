@@ -66,10 +66,17 @@ defmodule Oli.Delivery.AttemptsTest do
       |> Seeder.create_section_resources()
     end
 
-    test "create the attempt tree", %{p1: p1, user1: user, section: section, a1: a1, a2: a2} do
+    test "create the attempt tree", %{
+      p1: p1,
+      user1: user,
+      section: section,
+      a1: a1,
+      a2: a2,
+      publication: pub
+    } do
       Attempts.track_access(p1.resource.id, section.slug, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       # verify that creating the attempt tree returns both activity attempts
       {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
@@ -78,7 +85,9 @@ defmodule Oli.Delivery.AttemptsTest do
           page_revision: p1.revision,
           section_slug: section.slug,
           user_id: user.id,
-          activity_provider: activity_provider
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: pub.id
         })
 
       assert Map.has_key?(attempts, a1.resource.id)
@@ -126,7 +135,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 
@@ -161,7 +170,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
       PageContext.create_for_visit(section.slug, revision.slug, user2)
@@ -297,7 +306,7 @@ defmodule Oli.Delivery.AttemptsTest do
       graded_page: %{revision: revision},
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 
@@ -373,7 +382,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/2
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
       PageContext.create_for_visit(section.slug, revision.slug, user1)
 

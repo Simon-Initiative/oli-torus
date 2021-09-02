@@ -38,23 +38,6 @@
 
 </div>
 
-<script>
-
-  const isInIframe = !(window === window.parent);
-
-  if (isInIframe) {
-    const button = document.createElement("button");
-    button.onclick = (_e) =>
-      window.open(window.location.href, "_blank");
-    button.innerHTML = "Open in new window <i class='fas fa-external-link-alt'></i>";
-    button.className = "btn btn-primary"
-    const container = document.getElementById("index-container");
-    container.innerHTML = "";
-    container.appendChild(button);
-  }
-
-</script>
-
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--
 __OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @summary.hierarchy) %>__OVERVIEW_PAGES__

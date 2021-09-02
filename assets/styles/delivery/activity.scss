@@ -16,9 +16,11 @@
     border-width: 2px 2px 4px;
     padding: 12px 16px;
     border-style: none;
+    border-radius: 4px;
 
     &.correct {
       background-color: $feedback-correct-bg;
+      color: $feedback-correct-color;
 
       .result {
         border-color: $feedback-correct-color;
@@ -32,6 +34,7 @@
 
     &.incorrect {
       background-color: $feedback-incorrect-bg;
+      color: $feedback-incorrect-color;
 
       .result {
         border-color: $feedback-incorrect-color;
@@ -45,6 +48,7 @@
 
     &.error {
       background-color: $feedback-error-bg;
+      color: $feedback-error-color;
     }
 
     .result {
@@ -67,32 +71,6 @@
         margin-right: 3px;
       }
     }
-  }
-}
-
-// To remove later
-.choice-index {
-  background-color: initial;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #e5e5e5;
-  color: #afafaf;
-  height: 30px;
-  width: 30px;
-  font-weight: bold;
-  margin-right: 16px;
-
-  &:hover {
-    background-color: $white;
-  }
-}
-
-.selected {
-  .choice-index {
-    background-color: $choice-selected-color;
-    border: 2px solid $choice-selected-color;
-    color: $white;
   }
 }
 
@@ -134,6 +112,12 @@
       background-color: $choice-selected-bg;
       border-color: $choice-selected-border-color;
     }
+  }
+
+  .hints.card {
+    color: $hints-color;
+    background-color: $hints-bg;
+    border: $hints-border;
   }
 
   p:last-of-type {

@@ -200,6 +200,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
            construct_parent_references(objectives) |> trap_nil(),
+         {:ok, tags} <- Oli.Authoring.Editing.TagEditor.list(project_slug, author),
          {:ok, activities} <- create_activities_map(project_slug, publication.id, content) do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
@@ -217,6 +218,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          editorMap: editor_map,
          objectives: revision.objectives,
          allObjectives: objectives_with_parent_reference,
+         allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
          title: revision.title,
          graded: revision.graded,
          content: convert_to_activity_slugs(revision.content, publication.id),
@@ -231,12 +233,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  def render_page_html(project_slug, revision_slug, author, options \\ []) do
+  def render_page_html(project_slug, content, author, options \\ []) do
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
-         {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-         {:ok, %{content: content} = _revision} <-
-           get_latest_revision(publication, resource) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{
            user: author,

@@ -3,15 +3,13 @@ import React, { CSSProperties, useEffect } from 'react';
 import { InputTextModel } from './schema';
 
 const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (props) => {
-  const { model } = props;
+  const { id, model } = props;
 
-  const { x, y, z, width } = model;
+  const { x, y, z, width, height, showLabel, label, prompt } = model;
   const styles: CSSProperties = {
-    width,
+    width: '100%',
+    // height // TODO: only if the delivery component supports it
     zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
   };
 
   useEffect(() => {
@@ -20,8 +18,18 @@ const InputTextAuthor: React.FC<AuthorPartComponentProps<InputTextModel>> = (pro
   }, []);
 
   return (
-    <div style={styles}>
-      <p>Input Text (single)</p>
+    <div className={`short-text-input`} style={styles}>
+      <label htmlFor={`${id}-short-text-input`}>
+        {showLabel && label ? label : <span>&nbsp;</span>}
+      </label>
+      <input
+        name="janus-input-text"
+        id={`${id}-short-text-input`}
+        type="text"
+        placeholder={prompt}
+        disabled={true}
+        style={{ width: '100%' }}
+      />
     </div>
   );
 };

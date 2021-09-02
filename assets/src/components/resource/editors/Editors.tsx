@@ -22,6 +22,7 @@ import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
+import { Tag } from 'data/content/tags';
 
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
@@ -36,9 +37,11 @@ export type EditorsProps = {
   projectSlug: ProjectSlug;
   resourceSlug: ResourceSlug;
   resourceContext: ResourceContext;
+  allTags: Immutable.List<Tag>;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (o: Objective) => void;
+  onRegisterNewTag: (o: Tag) => void;
   onActivityEdit: (key: string, update: EditorUpdate) => void;
   onPostUndoable: (key: string, undoable: Undoable) => void;
 };
@@ -51,13 +54,13 @@ export const Editors = (props: EditorsProps) => {
   }, {});
 
   const {
-    editorMap,
     editMode,
     graded,
     content,
     activityContexts,
     projectSlug,
     resourceSlug,
+    editorMap,
     onEditContentList,
     onAddItem,
     onActivityEdit,
@@ -73,6 +76,7 @@ export const Editors = (props: EditorsProps) => {
   const onDragEnd = dragEndHandler(setActiveDragId);
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
   const allObjectives = props.objectives.toArray();
+  const allTags = props.allTags.toArray();
 
   const editors = content.entrySeq().map(([contentKey, contentValue], index) => {
     const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
@@ -81,8 +85,7 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
     };
 
-    const purposes =
-      contentValue.type === 'activity-reference' ? ActivityPurposes : ContentPurposes;
+    const purposes = contentValue.type === 'content' ? ContentPurposes : ActivityPurposes;
 
     const dragPayload = getDragPayload(contentValue, activityContexts, projectSlug);
     const onDragStart = dragStartHandler(dragPayload, contentValue, setActiveDragId);
@@ -121,10 +124,13 @@ export const Editors = (props: EditorsProps) => {
       objectivesMap,
       editorProps,
       allObjectives,
+      allTags,
+      editorMap,
       onEdit,
       onActivityEdit,
       onPostUndoable,
       onRegisterNewObjective,
+      props.onRegisterNewTag,
     );
 
     return (

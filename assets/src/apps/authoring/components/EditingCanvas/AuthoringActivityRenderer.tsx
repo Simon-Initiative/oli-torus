@@ -27,6 +27,11 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 
   const selectedPartId = useSelector(selectCurrentSelection);
 
+  if (!activityModel.authoring || !activityModel.activityType) {
+    console.warn('Bad Activity Data', activityModel);
+    return null;
+  }
+
   const elementProps = {
     id: `activity-${activityModel.id}`,
     model: JSON.stringify(activityModel),

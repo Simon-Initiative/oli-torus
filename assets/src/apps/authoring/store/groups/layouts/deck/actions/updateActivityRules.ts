@@ -84,6 +84,7 @@ export const updateActivityRules = createAsyncThunk(
           title: activity.title,
           objectives: activity.objectives,
           content: { ...activity.content, authoring: activity.authoring },
+          tags: activity.tags,
         };
         return edit(projectSlug, resourceId, activity.resourceId, changeData, false);
       });

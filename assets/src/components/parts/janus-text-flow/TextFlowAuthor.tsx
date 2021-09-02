@@ -1,5 +1,5 @@
 import chroma from 'chroma-js';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
@@ -16,10 +16,14 @@ export interface MarkupTree {
   style?: any;
   text?: string;
   children?: MarkupTree[];
+  customCssClass?: string;
 }
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
   const style: any = {};
+  if (!node.style) {
+    return style;
+  }
   if (
     (node.style.styleName === 'Heading' || node.style.styleName === 'Title') &&
     node.children?.length === 1 &&
@@ -79,6 +83,7 @@ export const renderFlow = (
       style={styles}
       text={treeNode.text}
       state={state}
+      customCssClass={treeNode.customCssClass}
       displayRawText={true}
     >
       {treeNode.children &&
@@ -101,6 +106,16 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+
+  const htmlPreviewRef = useRef<any>(null);
+  const [htmlPreview, setHtmlPreview] = useState<string>('');
+
+  useEffect(() => {
+    console.log('TF REF CHANGE', htmlPreviewRef.current);
+    if (htmlPreviewRef.current) {
+      setHtmlPreview(htmlPreviewRef.current?.innerHTML || '');
+    }
+  }, [htmlPreviewRef.current]);
 
   useEffect(() => {
     setInConfigureMode(parseBoolean(configuremode));
@@ -224,7 +239,8 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const Editor = () =>
     React.createElement(quillEditorTagName, {
-      tree: JSON.stringify(tree),
+      /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
+      html: htmlPreview,
     });
 
   const renderIt = inConfigureMode ? (
@@ -245,7 +261,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         }
       `}
       </style>
-      <div className="text-flow-authoring-preview" style={styles}>
+      <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
         {tree?.map((subtree: MarkupTree) =>
           renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
         )}

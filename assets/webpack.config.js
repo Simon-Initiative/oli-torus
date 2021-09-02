@@ -14,7 +14,7 @@ const populateEntries = () => {
   // These are the non-activity bundles
   const initialEntries = {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
-    resourceeditor: ['./src/components/resource/ResourceEditorApp.tsx'],
+    pageeditor: ['./src/apps/PageEditorApp.tsx'],
     activitybank: ['./src/apps/ActivityBankApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],

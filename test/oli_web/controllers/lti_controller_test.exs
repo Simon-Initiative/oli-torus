@@ -77,7 +77,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
       # validate still works when a user is already logged in
@@ -89,7 +89,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
@@ -208,7 +208,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Welcome to the Open Learning Initiative!"
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 

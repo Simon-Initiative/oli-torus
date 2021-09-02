@@ -2,7 +2,7 @@ defmodule OliWeb.ResourceController do
   use OliWeb, :controller
 
   import OliWeb.ProjectPlugs
-
+  alias Oli.Activities.Realizer.Query.Source
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Accounts
   alias Oli.Activities
@@ -33,7 +33,7 @@ defmodule OliWeb.ResourceController do
           project_slug: project_slug,
           revision_slug: revision_slug,
           activity_types: Activities.activities_for_project(project),
-          part_component_types: PartComponents.part_components_for_project(project),
+          part_component_types: PartComponents.part_components_for_project(project)
         )
 
       {:error, :not_found} ->
@@ -71,11 +71,17 @@ defmodule OliWeb.ResourceController do
           preview_mode: true
         )
 
-      %{content: content} ->
-        activity_ids =
-          Oli.Authoring.Editing.Utils.activity_references(content) |> MapSet.to_list()
-
-        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+      revision ->
+        {_, activity_revisions, transformed_content} =
+          Oli.Delivery.ActivityProvider.provide(
+            revision,
+            %Source{
+              blacklisted_activity_ids: [],
+              section_slug: project_slug,
+              publication_id: Oli.Publishing.project_working_publication(project_slug).id
+            },
+            Oli.Publishing.AuthoringResolver
+          )
 
         case PageEditor.create_context(project_slug, revision_slug, author) do
           {:ok, context} ->
@@ -88,7 +94,9 @@ defmodule OliWeb.ResourceController do
                   project_slug
                 ),
               content_html:
-                PageEditor.render_page_html(project_slug, revision_slug, author, preview: true),
+                PageEditor.render_page_html(project_slug, transformed_content, author,
+                  preview: true
+                ),
               context: context,
               scripts: Activities.get_activity_scripts(),
               preview_mode: true

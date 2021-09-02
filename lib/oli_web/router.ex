@@ -146,7 +146,10 @@ defmodule OliWeb.Router do
   end
 
   def with_section_user(conn) do
-    %{"section" => conn.assigns.section, "current_user" => conn.assigns.current_user}
+    %{
+      "section" => conn.assigns.section,
+      "current_user" => conn.assigns.current_user
+    }
   end
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -390,6 +393,14 @@ defmodule OliWeb.Router do
     post("/", Api.ObjectivesController, :create)
     get("/", Api.ObjectivesController, :index)
     put("/objective/:objective", Api.ObjectivesController, :update)
+  end
+
+  # Tags Service
+  scope "/api/v1/tags/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.TagController, :new)
+    get("/", Api.TagController, :index)
   end
 
   # User State Service, instrinsic state

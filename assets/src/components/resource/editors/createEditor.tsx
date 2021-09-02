@@ -17,6 +17,9 @@ import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
 import { Undoable } from 'components/activities/types';
+import { ActivityBankSelection } from './ActivityBankSelection';
+import { Tag } from 'data/content/tags';
+import { ActivityEditorMap } from 'data/content/editors';
 
 // content or referenced activities
 export const createEditor = (
@@ -31,11 +34,33 @@ export const createEditor = (
   objectivesMap: any,
   editorProps: any,
   allObjectives: Objective[],
+  allTags: Tag[],
+  editorMap: ActivityEditorMap,
   onEdit: (content: ResourceContent) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
+  onRegisterNewTag: (o: Tag) => void,
 ): JSX.Element => {
+  if (content.type === 'selection') {
+    return (
+      <ContentBlock {...editorProps} contentItem={content} index={index}>
+        <ActivityBankSelection
+          editorMap={editorMap}
+          key={content.id}
+          editMode={editMode}
+          selection={content}
+          onChange={onEdit}
+          projectSlug={projectSlug}
+          allObjectives={Immutable.List<Objective>(allObjectives)}
+          allTags={Immutable.List<Tag>(allTags)}
+          onRegisterNewObjective={onRegisterNewObjective}
+          onRegisterNewTag={onRegisterNewTag}
+        />
+      </ContentBlock>
+    );
+  }
+
   if (content.type === 'content') {
     return (
       <ContentBlock {...editorProps} contentItem={content} index={index}>
@@ -83,12 +108,16 @@ export const createEditor = (
       friendlyName: activity.friendlyName,
       description: activity.description,
       objectives: activity.objectives,
-      allObjectives: allObjectives,
+      allObjectives,
+      tags: activity.tags,
+      allTags,
       activityId: activity.activityId,
       title: activity.title,
       onEdit: (update: EditorUpdate) => onActivityEdit(activity.activitySlug, update),
       onPostUndoable: (undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable),
       onRegisterNewObjective,
+      onRegisterNewTag,
+      banked: false,
     };
 
     return (
