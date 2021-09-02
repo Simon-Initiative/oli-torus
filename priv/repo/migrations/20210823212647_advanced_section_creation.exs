@@ -236,7 +236,7 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
     from(p in "published_resources",
       join: r in "revisions",
       on: r.id == p.revision_id,
-      where: p.publication_id == ^publication_id and r.deleted == false,
+      where: p.publication_id == ^publication_id,
       select: %{
         resource_id: r.resource_id,
         resource_type_id: r.resource_type_id,
