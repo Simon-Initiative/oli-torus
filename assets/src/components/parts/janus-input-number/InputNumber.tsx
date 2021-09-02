@@ -179,7 +179,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     width,
   };
   const inputNumberCompStyles: CSSProperties = {
-    width,
+    width: '100%',
   };
 
   const debouncetime = 300;
@@ -240,7 +240,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         id={`${id}-number-input`}
         min={minValue}
         max={maxValue}
-        className={`${customCssClass} ${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
+        className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
         value={inputNumberValue}
       />
