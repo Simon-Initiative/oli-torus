@@ -67,7 +67,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);
-      const resourceId = selectResourceId(rootState);
+      const pageResourceId = selectResourceId(rootState);
       // in lieu of bulk edit
       const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
         const changeData: BulkActivityUpdate = {
@@ -75,11 +75,11 @@ export const updateActivityPartInheritance = createAsyncThunk(
           objectives: activity.objectives,
           content: activity.content,
           authoring: activity.authoring,
-          resource_id: resourceId,
+          resource_id: activity.resourceId,
         };
         return changeData;
       });
-      await bulkEdit(projectSlug, resourceId, updates);
+      await bulkEdit(projectSlug, pageResourceId, updates);
       await dispatch(releaseEditingLock());
       return;
     }
