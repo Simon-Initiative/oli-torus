@@ -20,6 +20,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   const [cssClass, setCssClass] = useState('');
   const [text, setText] = useState<string>('');
 
+  //need to save the textLength
   const saveTextLength = (sText: String) => {
     props.onSave({
       id,
