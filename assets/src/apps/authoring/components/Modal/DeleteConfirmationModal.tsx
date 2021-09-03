@@ -8,11 +8,11 @@ interface ConfirmDeleteProps {
   elementType?: string;
   elementName?: string;
   cancelHandler: () => void;
-  DeleteHandler: () => void;
+  deleteHandler: () => void;
 }
 
 const ConfirmDelete: React.FC<ConfirmDeleteProps> = (props) => {
-  const { show, elementType, elementName, cancelHandler, DeleteHandler } = props;
+  const { show, elementType, elementName, cancelHandler, deleteHandler } = props;
   const [display, setDisplay] = useState<boolean>(false);
   useEffect(() => {
     setDisplay(show);
@@ -30,7 +30,7 @@ const ConfirmDelete: React.FC<ConfirmDeleteProps> = (props) => {
           <button id="btnCancel" className="btn btn-secondary" onClick={cancelHandler}>
             Cancel
           </button>
-          <button id="btnDelete" className="btn btn-danger" onClick={DeleteHandler}>
+          <button id="btnDelete" className="btn btn-danger" onClick={deleteHandler}>
             {`Delete ${elementType}`}
           </button>
         </Modal.Footer>
