@@ -20,6 +20,19 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   const [cssClass, setCssClass] = useState('');
   const [text, setText] = useState<string>('');
 
+  const saveTextLength = (sText: String) => {
+    props.onSave({
+      id,
+      responses: [
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: sText.length,
+        },
+      ],
+    });
+  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -66,6 +79,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     const sText = currentStateSnapshot[`stage.${id}.text`];
     if (sText !== undefined) {
       setText(sText);
+      saveTextLength(sText);
     }
     const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
     if (sCssClass !== undefined) {
@@ -111,16 +125,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
               const sText = changes[`stage.${id}.text`];
               if (sText !== undefined) {
                 setText(sText);
-                props.onSave({
-                  id,
-                  responses: [
-                    {
-                      key: 'textLength',
-                      type: CapiVariableTypes.NUMBER,
-                      value: sText.length,
-                    },
-                  ],
-                });
+                saveTextLength(sText);
               }
               const sCssClass = changes[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {

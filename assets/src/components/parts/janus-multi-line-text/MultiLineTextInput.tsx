@@ -20,7 +20,18 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   const [text, setText] = useState<string>('');
   const [enabled, setEnabled] = useState(true);
   const [cssClass, setCssClass] = useState('');
-
+  const saveTextLength = (sText: String) => {
+    props.onSave({
+      id,
+      responses: [
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: sText.length,
+        },
+      ],
+    });
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -67,6 +78,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     const sText = currentStateSnapshot[`stage.${id}.text`];
     if (sText !== undefined) {
       setText(sText);
+      saveTextLength(sText);
     }
     const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
     if (sCssClass !== undefined) {
@@ -152,16 +164,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
               const sText = changes[`stage.${id}.text`];
               if (sText !== undefined) {
                 setText(sText);
-                props.onSave({
-                  id,
-                  responses: [
-                    {
-                      key: 'textLength',
-                      type: CapiVariableTypes.NUMBER,
-                      value: sText.length,
-                    },
-                  ],
-                });
+                saveTextLength(sText);
               }
 
               const sEnabled = changes[`stage.${id}.enabled`];
