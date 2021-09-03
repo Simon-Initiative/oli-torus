@@ -457,8 +457,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       let shouldSave = false;
       let optionText = selectedChoiceText;
       if (!optionText?.length) {
-        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and hence need to save
-        // the text as well.
+        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
+        //hence need to save the props as well.
         shouldSave = true;
         optionText = getOptionTextById(options, selectedChoice);
       }
@@ -486,6 +486,12 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
+      let shouldSave = false;
+      if (!selectedChoicesText?.length) {
+        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
+        //hence need to save the props.
+        shouldSave = true;
+      }
       /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
         handleItemSelection(
@@ -494,7 +500,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             textValue: option.textValue,
             checked: selectedChoices.includes(option.value),
           },
-          false,
+          shouldSave,
         );
       });
     }
