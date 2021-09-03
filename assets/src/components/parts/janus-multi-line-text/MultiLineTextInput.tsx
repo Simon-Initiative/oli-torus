@@ -21,7 +21,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
   const [enabled, setEnabled] = useState(true);
   const [cssClass, setCssClass] = useState('');
   //need to save the textLength
-  const saveTextLength = (sText: String) => {
+  const saveTextLength = (sText: string) => {
     props.onSave({
       id,
       responses: [
