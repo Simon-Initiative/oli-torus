@@ -430,6 +430,7 @@ OliWeb.Router.Helpers.html
 OliWeb.Router.PowExtensionRouter.html
 OliWeb.Router.html
 OliWeb.SectionUserStateChannel.html
+OliWeb.SetLiveCSRF.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
 OliWeb.StaticPageView.html
@@ -448,8 +449,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-20a9146f57.js
-dist/sidebar_items-272b75b462.js
+dist/search_items-2c735bcd9c.js
+dist/sidebar_items-fdfdfaad5a.js
 index.html
 license.html
 readme.html
