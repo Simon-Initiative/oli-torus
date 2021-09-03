@@ -490,7 +490,7 @@ const RightMenu: React.FC<any> = () => {
                   show={showConfirmDelete}
                   elementType="Component"
                   elementName={currentComponentData?.id}
-                  DeleteHandler={DeleteComponentHandler}
+                  deleteHandler={DeleteComponentHandler}
                   cancelHandler={() => {
                     setShowConfirmDelete(false);
                   }}

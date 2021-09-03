@@ -261,7 +261,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             show={showConfirmDelete}
             elementType="Component"
             elementName={selectedPart?.id}
-            DeleteHandler={DeleteComponentHandler}
+            deleteHandler={DeleteComponentHandler}
             cancelHandler={() => {
               setShowConfirmDelete(false);
             }}
