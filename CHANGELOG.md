@@ -17,6 +17,7 @@
 - Add infrastructure for advanced section creation, including the ability to view and apply publication updates
 - Enable banked activity creation and editing
 - Add user-defined tag infrastructure and incorporate in banked activity editing
+- Allow filtering of deleted projects as an admin
 - Add the ability for an admin to delete user and author accounts
 
 ## 0.12.9 (2021-08-20)

@@ -516,6 +516,8 @@ defmodule OliWeb.Router do
     ])
 
     get("/:section_slug", PageDeliveryController, :index)
+    get("/:section_slug/updates", PageDeliveryController, :updates)
+
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -534,10 +536,6 @@ defmodule OliWeb.Router do
     live("/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []})
 
     live("/:section_slug/manage", Delivery.ManageSection,
-      session: {__MODULE__, :with_section_user, []}
-    )
-
-    live("/:section_slug/updates", Delivery.ManageUpdates,
       session: {__MODULE__, :with_section_user, []}
     )
 

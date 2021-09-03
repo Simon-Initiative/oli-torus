@@ -32,6 +32,26 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def updates(conn, %{"section_slug" => section_slug}) do
+    current_user = conn.assigns.current_user
+    section = Sections.get_section_by(slug: section_slug)
+
+    if is_section_instructor?(section, current_user) do
+      render(conn, "updates.html", section: section)
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
+  defp is_section_instructor?(section, current_user) do
+    Sections.is_enrolled?(current_user.id, section.slug) &&
+      ContextRoles.has_role?(
+        current_user,
+        section.slug,
+        ContextRoles.get_role(:context_instructor)
+      )
+  end
+
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
 

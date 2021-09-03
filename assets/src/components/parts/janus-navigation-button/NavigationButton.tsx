@@ -367,7 +367,6 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     onClick: handleButtonPress,
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
-    className: `${cssClass}`,
   };
 
   return ready && buttonVisible ? (

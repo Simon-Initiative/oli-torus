@@ -147,12 +147,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   } = model;
 
   const dropdownContainerStyles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
     width,
-    // height,
-    zIndex: z, */
   };
   if (palette) {
     dropdownContainerStyles.borderWidth = `${
