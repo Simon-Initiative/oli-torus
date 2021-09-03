@@ -10,6 +10,7 @@
 - Fix an issue where the manage grades page displayed an incorrect grade book link
 - Removed unecessary and failing javascript from project listing view
 - Restore ability to realize deeply nested activity references within adaptive page content
+- Fix an issue in admin accounts interface where manage options sometimes appear twice
 
 ### Enhancements
 
@@ -17,6 +18,7 @@
 - Enable banked activity creation and editing
 - Add user-defined tag infrastructure and incorporate in banked activity editing
 - Allow filtering of deleted projects as an admin
+- Add the ability for an admin to delete user and author accounts
 
 ## 0.12.9 (2021-08-20)
 

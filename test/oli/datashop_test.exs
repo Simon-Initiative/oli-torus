@@ -799,5 +799,20 @@ defmodule Oli.DatashopTest do
 
       assert !String.match?(datashop_file, regex)
     end
+
+    test "deleted users should not be present in the datashop attempt query", %{
+      datashop_file: datashop_file,
+      user1: user1,
+      project: project
+    } do
+      regex = ~r/#{user1.email}/s
+
+      assert String.match?(datashop_file, regex)
+
+      {:ok, _} = Oli.Accounts.delete_user(user1)
+      latest_datashop_file = Datashop.export(project.id)
+
+      assert !String.match?(latest_datashop_file, regex)
+    end
   end
 end

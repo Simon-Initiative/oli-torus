@@ -553,6 +553,36 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ "Course Overview"
     end
+
+    test "handles open and free user access after author and another user have been deleted", %{
+      conn: conn,
+      section: section,
+      author: author
+    } do
+      enrolled_user = user_fixture()
+      another_user = user_fixture()
+
+      {:ok, _enrollment} =
+        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _enrollment} =
+        Sections.enroll(another_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Oli.Accounts.delete_author(author)
+      {:ok, _} = Oli.Accounts.delete_user(another_user)
+
+      # user should still be able to access
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          enrolled_user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
   end
 
   defp setup_session(%{conn: conn}) do
@@ -674,6 +704,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     {:ok, section} = Sections.create_section_resources(section, publication)
 
-    %{section: section, project: project, publication: publication}
+    %{section: section, project: project, publication: publication, author: author}
   end
 end

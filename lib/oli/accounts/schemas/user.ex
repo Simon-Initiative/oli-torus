@@ -50,9 +50,9 @@ defmodule Oli.Accounts.User do
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
 
-    has_many :enrollments, Oli.Delivery.Sections.Enrollment
+    has_many :enrollments, Oli.Delivery.Sections.Enrollment, on_delete: :delete_all
 
-    has_many :consent_cookies, Oli.Consent.CookiesConsent
+    has_many :consent_cookies, Oli.Consent.CookiesConsent, on_delete: :delete_all
 
     many_to_many :platform_roles, Lti_1p3.DataProviders.EctoProvider.PlatformRole,
       join_through: "users_platform_roles",
