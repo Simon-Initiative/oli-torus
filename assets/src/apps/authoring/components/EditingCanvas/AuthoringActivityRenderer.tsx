@@ -38,8 +38,10 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     editMode,
     style: {
       position: 'absolute',
-      top: '10%',
-      left: '25%',
+      top: '65px',
+      left: '300px',
+      paddingRight: '300px',
+      paddingBottom: '300px',
     },
     authoringContext: JSON.stringify({
       selectedPartId,
