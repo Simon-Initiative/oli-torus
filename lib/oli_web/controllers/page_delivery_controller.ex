@@ -141,6 +141,7 @@ defmodule OliWeb.PageDeliveryController do
 
     render(conn, "advanced_delivery.html", %{
       review_mode: context.review_mode,
+      graded: context.page.graded,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
       resource_attempt_state: resource_attempt_state,

@@ -34,6 +34,7 @@
     userName: "<%= @current_user.name %>",
     pageTitle: "<%= @title %>",
     pageSlug: "<%= @slug %>",
+    graded: <%= @graded %>,
     content: "<%= Base.encode64(@content) %>",
     resourceAttemptState: <%= raw(@resource_attempt_state) %>,
     resourceAttemptGuid: "<%= @resource_attempt_guid %>",
