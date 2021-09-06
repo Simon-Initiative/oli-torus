@@ -10,8 +10,17 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
+  alias Oli.Accounts
+  alias Oli.Repo
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
+  def mount(
+        _params,
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id},
+        socket
+      ) do
+    section = Sections.get_section_by_slug(section_slug)
+    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
+
     if ContextRoles.has_role?(
          current_user,
          section.slug,
@@ -210,6 +219,8 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def handle_event("send_line_items", _, socket) do
+    IO.inspect("send_line_items")
+
     registration = socket.assigns.registration
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do

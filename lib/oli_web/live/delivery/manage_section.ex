@@ -10,8 +10,17 @@ defmodule OliWeb.Delivery.ManageSection do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Accounts
+  alias Oli.Repo
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
+  def mount(
+        _params,
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id},
+        socket
+      ) do
+    section = Sections.get_section_by_slug(section_slug)
+    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
+
     # only permit instructor level access
     if is_admin?(%{assigns: %{current_author: current_user}}) or
          ContextRoles.has_role?(
