@@ -35,7 +35,6 @@ defmodule OliWeb.Delivery.ManageSection do
 
       {:ok, socket}
     else
-      IO.inspect("REDDDDD")
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end

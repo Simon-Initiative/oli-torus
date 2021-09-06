@@ -219,8 +219,6 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def handle_event("send_line_items", _, socket) do
-    IO.inspect("send_line_items")
-
     registration = socket.assigns.registration
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
