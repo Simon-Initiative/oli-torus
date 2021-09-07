@@ -283,16 +283,15 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton =
-    model.isExample || props.graded ? null : (
-      <button
-        className="btn btn-primary mt-2 float-right"
-        disabled={isEvaluated || !ranCode}
-        onClick={onSubmit}
-      >
-        Submit
-      </button>
-    );
+  const maybeSubmitButton = model.isExample ? null : (
+    <button
+      className="btn btn-primary mt-2 float-right"
+      disabled={isEvaluated || !ranCode}
+      onClick={onSubmit}
+    >
+      Submit
+    </button>
+  );
 
   const runButton = (
     <button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>

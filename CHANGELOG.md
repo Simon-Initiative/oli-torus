@@ -12,6 +12,7 @@
 - Restore ability to realize deeply nested activity references within adaptive page content
 - Fix an issue in admin accounts interface where manage options sometimes appear twice
 - Allow graded adaptive pages to render the prologue page
+- Allow Image Coding activity to work properly within graded pages
 
 ### Enhancements
 
