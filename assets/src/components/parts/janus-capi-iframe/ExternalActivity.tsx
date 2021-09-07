@@ -256,9 +256,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [simIsInitStatePassedOnce, setSimIsInitStatePassedOnce] = useState(false);
 
   const externalActivityStyles: CSSProperties = {
-    /* position: 'absolute',
+    /* position: 'absolute',*/
     top: frameY,
-    left: frameX, */
+    left: frameX,
     width: frameWidth,
     height: frameHeight,
     zIndex: frameZ,
