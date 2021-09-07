@@ -3,9 +3,9 @@ import React, { CSSProperties, useEffect } from 'react';
 import { InputNumberModel } from './schema';
 
 const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
-  const { model } = props;
+  const { id, model } = props;
 
-  const { x, y, z, width } = model;
+  const { x, y, z, width, height, showLabel, label, prompt } = model;
   const styles: CSSProperties = {
     width,
     zIndex: z,
@@ -20,8 +20,18 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
   }, []);
 
   return (
-    <div style={styles}>
-      <p>Input Number</p>
+    <div className={`number-input`} style={styles}>
+      <label htmlFor={`${id}-number-input`}>
+        {showLabel && label ? label : <span>&nbsp;</span>}
+      </label>
+      <input
+        name="janus-input-number"
+        id={`${id}-number-input`}
+        type="number"
+        placeholder={prompt}
+        disabled={true}
+        style={{ width: '100%' }}
+      />
     </div>
   );
 };
