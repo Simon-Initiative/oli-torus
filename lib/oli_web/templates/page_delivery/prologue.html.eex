@@ -27,8 +27,7 @@
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
-      <div><%=  (resource_attempt.score / resource_attempt.out_of) * 100 |> round
-            |> Integer.to_string  %>%</div>
+      <div><%= show_score(resource_attempt.score, resource_attempt.out_of) %>%</div>
     </div>
     <div class="row">
       <div class="col-sm-3">Points:</div>
