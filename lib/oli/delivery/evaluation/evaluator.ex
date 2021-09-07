@@ -15,7 +15,19 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
       # No matching response found - mark incorrect
       {_, nil, _, out_of} ->
-        {:ok, {ParseUtils.default_content_item("Incorrect"), %Result{score: 0, out_of: out_of}}}
+        # this guarantees that all activities, even unanswered client-side
+        # evaluated ones, that have no matching responses get 0 out of
+        # a non-zero maximum value
+        adjusted_out_of =
+          if out_of == 0 do
+            1
+          else
+            out_of
+          end
+
+        {:ok,
+         {ParseUtils.default_content_item("Incorrect"),
+          %Result{score: 0, out_of: adjusted_out_of}}}
 
       _ ->
         {:error, "Error in evaluation"}
