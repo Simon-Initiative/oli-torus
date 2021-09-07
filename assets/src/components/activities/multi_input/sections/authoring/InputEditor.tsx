@@ -1,6 +1,6 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
-import { multiInputOptions, MultiTextInput } from 'components/activities/multi_input/utils';
+import { FillInTheBlank, MultiInputSchema } from 'components/activities/multi_input/schema';
+import { multiInputOptions } from 'components/activities/multi_input/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { makeResponse, Part, Response } from 'components/activities/types';
@@ -16,7 +16,7 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 
 interface Props {
   part: Part;
-  input: MultiTextInput;
+  input: FillInTheBlank;
 }
 export const InputEditor: React.FC<Props> = ({ part, input }) => {
   const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();

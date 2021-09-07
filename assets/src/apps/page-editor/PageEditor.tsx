@@ -30,7 +30,6 @@ import { registerUnload, unregisterUnload } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Undoables, empty, PageUndoable } from './types';
-import './ResourceEditor.scss';
 import { Operations } from 'utils/pathOperations';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { Tag } from 'data/content/tags';

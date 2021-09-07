@@ -78,6 +78,8 @@ export function editorFor(
     case 'math':
     case 'math_line':
       return <span {...attributes}>Not implemented</span>;
+    case 'input_ref':
+      return <div {...attributes}>Input Ref</div>;
     default:
       return <span>{children}</span>;
   }

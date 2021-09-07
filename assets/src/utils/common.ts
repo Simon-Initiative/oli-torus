@@ -140,8 +140,9 @@ export const parseBool = (val: any) => {
 };
 
 export const parseNumString = (item: string): string | number => {
+  if (!item?.length) return item;
   // check if items are strings or numbers and converts if number
-  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item;
+  return !Number.isNaN(Number(item)) ? parseFloat(item) : item;
 };
 
 // Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]

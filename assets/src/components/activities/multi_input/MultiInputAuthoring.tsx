@@ -6,7 +6,6 @@ import {
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { MultiInputSchema } from './schema';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -15,12 +14,6 @@ import { shuffleAnswerChoiceSetting } from 'components/activities/common/authori
 import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { zip } from 'utils/common';
-import {
-  MultiInput,
-  MultiInputType,
-  multiInputTypeFriendly,
-  multiInputTypes,
-} from 'components/activities/multi_input/utils';
 import { getPartById, getParts } from 'data/activities/model/utils1';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { Card } from 'components/misc/Card';
@@ -33,6 +26,13 @@ import { MultiInputStem } from 'components/activities/multi_input/sections/deliv
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/authoring/DropdownQuestionEditor';
 import { InputQuestionEditor } from 'components/activities/multi_input/sections/authoring/InputQuestionEditor';
+import {
+  MultiInput,
+  MultiInputSchema,
+  MultiInputType,
+  multiInputTypeFriendly,
+  multiInputTypes,
+} from 'components/activities/multi_input/schema';
 
 const store = configureStore();
 
@@ -45,16 +45,17 @@ const MultiInput = () => {
   // then zip stems.slice(1) with model.inputs => the sizes should match, because we insert a stem after each input
 
   const addResourceContent = (index: number) => (
-    <div className="activities">
+    <div className="list-group">
       {multiInputTypes.map((type) => {
         return (
-          <button
-            className="btn btn-sm insert-activity-btn"
+          <a
+            href="#"
+            className="list-group-item list-group-item-action flex-column align-items-start"
             key={type}
             onClick={(_e) => dispatch(MultiInputActions.addPart(type, index))}
           >
             {multiInputTypeFriendly(type)}
-          </button>
+          </a>
         );
       })}
     </div>
@@ -94,6 +95,9 @@ const MultiInput = () => {
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <div className="flex-grow-1 mb-3">
+            <AddResourceContent editMode={editMode} isLast={false}>
+              {addResourceContent(0)}
+            </AddResourceContent>
             <RichTextEditorConnected
               text={model.stems[0].content}
               onEdit={(content) =>
@@ -147,13 +151,13 @@ const MultiInput = () => {
                 />
               </div>
               {index < model.inputs.length - 1 && (
-                <AddResourceContent editMode={editMode} index={0} isLast={false}>
-                  {addResourceContent(index)}
+                <AddResourceContent editMode={editMode} isLast={false}>
+                  {addResourceContent(index + 1)}
                 </AddResourceContent>
               )}
             </>
           ))}
-          <AddResourceContent editMode={editMode} index={model.stems.length - 1} isLast={true}>
+          <AddResourceContent editMode={editMode} isLast={true}>
             {addResourceContent(model.stems.length - 1)}
           </AddResourceContent>
         </TabbedNavigation.Tab>

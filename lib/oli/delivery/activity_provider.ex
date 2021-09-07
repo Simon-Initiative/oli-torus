@@ -7,6 +7,10 @@ defmodule Oli.Delivery.ActivityProvider do
   @doc """
   Realizes and resolves activities in a page.
 
+  For advanced delivery pages this impl finds all activity-reference instances from within the entire
+  nested tree of the content model.  For basic delivery, we only need to look at the top-level model
+  collection, but do need to look for selections as well as static activity-reference instances.
+
   Activities are realized in different ways, depending on the type of reference. First, a static
   reference to an activity (via "activity-reference") is simply resovled to the correct published
   resource. A second type of reference is a selection from the activity bank (via "selection" element).
@@ -21,6 +25,26 @@ defmodule Oli.Delivery.ActivityProvider do
   the second being the revisions of all provided activities, and the third being the transformed
   content of the page revision.
   """
+  def provide(
+        %Revision{content: %{"advancedDelivery" => true} = content},
+        %Source{} = source,
+        resolver
+      ) do
+    activity_ids =
+      Oli.Resources.PageContent.flat_filter(content, fn e ->
+        case Map.get(e, "type", nil) do
+          nil -> false
+          "activity-reference" -> true
+          _ -> false
+        end
+      end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    revisions = resolver.from_resource_id(source.section_slug, activity_ids)
+
+    {[], revisions, content}
+  end
+
   def provide(
         %Revision{content: %{"model" => model} = content},
         %Source{} = source,

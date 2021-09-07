@@ -24,14 +24,18 @@ export const MultiInputStem: React.FC<Props> = (props) => {
         <DropdownInput
           onChange={() => {}}
           disabled
-          options={input.choices.map((choice) => ({
-            value: choice.id,
-            content: toSimpleText({ children: choice.content.model }),
-          }))}
+          options={props.model.choices
+            .filter((choice) => input.choiceIds.includes(choice.id))
+            .map((choice) => ({
+              value: choice.id,
+              content: toSimpleText({ children: choice.content.model }),
+            }))}
         />
       );
     }
   });
+
+  // Transforms.insertNodes(editor, [{ type: 'hey ' }]);
 
   return (
     <div className="multiInput__stem form-inline">

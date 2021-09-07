@@ -25,7 +25,8 @@ import {
   Blockquote,
   Hyperlink,
   Webpage,
-} from '../model';
+  InputRef,
+} from 'data/content/model';
 import { Text } from 'slate';
 import { WriterContext } from './context';
 
@@ -157,6 +158,11 @@ export class HtmlParser implements WriterImpl {
       href,
     )}" target="_blank">${next()}</a>\n`;
   };
+
+  inputRef = (_context: WriterContext, _next: Next, _x: InputRef) => {
+    return `<div>InputRev</div>`;
+  };
+
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
 

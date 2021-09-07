@@ -25,7 +25,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { setLessonEnd } from '../../adaptivity/slice';
+import { setInitStateFacts, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -137,6 +137,7 @@ export const initializeActivity = createAsyncThunk(
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
+    const arrInitFacts: string[] = [];
     const globalizedInitState = initState.map((s: any) => {
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
@@ -149,12 +150,21 @@ export const initializeActivity = createAsyncThunk(
         // shouldn't happen, but ignore I guess
         return { ...s };
       }
+      arrInitFacts.push(`${ownerActivity.id}|${s.target}`);
       return { ...s, target: `${ownerActivity.id}|${s.target}` };
     });
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
     const currentState = getEnvState(defaultGlobalEnv);
+
+    const currentInitiSnapshot = arrInitFacts.reduce((collect: any, element: string) => {
+      const key = element.split('|');
+      collect[key[1]] = currentState[element];
+      return collect;
+    }, {});
+
+    thunkApi.dispatch(setInitStateFacts({ facts: currentInitiSnapshot }));
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
         collect[key] = currentState[key];

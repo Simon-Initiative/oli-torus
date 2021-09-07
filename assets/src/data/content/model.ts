@@ -1,6 +1,7 @@
 import { Element, Range } from 'slate';
 import guid from 'utils/guid';
 import { normalizeHref } from 'components/editing/models/link/utils';
+import { MultiInputType } from 'components/activities/multi_input/schema';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -67,7 +68,8 @@ export type ModelElement =
   | Code
   | CodeLine
   | Blockquote
-  | Hyperlink;
+  | Hyperlink
+  | InputRef;
 
 export type TextElement =
   | Paragraph
@@ -209,6 +211,11 @@ export interface Hyperlink extends Element, Identifiable {
   target: string;
 }
 
+export interface InputRef extends Element, Identifiable {
+  type: 'input_ref';
+  inputType: MultiInputType;
+}
+
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
 
 export enum Marks {
@@ -268,7 +275,7 @@ export type SchemaConfig = {
   isBlock: boolean;
   isTopLevel: boolean;
   // eslint-disable-next-line
-  validChildren: Object,
+  validChildren: Object;
 };
 
 const header = {
@@ -372,6 +379,12 @@ export const schema = {
   },
   a: {
     isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  inputRef: {
+    isVoid: true,
     isBlock: false,
     isTopLevel: false,
     validChildren: {},

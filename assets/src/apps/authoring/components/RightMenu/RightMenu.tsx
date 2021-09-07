@@ -53,6 +53,7 @@ import {
   SequenceBank,
   SequenceEntry,
 } from '../../../delivery/store/features/groups/actions/sequence';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -82,6 +83,7 @@ const RightMenu: React.FC<any> = () => {
   const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
   const [questionBankData, setBankData] = useState<any>();
   const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -269,7 +271,7 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const [currentComponentData, setCurrentComponentData] = useState(null);
+  const [currentComponentData, setCurrentComponentData] = useState<any>();
   const [currentPartInstance, setCurrentPartInstance] = useState(null);
   const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
@@ -393,6 +395,10 @@ const RightMenu: React.FC<any> = () => {
       dispatch(saveActivity({ activity: cloneActivity }));
     }
   };
+  const DeleteComponentHandler = () => {
+    handleDeleteComponent();
+    setShowConfirmDelete(false);
+  };
   const handleDeleteComponent = useCallback(() => {
     // only allow delete of "owned" parts
     // TODO: disable/hide button if that is not owned
@@ -477,9 +483,18 @@ const RightMenu: React.FC<any> = () => {
                   jsonValue={currentComponentData}
                   existingPartIds={existingIds}
                 />
-                <Button variant="danger" onClick={handleDeleteComponent}>
+                <Button variant="danger" onClick={() => setShowConfirmDelete(true)}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
+                <ConfirmDelete
+                  show={showConfirmDelete}
+                  elementType="Component"
+                  elementName={currentComponentData?.id}
+                  deleteHandler={DeleteComponentHandler}
+                  cancelHandler={() => {
+                    setShowConfirmDelete(false);
+                  }}
+                />
               </ButtonGroup>
             </ButtonToolbar>
             <PropertyEditor

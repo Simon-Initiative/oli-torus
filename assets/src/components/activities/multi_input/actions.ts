@@ -1,11 +1,4 @@
-import { eqRule, containsRule } from '../../../data/activities/model/rules';
-import { matchRule } from 'data/activities/model/rules';
-import {
-  MultiInputType,
-  MultiInput,
-  makeMultiDropdownInput,
-  makeMultiTextInput,
-} from 'components/activities/multi_input/utils';
+import { containsRule, eqRule, matchRule } from 'data/activities/model/rules';
 import {
   RichText,
   HasPreviewText,
@@ -21,11 +14,13 @@ import {
 } from 'components/activities/types';
 import { toSimpleText } from 'data/content/text';
 import { assertNever, clone } from 'utils/common';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
-import { current } from '@reduxjs/toolkit';
+import {
+  MultiInput,
+  MultiInputSchema,
+  MultiInputType,
+} from 'components/activities/multi_input/schema';
 import { Operations } from 'utils/pathOperations';
 import { getPartById, getParts } from 'data/activities/model/utils1';
-import { create, p } from 'data/content/model';
 
 export const MultiInputActions = {
   editStem(content: RichText, id: string) {
@@ -68,7 +63,8 @@ export const MultiInputActions = {
             [makeResponse(matchRule(choiceA.id), 1, ''), makeResponse(matchRule('.*'), 0, '')],
             [makeHint('')],
           );
-          input = makeMultiDropdownInput(part.id);
+          model.choices.push(choiceA, choiceB);
+          input = { type: 'dropdown', partId: part.id, choiceIds: [choiceA.id, choiceB.id] };
           break;
 
         case 'numeric':
@@ -76,7 +72,7 @@ export const MultiInputActions = {
             [makeResponse(eqRule('1'), 1, ''), makeResponse(matchRule('.*'), 0, '')],
             [makeHint('')],
           );
-          input = makeMultiTextInput('numeric', part.id);
+          input = { type: 'numeric', partId: part.id };
           break;
 
         case 'text':
@@ -84,7 +80,7 @@ export const MultiInputActions = {
             [makeResponse(containsRule('answer'), 1, ''), makeResponse(matchRule('.*'), 0, '')],
             [makeHint('')],
           );
-          input = makeMultiTextInput('text', part.id);
+          input = { type: 'text', partId: part.id };
           break;
 
         default:
@@ -123,6 +119,11 @@ export type RichText = {
       //    merge s3 into s2
       //    remove s3
 
+      const input = model.inputs.find((input) => input.partId === id);
+      if (!input) {
+        return;
+      }
+
       const stem1 = model.stems[partIndex];
       const stem2 = model.stems[partIndex + 1];
       MultiInputActions.editStemAndPreviewText(
@@ -137,6 +138,11 @@ export type RichText = {
         Operations.filter('$..parts', `[?(@.id!=${id})]`),
         Operations.filter('$..inputs', `[?(@.partId!=${id})]`),
       ]);
+
+      // remove choices if dropdown
+      if (input.type === 'dropdown') {
+        model.choices = model.choices.filter((choice) => !input.choiceIds.includes(choice.id));
+      }
 
       const undoable = makeUndoable('Removed a part', [
         Operations.replace('$.authoring', clone(model.authoring)),

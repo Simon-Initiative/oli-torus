@@ -14,8 +14,7 @@ export type AddCallback = (
 // content or the any of the registered activities
 interface AddResourceContentProps {
   editMode: boolean;
-  index: number;
-  isLast: boolean;
+  isLast?: boolean;
 }
 export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   editMode,
@@ -63,7 +62,11 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
           </React.Fragment>
         )}
       </div>
-      <LastAddContentButton isLast={isLast} editMode={editMode} togglePopover={togglePopover} />
+      <LastAddContentButton
+        isLast={typeof isLast === 'boolean' && isLast}
+        editMode={editMode}
+        togglePopover={togglePopover}
+      />
     </React.Fragment>
   );
 };

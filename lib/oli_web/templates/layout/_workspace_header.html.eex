@@ -5,13 +5,3 @@
     <%= account_link @conn %>
   </div>
 </div>
-<script>
-  const createProjectButton = document.getElementById("button-create-project")
-  const titleInput = document.getElementById("input-title")
-  if (titleInput) {
-    createProjectButton.disabled = !titleInput.value || titleInput.value.length === 0
-    titleInput.addEventListener('input', () => titleInput.value.length > 0
-      ? createProjectButton.disabled = false
-      : createProjectButton.disabled = true)
-  }
-</script>
