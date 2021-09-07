@@ -6,6 +6,18 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.HierarchyNode
 
+  def show_score(score, out_of) do
+    case out_of do
+      0.0 ->
+        "0"
+
+      _ ->
+        (score / out_of * 100)
+        |> round
+        |> Integer.to_string()
+    end
+  end
+
   def is_instructor?(conn, section_slug) do
     user = conn.assigns.current_user
     ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor))

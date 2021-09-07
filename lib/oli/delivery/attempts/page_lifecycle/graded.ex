@@ -161,8 +161,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # future we do allow this to be configured
       {score, out_of} =
         Enum.reduce(resource_attempt.activity_attempts, {0, 0}, fn p, {score, out_of} ->
+          IO.inspect("act attempt")
+          IO.inspect(p.out_of)
           {score + p.score, out_of + p.out_of}
         end)
+
+      IO.inspect("rolled up")
+      IO.inspect(out_of)
 
       update_resource_attempt(resource_attempt, %{
         score: score,
