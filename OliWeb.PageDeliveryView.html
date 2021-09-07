@@ -10,7 +10,7 @@
     <title>OliWeb.PageDeliveryView — OLI Torus v0.13.0</title>
     <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
 
-    <script src="dist/sidebar_items-fdfdfaad5a.js"></script>
+    <script src="dist/sidebar_items-465557b885.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -179,6 +179,13 @@ OliWeb.PageDeliveryView <small class="app-vsn">(OLI Torus v0.13.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#show_score/2">show_score(score, out_of)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#template_not_found/2">template_not_found(template, assigns)</a>
 
   </div>
@@ -234,7 +241,7 @@ Functions
     </a>
     <h1 class="signature">calculate_score_percentage(resource_access)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L99" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -256,7 +263,7 @@ Functions
     </a>
     <h1 class="signature">container?(rev)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L26" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -278,7 +285,7 @@ Functions
     </a>
     <h1 class="signature">container_title(hierarchy_node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L30" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -300,7 +307,7 @@ Functions
     </a>
     <h1 class="signature">encode_activity_attempts(registered_activity_slug_map, latest_attempts)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L69" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -322,7 +329,7 @@ Functions
     </a>
     <h1 class="signature">encode_pages(conn, section_slug, hierarchy)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -344,7 +351,7 @@ Functions
     </a>
     <h1 class="signature">encode_url(url)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L52" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L64" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -366,7 +373,7 @@ Functions
     </a>
     <h1 class="signature">has_submitted_attempt?(resource_access)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L40" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -388,7 +395,7 @@ Functions
     </a>
     <h1 class="signature">is_instructor?(conn, section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L9" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -423,6 +430,28 @@ Functions
   <section class="docstring">
 
 <p>Renders the given template locally.</p>
+  </section>
+</section>
+<section class="detail" id="show_score/2">
+
+  <div class="detail-header">
+    <a href="#show_score/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">show_score(score, out_of)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/page_delivery_view.ex#L9" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="template_not_found/2">
