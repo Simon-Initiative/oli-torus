@@ -7,11 +7,11 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Publishing.HierarchyNode
 
   def show_score(score, out_of) do
-    case out_of do
-      0.0 ->
+    cond do
+      out_of <= 0.0 ->
         "0"
 
-      _ ->
+      true ->
         (score / out_of * 100)
         |> round
         |> Integer.to_string()
