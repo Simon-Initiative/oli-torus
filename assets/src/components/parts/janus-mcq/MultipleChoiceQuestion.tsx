@@ -491,6 +491,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
         //hence need to save the props.
         shouldSave = true;
+        selectedChoices.forEach((option) => {
+          selectedChoicesText.push({
+            value: option,
+            textValue: getOptionTextById(options, option),
+            checked: selectedChoices.includes(option),
+          });
+        });
       }
       /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
