@@ -38,7 +38,7 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
       partComponentTypes: parsedPartComponentTypes,
     };
 
-    console.log('MOUNT UP', { props, params, mountPoint });
+    // console.log('MOUNT UP', { props, params, mountPoint });
 
     ReactDOM.render(
       <Provider store={store}>
