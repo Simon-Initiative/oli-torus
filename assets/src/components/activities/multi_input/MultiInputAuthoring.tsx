@@ -83,7 +83,12 @@ const AddInputRefButtons: React.FC<AddInputRefButtonsProps> = (props) => {
             addInputRef(type);
           }}
         >
-          <input disabled type="text" value={'Add ' + type} />
+          <input
+            readOnly
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+            type="text"
+            value={'Add ' + type}
+          />
         </AuthoringButtonConnected>
       ))}
     </div>
@@ -142,14 +147,7 @@ const MultiInput = () => {
             </RichTextEditorConnected>
           </div>
           {
-            // zip(model.stems.slice(1), model.inputs).map(([stem, input], index) => (
-            //   <>
-            //     <Card.Card>
-            //       <Card.Title>
-            //         <div className="d-flex justify-content-between w-100">
-            //           <div>
             //             <div className="text-muted">Part {index + 1}</div>
-            //           </div>
             //           <select className="custom-select" style={{ flexBasis: '160px' }}>
             //             {multiInputTypes.map((type) => (
             //               <option selected={input.type === type} key={type}>
@@ -167,36 +165,13 @@ const MultiInput = () => {
             //             </div>
             //           )}
             //         </div>
-            //       </Card.Title>
-            //       <Card.Content>
             //         {input.type === 'dropdown' && (
             //           <DropdownQuestionEditor part={getPartById(model, input.partId)} input={input} />
             //         )}
             //         {(input.type === 'numeric' || input.type === 'text') && (
             //           <InputQuestionEditor part={getPartById(model, input.partId)} input={input} />
             //         )}
-            //       </Card.Content>
-            //     </Card.Card>
-            //     <div className="flex-grow-1">
-            //       <RichTextEditorConnected
-            //         text={stem.content}
-            //         onEdit={(content) =>
-            //           dispatch(MultiInputActions.editStemAndPreviewText(content, stem.id))
-            //         }
-            //         placeholder="Question continued..."
-            //       />
-            //     </div>
-            //     {index < model.inputs.length - 1 && (
-            //       <AddResourceContent editMode={editMode} isLast={false}>
-            //         {addResourceContent(index + 1)}
-            //       </AddResourceContent>
-            //     )}
-            //   </>
-            // ))
           }
-          {/* <AddResourceContent editMode={editMode} isLast={true}>
-            {addResourceContent(model.stems.length - 1)}
-          </AddResourceContent> */}
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <StemDelivery context={defaultWriterContext()} stem={model.stem} />
@@ -247,7 +222,7 @@ const MultiInput = () => {
           })}
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Hints">
-          {/* <MultiInputStem model={model} /> */}
+          <StemDelivery context={defaultWriterContext()} stem={model.stem} />
           {getParts(model).map((part, i) => (
             <CognitiveHints
               key={part.id}

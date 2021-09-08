@@ -24,7 +24,6 @@ import {
 } from 'components/activities/DeliveryElement';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest } from 'components/activities/types';
-import { useLayoutEffect } from 'hoist-non-react-statics/node_modules/@types/react';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -41,6 +40,11 @@ export const MultiInputComponent: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Add hints button to right of each input
+    // Find the best way to display a React component for the input refs
+    // found when parsing
+    // Map choices to ids found in input ref
+
     model.inputs.forEach((input) => {
       const inputRef = document.querySelector(`#${input.id}`);
       if (inputRef) {
