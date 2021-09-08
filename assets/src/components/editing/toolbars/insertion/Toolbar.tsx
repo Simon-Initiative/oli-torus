@@ -20,8 +20,7 @@ function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: Insertio
     prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction
   );
 }
-// eslint-disable-next-line
-export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
+export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((props) => {
   const { toolbarItems } = props;
   const ref = useRef();
   const editor = useSlate();
@@ -110,3 +109,4 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     </div>
   );
 }, insertionAreEqual);
+InsertionToolbar.displayName = 'InsertionToolbar';

@@ -78,13 +78,13 @@ export class HtmlParser implements WriterImpl {
       </div>`;
   }
 
-  p = (context: WriterContext, next: Next, x: Paragraph) => `<p>${next()}</p>\n`;
-  h1 = (context: WriterContext, next: Next, x: HeadingOne) => `<h1>${next()}</h1>\n`;
-  h2 = (context: WriterContext, next: Next, x: HeadingTwo) => `<h2>${next()}</h2>\n`;
-  h3 = (context: WriterContext, next: Next, x: HeadingThree) => `<h3>${next()}</h3>\n`;
-  h4 = (context: WriterContext, next: Next, x: HeadingFour) => `<h4>${next()}</h4>\n`;
-  h5 = (context: WriterContext, next: Next, x: HeadingFive) => `<h5>${next()}</h5>\n`;
-  h6 = (context: WriterContext, next: Next, x: HeadingSix) => `<h6>${next()}</h6>\n`;
+  p = (context: WriterContext, next: Next, _x: Paragraph) => `<p>${next()}</p>\n`;
+  h1 = (context: WriterContext, next: Next, _x: HeadingOne) => `<h1>${next()}</h1>\n`;
+  h2 = (context: WriterContext, next: Next, _x: HeadingTwo) => `<h2>${next()}</h2>\n`;
+  h3 = (context: WriterContext, next: Next, _x: HeadingThree) => `<h3>${next()}</h3>\n`;
+  h4 = (context: WriterContext, next: Next, _x: HeadingFour) => `<h4>${next()}</h4>\n`;
+  h5 = (context: WriterContext, next: Next, _x: HeadingFive) => `<h5>${next()}</h5>\n`;
+  h6 = (context: WriterContext, next: Next, _x: HeadingSix) => `<h6>${next()}</h6>\n`;
   img = (context: WriterContext, next: Next, attrs: Image) => {
     const alt = attrs.alt ? ` alt="${this.escapeXml(attrs.alt)}"` : '';
     const width = attrs.width ? ` width="${this.escapeXml(String(attrs.width))}"` : '';
@@ -124,21 +124,21 @@ export class HtmlParser implements WriterImpl {
 
     return `<table>${caption}${next()}</table>\n`;
   };
-  tr = (context: WriterContext, next: Next, x: TableRow) => `<tr>${next()}</tr>\n`;
-  th = (context: WriterContext, next: Next, x: TableHeader) => `<th>${next()}</th>\n`;
-  td = (context: WriterContext, next: Next, x: TableData) => `<td>${next()}</td>\n`;
-  ol = (context: WriterContext, next: Next, x: OrderedList) => `<ol>${next()}</ol>\n`;
-  ul = (context: WriterContext, next: Next, x: UnorderedList) => `<ul>${next()}</ul>\n`;
-  li = (context: WriterContext, next: Next, x: ListItem) => `<li>${next()}</li>\n`;
-  math = (context: WriterContext, next: Next, x: Math) => `<div>${next()}</div>\n`;
-  mathLine = (context: WriterContext, next: Next, x: MathLine) => `${next()}\n`;
+  tr = (context: WriterContext, next: Next, _x: TableRow) => `<tr>${next()}</tr>\n`;
+  th = (context: WriterContext, next: Next, _x: TableHeader) => `<th>${next()}</th>\n`;
+  td = (context: WriterContext, next: Next, _x: TableData) => `<td>${next()}</td>\n`;
+  ol = (context: WriterContext, next: Next, _x: OrderedList) => `<ol>${next()}</ol>\n`;
+  ul = (context: WriterContext, next: Next, _x: UnorderedList) => `<ul>${next()}</ul>\n`;
+  li = (context: WriterContext, next: Next, _x: ListItem) => `<li>${next()}</li>\n`;
+  math = (context: WriterContext, next: Next, _x: Math) => `<div>${next()}</div>\n`;
+  mathLine = (context: WriterContext, next: Next, _x: MathLine) => `${next()}\n`;
   code = (context: WriterContext, next: Next, attrs: Code) =>
     this.figure(
       attrs,
       `<pre><code class="language-${this.escapeXml(attrs.language)}">${next()}</code></pre>\n`,
     );
-  codeLine = (context: WriterContext, next: Next, x: CodeLine) => `${next()}\n`;
-  blockquote = (context: WriterContext, next: Next, x: Blockquote) =>
+  codeLine = (context: WriterContext, next: Next, _x: CodeLine) => `${next()}\n`;
+  blockquote = (context: WriterContext, next: Next, _x: Blockquote) =>
     `<blockquote>${next()}</blockquote>\n`;
   a = (context: WriterContext, next: Next, { href }: Hyperlink) => {
     if (href.startsWith('/course/link/')) {
@@ -160,12 +160,14 @@ export class HtmlParser implements WriterImpl {
   };
 
   inputRef = (_context: WriterContext, _next: Next, _x: InputRef) => {
-    return `<div>InputRev</div>`;
+    const { id, inputType } = _x;
+    console.log(id, inputType);
+    return `<span id=${escapeHtml(id)}>InputRef</span>`;
   };
 
   text = (context: WriterContext, textEntity: Text) =>
     this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
 
-  unsupported = (context: WriterContext, { type }: ModelElement) =>
+  unsupported = (_context: WriterContext, _x: ModelElement) =>
     '<div class="content invalid">Content element is invalid</div>\n';
 }

@@ -13,6 +13,7 @@ import { ThEditor } from 'components/editing/models/table/ThEditor';
 import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
 import { WebpageEditor } from '../models/webpage/Editor';
+import { InputRefEditor } from 'components/editing/models/inputref/Editor';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -79,7 +80,7 @@ export function editorFor(
     case 'math_line':
       return <span {...attributes}>Not implemented</span>;
     case 'input_ref':
-      return <div {...attributes}>Input Ref</div>;
+      return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
     default:
       return <span>{children}</span>;
   }

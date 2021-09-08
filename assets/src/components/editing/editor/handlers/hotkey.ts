@@ -3,11 +3,13 @@ import { ReactEditor } from 'slate-react';
 import { toggleMark } from 'components/editing/commands/commands';
 import { commandDesc as linkCmd } from 'components/editing/commands/LinkCmd';
 import { CommandContext } from 'components/editing/models/interfaces';
+import { Element, Node, Range } from 'slate';
 
 const isBoldHotkey = isHotkey('mod+b');
 const isItalicHotkey = isHotkey('mod+i');
 const isCodeHotkey = isHotkey('mod+;');
 const isLinkHotkey = isHotkey('mod+l');
+const isDeleteKey = isHotkey(['Backspace', 'Delete']);
 
 export const hotkeyHandler = (
   editor: ReactEditor,
@@ -22,5 +24,17 @@ export const hotkeyHandler = (
     toggleMark(editor, 'code');
   } else if (isLinkHotkey(e)) {
     linkCmd.command.execute(commandContext, editor);
+  } else if (isDeleteKey(e)) {
+    // Fix slate's bug with deleting selected void nodes (such as Youtube, InputRef)
+    const { selection } = editor;
+    if (selection && Range.isCollapsed(selection)) {
+      const currentNode = Node.parent(editor, selection.anchor.path);
+      if (Element.isElement(currentNode)) {
+        if (editor.isVoid(currentNode)) {
+          e.preventDefault();
+          editor.deleteBackward('block');
+        }
+      }
+    }
   }
 };

@@ -11,7 +11,7 @@ export const DropdownInput: React.FC<Props> = (props) => {
       onChange={props.onChange}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       className="custom-select"
-      style={{ color: 'black', fontWeight: 500, flexBasis: '160px' }}
+      style={{ color: 'black', fontWeight: 500, flexBasis: '160px', width: '160px' }}
     >
       {props.options.map((option, i) => (
         <option selected key={i} value={option.value}>

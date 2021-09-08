@@ -26,6 +26,7 @@ export const RichTextEditor: React.FC<Props> = ({
   placeholder,
   onRequestMedia,
   style,
+  children,
 }) => {
   return (
     <div className={classNames(['rich-text-editor', className])}>
@@ -39,7 +40,9 @@ export const RichTextEditor: React.FC<Props> = ({
           toolbarItems={getToolbarForResourceType(1, onRequestMedia)}
           placeholder={placeholder}
           style={style}
-        />
+        >
+          {children}
+        </Editor>
       </ErrorBoundary>
     </div>
   );

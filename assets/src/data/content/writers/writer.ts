@@ -31,6 +31,7 @@ export interface WriterImpl {
   codeLine: ElementWriter;
   blockquote: ElementWriter;
   a: ElementWriter;
+  inputRef: ElementWriter;
   unsupported: (ctx: WriterContext, element: ModelElement) => string;
 }
 
@@ -112,6 +113,8 @@ export class ContentWriter {
         return impl.blockquote(context, next, content);
       case 'a':
         return impl.a(context, next, content);
+      case 'input_ref':
+        return impl.inputRef(context, next, content);
       default:
         return impl.unsupported(context, content);
     }

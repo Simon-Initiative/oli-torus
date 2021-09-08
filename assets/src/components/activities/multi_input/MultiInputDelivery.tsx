@@ -16,7 +16,6 @@ import { SubmitButtonConnected } from 'components/activities/common/delivery/sub
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { toSimpleText } from 'data/content/text';
 import {
   DeliveryElement,
   DeliveryElementProps,
@@ -25,6 +24,7 @@ import {
 } from 'components/activities/DeliveryElement';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest } from 'components/activities/types';
+import { useLayoutEffect } from 'hoist-non-react-statics/node_modules/@types/react';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -38,6 +38,15 @@ export const MultiInputComponent: React.FC = () => {
 
   useEffect(() => {
     dispatch(initializeState(activityState, initialSelection(activityState)));
+  }, []);
+
+  useEffect(() => {
+    model.inputs.forEach((input) => {
+      const inputRef = document.querySelector(`#${input.id}`);
+      if (inputRef) {
+        ReactDOM.render(<input />, inputRef);
+      }
+    });
   }, []);
 
   // First render initializes state

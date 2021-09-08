@@ -56,8 +56,8 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.placeholder === nextProps.placeholder
   );
 }
-// eslint-disable-next-line
-export const Editor = React.memo((props: EditorProps) => {
+
+export const Editor: React.FC<EditorProps> = React.memo((props) => {
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
 
   const commandContext = props.commandContext;
@@ -114,6 +114,7 @@ export const Editor = React.memo((props: EditorProps) => {
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
+      console.log('operations', operations, 'value', value);
       props.onEdit(value, selection);
     }
   };
@@ -140,6 +141,7 @@ export const Editor = React.memo((props: EditorProps) => {
           next();
         }}
       >
+        {props.children}
         <InsertionToolbar
           isPerformingAsyncAction={isPerformingAsyncAction}
           toolbarItems={props.toolbarItems}
@@ -168,3 +170,4 @@ export const Editor = React.memo((props: EditorProps) => {
     </React.Fragment>
   );
 }, areEqual);
+Editor.displayName = 'Editor';

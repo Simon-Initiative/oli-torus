@@ -1,4 +1,4 @@
-import { Range, Editor, Point, Path, Node } from 'slate';
+import { Range, Editor, Point, Node } from 'slate';
 
 export const withTables = (editor: Editor) => {
   const { deleteBackward, deleteForward, deleteFragment } = editor;

@@ -1,5 +1,4 @@
 import {
-  makeStem,
   makeTransformation,
   Transform,
   ScoringStrategy,
@@ -10,6 +9,8 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { containsRule, matchRule } from 'data/activities/model/rules';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import guid from 'utils/guid';
+import { InputRef, Paragraph } from 'data/content/model';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
@@ -20,9 +21,30 @@ export const multiInputChoicesPath = (partId: string) => `$.inputs[?(@.partId==$
 
 export const defaultModel = (): MultiInputSchema => {
   return {
-    stems: [makeStem(''), makeStem('')],
+    stem: {
+      id: guid(),
+      content: {
+        model: [
+          {
+            type: 'p',
+            id: guid(),
+            children: [
+              { text: 'Example question with a fill in the blank ' },
+              {
+                type: 'input_ref',
+                id: guid(),
+                inputType: 'text',
+                partId: DEFAULT_PART_ID,
+                children: [{ text: '' }],
+              } as InputRef,
+            ],
+          } as Paragraph,
+        ],
+        selection: null,
+      },
+    },
     choices: [],
-    inputs: [{ type: 'text', partId: DEFAULT_PART_ID }],
+    // inputs: [{ type: 'text', id: guid(), partId: DEFAULT_PART_ID }],
     authoring: {
       parts: [
         {

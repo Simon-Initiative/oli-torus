@@ -7,50 +7,41 @@ import {
   Choice,
   ChoiceId,
 } from 'components/activities/types';
-// import { ID } from 'data/content/model';
+import { Maybe } from 'tsmonad';
 import { assertNever } from 'utils/common';
-
-// An association list of [partId, Choice] used for dropdown inputs
-// type DropdownChoiceAssociation = { partId: ID; choice: Choice };
 
 export type MultiInput = Dropdown | FillInTheBlank;
 
 export type Dropdown = {
-  type: 'dropdown';
+  inputType: 'dropdown';
   partId: string;
   choiceIds: ChoiceId[];
 };
 export type FillInTheBlank = {
-  type: 'text' | 'numeric';
+  inputType: 'text' | 'numeric';
   partId: string;
 };
 
 export type MultiInputType = 'dropdown' | 'text' | 'numeric';
 export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric'];
 
-export const multiInputTypeFriendly = (type: MultiInputType): string => {
-  switch (type) {
-    case 'dropdown':
-      return 'Dropdown';
-    case 'numeric':
-      return 'Number';
-    case 'text':
-      return 'Text';
-    default:
-      assertNever(type);
-  }
-};
+export const multiInputTypeFriendly = (type: MultiInputType): string =>
+  Maybe.maybe(
+    {
+      dropdown: 'Dropdown',
+      numeric: 'Number',
+      text: 'Text',
+    }[type],
+  ).valueOr(assertNever(type));
 
 export interface MultiInputSchema extends ActivityModelSchema {
-  // Has one more stem than the number of parts/inputs.
-  // Stems are interspersed with parts when rendered
-  stems: Stem[];
+  stem: Stem;
   // This is a separated out rather than putting a dropdown's choices under
   // its item in the `inputs` array because the backend transformation logic
   // take a string key to shuffle, and doesn't allow for predicate logic.
   choices: Choice[];
   // The actual student-answerable inputs, designated by their type
-  inputs: MultiInput[];
+  // inputs: MultiInput[];
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];

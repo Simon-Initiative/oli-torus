@@ -1,4 +1,4 @@
-import { Node, Editor, Text } from 'slate';
+import { Node, Editor, Text, Element } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { Marks, schema, Mark } from 'data/content/model';
 import { Maybe } from 'tsmonad';
@@ -14,6 +14,12 @@ export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
 // Returns true if a text node contains the mark string key
 export function hasMark(textNode: Text, mark: string): boolean {
   return Object.keys(textNode).some((k) => k === mark);
+}
+
+export function elementsOfType(root: ReactEditor, type: string): Element[] {
+  return [...Node.elements(root)]
+    .map(([element]) => element)
+    .filter((elem) => Element.isElement(elem) && elem.type === type);
 }
 
 // Returns all the Text nodes in the current selection
