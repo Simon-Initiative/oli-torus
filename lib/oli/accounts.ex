@@ -284,6 +284,18 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Deletes an author.
+  ## Examples
+      iex> delete_author(author)
+      {:ok, %Author{}}
+      iex> delete_author(author)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_author(%Author{} = author) do
+    Repo.delete(author)
+  end
+
+  @doc """
   Searches for a list of authors with an email matching a wildcard pattern
   """
   def search_authors_matching(query) do

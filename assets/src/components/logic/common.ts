@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Objective } from 'data/content/objective';
+import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
 
 export interface LogicProps {
@@ -9,7 +10,9 @@ export interface LogicProps {
   editMode: boolean;
   allowText: boolean;
   allObjectives: Immutable.List<Objective>;
+  allTags: Immutable.List<Tag>;
   projectSlug: string;
   onRegisterNewObjective: (objective: Objective) => void;
+  onRegisterNewTag: (tag: Tag) => void;
   editorMap: ActivityEditorMap;
 }

@@ -82,6 +82,18 @@ defmodule Oli.Authoring.Broadcaster do
   end
 
   @doc """
+  Broadcasts that a warning has been created for a project. Only broadcasted
+  for warnings that can be generated async.
+  """
+  def broadcast_new_warning(warning_id, project_slug) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_new_warning(project_slug),
+      {:new_warning, warning_id, project_slug}
+    )
+  end
+
+  @doc """
   Broadcasts that a lock has been acquired on a resource
   """
   def broadcast_lock_acquired(project_slug, publication_id, resource_id, author_id) do

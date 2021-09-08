@@ -22,6 +22,7 @@ defmodule OliWeb.Router do
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
+    plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
   end
 
@@ -395,6 +396,14 @@ defmodule OliWeb.Router do
     put("/objective/:objective", Api.ObjectivesController, :update)
   end
 
+  # Tags Service
+  scope "/api/v1/tags/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.TagController, :new)
+    get("/", Api.TagController, :index)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -507,6 +516,8 @@ defmodule OliWeb.Router do
     ])
 
     get("/:section_slug", PageDeliveryController, :index)
+    get("/:section_slug/updates", PageDeliveryController, :updates)
+
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -525,10 +536,6 @@ defmodule OliWeb.Router do
     live("/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []})
 
     live("/:section_slug/manage", Delivery.ManageSection,
-      session: {__MODULE__, :with_section_user, []}
-    )
-
-    live("/:section_slug/updates", Delivery.ManageUpdates,
       session: {__MODULE__, :with_section_user, []}
     )
 

@@ -7,6 +7,7 @@ defmodule OliWeb.Projects.State do
   @default_display_mode "table"
 
   @default_state %{
+    show_deleted: false,
     active: :projects,
     projects: [],
     authors: %{},
@@ -54,6 +55,10 @@ defmodule OliWeb.Projects.State do
       )
 
     with_changes(state, sort_projects(state, @default_sort_by, @default_sort_order))
+  end
+
+  def toggle_show_deleted(state) do
+    [show_deleted: !state.show_deleted]
   end
 
   def sort_projects(state, sort_by, sort_order) do

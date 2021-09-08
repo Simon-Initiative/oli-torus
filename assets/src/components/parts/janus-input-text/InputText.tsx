@@ -20,6 +20,20 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   const [cssClass, setCssClass] = useState('');
   const [text, setText] = useState<string>('');
 
+  //need to save the textLength
+  const saveTextLength = (sText: string) => {
+    props.onSave({
+      id,
+      responses: [
+        {
+          key: 'textLength',
+          type: CapiVariableTypes.NUMBER,
+          value: sText.length,
+        },
+      ],
+    });
+  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -66,6 +80,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     const sText = currentStateSnapshot[`stage.${id}.text`];
     if (sText !== undefined) {
       setText(sText);
+      saveTextLength(sText);
     }
     const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
     if (sCssClass !== undefined) {
@@ -111,16 +126,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
               const sText = changes[`stage.${id}.text`];
               if (sText !== undefined) {
                 setText(sText);
-                props.onSave({
-                  id,
-                  responses: [
-                    {
-                      key: 'textLength',
-                      type: CapiVariableTypes.NUMBER,
-                      value: sText.length,
-                    },
-                  ],
-                });
+                saveTextLength(sText);
               }
               const sCssClass = changes[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {
@@ -218,7 +224,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   );
 
   return ready ? (
-    <div data-janus-type={tagName} className={`short-text-input ${cssClass}`}>
+    <div data-janus-type={tagName} className={`short-text-input`} style={{ width: '100%' }}>
       <label htmlFor={`${id}-short-text-input`}>
         {showLabel && label ? label : <span>&nbsp;</span>}
       </label>
@@ -230,6 +236,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
         onChange={handleOnChange}
         disabled={!enabled}
         value={text}
+        style={{ width: '100%' }}
       />
     </div>
   ) : null;

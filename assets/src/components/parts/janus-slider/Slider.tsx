@@ -250,7 +250,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   });
 
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`slider ${cssClass}`}>
+    <div data-janus-type={tagName} style={styles} className={`slider`}>
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">

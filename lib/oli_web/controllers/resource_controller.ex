@@ -33,7 +33,8 @@ defmodule OliWeb.ResourceController do
           project_slug: project_slug,
           revision_slug: revision_slug,
           activity_types: Activities.activities_for_project(project),
-          part_component_types: PartComponents.part_components_for_project(project)
+          part_component_types: PartComponents.part_components_for_project(project),
+          graded: context.graded,
         )
 
       {:error, :not_found} ->

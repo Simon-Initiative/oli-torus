@@ -263,7 +263,7 @@ $panel-section-title-bar-color: #e8ebed;
         width: 100%;
       }
 
-      > .dropdown-toggle{
+      > .dropdown-toggle {
         width: 100%;
         text-align: start;
       }
@@ -289,7 +289,7 @@ $panel-section-title-bar-color: #e8ebed;
     left: 65px;
     right: 0;
     bottom: 0;
-    overflow: hidden;
+    overflow: scroll;
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
       repeat;
   }

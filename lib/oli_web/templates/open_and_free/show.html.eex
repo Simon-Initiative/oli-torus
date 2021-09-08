@@ -36,12 +36,28 @@
 
       <tr>
         <td><strong>Start Date:</strong></td>
-        <td><%= @section.start_date %></td>
+        <td>
+          <%= case  @section.start_date do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+
+            <% start_date -> %>
+              <%= start_date %>
+          <% end %>
+        </td>
       </tr>
 
       <tr>
         <td><strong>End Date:</strong></td>
-        <td><%= @section.end_date %></td>
+        <td>
+          <%= case  @section.end_date do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
+
+            <% end_date -> %>
+              <%= end_date %>
+          <% end %>
+        </td>
       </tr>
 
       <tr>
@@ -59,7 +75,12 @@
           <% end %>
         </td>
       </tr>
-
     </tbody>
   </table>
+
+  <h5>Updates</h5>
+  <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
+    "section" => @section,
+    "redirect_after_apply" => Routes.open_and_free_path(@conn, :show, @section)
+    }) %>
 </div>

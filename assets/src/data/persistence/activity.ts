@@ -11,6 +11,7 @@ import { makeRequest } from './common';
 export type ActivityUpdate = {
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   content: ActivityModelSchema;
   authoring?: any;
 };
@@ -180,7 +181,7 @@ export function bulkEdit(
 ) {
   const params = {
     method: 'PUT',
-    body: JSON.stringify(updates),
+    body: JSON.stringify({ updates }),
     url: `/storage/project/${project}/resource?lock=${resource}`,
   };
 

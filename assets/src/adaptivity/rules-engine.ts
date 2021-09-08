@@ -91,8 +91,15 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         if (ogValue.indexOf('{') === -1) {
           modifiedValue = ogValue;
         } else {
-          //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
-          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+          const evaluatedValue = evaluateValueExpression(ogValue, env);
+          if (typeof evaluatedValue === 'string') {
+            //if the converted value is string then we don't have to stringify (e.g. if the evaluatedValue = L and we stringyfy it then the value becomes '"L"' instead if 'L'
+            // hence a trap state checking 'L' === 'L' returns false as the expression becomes 'L' === '"L"')
+            modifiedValue = evaluatedValue;
+          } else {
+            //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
+            modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+          }
         }
       }
       condition.value = modifiedValue;

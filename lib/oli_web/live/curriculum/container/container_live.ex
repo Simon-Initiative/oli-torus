@@ -370,6 +370,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{"type" => type}, socket) do
     attrs = %{
+      tags: [],
       objectives: %{"attached" => []},
       children: [],
       content:
