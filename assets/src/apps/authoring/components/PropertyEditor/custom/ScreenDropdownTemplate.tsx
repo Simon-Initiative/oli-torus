@@ -42,8 +42,8 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
   }, [value, sequence]);
 
   const onChangeHandler = (
-    e: React.MouseEvent,
     item: SequenceEntry<SequenceEntryChild> | null,
+    e: React.MouseEvent,
     isNext: boolean,
   ) => {
     const itemId = isNext ? 'next' : item?.custom.sequenceId;

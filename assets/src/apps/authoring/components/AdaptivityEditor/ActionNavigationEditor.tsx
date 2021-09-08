@@ -1,7 +1,16 @@
 import { NavigationAction, NavigationActionParams } from 'apps/authoring/types';
+import {
+  findInSequence,
+  getHierarchy,
+  SequenceEntry,
+  SequenceEntryChild,
+} from 'apps/delivery/store/features/groups/actions/sequence';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
+import { SequenceDropdown } from '../PropertyEditor/custom/SequenceDropdown';
 
 interface ActionNavigationEditorProps {
   action: NavigationAction;
@@ -11,13 +20,22 @@ interface ActionNavigationEditorProps {
 
 const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
   const { action, onChange, onDelete } = props;
-  const [target, setTarget] = useState(action?.params?.target || '');
+  const sequence = useSelector(selectSequence);
+  const selsectedSequence = findInSequence(sequence, action?.params?.target);
+  const [target, setTarget] = useState(selsectedSequence?.custom.sequenceName || 'next');
   const uuid = guid();
+  const hierarchy = getHierarchy(sequence);
 
   const handleTargetChange = (e: any) => {
     const currentVal = e.target.value;
     setTarget(currentVal);
     onChange({ target: currentVal });
+  };
+
+  const onChangeHandler = (item: SequenceEntry<SequenceEntryChild> | null) => {
+    const itemId = item?.custom.sequenceId;
+    onChange({ target: itemId || 'next' });
+    setTarget(item?.custom.sequenceName || 'next');
   };
 
   return (
@@ -42,22 +60,41 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
           onBlur={(e) => handleTargetChange(e)}
           title={target}
         />
+        <div className="dropdown dropup adaptivityDropdown">
+          <button
+            className="btn btn-secondary dropdown-toggle form-control form-control-sm"
+            type="button"
+            id={`drp-${uuid}`}
+            data-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          />
+          <div className="dropdown-menu" aria-labelledby={`drp-${uuid}`}>
+            <SequenceDropdown
+              items={hierarchy}
+              onChange={onChangeHandler}
+              value={target}
+              showNextBtn={false}
+            />
+          </div>
+        </div>
+
+        <OverlayTrigger
+          placement="top"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+              Delete Action
+            </Tooltip>
+          }
+        >
+          <span>
+            <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
+              <i className="fa fa-trash-alt" />
+            </button>
+          </span>
+        </OverlayTrigger>
       </div>
-      <OverlayTrigger
-        placement="top"
-        delay={{ show: 150, hide: 150 }}
-        overlay={
-          <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-            Delete Action
-          </Tooltip>
-        }
-      >
-        <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
-            <i className="fa fa-trash-alt" />
-          </button>
-        </span>
-      </OverlayTrigger>
     </div>
   );
 };
