@@ -5,7 +5,6 @@ export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
   overrideWidth?: boolean;
   overrideHeight?: boolean;
   nodes: any[]; // TODO
-  palette: any;
 }
 
 export const schema: JSONSchema7Object = {
@@ -20,16 +19,6 @@ export const schema: JSONSchema7Object = {
     description: 'enable to use the value provided by the width field',
   },
   customCssClass: { type: 'string' },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
-  },
 };
 
 export const uiSchema = {};

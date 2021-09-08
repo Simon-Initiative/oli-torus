@@ -1,4 +1,5 @@
 import { JSONSchema7 } from 'json-schema';
+import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema: JSONSchema7 = {
@@ -21,6 +22,16 @@ const partSchema: JSONSchema7 = {
       properties: {
         width: { type: 'number', title: 'Width' },
         height: { type: 'number', title: 'Height' },
+      },
+    },
+    palette: {
+      type: 'object',
+      properties: {
+        backgroundColor: { type: 'string', title: 'Background Color' },
+        borderColor: { type: 'string', title: 'Border Color' },
+        borderRadius: { type: 'string', title: 'Border Radius' },
+        borderStyle: { type: 'string', title: 'Border Style' },
+        borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
     custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
@@ -56,12 +67,24 @@ export const partUiSchema = {
       classNames: 'col-6',
     },
   },
+  palette: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Palette',
+    backgroundColor: {
+      'ui:widget': ColorPickerWidget,
+    },
+    borderColor: {
+      'ui:widget': ColorPickerWidget,
+    },
+    borderStyle: { classNames: 'col-6' },
+    borderWidth: { classNames: 'col-6' },
+  },
 };
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height } = model.custom;
-  return {
+  const { x, y, z, width, height, palette } = model.custom;
+  const result: any = {
     id,
     type,
     Position: {
@@ -75,11 +98,19 @@ export const transformModelToSchema = (model: any) => {
     },
     custom: { ...model.custom },
   };
+
+  if (palette) {
+    result.palette = palette;
+  }
+
+  console.log('PART [transformModelToSchema]', { model, result });
+
+  return result;
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size } = schema;
-  return {
+  const { id, type, Position, Size, palette } = schema;
+  const result = {
     id,
     type,
     custom: {
@@ -91,6 +122,21 @@ export const transformSchemaToModel = (schema: any) => {
       height: Size.height,
     },
   };
+
+  if (palette) {
+    result.custom.palette = {
+      useHtmlProps: true,
+      backgroundColor: palette.backgroundColor || 'transparent',
+      borderColor: palette.borderColor || 'transparent',
+      borderRadius: palette.borderRadius || 0,
+      borderWidth: palette.borderWidth || 0,
+      borderStyle: palette.borderStyle || 'none',
+    };
+  }
+
+  console.log('PART [transformSchemaToModel]', { schema, result });
+
+  return result;
 };
 
 export default partSchema;

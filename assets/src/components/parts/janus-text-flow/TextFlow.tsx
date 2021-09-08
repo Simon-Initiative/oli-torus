@@ -195,10 +195,6 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   } = model;
 
   const styles: any = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    zIndex: z, */
     wordWrap: 'break-word',
     lineHeight: 'inherit',
   };
@@ -210,20 +206,6 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   }
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
-  }
-  if (palette) {
-    styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
-    (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${
-        palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${
-        palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.fillAlpha})`);
   }
 
   // TODO: preprocess model to find required variables and/or expressions

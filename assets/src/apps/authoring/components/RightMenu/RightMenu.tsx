@@ -331,24 +331,6 @@ const RightMenu: React.FC<any> = () => {
               ...customPartUiSchema,
             },
           };
-          const customPartSchema = instance.getSchema();
-          if (customPartSchema.palette) {
-            newUiSchema.custom = {
-              ...newUiSchema.custom,
-              palette: {
-                'ui:ObjectFieldTemplate': CustomFieldTemplate,
-                'ui:title': 'Palette',
-                backgroundColor: {
-                  'ui:widget': ColorPickerWidget,
-                },
-                borderColor: {
-                  'ui:widget': ColorPickerWidget,
-                },
-                borderStyle: { classNames: 'col-6' },
-                borderWidth: { classNames: 'col-6' },
-              },
-            };
-          }
           setComponentUiSchema(newUiSchema);
         }
       }

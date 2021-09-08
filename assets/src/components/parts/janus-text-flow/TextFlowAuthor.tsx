@@ -156,20 +156,6 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }
-  if (palette) {
-    styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
-    (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${
-        palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${
-        palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.fillAlpha})`);
-  }
 
   // TODO: preprocess model to find required variables and/or expressions
   // using onInit to wait for initial state to be sent, and hold rendering

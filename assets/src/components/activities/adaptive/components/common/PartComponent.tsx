@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import chroma from 'chroma-js';
 import {
   AuthorPartComponentProps,
   CustomProperties,
@@ -21,6 +22,47 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
+
+  const initialStyles: CSSProperties = {
+    display: 'block',
+    position: 'absolute',
+    top: props.model.y,
+    left: props.model.x,
+    zIndex: props.model.z || 0,
+    width: props.model.width,
+    height: props.model.overrideHeight ? props.model.height : 'auto',
+  };
+
+  if (props.model.palette) {
+    // console.log('PALETTE: ', { props, palette: props.model.palette });
+    if (props.model.palette.useHtmlProps) {
+      initialStyles.backgroundColor = props.model.palette.backgroundColor;
+      initialStyles.borderColor = props.model.palette.borderColor;
+      initialStyles.borderWidth = props.model.palette.borderWidth;
+      initialStyles.borderStyle = props.model.palette.borderStyle;
+      initialStyles.borderRadius = props.model.palette.borderRadius;
+    } else {
+      initialStyles.borderWidth = `${
+        props.model?.palette?.lineThickness ? props.model?.palette?.lineThickness + 'px' : '1px'
+      }`;
+      initialStyles.borderRadius = '10px';
+      initialStyles.borderStyle = 'solid';
+      initialStyles.borderColor = `rgba(${
+        props.model?.palette?.lineColor || props.model?.palette?.lineColor === 0
+          ? chroma(props.model?.palette?.lineColor).rgb().join(',')
+          : '255, 255, 255'
+      },${props.model?.palette?.lineAlpha})`;
+      initialStyles.backgroundColor = `rgba(${
+        props.model?.palette?.fillColor || props.model?.palette?.fillColor === 0
+          ? chroma(props.model?.palette?.fillColor).rgb().join(',')
+          : '255, 255, 255'
+      },${props.model?.palette?.fillAlpha})`;
+    }
+  }
+
+  const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
+
+  const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
 
   const wcEvents: Record<string, any> = {
     init: props.onInit,
@@ -93,28 +135,12 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     };
   }, []);
 
-  const compStyles: CSSProperties = {
-    display: 'block',
-  };
-
-  if (props.model) {
-    compStyles.position = 'absolute';
-    compStyles.top = props.model.y;
-    compStyles.left = props.model.x;
-    compStyles.zIndex = props.model.z || 0;
-    compStyles.width = props.model.width;
-
-    // almost always height is meant to be auto, when not we'll have to let
-    // the component handle it
-    // compStyles.height = props.model.height;
-  }
-
   const webComponentProps: any = {
     ref,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
-    customCssClass: props.model.customCssClass || '',
+    customCssClass,
   };
 
   let wcTagName = props.type;
@@ -124,7 +150,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
-    webComponentProps.style = compStyles;
+    webComponentProps.style = componentStyle;
   }
 
   // don't render until we're listening because otherwise the init event will post too fast
