@@ -26,6 +26,7 @@ export interface DeliveryProps {
   previewMode?: boolean;
   enableHistory?: boolean;
   activityTypes?: any[];
+  graded: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -42,6 +43,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   activityTypes = [],
   previewMode = false,
   enableHistory = false,
+  graded = false,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -72,6 +74,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         activityTypes,
         enableHistory,
         score: 0,
+        graded,
       }),
     );
   };

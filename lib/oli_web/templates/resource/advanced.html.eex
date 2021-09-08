@@ -15,6 +15,7 @@
     isAdmin: <%= @is_admin? %>,
     revisionSlug: "<%= @revision_slug %>",
     projectSlug: "<%= @project_slug %>",
+    graded: <%= @graded %>,
     content: "<%= Base.encode64(@context) %>",
     paths: {
       images: "<%= Routes.static_path(@conn, "/images") %>"
