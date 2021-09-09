@@ -1,4 +1,5 @@
 import { JSONSchema7 } from 'json-schema';
+import { parseNumString } from 'utils/common';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema: JSONSchema7 = {
@@ -61,7 +62,7 @@ export const partUiSchema = {
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
   const { x, y, z, width, height } = model.custom;
-  return {
+  const result: any = {
     id,
     type,
     Position: {
@@ -75,11 +76,15 @@ export const transformModelToSchema = (model: any) => {
     },
     custom: { ...model.custom },
   };
+
+  console.log('PART [transformModelToSchema]', { model, result });
+
+  return result;
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size } = schema;
-  return {
+  const { id, type, Position, Size, palette } = schema;
+  const result = {
     id,
     type,
     custom: {
@@ -91,6 +96,21 @@ export const transformSchemaToModel = (schema: any) => {
       height: Size.height,
     },
   };
+
+  if (palette) {
+    result.custom.palette = {
+      useHtmlProps: true,
+      backgroundColor: palette.backgroundColor || 'transparent',
+      borderColor: palette.borderColor || 'transparent',
+      borderRadius: parseNumString(palette.borderRadius) || 0,
+      borderWidth: parseNumString(palette.borderWidth) || 0,
+      borderStyle: palette.borderStyle || 'none',
+    };
+  }
+
+  console.log('PART [transformSchemaToModel]', { schema, result });
+
+  return result;
 };
 
 export default partSchema;

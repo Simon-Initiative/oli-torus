@@ -22,6 +22,20 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
+  const initialStyles: CSSProperties = {
+    display: 'block',
+    position: 'absolute',
+    top: props.model.y,
+    left: props.model.x,
+    zIndex: props.model.z || 0,
+    width: props.model.width,
+    height: props.model.overrideHeight ? props.model.height : 'auto',
+  };
+
+  const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
+
+  const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
+
   const wcEvents: Record<string, any> = {
     init: props.onInit,
     ready: props.onReady,
@@ -93,28 +107,12 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     };
   }, []);
 
-  const compStyles: CSSProperties = {
-    display: 'block',
-  };
-
-  if (props.model) {
-    compStyles.position = 'absolute';
-    compStyles.top = props.model.y;
-    compStyles.left = props.model.x;
-    compStyles.zIndex = props.model.z || 0;
-    compStyles.width = props.model.width;
-
-    // almost always height is meant to be auto, when not we'll have to let
-    // the component handle it
-    // compStyles.height = props.model.height;
-  }
-
   const webComponentProps: any = {
     ref,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
-    customCssClass: props.model.customCssClass || '',
+    customCssClass,
   };
 
   let wcTagName = props.type;
@@ -124,7 +122,8 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
-    webComponentProps.style = compStyles;
+    webComponentProps.style = componentStyle;
+    // console.log('DELIVERY RENDER:', wcTagName, props);
   }
 
   // don't render until we're listening because otherwise the init event will post too fast

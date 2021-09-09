@@ -1,8 +1,7 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import EventEmitter from 'events';
-import React, { useEffect, useState } from 'react';
-import { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import { clone } from 'utils/common';
