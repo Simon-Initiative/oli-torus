@@ -100,8 +100,27 @@ defmodule Oli.AccountsTest do
       assert_raise Ecto.NoResultsError, fn -> Accounts.get_user!(user.id) end
     end
 
-    test "change_user/1 returns a user changeset", %{user: user} do
-      assert %Ecto.Changeset{} = Accounts.change_user(user)
+    test "update_user_platform_roles/2 updates a users platform roles", %{user: user} do
+      user = Repo.preload(user, [:platform_roles])
+      assert user.platform_roles == []
+
+      updated_roles = [
+        Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
+        Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+      ]
+
+      {:ok, _user} = Accounts.update_user_platform_roles(user, updated_roles)
+
+      user = Accounts.get_user!(user.id, preload: [:platform_roles])
+
+      assert Lti_1p3.Tool.PlatformRoles.has_roles?(
+               user,
+               [
+                 Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
+                 Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+               ],
+               :all
+             )
     end
   end
 end

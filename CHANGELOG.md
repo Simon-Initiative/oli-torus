@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where platform roles were failing to update on LTI launch
+
 ### Enhancements
 
 ## 0.13.0 (2021-09-07)
