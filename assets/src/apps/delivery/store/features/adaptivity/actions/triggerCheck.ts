@@ -74,7 +74,9 @@ export const triggerCheck = createAsyncThunk(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');
         const isVarVariable = key.startsWith('variables.');
-        if (isSessionVariable || isVarVariable) {
+        //Once Beagle App functionality is integrated, this can be removed
+        const isBeagleVariable = key.startsWith('app.');
+        if (isSessionVariable || isVarVariable || isBeagleVariable) {
           acc[key] = localizedSnapshot[key];
         }
         return acc;
