@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
-import { SequenceDropdown } from '../PropertyEditor/custom/SequenceDropdown';
+import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTemplate';
 
 interface ActionNavigationEditorProps {
   action: NavigationAction;
@@ -22,20 +22,12 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   const { action, onChange, onDelete } = props;
   const sequence = useSelector(selectSequence);
   const selectedSequence = findInSequence(sequence, action?.params?.target);
-  const [target, setTarget] = useState(selectedSequence?.custom.sequenceName || 'next');
+  const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'next');
   const uuid = guid();
-  const hierarchy = getHierarchy(sequence);
 
-  const handleTargetChange = (e: any) => {
-    const currentVal = e.target.value;
-    setTarget(currentVal);
-    onChange({ target: currentVal });
-  };
-
-  const onChangeHandler = (item: SequenceEntry<SequenceEntryChild> | null) => {
-    const itemId = item?.custom.sequenceId;
-    onChange({ target: itemId || 'next' });
-    setTarget(item?.custom.sequenceName || 'next');
+  const onChangeHandler = (sequenceId: string) => {
+    onChange({ target: sequenceId || 'next' });
+    setTarget(sequenceId || 'next');
   };
 
   return (
@@ -50,34 +42,14 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
             Navigate To
           </div>
         </div>
-        <input
-          type="text"
-          className="form-control form-control-sm"
+        <ScreenDropdownTemplate
           id={`action-navigation-${uuid}`}
-          placeholder="SequenceId"
+          label=""
           value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          onBlur={(e) => handleTargetChange(e)}
-          title={target}
+          onChange={onChangeHandler}
+          dropDownCSSClass="adaptivityDropdown form-control"
+          buttonCSSClass="form-control-sm"
         />
-        <div className="dropdown dropup adaptivityDropdown">
-          <button
-            className="btn btn-secondary dropdown-toggle form-control form-control-sm"
-            type="button"
-            id={`drp-${uuid}`}
-            data-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
-          />
-          <div className="dropdown-menu" aria-labelledby={`drp-${uuid}`}>
-            <SequenceDropdown
-              items={hierarchy}
-              onChange={onChangeHandler}
-              value={target}
-              showNextBtn={true}
-            />
-          </div>
-        </div>
 
         <OverlayTrigger
           placement="top"
