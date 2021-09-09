@@ -21,8 +21,8 @@ interface ActionNavigationEditorProps {
 const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
   const { action, onChange, onDelete } = props;
   const sequence = useSelector(selectSequence);
-  const selsectedSequence = findInSequence(sequence, action?.params?.target);
-  const [target, setTarget] = useState(selsectedSequence?.custom.sequenceName || 'next');
+  const selectedSequence = findInSequence(sequence, action?.params?.target);
+  const [target, setTarget] = useState(selectedSequence?.custom.sequenceName || 'next');
   const uuid = guid();
   const hierarchy = getHierarchy(sequence);
 
@@ -74,7 +74,7 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
               items={hierarchy}
               onChange={onChangeHandler}
               value={target}
-              showNextBtn={false}
+              showNextBtn={true}
             />
           </div>
         </div>
