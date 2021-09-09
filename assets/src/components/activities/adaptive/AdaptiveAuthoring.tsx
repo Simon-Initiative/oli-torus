@@ -108,7 +108,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
         border-width: ${paletteStyleObj.borderWidth}px;
         border-radius: ${paletteStyleObj.borderRadius}px;
         border-style: ${paletteStyleObj.borderStyle};
-      `
+      `;
     }
 
     return `#${part.id.replace(/:/g, '\\:')} {
