@@ -160,7 +160,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           case NotificationType.STATE_CHANGED:
             {
               const { mutateChanges: changes } = payload;
-              const isOpen = changes[`stage.${id}.isOpen`];
+              const isOpen: boolean | undefined = changes[`stage.${id}.isOpen`];
               if (isOpen !== undefined) {
                 setShowPopup(isOpen);
                 props.onSave({
@@ -195,7 +195,37 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { snapshot: changes } = payload;
+
+              const isOpen: boolean | undefined = changes[`stage.${id}.isOpen`];
+              if (isOpen !== undefined) {
+                setShowPopup(isOpen);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'isOpen',
+                      type: CapiVariableTypes.BOOLEAN,
+                      value: isOpen,
+                    },
+                  ],
+                });
+              }
+              const isVisible = changes[`stage.${id}.visible`];
+              if (isVisible !== undefined) {
+                setPopupVisible(isVisible);
+              }
+
+              const initIconUrl = changes[`stage.${id}.iconURL`];
+              if (initIconUrl !== undefined) {
+                if (getIcon(initIconUrl)) {
+                  setIconSrc(getIcon(initIconUrl));
+                } else {
+                  setIconSrc(initIconUrl);
+                }
+              }
+            }
             break;
         }
       };
