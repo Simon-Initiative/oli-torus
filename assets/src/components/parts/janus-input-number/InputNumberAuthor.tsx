@@ -5,7 +5,7 @@ import { InputNumberModel } from './schema';
 const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
   const { id, model } = props;
 
-  const { x, y, z, width, height, showLabel, label, prompt } = model;
+  const { x, y, z, width, height, showLabel, label, prompt, showIncrementArrows } = model;
   const styles: CSSProperties = {
     width,
     zIndex: z,
@@ -31,6 +31,7 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
         placeholder={prompt}
         disabled={true}
         style={{ width: '100%' }}
+        className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
       />
     </div>
   );
