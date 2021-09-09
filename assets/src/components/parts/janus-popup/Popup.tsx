@@ -62,6 +62,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     if (isOpen !== undefined) {
       setShowPopup(isOpen);
     }
+    const openByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
+    if (openByDefault !== undefined) {
+      setShowPopup(openByDefault);
+    }
     const isVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (isVisible !== undefined) {
       setPopupVisible(isVisible);
