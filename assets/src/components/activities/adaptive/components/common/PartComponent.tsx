@@ -151,6 +151,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
     webComponentProps.style = componentStyle;
+    console.log('DELIVERY RENDER:', wcTagName, webComponentProps);
   }
 
   // don't render until we're listening because otherwise the init event will post too fast

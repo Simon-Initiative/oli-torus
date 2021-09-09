@@ -1,4 +1,6 @@
 import { JSONSchema7 } from 'json-schema';
+import { parseNumString } from 'utils/common';
+import AccordionTemplate from '../custom/AccordionTemplate';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
@@ -68,8 +70,8 @@ export const partUiSchema = {
     },
   },
   palette: {
-    'ui:ObjectFieldTemplate': CustomFieldTemplate,
-    'ui:title': 'Palette',
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    'ui:title': 'Background & Border',
     backgroundColor: {
       'ui:widget': ColorPickerWidget,
     },
@@ -128,8 +130,8 @@ export const transformSchemaToModel = (schema: any) => {
       useHtmlProps: true,
       backgroundColor: palette.backgroundColor || 'transparent',
       borderColor: palette.borderColor || 'transparent',
-      borderRadius: palette.borderRadius || 0,
-      borderWidth: palette.borderWidth || 0,
+      borderRadius: parseNumString(palette.borderRadius) || 0,
+      borderWidth: parseNumString(palette.borderWidth) || 0,
       borderStyle: palette.borderStyle || 'none',
     };
   }
