@@ -98,8 +98,8 @@ describe('common parseArray', () => {
   });
 
   it('should parse an array-like string into a valid array', () => {
-    const str = '["some", "thing", "silly"]';
-    const expected = ['some', 'thing', 'silly'];
+    const str = '["some", "thing", "silly","-56.5/-13/70"]';
+    const expected = ['some', 'thing', 'silly', '-56.5/-13/70'];
     expect(parseArray(str)).toEqual(expected);
   });
 

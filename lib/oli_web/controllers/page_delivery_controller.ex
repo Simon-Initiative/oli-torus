@@ -64,51 +64,6 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   defp render_page(
-         %PageContext{summary: summary, page: %{content: %{"advancedDelivery" => true}}} =
-           context,
-         conn,
-         section_slug,
-         _
-       ) do
-    layout =
-      case Map.get(context.page.content, "displayApplicationChrome", true) do
-        true -> "page.html"
-        false -> "chromeless.html"
-      end
-
-    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
-    user = conn.assigns.current_user
-
-    resource_attempt = Enum.at(context.resource_attempts, 0)
-    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
-
-    {:ok, activity_guid_mapping} =
-      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
-      |> Jason.encode()
-
-    render(conn, "advanced_delivery.html", %{
-      review_mode: context.review_mode,
-      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
-      resource_attempt_guid: resource_attempt.attempt_guid,
-      resource_attempt_state: resource_attempt_state,
-      activity_guid_mapping: activity_guid_mapping,
-      content: Jason.encode!(context.page.content),
-      summary: summary,
-      activity_types: Activities.activities_for_section(),
-      scripts: Activities.get_activity_scripts(:delivery_script),
-      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-      section_slug: section_slug,
-      title: context.page.title,
-      resource_id: context.page.resource_id,
-      slug: context.page.slug,
-      previous_page: context.previous_page,
-      next_page: context.next_page,
-      user_id: user.id,
-      preview_mode: false
-    })
-  end
-
-  defp render_page(
          %PageContext{
            summary: summary,
            progress_state: :not_started,
@@ -158,6 +113,52 @@ defmodule OliWeb.PageDeliveryController do
       resource_id: page.resource_id,
       slug: context.page.slug,
       max_attempts: page.max_attempts
+    })
+  end
+
+  defp render_page(
+         %PageContext{summary: summary, page: %{content: %{"advancedDelivery" => true}}} =
+           context,
+         conn,
+         section_slug,
+         _
+       ) do
+    layout =
+      case Map.get(context.page.content, "displayApplicationChrome", true) do
+        true -> "page.html"
+        false -> "chromeless.html"
+      end
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
+    user = conn.assigns.current_user
+
+    resource_attempt = Enum.at(context.resource_attempts, 0)
+    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
+
+    {:ok, activity_guid_mapping} =
+      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
+      |> Jason.encode()
+
+    render(conn, "advanced_delivery.html", %{
+      review_mode: context.review_mode,
+      graded: context.page.graded,
+      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      resource_attempt_state: resource_attempt_state,
+      activity_guid_mapping: activity_guid_mapping,
+      content: Jason.encode!(context.page.content),
+      summary: summary,
+      activity_types: Activities.activities_for_section(),
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      section_slug: section_slug,
+      title: context.page.title,
+      resource_id: context.page.resource_id,
+      slug: context.page.slug,
+      previous_page: context.previous_page,
+      next_page: context.next_page,
+      user_id: user.id,
+      preview_mode: false
     })
   end
 

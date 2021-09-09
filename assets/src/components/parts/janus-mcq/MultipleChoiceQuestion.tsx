@@ -292,23 +292,25 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     let optionText = '';
     if (children.tag === 'text') {
       optionText = children.text;
-    } else {
+    } else if (children?.children?.length) {
       optionText = getOptionTextFromNode(children.children[0]);
     }
     return optionText;
   };
 
   const getOptionTextById = (options: any, optionId: any): any => {
-    const text = options.map((option: any) => {
-      if (option.value === optionId) {
-        if (option.nodes[0].tag === 'text') {
-          return option.nodes[0].text;
-        } else {
-          return getOptionTextFromNode(option.nodes[0]);
+    const text = options
+      .map((option: any) => {
+        if (option.value === optionId) {
+          if (option.nodes[0].tag === 'text') {
+            return option.nodes[0].text;
+          } else {
+            return getOptionTextFromNode(option.nodes[0]);
+          }
         }
-      }
-    });
-    return text.filter((option: any) => option !== undefined);
+      })
+      .filter((option: any) => option !== undefined);
+    return text?.length ? text[0] : '';
   };
 
   const getOptionTextByText = (options: any, optionText: any): any => {
@@ -451,15 +453,23 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   useEffect(() => {
     // watch for a new choice then
     // trigger item selection handler
-    if (selectedChoice !== prevSelectedChoice && selectedChoice !== 0 && selectedChoice !== -1) {
+    if (selectedChoice !== 0 && selectedChoice !== -1) {
+      let shouldSave = false;
+      let optionText = selectedChoiceText;
+      if (!optionText?.length) {
+        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
+        //hence need to save the props as well.
+        shouldSave = true;
+        optionText = getOptionTextById(options, selectedChoice);
+      }
       /* console.log('handling MCQ single select'); */
       handleItemSelection(
         {
           value: selectedChoice,
-          textValue: selectedChoiceText,
+          textValue: optionText,
           checked: true,
         },
-        false,
+        shouldSave,
       );
     }
   }, [selectedChoice]);
@@ -476,6 +486,19 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
+      let shouldSave = false;
+      if (!selectedChoicesText?.length) {
+        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
+        //hence need to save the props.
+        shouldSave = true;
+        selectedChoices.forEach((option) => {
+          selectedChoicesText.push({
+            value: option,
+            textValue: getOptionTextById(options, option),
+            checked: selectedChoices.includes(option),
+          });
+        });
+      }
       /* console.log('handling MCQ multi select'); */
       selectedChoicesText.forEach((option) => {
         handleItemSelection(
@@ -484,7 +507,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             textValue: option.textValue,
             checked: selectedChoices.includes(option.value),
           },
-          false,
+          shouldSave,
         );
       });
     }
