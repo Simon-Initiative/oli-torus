@@ -1,8 +1,7 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
-import chroma from 'chroma-js';
 import EventEmitter from 'events';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import { clone } from 'utils/common';
@@ -76,41 +75,6 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   };
 
   const partStyles = parts.map((part) => {
-    let paletteStyles = '';
-    if (part.custom.palette) {
-      const paletteStyleObj: CSSProperties = {};
-      if (part.custom.palette.useHtmlProps) {
-        paletteStyleObj.backgroundColor = part.custom.palette.backgroundColor;
-        paletteStyleObj.borderColor = part.custom.palette.borderColor;
-        paletteStyleObj.borderWidth = part.custom.palette.borderWidth;
-        paletteStyleObj.borderStyle = part.custom.palette.borderStyle;
-        paletteStyleObj.borderRadius = part.custom.palette.borderRadius;
-      } else {
-        paletteStyleObj.borderWidth = `${
-          part.custom?.palette?.lineThickness ? part.custom?.palette?.lineThickness + 'px' : '1px'
-        }`;
-        paletteStyleObj.borderRadius = '10px';
-        paletteStyleObj.borderStyle = 'solid';
-        paletteStyleObj.borderColor = `rgba(${
-          part.custom?.palette?.lineColor || part.custom?.palette?.lineColor === 0
-            ? chroma(part.custom?.palette?.lineColor).rgb().join(',')
-            : '255, 255, 255'
-        },${part.custom?.palette?.lineAlpha})`;
-        paletteStyleObj.backgroundColor = `rgba(${
-          part.custom?.palette?.fillColor || part.custom?.palette?.fillColor === 0
-            ? chroma(part.custom?.palette?.fillColor).rgb().join(',')
-            : '255, 255, 255'
-        },${part.custom?.palette?.fillAlpha})`;
-      }
-      paletteStyles = `
-        background-color: ${paletteStyleObj.backgroundColor};
-        border-color: ${paletteStyleObj.borderColor};
-        border-width: ${paletteStyleObj.borderWidth}px;
-        border-radius: ${paletteStyleObj.borderRadius}px;
-        border-style: ${paletteStyleObj.borderStyle};
-      `;
-    }
-
     return `#${part.id.replace(/:/g, '\\:')} {
       display: block;
       position: absolute;
@@ -118,7 +82,6 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       top: ${part.custom.y}px;
       left: ${part.custom.x}px;
       z-index: ${part.custom.z};
-      ${paletteStyles}
     }`;
   });
 

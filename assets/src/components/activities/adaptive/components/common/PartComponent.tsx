@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import chroma from 'chroma-js';
 import {
   AuthorPartComponentProps,
   CustomProperties,
@@ -32,33 +31,6 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     width: props.model.width,
     height: props.model.overrideHeight ? props.model.height : 'auto',
   };
-
-  if (props.model.palette) {
-    // console.log('PALETTE: ', { props, palette: props.model.palette });
-    if (props.model.palette.useHtmlProps) {
-      initialStyles.backgroundColor = props.model.palette.backgroundColor;
-      initialStyles.borderColor = props.model.palette.borderColor;
-      initialStyles.borderWidth = props.model.palette.borderWidth;
-      initialStyles.borderStyle = props.model.palette.borderStyle;
-      initialStyles.borderRadius = props.model.palette.borderRadius;
-    } else {
-      initialStyles.borderWidth = `${
-        props.model?.palette?.lineThickness ? props.model?.palette?.lineThickness + 'px' : '1px'
-      }`;
-      initialStyles.borderRadius = '10px';
-      initialStyles.borderStyle = 'solid';
-      initialStyles.borderColor = `rgba(${
-        props.model?.palette?.lineColor || props.model?.palette?.lineColor === 0
-          ? chroma(props.model?.palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${props.model?.palette?.lineAlpha})`;
-      initialStyles.backgroundColor = `rgba(${
-        props.model?.palette?.fillColor || props.model?.palette?.fillColor === 0
-          ? chroma(props.model?.palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${props.model?.palette?.fillAlpha})`;
-    }
-  }
 
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
 
@@ -151,7 +123,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
     webComponentProps.style = componentStyle;
-    console.log('DELIVERY RENDER:', wcTagName, webComponentProps);
+    // console.log('DELIVERY RENDER:', wcTagName, props);
   }
 
   // don't render until we're listening because otherwise the init event will post too fast

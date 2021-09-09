@@ -1,7 +1,5 @@
 import { JSONSchema7 } from 'json-schema';
 import { parseNumString } from 'utils/common';
-import AccordionTemplate from '../custom/AccordionTemplate';
-import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
 
 const partSchema: JSONSchema7 = {
@@ -24,16 +22,6 @@ const partSchema: JSONSchema7 = {
       properties: {
         width: { type: 'number', title: 'Width' },
         height: { type: 'number', title: 'Height' },
-      },
-    },
-    palette: {
-      type: 'object',
-      properties: {
-        backgroundColor: { type: 'string', title: 'Background Color' },
-        borderColor: { type: 'string', title: 'Border Color' },
-        borderRadius: { type: 'string', title: 'Border Radius' },
-        borderStyle: { type: 'string', title: 'Border Style' },
-        borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
     custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
@@ -69,23 +57,11 @@ export const partUiSchema = {
       classNames: 'col-6',
     },
   },
-  palette: {
-    'ui:ObjectFieldTemplate': AccordionTemplate,
-    'ui:title': 'Background & Border',
-    backgroundColor: {
-      'ui:widget': ColorPickerWidget,
-    },
-    borderColor: {
-      'ui:widget': ColorPickerWidget,
-    },
-    borderStyle: { classNames: 'col-6' },
-    borderWidth: { classNames: 'col-6' },
-  },
 };
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height, palette } = model.custom;
+  const { x, y, z, width, height } = model.custom;
   const result: any = {
     id,
     type,
@@ -100,10 +76,6 @@ export const transformModelToSchema = (model: any) => {
     },
     custom: { ...model.custom },
   };
-
-  if (palette) {
-    result.palette = palette;
-  }
 
   console.log('PART [transformModelToSchema]', { model, result });
 

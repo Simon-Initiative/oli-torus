@@ -111,7 +111,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   const [htmlPreview, setHtmlPreview] = useState<string>('');
 
   useEffect(() => {
-    console.log('TF REF CHANGE', htmlPreviewRef.current);
+    // console.log('TF REF CHANGE', htmlPreviewRef.current);
     if (htmlPreviewRef.current) {
       setHtmlPreview(htmlPreviewRef.current?.innerHTML || '');
     }
@@ -155,6 +155,35 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
+  }
+
+  if (palette) {
+    if (palette.useHtmlProps) {
+      styles.backgroundColor = palette.backgroundColor;
+      styles.borderColor = palette.borderColor;
+      styles.borderWidth = palette.borderWidth;
+      styles.borderStyle = palette.borderStyle;
+      styles.borderRadius = palette.borderRadius;
+    } else {
+      styles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
+      styles.borderRadius = 0;
+      styles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      let borderColor = 'transparent';
+      if (palette.lineColor! >= 0) {
+        borderColor = chroma(palette.lineColor || 0)
+          .alpha(palette.lineAlpha || 0)
+          .css();
+      }
+      styles.borderColor = borderColor;
+
+      let bgColor = 'transparent';
+      if (palette.fillColor! >= 0) {
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha || 0)
+          .css();
+      }
+      styles.backgroundColor = bgColor;
+    }
   }
 
   // TODO: preprocess model to find required variables and/or expressions
