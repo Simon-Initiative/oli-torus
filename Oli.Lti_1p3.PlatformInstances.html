@@ -4,22 +4,29 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.0">
 
     <title>Oli.Lti_1p3.PlatformInstances — OLI Torus v0.13.0</title>
-    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-465557b885.js"></script>
+    <script src="dist/sidebar_items-6bc3c71df5.js"></script>
 
       <script src="docs_config.js"></script>
 
-    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+    <script async src="dist/app-f97730d45ef67f3e6188.js"></script>
 
 
   </head>
   <body data-type="modules">
-    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
 
 <div class="main">
 
@@ -36,7 +43,7 @@
       <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -62,12 +69,12 @@ OLI Torus
   </div>
 
   <ul class="sidebar-listNav">
-    <li><a id="extras-list" href="#full-list">Pages</a></li>
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
 
-      <li><a id="modules-list" href="#full-list">Modules</a></li>
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
 
 
-      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+      <li><a id="tasks-list-link" href="#full-list">Mix Tasks</a></li>
 
   </ul>
   <div class="gradient"></div>
@@ -206,8 +213,8 @@ Functions
   <a href="#change_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_platform_instance</span><span class="p" data-group-id="2382974165-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="2382974165-1">)</span><span class="w">
-</span><span class="p" data-group-id="2382974165-2">%</span><span class="nc" data-group-id="2382974165-2">Ecto.Changeset</span><span class="p" data-group-id="2382974165-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2382974165-3">%</span><span class="nc" data-group-id="2382974165-3">PlatformInstance</span><span class="p" data-group-id="2382974165-3">{</span><span class="p" data-group-id="2382974165-3">}</span><span class="p" data-group-id="2382974165-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_platform_instance</span><span class="p" data-group-id="5247007595-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="5247007595-1">)</span><span class="w">
+</span><span class="p" data-group-id="5247007595-2">%</span><span class="nc" data-group-id="5247007595-2">Ecto.Changeset</span><span class="p" data-group-id="5247007595-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="5247007595-3">%</span><span class="nc" data-group-id="5247007595-3">PlatformInstance</span><span class="p" data-group-id="5247007595-3">{</span><span class="p" data-group-id="5247007595-3">}</span><span class="p" data-group-id="5247007595-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_platform_instance/1">
@@ -235,11 +242,11 @@ Functions
   <a href="#create_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="5035988293-1">(</span><span class="p" data-group-id="5035988293-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5035988293-2">}</span><span class="p" data-group-id="5035988293-1">)</span><span class="w">
-</span><span class="p" data-group-id="5035988293-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5035988293-4">%</span><span class="nc" data-group-id="5035988293-4">PlatformInstance</span><span class="p" data-group-id="5035988293-4">{</span><span class="p" data-group-id="5035988293-4">}</span><span class="p" data-group-id="5035988293-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="7952152511-1">(</span><span class="p" data-group-id="7952152511-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7952152511-2">}</span><span class="p" data-group-id="7952152511-1">)</span><span class="w">
+</span><span class="p" data-group-id="7952152511-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7952152511-4">%</span><span class="nc" data-group-id="7952152511-4">PlatformInstance</span><span class="p" data-group-id="7952152511-4">{</span><span class="p" data-group-id="7952152511-4">}</span><span class="p" data-group-id="7952152511-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="5035988293-5">(</span><span class="p" data-group-id="5035988293-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5035988293-6">}</span><span class="p" data-group-id="5035988293-5">)</span><span class="w">
-</span><span class="p" data-group-id="5035988293-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5035988293-8">%</span><span class="nc" data-group-id="5035988293-8">Ecto.Changeset</span><span class="p" data-group-id="5035988293-8">{</span><span class="p" data-group-id="5035988293-8">}</span><span class="p" data-group-id="5035988293-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_platform_instance</span><span class="p" data-group-id="7952152511-5">(</span><span class="p" data-group-id="7952152511-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7952152511-6">}</span><span class="p" data-group-id="7952152511-5">)</span><span class="w">
+</span><span class="p" data-group-id="7952152511-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7952152511-8">%</span><span class="nc" data-group-id="7952152511-8">Ecto.Changeset</span><span class="p" data-group-id="7952152511-8">{</span><span class="p" data-group-id="7952152511-8">}</span><span class="p" data-group-id="7952152511-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_platform_instance/1">
@@ -265,11 +272,11 @@ Functions
   <a href="#delete_platform_instance/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="9707195199-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="9707195199-1">)</span><span class="w">
-</span><span class="p" data-group-id="9707195199-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9707195199-3">%</span><span class="nc" data-group-id="9707195199-3">PlatformInstance</span><span class="p" data-group-id="9707195199-3">{</span><span class="p" data-group-id="9707195199-3">}</span><span class="p" data-group-id="9707195199-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="5465070452-1">(</span><span class="n">platform_instance</span><span class="p" data-group-id="5465070452-1">)</span><span class="w">
+</span><span class="p" data-group-id="5465070452-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5465070452-3">%</span><span class="nc" data-group-id="5465070452-3">PlatformInstance</span><span class="p" data-group-id="5465070452-3">{</span><span class="p" data-group-id="5465070452-3">}</span><span class="p" data-group-id="5465070452-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="9707195199-4">(</span><span class="n">platform_instance</span><span class="p" data-group-id="9707195199-4">)</span><span class="w">
-</span><span class="p" data-group-id="9707195199-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9707195199-6">%</span><span class="nc" data-group-id="9707195199-6">Ecto.Changeset</span><span class="p" data-group-id="9707195199-6">{</span><span class="p" data-group-id="9707195199-6">}</span><span class="p" data-group-id="9707195199-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_platform_instance</span><span class="p" data-group-id="5465070452-4">(</span><span class="n">platform_instance</span><span class="p" data-group-id="5465070452-4">)</span><span class="w">
+</span><span class="p" data-group-id="5465070452-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5465070452-6">%</span><span class="nc" data-group-id="5465070452-6">Ecto.Changeset</span><span class="p" data-group-id="5465070452-6">{</span><span class="p" data-group-id="5465070452-6">}</span><span class="p" data-group-id="5465070452-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_platform_instance!/1">
@@ -291,14 +298,14 @@ Functions
 
   <section class="docstring">
 
-<p>Gets a single platform_instance.</p><p>Raises <a href="https://hexdocs.pm/ecto/3.5.8/Ecto.NoResultsError.html"><code class="inline">Ecto.NoResultsError</code></a> if the PlatformInstance does not exist.</p><h2 id="get_platform_instance!/1-examples" class="section-heading">
+<p>Gets a single platform_instance.</p><p>Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code class="inline">Ecto.NoResultsError</code></a> if the PlatformInstance does not exist.</p><h2 id="get_platform_instance!/1-examples" class="section-heading">
   <a href="#get_platform_instance!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="1429725513-1">(</span><span class="mi">123</span><span class="p" data-group-id="1429725513-1">)</span><span class="w">
-</span><span class="p" data-group-id="1429725513-2">%</span><span class="nc" data-group-id="1429725513-2">PlatformInstance</span><span class="p" data-group-id="1429725513-2">{</span><span class="p" data-group-id="1429725513-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="3575983600-1">(</span><span class="mi">123</span><span class="p" data-group-id="3575983600-1">)</span><span class="w">
+</span><span class="p" data-group-id="3575983600-2">%</span><span class="nc" data-group-id="3575983600-2">PlatformInstance</span><span class="p" data-group-id="3575983600-2">{</span><span class="p" data-group-id="3575983600-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="1429725513-3">(</span><span class="mi">456</span><span class="p" data-group-id="1429725513-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance!</span><span class="p" data-group-id="3575983600-3">(</span><span class="mi">456</span><span class="p" data-group-id="3575983600-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -325,10 +332,10 @@ Functions
   <a href="#get_platform_instance_by_client_id/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="3643737961-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="3643737961-1">)</span><span class="w">
-</span><span class="p" data-group-id="3643737961-2">%</span><span class="nc" data-group-id="3643737961-2">PlatformInstance</span><span class="p" data-group-id="3643737961-2">{</span><span class="p" data-group-id="3643737961-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="6902807643-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="6902807643-1">)</span><span class="w">
+</span><span class="p" data-group-id="6902807643-2">%</span><span class="nc" data-group-id="6902807643-2">PlatformInstance</span><span class="p" data-group-id="6902807643-2">{</span><span class="p" data-group-id="6902807643-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="3643737961-3">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="3643737961-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_platform_instance_by_client_id</span><span class="p" data-group-id="6902807643-3">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="6902807643-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -355,8 +362,8 @@ Functions
   <a href="#list_lti_1p3_platform_instances/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_lti_1p3_platform_instance_instances</span><span class="p" data-group-id="5422594268-1">(</span><span class="p" data-group-id="5422594268-1">)</span><span class="w">
-</span><span class="p" data-group-id="5422594268-2">[</span><span class="p" data-group-id="5422594268-3">%</span><span class="nc" data-group-id="5422594268-3">PlatformInstance</span><span class="p" data-group-id="5422594268-3">{</span><span class="p" data-group-id="5422594268-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5422594268-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_lti_1p3_platform_instance_instances</span><span class="p" data-group-id="9207333908-1">(</span><span class="p" data-group-id="9207333908-1">)</span><span class="w">
+</span><span class="p" data-group-id="9207333908-2">[</span><span class="p" data-group-id="9207333908-3">%</span><span class="nc" data-group-id="9207333908-3">PlatformInstance</span><span class="p" data-group-id="9207333908-3">{</span><span class="p" data-group-id="9207333908-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9207333908-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_platform_instance/2">
@@ -382,11 +389,11 @@ Functions
   <a href="#update_platform_instance/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="2106879085-1">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2106879085-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2106879085-2">}</span><span class="p" data-group-id="2106879085-1">)</span><span class="w">
-</span><span class="p" data-group-id="2106879085-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2106879085-4">%</span><span class="nc" data-group-id="2106879085-4">PlatformInstance</span><span class="p" data-group-id="2106879085-4">{</span><span class="p" data-group-id="2106879085-4">}</span><span class="p" data-group-id="2106879085-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="8430169069-1">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8430169069-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="8430169069-2">}</span><span class="p" data-group-id="8430169069-1">)</span><span class="w">
+</span><span class="p" data-group-id="8430169069-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8430169069-4">%</span><span class="nc" data-group-id="8430169069-4">PlatformInstance</span><span class="p" data-group-id="8430169069-4">{</span><span class="p" data-group-id="8430169069-4">}</span><span class="p" data-group-id="8430169069-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="2106879085-5">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2106879085-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2106879085-6">}</span><span class="p" data-group-id="2106879085-5">)</span><span class="w">
-</span><span class="p" data-group-id="2106879085-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2106879085-8">%</span><span class="nc" data-group-id="2106879085-8">Ecto.Changeset</span><span class="p" data-group-id="2106879085-8">{</span><span class="p" data-group-id="2106879085-8">}</span><span class="p" data-group-id="2106879085-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_platform_instance</span><span class="p" data-group-id="8430169069-5">(</span><span class="n">platform_instance</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8430169069-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8430169069-6">}</span><span class="p" data-group-id="8430169069-5">)</span><span class="w">
+</span><span class="p" data-group-id="8430169069-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8430169069-8">%</span><span class="nc" data-group-id="8430169069-8">Ecto.Changeset</span><span class="p" data-group-id="8430169069-8">{</span><span class="p" data-group-id="8430169069-8">}</span><span class="p" data-group-id="8430169069-7">}</span></code></pre>
   </section>
 </section>
 
@@ -394,10 +401,11 @@ Functions
         </section>
 
       <footer class="footer">
+
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.2) for the
             <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">

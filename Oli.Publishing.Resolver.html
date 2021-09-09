@@ -4,22 +4,29 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.0">
 
     <title>Oli.Publishing.Resolver — OLI Torus v0.13.0</title>
-    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-465557b885.js"></script>
+    <script src="dist/sidebar_items-6bc3c71df5.js"></script>
 
       <script src="docs_config.js"></script>
 
-    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+    <script async src="dist/app-f97730d45ef67f3e6188.js"></script>
 
 
   </head>
   <body data-type="modules">
-    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
 
 <div class="main">
 
@@ -36,7 +43,7 @@
       <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -62,12 +69,12 @@ OLI Torus
   </div>
 
   <ul class="sidebar-listNav">
-    <li><a id="extras-list" href="#full-list">Pages</a></li>
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
 
-      <li><a id="modules-list" href="#full-list">Modules</a></li>
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
 
 
-      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+      <li><a id="tasks-list-link" href="#full-list">Mix Tasks</a></li>
 
   </ul>
   <div class="gradient"></div>
@@ -109,7 +116,7 @@ Oli.Publishing.Resolver <small>behaviour</small> <small class="app-vsn">(OLI Tor
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:all_revisions/1">all_revisions(arg1)</a>
+    <a href="#c:all_revisions/1">all_revisions(t)</a>
 
   </div>
 
@@ -118,7 +125,7 @@ Oli.Publishing.Resolver <small>behaviour</small> <small class="app-vsn">(OLI Tor
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:all_revisions_in_hierarchy/1">all_revisions_in_hierarchy(arg1)</a>
+    <a href="#c:all_revisions_in_hierarchy/1">all_revisions_in_hierarchy(t)</a>
 
   </div>
 
@@ -127,7 +134,7 @@ Oli.Publishing.Resolver <small>behaviour</small> <small class="app-vsn">(OLI Tor
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:find_parent_objectives/2">find_parent_objectives(arg1, list)</a>
+    <a href="#c:find_parent_objectives/2">find_parent_objectives(t, list)</a>
 
   </div>
 
@@ -139,7 +146,7 @@ a given objective resource id is a root objective.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:from_resource_id/2">from_resource_id(arg1, list)</a>
+    <a href="#c:from_resource_id/2">from_resource_id(t, list)</a>
 
   </div>
 
@@ -148,7 +155,7 @@ a given objective resource id is a root objective.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:from_revision_slug/2">from_revision_slug(arg1, arg2)</a>
+    <a href="#c:from_revision_slug/2">from_revision_slug(t, t)</a>
 
   </div>
 
@@ -158,7 +165,7 @@ Returns nil if a revision cannot be resolved.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:full_hierarchy/1">full_hierarchy(arg1)</a>
+    <a href="#c:full_hierarchy/1">full_hierarchy(t)</a>
 
   </div>
 
@@ -167,7 +174,7 @@ Returns nil if a revision cannot be resolved.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:root_container/1">root_container(arg1)</a>
+    <a href="#c:root_container/1">root_container(t)</a>
 
   </div>
 
@@ -196,7 +203,7 @@ Callbacks
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">all_revisions(arg1)</h1>
+    <h1 class="signature">all_revisions(t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L37" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -259,7 +266,7 @@ Callbacks
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">all_revisions_in_hierarchy(arg1)</h1>
+    <h1 class="signature">all_revisions_in_hierarchy(t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -322,7 +329,7 @@ Callbacks
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">find_parent_objectives(arg1, list)</h1>
+    <h1 class="signature">find_parent_objectives(t, list)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L58" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -354,7 +361,7 @@ a given objective resource id is a root objective.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">from_resource_id(arg1, list)</h1>
+    <h1 class="signature">from_resource_id(t, list)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -456,7 +463,7 @@ revision.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">from_revision_slug(arg1, arg2)</h1>
+    <h1 class="signature">from_revision_slug(t, t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L27" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -518,7 +525,7 @@ Returns nil if a revision cannot be resolved.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">full_hierarchy(arg1)</h1>
+    <h1 class="signature">full_hierarchy(t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L50" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -547,8 +554,8 @@ Returns nil if a revision cannot be resolved.</p>
   <a href="#c:full_hierarchy/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">full_hierarchy</span><span class="p" data-group-id="2431245284-1">(</span><span class="n">section_or_project_slug</span><span class="p" data-group-id="2431245284-1">)</span><span class="w">
-</span><span class="p" data-group-id="2431245284-2">%</span><span class="nc" data-group-id="2431245284-2">HierarchyNode</span><span class="p" data-group-id="2431245284-2">{</span><span class="p" data-group-id="2431245284-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">full_hierarchy</span><span class="p" data-group-id="2368103864-1">(</span><span class="n">section_or_project_slug</span><span class="p" data-group-id="2368103864-1">)</span><span class="w">
+</span><span class="p" data-group-id="2368103864-2">%</span><span class="nc" data-group-id="2368103864-2">HierarchyNode</span><span class="p" data-group-id="2368103864-2">{</span><span class="p" data-group-id="2368103864-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="c:root_container/1">
@@ -558,7 +565,7 @@ Returns nil if a revision cannot be resolved.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">root_container(arg1)</h1>
+    <h1 class="signature">root_container(t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing/resolver.ex#L32" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -617,10 +624,11 @@ Returns nil if a revision cannot be resolved.</p>
         </section>
 
       <footer class="footer">
+
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.2) for the
             <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">

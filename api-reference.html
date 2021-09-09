@@ -4,22 +4,29 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.23.0">
+    <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.0">
 
     <title>API Reference — OLI Torus v0.13.0</title>
-    <link rel="stylesheet" href="dist/elixir-9f91ebe876dc01d67920.css" />
+    <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-465557b885.js"></script>
+    <script src="dist/sidebar_items-6bc3c71df5.js"></script>
 
       <script src="docs_config.js"></script>
 
-    <script async src="dist/app-60a0c9f10e9e52eae31f.js"></script>
+    <script async src="dist/app-f97730d45ef67f3e6188.js"></script>
 
 
   </head>
   <body data-type="extras">
-    <script>try { if(localStorage.getItem('night-mode') === 'true') document.body.className += ' night-mode'; } catch (e) { }</script>
+    <script>
+
+      try {
+        if (localStorage.getItem('night-mode') === 'true') {
+          document.body.classList.add('night-mode');
+        }
+      } catch (error) { }
+    </script>
 
 <div class="main">
 
@@ -36,7 +43,7 @@
       <span class="icon-cross" aria-hidden="true" title="Cancel search"></span>
     </button>
     <label class="search-label">
-      <input name="q" type="text" id="search-list" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
     </label>
   </form>
 
@@ -62,12 +69,12 @@ OLI Torus
   </div>
 
   <ul class="sidebar-listNav">
-    <li><a id="extras-list" href="#full-list">Pages</a></li>
+    <li><a id="extras-list-link" href="#full-list">Pages</a></li>
 
-      <li><a id="modules-list" href="#full-list">Modules</a></li>
+      <li><a id="modules-list-link" href="#full-list">Modules</a></li>
 
 
-      <li><a id="tasks-list" href="#full-list">Mix Tasks</a></li>
+      <li><a id="tasks-list-link" href="#full-list">Mix Tasks</a></li>
 
   </ul>
   <div class="gradient"></div>
@@ -446,7 +453,7 @@ from a course project activity bank.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><dataset>  &lt;name&gt;example_course-TxE5btqmuCGYEmPUKfewoX&lt;/name&gt;  &lt;level type=&quot;Page&quot;&gt;    &lt;name&gt;one&lt;/name&gt;    &lt;problem tutorFlag=&quot;tutor&quot;&gt;      &lt;name&gt;one-part1&lt;/name&gt;    &lt;/problem&gt;  &lt;/level&gt;</dataset></div>
+    <div class="summary-synopsis"><dataset>  <name>example_course-TxE5btqmuCGYEmPUKfewoX</name>  <level type="Page">    <name>one</name>    <problem tutorFlag="tutor">      <name>one-part1</name>    </problem>  </level></dataset></div>
 
 </div>
 <div class="summary-row">
@@ -455,7 +462,7 @@ from a course project activity bank.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><event_descriptor>  &lt;selection&gt;(ARC-BD-MEASURE QUESTION1 REASON)&lt;/selection&gt;  &lt;action&gt;INPUT-CELL-VALUE&lt;/action&gt;  &lt;input&gt;HINT&lt;/input&gt;</event_descriptor><event_descriptor>  &lt;selection&gt;(ARC-BD-MEASURE QUESTION1 REASON)&lt;/selection&gt;  &lt;action&gt;INPUT-CELL-VALUE&lt;/action&gt;  &lt;input&gt;given&lt;/input&gt;</event_descriptor></div>
+    <div class="summary-synopsis"><event_descriptor>  <selection>(ARC-BD-MEASURE QUESTION1 REASON)</selection>  <action>INPUT-CELL-VALUE</action>  <input>HINT</input></event_descriptor><event_descriptor>  <selection>(ARC-BD-MEASURE QUESTION1 REASON)</selection>  <action>INPUT-CELL-VALUE</action>  <input>given</input></event_descriptor></div>
 
 </div>
 <div class="summary-row">
@@ -464,7 +471,7 @@ from a course project activity bank.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><meta>  &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;  &lt;session_id&gt;t.stark+0@avengers.com 2020-06-29 13:34&lt;/session_id&gt;  &lt;time&gt;2020-06-29 13:34&lt;/time&gt;  &lt;time_zone&gt;GMT&lt;/time_zone&gt;</meta></div>
+    <div class="summary-synopsis"><meta/></div>
 
 </div>
 <div class="summary-row">
@@ -491,7 +498,7 @@ from a course project activity bank.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><skill>  &lt;name&gt;objective one&lt;/name&gt;</skill><skill>  &lt;name&gt;objective two&lt;/name&gt;</skill></div>
+    <div class="summary-synopsis"><skill>  <name>objective one</name></skill><skill>  <name>objective two</name></skill></div>
 
 </div>
 <div class="summary-row">
@@ -509,7 +516,7 @@ from a course project activity bank.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">  &lt;meta&gt;    &lt;user_id&gt;t.stark+0@avengers.com&lt;/user_id&gt;    &lt;session_id&gt;t.stark+0@avengers.com 2020-06-30 00:18&lt;/session_id&gt;    &lt;time&gt;2020-06-30 00:18&lt;/time&gt;    &lt;time_zone&gt;GMT&lt;/time_zone&gt;  &lt;/meta&gt;  &lt;dataset&gt;    &lt;name&gt;example_course-XVeLxRjNVUdSnzsMuFeZNn&lt;/name&gt;    &lt;name&gt;Activity one&lt;/name&gt;    &lt;problem_name&gt;Activity one, part 1&lt;/problem_name&gt;  &lt;/dataset&gt;</context_message></div>
+    <div class="summary-synopsis"><context_message context_message_id="t.stark+0@avengers.com-one-part1" name="START_PROBLEM">  <meta>    <user_id>t.stark+0@avengers.com</user_id>    <session_id>t.stark+0@avengers.com 2020-06-30 00:18</session_id>    <time>2020-06-30 00:18</time>    <time_zone>GMT</time_zone>  </meta>  <dataset>    <name>example_course-XVeLxRjNVUdSnzsMuFeZNn</name>    <name>Activity one</name>    <problem_name>Activity one, part 1</problem_name>  </dataset></context_message></div>
 
 </div>
 <div class="summary-row">
@@ -2718,7 +2725,7 @@ must be added and removed from a parent LiveView programmatically when it needs 
 
   </div>
 
-    <div class="summary-synopsis"><p>Translates controller action results into valid <a href="https://hexdocs.pm/plug/1.11.1/Plug.Conn.html"><code class="inline">Plug.Conn</code></a> responses.</p></div>
+    <div class="summary-synopsis"><p>Translates controller action results into valid <a href="https://hexdocs.pm/plug/1.12.1/Plug.Conn.html"><code class="inline">Plug.Conn</code></a> responses.</p></div>
 
 </div>
 <div class="summary-row">
@@ -3454,11 +3461,30 @@ must be added and removed from a parent LiveView programmatically when it needs 
     </div>
   </section>
 
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="readme.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Torus - Next Generation OLI
+        </span>
+      </a>
+
+  </div>
+</div>
+
       <footer class="footer">
+
         <p>
           <span class="line">
             Built using
-            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.23.0) for the
+            <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener">ExDoc</a> (v0.25.2) for the
             <a href="https://elixir-lang.org" title="Elixir" target="_blank">Elixir programming language</a>.
           </span>
           <span class="line">
