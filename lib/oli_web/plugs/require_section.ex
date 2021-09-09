@@ -14,7 +14,9 @@ defmodule Oli.Plugs.RequireSection do
             section_not_found(conn)
 
           section ->
-            assign(conn, :section, section)
+            conn
+            |> assign(:section, section)
+            |> put_session(:section_slug, section_slug)
         end
 
       _ ->
