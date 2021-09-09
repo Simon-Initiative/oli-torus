@@ -5,7 +5,7 @@ import { NavButtonModel } from './schema';
 const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (props) => {
   const { model } = props;
 
-  const { x, y, z, width } = model;
+  const { x, y, z, width, ariaLabel, title } = model;
   const styles: CSSProperties = {
     width,
     zIndex: z,
@@ -19,9 +19,17 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     props.onReady({ id: `${props.id}` });
   }, []);
 
+  const buttonProps = {
+    title: title,
+    'aria-label': ariaLabel,
+    disabled: false,
+  };
+
   return (
-    <div style={styles}>
-      <p>Nav Button</p>
+    <div className={`navigation-button`}>
+      <button data-janus-type={tagName} {...buttonProps} style={styles}>
+        {title}
+      </button>
     </div>
   );
 };
