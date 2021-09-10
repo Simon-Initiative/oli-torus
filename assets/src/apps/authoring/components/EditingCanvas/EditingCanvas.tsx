@@ -1,8 +1,6 @@
-import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import React, { useCallback } from 'react';
-import { useEffect } from 'react';
+import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -49,30 +47,26 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: selectedTab }));
   };
 
-  const handlePositionChanged = useCallback(
-    async (id: string, dragData: any) => {
-      // if we haven't moved or the tree is invalid, no point
-      if (!currentActivityTree || (dragData.deltaX === 0 && dragData.deltaY === 0)) {
-        return false;
-      }
+  const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
+    // if we haven't moved, no point
+    if (dragData.deltaX === 0 && dragData.deltaY === 0) {
+      return false;
+    }
 
-      console.log('[handlePositionChanged]', { id, dragData });
+    // at this point, this handler's reference will have been set no matter the deps
+    // to a previous version, because the reference is passed into a DOM event
+    // when it is wired to listen to custom element events
+    // so we have to be able to simply dispatch the change to something that will
+    // be able to access the latest activity state
 
-      // only valid to move on the "owner" layer IF it's current
-      const currentActivityClone = clone(currentActivityTree.slice(-1)[0]);
-      const partDef = currentActivityClone.content.partsLayout.find((part: any) => part.id === id);
-      if (!partDef) {
-        return false;
-      }
-      partDef.custom.x = dragData.x;
-      partDef.custom.y = dragData.y;
+    console.log('[handlePositionChanged]', { activityId, partId, dragData });
 
-      dispatch(saveActivity({ activity: currentActivityClone }));
+    const newPosition = { x: dragData.x, y: dragData.y };
 
-      return { x: partDef.custom.x, y: partDef.custom.y };
-    },
-    [currentActivityTree],
-  );
+    dispatch(updatePart({ activityId, partId, changes: { custom: newPosition } }));
+
+    return newPosition;
+  };
 
   const handlePartSelect = async (id: string) => {
     console.log('[handlePartSelect]', { id });
