@@ -10,7 +10,7 @@ interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
-  onPartChangePosition?: (partId: string, x: number, y: number) => Promise<any>;
+  onPartChangePosition?: (partId: string, dragData: any) => Promise<any>;
 }
 
 // the authoring activity renderer should be capable of handling *any* activity type, not just adaptive
@@ -58,11 +58,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
           result = await onSelectPart(payload.payload.id);
         }
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
-          result = await onPartChangePosition(
-            payload.payload.id,
-            payload.payload.x,
-            payload.payload.y,
-          );
+          result = await onPartChangePosition(payload.payload.id, payload.payload.dragData);
         }
         if (continuation) {
           continuation(result);
