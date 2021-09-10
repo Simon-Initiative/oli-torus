@@ -17,6 +17,8 @@ const defaultHandler = async () => {
   };
 };
 
+const toolBarTopOffset = -38;
+
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
   const parts = props.model?.content?.partsLayout || [];
@@ -25,6 +27,16 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [selectedPart, setSelectedPart] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const x = selectedPart?.custom.x || 0;
+    const y = (selectedPart?.custom.y || 0) + toolBarTopOffset;
+    if (toolbarPosition.x !== x && toolbarPosition.y !== y) {
+      setToolbarPosition({ x, y });
+    }
+  }, [selectedPart]);
 
   useEffect(() => {
     if (selectedPartId) {
@@ -69,6 +81,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       const result = await props.onCustomEvent('dragPart', payload);
       if (result) {
         transformStyle = `transform: translate(${result.x}px, ${result.y}px);`;
+        setToolbarPosition({ x: result.x, y: result.y + toolBarTopOffset });
       }
     }
 
@@ -242,8 +255,8 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           className="active-selection-toolbar"
           style={{
             display: selectedPart && !isDragging ? 'block' : 'none',
-            top: (selectedPart?.custom.y || 0) - 38,
-            left: selectedPart?.custom.x || 0,
+            top: toolbarPosition.y,
+            left: toolbarPosition.x,
           }}
         >
           <button title="Edit" onClick={handlePartConfigure}>
