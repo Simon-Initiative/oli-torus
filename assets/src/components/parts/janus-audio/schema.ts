@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -78,6 +79,20 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  exposureinSeconds: CapiVariableTypes.NUMBER,
+  exposurePercentage: CapiVariableTypes.NUMBER,
+  hasStarted: CapiVariableTypes.BOOLEAN,
+  hasCompleted: CapiVariableTypes.BOOLEAN,
+  totalSecondsWatched: CapiVariableTypes.NUMBER,
+  duration: CapiVariableTypes.NUMBER,
+  autoPlay: CapiVariableTypes.BOOLEAN,
+  state: CapiVariableTypes.ENUM,
+  startTime: CapiVariableTypes.NUMBER,
+  endTime: CapiVariableTypes.NUMBER,
+  currentTime: CapiVariableTypes.NUMBER,
+};
 
 export const createSchema = (): Partial<AudioModel> => ({
   src: '',

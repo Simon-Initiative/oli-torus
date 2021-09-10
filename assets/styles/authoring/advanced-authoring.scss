@@ -594,4 +594,26 @@ $panel-section-title-bar-color: #e8ebed;
   .popover {
     max-width: 550px;
   }
+  .popover-header {
+    background-color: $panel-section-title-bar-color;
+    border-bottom-color: $ui-border-color;
+  }
+  #aa-variable-picker {
+    .target-select-container {
+      background-color: $panel-bg-color-light;
+      margin: -8px -12px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      min-width: 350px;
+
+      .dropdown-toggle:after {
+        display: block;
+        margin-left: 8px;
+      }
+      .screen-picker-container {
+        max-height: 200px;
+        overflow-y: scroll;
+      }
+    }
+  }
 }

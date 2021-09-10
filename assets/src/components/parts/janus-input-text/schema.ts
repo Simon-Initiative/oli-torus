@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -60,6 +61,12 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  text: CapiVariableTypes.STRING,
+  textLength: CapiVariableTypes.NUMBER,
+  enabled: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<InputTextModel> => ({
   enabled: true,

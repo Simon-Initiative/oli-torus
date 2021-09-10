@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -88,6 +89,16 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether MCQ is enabled',
     default: true,
   },
+};
+
+export const adaptivitySchema = {
+  enabled: CapiVariableTypes.BOOLEAN,
+  randomize: CapiVariableTypes.BOOLEAN,
+  numberOfSelectedChoices: CapiVariableTypes.NUMBER,
+  selectedChoice: CapiVariableTypes.NUMBER,
+  selectedChoiceText: CapiVariableTypes.STRING,
+  selectedChoices: CapiVariableTypes.ARRAY,
+  selectedChoicesText: CapiVariableTypes.ARRAY,
 };
 
 export const uiSchema = {};

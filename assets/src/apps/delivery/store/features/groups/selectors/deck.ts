@@ -43,6 +43,7 @@ export const selectCurrentActivityTree = createSelector(
       return null;
     }
     const lineage = getSequenceLineage(sequence as any[], currentSequenceEntry.custom.sequenceId);
+    console.log('🚀 > file: deck.ts > line 46 > lineage', lineage);
     const tree = lineage.map((entry) =>
       (activities as any[]).find((a) => a.resourceId === entry.resourceId),
     );

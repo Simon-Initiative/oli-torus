@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import debounce from 'lodash/debounce';
@@ -7,6 +7,7 @@ import guid from 'utils/guid';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -118,6 +119,9 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
     debounceSaveChanges();
   };
 
+  const targetRef = useRef<HTMLInputElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
+
   return (
     <div className="aa-initState-editor">
       {(isLayer || isBank) && (
@@ -162,9 +166,11 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
                 >
                   <div className="input-group input-group-sm flex-grow-1">
                     <div className="input-group-prepend" title="Target">
-                      <div className="input-group-text">
-                        <i className="fa fa-crosshairs" />
-                      </div>
+                      <VariablePicker
+                        targetRef={targetRef}
+                        typeRef={typeRef}
+                        placement={OverlayPlacements.TOP}
+                      />
                     </div>
                     <label className="sr-only" htmlFor={`target-${state.id}`}>
                       target
@@ -179,6 +185,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
                       onBlur={(e) => handleChange(state.id, 'target', e.target.value)}
                       title={state.target}
                       tabIndex={0}
+                      ref={targetRef}
                     />
                   </div>
 
@@ -193,6 +200,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
                     onChange={(e) => handleChange(state.id, 'type', e.target.value)}
                     title="Type"
                     tabIndex={0}
+                    ref={typeRef}
                   >
                     {typeOptions.map((option: TypeOption, index: number) => (
                       <option key={`option${index}-${state.id}`} value={option.value}>
