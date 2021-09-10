@@ -26,6 +26,7 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   const uuid = guid();
 
   const onChangeHandler = (sequenceId: string) => {
+    // console.log('onChange picker', sequenceId);
     onChange({ target: sequenceId || 'next' });
     setTarget(sequenceId || 'next');
   };

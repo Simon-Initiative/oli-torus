@@ -23,7 +23,7 @@ interface SeqDropdownProps {
 export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
   const { items, onChange, value, showNextBtn } = props;
   const sequence = useSelector(selectSequence);
-  console.log(sequence);
+  // console.log(sequence);
 
   const sequenceDropDownItems = (items: any) =>
     items.map((item: SequenceHierarchyItem<SequenceEntryType>, index: number) => {
