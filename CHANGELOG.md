@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Bug Fixes
+- Fix activity choice icon selection in authoring
+- Fix targeted feedback not showing in delivery
 
 ### Enhancements
 
