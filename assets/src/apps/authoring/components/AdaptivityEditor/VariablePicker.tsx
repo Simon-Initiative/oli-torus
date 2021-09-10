@@ -4,6 +4,7 @@ import {
   getHierarchy,
   SequenceEntry,
   SequenceEntryChild,
+  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
@@ -81,13 +82,13 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   };
 
   const onChangeHandler = (
-    e: React.MouseEvent,
-    item: SequenceEntry<SequenceEntryChild> | null,
-    isNext: boolean,
+    item: null | SequenceHierarchyItem<SequenceEntryChild>,
+    e?: React.MouseEvent,
+    isNextButton?: boolean,
   ) => {
     item ? setActiveFilter(item?.custom.sequenceName) : '';
     setIsFilterMenuOpen(false);
-    const itemId = isNext ? 'next' : item?.custom.sequenceId;
+    const itemId = isNextButton ? 'next' : item?.custom.sequenceId;
   };
 
   const getPartIcon = (type: string) => {
