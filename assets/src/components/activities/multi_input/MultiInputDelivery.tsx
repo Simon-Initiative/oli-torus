@@ -24,6 +24,60 @@ import {
 } from 'components/activities/DeliveryElement';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest } from 'components/activities/types';
+import { InputRef } from 'data/content/model';
+import { DropdownInput } from 'components/activities/multi_input/sections/delivery/DropdownInput';
+import { toSimpleText } from 'components/editing/utils';
+import { TextInput } from 'components/activities/common/delivery/short_answer/TextInput';
+
+/*
+const Input = (props: InputProps) => {
+  const shared = {
+    onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
+    value: valueOr(props.input, ''),
+    disabled: props.isEvaluated,
+  };
+
+  switch (props.inputType) {
+    case 'numeric':
+      return <NumericInput {...shared} />;
+    case 'text':
+      return <TextInput {...shared} />;
+    case 'textarea':
+      return <TextareaInput {...shared} />;
+    default:
+      assertNever(props.inputType);
+  }
+};
+*/
+
+interface InputRefProps {
+  inputRef: HTMLElement;
+  model: MultiInputSchema;
+}
+const InputRef: React.FC<InputRefProps> = (props) => {
+  // const shared = {
+  //   onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
+  //   value: valueOr(props.input, ''),
+  //   disabled: props.isEvaluated,
+  // };
+
+  const { type, partId, choiceIds } = props.inputRef.dataset;
+  if (type === 'dropdown') {
+    return ReactDOM.createPortal(
+      <DropdownInput
+        onChange={() => {}}
+        options={props.model.choices
+          .filter((choice) => choiceIds?.split(',').includes(choice.id))
+          .map((choice) => ({
+            value: choice.id,
+            content: toSimpleText({ children: choice.content.model }),
+          }))}
+      />,
+      props.inputRef,
+    );
+  }
+  return ReactDOM.createPortal(<TextInput onChange={() => {}} value="Hey" />, props.inputRef);
+};
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -35,23 +89,28 @@ export const MultiInputComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
+  const [inputRefs, setInputRefs] = React.useState<any>([]);
+
   useEffect(() => {
     dispatch(initializeState(activityState, initialSelection(activityState)));
   }, []);
 
   useEffect(() => {
-    // Add hints button to right of each input
-    // Find the best way to display a React component for the input refs
-    // found when parsing
-    // Map choices to ids found in input ref
-
-    model.inputs.forEach((input) => {
-      const inputRef = document.querySelector(`#${input.id}`);
-      if (inputRef) {
-        ReactDOM.render(<input />, inputRef);
-      }
-    });
-  }, []);
+    const inputRefs = document.querySelectorAll('span[data-type="input_ref"]');
+    console.log('inputRefs', inputRefs);
+    setInputRefs([...inputRefs]);
+    // inputRefs.forEach((ref) => ReactDOM.createPortal(<input>HEY</input>, ref));
+  }, [uiState.selection]);
+  // Add hints button to right of each input
+  // Find the best way to display a React component for the input refs
+  // found when parsing
+  // Map choices to ids found in input ref
+  // model.inputs.forEach((input) => {
+  //   const inputRef = document.querySelector(`#${input.id}`);
+  //   if (inputRef) {
+  //     ReactDOM.render(<input />, inputRef);
+  //   }
+  // });
 
   // First render initializes state
   if (!uiState.selection) {
@@ -63,7 +122,10 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <StemDeliveryConnected />
+        {inputRefs.map((inputRef: HTMLElement) => (
+          <InputRef key={inputRef.id} inputRef={inputRef} model={model} />
+        ))}
+        <StemDeliveryConnected className="form-inline" />
         <GradedPointsConnected />
         <select
           onChange={(e) => dispatch(setSelection(e.target.value, onSaveActivity, 'single'))}

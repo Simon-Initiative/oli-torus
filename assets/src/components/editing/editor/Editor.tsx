@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { createEditor, Editor as SlateEditor, Range } from 'slate';
+import { createEditor, Editor as SlateEditor, Operation, Range } from 'slate';
 import { Mark, ModelElement, Selection } from 'data/content/model';
 import { editorFor, markFor } from './modelEditorDispatch';
 import { ToolbarItem, CommandContext } from '../commands/interfaces';
@@ -24,7 +24,12 @@ import { withHistory } from 'slate-history';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: ModelElement[], selection: Selection) => void;
+  onEdit: (
+    value: ModelElement[],
+    selection: Selection,
+    editor: SlateEditor & ReactEditor,
+    operations: Operation[],
+  ) => void;
   // The content to display
   value: ModelElement[];
   // The current selection
@@ -114,8 +119,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      console.log('operations', operations, 'value', value);
-      props.onEdit(value, selection);
+      props.onEdit(value, selection, editor, operations);
     }
   };
 
@@ -156,6 +160,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
         </HoveringToolbar>
 
         <Editable
+          onPaste={(e) => {
+            console.log(e.clipboardData.types);
+            e.clipboardData.types.forEach((type) =>
+              console.log('pasting', e.clipboardData.getData(type)),
+            );
+          }}
           style={props.style}
           className={'slate-editor overflow-auto' + (props.className ? ' ' + props.className : '')}
           readOnly={!props.editMode}

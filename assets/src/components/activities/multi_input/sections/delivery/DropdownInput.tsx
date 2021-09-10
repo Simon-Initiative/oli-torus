@@ -6,6 +6,7 @@ interface Props {
   disabled?: boolean;
 }
 export const DropdownInput: React.FC<Props> = (props) => {
+  console.log('options', props.options);
   return (
     <select
       onChange={props.onChange}
@@ -14,7 +15,11 @@ export const DropdownInput: React.FC<Props> = (props) => {
       style={{ color: 'black', fontWeight: 500, flexBasis: '160px', width: '160px' }}
     >
       {props.options.map((option, i) => (
-        <option selected key={i} value={option.value}>
+        <option
+          selected={typeof option.selected === 'boolean' ? option.selected : false}
+          key={i}
+          value={option.value}
+        >
           {option.content}
         </option>
       ))}

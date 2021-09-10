@@ -40,15 +40,15 @@ export interface Success {
 export interface HasContent {
   content: RichText;
 }
-export function makeContent(text: string): { id: string; content: RichText } {
+export function makeContent(text: string, id?: string): { id: string; content: RichText } {
   return {
-    id: guid() + '',
+    id: id ? id : guid(),
     content: {
       model: [
         create({
           type: 'p',
           children: [{ text }],
-          id: guid() + '',
+          id: guid(),
         }),
       ],
       selection: null,
@@ -123,7 +123,7 @@ export interface ActivityState {
 }
 
 export interface Choice extends Identifiable, HasContent {}
-export const makeChoice: (text: string) => Choice = makeContent;
+export const makeChoice: (text: string, id?: string) => Choice = makeContent;
 export interface HasChoices {
   choices: Choice[];
 }
@@ -234,8 +234,9 @@ export const makePart = (
   // By default, parts have 3 hints (deer in headlights, cognitive, bottom out)
   // Multiinput activity parts start with just one hint
   hints = [makeHint(''), makeHint(''), makeHint('')],
+  id?: ID,
 ): Part => ({
-  id: guid(),
+  id: id ? id : guid(),
   scoringStrategy: ScoringStrategy.average,
   responses,
   hints,

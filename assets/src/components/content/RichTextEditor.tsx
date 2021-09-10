@@ -6,13 +6,15 @@ import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { classNames } from 'utils/classNames';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { ReactEditor } from 'slate-react';
+import { Editor as SlateEditor, Operation } from 'slate';
 
 type Props = {
   projectSlug: ProjectSlug;
   editMode: boolean;
   className?: string;
   text: RichText;
-  onEdit: (text: RichText) => void;
+  onEdit: (text: RichText, editor: SlateEditor & ReactEditor, operations: Operation[]) => void;
   placeholder?: string;
   onRequestMedia?: any;
   style?: React.CSSProperties;
@@ -35,7 +37,9 @@ export const RichTextEditor: React.FC<Props> = ({
           commandContext={{ projectSlug }}
           editMode={editMode}
           value={text.model}
-          onEdit={(model, selection) => onEdit({ model, selection })}
+          onEdit={(model, selection, editor, operations) =>
+            onEdit({ model, selection }, editor, operations)
+          }
           selection={text.selection}
           toolbarItems={getToolbarForResourceType(1, onRequestMedia)}
           placeholder={placeholder}

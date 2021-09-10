@@ -3,6 +3,7 @@ import * as Immutable from 'immutable';
 import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path, Element } from 'slate';
 import { p, schema, SchemaConfig } from 'data/content/model';
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
+import { normalize as inputRefNormalize } from 'components/editing/editor/normalizers/inputRefs';
 
 const spacesRequiredBetween = Immutable.Set<string>([
   'image',

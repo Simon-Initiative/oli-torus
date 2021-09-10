@@ -31,10 +31,8 @@ it('finds items', () => {
   const op3 = Operations.find('$..choices[?(@.id==1)]');
 
   const choices = Operations.apply(copy, op1);
-  console.log('choices', choices);
   expect(choices).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }]);
   const responses = Operations.apply(copy, op2);
-  console.log('responses', responses);
   expect(responses).toEqual([{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }]);
   const firstChoice = Operations.apply(copy, op3)[0];
   expect(firstChoice).toEqual({ id: 1 });

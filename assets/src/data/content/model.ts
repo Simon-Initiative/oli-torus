@@ -35,8 +35,8 @@ export const code = (): Code => ({
   children: [{ type: 'code_line', id: guid(), children: [{ text: '' }] }],
 });
 // TODO: Fix this
-export const inputRef = (inputType: MultiInputType) =>
-  create<InputRef>({ type: 'input_ref', inputType });
+export const inputRef = (inputType: MultiInputType, choiceIds?: ID[]): InputRef =>
+  create<InputRef>({ type: 'input_ref', inputType, partId: guid(), choiceIds });
 
 // eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {

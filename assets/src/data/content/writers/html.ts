@@ -29,6 +29,7 @@ import {
 } from 'data/content/model';
 import { Text } from 'slate';
 import { WriterContext } from './context';
+import { ChoiceId } from 'components/activities/types';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -159,10 +160,14 @@ export class HtmlParser implements WriterImpl {
     )}" target="_blank">${next()}</a>\n`;
   };
 
-  inputRef = (_context: WriterContext, _next: Next, _x: InputRef) => {
-    const { id, inputType } = _x;
-    console.log(id, inputType);
-    return `<span id=${escapeHtml(id)}>InputRef</span>`;
+  inputRef = (_context: WriterContext, _next: Next, inputRef: InputRef) => {
+    const { id, inputType, type, partId, choiceIds } = inputRef;
+    console.log('Delivered Input Ref', inputRef);
+    return `<span data-type="${this.escapeXml(type)}" data-input-type="${this.escapeXml(
+      inputType,
+    )}" data-part-id="${this.escapeXml(partId)}" ${
+      inputType === 'dropdown' ? `data-choice-ids="${(choiceIds as ChoiceId[]).join(',')}"` : ''
+    } id=${this.escapeXml(id)}></span>`;
   };
 
   text = (context: WriterContext, textEntity: Text) =>

@@ -11,67 +11,90 @@ import { configureStore } from 'state/store';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { getParts } from 'data/activities/model/utils1';
+import { getPartById, getParts } from 'data/activities/model/utils1';
 import { Card } from 'components/misc/Card';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { hintsByPart } from 'data/activities/model/hintUtils';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
-import { makeHint, Manifest, PostUndoable } from 'components/activities/types';
+import { makeHint, Manifest, Part } from 'components/activities/types';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import {
+  Dropdown,
+  FillInTheBlank,
   MultiInput,
   MultiInputSchema,
   MultiInputType,
   multiInputTypes,
 } from 'components/activities/multi_input/schema';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { useEditor } from 'slate-react';
-import { InputRef, inputRef } from 'data/content/model';
-import { Transforms } from 'slate';
+import { ReactEditor, useEditor } from 'slate-react';
+import { ID, InputRef, inputRef } from 'data/content/model';
+import { Editor, Element, Transforms } from 'slate';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { defaultWriterContext } from 'data/content/writers/context';
-import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { elementsOfType } from 'components/editing/utils';
-import { Maybe } from 'tsmonad';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
+import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import guid from 'utils/guid';
+import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/authoring/DropdownQuestionEditor';
+import { InputQuestionEditor } from 'components/activities/multi_input/sections/authoring/InputQuestionEditor';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface AddInputRefButtonsProps {
-  dispatch: (action: (model: MultiInputSchema, post: PostUndoable) => any) => MultiInputSchema;
-  model: MultiInputSchema;
+  setInputRefs: React.Dispatch<React.SetStateAction<Map<ID, InputRef>>>;
+  setEditor: React.Dispatch<React.SetStateAction<ReactEditor & Editor>>;
 }
 const AddInputRefButtons: React.FC<AddInputRefButtonsProps> = (props) => {
   const editor = useEditor();
+  const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();
 
   React.useEffect(() => {
+    props.setEditor(editor);
+  }, [editor]);
+
+  React.useEffect(() => {
+    if (!editMode) {
+      return;
+    }
+    const difference = (minuend: Map<any, any>, subtrahend: Map<any, any>) =>
+      new Set([...minuend].filter(([k]) => !subtrahend.has(k)).map(([, v]) => v));
+
     // Reconciliation logic
-    const inputRefs = elementsOfType(editor, 'input_ref') as InputRef[];
-    const parts = getParts(props.model);
+    const inputRefs = (elementsOfType(editor, 'input_ref') as InputRef[]).reduce(
+      (acc, ref) => acc.set(ref.partId, ref),
+      new Map<ID, InputRef>(),
+    );
+    const parts = getParts(model).reduce(
+      (acc, part) => acc.set(part.id, part),
+      new Map<ID, Part>(),
+    );
+    const extraInputRefs = difference(inputRefs, parts);
+    const extraParts = difference(parts, inputRefs);
+    if (extraInputRefs.size > 3 || extraParts.size > 3) {
+      return;
+    }
+    console.log('setting input refs', inputRefs);
+    // extraInputRefs.forEach((inputRef) => dispatch(MultiInputActions.addPart(inputRef)));
+    return props.setInputRefs(() => inputRefs);
 
     // if (/* Part Ids do not match all input part Ids */) {
     //   // Make sure all input refs match the part ids here
     //   // Figure out how to reconcile if necessary
     // }
-
-    if (inputRefs.length > parts.length) {
-      const missingRef = Maybe.maybe(
-        inputRefs.find((input) => !parts.map((p) => p.id).includes(input.partId)),
-      ).lift((input) => {
-        props.dispatch(MultiInputActions.addPart(input));
-      });
-      // Missing part
-    }
-    if (parts.length > inputRefs.length) {
-      // Missing input ref
-    }
-  }, [props.model, editor]);
+  }, [model, editor, editMode]);
 
   const addInputRef = (type: MultiInputType) => {
     // Insert InputRef node into stem, with choice ids if dropdown
     // Add choices if applicable
     // Add part to model corresponding to the input
-    const theInputRef = inputRef(type);
-    Transforms.insertNodes(editor, theInputRef);
+
+    Transforms.insertNodes(
+      editor,
+      type === 'dropdown' ? inputRef(type, [guid(), guid()]) : inputRef(type),
+    );
+    // setX(true);
+    // dispatch(MultiInputActions.addPart(theInputRef));
   };
 
   return (
@@ -99,6 +122,10 @@ const store = configureStore();
 
 const MultiInput = () => {
   const { dispatch, model } = useAuthoringElementContext<MultiInputSchema>();
+  // PartID to InputRef
+  const [inputRefs, setInputRefs] = React.useState<Map<ID, InputRef>>(new Map());
+  const [editor, setEditor] = React.useState<(ReactEditor & Editor) | undefined>();
+  console.log('All input refs', inputRefs);
 
   console.log('model', model);
 
@@ -138,14 +165,92 @@ const MultiInput = () => {
           <div className="flex-grow-1 mb-3">
             <RichTextEditorConnected
               text={model.stem.content}
-              onEdit={(content) => {
-                dispatch(StemActions.editStemAndPreviewText(content));
+              onEdit={(content, editor, operations) => {
+                dispatch(MultiInputActions.editStemAndPreviewText(content, editor, operations));
               }}
               placeholder="Question..."
             >
-              <AddInputRefButtons model={model} dispatch={dispatch} />
+              <AddInputRefButtons setInputRefs={setInputRefs} setEditor={setEditor} />
             </RichTextEditorConnected>
           </div>
+          {editor &&
+            (elementsOfType(editor, 'input_ref') as InputRef[]).map((inputRef, index) => {
+              return (
+                <Card.Card key={inputRef.id}>
+                  <Card.Title>
+                    <>
+                      <div className="text-muted">Part {index + 1}: </div>
+                      {/* <select className="custom-select" style={{ flexBasis: '160px' }}>
+                      {multiInputTypes.map((type) => (
+                        <option selected={input.type === type} key={type}>
+                          {multiInputTypeFriendly(type)}
+                        </option>
+                      ))}
+                    </select> */}
+                      {/* {title(model.inputs, input, index)} */}
+                      <div className="flex-grow-1"></div>
+                      <div className="choicesAuthoring__removeButtonContainer">
+                        {getParts(model).length > 1 && (
+                          <RemoveButtonConnected
+                            onClick={() => {
+                              if (!editor) {
+                                return;
+                              }
+                              Transforms.removeNodes(editor, {
+                                at: [],
+                                match: (n) =>
+                                  Element.isElement(n) &&
+                                  n.type === 'input_ref' &&
+                                  n.id === inputRef.id,
+                              });
+                              // dispatch(MultiInputActions.removePart(inputRef.partId));
+                            }}
+                          />
+                        )}
+                      </div>
+                    </>
+                  </Card.Title>
+                  <Card.Content>
+                    {
+                      {
+                        dropdown: (
+                          <DropdownQuestionEditor
+                            part={getPartById(model, inputRef.partId)}
+                            input={inputRef as Dropdown}
+                          />
+                        ),
+                        text: (
+                          <InputQuestionEditor
+                            part={getPartById(model, inputRef.partId)}
+                            input={inputRef as FillInTheBlank}
+                          />
+                        ),
+                        numeric: (
+                          <InputQuestionEditor
+                            part={getPartById(model, inputRef.partId)}
+                            input={inputRef as FillInTheBlank}
+                          />
+                        ),
+                      }[inputRef.inputType]
+                    }
+                  </Card.Content>
+                </Card.Card>
+              );
+              //   if (inputRef.inputType === 'dropdown') {
+              //     return (
+              //       <DropdownQuestionEditor
+              //         part={getPartById(model, inputRef.partId)}
+              //         input={inputRef}
+              //       />
+              //     );
+              //   }
+              //   if (inputRef.inputType === 'numeric' || inputRef.inputType === 'text') {
+              //     return (
+              //       <InputQuestionEditor part={getPartById(model, inputRef.partId)} input={inputRef} />
+              //     );
+              //   }
+              // })
+            })}
           {
             //             <div className="text-muted">Part {index + 1}</div>
             //           <select className="custom-select" style={{ flexBasis: '160px' }}>
@@ -165,12 +270,6 @@ const MultiInput = () => {
             //             </div>
             //           )}
             //         </div>
-            //         {input.type === 'dropdown' && (
-            //           <DropdownQuestionEditor part={getPartById(model, input.partId)} input={input} />
-            //         )}
-            //         {(input.type === 'numeric' || input.type === 'text') && (
-            //           <InputQuestionEditor part={getPartById(model, input.partId)} input={input} />
-            //         )}
           }
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">

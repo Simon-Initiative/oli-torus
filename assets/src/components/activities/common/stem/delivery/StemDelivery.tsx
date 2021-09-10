@@ -7,12 +7,13 @@ import './StemDelivery.scss';
 interface Props {
   stem: Stem;
   context: WriterContext;
+  className?: string;
 }
 
-export const StemDelivery: React.FC<Props> = ({ stem, context }) => {
+export const StemDelivery: React.FC<Props> = (props) => {
   return (
-    <div className="stem__delivery">
-      <HtmlContentModelRenderer text={stem.content} context={context} />
+    <div className={`stem__delivery${props.className ? ' ' + props.className : ''}`}>
+      <HtmlContentModelRenderer text={props.stem.content} context={props.context} />
     </div>
   );
 };

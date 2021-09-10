@@ -141,7 +141,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.state = {
       activityContexts,
       messages: [],
-      editMode: true,
+      editMode: false,
       title,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),

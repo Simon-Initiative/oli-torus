@@ -37,6 +37,7 @@ export const defaultModel = (): MultiInputSchema => {
                 partId: DEFAULT_PART_ID,
                 children: [{ text: '' }],
               } as InputRef,
+              { text: '.' },
             ],
           } as Paragraph,
         ],
