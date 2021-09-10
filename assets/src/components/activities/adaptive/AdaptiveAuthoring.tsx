@@ -243,7 +243,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           style={{
             display: selectedPart && !isDragging ? 'block' : 'none',
             top: (selectedPart?.custom.y || 0) - 38,
-            left: (selectedPart?.custom.x || 0),
+            left: selectedPart?.custom.x || 0,
           }}
         >
           <button title="Edit" onClick={handlePartConfigure}>
