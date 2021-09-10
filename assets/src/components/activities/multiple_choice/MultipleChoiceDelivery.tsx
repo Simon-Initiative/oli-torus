@@ -33,7 +33,6 @@ export const MultipleChoiceComponent: React.FC = () => {
     state: activityState,
     onSaveActivity,
     onResetActivity,
-    model,
   } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
@@ -46,8 +45,6 @@ export const MultipleChoiceComponent: React.FC = () => {
   if (!uiState.selection) {
     return null;
   }
-
-  console.log('model', model);
 
   return (
     <div className="activity mc-activity">
