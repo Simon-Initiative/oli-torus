@@ -139,7 +139,7 @@ abstract class ReactCustomElement extends HTMLElement {
     this._root = this;
     this._props = {};
     this._customEvents = {};
-    this._notify = new EventEmitter();
+    this._notify = new EventEmitter().setMaxListeners(50);
     this._attrConfig = {};
   }
 

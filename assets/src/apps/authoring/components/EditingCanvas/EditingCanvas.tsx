@@ -50,21 +50,26 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePositionChanged = useCallback(
-    async (id: string, deltaX: number, deltaY: number) => {
-      console.log('[handlePositionChanged]', { id, deltaX, deltaY });
-      if (!currentActivityTree) {
-        return;
+    async (id: string, dragData: any) => {
+      // if we haven't moved or the tree is invalid, no point
+      if (!currentActivityTree || (dragData.deltaX === 0 && dragData.deltaY === 0)) {
+        return false;
       }
+
+      console.log('[handlePositionChanged]', { id, dragData });
+
       // only valid to move on the "owner" layer IF it's current
       const currentActivityClone = clone(currentActivityTree.slice(-1)[0]);
       const partDef = currentActivityClone.content.partsLayout.find((part: any) => part.id === id);
       if (!partDef) {
-        return;
+        return false;
       }
-      partDef.custom.x += deltaX;
-      partDef.custom.y += deltaY;
+      partDef.custom.x = dragData.x;
+      partDef.custom.y = dragData.y;
 
       dispatch(saveActivity({ activity: currentActivityClone }));
+
+      return { x: partDef.custom.x, y: partDef.custom.y };
     },
     [currentActivityTree],
   );

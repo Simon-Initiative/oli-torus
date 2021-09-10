@@ -18,8 +18,7 @@ const defaultHandler = async () => {
 };
 
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
-  const [pusher, _setPusher] = useState(new EventEmitter());
-  console.log('adaptive authoring', props);
+  const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
   const parts = props.model?.content?.partsLayout || [];
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePartId, setConfigurePartId] = useState('');
@@ -65,13 +64,18 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
 
   const handlePartDrag = async (payload: any) => {
     console.log('AUTHOR PART DRAG', payload);
-    // TODO: optimistically update part location and sync with draggable?
+    let transformStyle = ''; // 'transform: translate(0px, 0px);';
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('dragPart', payload);
-      console.log('got result from onDrag', result);
+      if (result) {
+        transformStyle = `transform: translate(${result.x}px, ${result.y}px);`;
+      }
     }
+
+    // TODO: optimistically update part location and sync with draggable?
+
     // need to reset the styling applied by react-draggable
-    payload.node.setAttribute('style', '');
+    payload.dragData.node.setAttribute('style', transformStyle);
   };
 
   const partStyles = parts.map((part) => {
@@ -79,8 +83,9 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       display: block;
       position: absolute;
       width: ${part.custom.width}px;
-      top: ${part.custom.y}px;
-      left: ${part.custom.x}px;
+      top: 0px;
+      left: 0px;
+      transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);
       z-index: ${part.custom.z};
     }`;
   });
@@ -237,8 +242,8 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           className="active-selection-toolbar"
           style={{
             display: selectedPart && !isDragging ? 'block' : 'none',
-            top: (selectedPart?.custom.y || 0) - 36,
-            left: (selectedPart?.custom.x || 0) + 4,
+            top: (selectedPart?.custom.y || 0) - 38,
+            left: (selectedPart?.custom.x || 0),
           }}
         >
           <button title="Edit" onClick={handlePartConfigure}>
@@ -284,13 +289,14 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
             <Draggable
               key={part.id}
               grid={[5, 5]}
+              defaultPosition={{ x: part.custom.x, y: part.custom.y }}
               disabled={selectedPartId !== part.id || part.id === configurePartId}
               onStart={() => {
                 setIsDragging(true);
               }}
-              onStop={(_, { x, y, node }) => {
+              onStop={(_, dragData) => {
                 setIsDragging(false);
-                handlePartDrag({ id: part.id, x, y, node });
+                handlePartDrag({ id: part.id, dragData });
               }}
             >
               <PartComponent
