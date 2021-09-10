@@ -4,7 +4,6 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 export interface NavButtonModel extends JanusAbsolutePositioned, JanusCustomCss {
   title: string;
   ariaLabel: string;
-  palette: string;
   visible: boolean;
   enabled: boolean;
   textColor: string;
@@ -23,16 +22,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   visible: {
     title: 'Visible',

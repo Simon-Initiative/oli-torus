@@ -149,14 +149,6 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const dropdownContainerStyles: CSSProperties = {
     width,
   };
-  if (palette) {
-    dropdownContainerStyles.borderWidth = `${
-      palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'
-    }`;
-    (dropdownContainerStyles.borderStyle = 'solid'),
-      (dropdownContainerStyles.borderColor = 'transparent'),
-      (dropdownContainerStyles.backgroundColor = 'transparent');
-  }
 
   const dropDownStyle: CSSProperties = {
     width: 'auto',

@@ -259,8 +259,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     return match && match[1].length == 11 ? match[1] : false;
   };
   const youtubeOpts: Options = {
-    width: width?.toString(),
-    height: height?.toString(),
+    width: '100%', // width?.toString(),
+    height: '100%', // height?.toString(),
     playerVars: {
       autoplay: autoPlay ? 1 : 0,
       loop: autoPlay ? 1 : 0,
@@ -417,6 +417,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const iframeTag = (
     <YouTube
       videoId={videoId}
+      containerClassName="react-youtube-container"
       opts={youtubeOpts}
       onPlay={handleVideoPlay}
       onEnd={handleVideoEnd}
@@ -426,8 +427,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
 
   const videoTag = (
     <video
-      width={width}
-      height={height}
+      width="100%"
+      height="100%"
       /* className={cssClass} */
       autoPlay={autoPlay}
       loop={autoPlay}
@@ -456,7 +457,19 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   );
 
   const elementTag = youtubeRegex.test(src) ? iframeTag : videoTag;
-  return ready ? <div data-janus-type={tagName}>{elementTag}</div> : null;
+  return ready ? (
+    <div data-janus-type={tagName} style={{ width: '100%', height: '100%' }}>
+      <style>
+        {`
+          .react-youtube-container {
+            width: 100%;
+            height: 100%
+          }
+        `}
+      </style>
+      {elementTag}
+    </div>
+  ) : null;
 };
 
 export const tagName = 'janus-video';

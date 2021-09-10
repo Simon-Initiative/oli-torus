@@ -5,7 +5,6 @@ export interface InputTextModel extends JanusAbsolutePositioned, JanusCustomCss 
   enabled: boolean;
   prompt: string;
   defaultID: string;
-  palette: any;
   fontSize?: number;
   showLabel: boolean;
   label: string;
@@ -19,16 +18,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   fontSize: {
     title: 'Font Size',
