@@ -268,6 +268,20 @@ $panel-section-title-bar-color: #e8ebed;
         text-align: start;
       }
     }
+    .adaptivityDropdown{
+      padding: 0px !important;
+      border: 0px;
+      > button.form-control {
+        width: 100%;
+      }
+      > .dropdown-menu {
+        overflow: auto;
+        max-height: 250px;
+        min-height: 200px;
+        width: 250px;
+        bottom: -90px;
+      }
+    }
     .component-tab {
       .collapse > .col-12 {
         padding-left: 0px !important;

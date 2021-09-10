@@ -2,7 +2,6 @@ import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface PopupModel extends JanusAbsolutePositioned, JanusCustomCss {
-  palette: any;
   description: string;
   showLabel: boolean;
   openByDefault: boolean;
@@ -18,16 +17,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   description: {
     title: 'Description',
@@ -114,6 +103,7 @@ export const createSchema = (): Partial<PopupModel> => ({
       width: 350,
       height: 350,
       palette: {
+        useHtmlProps: true,
         backgroundColor: '#ffffff',
         borderColor: '#ffffff',
         borderRadius: '0',

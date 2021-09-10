@@ -3,7 +3,6 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
   fontSize?: number;
-  palette: any;
   showLabel: boolean;
   label: string;
   prompt: string;
@@ -12,16 +11,6 @@ export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustom
 }
 
 export const schema: JSONSchema7Object = {
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
