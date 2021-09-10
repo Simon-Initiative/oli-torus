@@ -110,12 +110,14 @@ export const submit =
     ) => Promise<EvaluationResponse>,
   ): AppThunk =>
   async (dispatch, getState) => {
+    console.log('response input', selectionToInput(getState().selection));
     const response = await onSubmitActivity(getState().attemptState.attemptGuid, [
       {
         attemptGuid: getState().attemptState.parts[0].attemptGuid,
         response: { input: selectionToInput(getState().selection) },
       },
     ]);
+    console.log('response', response);
     dispatch(slice.actions.activitySubmissionReceived(response));
   };
 

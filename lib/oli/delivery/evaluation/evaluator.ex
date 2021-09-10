@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   evaluation, returns the feedback and a scoring result.
   """
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
-    case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
+    case Enum.reduce(part.responses, {context, nil, -1, -1}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
         {:ok, {feedback, %Result{score: score, out_of: out_of}}}
 
