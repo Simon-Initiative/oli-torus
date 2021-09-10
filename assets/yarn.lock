@@ -6209,10 +6209,12 @@ performance-now@^2.1.0:
   version "1.5.9"
 
 "phoenix_html@file:../deps/phoenix_html":
-  version "2.14.3"
+  version "3.0.0"
 
-"phoenix_live_view@file:../deps/phoenix_live_view":
-  version "0.15.7"
+phoenix_live_view@^0.16.3:
+  version "0.16.3"
+  resolved "https://registry.yarnpkg.com/phoenix_live_view/-/phoenix_live_view-0.16.3.tgz#51963f8df66ad21f6bdcaa348eb523ca0510421a"
+  integrity sha512-9fLLDJ9fvylyPPUUQ917bUErWnvSH56nJUubT+O58bwozr5VMCP55To/465w3a9bJnJ9QFN2U0GkP2/sHTXvFA==
 
 picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.2.3:
   version "2.3.0"

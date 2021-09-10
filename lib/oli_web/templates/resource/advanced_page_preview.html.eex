@@ -21,6 +21,7 @@
     pageSlug: "<%= @revision.slug %>",
     pageTitle: "<%= @title %>",
     content: "<%= Jason.encode!(@revision.content) |> Base.encode64() %>",
+    graded: <%= @revision.graded %>,
     resourceAttemptState: null,
     resourceAttemptGuid: null,
     activityGuidMapping: null,

@@ -3,7 +3,13 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import { createSchema, schema, uiSchema } from './schema';
+import {
+  createSchema,
+  schema,
+  transformModelToSchema,
+  transformSchemaToModel,
+  uiSchema,
+} from './schema';
 import TextFlowAuthor from './TextFlowAuthor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
@@ -27,6 +33,8 @@ register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    transformModelToSchema,
+    transformSchemaToModel,
     createSchema,
   },
 });

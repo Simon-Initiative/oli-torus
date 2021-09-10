@@ -1,11 +1,28 @@
+import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
+import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
+import { parseNumString } from 'utils/common';
 import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
+interface ColorPalette {
+  useHtmlProps: boolean;
+  backgroundColor: string;
+  borderColor: string;
+  borderRadius: number | string;
+  borderStyle: string;
+  borderWidth: number | string;
+  fillColor?: number;
+  fillAlpha?: number;
+  lineColor?: number;
+  lineAlpha?: number;
+  lineStyle?: number;
+  lineThickness?: number;
+}
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
   overrideWidth?: boolean;
   overrideHeight?: boolean;
   nodes: any[]; // TODO
-  palette: any;
+  palette: ColorPalette;
 }
 
 export const schema: JSONSchema7Object = {
@@ -32,7 +49,20 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  palette: {
+    'ui:ObjectFieldTemplate': AccordionTemplate,
+    'ui:title': 'Background & Border',
+    backgroundColor: {
+      'ui:widget': 'ColorPicker',
+    },
+    borderColor: {
+      'ui:widget': 'ColorPicker',
+    },
+    borderStyle: { classNames: 'col-6' },
+    borderWidth: { classNames: 'col-6' },
+  },
+};
 
 export const createSchema = (context?: CreationContext): Partial<TextFlowModel> => {
   return {
@@ -60,4 +90,76 @@ export const createSchema = (context?: CreationContext): Partial<TextFlowModel> 
       },
     ],
   };
+};
+
+export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
+  const { palette } = model;
+
+  const paletteStyles: Partial<ColorPalette> = {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+    borderRadius: 0,
+  };
+
+  if (palette) {
+    if (palette.useHtmlProps) {
+      paletteStyles.backgroundColor = palette.backgroundColor;
+      paletteStyles.borderColor = palette.borderColor;
+      paletteStyles.borderWidth = parseNumString(palette.borderWidth.toString());
+      paletteStyles.borderStyle = palette.borderStyle;
+      paletteStyles.borderRadius = parseNumString(palette.borderRadius.toString());
+    } else {
+      paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
+      paletteStyles.borderRadius = 0;
+      paletteStyles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      let borderColor = 'transparent';
+      if (palette.lineColor! >= 0) {
+        borderColor = chroma(palette.lineColor || 0)
+          .alpha(palette.lineAlpha || 0)
+          .css();
+      }
+      paletteStyles.borderColor = borderColor;
+
+      let bgColor = 'transparent';
+      if (palette.fillColor! >= 0) {
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha || 0)
+          .css();
+      }
+      paletteStyles.backgroundColor = bgColor;
+    }
+  }
+
+  const result = { palette: paletteStyles };
+
+  console.log('TF [transformModelToSchema]', { model, result });
+
+  return result;
+};
+
+export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
+  const { overrideHeight, overrideWidth, customCssClass, palette } = schema;
+  const result: Partial<TextFlowModel> = {
+    ...schema,
+    overrideHeight: !!overrideHeight,
+    overrideWidth: !!overrideWidth,
+    customCssClass: customCssClass || '',
+  };
+
+  if (palette) {
+    result.palette = {
+      useHtmlProps: true,
+      backgroundColor: palette.backgroundColor || 'transparent',
+      borderColor: palette.borderColor || 'transparent',
+      borderRadius: parseNumString(palette.borderRadius.toString()) || 0,
+      borderWidth: parseNumString(palette.borderWidth.toString()) || 0,
+      borderStyle: palette.borderStyle || 'none',
+    };
+  }
+
+  console.log('TF [transformSchemaToModel]', { schema, result });
+
+  return result;
 };
