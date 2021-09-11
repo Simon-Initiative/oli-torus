@@ -6,16 +6,16 @@
   </p>
 
   <div class="card-deck mt-5">
-    <a href="<%= Routes.delivery_path(@conn, :configure_section) %>" class="card btn-card link-account">
+    <a href="<%= Routes.delivery_path(@conn, :select_project) %>" class="card btn-card link-account">
       <div class="card-body">
-        <h5 class="card-title">Select a Project</h5>
-        <p class="card-text">Get started quickly by creating your section from an existing course project</p>
+        <h5 class="card-title">Standard Quick Start</h5>
+        <p class="card-text">Create your section from an existing course project's curriculum. The curriculum can be customized later.</p>
       </div>
     </a>
-    <a href="#" class="card btn-card link-account">
+    <a href="<%= Routes.delivery_path(@conn, :select_project, remix: true) %>" class="card btn-card link-account">
       <div class="card-body">
-        <h5 class="card-title">Build a Custom Curriculum</h5>
-        <p class="card-text">Mix and match materials from multiple source projects to create a custom curriculum</p>
+        <h5 class="card-title">Custom Remix</h5>
+        <p class="card-text">Mix and match materials from multiple source projects to create a custom curriculum.</p>
       </div>
     </a>
   </div>

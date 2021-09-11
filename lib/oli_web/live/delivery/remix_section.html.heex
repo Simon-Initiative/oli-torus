@@ -1,0 +1,48 @@
+<div id="curriculum-container" class="container curriculum-editor">
+  <h2><%= dgettext("section", "Curriculum Remix") %></h2>
+  <div class="row">
+    <div class="col-12">
+      <div class="mb-3 d-flex flex-row flex-nowrap">
+        Customize your curriculum by adding, removing and rearranging course materials.
+        <div class="flex-grow-1"></div>
+        <div class="flex-shrink-0">
+          <button class="btn btn-outline-primary ml-1">Cancel</button>
+          <button disabled={!@has_unsaved_changes} class="btn btn-primary ml-1">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="curriculum-navigation">
+    <%= render_breadcrumb assigns %>
+  </div>
+
+  <div class="row" phx-window-keydown="keydown">
+    <div class="col-12">
+      <div class="curriculum-entries">
+        <%= if Enum.count(@active.children) == 0 do %>
+          <div style="margin-top: 15px">
+            <p>There's nothing here.</p>
+          </div>
+        <% end %>
+        <%= for {%HierarchyNode{revision: revision} = node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.revision.slug != @dragging end) do %>
+          <DropTarget.droptarget id={index} index={index} />
+          <Entry.entry
+              index={index}
+              selected={node == @selected}
+              revision={revision} />
+        <% end %>
+        <DropTarget.droptarget id={"last"} index={length(@active.children)} />
+      </div>
+      <div class="mt-5">
+        <span class="text-secondary mr-2">Add</span>
+        <button disabled={true} phx-click="add" phx-value-type="material" class="btn btn-xs btn-primary p-2 mr-1" type="button">
+          Materials
+        </button>
+        <button disabled={true} phx-click="add" phx-value-type="container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+          <%= new_container_name(@active) %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

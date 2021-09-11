@@ -174,38 +174,44 @@ defmodule Oli.Publishing.AuthoringResolver do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
     root_revision = root_container(project_slug)
-    numberings = Numbering.init_numberings()
+    numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
 
-    {root_node, _numberings} =
-      hierarchy_node_with_children(root_revision, revisions_by_resource_id, numberings, level)
+    {root_node, _numbering_tracker} =
+      hierarchy_node_with_children(
+        root_revision,
+        revisions_by_resource_id,
+        numbering_tracker,
+        level
+      )
 
     root_node
   end
 
-  def hierarchy_node_with_children(revision, revisions_by_resource_id, numberings, level) do
-    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
+  def hierarchy_node_with_children(revision, revisions_by_resource_id, numbering_tracker, level) do
+    {numbering_index, numbering_tracker} =
+      Numbering.next_index(numbering_tracker, level, revision)
 
-    {children, numberings} =
+    {children, numbering_tracker} =
       Enum.reduce(
         revision.children,
-        {[], numberings},
-        fn resource_id, {nodes, numberings} ->
-          {node, numberings} =
+        {[], numbering_tracker},
+        fn resource_id, {nodes, numbering_tracker} ->
+          {node, numbering_tracker} =
             hierarchy_node_with_children(
               revisions_by_resource_id[resource_id],
               revisions_by_resource_id,
-              numberings,
+              numbering_tracker,
               level + 1
             )
 
-          {[node | nodes], numberings}
+          {[node | nodes], numbering_tracker}
         end
       )
       # it's more efficient to append to list using [node | nodes] and
       # then reverse than to concat on every reduce call using ++
-      |> then(fn {children, numberings} ->
-        {Enum.reverse(children), numberings}
+      |> then(fn {children, numbering_tracker} ->
+        {Enum.reverse(children), numbering_tracker}
       end)
 
     {
@@ -220,7 +226,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         revision: revision,
         section_resource: nil
       },
-      numberings
+      numbering_tracker
     }
   end
 end

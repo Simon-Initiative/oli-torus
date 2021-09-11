@@ -94,5 +94,13 @@ defmodule Oli.Resources.NumberingTest do
         assert n.revision.title == "#{level} #{n.index}"
       end)
     end
+
+    test "renumber_hierarchy/1" do
+      throw("TODO")
+    end
+
+    test "path_from_root_to/2" do
+      throw("TODO")
+    end
   end
 end

@@ -7,16 +7,6 @@
   <div class="d-flex flex-row my-2">
     <div class="flex-fill"></div>
     <div>
-      <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
-    </div>
-
-    <%= if user_role(@section, @current_user) == :administrator do %>
-      <div>
-        <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm" %>
-      </div>
-    <% end %>
-
-    <div>
       <%= link to: Routes.page_delivery_path(@conn, :updates, @section_slug), class: "btn btn-link btn-sm" do %>
         <%= case Enum.count(@summary.updates) do %>
           <% 0 -> %>
@@ -26,6 +16,16 @@
         <% end %>
       <% end %>
     </div>
+
+    <div>
+      <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
+    </div>
+
+    <%= if user_role(@section, @current_user) == :administrator do %>
+      <div>
+        <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm" %>
+      </div>
+    <% end %>
   </div>
 
   <% end %>

@@ -24,4 +24,17 @@ defmodule Oli.Publishing.HierarchyNode do
       Enum.reduce(node.children, all, &flatten_pages(&1, &2))
     end
   end
+
+  def find_in_hierarchy(
+        %HierarchyNode{section_resource: sr, children: children} = node,
+        section_resource_slug
+      ) do
+    if sr.slug == section_resource_slug do
+      node
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_in_hierarchy(child, section_resource_slug), else: acc
+      end)
+    end
+  end
 end

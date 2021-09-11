@@ -364,11 +364,11 @@ defmodule Oli.Delivery.Sections do
       Oli.Publishing.get_published_revisions(publication)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
-    numberings = Numbering.init_numberings()
+      numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
     processed_ids = []
 
-    {root_section_resource_id, _numberings, processed_ids} =
+    {root_section_resource_id, _numbering_tracker, processed_ids} =
       create_section_resource(
         section,
         publication,
@@ -376,7 +376,7 @@ defmodule Oli.Delivery.Sections do
         processed_ids,
         revisions_by_resource_id[root_resource_id],
         level,
-        numberings
+        numbering_tracker
       )
 
     processed_ids = [root_resource_id | processed_ids]
@@ -422,16 +422,16 @@ defmodule Oli.Delivery.Sections do
          processed_ids,
          revision,
          level,
-         numberings
+         numbering_tracker
        ) do
-    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
+    {numbering_index, numbering_tracker} = Numbering.next_index(numbering_tracker, level, revision)
 
-    {children, numberings, processed_ids} =
+    {children, numbering_tracker, processed_ids} =
       Enum.reduce(
         revision.children,
-        {[], numberings, processed_ids},
-        fn resource_id, {children_ids, numberings, processed_ids} ->
-          {id, numberings, processed_ids} =
+        {[], numbering_tracker, processed_ids},
+        fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
+          {id, numbering_tracker, processed_ids} =
             create_section_resource(
               section,
               publication,
@@ -439,16 +439,16 @@ defmodule Oli.Delivery.Sections do
               processed_ids,
               revisions_by_resource_id[resource_id],
               level + 1,
-              numberings
+              numbering_tracker
             )
 
-          {[id | children_ids], numberings, [resource_id | processed_ids]}
+          {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
         end
       )
       # it's more efficient to append to list using [id | children_ids] and
       # then reverse than to concat on every reduce call using ++
-      |> then(fn {children, numberings, processed_ids} ->
-        {Enum.reverse(children), numberings, processed_ids}
+      |> then(fn {children, numbering_tracker, processed_ids} ->
+        {Enum.reverse(children), numbering_tracker, processed_ids}
       end)
 
     %SectionResource{id: section_resource_id} =
@@ -462,7 +462,7 @@ defmodule Oli.Delivery.Sections do
         section_id: section.id
       })
 
-    {section_resource_id, numberings, processed_ids}
+    {section_resource_id, numbering_tracker, processed_ids}
   end
 
   def rebuild_section_resources(

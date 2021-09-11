@@ -90,8 +90,9 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetDefaultPow, :user)
     plug(Oli.Plugs.SetCurrentUser)
 
-    plug PowAssent.Plug.Reauthorization,
+    plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
 
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
@@ -107,8 +108,9 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetDefaultPow, :author)
     plug(Oli.Plugs.SetCurrentUser)
 
-    plug PowAssent.Plug.Reauthorization,
+    plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
 
     plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
@@ -518,6 +520,9 @@ defmodule OliWeb.Router do
 
     live("/:section_slug/manage", Delivery.ManageSection)
 
+    live("/:section_slug/curriculum", Delivery.RemixSection)
+    live("/:section_slug/curriculum/:section_resource_slug", Delivery.RemixSection)
+
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
   end
 
@@ -545,7 +550,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
     get("/", DeliveryController, :index)
-    get("/configure_section", DeliveryController, :configure_section)
+    get("/select_project", DeliveryController, :select_project)
 
     get("/link_account", DeliveryController, :link_account)
     post("/link_account", DeliveryController, :process_link_account_user)

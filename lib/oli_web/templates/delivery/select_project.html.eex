@@ -32,9 +32,9 @@ $(function() {
 </script>
 
 <div class="available-projects">
-  <%= form_for @conn, Routes.delivery_path(@conn, :create_section), [id: "select-project-form"], fn _f -> %>
+  <%= form_for @conn, Routes.delivery_path(@conn, :create_section), [id: "select-project-form"], fn f -> %>
     <div class="text-center">
-      <h3>Select a Project</h3>
+      <h3>Select a Base Project</h3>
       <p class="mt-3">
         Select one of the published projects below to create your course section:
       </p>
@@ -70,6 +70,8 @@ $(function() {
         <% end %>
         </div>
       </div>
+
+      <%= hidden_input f, :remix, value: @remix %>
 
       <div class="text-center">
         <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>

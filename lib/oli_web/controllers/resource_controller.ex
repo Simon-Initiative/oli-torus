@@ -24,7 +24,7 @@ defmodule OliWeb.ResourceController do
       {:ok, context} ->
         render(conn, determine_editor(context),
           active: :curriculum,
-          breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+          breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
           is_admin?: is_admin?,
           context: Jason.encode!(context),
           raw_context: context,
@@ -87,7 +87,7 @@ defmodule OliWeb.ResourceController do
         case PageEditor.create_context(project_slug, revision_slug, author) do
           {:ok, context} ->
             render(conn, "page_preview.html",
-              breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+              breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
                   activity_revisions,
