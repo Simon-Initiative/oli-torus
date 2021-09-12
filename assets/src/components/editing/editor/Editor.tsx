@@ -58,7 +58,8 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     !!prevProps.selection &&
     !!nextProps.selection &&
     Range.equals(prevProps.selection, nextProps.selection) &&
-    prevProps.placeholder === nextProps.placeholder
+    prevProps.placeholder === nextProps.placeholder &&
+    prevProps.commandContext === nextProps.commandContext
   );
 }
 
@@ -91,11 +92,14 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
     editor.selection = props.selection;
   }
 
-  const renderElement = useCallback((props) => {
-    const model = props.element as ModelElement;
+  const renderElement = useCallback(
+    (props) => {
+      const model = props.element as ModelElement;
 
-    return editorFor(model, props, editor, commandContext);
-  }, []);
+      return editorFor(model, props, editor, commandContext);
+    },
+    [commandContext],
+  );
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);

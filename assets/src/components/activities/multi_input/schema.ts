@@ -7,20 +7,21 @@ import {
   Choice,
   ChoiceId,
 } from 'components/activities/types';
+import { Identifiable } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 import { assertNever } from 'utils/common';
 
 export type MultiInput = Dropdown | FillInTheBlank;
 
-export type Dropdown = {
+export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
   partId: string;
   choiceIds: ChoiceId[];
-};
-export type FillInTheBlank = {
+}
+export interface FillInTheBlank extends Identifiable {
   inputType: 'text' | 'numeric';
   partId: string;
-};
+}
 
 export type MultiInputType = 'dropdown' | 'text' | 'numeric';
 export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric'];
@@ -41,7 +42,7 @@ export interface MultiInputSchema extends ActivityModelSchema {
   // take a string key to shuffle, and doesn't allow for predicate logic.
   choices: Choice[];
   // The actual student-answerable inputs, designated by their type
-  // inputs: MultiInput[];
+  inputs: MultiInput[];
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];

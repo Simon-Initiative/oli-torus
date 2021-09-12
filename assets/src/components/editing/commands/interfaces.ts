@@ -1,3 +1,5 @@
+import { MultiInput } from 'components/activities/multi_input/schema';
+import { ID } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 
 // For toolbar buttons
@@ -12,6 +14,10 @@ export type CommandDesc = {
 
 export interface CommandContext {
   projectSlug: string;
+  inputRefContext?: {
+    onEditInput: (id: string, attrs: Partial<MultiInput>) => void;
+    inputs: Map<ID, MultiInput>;
+  };
 }
 
 export type Command = {
@@ -20,7 +26,7 @@ export type Command = {
   precondition: (editor: ReactEditor) => boolean;
   // execute: run when the command is called (usually to create an element and insert it)
   // eslint-disable-next-line
-  execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void,
+  execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void;
   // obtainParameters: allow the command to gather additional info before running the command
   // (for example, show a size picker for table insertion)
   // Returns a JSX element that will be inserted in a popover

@@ -162,7 +162,7 @@ export class HtmlParser implements WriterImpl {
 
   inputRef = (_context: WriterContext, _next: Next, inputRef: InputRef) => {
     const { id, inputType, type, partId, choiceIds } = inputRef;
-    console.log('Delivered Input Ref', inputRef);
+    // console.log('Delivered Input Ref', inputRef);
     return `<span data-type="${this.escapeXml(type)}" data-input-type="${this.escapeXml(
       inputType,
     )}" data-part-id="${this.escapeXml(partId)}" ${

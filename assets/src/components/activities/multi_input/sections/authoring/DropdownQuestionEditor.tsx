@@ -14,8 +14,6 @@ interface Props {
 export const DropdownQuestionEditor: React.FC<Props> = ({ part, input }) => {
   const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
 
-  console.log('input', input);
-
   return (
     <>
       <Choices

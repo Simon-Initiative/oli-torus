@@ -48,6 +48,7 @@ const ShortAnswer = () => {
                 dispatch(
                   ShortAnswerActions.setInputType(
                     inputType,
+                    DEFAULT_PART_ID,
                     parseInputFromRule(getCorrectResponse(model, DEFAULT_PART_ID).rule),
                   ),
                 )

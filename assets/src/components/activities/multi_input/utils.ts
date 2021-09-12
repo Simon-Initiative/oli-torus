@@ -8,18 +8,22 @@ import {
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { containsRule, matchRule } from 'data/activities/model/rules';
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import {
+  MultiInput,
+  MultiInputSchema,
+  MultiInputType,
+} from 'components/activities/multi_input/schema';
 import guid from 'utils/guid';
-import { InputRef, Paragraph } from 'data/content/model';
+import { inputRef, Paragraph } from 'data/content/model';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Text' },
 ];
 
-export const multiInputChoicesPath = (partId: string) => `$.inputs[?(@.partId==${partId})].choices`;
-
 export const defaultModel = (): MultiInputSchema => {
+  const input = inputRef();
+
   return {
     stem: {
       id: guid(),
@@ -30,13 +34,7 @@ export const defaultModel = (): MultiInputSchema => {
             id: guid(),
             children: [
               { text: 'Example question with a fill in the blank ' },
-              {
-                type: 'input_ref',
-                id: guid(),
-                inputType: 'text',
-                partId: DEFAULT_PART_ID,
-                children: [{ text: '' }],
-              } as InputRef,
+              input,
               { text: '.' },
             ],
           } as Paragraph,
@@ -45,7 +43,7 @@ export const defaultModel = (): MultiInputSchema => {
       },
     },
     choices: [],
-    // inputs: [{ type: 'text', id: guid(), partId: DEFAULT_PART_ID }],
+    inputs: [{ inputType: 'text', id: input.id, partId: DEFAULT_PART_ID }],
     authoring: {
       parts: [
         {
@@ -63,4 +61,33 @@ export const defaultModel = (): MultiInputSchema => {
       previewText: '',
     },
   };
+};
+
+export const friendlyType = (type: MultiInputType) => {
+  if (type === 'dropdown') {
+    return 'Dropdown';
+  }
+  return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
+};
+
+export const inputNumberings = (inputs: MultiInput[]): { type: string; number: number }[] => {
+  return inputs.reduce(
+    (acc, input) => {
+      const type = friendlyType(input.inputType);
+
+      if (!acc.seenCount[type]) {
+        acc.seenCount[type] = 1;
+        acc.numberings.push({ type, number: 1 });
+        return acc;
+      }
+      acc.seenCount[type] = acc.seenCount[type] + 1;
+      acc.numberings.push({ type, number: acc.seenCount[type] });
+      return acc;
+    },
+    { seenCount: {}, numberings: [] } as any,
+  ).numberings;
+};
+
+export const friendlyTitle = (numbering: any) => {
+  return numbering.type + ' ' + numbering.number;
 };

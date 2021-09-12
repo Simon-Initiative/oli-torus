@@ -16,10 +16,10 @@ export function hasMark(textNode: Text, mark: string): boolean {
   return Object.keys(textNode).some((k) => k === mark);
 }
 
-export function elementsOfType(root: ReactEditor, type: string): Element[] {
+export function elementsOfType<T extends Element>(root: ReactEditor, type: string): T[] {
   return [...Node.elements(root)]
     .map(([element]) => element)
-    .filter((elem) => Element.isElement(elem) && elem.type === type);
+    .filter((elem) => Element.isElement(elem) && elem.type === type) as T[];
 }
 
 // Returns all the Text nodes in the current selection

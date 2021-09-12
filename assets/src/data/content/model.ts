@@ -1,7 +1,6 @@
 import { Element, Range } from 'slate';
 import guid from 'utils/guid';
 import { normalizeHref } from 'components/editing/models/link/utils';
-import { FillInTheBlank, Dropdown, MultiInputType } from 'components/activities/multi_input/schema';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -34,9 +33,7 @@ export const code = (): Code => ({
   language: 'python',
   children: [{ type: 'code_line', id: guid(), children: [{ text: '' }] }],
 });
-// TODO: Fix this
-export const inputRef = (inputType: MultiInputType, choiceIds?: ID[]): InputRef =>
-  create<InputRef>({ type: 'input_ref', inputType, partId: guid(), choiceIds });
+export const inputRef = () => create<InputRef>({ type: 'input_ref' });
 
 // eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
@@ -215,11 +212,9 @@ export interface Hyperlink extends Element, Identifiable {
   target: string;
 }
 
-export type InputRef = Element &
-  Identifiable &
-  (FillInTheBlank | Dropdown) & {
-    type: 'input_ref';
-  };
+export interface InputRef extends Element, Identifiable {
+  type: 'input_ref';
+}
 
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
 

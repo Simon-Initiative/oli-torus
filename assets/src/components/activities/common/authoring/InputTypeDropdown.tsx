@@ -15,7 +15,7 @@ export const InputTypeDropdown = <K extends string>({
   options,
 }: InputTypeDropdownProps<K>) => {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (!Object.keys(options).includes(e.target.value)) {
+    if (!options.find(({ value }) => value === e.target.value)) {
       return;
     }
     onChange(e.target.value as any);
