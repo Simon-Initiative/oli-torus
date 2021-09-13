@@ -23,11 +23,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   } = model;
 
   const styles: CSSProperties = {
-    width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
+    flexDirection: showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
@@ -46,10 +42,12 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     props.onReady({ id: `${props.id}` });
   }, []);
 
+  const internalId = `${id}__slider`;
+
   return (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
       <div className="sliderInner">
-        {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
+        {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
           <div style={divStyles}>
             <input
@@ -60,14 +58,14 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
               type={'range'}
               step={snapInterval}
               className={` slider ` + customCssClass}
-              id={id}
+              id={internalId}
             />
           </div>
         </div>
-        {showValueLabels && <label htmlFor={id}>{invertScale ? minimum : maximum}</label>}
+        {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
       </div>
       {showLabel && (
-        <label className="input-label" htmlFor={id}>
+        <label className="input-label" htmlFor={internalId}>
           {label}
         </label>
       )}
