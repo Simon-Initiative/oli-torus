@@ -24,11 +24,10 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
   const styles: CSSProperties = {
     width,
     height,
-    cursor: "move"
+    cursor: 'move',
   };
 
-  if (transparent || !visible || !enabled)
-  {
+  if (transparent || !visible || !enabled) {
     // TODO: some kind of strike through style?
     styles.opacity = 0.5;
   }
