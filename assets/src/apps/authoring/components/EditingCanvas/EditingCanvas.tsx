@@ -25,19 +25,6 @@ const EditingCanvas: React.FC = () => {
     setCurrentActivityId(current?.id || '');
   }, [currentActivityTree]);
 
-  // TODO: pull from currentActivity with these defaults? (or lesson defaults)
-  const width = currentActivity?.content?.custom?.width || 800;
-  const height = currentActivity?.content?.custom?.height || 600;
-
-  const background = {
-    color: currentActivity?.content?.custom?.palette?.backgroundColor || '#ffffff',
-  };
-
-  const layers = (currentActivityTree || []).map((activity) => ({
-    id: activity.id,
-    parts: activity.content.partsLayout || [],
-  }));
-
   const handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
     console.log('[handleSelectionChanged]', { selected });
@@ -87,7 +74,7 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
-  console.log('EC: RENDER', { layers });
+  // console.log('EC: RENDER', { layers });
 
   useEffect(() => {
     dispatch(setCurrentSelection({ selection: '' }));
