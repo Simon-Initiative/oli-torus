@@ -36,11 +36,16 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
           .every((item) => updatedFacts.includes(item))
       );
     } else {
-      return (
-        modifideValue
-          // check if value is found in factValue array
-          .some((item) => updatedFacts.includes(item))
-      );
+      let hitCount = 0; // counts the number of values found
+
+      modifideValue.forEach((item) => {
+        if (updatedFacts.includes(item)) {
+          hitCount++;
+        }
+      });
+      if (hitCount == modifideValue.length) {
+        return true;
+      }
     }
   } else if (Array.isArray(factValue) && value) {
     // We are parseArrayString for the cases where factValue contains strings but the values contain strings
