@@ -23,6 +23,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
 
   const styles: CSSProperties = {
     width,
+    height,
     cursor: "move"
   };
 
@@ -46,7 +47,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
   }, []);
 
   const buttonProps = {
-    title: title,
+    title,
     'aria-label': ariaLabel,
     disabled: false,
   };
