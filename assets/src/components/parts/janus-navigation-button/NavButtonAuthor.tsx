@@ -5,14 +5,40 @@ import { NavButtonModel } from './schema';
 const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (props) => {
   const { model } = props;
 
-  const { x, y, z, width, ariaLabel, title } = model;
+  const {
+    title,
+    x = 0,
+    y = 0,
+    z = 0,
+    width,
+    height,
+    textColor,
+    buttonColor,
+    visible = true,
+    enabled = true,
+    ariaLabel,
+    transparent,
+    selected,
+  } = model;
+
   const styles: CSSProperties = {
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
+    height,
+    cursor: 'move',
   };
+
+  if (transparent || !visible || !enabled) {
+    // TODO: some kind of strike through style?
+    styles.opacity = 0.5;
+  }
+
+  if (textColor) {
+    styles.color = textColor;
+  }
+
+  if (buttonColor) {
+    styles.backgroundColor = buttonColor;
+  }
 
   useEffect(() => {
     // all activities *must* emit onReady
@@ -20,7 +46,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
   }, []);
 
   const buttonProps = {
-    title: title,
+    title,
     'aria-label': ariaLabel,
     disabled: false,
   };

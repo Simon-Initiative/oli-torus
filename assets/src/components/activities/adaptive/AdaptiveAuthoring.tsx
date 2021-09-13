@@ -63,8 +63,8 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   };
 
   const handlePartClick = async (payload: any) => {
-    console.log('AUTHOR PART CLICK', { payload, props });
-    if (!props.editMode) {
+    // console.log('AUTHOR PART CLICK', { payload, props });
+    if (!props.editMode || selectedPartId === payload.id) {
       return;
     }
     setSelectedPartId(payload.id);
@@ -75,7 +75,10 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   };
 
   const handlePartDrag = async (payload: any) => {
-    console.log('AUTHOR PART DRAG', payload);
+    // console.log('AUTHOR PART DRAG', payload);
+    if (payload.dragData.deltaX === 0 && payload.dragData.deltaY === 0) {
+      return;
+    }
     let transformStyle = ''; // 'transform: translate(0px, 0px);';
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('dragPart', payload);
