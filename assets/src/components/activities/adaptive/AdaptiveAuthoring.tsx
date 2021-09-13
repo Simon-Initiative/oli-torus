@@ -85,7 +85,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       }
     }
 
-    // TODO: optimistically update part location and sync with draggable?
+    // optimistically update part location and sync with draggable
 
     // need to reset the styling applied by react-draggable
     payload.dragData.node.setAttribute('style', transformStyle);
@@ -309,7 +309,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
               }}
               onStop={(_, dragData) => {
                 setIsDragging(false);
-                handlePartDrag({ id: part.id, dragData });
+                handlePartDrag({ activityId: props.model.id, partId: part.id, dragData });
               }}
             >
               <PartComponent
