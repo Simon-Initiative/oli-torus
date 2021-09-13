@@ -1,12 +1,13 @@
 import { WriterContext } from './context';
 import { ModelElement } from '../model';
 import { Text } from 'slate';
+import React from 'react';
 
-export type Next = () => string;
-type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => string;
+export type Next = () => React.ReactElement;
+type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => React.ReactElement;
 
 export interface WriterImpl {
-  text: (ctx: WriterContext, text: Text) => string;
+  text: (ctx: WriterContext, text: Text) => React.ReactElement;
   p: ElementWriter;
   h1: ElementWriter;
   h2: ElementWriter;
@@ -32,7 +33,7 @@ export interface WriterImpl {
   blockquote: ElementWriter;
   a: ElementWriter;
   inputRef: ElementWriter;
-  unsupported: (ctx: WriterContext, element: ModelElement) => string;
+  unsupported: (ctx: WriterContext, element: ModelElement) => React.ReactElement;
 }
 
 type ContentItem = { type: 'content'; children: ModelElement[] };
@@ -43,19 +44,19 @@ function isContentItem(value: any): value is ContentItem {
 type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
 
 export class ContentWriter {
-  render(context: WriterContext, content: ContentItem[], impl: WriterImpl): string;
-  render(context: WriterContext, content: ContentItem, impl: WriterImpl): string;
-  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): string;
-  render(context: WriterContext, content: ModelElement, impl: WriterImpl): string;
-  render(context: WriterContext, content: Text, impl: WriterImpl): string;
-  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): string {
+  render(context: WriterContext, content: ContentItem[], impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: ContentItem, impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: ModelElement, impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): React.ReactElement {
     if (Array.isArray(content)) {
       // Typescript seems not to be able to recognize the overloaded function signatures here
-      return (content as any).map((item: any) => this.render(context, item, impl)).join('');
+      return <>{content.map((item: any) => this.render(context, item, impl))}</>;
     }
 
     if (isContentItem(content)) {
-      return content.children.map((child) => this.render(context, child, impl)).join('');
+      return <>{content.children.map((child) => this.render(context, child, impl))}</>;
     }
 
     if (Text.isText(content)) {

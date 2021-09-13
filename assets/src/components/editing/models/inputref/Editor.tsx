@@ -1,7 +1,7 @@
 import React from 'react';
 import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editing/models/interfaces';
-import { DropdownInput } from 'components/activities/multi_input/sections/delivery/DropdownInput';
+import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { ReactEditor, useEditor, useFocused, useSelected } from 'slate-react';
 import { Transforms } from 'slate';
 import { initCommands } from 'components/editing/models/inputref/commands';
@@ -38,17 +38,12 @@ export const InputRefEditor = (props: InputRefProps) => {
     onClick: () => Transforms.select(editor, ReactEditor.findPath(editor, props.model)),
   };
 
-  console.log('re-rendering');
-
   const withToolbar = (target: React.ReactElement) => (
     <HoveringToolbar
       isOpen={() => focused && selected}
       showArrow
       target={target}
-      contentLocation={(state) => {
-        console.log('state', state);
-        return centeredAbove(state);
-      }}
+      contentLocation={centeredAbove}
     >
       <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
     </HoveringToolbar>

@@ -19,14 +19,15 @@ import {
   resetAction,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { initialSelection, isCorrect } from 'data/activities/utils';
+import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -38,11 +39,11 @@ export const MultipleChoiceComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(activityState, initialSelection(activityState)));
+    dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 
   // First render initializes state
-  if (!uiState.selection) {
+  if (!uiState.partState) {
     return null;
   }
 
@@ -62,11 +63,13 @@ export const MultipleChoiceComponent: React.FC = () => {
               <Radio.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'single'))}
+          onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'single'))}
         />
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
+        <ResetButtonConnected
+          onReset={() => dispatch(resetAction(onResetActivity, new Map().set(DEFAULT_PART_ID, [])))}
+        />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected />
+        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />
       </div>
     </div>

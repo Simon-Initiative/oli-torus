@@ -165,7 +165,6 @@ const MultiInput = () => {
                                   n.type === 'input_ref' &&
                                   n.id === input.id,
                               });
-                              // dispatch(MultiInputActions.removePart(input.partId));
                             }}
                           />
                         )}
@@ -237,7 +236,11 @@ const MultiInput = () => {
           }
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          <StemDelivery context={defaultWriterContext()} stem={model.stem} />
+          <StemDelivery
+            context={defaultWriterContext()}
+            stem={model.stem}
+            className="form-inline"
+          />
           {/* <MultiInputStem model={model} /> */}
           {getParts(model).map((part, i) => {
             return (
@@ -285,7 +288,11 @@ const MultiInput = () => {
           })}
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Hints">
-          <StemDelivery context={defaultWriterContext()} stem={model.stem} />
+          <StemDelivery
+            context={defaultWriterContext()}
+            stem={model.stem}
+            className="form-inline"
+          />
           {getParts(model).map((part, i) => (
             <CognitiveHints
               key={part.id}

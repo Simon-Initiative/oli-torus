@@ -6,7 +6,6 @@ interface Props {
   disabled?: boolean;
 }
 export const DropdownInput: React.FC<Props> = (props) => {
-  console.log('options', props.options);
   return (
     <select
       onChange={props.onChange}

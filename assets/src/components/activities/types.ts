@@ -26,6 +26,7 @@ export function makeUndoable(description: string, operations: PathOperation[]): 
 }
 
 export type ChoiceId = ID;
+export type PartId = ID;
 export type ResponseId = ID;
 
 export type RichText = {

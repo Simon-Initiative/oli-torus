@@ -14,7 +14,13 @@ export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   return (
     <SubmitButton
       shouldShow={!isEvaluated(uiState) && !graded}
-      disabled={disabled === undefined ? uiState.selection.length === 0 : disabled}
+      disabled={
+        disabled === undefined
+          ? Object.values(uiState.partState)
+              .map((partState) => partState.selection)
+              .every((selection) => selection.length === 0)
+          : disabled
+      }
       onClick={() => dispatch(submit(onSubmitActivity))}
     />
   );

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { assertNever, valueOr } from 'utils/common';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
@@ -16,10 +16,10 @@ import {
   resetAction,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
-import { safelySelectInput } from 'data/activities/utils';
-import { TextInput } from 'components/activities/common/delivery/short_answer/TextInput';
-import { TextareaInput } from 'components/activities/common/delivery/short_answer/TextareaInput';
-import { NumericInput } from 'components/activities/common/delivery/short_answer/NumericInput';
+import { safelySelectInputs } from 'data/activities/utils';
+import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
+import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import {
   DeliveryElement,
   DeliveryElementProps,
@@ -28,6 +28,8 @@ import {
 } from 'components/activities/DeliveryElement';
 import { Manifest } from 'components/activities/types';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Maybe } from 'tsmonad';
 
 type InputProps = {
   input: string;
@@ -72,21 +74,26 @@ export const ShortAnswerComponent: React.FC = () => {
         activityState,
         // Short answers only have one input, but the selection is modeled
         // as an array just to make it consistent with the other activity types
-        safelySelectInput(activityState).caseOf({
-          just: (input) => [input],
-          nothing: () => [''],
+        safelySelectInputs(activityState).caseOf({
+          just: (input) => input,
+          nothing: () => new Map().set(DEFAULT_PART_ID, ['']),
         }),
       ),
     );
   }, []);
 
   // First render initializes state
-  if (!uiState.attemptState) {
+  if (!uiState.partState) {
     return null;
   }
 
   const onInputChange = (input: string) => {
-    dispatch(activityDeliverySlice.actions.setSelection([input]));
+    dispatch(
+      activityDeliverySlice.actions.setSelectionForPart({
+        partId: DEFAULT_PART_ID,
+        selection: [input],
+      }),
+    );
 
     onSaveActivity(uiState.attemptState.attemptGuid, [
       { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
@@ -103,14 +110,18 @@ export const ShortAnswerComponent: React.FC = () => {
           inputType={model.inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
-          input={uiState.selection[0]}
+          input={Maybe.maybe(uiState.partState.get(DEFAULT_PART_ID)?.selection).valueOr([''])[0]}
           isEvaluated={isEvaluated(uiState)}
           onChange={onInputChange}
         />
 
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, ['']))} />
+        <ResetButtonConnected
+          onReset={() =>
+            dispatch(resetAction(onResetActivity, new Map().set(DEFAULT_PART_ID, [''])))
+          }
+        />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected />
+        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />
       </div>
     </div>
