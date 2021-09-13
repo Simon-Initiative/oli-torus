@@ -2,9 +2,7 @@ import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
-  defaultID: string;
   fontSize?: number;
-  number: number;
   maxValue: number;
   minValue: number;
   showLabel: boolean;
@@ -13,13 +11,10 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
   deleteEnabled: boolean;
   enabled: boolean;
   showIncrementArrows: boolean;
+  prompt: string;
 }
 
 export const schema: JSONSchema7Object = {
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -29,10 +24,7 @@ export const schema: JSONSchema7Object = {
     type: 'number',
     default: 12,
   },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
+
   maxValue: {
     title: 'Max Value',
     type: 'number',
@@ -73,6 +65,9 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether increment arrows should be visible in number textbox',
     default: false,
   },
+  prompt: {
+    type: 'string',
+  },
 };
 
 export const uiSchema = {};
@@ -88,4 +83,5 @@ export const createSchema = (): Partial<InputNumberModel> => ({
   maxManualGrade: 0,
   maxValue: 1,
   minValue: 0,
+  prompt: 'enter a number...',
 });
