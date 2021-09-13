@@ -406,8 +406,8 @@ Functions
   <a href="#change_section/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_section</span><span class="p" data-group-id="4761994336-1">(</span><span class="n">section</span><span class="p" data-group-id="4761994336-1">)</span><span class="w">
-</span><span class="p" data-group-id="4761994336-2">%</span><span class="nc" data-group-id="4761994336-2">Ecto.Changeset</span><span class="p" data-group-id="4761994336-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4761994336-3">%</span><span class="nc" data-group-id="4761994336-3">Section</span><span class="p" data-group-id="4761994336-3">{</span><span class="p" data-group-id="4761994336-3">}</span><span class="p" data-group-id="4761994336-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_section</span><span class="p" data-group-id="2877080060-1">(</span><span class="n">section</span><span class="p" data-group-id="2877080060-1">)</span><span class="w">
+</span><span class="p" data-group-id="2877080060-2">%</span><span class="nc" data-group-id="2877080060-2">Ecto.Changeset</span><span class="p" data-group-id="2877080060-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="2877080060-3">%</span><span class="nc" data-group-id="2877080060-3">Section</span><span class="p" data-group-id="2877080060-3">{</span><span class="p" data-group-id="2877080060-3">}</span><span class="p" data-group-id="2877080060-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="check_for_available_publication_updates/1">
@@ -458,10 +458,10 @@ if a newer publication is available.</p>
   <a href="#create_section/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="8668667586-1">(</span><span class="p" data-group-id="8668667586-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8668667586-2">}</span><span class="p" data-group-id="8668667586-1">)</span><span class="w">
-</span><span class="p" data-group-id="8668667586-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8668667586-4">%</span><span class="nc" data-group-id="8668667586-4">Section</span><span class="p" data-group-id="8668667586-4">{</span><span class="p" data-group-id="8668667586-4">}</span><span class="p" data-group-id="8668667586-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="8668667586-5">(</span><span class="p" data-group-id="8668667586-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8668667586-6">}</span><span class="p" data-group-id="8668667586-5">)</span><span class="w">
-</span><span class="p" data-group-id="8668667586-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8668667586-8">%</span><span class="nc" data-group-id="8668667586-8">Ecto.Changeset</span><span class="p" data-group-id="8668667586-8">{</span><span class="p" data-group-id="8668667586-8">}</span><span class="p" data-group-id="8668667586-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="0310135299-1">(</span><span class="p" data-group-id="0310135299-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="0310135299-2">}</span><span class="p" data-group-id="0310135299-1">)</span><span class="w">
+</span><span class="p" data-group-id="0310135299-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0310135299-4">%</span><span class="nc" data-group-id="0310135299-4">Section</span><span class="p" data-group-id="0310135299-4">{</span><span class="p" data-group-id="0310135299-4">}</span><span class="p" data-group-id="0310135299-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_section</span><span class="p" data-group-id="0310135299-5">(</span><span class="p" data-group-id="0310135299-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0310135299-6">}</span><span class="p" data-group-id="0310135299-5">)</span><span class="w">
+</span><span class="p" data-group-id="0310135299-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0310135299-8">%</span><span class="nc" data-group-id="0310135299-8">Ecto.Changeset</span><span class="p" data-group-id="0310135299-8">{</span><span class="p" data-group-id="0310135299-8">}</span><span class="p" data-group-id="0310135299-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_section_resources/2">
@@ -488,8 +488,8 @@ root resource's revision tree. Returns the root section resource record.</p><h2 
   <a href="#create_section_resources/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section_resources</span><span class="p" data-group-id="9114582182-1">(</span><span class="n">section</span><span class="p" data-group-id="9114582182-1">)</span><span class="w">
-</span><span class="p" data-group-id="9114582182-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9114582182-3">%</span><span class="nc" data-group-id="9114582182-3">Section</span><span class="p" data-group-id="9114582182-3">{</span><span class="p" data-group-id="9114582182-3">}</span><span class="p" data-group-id="9114582182-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_section_resources</span><span class="p" data-group-id="9829346159-1">(</span><span class="n">section</span><span class="p" data-group-id="9829346159-1">)</span><span class="w">
+</span><span class="p" data-group-id="9829346159-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9829346159-3">%</span><span class="nc" data-group-id="9829346159-3">Section</span><span class="p" data-group-id="9829346159-3">{</span><span class="p" data-group-id="9829346159-3">}</span><span class="p" data-group-id="9829346159-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="enroll/3">
@@ -535,11 +535,11 @@ root resource's revision tree. Returns the root section resource record.</p><h2 
   <a href="#enroll/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">enroll</span><span class="p" data-group-id="6217082687-1">(</span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">section_id</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6217082687-2">[</span><span class="p" data-group-id="6217082687-3">%</span><span class="nc" data-group-id="6217082687-3">ContextRole</span><span class="p" data-group-id="6217082687-3">{</span><span class="p" data-group-id="6217082687-3">}</span><span class="p" data-group-id="6217082687-2">]</span><span class="p" data-group-id="6217082687-1">)</span><span class="w">
-</span><span class="p" data-group-id="6217082687-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6217082687-5">%</span><span class="nc" data-group-id="6217082687-5">Enrollment</span><span class="p" data-group-id="6217082687-5">{</span><span class="p" data-group-id="6217082687-5">}</span><span class="p" data-group-id="6217082687-4">}</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">enroll</span><span class="p" data-group-id="1407529708-1">(</span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">section_id</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1407529708-2">[</span><span class="p" data-group-id="1407529708-3">%</span><span class="nc" data-group-id="1407529708-3">ContextRole</span><span class="p" data-group-id="1407529708-3">{</span><span class="p" data-group-id="1407529708-3">}</span><span class="p" data-group-id="1407529708-2">]</span><span class="p" data-group-id="1407529708-1">)</span><span class="w">
+</span><span class="p" data-group-id="1407529708-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1407529708-5">%</span><span class="nc" data-group-id="1407529708-5">Enrollment</span><span class="p" data-group-id="1407529708-5">{</span><span class="p" data-group-id="1407529708-5">}</span><span class="p" data-group-id="1407529708-4">}</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">enroll</span><span class="p" data-group-id="6217082687-6">(</span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">section_id</span><span class="p">,</span><span class="w"> </span><span class="ss">:open_and_free</span><span class="p" data-group-id="6217082687-6">)</span><span class="w">
-</span><span class="p" data-group-id="6217082687-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="6217082687-7">}</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">enroll</span><span class="p" data-group-id="1407529708-6">(</span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">section_id</span><span class="p">,</span><span class="w"> </span><span class="ss">:open_and_free</span><span class="p" data-group-id="1407529708-6">)</span><span class="w">
+</span><span class="p" data-group-id="1407529708-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="1407529708-7">}</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_current_publication/2">
@@ -587,9 +587,9 @@ root resource's revision tree. Returns the root section resource record.</p><h2 
   <a href="#get_deployment_registration_from_section/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment_registration_from_section</span><span class="p" data-group-id="2039620006-1">(</span><span class="n">section</span><span class="p" data-group-id="2039620006-1">)</span><span class="w">
-</span><span class="p" data-group-id="2039620006-2">{</span><span class="p" data-group-id="2039620006-3">%</span><span class="nc" data-group-id="2039620006-3">Deployment</span><span class="p" data-group-id="2039620006-3">{</span><span class="p" data-group-id="2039620006-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2039620006-4">%</span><span class="nc" data-group-id="2039620006-4">Registration</span><span class="p" data-group-id="2039620006-4">{</span><span class="p" data-group-id="2039620006-4">}</span><span class="p" data-group-id="2039620006-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment_registration_from_section</span><span class="p" data-group-id="2039620006-5">(</span><span class="n">section</span><span class="p" data-group-id="2039620006-5">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment_registration_from_section</span><span class="p" data-group-id="3547445001-1">(</span><span class="n">section</span><span class="p" data-group-id="3547445001-1">)</span><span class="w">
+</span><span class="p" data-group-id="3547445001-2">{</span><span class="p" data-group-id="3547445001-3">%</span><span class="nc" data-group-id="3547445001-3">Deployment</span><span class="p" data-group-id="3547445001-3">{</span><span class="p" data-group-id="3547445001-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3547445001-4">%</span><span class="nc" data-group-id="3547445001-4">Registration</span><span class="p" data-group-id="3547445001-4">{</span><span class="p" data-group-id="3547445001-4">}</span><span class="p" data-group-id="3547445001-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment_registration_from_section</span><span class="p" data-group-id="3547445001-5">(</span><span class="n">section</span><span class="p" data-group-id="3547445001-5">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -639,9 +639,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_section!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="3186894968-1">(</span><span class="mi">123</span><span class="p" data-group-id="3186894968-1">)</span><span class="w">
-</span><span class="p" data-group-id="3186894968-2">%</span><span class="nc" data-group-id="3186894968-2">Section</span><span class="p" data-group-id="3186894968-2">{</span><span class="p" data-group-id="3186894968-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="3186894968-3">(</span><span class="mi">456</span><span class="p" data-group-id="3186894968-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="0830863135-1">(</span><span class="mi">123</span><span class="p" data-group-id="0830863135-1">)</span><span class="w">
+</span><span class="p" data-group-id="0830863135-2">%</span><span class="nc" data-group-id="0830863135-2">Section</span><span class="p" data-group-id="0830863135-2">{</span><span class="p" data-group-id="0830863135-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section!</span><span class="p" data-group-id="0830863135-3">(</span><span class="mi">456</span><span class="p" data-group-id="0830863135-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -668,9 +668,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_section_by/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="7033491513-1">(</span><span class="ss">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="7033491513-1">)</span><span class="w">
-</span><span class="p" data-group-id="7033491513-2">%</span><span class="nc" data-group-id="7033491513-2">Section</span><span class="p" data-group-id="7033491513-2">{</span><span class="p" data-group-id="7033491513-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="7033491513-3">(</span><span class="ss">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="7033491513-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="7608276718-1">(</span><span class="ss">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="7608276718-1">)</span><span class="w">
+</span><span class="p" data-group-id="7608276718-2">%</span><span class="nc" data-group-id="7608276718-2">Section</span><span class="p" data-group-id="7608276718-2">{</span><span class="p" data-group-id="7608276718-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by</span><span class="p" data-group-id="7608276718-3">(</span><span class="ss">slug</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="7608276718-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -698,8 +698,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   Examples
 </h2>
 <pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by_slug</span><span class="s">&quot;123&quot;</span><span class="p">)</span><span class="w">
-</span><span class="p" data-group-id="6779515763-1">%</span><span class="nc" data-group-id="6779515763-1">Section</span><span class="p" data-group-id="6779515763-1">{</span><span class="p" data-group-id="6779515763-1">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by_slug</span><span class="p" data-group-id="6779515763-2">(</span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="6779515763-2">)</span><span class="w">
+</span><span class="p" data-group-id="4171933099-1">%</span><span class="nc" data-group-id="4171933099-1">Section</span><span class="p" data-group-id="4171933099-1">{</span><span class="p" data-group-id="4171933099-1">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_by_slug</span><span class="p" data-group-id="4171933099-2">(</span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="4171933099-2">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -726,9 +726,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_section_from_lti_params/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_from_lti_params</span><span class="p" data-group-id="7540733640-1">(</span><span class="n">lti_params</span><span class="p" data-group-id="7540733640-1">)</span><span class="w">
-</span><span class="p" data-group-id="7540733640-2">%</span><span class="nc" data-group-id="7540733640-2">Section</span><span class="p" data-group-id="7540733640-2">{</span><span class="p" data-group-id="7540733640-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_from_lti_params</span><span class="p" data-group-id="7540733640-3">(</span><span class="n">lti_params</span><span class="p" data-group-id="7540733640-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_from_lti_params</span><span class="p" data-group-id="1626204364-1">(</span><span class="n">lti_params</span><span class="p" data-group-id="1626204364-1">)</span><span class="w">
+</span><span class="p" data-group-id="1626204364-2">%</span><span class="nc" data-group-id="1626204364-2">Section</span><span class="p" data-group-id="1626204364-2">{</span><span class="p" data-group-id="1626204364-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_from_lti_params</span><span class="p" data-group-id="1626204364-3">(</span><span class="n">lti_params</span><span class="p" data-group-id="1626204364-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -756,9 +756,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_section_preloaded!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_preloaded!</span><span class="p" data-group-id="9816009677-1">(</span><span class="mi">123</span><span class="p" data-group-id="9816009677-1">)</span><span class="w">
-</span><span class="p" data-group-id="9816009677-2">%</span><span class="nc" data-group-id="9816009677-2">Section</span><span class="p" data-group-id="9816009677-2">{</span><span class="p" data-group-id="9816009677-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_preloaded!</span><span class="p" data-group-id="9816009677-3">(</span><span class="mi">456</span><span class="p" data-group-id="9816009677-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_section_preloaded!</span><span class="p" data-group-id="4771378488-1">(</span><span class="mi">123</span><span class="p" data-group-id="4771378488-1">)</span><span class="w">
+</span><span class="p" data-group-id="4771378488-2">%</span><span class="nc" data-group-id="4771378488-2">Section</span><span class="p" data-group-id="4771378488-2">{</span><span class="p" data-group-id="4771378488-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_section_preloaded!</span><span class="p" data-group-id="4771378488-3">(</span><span class="mi">456</span><span class="p" data-group-id="4771378488-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -785,10 +785,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_sections_by_base_project/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_base_project</span><span class="p" data-group-id="7134210931-1">(</span><span class="n">project</span><span class="p" data-group-id="7134210931-1">)</span><span class="w">
-</span><span class="p" data-group-id="7134210931-2">[</span><span class="p" data-group-id="7134210931-3">%</span><span class="nc" data-group-id="7134210931-3">Section</span><span class="p" data-group-id="7134210931-3">{</span><span class="p" data-group-id="7134210931-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7134210931-2">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_base_project</span><span class="p" data-group-id="2705586867-1">(</span><span class="n">project</span><span class="p" data-group-id="2705586867-1">)</span><span class="w">
+</span><span class="p" data-group-id="2705586867-2">[</span><span class="p" data-group-id="2705586867-3">%</span><span class="nc" data-group-id="2705586867-3">Section</span><span class="p" data-group-id="2705586867-3">{</span><span class="p" data-group-id="2705586867-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2705586867-2">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_base_project</span><span class="p" data-group-id="7134210931-4">(</span><span class="n">invalid_project</span><span class="p" data-group-id="7134210931-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_base_project</span><span class="p" data-group-id="2705586867-4">(</span><span class="n">invalid_project</span><span class="p" data-group-id="2705586867-4">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -815,10 +815,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_sections_by_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="3627521048-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="3627521048-1">)</span><span class="w">
-</span><span class="p" data-group-id="3627521048-2">[</span><span class="p" data-group-id="3627521048-3">%</span><span class="nc" data-group-id="3627521048-3">Section</span><span class="p" data-group-id="3627521048-3">{</span><span class="p" data-group-id="3627521048-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3627521048-2">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="5793417725-1">(</span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="5793417725-1">)</span><span class="w">
+</span><span class="p" data-group-id="5793417725-2">[</span><span class="p" data-group-id="5793417725-3">%</span><span class="nc" data-group-id="5793417725-3">Section</span><span class="p" data-group-id="5793417725-3">{</span><span class="p" data-group-id="5793417725-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5793417725-2">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="3627521048-4">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="3627521048-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_sections_by_publication</span><span class="p" data-group-id="5793417725-4">(</span><span class="s">&quot;456&quot;</span><span class="p" data-group-id="5793417725-4">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -889,8 +889,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_open_and_free_sections/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_open_and_free_sections</span><span class="p" data-group-id="8091400175-1">(</span><span class="p" data-group-id="8091400175-1">)</span><span class="w">
-</span><span class="p" data-group-id="8091400175-2">[</span><span class="p" data-group-id="8091400175-3">%</span><span class="nc" data-group-id="8091400175-3">Section</span><span class="p" data-group-id="8091400175-3">{</span><span class="p" data-group-id="8091400175-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="8091400175-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_open_and_free_sections</span><span class="p" data-group-id="6464208744-1">(</span><span class="p" data-group-id="6464208744-1">)</span><span class="w">
+</span><span class="p" data-group-id="6464208744-2">[</span><span class="p" data-group-id="6464208744-3">%</span><span class="nc" data-group-id="6464208744-3">Section</span><span class="p" data-group-id="6464208744-3">{</span><span class="p" data-group-id="6464208744-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6464208744-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_sections/0">
@@ -916,8 +916,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_sections/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_sections</span><span class="p" data-group-id="3681963985-1">(</span><span class="p" data-group-id="3681963985-1">)</span><span class="w">
-</span><span class="p" data-group-id="3681963985-2">[</span><span class="p" data-group-id="3681963985-3">%</span><span class="nc" data-group-id="3681963985-3">Section</span><span class="p" data-group-id="3681963985-3">{</span><span class="p" data-group-id="3681963985-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3681963985-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_sections</span><span class="p" data-group-id="0866569682-1">(</span><span class="p" data-group-id="0866569682-1">)</span><span class="w">
+</span><span class="p" data-group-id="0866569682-2">[</span><span class="p" data-group-id="0866569682-3">%</span><span class="nc" data-group-id="0866569682-3">Section</span><span class="p" data-group-id="0866569682-3">{</span><span class="p" data-group-id="0866569682-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0866569682-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_user_open_and_free_sections/1">
@@ -987,10 +987,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#soft_delete_section/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">soft_delete_section</span><span class="p" data-group-id="1407789156-1">(</span><span class="n">section</span><span class="p" data-group-id="1407789156-1">)</span><span class="w">
-</span><span class="p" data-group-id="1407789156-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1407789156-3">%</span><span class="nc" data-group-id="1407789156-3">Section</span><span class="p" data-group-id="1407789156-3">{</span><span class="p" data-group-id="1407789156-3">}</span><span class="p" data-group-id="1407789156-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">soft_delete_section</span><span class="p" data-group-id="1407789156-4">(</span><span class="n">section</span><span class="p" data-group-id="1407789156-4">)</span><span class="w">
-</span><span class="p" data-group-id="1407789156-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1407789156-6">%</span><span class="nc" data-group-id="1407789156-6">Ecto.Changeset</span><span class="p" data-group-id="1407789156-6">{</span><span class="p" data-group-id="1407789156-6">}</span><span class="p" data-group-id="1407789156-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">soft_delete_section</span><span class="p" data-group-id="6166468636-1">(</span><span class="n">section</span><span class="p" data-group-id="6166468636-1">)</span><span class="w">
+</span><span class="p" data-group-id="6166468636-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6166468636-3">%</span><span class="nc" data-group-id="6166468636-3">Section</span><span class="p" data-group-id="6166468636-3">{</span><span class="p" data-group-id="6166468636-3">}</span><span class="p" data-group-id="6166468636-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">soft_delete_section</span><span class="p" data-group-id="6166468636-4">(</span><span class="n">section</span><span class="p" data-group-id="6166468636-4">)</span><span class="w">
+</span><span class="p" data-group-id="6166468636-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6166468636-6">%</span><span class="nc" data-group-id="6166468636-6">Ecto.Changeset</span><span class="p" data-group-id="6166468636-6">{</span><span class="p" data-group-id="6166468636-6">}</span><span class="p" data-group-id="6166468636-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_enrollment/2">
@@ -1038,10 +1038,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_section/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="5386915599-1">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5386915599-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5386915599-2">}</span><span class="p" data-group-id="5386915599-1">)</span><span class="w">
-</span><span class="p" data-group-id="5386915599-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5386915599-4">%</span><span class="nc" data-group-id="5386915599-4">Section</span><span class="p" data-group-id="5386915599-4">{</span><span class="p" data-group-id="5386915599-4">}</span><span class="p" data-group-id="5386915599-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="5386915599-5">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5386915599-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5386915599-6">}</span><span class="p" data-group-id="5386915599-5">)</span><span class="w">
-</span><span class="p" data-group-id="5386915599-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5386915599-8">%</span><span class="nc" data-group-id="5386915599-8">Ecto.Changeset</span><span class="p" data-group-id="5386915599-8">{</span><span class="p" data-group-id="5386915599-8">}</span><span class="p" data-group-id="5386915599-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="7449987585-1">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7449987585-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7449987585-2">}</span><span class="p" data-group-id="7449987585-1">)</span><span class="w">
+</span><span class="p" data-group-id="7449987585-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7449987585-4">%</span><span class="nc" data-group-id="7449987585-4">Section</span><span class="p" data-group-id="7449987585-4">{</span><span class="p" data-group-id="7449987585-4">}</span><span class="p" data-group-id="7449987585-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_section</span><span class="p" data-group-id="7449987585-5">(</span><span class="n">section</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7449987585-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7449987585-6">}</span><span class="p" data-group-id="7449987585-5">)</span><span class="w">
+</span><span class="p" data-group-id="7449987585-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7449987585-8">%</span><span class="nc" data-group-id="7449987585-8">Ecto.Changeset</span><span class="p" data-group-id="7449987585-8">{</span><span class="p" data-group-id="7449987585-8">}</span><span class="p" data-group-id="7449987585-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_section_project_publication/3">
