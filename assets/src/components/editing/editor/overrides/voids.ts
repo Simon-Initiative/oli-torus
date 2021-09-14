@@ -8,20 +8,20 @@ export const withVoids = (editor: Editor & ReactEditor) => {
 
   console.log('with voids');
 
-  editor.insertData = (data) => {
-    const fragment = data.getData('application/x-slate-fragment');
-    console.log('fragment', fragment);
+  // editor.insertData = (data) => {
+  //   const fragment = data.getData('application/x-slate-fragment');
+  //   console.log('fragment', fragment);
 
-    if (fragment) {
-      const decoded = decodeURIComponent(window.atob(fragment));
-      const parsed = JSON.parse(decoded) as Node[];
-      console.log('parsed', parsed);
-      editor.insertFragment(parsed);
-      return editor;
-    }
+  //   if (fragment) {
+  //     const decoded = decodeURIComponent(window.atob(fragment));
+  //     const parsed = JSON.parse(decoded) as Node[];
+  //     console.log('parsed', parsed);
+  //     editor.insertFragment(parsed);
+  //     return editor;
+  //   }
 
-    insertData(data);
-  };
+  //   insertData(data);
+  // };
 
   editor.isVoid = (element) => {
     try {
