@@ -53,6 +53,7 @@ export const MultipleChoiceComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
+          partId={DEFAULT_PART_ID}
           unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -66,7 +67,7 @@ export const MultipleChoiceComponent: React.FC = () => {
           onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'single'))}
         />
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, new Map().set(DEFAULT_PART_ID, [])))}
+          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
         />
         <SubmitButtonConnected />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />

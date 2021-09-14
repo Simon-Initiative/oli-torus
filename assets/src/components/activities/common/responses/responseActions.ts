@@ -18,17 +18,16 @@ export const ResponseActions = {
   addResponse(response: Response, partId: string, path = RESPONSES_PATH) {
     return (model: HasParts) => {
       // Insert a new reponse just before the last response (which is the catch-all response)
-      Operations.apply(model, Operations.insert(path, response));
-      jp.apply(model, path, (responses: Response[]) => {
-        responses.splice(getResponsesByPartId(model, partId).length - 1, 0, response);
-        return responses;
-      });
+      Operations.apply(
+        model,
+        Operations.insert(path, response, getResponsesByPartId(model, partId, path).length - 1),
+      );
     };
   },
 
-  editResponseFeedback(id: ResponseId, content: RichText) {
+  editResponseFeedback(responseId: ResponseId, content: RichText) {
     return (model: HasParts) => {
-      getResponseBy(model, (r) => r.id === id).feedback.content = content;
+      getResponseBy(model, (r) => r.id === responseId).feedback.content = content;
     };
   },
 

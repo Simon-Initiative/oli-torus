@@ -10,9 +10,10 @@ import {
   Hint,
   PartId,
   PartResponse,
+  PartState,
   Success,
 } from 'components/activities/types';
-import { selectionToInput } from 'data/activities/utils';
+import { studentInputToString } from 'data/activities/utils';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
@@ -22,11 +23,11 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   AnyAction
 >;
 export type StudentInput = string[];
-export type PartInputs = Map<PartId, StudentInput>;
+export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
   attemptState: ActivityState;
-  partState: Map<
+  partState: Record<
     PartId,
     {
       studentInput: StudentInput;
@@ -41,27 +42,45 @@ export const activityDeliverySlice = createSlice({
   reducers: {
     activitySubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
-        console.log('actions', action.payload.actions);
-        const { score, out_of, feedback, error } = action.payload.actions[0] as FeedbackAction;
+        const { score, out_of } = action.payload.actions.reduce(
+          (acc, action: FeedbackAction) => ({
+            score: acc.score + action.score,
+            out_of: acc.out_of + action.out_of,
+          }),
+          {
+            score: 0,
+            out_of: 0,
+          },
+        );
+
         state.attemptState = {
           ...state.attemptState,
           score,
           outOf: out_of,
-          parts: [{ ...state.attemptState.parts[0], feedback, error }],
+          parts: state.attemptState.parts.map((part) => {
+            const feedbackAction = action.payload.actions.find(
+              (action: FeedbackAction) => action.attempt_guid === part.partId,
+            ) as FeedbackAction | undefined;
+            if (!feedbackAction) return part;
+            return Object.assign(part, {
+              score: feedbackAction.score,
+              outOf: feedbackAction.out_of,
+              feedback: feedbackAction.feedback,
+              error: feedbackAction.error,
+            } as Partial<PartState>);
+          }),
         };
       }
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
-      state.partState = new Map(
-        action.payload.parts.map((partState) => [
-          String(partState.partId),
-          { studentInput: [], hintsShown: [], hasMoreHints: false },
-        ]),
-      );
+      state.partState = action.payload.parts.reduce((acc, partState) => {
+        acc[String(partState.partId)] = { studentInput: [], hintsShown: [], hasMoreHints: false };
+        return acc;
+      }, {} as ActivityDeliveryState['partState']);
     },
     setPartInputs(state, action: PayloadAction<PartInputs>) {
-      [...action.payload].forEach(([partId, studentInput]) =>
-        Maybe.maybe(state.partState.get(partId)).lift(
+      Object.entries(action.payload).forEach(([partId, studentInput]) =>
+        Maybe.maybe(state.partState[partId]).lift(
           (partState) => (partState.studentInput = studentInput),
         ),
       );
@@ -70,7 +89,7 @@ export const activityDeliverySlice = createSlice({
       state,
       action: PayloadAction<{ partId: PartId; studentInput: StudentInput }>,
     ) {
-      Maybe.maybe(state.partState.get(action.payload.partId)).lift(
+      Maybe.maybe(state.partState[action.payload.partId]).lift(
         (partState) => (partState.studentInput = action.payload.studentInput),
       );
     },
@@ -82,7 +101,7 @@ export const activityDeliverySlice = createSlice({
       action: PayloadAction<{ partId: PartId; selection: string }>,
     ) {
       const { partId, selection } = action.payload;
-      Maybe.maybe(state.partState.get(partId)).lift(
+      Maybe.maybe(state.partState[partId]).lift(
         (partState) =>
           (partState.studentInput = partState.studentInput.find(
             (choiceId) => choiceId === selection,
@@ -92,12 +111,12 @@ export const activityDeliverySlice = createSlice({
       );
     },
     setHintsShownForPart(state, action: PayloadAction<{ partId: PartId; hintsShown: Hint[] }>) {
-      Maybe.maybe(state.partState.get(action.payload.partId)).lift(
+      Maybe.maybe(state.partState[action.payload.partId]).lift(
         (partState) => (partState.hintsShown = action.payload.hintsShown),
       );
     },
     showHintForPart(state, action: PayloadAction<{ partId: PartId; hint: Hint }>) {
-      Maybe.maybe(state.partState.get(action.payload.partId)).lift((partState) =>
+      Maybe.maybe(state.partState[action.payload.partId]).lift((partState) =>
         partState.hintsShown.push(action.payload.hint),
       );
     },
@@ -105,17 +124,15 @@ export const activityDeliverySlice = createSlice({
       state,
       action: PayloadAction<{ partId: PartId; hasMoreHints: boolean }>,
     ) {
-      Maybe.maybe(state.partState.get(action.payload.partId)).lift(
+      Maybe.maybe(state.partState[action.payload.partId]).lift(
         (partState) => (partState.hasMoreHints = action.payload.hasMoreHints),
       );
     },
     hideAllHints(state) {
-      state.partState.forEach((partState) => (partState.hintsShown = []));
+      Object.values(state.partState).forEach((partState) => (partState.hintsShown = []));
     },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
-      Maybe.maybe(state.partState.get(action.payload)).lift(
-        (partState) => (partState.hintsShown = []),
-      );
+      Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
     },
   },
 });
@@ -176,10 +193,8 @@ export const submit =
       getState().attemptState.parts.map((partState) => ({
         attemptGuid: partState.attemptGuid,
         response: {
-          input: selectionToInput(
-            Maybe.maybe(getState().partState.get(String(partState.partId))?.studentInput).valueOr([
-              '',
-            ]),
+          input: studentInputToString(
+            Maybe.maybe(getState().partState[String(partState.partId)]?.studentInput).valueOr(['']),
           ),
         },
       })),
@@ -190,6 +205,7 @@ export const submit =
 export const initializeState =
   (state: ActivityState, initialPartInputs: PartInputs): AppThunk =>
   async (dispatch, _getState) => {
+    dispatch(slice.actions.initializePartState(state));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({
@@ -232,13 +248,13 @@ export const setSelection =
     // Here we will make a list of the selected ids like { input: [id1, id2, id3].join(' ')}
     // Then in the rule evaluator, we will say
     // `input like id1 && input like id2 && input like id3`
-    const newSelection = getState().partState.get(partId)?.studentInput;
+    const newSelection = getState().partState[partId]?.studentInput;
     if (!newSelection) return;
 
     return onSaveActivity(getState().attemptState.attemptGuid, [
       {
         attemptGuid,
-        response: { input: selectionToInput(newSelection) },
+        response: { input: studentInputToString(newSelection) },
       },
     ]);
   };

@@ -14,11 +14,13 @@ import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
 import { WebpageEditor } from '../models/webpage/Editor';
 import { InputRefEditor } from 'components/editing/models/inputref/Editor';
+import { ReactEditor } from 'slate-react';
+import { Editor } from 'slate';
 
 export function editorFor(
   element: ContentModel.ModelElement,
   props: any,
-  editor: any,
+  editor: ReactEditor & Editor,
   commandContext: CommandContext,
 ): JSX.Element {
   const { attributes, children } = props;

@@ -13,6 +13,7 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'code',
   'table',
   'iframe',
+  'input_ref',
 ]);
 
 export function installNormalizer(editor: SlateEditor & ReactEditor) {

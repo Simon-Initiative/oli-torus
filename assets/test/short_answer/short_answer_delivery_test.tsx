@@ -1,6 +1,5 @@
 import { render, fireEvent, screen } from '@testing-library/react';
 import React from 'react';
-import { defaultState } from 'components/resource/TestModeHandler';
 import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
@@ -11,16 +10,16 @@ import { configureStore } from 'state/store';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
+import { defaultActivityState } from 'data/activities/utils';
 
 describe('multiple choice delivery', () => {
   it('renders ungraded activities correctly', async () => {
     const model = defaultModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
-    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',
-      state: Object.assign(defaultActivityState, { hasMoreHints: false }),
+      state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
       graded: false,
       preview: false,
     };
@@ -67,7 +66,7 @@ describe('multiple choice delivery', () => {
     });
 
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
-    expect(onSubmitActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
+    expect(onSubmitActivity).toHaveBeenCalledWith(props.state.attemptGuid, [
       {
         attemptGuid: '1',
         response: { input: 'answer' },

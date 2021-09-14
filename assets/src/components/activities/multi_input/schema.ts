@@ -1,3 +1,4 @@
+import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import {
   Stem,
   ActivityModelSchema,
@@ -12,6 +13,9 @@ import { Maybe } from 'tsmonad';
 import { assertNever } from 'utils/common';
 
 export type MultiInput = Dropdown | FillInTheBlank;
+export type MultiInputDelivery =
+  | { id: string; inputType: 'dropdown'; options: SelectOption[] }
+  | { id: string; inputType: 'text' | 'numeric' };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';

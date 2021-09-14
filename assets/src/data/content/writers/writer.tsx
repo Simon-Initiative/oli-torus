@@ -51,12 +51,25 @@ export class ContentWriter {
   render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: ContentTypes, impl: WriterImpl): React.ReactElement {
     if (Array.isArray(content)) {
-      // Typescript seems not to be able to recognize the overloaded function signatures here
-      return <>{content.map((item: any) => this.render(context, item, impl))}</>;
+      return (
+        <>
+          {(content as Array<any>).map((item, i) => (
+            <React.Fragment key={item.type + String(i)}>
+              {this.render(context, item, impl)}
+            </React.Fragment>
+          ))}
+        </>
+      );
     }
 
     if (isContentItem(content)) {
-      return <>{content.children.map((child) => this.render(context, child, impl))}</>;
+      return (
+        <>
+          {(content.children as Array<any>).map((child) => (
+            <React.Fragment key={child.id}>{this.render(context, child, impl)}</React.Fragment>
+          ))}
+        </>
+      );
     }
 
     if (Text.isText(content)) {

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type SelectOption<K> = { value: K; displayValue: string };
+export type SelectOption<K = string> = { value: K; displayValue: string };
 
 type InputTypeDropdownProps<K> = {
   editMode: boolean;

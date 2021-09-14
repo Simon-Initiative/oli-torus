@@ -163,7 +163,7 @@ export interface Response extends Identifiable {
   score: number;
   feedback: Feedback;
 }
-export const makeResponse = (rule: string, score: number, text: ''): Response => ({
+export const makeResponse = (rule: string, score: number, text = ''): Response => ({
   id: guid(),
   rule,
   score,
@@ -264,7 +264,7 @@ export enum EvaluationStrategy {
 export enum Transform {
   'shuffle' = 'shuffle',
 }
-// eslint-disable-next-line
+
 export interface CreationContext extends ResourceContext {}
 
 export interface PartComponentDefinition {

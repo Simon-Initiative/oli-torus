@@ -27,13 +27,6 @@ export const InputQuestionEditor: React.FC<Props> = (props) => {
           editMode={editMode}
           selected={props.input.inputType}
           onChange={(inputType) => {
-            console.log(
-              'nodes',
-              Editor.nodes(props.editor, {
-                at: [],
-                match: (n) => Element.isElement(n) && n.id === props.input.id,
-              }),
-            );
             Transforms.setNodes(
               props.editor,
               { inputType },

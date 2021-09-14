@@ -1,7 +1,8 @@
+import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import React from 'react';
 
 interface Props {
-  options: { value: string | number; content: string; selected?: boolean }[];
+  options: SelectOption[];
   onChange: React.ChangeEventHandler<HTMLSelectElement>;
   disabled?: boolean;
 }
@@ -11,15 +12,11 @@ export const DropdownInput: React.FC<Props> = (props) => {
       onChange={props.onChange}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       className="custom-select"
-      style={{ color: 'black', fontWeight: 500, flexBasis: '160px', width: '160px' }}
+      style={{ flexBasis: '160px', width: '160px' }}
     >
       {props.options.map((option, i) => (
-        <option
-          selected={typeof option.selected === 'boolean' ? option.selected : false}
-          key={i}
-          value={option.value}
-        >
-          {option.content}
+        <option key={i} value={option.value}>
+          {option.displayValue}
         </option>
       ))}
     </select>

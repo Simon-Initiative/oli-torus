@@ -1,11 +1,11 @@
-import { MultiInput } from 'components/activities/multi_input/schema';
+import { MultiInputDelivery } from 'components/activities/multi_input/schema';
 import { ID } from 'data/content/model';
 
 export interface WriterContext {
   sectionSlug?: string;
   inputRefContext?: {
     onChange: (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-    inputs: Map<ID, { input: MultiInput; value: string }>;
+    inputs: Map<ID, { input: MultiInputDelivery; value: string; placeholder?: string }>;
     disabled: boolean;
   };
 }

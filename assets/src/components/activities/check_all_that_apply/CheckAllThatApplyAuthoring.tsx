@@ -55,7 +55,7 @@ const CheckAllThatApply = () => {
 
         <ChoicesDelivery
           unselectedIcon={<Checkbox.Unchecked />}
-          selectedIcon={<Checkbox.Correct />}
+          selectedIcon={<Checkbox.Checked />}
           choices={model.choices}
           selected={getCorrectChoiceIds(model)}
           onSelect={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
@@ -63,7 +63,7 @@ const CheckAllThatApply = () => {
           context={defaultWriterContext()}
         />
         <SimpleFeedback partId={DEFAULT_PART_ID} />
-        {/* <TargetedFeedback
+        <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(
               CATAActions.editTargetedFeedbackChoices(
@@ -77,17 +77,7 @@ const CheckAllThatApply = () => {
           addTargetedResponse={() => dispatch(CATAActions.addTargetedFeedback())}
           unselectedIcon={<Checkbox.Unchecked />}
           selectedIcon={<Checkbox.Checked />}
-        >{({targetedMappings, removeFeedback, updateFeedback}) => }
-          <ChoicesDelivery
-            unselectedIcon={unselectedIcon}
-            selectedIcon={selectedIcon}
-            choices={choices}
-            selected={mapping.choiceIds}
-            onSelect={(id) => toggleChoice(id, mapping)}
-            isEvaluated={false}
-            context={defaultWriterContext()}
-          />
-        </TargetedFeedback> */}
+        />
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">

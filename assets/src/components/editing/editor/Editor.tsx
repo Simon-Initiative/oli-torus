@@ -58,8 +58,7 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     !!prevProps.selection &&
     !!nextProps.selection &&
     Range.equals(prevProps.selection, nextProps.selection) &&
-    prevProps.placeholder === nextProps.placeholder &&
-    prevProps.commandContext === nextProps.commandContext
+    prevProps.placeholder === nextProps.placeholder
   );
 }
 
@@ -143,6 +142,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
           // eslint-disable-next-line
           next: Function,
         ) => {
+          console.log('pasting');
           setIsPerformingAsyncAction(true);
           await onPaste(editor, e, props.commandContext.projectSlug);
           setIsPerformingAsyncAction(false);
@@ -164,12 +164,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
         </HoveringToolbar>
 
         <Editable
-          onPaste={(e) => {
-            console.log(e.clipboardData.types);
-            e.clipboardData.types.forEach((type) =>
-              console.log('pasting', e.clipboardData.getData(type)),
-            );
-          }}
+          // onPaste={(e) => {
+          //   console.log(e.clipboardData.types);
+          //   e.clipboardData.types.forEach((type) =>
+          //     console.log('pasting', e.clipboardData.getData(type)),
+          //   );
+          // }}
           style={props.style}
           className={'slate-editor overflow-auto' + (props.className ? ' ' + props.className : '')}
           readOnly={!props.editMode}

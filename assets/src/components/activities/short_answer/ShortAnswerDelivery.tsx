@@ -76,7 +76,9 @@ export const ShortAnswerComponent: React.FC = () => {
         // as an array just to make it consistent with the other activity types
         safelySelectInputs(activityState).caseOf({
           just: (input) => input,
-          nothing: () => new Map().set(DEFAULT_PART_ID, ['']),
+          nothing: () => ({
+            [DEFAULT_PART_ID]: [''],
+          }),
         }),
       ),
     );
@@ -89,9 +91,9 @@ export const ShortAnswerComponent: React.FC = () => {
 
   const onInputChange = (input: string) => {
     dispatch(
-      activityDeliverySlice.actions.setSelectionForPart({
+      activityDeliverySlice.actions.setStudentInputForPart({
         partId: DEFAULT_PART_ID,
-        selection: [input],
+        studentInput: [input],
       }),
     );
 
@@ -110,15 +112,13 @@ export const ShortAnswerComponent: React.FC = () => {
           inputType={model.inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
-          input={Maybe.maybe(uiState.partState.get(DEFAULT_PART_ID)?.selection).valueOr([''])[0]}
+          input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}
           isEvaluated={isEvaluated(uiState)}
           onChange={onInputChange}
         />
 
         <ResetButtonConnected
-          onReset={() =>
-            dispatch(resetAction(onResetActivity, new Map().set(DEFAULT_PART_ID, [''])))
-          }
+          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [''] }))}
         />
         <SubmitButtonConnected />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />

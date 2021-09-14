@@ -30,8 +30,8 @@ export const defaultMCModel: () => MCSchema = () => {
           id: DEFAULT_PART_ID, // an MCQ only has one part, so it is safe to hardcode the id
           scoringStrategy: ScoringStrategy.average,
           responses: [
-            makeResponse(matchRule(choiceA.id), 1, ''),
-            makeResponse(matchRule('.*'), 0, ''),
+            makeResponse(matchRule(choiceA.id), 1, 'Correct'),
+            makeResponse(matchRule('.*'), 0, 'Incorrect'),
           ],
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },

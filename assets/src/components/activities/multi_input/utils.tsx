@@ -15,6 +15,7 @@ import {
 } from 'components/activities/multi_input/schema';
 import guid from 'utils/guid';
 import { inputRef, Paragraph } from 'data/content/model';
+import React from 'react';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
   { value: 'numeric', displayValue: 'Number' },
@@ -91,3 +92,41 @@ export const inputNumberings = (inputs: MultiInput[]): { type: string; number: n
 export const friendlyTitle = (numbering: any) => {
   return numbering.type + ' ' + numbering.number;
 };
+
+/*
+const writerContext = defaultWriterContext({
+    inputRefContext: {
+      onChange: () => {},
+      inputs: new Map(
+        model.inputs.map((input, i) => [
+          input.id,
+          {
+            input:
+              input.inputType === 'dropdown'
+                ? {
+                    id: input.id,
+                    inputType: input.inputType,
+                    options: [
+                      {
+                        value: '',
+                        displayValue: `Part ${i + 1}`,
+                      },
+                    ],
+                  }
+                : { id: input.id, inputType: input.inputType },
+            value: '',
+            placeholder: `Part ${i + 1}`,
+          },
+        ]),
+      ),
+      disabled: true,
+    },
+  });
+*/
+
+export const partTitle = (input: MultiInput, index: number) => (
+  <div>
+    {`Part ${index + 1}: `}
+    <span className="text-muted">{friendlyType(input.inputType)}</span>
+  </div>
+);

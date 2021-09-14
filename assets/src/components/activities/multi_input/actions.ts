@@ -6,24 +6,30 @@ import {
   makeUndoable,
   PostUndoable,
   makeHint,
-  Response,
   RichText,
+  Choice,
+  Stem,
   Part,
-  ChoiceId,
 } from 'components/activities/types';
 import { clone } from 'utils/common';
 import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
-import { Operations } from 'utils/pathOperations';
+import { Operations, PathOperation } from 'utils/pathOperations';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils1';
-import { ID, InputRef } from 'data/content/model';
-import { Editor, Operation, Transforms } from 'slate';
+import { InputRef } from 'data/content/model';
+import { Operation } from 'slate';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
-import { elementsOfType } from 'components/editing/utils';
 import { Editor as SlateEditor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { current } from '@reduxjs/toolkit';
-import { ShortAnswerActions } from 'components/activities/short_answer/actions';
+import { CHOICES_PATH, getChoice, getChoices } from 'data/activities/model/choiceUtils';
+import {
+  getCorrectResponse,
+  getResponseId,
+  getTargetedResponses,
+} from 'data/activities/model/responseUtils';
+import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
+import { elementsOfType } from 'components/editing/utils';
+import { remove } from 'components/activities/common/utils';
 
 export const MultiInputActions = {
   editStemAndPreviewText(
@@ -31,10 +37,10 @@ export const MultiInputActions = {
     editor: SlateEditor & ReactEditor,
     operations: Operation[],
   ) {
-    return (model: any, post: any) => {
+    return (model: MultiInputSchema, post: any) => {
+      const clonedStem = clone(model.stem);
+      const clonedPreviewText = clone(model.authoring.previewText);
       StemActions.editStemAndPreviewText(content)(model);
-
-      console.log('operations', operations);
 
       const addedInputRefs = operations
         .filter(
@@ -49,8 +55,20 @@ export const MultiInputActions = {
         )
         .map((operation) => operation.node as InputRef);
       removedInputRefs.forEach((inputRef) =>
-        MultiInputActions.removePart(inputRef.id)(model, post),
+        MultiInputActions.removePart(inputRef.id, clonedStem, clonedPreviewText)(model, post),
       );
+
+      // Reorder parts and inputs by new editor model
+      const inputRefIds = (elementsOfType(editor, 'input_ref') as InputRef[]).map(
+        (inputRef) => inputRef.id,
+      );
+      model.inputs = inputRefIds
+        .map((id) => model.inputs.find((input) => input.id === id))
+        .filter((x) => !!x) as MultiInput[];
+      model.authoring.parts = model.inputs
+        .map((input) => input.partId)
+        .map((partId) => model.authoring.parts.find((part) => part.id === partId))
+        .filter((x) => !!x) as Part[];
 
       // if (addedInputRefs.length) {
       //   console.log('added input ref', addedInputRefs);
@@ -87,8 +105,58 @@ export const MultiInputActions = {
     };
   },
 
+  addChoice(inputId: string, choice: Choice) {
+    return (model: MultiInputSchema, post: PostUndoable) => {
+      const input = model.inputs.find((input) => input.id === inputId);
+      if (!input || input.inputType !== 'dropdown') return;
+      ChoiceActions.addChoice(choice)(model, post);
+      input.choiceIds.push(choice.id);
+    };
+  },
+
+  reorderChoices(inputId: string, choices: Choice[]) {
+    return (model: MultiInputSchema, _post: PostUndoable) => {
+      const input = model.inputs.find((input) => input.id === inputId);
+      if (!input || input.inputType !== 'dropdown') return;
+      model.choices = model.choices.filter(
+        (choice) => !choices.map((c) => c.id).includes(choice.id),
+      );
+      model.choices.push(...choices);
+    };
+  },
+
+  removeChoice(inputId: string, choiceId: string) {
+    return (model: MultiInputSchema, post: PostUndoable) => {
+      const input = getByUnsafe(model.inputs, (input) => input.id === inputId) as Dropdown;
+      const inputIndex = input.choiceIds.findIndex((id) => id === choiceId);
+      if (input.choiceIds.length < 2) return;
+
+      const choice = getChoice(model, choiceId, CHOICES_PATH);
+      const choiceIndex = getChoices(model, CHOICES_PATH).findIndex((c) => c.id === choiceId);
+
+      // Remove the choice id from the input and the choice from the model
+      ChoiceActions.removeChoice(choiceId, CHOICES_PATH)(model, post);
+      input.choiceIds = input.choiceIds.filter((id) => id !== choiceId);
+
+      // if the choice being removed is the correct choice, a new correct choice
+      // must be set
+      const authoringClone = clone(model.authoring);
+      if (getCorrectResponse(model, input.partId).rule === matchRule(choiceId)) {
+        MCActions.toggleChoiceCorrectness(input.choiceIds[0], input.partId)(model, post);
+      }
+
+      post(
+        makeUndoable('Removed a choice', [
+          Operations.replace('$.authoring', authoringClone),
+          Operations.insert(`$.inputs[?(@.id==${input.id})].choiceIds`, choiceId, inputIndex),
+          Operations.insert(CHOICES_PATH, clone(choice), choiceIndex),
+        ]),
+      );
+    };
+  },
+
   updateInput(id: string, input: Partial<MultiInput>) {
-    return (model: MultiInputSchema, _post: any) => {
+    return (model: MultiInputSchema, _post: PostUndoable) => {
       const modelInput = getByUnsafe(model.inputs, (x) => x.id === id);
 
       if (input.inputType && modelInput.inputType !== input.inputType) {
@@ -125,106 +193,80 @@ export const MultiInputActions = {
     };
   },
 
-  updateStemWithInput(input: InputRef, editor: Editor) {
-    return (_model: any, _post: any) => {
-      Transforms.insertNodes(editor, input);
-    };
-  },
-
-  addDropdown() {
-    return (_model: MultiInputSchema, _post: PostUndoable) => {};
-  },
-
-  addPart(inputRefId: string) {
+  addPart(inputId: string) {
     return (model: MultiInputSchema, _post: PostUndoable) => {
       const part = makePart(
         [makeResponse(containsRule('answer'), 1, ''), makeResponse(matchRule('.*'), 0, '')],
         [makeHint('')],
       );
-      model.inputs.push({ inputType: 'text', partId: part.id, id: inputRefId });
+      model.inputs.push({ inputType: 'text', partId: part.id, id: inputId });
       model.authoring.parts.push(part);
-      // const part = (responses: Response[]) => makePart(responses, [makeHint('')], inputRef.partId);
-
-      // if (inputRef.inputType === 'dropdown') {
-      //   const choices = inputRef.choiceIds.map((id, i) => makeChoice('Choice ' + (i + 1), id));
-      //   model.choices.push(...choices);
-      //   model.authoring.parts.push(
-      //     part([
-      //       makeResponse(matchRule(choices[0].id), 1, ''),
-      //       makeResponse(matchRule('.*'), 0, ''),
-      //     ]),
-      //   );
-      //   return;
-      // }
-
-      // if (inputRef.inputType === 'numeric') {
-      //   model.authoring.parts.push(
-      //     part([makeResponse(eqRule('1'), 1, ''), makeResponse(matchRule('.*'), 0, '')]),
-      //   );
-      //   return;
-      // }
-
-      // if (inputRef.inputType === 'text') {
-      //   model.authoring.parts.push(
-      //     part([makeResponse(containsRule('answer'), 1, ''), makeResponse(matchRule('.*'), 0, '')]),
-      //   );
-      //   return;
-      // }
     };
   },
 
-  removePart(inputRefId: string) {
-    // IMPORTANT: Make sure removing an input with backspace also removes the matching part (and choices)
-    // If this can't be done, add an 'x' button to remove the input that triggers
-    // this logic
+  removePart(inputId: string, stem: Stem, previewText: string) {
+    // TODO: Standardize language (input, part, fill in the blank, etc)
+    // add warnings for malformed multi input questions
+    // xxAdd answer key for inputs (need to extend short answer component)
+    // Remove targeted feedback when removing part or changing input type
+    // Split out responses by part in delivery, maybe also show total score
+    // Add reconciliation logic when missing inputs/parts
+    // Merge all the activity data utils
+    // Finish displaying hints on each delivery component
+    // Write tests
+    // Fix issue with adding an input and not being able to select others -> requires a stem update to fix it
+    // Handle copy/pasting inputs, maybe blacklist / normalize inputRefs
 
     return (model: MultiInputSchema, post: PostUndoable) => {
       if (getParts(model).length < 2) {
         return;
       }
 
-      const input = getByUnsafe(model.inputs, (input) => input.id === inputRefId);
+      const input = getByUnsafe(model.inputs, (input) => input.id === inputId);
+      const inputIndex = model.inputs.findIndex((input) => input.id === inputId);
 
-      // remove part, input, and join stems at the right indices
-      // stem is the one after the part index
-
-      // TODO: Standardize language (input, part, fill in the blank, etc)
       const part = getPartById(model, input.partId);
       const partIndex = getParts(model).findIndex((p) => p.id === part.id);
 
-      // clone inputs, authoring (or just entire model? ... or will this undo actions after the undo)
-
-      // console.log('parts before removing', getParts(current(model)));
-      // console.log('removing part', current(part));
-
-      Operations.applyAll(model, [
-        Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
-        Operations.filter('$.inputs', `[?(@.id!=${inputRefId})]`),
-      ]);
-      // const allChoiceIds: ChoiceId[] = Object.values(inputRefs)
-      //   .filter((input: InputRef) => input.inputType === 'dropdown')
-      //   .reduce((acc: ChoiceId[], dropdown: Dropdown) => acc.concat(dropdown.choiceIds), []);
-      // console.log(
-      //   'new choices',
-      //   model.choices.filter((choice) => allChoiceIds.includes(choice.id)),
-      // );
-      // console.log('parts after removing', getParts(current(model)));
+      const choiceUndoables: PathOperation[] = [];
+      const targetedUndoables: PathOperation[] = [];
       if (input.inputType === 'dropdown') {
+        model.choices.forEach((choice, index) => {
+          if (input.choiceIds.includes(choice.id)) {
+            choiceUndoables.push(Operations.insert(CHOICES_PATH, clone(choice), index));
+          }
+        });
+        post(
+          makeUndoable('Removed feedback', [
+            Operations.replace('$.authoring', clone(model.authoring)),
+          ]),
+        );
+
+        // remove targeted feedbacks
+        // remove(
+        //   model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
+        //   model.authoring.targeted,
+        // );
+
         ChoiceActions.setAllChoices(
           model.choices.filter((choice) => !input.choiceIds.includes(choice.id)),
         )(model, post);
       }
 
-      // remove choices if dropdown
-      // if (input.type === 'dropdown') {
-      //   model.choices = model.choices.filter((choice) => !input.choiceIds.includes(choice.id));
-      // }
-
-      const undoable = makeUndoable('Removed a part', [
-        Operations.replace('$.authoring', clone(model.authoring)),
-        // Operations.insert('$.choices', clone(choice), index),
+      Operations.applyAll(model, [
+        Operations.filter('$..parts', `[?(@.id!=${part.id})]`),
+        Operations.filter('$.inputs', `[?(@.id!=${inputId})]`),
       ]);
-      post(undoable);
+
+      post(
+        makeUndoable('Removed a part', [
+          Operations.insert('$..parts', clone(part), partIndex),
+          Operations.insert('$.inputs', clone(input), inputIndex),
+          Operations.replace('$.stem', stem),
+          Operations.replace('$..previewText', previewText),
+          ...choiceUndoables,
+        ]),
+      );
     };
   },
 };

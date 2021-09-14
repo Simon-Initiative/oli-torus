@@ -187,7 +187,6 @@ export class HtmlParser implements WriterImpl {
     return <blockquote>{next()}</blockquote>;
   }
   a(context: WriterContext, next: Next, { href }: Hyperlink) {
-    console.log('href', href);
     if (href.startsWith('/course/link/')) {
       let internalHref = href;
       if (context.sectionSlug) {
@@ -222,15 +221,41 @@ export class HtmlParser implements WriterImpl {
         inputRefContext.onChange(inputRef.id, e),
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
+      placeholder: inputData.placeholder || '',
+    };
+
+    const Hints = (props: any) => {
+      const [active, setActive] = React.useState(false);
+      const icon = active ? (
+        <span className="material-icons">lightbulb</span>
+      ) : (
+        <span className="material-icons-outlined">lightbulb</span>
+      );
+      return icon;
     };
 
     switch (inputData.input.inputType) {
       case 'numeric':
-        return <NumericInput {...shared} />;
+        return (
+          <>
+            <NumericInput {...shared} />
+            <Hints hints={[]} />
+          </>
+        );
       case 'text':
-        return <TextInput {...shared} />;
+        return (
+          <>
+            <TextInput {...shared} />
+            <Hints hints={[]} />
+          </>
+        );
       case 'dropdown':
-        return <DropdownInput {...shared} options={[]} />;
+        return (
+          <>
+            <DropdownInput {...shared} options={inputData.input.options} />
+            <Hints hints={[]} />
+          </>
+        );
       default:
         assertNever(inputData.input);
     }

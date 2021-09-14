@@ -53,6 +53,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
+          partId={DEFAULT_PART_ID}
           unselectedIcon={<Checkbox.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -66,7 +67,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
           onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'multiple'))}
         />
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, new Map().set(DEFAULT_PART_ID, [])))}
+          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
         />
         <SubmitButtonConnected />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />

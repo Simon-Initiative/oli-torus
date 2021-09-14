@@ -15,6 +15,7 @@ import {
   initializeState,
   activityDeliverySlice,
   resetAction,
+  StudentInput,
 } from 'data/activities/DeliveryState';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
@@ -23,7 +24,7 @@ import { HintsDeliveryConnected } from 'components/activities/common/hints/deliv
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { initialPartInputs, selectionToInput } from 'data/activities/utils';
+import { initialPartInputs, studentInputToString } from 'data/activities/utils';
 import { getChoice } from 'data/activities/model/choiceUtils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Maybe } from 'tsmonad';
@@ -49,7 +50,7 @@ export const OrderingComponent: React.FC = () => {
     onSaveActivity(uiState.attemptState.attemptGuid, [
       {
         attemptGuid: uiState.attemptState.parts[0].attemptGuid,
-        response: { input: selectionToInput(studentInput) },
+        response: { input: studentInputToString(studentInput) },
       },
     ]);
   };
@@ -58,13 +59,7 @@ export const OrderingComponent: React.FC = () => {
     dispatch(
       initializeState(
         activityState,
-        initialPartInputs(
-          activityState,
-          new Map().set(
-            DEFAULT_PART_ID,
-            model.choices.map((c) => c.id),
-          ),
-        ),
+        initialPartInputs(activityState, { [DEFAULT_PART_ID]: model.choices.map((c) => c.id) }),
       ),
     );
 
@@ -74,7 +69,7 @@ export const OrderingComponent: React.FC = () => {
     setTimeout(() => {
       if (activityState.parts[0].response === null) {
         const selection = model.choices.map((choice) => choice.id);
-        const input = selectionToInput(selection);
+        const input = studentInputToString(selection);
         onSaveActivity(activityState.attemptGuid, [
           {
             attemptGuid: activityState.parts[0].attemptGuid,
@@ -90,27 +85,25 @@ export const OrderingComponent: React.FC = () => {
     return null;
   }
 
+  console.log('student input', uiState.partState[DEFAULT_PART_ID]?.studentInput);
+
   return (
     <div className="activity ordering-activity">
       <div className="activity-content">
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={Maybe.maybe(uiState.partState.get(DEFAULT_PART_ID)?.studentInput)
-            .valueOr([])
+          choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
+            .valueOr<StudentInput>([])
             .map((id) => getChoice(model, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
         />
         <ResetButtonConnected
           onReset={() =>
             dispatch(
-              resetAction(
-                onResetActivity,
-                new Map().set(
-                  DEFAULT_PART_ID,
-                  model.choices.map((choice) => choice.id),
-                ),
-              ),
+              resetAction(onResetActivity, {
+                [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
+              }),
             )
           }
         />

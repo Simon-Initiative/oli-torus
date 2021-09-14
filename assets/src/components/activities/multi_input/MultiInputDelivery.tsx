@@ -8,10 +8,10 @@ import {
   activityDeliverySlice,
   resetAction,
   isEvaluated,
+  PartInputs,
 } from 'data/activities/DeliveryState';
 import { safelySelectInputs } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -26,6 +26,7 @@ import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest } from 'components/activities/types';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { getByUnsafe, getParts } from 'data/activities/model/utils1';
+import { toSimpleText } from 'data/content/text';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -44,7 +45,11 @@ export const MultiInputComponent: React.FC = () => {
         activityState,
         safelySelectInputs(activityState).caseOf({
           just: (inputs) => inputs,
-          nothing: () => new Map(getParts(model).map((part) => [part.id, ['']])),
+          nothing: () =>
+            getParts(model).reduce((acc, part) => {
+              acc[part.id] = [''];
+              return acc;
+            }, {} as PartInputs),
         }),
       ),
     );
@@ -55,50 +60,67 @@ export const MultiInputComponent: React.FC = () => {
     return null;
   }
 
+  const writerContext = defaultWriterContext({
+    sectionSlug,
+    inputRefContext: {
+      onChange: (id, e) => {
+        const input = getByUnsafe(model.inputs, (x) => x.id === id);
+        const value = e.target.value;
+        dispatch(
+          activityDeliverySlice.actions.setStudentInputForPart({
+            partId: input.partId,
+            studentInput: [value],
+          }),
+        );
+
+        onSaveActivity(uiState.attemptState.attemptGuid, [
+          {
+            attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
+              .attemptGuid,
+            response: { input: value },
+          },
+        ]);
+      },
+      inputs: new Map(
+        model.inputs.map((input) => [
+          input.id,
+          {
+            input:
+              input.inputType === 'dropdown'
+                ? {
+                    id: input.id,
+                    inputType: input.inputType,
+                    options: model.choices
+                      .filter((c) => input.choiceIds.includes(c.id))
+                      .map((choice) => ({
+                        value: choice.id,
+                        displayValue: toSimpleText({ children: choice.content.model }),
+                      })),
+                  }
+                : { id: input.id, inputType: input.inputType },
+            value: (uiState.partState[input.partId]?.studentInput || [''])[0],
+          },
+        ]),
+      ),
+      disabled: isEvaluated(uiState),
+    },
+  });
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <StemDelivery
-          className="form-inline"
-          stem={model.stem}
-          context={defaultWriterContext({
-            sectionSlug,
-            inputRefContext: {
-              onChange: (id, e) => {
-                const input = getByUnsafe(model.inputs, (x) => x.id === id);
-                const value = e.target.value;
-                dispatch(
-                  activityDeliverySlice.actions.setSelectionForPart({
-                    partId: input.partId,
-                    selection: [value],
-                  }),
-                );
-
-                onSaveActivity(uiState.attemptState.attemptGuid, [
-                  {
-                    attemptGuid: getByUnsafe(
-                      uiState.attemptState.parts,
-                      (p) => p.partId === input.partId,
-                    ).attemptGuid,
-                    response: { input: value },
-                  },
-                ]);
-              },
-              inputs: new Map(
-                model.inputs.map((input) => [
-                  input.id,
-                  { input, value: (uiState.partState.get(input.partId)?.selection || [''])[0] },
-                ]),
-              ),
-              disabled: isEvaluated(uiState),
-            },
-          })}
-        />
+        <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
         <GradedPointsConnected />
         <ResetButtonConnected
           onReset={() =>
             dispatch(
-              resetAction(onResetActivity, new Map(getParts(model).map((part) => [part.id, ['']]))),
+              resetAction(
+                onResetActivity,
+                getParts(model).reduce((acc, part) => {
+                  acc[part.id] = [''];
+                  return acc;
+                }, {} as PartInputs),
+              ),
             )
           }
         />

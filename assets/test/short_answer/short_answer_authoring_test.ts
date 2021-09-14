@@ -44,7 +44,7 @@ describe('short answer question', () => {
   });
 
   it('can add and remove a response in numeric mode', () => {
-    let updated = dispatch(model, ShortAnswerActions.setInputType('numeric'));
+    let updated = dispatch(model, ShortAnswerActions.setInputType('numeric', DEFAULT_PART_ID));
 
     updated = dispatch(
       updated,

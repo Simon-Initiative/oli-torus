@@ -1,5 +1,5 @@
 import { MultiInput } from 'components/activities/multi_input/schema';
-import { ID } from 'data/content/model';
+import { ID, InputRef } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 
 // For toolbar buttons
@@ -15,8 +15,10 @@ export type CommandDesc = {
 export interface CommandContext {
   projectSlug: string;
   inputRefContext?: {
-    onEditInput: (id: string, attrs: Partial<MultiInput>) => void;
+    onEditInput: (id: ID, attrs: Partial<MultiInput>) => void;
     inputs: Map<ID, MultiInput>;
+    selectedInputRef: InputRef | undefined;
+    setSelectedInputRef: (ref: InputRef | undefined) => void;
   };
 }
 

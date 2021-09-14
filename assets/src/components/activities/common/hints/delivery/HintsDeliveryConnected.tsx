@@ -16,8 +16,8 @@ export const HintsDeliveryConnected: React.FC<Props> = (props) => {
     <HintsDelivery
       shouldShow={!isEvaluated(uiState) && !graded}
       onClick={() => dispatch(requestHint(props.partId, onRequestHint))}
-      hints={uiState.partState.get(props.partId)?.hintsShown || []}
-      hasMoreHints={uiState.partState.get(props.partId)?.hasMoreHints || false}
+      hints={uiState.partState[props.partId]?.hintsShown || []}
+      hasMoreHints={uiState.partState[props.partId]?.hasMoreHints || false}
       isEvaluated={isEvaluated(uiState)}
       context={writerContext}
     />

@@ -44,7 +44,7 @@ export const PartObjectives = (props: PartObjectivesProps) => {
                   <Objectives
                     editMode={editMode}
                     projectSlug={props.projectSlug}
-                    selected={objectives[id]}
+                    selected={objectives[id] || []}
                     objectives={allObjectives}
                     onRegisterNewObjective={onRegisterNewObjective}
                     onEdit={(objectives) =>

@@ -11,14 +11,15 @@ export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   const { graded, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
+  console.log('partState', uiState.partState);
   return (
     <SubmitButton
       shouldShow={!isEvaluated(uiState) && !graded}
       disabled={
         disabled === undefined
           ? Object.values(uiState.partState)
-              .map((partState) => partState.selection)
-              .every((selection) => selection.length === 0)
+              .map((partState) => partState.studentInput)
+              .every((input) => input.length === 0)
           : disabled
       }
       onClick={() => dispatch(submit(onSubmitActivity))}

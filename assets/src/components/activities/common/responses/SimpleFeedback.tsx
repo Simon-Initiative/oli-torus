@@ -16,8 +16,8 @@ export const useSimpleFeedback = (partId: string) => {
   return {
     correctResponse: getCorrectResponse(model, partId),
     incorrectResponse: getIncorrectResponse(model, partId),
-    updateFeedback: (id: string, content: RichText) =>
-      dispatch(ResponseActions.editResponseFeedback(id, content)),
+    updateFeedback: (responseId: string, content: RichText) =>
+      dispatch(ResponseActions.editResponseFeedback(responseId, content)),
   };
 };
 
