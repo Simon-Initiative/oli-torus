@@ -3,7 +3,10 @@ defmodule OliWeb.Projects.Table do
   alias OliWeb.Router.Helpers, as: Routes
 
   defp authors(assigns, project_id) do
-    Map.get(assigns.authors, project_id)
+    case Map.get(assigns.authors, project_id) do
+      nil -> []
+      authors -> authors
+    end
   end
 
   def th(assigns, label, sort_by, sort_order, column) do
@@ -44,8 +47,14 @@ defmodule OliWeb.Projects.Table do
             <td><%= time_ago(assigns, project.inserted_at) %></td>
             <td>
               <ul>
-              <%= for author <- authors(assigns, project.id) do %>
-                <li><%= author.name %> (<%= author.email %>)</li>
+              <%= case authors(assigns, project.id) do %>
+                <% [] -> %>
+                  <span class="text-secondary">None</span>
+
+                <% authors -> %>
+                  <%= for author <- authors do %>
+                    <li><%= author.name %> (<%= author.email %>)</li>
+                  <% end %>
               <% end %>
               </ul>
             </td>
