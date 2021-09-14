@@ -11,7 +11,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { PartComponentProps } from '../types/parts';
-import { getIcon } from './GetIcon';
+import { getIcon, getIconSrc } from './GetIcon';
 import { PopupModel } from './schema';
 interface ContextProps {
   currentActivity: string;
@@ -108,19 +108,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     }
 
     const { iconURL, defaultURL } = pModel;
-    const getIconSrc = () => {
-      if (iconURL && getIcon(iconURL)) {
-        return getIcon(iconURL);
-      } else if (iconURL) {
-        return iconURL;
-      } else {
-        return getIcon(defaultURL!);
-      }
-    };
 
     setShowPopup(!!pModel.openByDefault);
     setPopupVisible(!!pModel.visible);
-    setIconSrc(getIconSrc());
+    setIconSrc(getIconSrc(iconURL, defaultURL));
 
     initialize(pModel);
   }, [props]);
@@ -336,6 +327,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     width: '100%',
     height: '100%',
   };
+
+  if (showPopup) {
+    console.log('SHOW POPUP: ', { model, popupModalStyles });
+  }
+
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
