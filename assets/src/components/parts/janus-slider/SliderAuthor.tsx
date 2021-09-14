@@ -24,6 +24,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   } = model;
 
   const styles: CSSProperties = {
+    width: '100%',
     flexDirection: showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
@@ -78,7 +79,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
           <div style={divStyles}>
-            {/* {showDataTip && (
+            {showDataTip && (
               <div className="rangeValue" id={`rangeV-${internalId}`}>
                 <span
                   ref={divTargetRef}
@@ -93,7 +94,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
                   {sliderValue}
                 </span>
               </div>
-            )} */}
+            )}
             <input
               ref={inputTargetRef}
               disabled={false}
