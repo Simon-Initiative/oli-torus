@@ -2,22 +2,13 @@ import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/A
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
 import { parseNumString } from 'utils/common';
-import { CreationContext, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import {
+  ColorPalette,
+  CreationContext,
+  JanusAbsolutePositioned,
+  JanusCustomCss,
+} from '../types/parts';
 
-interface ColorPalette {
-  useHtmlProps: boolean;
-  backgroundColor: string;
-  borderColor: string;
-  borderRadius: number | string;
-  borderStyle: string;
-  borderWidth: number | string;
-  fillColor?: number;
-  fillAlpha?: number;
-  lineColor?: number;
-  lineAlpha?: number;
-  lineStyle?: number;
-  lineThickness?: number;
-}
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
   overrideWidth?: boolean;
   overrideHeight?: boolean;

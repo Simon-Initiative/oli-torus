@@ -55,3 +55,18 @@ export interface CreationContext {
   };
   [key: string]: any;
 }
+
+export interface ColorPalette {
+  useHtmlProps: boolean;
+  backgroundColor: string;
+  borderColor: string;
+  borderRadius: number | string;
+  borderStyle: string;
+  borderWidth: number | string;
+  fillColor?: number;
+  fillAlpha?: number;
+  lineColor?: number;
+  lineAlpha?: number;
+  lineStyle?: number;
+  lineThickness?: number;
+}

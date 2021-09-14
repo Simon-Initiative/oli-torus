@@ -53,3 +53,15 @@ export const getIcon = (iconKey: string): string => {
 
   return typeof iconManifest[iconKey] !== 'undefined' ? iconManifest[iconKey] : '';
 };
+
+export const getIconSrc = (iconURL: string, defaultURL?: string): string => {
+  if (iconURL && getIcon(iconURL)) {
+    return getIcon(iconURL);
+  } else if (iconURL) {
+    return iconURL;
+  } else if (defaultURL) {
+    return getIconSrc(defaultURL);
+  }
+
+  return '';
+};
