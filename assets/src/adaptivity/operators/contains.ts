@@ -28,22 +28,22 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
   if (Array.isArray(factValue) && Array.isArray(value)) {
     // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
     const updatedFacts = parseArray(factValue);
-    const modifideValue = parseArray(value);
+    const modifiedValue = parseArray(value);
     if (isDoesNotContainsOperator) {
       return (
-        modifideValue
+        modifiedValue
           // check if value is found in factValue array
           .every((item) => updatedFacts.includes(item))
       );
     } else {
       let hitCount = 0; // counts the number of values found
 
-      modifideValue.forEach((item) => {
+      modifiedValue.forEach((item) => {
         if (updatedFacts.includes(item)) {
           hitCount++;
         }
       });
-      if (hitCount == modifideValue.length) {
+      if (hitCount === modifiedValue.length) {
         return true;
       }
     }
