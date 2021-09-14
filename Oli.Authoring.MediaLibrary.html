@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.13.0">
+    <meta name="project" content="OLI Torus v0.13.1">
 
-    <title>Oli.Authoring.MediaLibrary — OLI Torus v0.13.0</title>
+    <title>Oli.Authoring.MediaLibrary — OLI Torus v0.13.1</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-86a17473ad.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.13.0
+        v0.13.1
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Authoring.MediaLibrary <small class="app-vsn">(OLI Torus v0.13.0)</small>
+Oli.Authoring.MediaLibrary <small class="app-vsn">(OLI Torus v0.13.1)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/authoring/media_library.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -283,10 +283,10 @@ to storage or it was a problem saving file meta data</p><p>If the project does n
   <a href="#create_media_item/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="5004713551-1">(</span><span class="p" data-group-id="5004713551-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5004713551-2">}</span><span class="p" data-group-id="5004713551-1">)</span><span class="w">
-</span><span class="p" data-group-id="5004713551-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5004713551-4">%</span><span class="nc" data-group-id="5004713551-4">MediaItem</span><span class="p" data-group-id="5004713551-4">{</span><span class="p" data-group-id="5004713551-4">}</span><span class="p" data-group-id="5004713551-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="5004713551-5">(</span><span class="p" data-group-id="5004713551-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5004713551-6">}</span><span class="p" data-group-id="5004713551-5">)</span><span class="w">
-</span><span class="p" data-group-id="5004713551-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5004713551-8">%</span><span class="nc" data-group-id="5004713551-8">Ecto.Changeset</span><span class="p" data-group-id="5004713551-8">{</span><span class="p" data-group-id="5004713551-8">}</span><span class="p" data-group-id="5004713551-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="8618225231-1">(</span><span class="p" data-group-id="8618225231-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8618225231-2">}</span><span class="p" data-group-id="8618225231-1">)</span><span class="w">
+</span><span class="p" data-group-id="8618225231-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8618225231-4">%</span><span class="nc" data-group-id="8618225231-4">MediaItem</span><span class="p" data-group-id="8618225231-4">{</span><span class="p" data-group-id="8618225231-4">}</span><span class="p" data-group-id="8618225231-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_media_item</span><span class="p" data-group-id="8618225231-5">(</span><span class="p" data-group-id="8618225231-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8618225231-6">}</span><span class="p" data-group-id="8618225231-5">)</span><span class="w">
+</span><span class="p" data-group-id="8618225231-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8618225231-8">%</span><span class="nc" data-group-id="8618225231-8">Ecto.Changeset</span><span class="p" data-group-id="8618225231-8">{</span><span class="p" data-group-id="8618225231-8">}</span><span class="p" data-group-id="8618225231-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="items/2">
@@ -404,10 +404,10 @@ project's media library.</p><p>If the project matching the supplied slug exists,
   <a href="#update_media_item/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="2649362951-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2649362951-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2649362951-2">}</span><span class="p" data-group-id="2649362951-1">)</span><span class="w">
-</span><span class="p" data-group-id="2649362951-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2649362951-4">%</span><span class="nc" data-group-id="2649362951-4">MediaItem</span><span class="p" data-group-id="2649362951-4">{</span><span class="p" data-group-id="2649362951-4">}</span><span class="p" data-group-id="2649362951-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="2649362951-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2649362951-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2649362951-6">}</span><span class="p" data-group-id="2649362951-5">)</span><span class="w">
-</span><span class="p" data-group-id="2649362951-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2649362951-8">%</span><span class="nc" data-group-id="2649362951-8">Ecto.Changeset</span><span class="p" data-group-id="2649362951-8">{</span><span class="p" data-group-id="2649362951-8">}</span><span class="p" data-group-id="2649362951-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="0817295710-1">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817295710-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0817295710-2">}</span><span class="p" data-group-id="0817295710-1">)</span><span class="w">
+</span><span class="p" data-group-id="0817295710-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817295710-4">%</span><span class="nc" data-group-id="0817295710-4">MediaItem</span><span class="p" data-group-id="0817295710-4">{</span><span class="p" data-group-id="0817295710-4">}</span><span class="p" data-group-id="0817295710-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_media_item</span><span class="p" data-group-id="0817295710-5">(</span><span class="n">revision</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817295710-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0817295710-6">}</span><span class="p" data-group-id="0817295710-5">)</span><span class="w">
+</span><span class="p" data-group-id="0817295710-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817295710-8">%</span><span class="nc" data-group-id="0817295710-8">Ecto.Changeset</span><span class="p" data-group-id="0817295710-8">{</span><span class="p" data-group-id="0817295710-8">}</span><span class="p" data-group-id="0817295710-7">}</span></code></pre>
   </section>
 </section>
 
