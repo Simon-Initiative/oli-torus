@@ -116,7 +116,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.connected = false;
 
     // need a way to push into the react component w/o rerendering the custom element
-    this._notify = new EventEmitter();
+    this._notify = new EventEmitter().setMaxListeners(50);
 
     this.onRequestHint = (attemptGuid: string, partAttemptGuid: string) =>
       this.dispatch('requestHint', attemptGuid, partAttemptGuid);

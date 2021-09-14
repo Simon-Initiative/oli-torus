@@ -1,8 +1,6 @@
-import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import React, { useCallback } from 'react';
-import { useEffect } from 'react';
+import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -27,19 +25,6 @@ const EditingCanvas: React.FC = () => {
     setCurrentActivityId(current?.id || '');
   }, [currentActivityTree]);
 
-  // TODO: pull from currentActivity with these defaults? (or lesson defaults)
-  const width = currentActivity?.content?.custom?.width || 800;
-  const height = currentActivity?.content?.custom?.height || 600;
-
-  const background = {
-    color: currentActivity?.content?.custom?.palette?.backgroundColor || '#ffffff',
-  };
-
-  const layers = (currentActivityTree || []).map((activity) => ({
-    id: activity.id,
-    parts: activity.content.partsLayout || [],
-  }));
-
   const handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
     console.log('[handleSelectionChanged]', { selected });
@@ -49,25 +34,26 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: selectedTab }));
   };
 
-  const handlePositionChanged = useCallback(
-    async (id: string, deltaX: number, deltaY: number) => {
-      console.log('[handlePositionChanged]', { id, deltaX, deltaY });
-      if (!currentActivityTree) {
-        return;
-      }
-      // only valid to move on the "owner" layer IF it's current
-      const currentActivityClone = clone(currentActivityTree.slice(-1)[0]);
-      const partDef = currentActivityClone.content.partsLayout.find((part: any) => part.id === id);
-      if (!partDef) {
-        return;
-      }
-      partDef.custom.x += deltaX;
-      partDef.custom.y += deltaY;
+  const handlePositionChanged = async (activityId: string, partId: string, dragData: any) => {
+    // if we haven't moved, no point
+    if (dragData.deltaX === 0 && dragData.deltaY === 0) {
+      return false;
+    }
 
-      dispatch(saveActivity({ activity: currentActivityClone }));
-    },
-    [currentActivityTree],
-  );
+    // at this point, this handler's reference will have been set no matter the deps
+    // to a previous version, because the reference is passed into a DOM event
+    // when it is wired to listen to custom element events
+    // so we have to be able to simply dispatch the change to something that will
+    // be able to access the latest activity state
+
+    console.log('[handlePositionChanged]', { activityId, partId, dragData });
+
+    const newPosition = { x: dragData.x, y: dragData.y };
+
+    dispatch(updatePart({ activityId, partId, changes: { custom: newPosition } }));
+
+    return newPosition;
+  };
 
   const handlePartSelect = async (id: string) => {
     console.log('[handlePartSelect]', { id });
@@ -88,7 +74,7 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
-  console.log('EC: RENDER', { layers });
+  // console.log('EC: RENDER', { layers });
 
   useEffect(() => {
     dispatch(setCurrentSelection({ selection: '' }));

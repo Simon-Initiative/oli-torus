@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.ManageSection do
     current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
 
     # only permit instructor level access
-    if is_admin?(%{assigns: %{current_author: current_user}}) or
+    if is_admin?(%{assigns: %{current_author: current_user.author}}) or
          ContextRoles.has_role?(
            current_user,
            section.slug,

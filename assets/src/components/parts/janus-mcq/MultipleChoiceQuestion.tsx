@@ -400,7 +400,31 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing
+            {
+              const { snapshot: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+              const sRandomized = changes[`stage.${id}.randomize`];
+              if (sRandomized !== undefined) {
+                setRandomized(parseBoolean(sRandomized));
+              }
+              const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
+              if (sSelectedChoice !== undefined) {
+                const choice = parseInt(String(sSelectedChoice), 10);
+                if (selectedChoice !== choice) {
+                  setSelectedChoice(choice);
+                }
+              }
+              const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
+              if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
+                const updatedValues = sSelectedChoices.map((item) =>
+                  !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
+                );
+                setSelectedChoices(updatedValues);
+              }
+            }
             break;
         }
       };
