@@ -16,10 +16,11 @@ defmodule OliWeb.RemixSectionLiveTest do
 
   defp setup_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
+    user = user_fixture()
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
      conn: conn,

@@ -1,7 +1,5 @@
-defmodule Oli.Publishing.DeliveryResolverTest do
+defmodule Oli.Publishing.HierarchyNodeTest do
   use Oli.DataCase
-
-  alias Oli.Publishing.DeliveryResolver
 
   describe "hierarchy node" do
     setup do

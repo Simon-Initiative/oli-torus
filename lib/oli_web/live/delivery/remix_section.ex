@@ -172,8 +172,16 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, active: active)}
   end
 
+  def handle_event("save", _, socket) do
+    %{hierarchy: hierarchy} = socket.assigns
+
+    active = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+
+    {:noreply, assign(socket, active: active)}
+  end
+
   defp new_container_name(%HierarchyNode{section_resource: sr} = _active) do
-    Numbering.container_type(sr.numbering_level)
+    Numbering.container_type(sr.numbering_level + 1)
   end
 
   defp is_instructor_or_admin?(section, current_user) do

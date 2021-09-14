@@ -53,8 +53,8 @@ defmodule Oli.Resources.Numbering do
 
   def container_type(level) do
     case level do
-      0 -> "Unit"
-      1 -> "Module"
+      1 -> "Unit"
+      2 -> "Module"
       _ -> "Section"
     end
   end
@@ -176,7 +176,8 @@ defmodule Oli.Resources.Numbering do
     numbering_tracker = init_numbering_tracker()
     level = 0
     numberings = %{}
-    {_, numberings} = number_helper(revision, by_id, level, numbering_tracker, numberings)
+
+    {_, numberings} = number_helper(revision, by_id, level + 1, numbering_tracker, numberings)
 
     numberings
   end
