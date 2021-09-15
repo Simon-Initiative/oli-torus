@@ -270,7 +270,8 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                       {FilterItems.VARIABLES}
                     </Dropdown.Item>
                     <Dropdown.Divider />
-                    <Dropdown.Header>Other Screens</Dropdown.Header>
+                    {/* TODO: re-enable this for part2 */}
+                    {/* <Dropdown.Header>Other Screens</Dropdown.Header>
                     <div className="screen-picker-container">
                       <SequenceDropdown
                         items={hierarchy}
@@ -278,7 +279,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                         value={'next'}
                         showNextBtn={false}
                       />
-                    </div>
+                    </div> */}
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
