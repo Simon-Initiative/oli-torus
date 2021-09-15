@@ -61,7 +61,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     if (sHeight !== undefined) {
       styleChanges.height = sHeight;
     }
-    setComponentStyle({ ...componentStyle, ...styleChanges });
+    setComponentStyle((previousStyle) => {
+      return { ...previousStyle, ...styleChanges };
+    });
 
     const sCssClass: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
     if (sCssClass !== undefined) {
