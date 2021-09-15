@@ -108,7 +108,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
 
   const getPartTypeTemplate = useCallback(
     (part: Record<string, string>, index: number) => {
-      const adaptivitySchema = partAdaptivityMap[part.type];
+      const adaptivitySchema: any = partAdaptivityMap[part.type];
       if (adaptivitySchema) {
         return (
           <>
@@ -147,9 +147,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     <button type="button" className="text-btn font-italic">
                       <span
                         title={
-                          // @ts-expect-error Element implicitly has an 'any' type because index expression is not of type 'number'.ts(7015)
                           CapiVariableTypes[adaptivitySchema[key]][0] +
-                          // @ts-expect-error Element implicitly has an 'any' type because index expression is not of type 'number'.ts(7015)
                           CapiVariableTypes[adaptivitySchema[key]].slice(1).toLowerCase()
                         }
                       >
