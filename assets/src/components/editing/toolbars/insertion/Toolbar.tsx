@@ -1,11 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useFocused, useSlate } from 'slate-react';
-import { ToolbarItem, CommandContext } from '../../commands/interfaces';
-import { Popover } from 'react-tiny-popover';
-import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
-import { shouldShowInsertionToolbar, positionInsertion } from './utils';
-import { classNames } from 'utils/classNames';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import React, { useEffect, useRef, useState } from 'react';
+import { Popover } from 'react-tiny-popover';
+import { useFocused, useSlate } from 'slate-react';
+import { classNames } from 'utils/classNames';
+import { CommandContext, ToolbarItem } from '../../commands/interfaces';
+import { DropdownToolbarButton, hideToolbar, showToolbar, Spacer, ToolbarButton } from '../common';
+import { positionInsertion, shouldShowInsertionToolbar } from './utils';
 
 type InsertionToolbarProps = {
   isPerformingAsyncAction: boolean;

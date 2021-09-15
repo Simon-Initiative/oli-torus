@@ -25,7 +25,6 @@ import { getCorrectResponse, Responses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model';
-import { current } from 'immer';
 import { Editor as SlateEditor, Operation } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { clone } from 'utils/common';
@@ -76,7 +75,6 @@ export const MultiInputActions = {
   removeExtraParts(operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
-      console.log('stem before removal', current(model.stem));
       const clonedStem = clone(model.stem);
       const clonedPreviewText = clone(model.authoring.previewText);
       removedInputRefs.forEach((inputRef) =>

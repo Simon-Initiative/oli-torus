@@ -27,6 +27,40 @@ import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
+const input = inputRef();
+const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
+
+const _dropdownModel: MultiInputSchema = {
+  stem: multiInputStem(input),
+  choices,
+  inputs: [
+    {
+      inputType: 'dropdown',
+      id: input.id,
+      partId: DEFAULT_PART_ID,
+      choiceIds: choices.map((c) => c.id),
+    },
+  ],
+  authoring: {
+    parts: [makePart(Responses.forMultipleChoice(choices[0].id), [makeHint('')], DEFAULT_PART_ID)],
+    targeted: [],
+    transformations: [makeTransformation('choices', Transform.shuffle)],
+    previewText: 'Example question with a fill in the blank',
+  },
+};
+
+const _numericModel: MultiInputSchema = {
+  stem: multiInputStem(input),
+  choices: [],
+  inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
+  authoring: {
+    parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
+    targeted: [],
+    transformations: [makeTransformation('choices', Transform.shuffle)],
+    previewText: 'Example question with a fill in the blank',
+  },
+};
+
 describe('multi input question - default (with text input)', () => {
   const props = defaultAuthoringElementProps<MultiInputSchema>(defaultModel());
   const { model } = props;
@@ -140,102 +174,4 @@ describe('multi input question - default (with text input)', () => {
     expect(model.inputs).toHaveLength(2);
     expect(model.inputs[1]).toHaveProperty('inputType', 'text');
   });
-
-  it('can remove a text input ref', () => {
-    render(
-      <Provider store={store}>
-        <AuthoringElementProvider {...props}>
-          <MultiInputComponent />
-        </AuthoringElementProvider>
-      </Provider>,
-    );
-    fireEvent.click(screen.getByText('Add Input'));
-  });
-  // preview text?
-  // input ref removed from stem
-  // input removed
-  // part removed
-
-  test.todo('should reorder parts and inputs when an input ref is removed');
-  test.todo('cannot remove an input ref if there is only one');
-
-  test.todo('can switch from text to numeric');
-  // targeted responses removed
-  // responses set to default numeric
-});
-
-describe('multi input question (with numeric input)', () => {
-  const input = inputRef();
-
-  const model: MultiInputSchema = {
-    stem: multiInputStem(input),
-    choices: [],
-    inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
-    authoring: {
-      parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
-      targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
-      previewText: 'Example question with a fill in the blank',
-    },
-  };
-
-  test.todo('can add targeted feedback to a numeric input');
-  test.todo('can switch from numeric to text');
-  test.todo('can switch from numeric to dropdown');
-  test.todo('can remove a numeric input ref');
-});
-
-describe('multi input question (with dropdown)', () => {
-  const input = inputRef();
-  const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
-
-  const model: MultiInputSchema = {
-    stem: multiInputStem(input),
-    choices,
-    inputs: [
-      {
-        inputType: 'dropdown',
-        id: input.id,
-        partId: DEFAULT_PART_ID,
-        choiceIds: choices.map((c) => c.id),
-      },
-    ],
-    authoring: {
-      parts: [
-        makePart(Responses.forMultipleChoice(choices[0].id), [makeHint('')], DEFAULT_PART_ID),
-      ],
-      targeted: [],
-      transformations: [makeTransformation('choices', Transform.shuffle)],
-      previewText: 'Example question with a fill in the blank',
-    },
-  };
-
-  test.todo('can add targeted feedback to a dropdown input');
-  test.todo('can reorder choices for a dropdown');
-  test.todo('can remove a choice from a dropdown');
-  test.todo('can switch from dropdown to numeric');
-  test.todo('can switch from dropdown to text');
-  // responses set to default text
-  // choices matching dropdown removed
-  // targeted responses matching dropdown removed
-
-  test.todo('can remove a dropdown input ref');
-  // choices matching the dropdown removed
-  // targeted responses matching the dropdown removed
-});
-
-describe('multi input question', () => {
-  test.todo('can add a choice to a dropdown input');
-
-  test.todo('cannot add a choice to a non-dropdown input');
-  // const input = model.inputs[0];
-  // const updated = dispatch(model, MultiInputActions.addChoice(input.id, makeChoice('')));
-  // expect(updated).toEqual(model);
-
-  test.todo('can undo removing an input ref');
-  test.todo('can undo removing targeted feedback');
-  test.todo('can undo removing a choice');
-
-  test.todo('will reconcile extra parts');
-  test.todo('will reconcile missing parts');
 });

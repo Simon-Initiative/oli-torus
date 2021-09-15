@@ -1,11 +1,11 @@
-import React from 'react';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { ID } from 'data/content/model';
-import { Hint, RichText } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
-import { Card } from 'components/misc/Card';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
+import { Hint, RichText } from 'components/activities/types';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { Card } from 'components/misc/Card';
+import { ID } from 'data/content/model';
+import React from 'react';
 
 interface HintsAuthoringProps {
   addOne: () => void;
@@ -71,7 +71,9 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
     <Card.Content>
       {hints.map((hint, index) => (
         <div key={hint.id} className="d-flex">
-          <span className="mr-3 mt-2">{index + 1}.</span>
+          <div className="mr-3 mt-2" style={{ flexBasis: '18px' }}>
+            {index + 1}.
+          </div>
           <RichTextEditorConnected
             placeholder={placeholder || 'Explain how to solve the problem'}
             className="mb-2 flex-grow-1"

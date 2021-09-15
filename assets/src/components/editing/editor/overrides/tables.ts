@@ -1,7 +1,6 @@
 import { Editor, Node, Point, Range } from 'slate';
-import { ReactEditor } from 'slate-react';
 
-export const withTables = (editor: Editor & ReactEditor) => {
+export const withTables = (editor: Editor) => {
   const { deleteBackward, deleteForward, deleteFragment } = editor;
 
   editor.deleteFragment = () => {

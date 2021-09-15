@@ -29,8 +29,6 @@ export const MultiInputComponent = () => {
   const [editor, setEditor] = React.useState<(ReactEditor & Editor) | undefined>();
   const [selectedInputRef, setSelectedInputRef] = React.useState<InputRef | undefined>(undefined);
 
-  console.log('model', model);
-
   // Focus the active input ref selection when it changes
   React.useEffect(() => {
     if (!editor || !selectedInputRef) return;
