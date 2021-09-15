@@ -5,6 +5,7 @@
 ### Bug Fixes
 - Fix activity choice icon selection in authoring
 - Fix targeted feedback not showing in delivery
+- Fix delivered activity choice input size changing with content
 
 ### Enhancements
 
