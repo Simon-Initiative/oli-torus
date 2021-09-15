@@ -2,9 +2,9 @@ import { ActivitySettings } from 'components/activities/common/authoring/setting
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { HintsTab } from 'components/activities/multi_input/sections/authoring/HintsTab';
-import { MultiInputStem } from 'components/activities/multi_input/sections/authoring/MultiInputStem';
-import { QuestionTab } from 'components/activities/multi_input/sections/authoring/QuestionTab';
+import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
+import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
+import { QuestionTab } from 'components/activities/multi_input/sections/QuestionTab';
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/utils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
