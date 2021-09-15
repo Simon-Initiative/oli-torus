@@ -11,11 +11,13 @@ export type Props = {
   children?: React.ReactNode;
   disabled?: boolean;
   editMode: boolean;
+  ariaLabel?: string;
 };
 
 export const AuthoringButton: React.FC<Props> = (props: Props) => {
   return (
     <button
+      aria-label={props.ariaLabel || ''}
       style={props.style}
       className={classNames(['btn', props.className])}
       disabled={props.disabled || !props.editMode}

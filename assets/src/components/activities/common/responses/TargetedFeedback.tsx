@@ -1,6 +1,6 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { getTargetedResponseMappings, ResponseMapping } from 'data/activities/model/responseUtils';
+import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import {
@@ -11,9 +11,9 @@ import {
   HasParts,
   RichText,
 } from 'components/activities/types';
-import React from 'react';
-import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
+import { getTargetedResponseMappings, ResponseMapping } from 'data/activities/model/responses';
 import { defaultWriterContext } from 'data/content/writers/context';
+import React from 'react';
 
 interface Props {
   choices?: Choice[];

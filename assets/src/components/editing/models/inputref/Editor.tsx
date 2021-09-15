@@ -1,12 +1,13 @@
-import React from 'react';
-import * as ContentModel from 'data/content/model';
-import { EditorProps } from 'components/editing/models/interfaces';
-import { useFocused, useSelected } from 'slate-react';
-import { initCommands } from 'components/editing/models/inputref/commands';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
-import { centeredAbove } from 'data/content/utils';
 import { friendlyType } from 'components/activities/multi_input/utils';
+import { initCommands } from 'components/editing/models/inputref/commands';
+import { EditorProps } from 'components/editing/models/interfaces';
+import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
+import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import * as ContentModel from 'data/content/model';
+import { centeredAbove } from 'data/content/utils';
+import React from 'react';
+import { Transforms } from 'slate';
+import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
 
 export interface InputRefProps extends EditorProps<ContentModel.InputRef> {}
 export const InputRefEditor = (props: InputRefProps) => {
@@ -14,27 +15,25 @@ export const InputRefEditor = (props: InputRefProps) => {
 
   const focused = useFocused();
   const selected = useSelected();
+  const editor = useSlate();
 
   const input = inputRefContext?.inputs.get(props.model.id);
-  React.useEffect(() => {
-    if (focused && selected && inputRefContext?.selectedInputRef?.id !== props.model.id) {
-      inputRefContext?.setSelectedInputRef(props.model);
-    }
-  }, [selected, focused]);
 
   if (!inputRefContext || !input) {
-    return props.children;
+    return <span style={{ border: '1px solid black' }}>Input Ref {props.children}</span>;
   }
 
-  const commands = initCommands(input, inputRefContext.onEditInput);
+  const commands = initCommands(input, inputRefContext.setInputType);
 
   const borderStyle =
     focused && selected
       ? { border: 'solid 3px lightblue', borderRadius: '0.25rem' }
       : { border: 'solid 3px transparent' };
 
-  const backgroundStyle =
-    inputRefContext.selectedInputRef?.id === props.model.id ? { backgroundColor: 'lightblue' } : {};
+  const activeStyle =
+    inputRefContext.selectedInputRef?.id === props.model.id
+      ? { fontWeight: 'bold', backgroundColor: 'lightblue' }
+      : {};
 
   const withToolbar = (target: React.ReactElement) => (
     <HoveringToolbar
@@ -55,7 +54,12 @@ export const InputRefEditor = (props: InputRefProps) => {
     >
       {withToolbar(
         <span
-          style={Object.assign(backgroundStyle, {
+          onClick={(e) => {
+            e.preventDefault();
+            inputRefContext?.setSelectedInputRef(props.model);
+            Transforms.select(editor, ReactEditor.findPath(editor, props.model));
+          }}
+          style={Object.assign(activeStyle, {
             width: '160px',
             display: 'inline-block',
             userSelect: 'none',

@@ -1,9 +1,9 @@
-import { CommandDesc } from 'components/editing/commands/interfaces';
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
+import { CommandDesc } from 'components/editing/commands/interfaces';
 
 export const initCommands = (
   model: MultiInput,
-  onEdit: (id: string, updated: Partial<MultiInput>) => void,
+  setInputType: (id: string, updated: MultiInputType) => void,
 ): CommandDesc[][] => {
   const makeCommand = (description: string, type: MultiInputType): CommandDesc => ({
     type: 'CommandDesc',
@@ -12,7 +12,7 @@ export const initCommands = (
     active: () => model.inputType === type,
     command: {
       execute: (_context, _editor, _params) => {
-        model.inputType !== type && onEdit(model.id, { inputType: type });
+        model.inputType !== type && setInputType(model.id, type);
       },
       precondition: () => true,
     },

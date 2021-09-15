@@ -1,6 +1,5 @@
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 import { makeChoice } from 'components/activities/types';
-import { getChoices } from 'data/activities/model/choiceUtils';
+import { Choices } from 'data/activities/model/choices';
 import { dispatch } from 'utils/test_utils';
 
 describe('choices actions', () => {
@@ -9,9 +8,9 @@ describe('choices actions', () => {
   };
   it('can add a choice', () => {
     const newChoice = makeChoice('c');
-    const newModel = dispatch(model, ChoiceActions.addChoice(newChoice));
+    const newModel = dispatch(model, Choices.addOne(newChoice));
     expect(newModel.choices).toHaveLength(3);
-    expect(getChoices(newModel)[getChoices(newModel).length - 1].content).toEqual(
+    expect(Choices.getAll(newModel)[Choices.getAll(newModel).length - 1].content).toEqual(
       newChoice.content,
     );
   });
@@ -21,8 +20,7 @@ describe('choices actions', () => {
     const firstChoice = model.choices[0];
     expect(model.choices[0]).not.toHaveProperty('content', newChoice.content);
     expect(
-      dispatch(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoice.content))
-        .choices[0],
+      dispatch(model, Choices.setContent(firstChoice.id, newChoice.content)).choices[0],
     ).toHaveProperty('content', newChoice.content);
   });
 
@@ -32,7 +30,7 @@ describe('choices actions', () => {
     expect(model.choices[0]).not.toHaveProperty('content', choice1.content);
     expect(model.choices[1]).not.toHaveProperty('content', choice2.content);
 
-    const newModel = dispatch(model, ChoiceActions.setAllChoices([choice1, choice2]));
+    const newModel = dispatch(model, Choices.setAll([choice1, choice2]));
     expect(newModel.choices).toHaveLength(2);
     expect(newModel.choices[0]).toHaveProperty('content', choice1.content);
     expect(newModel.choices[1]).toHaveProperty('content', choice2.content);
@@ -40,8 +38,8 @@ describe('choices actions', () => {
 
   it('can remove a choice', () => {
     expect(model.choices).toHaveLength(2);
-    const choice1 = getChoices(model)[0];
-    const newModel = dispatch(model, ChoiceActions.removeChoice(choice1.id));
+    const choice1 = Choices.getAll(model)[0];
+    const newModel = dispatch(model, Choices.removeOne(choice1.id));
     expect(newModel.choices).not.toContain(choice1);
     expect(newModel.choices).toHaveLength(1);
   });

@@ -1,23 +1,41 @@
-import { getByUnsafe } from 'data/activities/model/utils1';
-import { matchRule } from 'data/activities/model/rules';
-import { ChoiceId, ChoiceIdsToResponseId, HasParts, Response } from 'components/activities/types';
+import {
+  ChoiceId,
+  ChoiceIdsToResponseId,
+  HasParts,
+  makeResponse,
+  Response,
+} from 'components/activities/types';
+import { containsRule, eqRule, matchRule } from 'data/activities/model/rules';
+import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 import { Maybe } from 'tsmonad';
 import { Operations } from 'utils/pathOperations';
 
-// Responses
+export const Responses = {
+  catchAll: (text = 'Incorrect') => makeResponse(matchRule('.*'), 0, text),
+  forTextInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
+    makeResponse(containsRule('answer'), 1, correctText),
+    Responses.catchAll(incorrectText),
+  ],
+  forNumericInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
+    makeResponse(eqRule('1'), 1, correctText),
+    Responses.catchAll(incorrectText),
+  ],
+  forMultipleChoice: (
+    correctChoiceId: ChoiceId,
+    correctText = 'Correct',
+    incorrectText = 'Incorrect',
+  ) => [
+    makeResponse(matchRule(correctChoiceId), 1, correctText),
+    makeResponse(matchRule('.*'), 0, incorrectText),
+  ],
+};
 
 export const RESPONSES_PATH = '$..responses';
 export const getResponses = (model: HasParts, path = RESPONSES_PATH): Response[] =>
   Operations.apply(model, Operations.find(path));
 
-export const RESPONSES_BY_PART_ID_PATH = (partId: string) =>
-  `$..parts[?(@.id==${partId})].responses`;
-export const getResponsesByPartId = (
-  model: any,
-  partId: string,
-  path: string | ((partId: string) => string) = RESPONSES_BY_PART_ID_PATH,
-): Response[] =>
-  Operations.apply(model, Operations.find(typeof path === 'function' ? path(partId) : path));
+export const getResponsesByPartId = (model: HasParts, partId: string): Response[] =>
+  getPartById(model, partId).responses;
 
 export const getResponseBy = (model: HasParts, predicate: (x: Response) => boolean) =>
   getByUnsafe(getResponses(model), predicate);

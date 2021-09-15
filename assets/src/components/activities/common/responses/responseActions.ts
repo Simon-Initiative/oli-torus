@@ -1,16 +1,20 @@
-import { getResponsesByPartId } from '../../../../data/activities/model/responseUtils';
-import jp from 'jsonpath';
-import { getResponseBy, getResponseId, RESPONSES_PATH } from 'data/activities/model/responseUtils';
 import { remove } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
   HasParts,
+  makeUndoable,
   PostUndoable,
+  Response,
   ResponseId,
   RichText,
-  makeUndoable,
-  Response,
 } from 'components/activities/types';
+import {
+  getResponseBy,
+  getResponseId,
+  getResponsesByPartId,
+  RESPONSES_PATH,
+} from 'data/activities/model/responses';
+import { getParts } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -18,10 +22,8 @@ export const ResponseActions = {
   addResponse(response: Response, partId: string, path = RESPONSES_PATH) {
     return (model: HasParts) => {
       // Insert a new reponse just before the last response (which is the catch-all response)
-      Operations.apply(
-        model,
-        Operations.insert(path, response, getResponsesByPartId(model, partId, path).length - 1),
-      );
+      const responses = getResponsesByPartId(model, partId);
+      getResponsesByPartId(model, partId).splice(responses.length - 1, 0, response);
     };
   },
 
@@ -31,11 +33,13 @@ export const ResponseActions = {
     };
   },
 
-  removeResponse(id: ResponseId, path = RESPONSES_PATH) {
+  removeResponse(responseId: ResponseId, path = RESPONSES_PATH) {
     return (model: HasParts) => {
-      jp.apply(model, path, (responses: Response[]) =>
-        responses.filter((response: any) => response.id !== id),
-      );
+      getParts(model).forEach((part) => {
+        if (part.responses.find(({ id }) => id === responseId)) {
+          part.responses = part.responses.filter(({ id }) => id !== responseId);
+        }
+      });
     };
   },
 

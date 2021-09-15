@@ -1,16 +1,15 @@
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { MCSchemaV1 } from 'components/activities/multiple_choice/transformations/v1';
 import {
   ActivityModelSchema,
   Choice,
   ChoiceIdsToResponseId,
-  makeResponse,
   Part,
   Stem,
   Transformation,
 } from 'components/activities/types';
-import { getCorrectResponse, getResponses } from 'data/activities/model/responseUtils';
+import { getCorrectResponse, getResponses, Responses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
-import { MCSchemaV1 } from 'components/activities/multiple_choice/transformations/v1';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export interface MCSchemaV2 extends ActivityModelSchema {
   stem: Stem;
@@ -40,7 +39,7 @@ export const mcV1toV2 = (model: MCSchemaV1): MCSchemaV2 => {
   if (!getResponses(newModel).find((r) => r.rule === matchRule('.*'))) {
     newModel.authoring.parts[0].responses = [
       getCorrectResponse(newModel, DEFAULT_PART_ID),
-      makeResponse(matchRule('.*'), 0, ''),
+      Responses.catchAll(),
     ];
   }
 

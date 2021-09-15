@@ -1,14 +1,14 @@
-import { RESPONSES_PATH } from '../../../data/activities/model/responseUtils';
-import { OrderingSchema as Ordering } from './schema';
+import { DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
 import {
   Choice,
-  ResponseId,
-  PostUndoable,
-  makeUndoable,
   ChoiceId,
   makeResponse,
+  makeUndoable,
+  PostUndoable,
   Response,
+  ResponseId,
 } from 'components/activities/types';
+import { Choices } from 'data/activities/model/choices';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
@@ -16,14 +16,13 @@ import {
   getResponseBy,
   getResponseId,
   getResponses,
-} from 'data/activities/model/responseUtils';
-import { DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { clone } from 'utils/common';
-import jp from 'jsonpath';
+} from 'data/activities/model/responses';
 import { matchInOrderRule } from 'data/activities/model/rules';
+import jp from 'jsonpath';
+import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { getChoice, getChoices } from 'data/activities/model/choiceUtils';
+import { RESPONSES_PATH } from '../../../data/activities/model/responses';
+import { OrderingSchema as Ordering } from './schema';
 
 export class Actions {
   static addChoice(choice: Choice) {
@@ -45,9 +44,9 @@ export class Actions {
 
   static removeChoiceAndUpdateRules(id: string) {
     return (model: Ordering, post: PostUndoable) => {
-      const choice = getChoice(model, id);
-      const index = getChoices(model).findIndex((c) => c.id === id);
-      ChoiceActions.removeChoice(id)(model, post);
+      const choice = Choices.getOne(model, id);
+      const index = Choices.getAll(model).findIndex((c) => c.id === id);
+      Choices.removeOne(id)(model);
 
       remove(id, getChoiceIds(model.authoring.correct));
       model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));

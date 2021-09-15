@@ -1,26 +1,33 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
-import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { createEditor, Editor as SlateEditor, Operation, Range } from 'slate';
 import { Mark, ModelElement, Selection } from 'data/content/model';
-import { editorFor, markFor } from './modelEditorDispatch';
-import { ToolbarItem, CommandContext } from '../commands/interfaces';
-import { installNormalizer } from './normalizers/normalizer';
-import { InsertionToolbar } from '../toolbars/insertion/Toolbar';
-import { formatMenuCommands } from '../toolbars/formatting/items';
-import { shouldShowFormattingToolbar } from '../toolbars/formatting/utils';
-import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
-import { onKeyDown as listOnKeyDown } from './handlers/lists';
-import { onKeyDown as voidOnKeyDown } from './handlers/void';
-import { onKeyDown as titleOnKeyDown } from './handlers/title';
-import { hotkeyHandler } from './handlers/hotkey';
-import { HoveringToolbar } from '../toolbars/HoveringToolbar';
-import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
-import { withVoids } from './overrides/voids';
-import { withInlines } from './overrides/inlines';
-import { withTables } from './overrides/tables';
-import { withMarkdown } from './overrides/markdown';
-import { onPaste } from './handlers/paste';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createEditor, Editor as SlateEditor, Operation, Range } from 'slate';
 import { withHistory } from 'slate-history';
+import {
+  Editable,
+  ReactEditor,
+  RenderElementProps,
+  RenderLeafProps,
+  Slate,
+  withReact,
+} from 'slate-react';
+import { CommandContext, ToolbarItem } from '../commands/interfaces';
+import { formatMenuCommands } from '../toolbars/formatting/items';
+import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
+import { shouldShowFormattingToolbar } from '../toolbars/formatting/utils';
+import { HoveringToolbar } from '../toolbars/HoveringToolbar';
+import { InsertionToolbar } from '../toolbars/insertion/Toolbar';
+import { hotkeyHandler } from './handlers/hotkey';
+import { onKeyDown as listOnKeyDown } from './handlers/lists';
+import { onPaste } from './handlers/paste';
+import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
+import { onKeyDown as titleOnKeyDown } from './handlers/title';
+import { onKeyDown as voidOnKeyDown } from './handlers/void';
+import { editorFor, markFor } from './modelEditorDispatch';
+import { installNormalizer, NormalizerContext } from './normalizers/normalizer';
+import { withInlines } from './overrides/inlines';
+import { withMarkdown } from './overrides/markdown';
+import { withTables } from './overrides/tables';
+import { withVoids } from './overrides/voids';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
@@ -39,6 +46,7 @@ export type EditorProps = {
   // Whether or not editing is allowed
   editMode: boolean;
   commandContext: CommandContext;
+  normalizerContext?: NormalizerContext;
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
@@ -79,7 +87,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
   // Install the custom normalizer, only once
   useEffect(() => {
     if (!installed) {
-      installNormalizer(editor);
+      installNormalizer(editor, props.normalizerContext);
       setInstalled(true);
     }
   }, [installed]);
@@ -92,7 +100,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
   }
 
   const renderElement = useCallback(
-    (props) => {
+    (props: RenderElementProps) => {
       const model = props.element as ModelElement;
 
       return editorFor(model, props, editor, commandContext);
@@ -108,7 +116,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
     hotkeyHandler(editor, e.nativeEvent, commandContext);
   }, []);
 
-  const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
+  const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(
       (m, k) => (k !== 'text' ? markFor(k as Mark, m) : m),
       children,
@@ -118,6 +126,9 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
 
   const onChange = (value: ModelElement[]) => {
     const { operations, selection } = editor;
+
+    const ops = operations.filter(({ type }) => type === 'set_selection');
+    ops.length > 0 && console.log('ops', ops);
 
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.

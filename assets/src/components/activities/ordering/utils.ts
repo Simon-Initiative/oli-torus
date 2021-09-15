@@ -1,16 +1,16 @@
-import { DEFAULT_PART_ID } from './../common/utils';
+import { Responses } from 'data/activities/model/responses';
+import { matchInOrderRule } from 'data/activities/model/rules';
 import guid from 'utils/guid';
+import { makeChoice, makeHint, makePart, makeResponse, makeStem, Transform } from '../types';
+import { DEFAULT_PART_ID } from './../common/utils';
 import { OrderingSchema as Ordering } from './schema';
-import { Transform, ScoringStrategy, makeStem, makeHint, makeChoice, makeResponse } from '../types';
-import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
 
 // Model creation
 export const defaultOrderingModel = (): Ordering => {
   const choice1 = makeChoice('Choice 1');
   const choice2 = makeChoice('Choice 2');
 
-  const correctResponse = makeResponse(matchInOrderRule([choice1.id, choice2.id]), 1, '');
-  const incorrectResponse = makeResponse(matchRule('.*'), 0, '');
+  const correctResponse = makeResponse(matchInOrderRule([choice1.id, choice2.id]), 1, 'Correct');
 
   return {
     stem: makeStem(''),
@@ -18,12 +18,11 @@ export const defaultOrderingModel = (): Ordering => {
     authoring: {
       version: 2,
       parts: [
-        {
-          id: DEFAULT_PART_ID,
-          scoringStrategy: ScoringStrategy.average,
-          responses: [correctResponse, incorrectResponse],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
+        makePart(
+          [correctResponse, Responses.catchAll()],
+          [makeHint(''), makeHint(''), makeHint('')],
+          DEFAULT_PART_ID,
+        ),
       ],
       targeted: [],
       correct: [[choice1.id, choice2.id], correctResponse.id],

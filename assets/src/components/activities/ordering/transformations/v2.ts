@@ -1,14 +1,13 @@
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { OrderingSchemaV1 as V1 } from 'components/activities/ordering/transformations/v1';
 import {
   ActivityModelSchema,
   Choice,
   ChoiceIdsToResponseId,
-  makeResponse,
   Part,
   Stem,
   Transformation,
 } from 'components/activities/types';
-import { OrderingSchemaV1 as V1 } from 'components/activities/ordering/transformations/v1';
-import { Maybe } from 'tsmonad';
 import {
   getChoiceIds,
   getCorrectResponse,
@@ -16,9 +15,10 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'data/activities/model/responseUtils';
+  Responses,
+} from 'data/activities/model/responses';
 import { matchInOrderRule, matchRule } from 'data/activities/model/rules';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Maybe } from 'tsmonad';
 
 export interface OrderingSchemaV2 extends ActivityModelSchema {
   stem: Stem;
@@ -74,8 +74,7 @@ export const orderingV1toV2 = (model: V1): OrderingSchemaV2 => {
     ),
   ).caseOf({
     just: (incorrectResponse) => void (incorrectResponse.rule = matchRule('.*')),
-    nothing: () =>
-      void newModel.authoring.parts[0].responses.push(makeResponse(matchRule('.*'), 0, '')),
+    nothing: () => void newModel.authoring.parts[0].responses.push(Responses.catchAll()),
   });
 
   return newModel;

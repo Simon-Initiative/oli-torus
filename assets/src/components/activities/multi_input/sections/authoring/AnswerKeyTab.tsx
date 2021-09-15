@@ -14,12 +14,23 @@ import {
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
+import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { makeResponse, Response } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
-import { getCorrectResponse, getTargetedResponses } from 'data/activities/model/responseUtils';
+import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
+
+export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
+  ResponseActions.addResponse(
+    makeResponse(
+      input.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
+      0,
+      '',
+    ),
+    input.partId,
+  );
 
 interface Props {
   input: MultiInput;
@@ -28,14 +39,15 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
 
   if (props.input.inputType === 'dropdown') {
+    const choices = model.choices.filter((choice) =>
+      (props.input as Dropdown).choiceIds.includes(choice.id),
+    );
     return (
       <>
         <ChoicesDelivery
           unselectedIcon={<Radio.Unchecked />}
           selectedIcon={<Radio.Checked />}
-          choices={model.choices.filter((choice) =>
-            (props.input as Dropdown).choiceIds.includes(choice.id),
-          )}
+          choices={choices}
           selected={[getCorrectChoice(model, props.input.partId).id]}
           onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
           isEvaluated={false}
@@ -49,7 +61,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           toggleChoice={(choiceId, mapping) => {
             dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
           }}
-          addTargetedResponse={() => dispatch(MCActions.addTargetedFeedback(props.input.partId))}
+          addTargetedResponse={() =>
+            dispatch(MCActions.addTargetedFeedback(props.input.partId, choices[0].id))
+          }
           unselectedIcon={<Radio.Unchecked />}
           selectedIcon={<Radio.Checked />}
         />
@@ -65,7 +79,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
       />
       <SimpleFeedback partId={props.input.partId} />
-      {getTargetedResponses(model).map((response: Response) => (
+      {getTargetedResponses(model, props.input.partId).map((response: Response) => (
         <ResponseCard
           title="Targeted feedback"
           response={response}
@@ -84,19 +98,9 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         </ResponseCard>
       ))}
       <AuthoringButtonConnected
+        ariaLabel="Add targeted feedback"
         className="align-self-start btn btn-link"
-        action={() =>
-          dispatch(
-            ResponseActions.addResponse(
-              makeResponse(
-                props.input.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
-                0,
-                '',
-              ),
-              props.input.partId,
-            ),
-          )
-        }
+        action={() => dispatch(addTargetedFeedbackFillInTheBlank(props.input as FillInTheBlank))}
       >
         Add targeted feedback
       </AuthoringButtonConnected>

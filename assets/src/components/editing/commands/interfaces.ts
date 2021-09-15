@@ -1,4 +1,4 @@
-import { MultiInput } from 'components/activities/multi_input/schema';
+import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
 import { ID, InputRef } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 
@@ -15,7 +15,7 @@ export type CommandDesc = {
 export interface CommandContext {
   projectSlug: string;
   inputRefContext?: {
-    onEditInput: (id: ID, attrs: Partial<MultiInput>) => void;
+    setInputType: (id: ID, attrs: MultiInputType) => void;
     inputs: Map<ID, MultiInput>;
     selectedInputRef: InputRef | undefined;
     setSelectedInputRef: (ref: InputRef | undefined) => void;

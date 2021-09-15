@@ -1,10 +1,9 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { HintActions } from 'components/activities/common/hints/authoring/hintActions';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { partTitle } from 'components/activities/multi_input/utils';
 import { makeHint } from 'components/activities/types';
-import { getHints, hintsByPart } from 'data/activities/model/hintUtils';
+import { Hints } from 'data/activities/model/hints';
 import React from 'react';
 
 interface Props {
@@ -17,12 +16,10 @@ export const HintsTab: React.FC<Props> = (props) => {
   return (
     <CognitiveHints
       key={props.input.id}
-      hints={getHints(model, props.input.partId)}
-      updateOne={(id, content) => dispatch(HintActions.editHint(id, content, props.input.partId))}
-      addOne={() => dispatch(HintActions.addHint(makeHint(''), props.input.partId))}
-      removeOne={(id) =>
-        dispatch(HintActions.removeHint(id, hintsByPart(props.input.partId), props.input.partId))
-      }
+      hints={Hints.byPart(model, props.input.partId)}
+      updateOne={(id, content) => dispatch(Hints.setContent(id, content))}
+      addOne={() => dispatch(Hints.addOne(makeHint(''), props.input.partId))}
+      removeOne={(id) => dispatch(Hints.removeOne(id))}
       placeholder="Hint"
       title={partTitle(props.input, props.index)}
     />

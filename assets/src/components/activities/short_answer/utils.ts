@@ -1,13 +1,13 @@
-import { HasParts, makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
-import { containsRule, matchRule } from 'data/activities/model/rules';
+import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import {
   getCorrectResponse,
   getIncorrectResponse,
-  getResponses,
-} from 'data/activities/model/responseUtils';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
-import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+  getResponsesByPartId,
+  Responses,
+} from 'data/activities/model/responses';
+import { HasParts, makeHint, makeStem, ScoringStrategy } from '../types';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {
@@ -18,10 +18,7 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
         {
           id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
-          responses: [
-            makeResponse(containsRule('answer'), 1, ''),
-            makeResponse(matchRule('.*'), 0, ''),
-          ],
+          responses: Responses.forTextInput(),
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
@@ -32,7 +29,7 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
 };
 
 export const getTargetedResponses = (model: HasParts, partId: string) =>
-  getResponses(model).filter(
+  getResponsesByPartId(model, partId).filter(
     (response) =>
       response !== getCorrectResponse(model, partId) &&
       response !== getIncorrectResponse(model, partId),

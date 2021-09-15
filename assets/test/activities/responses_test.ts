@@ -1,5 +1,3 @@
-import { getResponses } from 'data/activities/model/responseUtils';
-import { matchRule } from 'data/activities/model/rules';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
@@ -11,6 +9,8 @@ import {
   makeResponse,
   ScoringStrategy,
 } from 'components/activities/types';
+import { getResponses } from 'data/activities/model/responses';
+import { matchRule } from 'data/activities/model/rules';
 import { dispatch } from 'utils/test_utils';
 
 describe('responses', () => {

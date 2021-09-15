@@ -1,4 +1,8 @@
-import { getHints } from 'data/activities/model/hintUtils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Actions } from 'components/activities/ordering/actions';
+import { defaultOrderingModel } from 'components/activities/ordering/utils';
+import { Hints } from 'data/activities/model/hints';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
@@ -8,11 +12,7 @@ import {
   getResponses,
   getTargetedChoiceIds,
   getTargetedResponses,
-} from 'data/activities/model/responseUtils';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { Actions } from 'components/activities/ordering/actions';
-import { defaultOrderingModel } from 'components/activities/ordering/utils';
+} from 'data/activities/model/responses';
 import { dispatch } from 'utils/test_utils';
 
 const testDefaultModel = defaultOrderingModel;
@@ -75,6 +75,6 @@ describe('ordering question', () => {
   });
 
   it('has at least 3 hints', () => {
-    expect(getHints(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
+    expect(Hints.byPart(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
   });
 });

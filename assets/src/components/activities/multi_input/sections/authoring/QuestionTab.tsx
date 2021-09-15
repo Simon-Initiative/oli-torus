@@ -4,7 +4,7 @@ import { Dropdown, MultiInput, MultiInputSchema } from 'components/activities/mu
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/authoring/DropdownQuestionEditor';
 import { partTitle } from 'components/activities/multi_input/utils';
 import { Card } from 'components/misc/Card';
-import { getParts } from 'data/activities/model/utils1';
+import { getParts } from 'data/activities/model/utils';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';

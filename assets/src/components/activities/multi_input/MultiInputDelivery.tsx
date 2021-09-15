@@ -1,20 +1,8 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from 'state/store';
-import {
-  ActivityDeliveryState,
-  initializeState,
-  activityDeliverySlice,
-  resetAction,
-  isEvaluated,
-  PartInputs,
-} from 'data/activities/DeliveryState';
-import { safelySelectInputs } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import {
   DeliveryElement,
@@ -23,10 +11,24 @@ import {
   useDeliveryElementContext,
 } from 'components/activities/DeliveryElement';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
-import { Manifest } from 'components/activities/types';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { getByUnsafe, getParts } from 'data/activities/model/utils1';
+import { Manifest, PartId } from 'components/activities/types';
+import {
+  activityDeliverySlice,
+  ActivityDeliveryState,
+  initializeState,
+  isEvaluated,
+  PartInputs,
+  resetAction,
+} from 'data/activities/DeliveryState';
+import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
+import { safelySelectInputs } from 'data/activities/utils';
 import { toSimpleText } from 'data/content/text';
+import { defaultWriterContext } from 'data/content/writers/context';
+import React, { useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
+import { removeEmpty } from 'utils/common';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -37,6 +39,7 @@ export const MultiInputComponent: React.FC = () => {
     sectionSlug,
   } = useDeliveryElementContext<MultiInputSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -60,9 +63,22 @@ export const MultiInputComponent: React.FC = () => {
     return null;
   }
 
+  const toggleHints = (id: string) => {
+    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    setHintsShown((hintsShown) =>
+      hintsShown.includes(input.partId)
+        ? hintsShown.filter((id) => id !== input.partId)
+        : hintsShown.concat(input.partId),
+    );
+  };
+
+  console.log('Attempt State', uiState.attemptState);
+  console.log('Part State', uiState.partState);
+
   const writerContext = defaultWriterContext({
     sectionSlug,
     inputRefContext: {
+      toggleHints,
       onChange: (id, e) => {
         const input = getByUnsafe(model.inputs, (x) => x.id === id);
         const value = e.target.value;
@@ -99,6 +115,7 @@ export const MultiInputComponent: React.FC = () => {
                   }
                 : { id: input.id, inputType: input.inputType },
             value: (uiState.partState[input.partId]?.studentInput || [''])[0],
+            hasHints: removeEmpty(getPartById(model, input.partId).hints).length > 0,
           },
         ]),
       ),
@@ -125,7 +142,13 @@ export const MultiInputComponent: React.FC = () => {
           }
         />
         <SubmitButtonConnected disabled={false} />
-        {/* <HintsDeliveryConnected /> */}
+        {hintsShown.map((partId) => (
+          <HintsDeliveryConnected
+            key={partId}
+            partId={partId}
+            shouldShow={hintsShown.includes(partId)}
+          />
+        ))}
         <EvaluationConnected />
       </div>
     </div>

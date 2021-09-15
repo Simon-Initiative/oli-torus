@@ -1,14 +1,15 @@
-import React from 'react';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { RichText } from 'components/activities/types';
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { CommandContext } from 'components/editing/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
+import { NormalizerContext } from 'components/editing/editor/normalizers/normalizer';
 import { getToolbarForResourceType } from 'components/editing/toolbars/insertion/items';
 import { ProjectSlug } from 'data/types';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { classNames } from 'utils/classNames';
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { ReactEditor } from 'slate-react';
+import React from 'react';
 import { Editor as SlateEditor, Operation } from 'slate';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ReactEditor } from 'slate-react';
+import { classNames } from 'utils/classNames';
 
 type Props = {
   projectSlug: ProjectSlug;
@@ -20,12 +21,14 @@ type Props = {
   onRequestMedia?: any;
   style?: React.CSSProperties;
   commandContext?: CommandContext;
+  normalizerContext?: NormalizerContext;
 };
 export const RichTextEditor: React.FC<Props> = (props) => {
   return (
     <div className={classNames(['rich-text-editor', props.className])}>
       <ErrorBoundary>
         <Editor
+          normalizerContext={props.normalizerContext}
           commandContext={
             props.commandContext ? props.commandContext : { projectSlug: props.projectSlug }
           }

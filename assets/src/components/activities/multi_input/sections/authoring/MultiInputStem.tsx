@@ -1,9 +1,10 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
-import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
+import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/authoring/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/commands/interfaces';
+import { elementsRemoved } from 'components/editing/utils';
 import { InputRef } from 'data/content/model';
 import React from 'react';
 import { Editor } from 'slate';
@@ -20,8 +21,7 @@ export const MultiInputStem: React.FC<Props> = (props) => {
   const commandContext: CommandContext = {
     projectSlug,
     inputRefContext: {
-      onEditInput: (id: string, input: Partial<MultiInput>) =>
-        dispatch(MultiInputActions.updateInput(id, input)),
+      setInputType: (id, type) => dispatch(MultiInputActions.setInputType(id, type)),
       inputs: new Map(model.inputs.map((v) => [v.id, v])),
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,
@@ -31,15 +31,11 @@ export const MultiInputStem: React.FC<Props> = (props) => {
   return (
     <div className="flex-grow-1 mb-3">
       <RichTextEditorConnected
+        normalizerContext={{ whitelist: ['input_ref'] }}
         text={model.stem.content}
         onEdit={(content, editor, operations) => {
           dispatch(MultiInputActions.editStemAndPreviewText(content, editor, operations));
-          if (
-            operations.find(
-              (operation) =>
-                operation.type === 'remove_node' && operation.node.type === 'input_ref',
-            )
-          ) {
+          if (elementsRemoved(operations, 'input_ref').length > 0) {
             props.setSelectedInputRef(undefined);
           }
         }}

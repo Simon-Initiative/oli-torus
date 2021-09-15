@@ -1,17 +1,17 @@
+import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   makeChoice,
   makeHint,
+  makePart,
   makeResponse,
   makeStem,
   makeTransformation,
   Transform,
-  ScoringStrategy,
 } from 'components/activities/types';
-import { matchListRule, matchRule } from 'data/activities/model/rules';
-import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Responses } from 'data/activities/model/responses';
+import { matchListRule } from 'data/activities/model/rules';
 
-// Model creation
 export const defaultCATAModel = (): CATA => {
   const correctChoice = makeChoice('Choice 1');
   const incorrectChoice = makeChoice('Choice 2');
@@ -21,7 +21,6 @@ export const defaultCATAModel = (): CATA => {
     1,
     '',
   );
-  const incorrectResponse = makeResponse(matchRule('.*'), 0, '');
 
   return {
     stem: makeStem(''),
@@ -29,12 +28,11 @@ export const defaultCATAModel = (): CATA => {
     authoring: {
       version: 2,
       parts: [
-        {
-          id: DEFAULT_PART_ID,
-          scoringStrategy: ScoringStrategy.average,
-          responses: [correctResponse, incorrectResponse],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
+        makePart(
+          [correctResponse, Responses.catchAll()],
+          [makeHint(''), makeHint(''), makeHint('')],
+          DEFAULT_PART_ID,
+        ),
       ],
       correct: [[correctChoice.id], correctResponse.id],
       targeted: [],

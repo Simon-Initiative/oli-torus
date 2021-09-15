@@ -1,3 +1,4 @@
+import { AuthoringElementProps } from 'components/activities/AuthoringElement';
 import { EvaluationResponse, RequestHintResponse } from 'components/activities/DeliveryElement';
 import {
   Action,
@@ -72,4 +73,16 @@ export const defaultDeliveryElementProps = {
   state: attemptState,
   review: false,
   userId: 1,
+};
+
+export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringElementProps<T> => {
+  const model = initialModel;
+  return {
+    projectSlug: '',
+    editMode: true,
+    model,
+    onPostUndoable: jest.fn(),
+    onRequestMedia: jest.fn(),
+    onEdit: (newModel) => Object.assign(model, newModel),
+  };
 };

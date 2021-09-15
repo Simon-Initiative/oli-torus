@@ -102,7 +102,7 @@ export interface PartState {
   score: number | null;
   outOf: number | null;
   response: any;
-  feedback: any;
+  feedback: Feedback | null;
   hints: [];
   partId: string | number;
   hasMoreAttempts: boolean;

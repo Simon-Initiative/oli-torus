@@ -7,14 +7,26 @@ import { useDispatch, useSelector } from 'react-redux';
 
 interface Props {
   partId: PartId;
+  shouldShow?: boolean;
 }
 export const HintsDeliveryConnected: React.FC<Props> = (props) => {
   const { onRequestHint, graded, writerContext } = useDeliveryElementContext<HasHints>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
+
+  console.log(
+    'should show in Hints Delivery',
+    (typeof props.shouldShow === 'undefined' || props.shouldShow) &&
+      !isEvaluated(uiState) &&
+      !graded,
+  );
   return (
     <HintsDelivery
-      shouldShow={!isEvaluated(uiState) && !graded}
+      shouldShow={
+        (typeof props.shouldShow === 'undefined' || props.shouldShow) &&
+        !isEvaluated(uiState) &&
+        !graded
+      }
       onClick={() => dispatch(requestHint(props.partId, onRequestHint))}
       hints={uiState.partState[props.partId]?.hintsShown || []}
       hasMoreHints={uiState.partState[props.partId]?.hasMoreHints || false}

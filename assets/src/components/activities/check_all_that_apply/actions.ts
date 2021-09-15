@@ -1,24 +1,23 @@
-import { CATASchema as CATA } from './schema';
-import { ChoiceId, Choice, ResponseId, PostUndoable, makeResponse, makeUndoable } from '../types';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { DEFAULT_PART_ID, addOrRemove, remove } from 'components/activities/common/utils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { addOrRemove, DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
+import { Choices } from 'data/activities/model/choices';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
   getCorrectResponse,
   getResponseBy,
   getResponseId,
-} from 'data/activities/model/responseUtils';
-import { clone } from 'utils/common';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
+} from 'data/activities/model/responses';
 import { matchListRule } from 'data/activities/model/rules';
+import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { CHOICES_PATH, getChoices } from 'data/activities/model/choiceUtils';
+import { Choice, ChoiceId, makeResponse, makeUndoable, PostUndoable, ResponseId } from '../types';
+import { CATASchema as CATA } from './schema';
 
 export const CATAActions = {
-  addChoice(choice: Choice, choicesPath = CHOICES_PATH) {
+  addChoice(choice: Choice) {
     return (model: CATA, post: PostUndoable) => {
-      ChoiceActions.addChoice(choice, choicesPath)(model, post);
+      Choices.addOne(choice)(model);
       updateResponseRules(model);
     };
   },
@@ -39,7 +38,7 @@ export const CATAActions = {
         ]),
       );
 
-      ChoiceActions.removeChoice(id)(model, post);
+      Choices.removeOne(id)(model);
 
       remove(id, getChoiceIds(model.authoring.correct));
       model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));
@@ -48,9 +47,9 @@ export const CATAActions = {
     };
   },
 
-  addTargetedFeedback(choicesPath = CHOICES_PATH) {
+  addTargetedFeedback() {
     return (model: CATA) => {
-      const choiceIds = getChoices(model, choicesPath).map((c) => c.id);
+      const choiceIds = Choices.getAll(model).map((c) => c.id);
       const response = makeResponse(matchListRule(choiceIds, []), 0, '');
 
       ResponseActions.addResponse(response, DEFAULT_PART_ID)(model);

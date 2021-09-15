@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReactEditor, useEditor, useSlate } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { Popover, ArrowContainer, ContentLocationGetter } from 'react-tiny-popover';
 
 type HoveringToolbarProps = {
@@ -12,7 +12,6 @@ type HoveringToolbarProps = {
 };
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const editor = useSlate();
-  console.log('rerendering', props.isOpen(editor));
 
   const arrowSize = 8;
 

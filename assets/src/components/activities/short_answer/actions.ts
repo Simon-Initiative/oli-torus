@@ -1,23 +1,16 @@
-import { ShortAnswerModelSchema, InputType } from './schema';
-import { containsRule, eqRule, matchRule } from 'data/activities/model/rules';
-import { makeResponse } from 'components/activities/types';
-import { getPartById } from 'data/activities/model/utils1';
+import { Responses } from 'data/activities/model/responses';
+import { getPartById } from 'data/activities/model/utils';
+import { InputType, ShortAnswerModelSchema } from './schema';
 
 export const ShortAnswerActions = {
-  setInputType(inputType: InputType, partId: string, input: string | [string, string] = '') {
+  setInputType(inputType: InputType, partId: string) {
     return (model: ShortAnswerModelSchema) => {
-      // Numeric inputs can have two inputs to support the "between" rule
-      const firstInput = typeof input === 'string' ? input : input[1];
+      if (model.inputType === inputType) return;
+
       if (inputType === 'text' || inputType === 'textarea') {
-        getPartById(model, partId).responses = [
-          makeResponse(containsRule(firstInput), 1, ''),
-          makeResponse(matchRule('.*'), 0, ''),
-        ];
+        getPartById(model, partId).responses = Responses.forTextInput();
       } else if (inputType === 'numeric') {
-        getPartById(model, partId).responses = [
-          makeResponse(eqRule('1'), 1, ''),
-          makeResponse(matchRule('.*'), 0, ''),
-        ];
+        getPartById(model, partId).responses = Responses.forNumericInput();
       }
 
       model.inputType = inputType;

@@ -5,7 +5,11 @@ export interface WriterContext {
   sectionSlug?: string;
   inputRefContext?: {
     onChange: (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-    inputs: Map<ID, { input: MultiInputDelivery; value: string; placeholder?: string }>;
+    toggleHints: (id: string) => void;
+    inputs: Map<
+      ID,
+      { input: MultiInputDelivery; value: string; placeholder?: string; hasHints: boolean }
+    >;
     disabled: boolean;
   };
 }

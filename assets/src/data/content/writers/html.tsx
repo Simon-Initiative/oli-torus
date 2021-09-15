@@ -1,40 +1,41 @@
 /* eslint-disable react/display-name */
-import { WriterImpl, Next } from './writer';
+import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
+import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
+import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import {
-  ModelElement,
-  Image,
-  HeadingSix,
-  Paragraph,
-  HeadingOne,
-  HeadingTwo,
-  HeadingThree,
-  HeadingFour,
-  HeadingFive,
-  YouTube,
   Audio,
-  Table,
-  TableRow,
-  TableHeader,
-  TableData,
-  OrderedList,
-  UnorderedList,
+  Blockquote,
+  Code,
+  CodeLine,
+  HeadingFive,
+  HeadingFour,
+  HeadingOne,
+  HeadingSix,
+  HeadingThree,
+  HeadingTwo,
+  Hyperlink,
+  Image,
+  InputRef,
   ListItem,
   Math,
   MathLine,
-  Code,
-  CodeLine,
-  Blockquote,
-  Hyperlink,
+  ModelElement,
+  OrderedList,
+  Paragraph,
+  Table,
+  TableData,
+  TableHeader,
+  TableRow,
+  UnorderedList,
   Webpage,
-  InputRef,
+  YouTube,
 } from 'data/content/model';
-import { Text } from 'slate';
-import { WriterContext } from './context';
 import React from 'react';
-import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
-import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
-import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
+import { WriterContext } from './context';
+import { Next, WriterImpl } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -224,38 +225,23 @@ export class HtmlParser implements WriterImpl {
       placeholder: inputData.placeholder || '',
     };
 
-    const Hints = (props: any) => {
-      const [active, setActive] = React.useState(false);
-      const icon = active ? (
-        <span className="material-icons">lightbulb</span>
-      ) : (
-        <span className="material-icons-outlined">lightbulb</span>
-      );
-      return icon;
-    };
+    const withHints = (element: React.ReactElement) => (
+      <>
+        {element}
+        <HintsBadge
+          hasHints={inputData.hasHints}
+          toggleHints={() => inputRefContext.toggleHints(inputData.input.id)}
+        />
+      </>
+    );
 
     switch (inputData.input.inputType) {
       case 'numeric':
-        return (
-          <>
-            <NumericInput {...shared} />
-            <Hints hints={[]} />
-          </>
-        );
+        return withHints(<NumericInput {...shared} />);
       case 'text':
-        return (
-          <>
-            <TextInput {...shared} />
-            <Hints hints={[]} />
-          </>
-        );
+        return withHints(<TextInput {...shared} />);
       case 'dropdown':
-        return (
-          <>
-            <DropdownInput {...shared} options={inputData.input.options} />
-            <Hints hints={[]} />
-          </>
-        );
+        return withHints(<DropdownInput {...shared} options={inputData.input.options} />);
       default:
         assertNever(inputData.input);
     }

@@ -1,33 +1,33 @@
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import {
+  activityDeliverySlice,
+  ActivityDeliveryState,
+  initializeState,
+  resetAction,
+  StudentInput,
+} from 'data/activities/DeliveryState';
+import { Choices } from 'data/activities/model/choices';
+import { initialPartInputs, studentInputToString } from 'data/activities/utils';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
+import { Maybe } from 'tsmonad';
 import {
   DeliveryElement,
   DeliveryElementProps,
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from 'state/store';
-import {
-  ActivityDeliveryState,
-  initializeState,
-  activityDeliverySlice,
-  resetAction,
-  StudentInput,
-} from 'data/activities/DeliveryState';
-import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { initialPartInputs, studentInputToString } from 'data/activities/utils';
-import { getChoice } from 'data/activities/model/choiceUtils';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { Maybe } from 'tsmonad';
+import { OrderingSchema } from './schema';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -95,7 +95,7 @@ export const OrderingComponent: React.FC = () => {
         <ResponseChoices
           choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
             .valueOr<StudentInput>([])
-            .map((id) => getChoice(model, id))}
+            .map((id) => Choices.getOne(model, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
         />
         <ResetButtonConnected

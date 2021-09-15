@@ -1,8 +1,8 @@
-import { ActivityModelSchema, PostUndoable, Undoable, MediaItemRequest } from './types';
 import { ProjectSlug } from 'data/types';
+import produce from 'immer';
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
-import produce from 'immer';
+import { ActivityModelSchema, MediaItemRequest, PostUndoable, Undoable } from './types';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;

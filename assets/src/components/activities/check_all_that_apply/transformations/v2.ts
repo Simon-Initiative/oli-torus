@@ -1,13 +1,13 @@
+import { CATASchemaV1 } from 'components/activities/check_all_that_apply/transformations/v1';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   ActivityModelSchema,
   Choice,
   ChoiceIdsToResponseId,
-  makeResponse,
   Part,
   Stem,
   Transformation,
 } from 'components/activities/types';
-import { Maybe } from 'tsmonad';
 import {
   getChoiceIds,
   getCorrectResponse,
@@ -15,10 +15,10 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'data/activities/model/responseUtils';
+  Responses,
+} from 'data/activities/model/responses';
 import { matchListRule, matchRule } from 'data/activities/model/rules';
-import { CATASchemaV1 } from 'components/activities/check_all_that_apply/transformations/v1';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Maybe } from 'tsmonad';
 
 // Support targeted feedback the way other activities do
 export interface CATASchemaV2 extends ActivityModelSchema {
@@ -78,8 +78,7 @@ export const cataV1toV2 = (model: CATASchemaV1): CATASchemaV2 => {
     ),
   ).caseOf({
     just: (incorrectResponse) => void (incorrectResponse.rule = matchRule('.*')),
-    nothing: () =>
-      void newModel.authoring.parts[0].responses.push(makeResponse(matchRule('.*'), 0, '')),
+    nothing: () => void newModel.authoring.parts[0].responses.push(Responses.catchAll()),
   });
 
   return newModel;
