@@ -125,9 +125,8 @@ export const evalScript = (
   const result = evaluator.eval(program, globalEnv);
   const jsResult = result.toJS();
   //if a variable has bindTo operator applied on this then we get a error that we can ignore
-  const foundBindToErrorMessage = jsResult?.message?.indexOf('is a bound reference, cannot assign');
-  // sometimes foundBindToErrorMessage is undefined so foundBindToErrorMessage !== -1 return true which we want to avoid hence checking if foundBindToErrorMessage is not undefined
-  if (foundBindToErrorMessage && foundBindToErrorMessage !== -1) {
+  // sometimes jsResult?.message?.indexOf('is a bound reference, cannot assign') is undefined so jsResult?.message?.indexOf('is a bound reference, cannot assign') !== -1 return true which we want to avoid hence checking > 0
+  if (jsResult?.message?.indexOf('is a bound reference, cannot assign') > 0) {
     return { env: globalEnv, result: null };
   }
   return { env: globalEnv, result: jsResult };
