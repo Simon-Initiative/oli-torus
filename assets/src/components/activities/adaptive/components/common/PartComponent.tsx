@@ -35,40 +35,37 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
 
   const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
-  const handleiFrameStylingChanges = (currentStateSnapshot: Record<string, unknown>) => {
-    //janus-capi-iframe is the only component that allows a user to change it's position and some other style attributes
-    if (props.type === 'janus-capi-iframe') {
-      const externalActivityStyles: CSSProperties = {};
-      const sX: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
-      if (sX !== undefined) {
-        externalActivityStyles.left = sX;
-      }
+  const handleStylingChanges = (currentStateSnapshot: Record<string, unknown>) => {
+    const externalActivityStyles: CSSProperties = {};
+    const sX: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
+    if (sX !== undefined) {
+      externalActivityStyles.left = sX;
+    }
 
-      const sY: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
-      if (sY !== undefined) {
-        externalActivityStyles.top = sY;
-      }
+    const sY: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
+    if (sY !== undefined) {
+      externalActivityStyles.top = sY;
+    }
 
-      const sZ: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
-      if (sZ !== undefined) {
-        externalActivityStyles.zIndex = sZ;
-      }
+    const sZ: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
+    if (sZ !== undefined) {
+      externalActivityStyles.zIndex = sZ;
+    }
 
-      const sWidth: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
-      if (sWidth !== undefined) {
-        externalActivityStyles.width = sWidth;
-      }
+    const sWidth: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
+    if (sWidth !== undefined) {
+      externalActivityStyles.width = sWidth;
+    }
 
-      const sHeight: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
-      if (sHeight !== undefined) {
-        externalActivityStyles.height = sHeight;
-      }
-      setComponentStyle({ ...componentStyle, ...externalActivityStyles });
+    const sHeight: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
+    if (sHeight !== undefined) {
+      externalActivityStyles.height = sHeight;
+    }
+    setComponentStyle({ ...componentStyle, ...externalActivityStyles });
 
-      const sCssClass: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
-      if (sCssClass !== undefined) {
-        setCustomCssClass(sCssClass);
-      }
+    const sCssClass: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
+    if (sCssClass !== undefined) {
+      setCustomCssClass(sCssClass);
     }
   };
   const wcEvents: Record<string, any> = {
@@ -100,7 +97,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         if (el) {
           if (el.notify) {
             if (notificationType === NotificationType.CONTEXT_CHANGED) {
-              handleiFrameStylingChanges(e.snapshot);
+              handleStylingChanges(e.snapshot);
             }
             el.notify(notificationType.toString(), e);
           }
