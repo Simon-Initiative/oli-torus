@@ -85,24 +85,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }, []);
 
   useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
+    const pModel = props.model;
+    setModel(pModel);
+
+    const pState = props.state;
+    setState(pState);
     if (!pModel) {
       return;
     }
