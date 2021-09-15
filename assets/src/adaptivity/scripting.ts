@@ -124,6 +124,9 @@ export const evalScript = (
   }
   const result = evaluator.eval(program, globalEnv);
   const jsResult = result.toJS();
+  if (jsResult?.message?.indexOf('is a bound reference, cannot assign') !== -1) {
+    return { env: globalEnv, result: null };
+  }
   return { env: globalEnv, result: jsResult };
 };
 
@@ -161,8 +164,14 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
   return letStatements;
 };
 
-export const getAssignScript = (state: Record<string, any>): string => {
+export const getAssignScript = (
+  state: Record<string, any>,
+  sendArray = false,
+): string | string[] => {
   const letStatements = getAssignStatements(state);
+  if (sendArray) {
+    return letStatements;
+  }
   return letStatements.join('');
 };
 
