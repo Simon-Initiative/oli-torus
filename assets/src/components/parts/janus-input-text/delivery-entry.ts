@@ -13,4 +13,9 @@ const customEvents: any = { ...apiCustomEvents };
 register(InputText, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
 });

@@ -13,4 +13,9 @@ const customEvents: any = { ...apiCustomEvents };
 register(Dropdown, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: false,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
 });
