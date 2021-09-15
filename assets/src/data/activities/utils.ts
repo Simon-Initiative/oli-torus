@@ -22,7 +22,6 @@ export const stringToStudentInput = (input: string): StudentInput =>
 // An `ActivityState` only has an input if it has been saved or submitted.
 // Each activity part may have an input.
 export const safelySelectInputs = (activityState: ActivityState | undefined): Maybe<PartInputs> => {
-  console.log('activity State', activityState);
   const partInputs = activityState?.parts.filter((part) => !!part?.response?.input);
   if (!partInputs) return Maybe.nothing();
 

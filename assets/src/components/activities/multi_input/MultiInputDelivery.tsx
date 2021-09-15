@@ -123,8 +123,6 @@ export const MultiInputComponent: React.FC = () => {
     },
   });
 
-  console.log('attempt state', uiState.attemptState);
-
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
