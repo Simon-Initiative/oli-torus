@@ -46,6 +46,12 @@ export const InputRefEditor = (props: InputRefProps) => {
     </HoveringToolbar>
   );
 
+  const action = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    inputRefContext?.setSelectedInputRef(props.model);
+    Transforms.select(editor, ReactEditor.findPath(editor, props.model));
+  };
+
   return (
     <span
       {...props.attributes}
@@ -54,10 +60,13 @@ export const InputRefEditor = (props: InputRefProps) => {
     >
       {withToolbar(
         <span
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              action(e);
+            }
+          }}
           onClick={(e) => {
-            e.preventDefault();
-            inputRefContext?.setSelectedInputRef(props.model);
-            Transforms.select(editor, ReactEditor.findPath(editor, props.model));
+            action(e);
           }}
           style={Object.assign(activeStyle, {
             width: '160px',

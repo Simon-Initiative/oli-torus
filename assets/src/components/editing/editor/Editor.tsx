@@ -127,9 +127,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
   const onChange = (value: ModelElement[]) => {
     const { operations, selection } = editor;
 
-    const ops = operations.filter(({ type }) => type === 'set_selection');
-    ops.length > 0 && console.log('ops', ops);
-
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
