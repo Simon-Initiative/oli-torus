@@ -59,6 +59,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     setTimeout(() => {
       if (targetRef?.current) {
         targetRef.current.value = setTo;
+        targetRef.current.click();
         targetRef.current.focus();
       }
     });
