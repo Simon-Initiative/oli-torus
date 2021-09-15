@@ -16,6 +16,9 @@
         <% end %>
       <% end %>
     </div>
+    <div>
+      <%= link "Remix", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section_slug), class: "btn btn-link btn-sm" %>
+    </div>
 
     <div>
       <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
@@ -31,7 +34,7 @@
   <% end %>
 
   <div id="index-container" class="course-outline list-group">
-    <h5 class="text-primary border-bottom border-primary">Course Overview</h5>
+    <h5 class="text-primary border-bottom border-primary mb-2">Course Overview</h5>
 
     <%= render "_outline.html", conn: @conn, section_slug: @section_slug, summary: @summary, nodes: @summary.hierarchy.children, active_page: nil %>
   </div>

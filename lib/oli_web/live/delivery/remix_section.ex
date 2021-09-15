@@ -172,12 +172,20 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, active: active)}
   end
 
+  def handle_event("cancel", _, socket) do
+    %{section: section} = socket.assigns
+    
+    {:noreply,
+     redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
+  end
+
   def handle_event("save", _, socket) do
-    %{hierarchy: hierarchy} = socket.assigns
+    %{section: section, hierarchy: hierarchy} = socket.assigns
 
-    active = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    Sections.rebuild_section_curriculum(section, hierarchy)
 
-    {:noreply, assign(socket, active: active)}
+    {:noreply,
+     redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
   end
 
   defp new_container_name(%HierarchyNode{section_resource: sr} = _active) do

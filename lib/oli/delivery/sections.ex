@@ -16,6 +16,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
+  alias Oli.Publishing.HierarchyNode
 
   @doc """
   Enrolls a user in a course section
@@ -364,7 +365,7 @@ defmodule Oli.Delivery.Sections do
       Oli.Publishing.get_published_revisions(publication)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
-      numbering_tracker = Numbering.init_numbering_tracker()
+    numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
     processed_ids = []
 
@@ -424,7 +425,8 @@ defmodule Oli.Delivery.Sections do
          level,
          numbering_tracker
        ) do
-    {numbering_index, numbering_tracker} = Numbering.next_index(numbering_tracker, level, revision)
+    {numbering_index, numbering_tracker} =
+      Numbering.next_index(numbering_tracker, level, revision)
 
     {children, numbering_tracker, processed_ids} =
       Enum.reduce(
@@ -560,5 +562,70 @@ defmodule Oli.Delivery.Sections do
       where: spp.section_id == ^section_id and spp.project_id == ^project_id
     )
     |> Repo.update_all(set: [publication_id: publication_id])
+  end
+
+  def rebuild_section_curriculum(
+        %Section{id: section_id},
+        %HierarchyNode{} = hierarchy
+      ) do
+    Repo.transaction(fn ->
+      previous_section_resource_ids =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id,
+          select: sr.id
+        )
+        |> Repo.all()
+
+      # generate a new set of section resources based on the hierarchy
+      section_resources = collapse_section_hierarchy(hierarchy, [])
+
+      section_resources_by_id =
+        section_resources
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.id, sr) end)
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      placeholders = %{timestamp: now}
+
+      # upsert all section resources
+      section_resources
+      |> Enum.map(fn section_resource ->
+        %{SectionResource.to_map(section_resource) | updated_at: {:placeholder, :timestamp}}
+      end)
+      |> then(
+        &Repo.insert_all(SectionResource, &1,
+          placeholders: placeholders,
+          on_conflict: :replace_all,
+          conflict_target: :id
+        )
+      )
+
+      # cleanup any deleted section resources
+      section_resource_ids_to_delete =
+        previous_section_resource_ids
+        |> Enum.filter(fn sr_id -> !Map.has_key?(section_resources_by_id, sr_id) end)
+
+      from(sr in SectionResource,
+        where: sr.id in ^section_resource_ids_to_delete
+      )
+      |> Repo.delete_all()
+
+      section_resources
+    end)
+  end
+
+  # Takes a hierarchy node and a accumulator list of section resources and returns the
+  # updated collapsed list of section resources
+  defp collapse_section_hierarchy(
+         %HierarchyNode{children: children, section_resource: sr},
+         section_resources
+       ) do
+    {children_sr_ids, child_section_resources} =
+      Enum.reduce(children, {[], section_resources}, fn child, {sr_ids, section_resources} ->
+        child_section_resources = collapse_section_hierarchy(child, section_resources)
+
+        {[child.section_resource.id | sr_ids], child_section_resources}
+      end)
+
+    [%SectionResource{sr | children: Enum.reverse(children_sr_ids)} | child_section_resources]
   end
 end

@@ -351,4 +351,11 @@ defmodule Oli.SectionsTest do
       assert available_updates[project.id].id == latest_publication.id
     end
   end
+
+  describe "sections remix" do
+    test "rebuild_section_curriculum/2 takes a section and hierarchy and upserts section resources",
+         %{} do
+      throw("TODO")
+    end
+  end
 end
