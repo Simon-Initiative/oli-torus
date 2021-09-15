@@ -5,13 +5,24 @@ import { InputNumberModel } from './schema';
 const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = (props) => {
   const { id, model } = props;
 
-  const { x, y, z, width, height, showLabel, label, prompt, showIncrementArrows } = model;
+  const {
+    x,
+    y,
+    z,
+    width,
+    height,
+    minValue,
+    maxValue,
+    customCssClass,
+    unitsLabel,
+    label,
+    showLabel,
+    showIncrementArrows,
+    prompt = '',
+  } = model;
+
   const styles: CSSProperties = {
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
   };
 
   useEffect(() => {
@@ -21,18 +32,26 @@ const InputNumberAuthor: React.FC<AuthorPartComponentProps<InputNumberModel>> = 
 
   return (
     <div className={`number-input`} style={styles}>
-      <label htmlFor={`${id}-number-input`}>
-        {showLabel && label ? label : <span>&nbsp;</span>}
-      </label>
+      {showLabel && (
+        <React.Fragment>
+          <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
+            {label.length > 0 ? label : ''}
+          </label>
+          <br />
+        </React.Fragment>
+      )}
       <input
         name="janus-input-number"
         id={`${id}-number-input`}
         type="number"
         placeholder={prompt}
+        min={minValue}
+        max={maxValue}
         disabled={true}
         style={{ width: '100%' }}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
       />
+      {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
     </div>
   );
 };
