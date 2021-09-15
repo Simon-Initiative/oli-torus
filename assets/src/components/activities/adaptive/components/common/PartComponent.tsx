@@ -36,32 +36,32 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
   const handleStylingChanges = (currentStateSnapshot: Record<string, unknown>) => {
-    const externalActivityStyles: CSSProperties = {};
+    const styleChanges: CSSProperties = {};
     const sX: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
     if (sX !== undefined) {
-      externalActivityStyles.left = sX;
+      styleChanges.left = sX;
     }
 
     const sY: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
     if (sY !== undefined) {
-      externalActivityStyles.top = sY;
+      styleChanges.top = sY;
     }
 
     const sZ: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
     if (sZ !== undefined) {
-      externalActivityStyles.zIndex = sZ;
+      styleChanges.zIndex = sZ;
     }
 
     const sWidth: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
     if (sWidth !== undefined) {
-      externalActivityStyles.width = sWidth;
+      styleChanges.width = sWidth;
     }
 
     const sHeight: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
     if (sHeight !== undefined) {
-      externalActivityStyles.height = sHeight;
+      styleChanges.height = sHeight;
     }
-    setComponentStyle({ ...componentStyle, ...externalActivityStyles });
+    setComponentStyle({ ...componentStyle, ...styleChanges });
 
     const sCssClass: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
     if (sCssClass !== undefined) {
