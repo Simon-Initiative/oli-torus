@@ -20,7 +20,7 @@ import {
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
-import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
+import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { toSimpleText } from 'data/content/text';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -28,7 +28,6 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { removeEmpty } from 'utils/common';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -49,8 +48,8 @@ export const MultiInputComponent: React.FC = () => {
         safelySelectInputs(activityState).caseOf({
           just: (inputs) => inputs,
           nothing: () =>
-            getParts(model).reduce((acc, part) => {
-              acc[part.id] = [''];
+            model.inputs.reduce((acc, input) => {
+              acc[input.partId] = [''];
               return acc;
             }, {} as PartInputs),
         }),
@@ -72,56 +71,59 @@ export const MultiInputComponent: React.FC = () => {
     );
   };
 
-  console.log('Attempt State', uiState.attemptState);
-  console.log('Part State', uiState.partState);
+  const inputs = new Map(
+    model.inputs.map((input) => [
+      input.id,
+      {
+        input:
+          input.inputType === 'dropdown'
+            ? {
+                id: input.id,
+                inputType: input.inputType,
+                options: model.choices
+                  .filter((c) => input.choiceIds.includes(c.id))
+                  .map((choice) => ({
+                    value: choice.id,
+                    displayValue: toSimpleText({ children: choice.content.model }),
+                  })),
+              }
+            : { id: input.id, inputType: input.inputType },
+        value: (uiState.partState[input.partId]?.studentInput || [''])[0],
+        hasHints: uiState.partState[input.partId].hasMoreHints,
+      },
+    ]),
+  );
+
+  const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    const value = e.target.value;
+    dispatch(
+      activityDeliverySlice.actions.setStudentInputForPart({
+        partId: input.partId,
+        studentInput: [value],
+      }),
+    );
+
+    onSaveActivity(uiState.attemptState.attemptGuid, [
+      {
+        attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
+          .attemptGuid,
+        response: { input: value },
+      },
+    ]);
+  };
 
   const writerContext = defaultWriterContext({
     sectionSlug,
     inputRefContext: {
       toggleHints,
-      onChange: (id, e) => {
-        const input = getByUnsafe(model.inputs, (x) => x.id === id);
-        const value = e.target.value;
-        dispatch(
-          activityDeliverySlice.actions.setStudentInputForPart({
-            partId: input.partId,
-            studentInput: [value],
-          }),
-        );
-
-        onSaveActivity(uiState.attemptState.attemptGuid, [
-          {
-            attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
-              .attemptGuid,
-            response: { input: value },
-          },
-        ]);
-      },
-      inputs: new Map(
-        model.inputs.map((input) => [
-          input.id,
-          {
-            input:
-              input.inputType === 'dropdown'
-                ? {
-                    id: input.id,
-                    inputType: input.inputType,
-                    options: model.choices
-                      .filter((c) => input.choiceIds.includes(c.id))
-                      .map((choice) => ({
-                        value: choice.id,
-                        displayValue: toSimpleText({ children: choice.content.model }),
-                      })),
-                  }
-                : { id: input.id, inputType: input.inputType },
-            value: (uiState.partState[input.partId]?.studentInput || [''])[0],
-            hasHints: removeEmpty(getPartById(model, input.partId).hints).length > 0,
-          },
-        ]),
-      ),
+      onChange,
+      inputs,
       disabled: isEvaluated(uiState),
     },
   });
+
+  console.log('attempt state', uiState.attemptState);
 
   return (
     <div className="activity mc-activity">
@@ -133,8 +135,8 @@ export const MultiInputComponent: React.FC = () => {
             dispatch(
               resetAction(
                 onResetActivity,
-                getParts(model).reduce((acc, part) => {
-                  acc[part.id] = [''];
+                model.inputs.reduce((acc, input) => {
+                  acc[input.partId] = [''];
                   return acc;
                 }, {} as PartInputs),
               ),

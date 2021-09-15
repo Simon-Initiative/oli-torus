@@ -1,7 +1,7 @@
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
-import { AnswerKeyTab } from 'components/activities/multi_input/sections/authoring/AnswerKeyTab';
+import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/authoring/HintsTab';
 import { MultiInputStem } from 'components/activities/multi_input/sections/authoring/MultiInputStem';
 import { QuestionTab } from 'components/activities/multi_input/sections/authoring/QuestionTab';

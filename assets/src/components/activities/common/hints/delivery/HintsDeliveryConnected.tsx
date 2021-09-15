@@ -14,12 +14,6 @@ export const HintsDeliveryConnected: React.FC<Props> = (props) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
-  console.log(
-    'should show in Hints Delivery',
-    (typeof props.shouldShow === 'undefined' || props.shouldShow) &&
-      !isEvaluated(uiState) &&
-      !graded,
-  );
   return (
     <HintsDelivery
       shouldShow={

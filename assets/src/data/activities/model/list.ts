@@ -17,8 +17,6 @@ export interface List<T> {
   setAll: (xs: T[]) => (model: any) => void;
 }
 export const List: <T>(path: string) => List<T> = (path) => ({
-  // addAtIndex,
-
   getOne: (model, id) => Operations.apply(model, Operations.find(path + ID_PATH(id)))[0],
   getOneBy: (model, pred) => Operations.apply(model, Operations.find(path)).filter(pred)[0],
 
@@ -30,11 +28,6 @@ export const List: <T>(path: string) => List<T> = (path) => ({
       Operations.apply(model, Operations.insert(path, x, -1));
     };
   },
-  // setContent(id: string, content: RichText, path) {
-  //   return (model: any, _post: PostUndoable) => {
-  //     Operations.apply(model, Operations.replace(`$..choices[?(@.id==${id})].content`, content));
-  //   };
-  // },
 
   setOne(id, x) {
     return (model: any) => {

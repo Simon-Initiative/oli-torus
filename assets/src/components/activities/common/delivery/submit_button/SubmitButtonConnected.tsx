@@ -11,7 +11,6 @@ export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   const { graded, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-  console.log('partState', uiState.partState);
   return (
     <SubmitButton
       shouldShow={!isEvaluated(uiState) && !graded}

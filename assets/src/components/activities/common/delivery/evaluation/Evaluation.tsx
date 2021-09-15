@@ -1,4 +1,4 @@
-import { ActivityState, makeContent, makeFeedback } from 'components/activities/types';
+import { ActivityState, makeContent, makeFeedback, RichText } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
@@ -16,6 +16,16 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
   }
 
   const errorText = makeContent('There was an error processing this response');
+  const totalScoreText: RichText = {
+    model: [
+      {
+        type: 'p',
+        children: [{ text: 'Total Score', strong: true }],
+        id: guid(),
+      },
+    ],
+    selection: null,
+  };
 
   if (parts.length === 1) {
     const error = parts[0].error;
@@ -37,21 +47,12 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
   return (
     <>
       <Component resultClass={resultClass(score, outOf, undefined)} score={score} outOf={outOf}>
-        <HtmlContentModelRenderer
-          text={{
-            model: [
-              {
-                type: 'p',
-                children: [{ text: 'Total Score', strong: true }],
-                id: guid(),
-              },
-            ],
-            selection: null,
-          }}
-          context={context}
-        />
+        <HtmlContentModelRenderer text={totalScoreText} context={context} />
       </Component>
       {parts.map((partState) => {
+        if (!partState.score && !partState.outOf) {
+          return null;
+        }
         const error = partState.error;
         const feedback = partState.feedback?.content;
         return (

@@ -58,7 +58,6 @@ export const MCActions = {
     };
   },
 
-  // TODO: Add this to tests, maybe merge with other `addTargetedFeedback` methods
   addTargetedFeedback(partId = DEFAULT_PART_ID, choiceId?: string) {
     return (model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } }) => {
       const firstChoice = Choices.getAll(model)[0];

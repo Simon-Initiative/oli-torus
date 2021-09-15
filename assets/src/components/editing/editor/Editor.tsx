@@ -175,12 +175,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
         </HoveringToolbar>
 
         <Editable
-          // onPaste={(e) => {
-          //   console.log(e.clipboardData.types);
-          //   e.clipboardData.types.forEach((type) =>
-          //     console.log('pasting', e.clipboardData.getData(type)),
-          //   );
-          // }}
           style={props.style}
           className={'slate-editor overflow-auto' + (props.className ? ' ' + props.className : '')}
           readOnly={!props.editMode}

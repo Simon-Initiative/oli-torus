@@ -9,7 +9,7 @@ import {
   FillInTheBlank,
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
-import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/authoring/AnswerKeyTab';
+import { addTargetedFeedbackFillInTheBlank } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { defaultModel, multiInputStem } from 'components/activities/multi_input/utils';
 import {
   makeChoice,

@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 ### Enhancements
+- Add multi input activity
 
 ## 0.13.1 (2021-09-14)
 

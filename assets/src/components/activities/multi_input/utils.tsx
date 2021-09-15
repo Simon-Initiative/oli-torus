@@ -53,59 +53,6 @@ export const friendlyType = (type: MultiInputType) => {
   return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
 };
 
-export const inputNumberings = (inputs: MultiInput[]): { type: string; number: number }[] => {
-  return inputs.reduce(
-    (acc, input) => {
-      const type = friendlyType(input.inputType);
-
-      if (!acc.seenCount[type]) {
-        acc.seenCount[type] = 1;
-        acc.numberings.push({ type, number: 1 });
-        return acc;
-      }
-      acc.seenCount[type] = acc.seenCount[type] + 1;
-      acc.numberings.push({ type, number: acc.seenCount[type] });
-      return acc;
-    },
-    { seenCount: {}, numberings: [] } as any,
-  ).numberings;
-};
-
-export const friendlyTitle = (numbering: any) => {
-  return numbering.type + ' ' + numbering.number;
-};
-
-/*
-const writerContext = defaultWriterContext({
-    inputRefContext: {
-      onChange: () => {},
-      inputs: new Map(
-        model.inputs.map((input, i) => [
-          input.id,
-          {
-            input:
-              input.inputType === 'dropdown'
-                ? {
-                    id: input.id,
-                    inputType: input.inputType,
-                    options: [
-                      {
-                        value: '',
-                        displayValue: `Part ${i + 1}`,
-                      },
-                    ],
-                  }
-                : { id: input.id, inputType: input.inputType },
-            value: '',
-            placeholder: `Part ${i + 1}`,
-          },
-        ]),
-      ),
-      disabled: true,
-    },
-  });
-*/
-
 export const partTitle = (input: MultiInput, index: number) => (
   <div>
     {`Part ${index + 1}: `}

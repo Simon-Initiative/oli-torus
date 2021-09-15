@@ -206,13 +206,6 @@ export const MultiInputActions = {
   },
 
   removePart(inputId: string, stem: Stem, previewText: string) {
-    // TODO:
-    // Add reconciliation logic when missing inputs/parts
-    // Write tests
-
-    // Merge all the activity data utils
-    // add warnings for malformed multi input questions
-
     return (model: MultiInputSchema, post: PostUndoable) => {
       if (getParts(model).length < 2) {
         return;

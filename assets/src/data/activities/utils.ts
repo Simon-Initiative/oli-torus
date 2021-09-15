@@ -35,9 +35,6 @@ export const safelySelectInputs = (activityState: ActivityState | undefined): Ma
   );
 };
 
-// export const safelySelectInput = (activityState: ActivityState | undefined): Maybe<string> =>
-// Maybe.maybe(activityState?.parts[0]?.response?.input);
-
 export const initialPartInputs = (
   activityState: ActivityState | undefined,
   defaultPartInputs: PartInputs = { [DEFAULT_PART_ID]: [] },
