@@ -17,5 +17,8 @@ register(Carousel, manifest.delivery.element, observedAttributes, {
     model: {
       json: true,
     },
+    state: {
+      json: true,
+    },
   },
 });

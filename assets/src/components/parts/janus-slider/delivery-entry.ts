@@ -17,5 +17,8 @@ register(Slider, manifest.delivery.element, observedAttributes, {
     model: {
       json: true,
     },
+    state: {
+      json: true,
+    },
   },
 });
