@@ -57,14 +57,14 @@ export const InputRefEditor = (props: InputRefProps) => {
       {...props.attributes}
       contentEditable={false}
       style={Object.assign(borderStyle, { display: 'inline-block' })}
+      onKeyPress={(e) => {
+        if (e.key === 'Enter') {
+          action(e);
+        }
+      }}
     >
       {withToolbar(
         <span
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              action(e);
-            }
-          }}
           onClick={(e) => {
             action(e);
           }}
