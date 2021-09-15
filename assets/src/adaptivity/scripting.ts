@@ -167,14 +167,12 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
   return letStatements;
 };
 
-export const getAssignScript = (
-  state: Record<string, any>,
-  sendArray = false,
-): string | string[] => {
+export const getAssignScriptArray = (state: Record<string, any>): string | string[] => {
+  return getAssignStatements(state);
+};
+
+export const getAssignScript = (state: Record<string, any>): string => {
   const letStatements = getAssignStatements(state);
-  if (sendArray) {
-    return letStatements;
-  }
   return letStatements.join('');
 };
 
