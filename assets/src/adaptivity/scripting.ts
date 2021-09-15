@@ -166,10 +166,6 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
   return letStatements;
 };
 
-export const getAssignScriptArray = (state: Record<string, any>): string | string[] => {
-  return getAssignStatements(state);
-};
-
 export const getAssignScript = (state: Record<string, any>): string => {
   const letStatements = getAssignStatements(state);
   return letStatements.join('');

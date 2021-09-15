@@ -3,8 +3,7 @@ import { writePartAttemptState } from 'data/persistence/state/intrinsic';
 import {
   defaultGlobalEnv,
   evalScript,
-  getAssignScript,
-  getAssignScriptArray,
+  getAssignStatements,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
@@ -43,7 +42,7 @@ export const savePartState = createAsyncThunk(
     }
 
     // update scripting env with latest values
-    const assignScripts = getAssignScriptArray(response);
+    const assignScripts = getAssignStatements(response);
     const scriptResult: string[] = [];
     if (Array.isArray(assignScripts)) {
       //Need to execute scripts one-by-one so that error free expression are evaluated and only the expression with error fails. It should not have any impacts
