@@ -7,7 +7,7 @@ tbody tr {
 <script>
 $(function() {
   $('a.link-account').on('click', function() {
-    $('.available-projects').html('<h4 class="text-center">Please reload your browser</h4>');
+    $('.available-projects').html('<h4 class="text-center mt-4">Please reload your browser</h4>');
   });
 });
 </script>
@@ -31,7 +31,7 @@ $(function() {
 })
 </script>
 
-<div class="available-projects">
+<div class="available-projects container">
   <%= form_for @conn, Routes.delivery_path(@conn, :create_section), [id: "select-project-form"], fn f -> %>
     <div class="text-center">
       <h3>Select a Base Project</h3>
@@ -39,61 +39,58 @@ $(function() {
         Select one of the published projects below to create your course section:
       </p>
     </div>
-    <div>
-      <div class="my-5">
-        <h4>Available Projects</h4>
-        <%= if Enum.count(@available_publications) > 0 do %>
-          <table class="table table-hover">
-            <thead>
+    <div class="my-5">
+      <h4>Available Projects</h4>
+      <%= if Enum.count(@available_publications) > 0 do %>
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 5%"></th>
+              <th scope="col" style="width: 50%">Title</th>
+              <th scope="col" style="width: 15%">Version</th>
+              <th scope="col" style="width: 30%">Date Published</th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for pub <- @available_publications do %>
               <tr>
-                <th scope="col" style="width: 5%"></th>
-                <th scope="col" style="width: 50%">Title</th>
-                <th scope="col" style="width: 15%">Version</th>
-                <th scope="col" style="width: 30%">Date Published</th>
+                <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
+                <td><%= pub.project.title %></td>
+                <td><%= pub.project.version %></td>
+                <td><%= format_datetime(pub.inserted_at) %></td>
               </tr>
-            </thead>
-            <tbody>
-              <%= for pub <- @available_publications do %>
-                <tr>
-                  <td><input type="checkbox" name="publication_id" value="<%= pub.id %>"></td>
-                  <td><%= pub.project.title %></td>
-                  <td><%= pub.project.version %></td>
-                  <td><%= format_datetime(pub.inserted_at) %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% else %>
-          <p class="my-3 text-center text-secondary">
-          You do not have any available projects.
-          </p>
-        <% end %>
-        </div>
-      </div>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="my-3 text-center text-secondary">
+        You do not have any available projects.
+        </p>
+      <% end %>
+    </div>
 
-      <%= hidden_input f, :remix, value: @remix %>
+    <%= hidden_input f, :remix, value: @remix %>
 
-      <div class="text-center">
-        <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
-      </div>
+    <div class="text-center">
+      <%= submit "Select and Continue", id: "select-submit", class: "btn btn-primary", disabled: true %>
     </div>
   <% end %>
 
-  <%= if assigns[:author] == nil do %>
-    <div class="row justify-content-md-center mt-5">
-      <div class="col-8">
-        <div class="card">
-          <div class="card-body text-center">
-            <h5 class="card-title">Have a Course Authoring Account?</h5>
-            <p class="card-text">
-              Link your authoring account to access projects where you are a collaborator.
-            </p>
+    <%= if assigns[:author] == nil do %>
+      <div class="row mt-5">
+        <div class="col-8 mx-auto">
+          <div class="card">
+            <div class="card-body text-center">
+              <h5 class="card-title">Have a Course Authoring Account?</h5>
+              <p class="card-text">
+                Link your authoring account to access projects where you are a collaborator.
+              </p>
 
-          <a href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+            <a href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  <% end %>
+    <% end %>
 
 </div>

@@ -157,6 +157,8 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     seeds = Seeder.base_project_with_resource(admin_author)
 
+    Seeder.base_project_with_resource4()
+
     Collaborators.add_collaborator(admin_author, seeds.project)
 
     Oli.Publishing.publish_project(seeds.project, "Initial publish")

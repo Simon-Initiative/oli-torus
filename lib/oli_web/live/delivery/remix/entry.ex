@@ -25,7 +25,11 @@ defmodule OliWeb.Delivery.Remix.Entry do
       <div class="flex-grow-1 d-flex flex-column align-self-center">
         <div class="flex-1">
           <%= icon(assigns) %>
-          <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-slug={revision.slug} disabled={!is_container?(revision)}><%= revision.title %></button>
+          <%= if is_container?(revision) do %>
+            <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-slug={revision.slug}><%= revision.title %></button>
+          <% else %>
+            <span class="ml-1 mr-1 entry-title"><%= revision.title %></span>
+          <% end %>
         </div>
       </div>
 

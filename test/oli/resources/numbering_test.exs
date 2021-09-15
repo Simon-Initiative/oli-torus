@@ -1,9 +1,7 @@
 defmodule Oli.Resources.NumberingTest do
   use Oli.DataCase
 
-  alias Oli.Resources.Revision
   alias Oli.Resources.Numbering
-  alias Oli.Repo
   alias Oli.Publishing.AuthoringResolver
 
   describe "container numbering" do
