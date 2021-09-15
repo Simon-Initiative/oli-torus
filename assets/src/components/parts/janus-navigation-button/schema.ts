@@ -39,6 +39,11 @@ export const schema: JSONSchema7Object = {
     type: 'string',
     description: 'hex color value for text',
   },
+  buttonColor: {
+    type: 'string',
+    title: 'Button Color',
+    description: 'background color for the button',
+  },
   transparent: {
     title: 'Transparent',
     type: 'boolean',
@@ -47,7 +52,14 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  textColor: {
+    'ui:widget': 'ColorPicker',
+  },
+  buttonColor: {
+    'ui:widget': 'ColorPicker',
+  },
+};
 
 export const adaptivitySchema = {
   selected: CapiVariableTypes.BOOLEAN,
@@ -66,6 +78,8 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   visible: true,
   textColor: '#000',
   transparent: false,
-  title: 'Button',
-  ariaLabel: 'Button',
+  width: 100,
+  height: 30,
+  title: 'Nav Button',
+  ariaLabel: 'Nav Button',
 });
