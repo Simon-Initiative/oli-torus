@@ -268,7 +268,7 @@ $panel-section-title-bar-color: #e8ebed;
         text-align: start;
       }
     }
-    .adaptivityDropdown{
+    .adaptivityDropdown {
       padding: 0px !important;
       border: 0px;
       > button.form-control {
@@ -607,5 +607,76 @@ $panel-section-title-bar-color: #e8ebed;
   }
   .popover {
     max-width: 550px;
+  }
+  .popover-header {
+    background-color: $panel-section-title-bar-color;
+    border-bottom-color: $ui-border-color;
+  }
+  #aa-variable-picker {
+    font-size: 13px;
+
+    .popover-header {
+      display: flex;
+      font-family: 'Raleway', $font-family-sans-serif;
+      font-size: 12px;
+      color: $panel-font-color-light;
+      height: $panel-section-title-bar-height;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .target-select-container {
+      background-color: $panel-bg-color-light;
+      margin: -8px -12px;
+      padding: 8px 12px;
+      min-width: 350px;
+      border-bottom: 1px solid $ui-border-color;
+
+      .dropdown-toggle:after {
+        display: block;
+        margin-left: 8px;
+        font-size: 14px;
+      }
+      .screen-picker-container {
+        max-height: 200px;
+        overflow-y: scroll;
+      }
+    }
+    .variable-picker-dropdown {
+      font-size: 12px;
+      background: $white;
+      color: $panel-font-color-light;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      border-color: $ui-border-color;
+    }
+    .activity-tree {
+      margin-top: 16px;
+      max-height: 250px;
+      overflow-y: scroll;
+
+      .part-type {
+        padding: 8px 0 8px 8px;
+        border: none;
+        border-top: 1px solid $ui-border-color;
+        display: flex;
+        align-items: center;
+        background-color: $white;
+
+        &:first-of-type {
+          border-top: none;
+        }
+      }
+      .part-type-icon {
+        max-width: 16px;
+        max-height: 16px;
+      }
+    }
+  }
+  .text-btn {
+    background: none;
+    border: none;
+    color: $panel-font-color-light;
   }
 }

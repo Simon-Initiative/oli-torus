@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
@@ -73,6 +74,21 @@ export const uiSchema = {
     'ui:title': 'Subtitles',
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
   },
+};
+
+export const adaptivitySchema = {
+  hasStarted: CapiVariableTypes.BOOLEAN,
+  autoPlay: CapiVariableTypes.BOOLEAN,
+  currentTime: CapiVariableTypes.STRING,
+  duration: CapiVariableTypes.STRING,
+  endTime: CapiVariableTypes.STRING,
+  exposureInSeconds: CapiVariableTypes.NUMBER,
+  exposureInPercentage: CapiVariableTypes.NUMBER,
+  hasCompleted: CapiVariableTypes.BOOLEAN,
+  startTime: CapiVariableTypes.STRING,
+  state: CapiVariableTypes.STRING,
+  totalSecondsWatched: CapiVariableTypes.STRING,
+  enableReplay: CapiVariableTypes.BOOLEAN,
 };
 
 export const createSchema = (): Partial<VideoModel> => ({

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import state from 'state';
 import guid from 'utils/guid';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
+import { VariablePicker, OverlayPlacements } from './VariablePicker';
 
 const conditionOperatorOptions = [
   { key: 'equal', text: '=', value: 'equal' },
@@ -92,22 +94,34 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   };
 
   const uuid = guid();
+  const targetRef = useRef<HTMLInputElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
   return (
     <div className="d-flex mt-1">
-      <label className="sr-only" htmlFor={`target-${uuid}`}>
-        target
-      </label>
-      <input
-        key={`target-${uuid}`}
-        id={`target-${uuid}`}
-        className="form-control form-control-sm flex-grow-1 mw-25 mr-2"
-        type="text"
-        placeholder="Target"
-        defaultValue={fact}
-        onBlur={(e) => handleFactChange(e)}
-        title={fact}
-        tabIndex={0}
-      />
+      <div className="input-group input-group-sm flex-grow-1">
+        <div className="input-group-prepend" title="Target">
+          <VariablePicker
+            targetRef={targetRef}
+            typeRef={typeRef}
+            placement={OverlayPlacements.TOP}
+          />
+        </div>
+        <label className="sr-only" htmlFor={`target-${uuid}`}>
+          target
+        </label>
+        <input
+          key={`target-${uuid}`}
+          id={`target-${uuid}`}
+          className="form-control form-control-sm flex-grow-1 mr-2"
+          type="text"
+          placeholder="Target"
+          defaultValue={fact}
+          onBlur={(e) => handleFactChange(e)}
+          title={fact}
+          tabIndex={0}
+          ref={targetRef}
+        />
+      </div>
       <label className="sr-only" htmlFor={`operator-${uuid}`}>
         operator
       </label>

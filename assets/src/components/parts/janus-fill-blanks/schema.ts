@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -98,6 +99,14 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  enabled: CapiVariableTypes.BOOLEAN,
+  correct: CapiVariableTypes.BOOLEAN,
+  attempted: CapiVariableTypes.BOOLEAN,
+  customCss: CapiVariableTypes.STRING,
+  customCssClass: CapiVariableTypes.STRING,
+};
 
 export const createSchema = (): Partial<FIBModel> => ({
   cssClasses: '',

@@ -1,7 +1,8 @@
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
+import { VariablePicker, OverlayPlacements } from './VariablePicker';
 
 const typeOptions = [
   { key: 'number', text: 'Number', value: 1 },
@@ -34,6 +35,9 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const [value, setValue] = useState(action.params.value);
   const [isDirty, setIsDirty] = useState(false);
   const uuid = guid();
+
+  const targetRef = useRef<HTMLInputElement>(null);
+  const typeRef = useRef<HTMLSelectElement>(null);
 
   const handleTargetChange = (e: any) => {
     const val = e.target.value;
@@ -96,17 +100,20 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
       </label>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="target">
-          <div className="input-group-text">
-            <i className="fa fa-crosshairs" />
-          </div>
+          <VariablePicker
+            targetRef={targetRef}
+            typeRef={typeRef}
+            placement={OverlayPlacements.TOP}
+          />
         </div>
         <input
           type="text"
           className="form-control form-control-sm mr-2 flex-grow-1"
           id={`action-mutate-target-${uuid}`}
-          value={target}
-          onChange={(e) => handleTargetChange(e)}
+          defaultValue={target}
+          onBlur={(e) => handleTargetChange(e)}
           title={target}
+          ref={targetRef}
         />
       </div>
       <label className="sr-only" htmlFor={`action-mutate-type-${uuid}`}>
@@ -117,6 +124,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         id={`action-mutate-type-${uuid}`}
         defaultValue={targetType}
         onChange={(e) => handleTargetTypeChange(e)}
+        ref={typeRef}
       >
         {typeOptions.map((type) => (
           <option key={type.key} value={type.value}>
