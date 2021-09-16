@@ -69,10 +69,7 @@ const slice: Slice<PageState> = createSlice({
       }
       if (action.payload.customCss !== undefined) {
         state.customCss = action.payload.customCss;
-      } else {
-        // For allowing empty custom css field
-        state.customCss = '';
-      }
+      } 
       if (action.payload.additionalStylesheets !== undefined) {
         state.additionalStylesheets = action.payload.additionalStylesheets;
       }
