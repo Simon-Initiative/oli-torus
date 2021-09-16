@@ -114,9 +114,6 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }

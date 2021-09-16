@@ -27,7 +27,6 @@ interface SelectOption {
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : []);
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
@@ -52,9 +51,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
 
     if (!pModel) {
       return;

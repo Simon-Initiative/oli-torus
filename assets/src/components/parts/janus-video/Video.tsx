@@ -10,7 +10,6 @@ import { PartComponentProps } from '../types/parts';
 import { VideoModel } from './schema';
 
 const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
-  const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'string' ? {} : props.model);
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -135,9 +134,6 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }

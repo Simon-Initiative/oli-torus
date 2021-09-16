@@ -11,7 +11,6 @@ import { PartComponentProps } from '../types/parts';
 import { DropdownModel } from './schema';
 
 const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -104,8 +103,6 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     const pModel = props.model;
     setModel(pModel);
 
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }
@@ -149,11 +146,6 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     //if lable is visible then need to set the maxWidth otherwise it gets out of the container
     dropDownStyle.maxWidth = `${Number(width * 0.63)}px`;
   }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
 
   const saveState = ({
     selectedIndex,

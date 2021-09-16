@@ -11,7 +11,6 @@ import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 
 const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -169,9 +168,6 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }
@@ -345,11 +341,6 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       ],
     });
   }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
 
   const buttonProps = {
     title: buttonTitle,

@@ -24,7 +24,6 @@ interface InitResultProps {
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const id: string = props.id;
   const [context, setContext] = useState<boolean>(false);
@@ -87,9 +86,6 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }

@@ -259,9 +259,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }

@@ -11,7 +11,6 @@ import { PartComponentProps } from '../types/parts';
 import { MultiLineTextModel } from './schema';
 
 const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -96,8 +95,6 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     const pModel = props.model;
     setModel(pModel);
 
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }
@@ -190,11 +187,6 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     height,
     resize: 'none',
   };
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
 
   const saveInputText = (val: string) => {
     props.onSave({

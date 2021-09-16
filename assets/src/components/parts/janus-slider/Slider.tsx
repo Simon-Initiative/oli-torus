@@ -11,7 +11,6 @@ import { SliderModel } from './schema';
 import './Slider.scss';
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
-  const [state, setState] = useState<unknown>([]);
   const [model, setModel] = useState<Partial<SliderModel>>({});
   const [ready, setReady] = useState<boolean>(false);
 
@@ -85,9 +84,6 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }

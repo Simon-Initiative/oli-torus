@@ -11,7 +11,6 @@ import { PartComponentProps } from '../types/parts';
 import { InputTextModel } from './schema';
 
 const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
@@ -152,9 +151,6 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
   useEffect(() => {
     const pModel = props.model;
     setModel(pModel);
-
-    const pState = props.state;
-    setState(pState);
     if (!pModel) {
       return;
     }
