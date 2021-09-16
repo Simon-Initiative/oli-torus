@@ -69,7 +69,7 @@ const slice: Slice<PageState> = createSlice({
       }
       if (action.payload.customCss !== undefined) {
         state.customCss = action.payload.customCss;
-      } 
+      }
       if (action.payload.additionalStylesheets !== undefined) {
         state.additionalStylesheets = action.payload.additionalStylesheets;
       }
