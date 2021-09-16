@@ -53,7 +53,7 @@ const MultipleChoice: React.FC = () => {
 
           <ChoicesDelivery
             unselectedIcon={<Radio.Unchecked />}
-            selectedIcon={<Radio.Correct />}
+            selectedIcon={<Radio.Checked />}
             choices={model.choices}
             selected={[getCorrectChoice(model).id]}
             onSelect={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}

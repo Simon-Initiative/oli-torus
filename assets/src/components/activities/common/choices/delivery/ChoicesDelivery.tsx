@@ -1,7 +1,7 @@
-import { WriterContext } from 'data/content/writers/context';
-import React from 'react';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { Choice, ChoiceId } from 'components/activities/types';
+import { WriterContext } from 'data/content/writers/context';
+import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import React from 'react';
 import './ChoicesDelivery.scss';
 
 interface Props {
@@ -34,7 +34,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
         >
           <div className="choices__choice-wrapper">
             <label className="choices__choice-label" htmlFor={`choice-${index}`}>
-              <div className="d-flex align-items-center flex-shrink-1">
+              <div className="d-flex align-items-center">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
                 <div className="choices__choice-content">
                   <HtmlContentModelRenderer text={choice.content} context={context} />
