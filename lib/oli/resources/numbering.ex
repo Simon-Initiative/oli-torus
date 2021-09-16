@@ -279,7 +279,8 @@ defmodule Oli.Resources.Numbering do
         {Enum.reverse(children), numbering_tracker, numberings}
       end)
 
-    {%HierarchyNode{node | children: children}, numbering_tracker, numberings}
+    {%HierarchyNode{node | numbering: numbering, children: children}, numbering_tracker,
+     numberings}
   end
 
   @doc """

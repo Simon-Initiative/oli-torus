@@ -6,8 +6,8 @@
         Customize your curriculum by adding, removing and rearranging course materials.
         <div class="flex-grow-1"></div>
         <div class="flex-shrink-0">
-          <button class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
-          <button disabled={!@has_unsaved_changes} class="btn btn-primary ml-1" phx-click="save" phx-disabled-with="Saving...">Save</button>
+          <button id="#cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
+          <button id="#save" disabled={!@has_unsaved_changes} class="btn btn-primary ml-1" phx-click="save" phx-disabled-with="Saving...">Save</button>
         </div>
       </div>
     </div>

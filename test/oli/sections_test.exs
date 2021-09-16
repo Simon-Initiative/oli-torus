@@ -6,6 +6,9 @@ defmodule Oli.SectionsTest do
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Numbering
+  alias Oli.Publishing.HierarchyNode
 
   describe "enrollments" do
     @valid_attrs %{
@@ -353,9 +356,64 @@ defmodule Oli.SectionsTest do
   end
 
   describe "sections remix" do
+    setup do
+      Seeder.base_project_with_resource4()
+    end
+
     test "rebuild_section_curriculum/2 takes a section and hierarchy and upserts section resources",
-         %{} do
-      throw("TODO")
+         %{
+           section_1: section,
+           nested_revision1: nested_revision1,
+           nested_revision2: nested_revision2
+         } do
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      source_index = 0
+      destination_index = 2
+      container_node = Enum.at(hierarchy.children, 2)
+      node = Enum.at(container_node.children, source_index)
+
+      children =
+        HierarchyNode.reorder_children(
+          container_node.children,
+          node,
+          source_index,
+          destination_index
+        )
+
+      updated = %HierarchyNode{container_node | children: children}
+      hierarchy = HierarchyNode.find_and_update_node(hierarchy, updated)
+
+      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+
+      # verify the pages in the new hierarchy are reordered
+      updated_container_node = Enum.at(hierarchy.children, 2)
+
+      assert Enum.at(updated_container_node.children, 0).revision == nested_revision2
+      assert Enum.at(updated_container_node.children, 1).revision == nested_revision1
+
+      # # verify new numberings are correct
+      assert hierarchy.section_resource.numbering_level == 0
+      assert hierarchy.section_resource.numbering_index == 1
+
+      assert Enum.at(hierarchy.children, 0).section_resource.numbering_level == 1
+      assert Enum.at(hierarchy.children, 0).section_resource.numbering_index == 1
+      assert Enum.at(hierarchy.children, 1).section_resource.numbering_level == 1
+      assert Enum.at(hierarchy.children, 1).section_resource.numbering_index == 2
+      assert Enum.at(hierarchy.children, 2).section_resource.numbering_level == 1
+      assert Enum.at(hierarchy.children, 2).section_resource.numbering_index == 3
+
+      assert Enum.at(hierarchy.children, 2).children
+             |> Enum.at(0).section_resource.numbering_level == 2
+
+      assert Enum.at(hierarchy.children, 2).children
+             |> Enum.at(0).section_resource.numbering_index == 1
+
+      assert Enum.at(hierarchy.children, 2).children
+             |> Enum.at(1).section_resource.numbering_level == 2
+
+      assert Enum.at(hierarchy.children, 2).children
+             |> Enum.at(1).section_resource.numbering_index == 2
     end
   end
 end

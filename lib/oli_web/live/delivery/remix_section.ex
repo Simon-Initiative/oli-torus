@@ -134,13 +134,15 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => drop_index}, socket) do
     %{active: active, hierarchy: hierarchy} = socket.assigns
 
+    IO.inspect(%{"sourceIndex" => source_index, "dropIndex" => drop_index})
+
     source_index = String.to_integer(source_index)
     destination_index = String.to_integer(drop_index)
 
     node = Enum.at(active.children, source_index)
 
     children =
-      reorder_children(
+      HierarchyNode.reorder_children(
         active.children,
         node,
         source_index,
@@ -148,7 +150,7 @@ defmodule OliWeb.Delivery.RemixSection do
       )
 
     updated = %HierarchyNode{active | children: children}
-    hierarchy = find_and_update_node(hierarchy, updated)
+    hierarchy = HierarchyNode.find_and_update_node(hierarchy, updated)
 
     {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
 
@@ -174,7 +176,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("cancel", _, socket) do
     %{section: section} = socket.assigns
-    
+
     {:noreply,
      redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
   end
@@ -202,45 +204,13 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  defp reorder_children(
-         children,
-         node,
-         source_index,
-         index
-       ) do
-    insert_index =
-      if source_index < index do
-        index - 1
-      else
-        index
-      end
-
-    children =
-      Enum.filter(children, fn %HierarchyNode{revision: r} -> r.id !== node.revision.id end)
-      |> List.insert_at(insert_index, node)
-
-    children
-  end
-
-  defp find_and_update_node(hierarchy, node) do
-    if hierarchy.section_resource.id == node.section_resource.id do
-      node
-    else
-      %HierarchyNode{
-        hierarchy
-        | children:
-            Enum.map(hierarchy.children, fn child -> find_and_update_node(child, node) end)
-      }
-    end
-  end
-
   defp render_breadcrumb(assigns) do
     %{hierarchy: hierarchy, active: active} = assigns
     breadcrumbs = breadcrumb_trail_to(hierarchy, active)
 
     ~L"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button class="btn btn-sm btn-link" phx-click="RemixSection.select" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="RemixSection.select" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{

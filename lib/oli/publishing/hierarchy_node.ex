@@ -37,4 +37,36 @@ defmodule Oli.Publishing.HierarchyNode do
       end)
     end
   end
+
+  def reorder_children(
+        children,
+        node,
+        source_index,
+        index
+      ) do
+    insert_index =
+      if source_index < index do
+        index - 1
+      else
+        index
+      end
+
+    children =
+      Enum.filter(children, fn %HierarchyNode{revision: r} -> r.id !== node.revision.id end)
+      |> List.insert_at(insert_index, node)
+
+    children
+  end
+
+  def find_and_update_node(hierarchy, node) do
+    if hierarchy.section_resource.id == node.section_resource.id do
+      node
+    else
+      %HierarchyNode{
+        hierarchy
+        | children:
+            Enum.map(hierarchy.children, fn child -> find_and_update_node(child, node) end)
+      }
+    end
+  end
 end

@@ -24,12 +24,75 @@ defmodule OliWeb.RemixSectionLiveTest do
       conn =
         get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
 
-      {:ok, view, _} = live(conn)
+      {:ok, view, _html} = live(conn)
 
       assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
       assert view |> element("##{revision1.resource_id}") |> has_element?()
       assert view |> element("##{revision2.resource_id}") |> has_element?()
     end
+
+    test "remix section navigation", %{
+      conn: conn,
+      project: project,
+      map: %{
+        section_1: section_1,
+        unit1_container: unit1_container,
+        revision1: revision1,
+        revision2: revision2,
+        nested_revision1: nested_revision1,
+        nested_revision2: nested_revision2
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      # navigate to a lower unit
+      view
+      |> element("##{unit1_container.revision.resource_id} button.entry-title")
+      |> render_click()
+
+      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?() ==
+               false
+
+      assert view |> element("##{nested_revision1.resource_id}") |> has_element?()
+      assert view |> element("##{nested_revision2.resource_id}") |> has_element?()
+
+      # navigate back to root container
+      view
+      |> element("#curriculum-back")
+      |> render_click()
+
+      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
+    end
+
+    test "remix section save", %{
+      conn: conn,
+      project: project,
+      map: %{
+        section_1: section_1,
+        unit1_container: unit1_container,
+        revision1: revision1,
+        revision2: revision2
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      view
+      |> element("#save")
+      |> render_hook("reorder", %{"sourceIndex" => 0, "dropIndex" => 1})
+
+      view
+      |> element("#save")
+      |> render_click()
+
+
+    end
+
   end
 
   defp setup_session(%{conn: conn}) do
