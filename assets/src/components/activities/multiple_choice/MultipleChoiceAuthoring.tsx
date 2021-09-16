@@ -51,7 +51,7 @@ const MultipleChoice: React.FC = () => {
         <TabbedNavigation.Tab label="Answer Key">
           <AnswerKey
             selectedChoiceIds={[getCorrectChoice(model).id]}
-            selectedIcon={<Radio.Correct />}
+            selectedIcon={<Radio.Checked />}
             unselectedIcon={<Radio.Unchecked />}
             onSelectChoiceId={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
           />
