@@ -102,13 +102,19 @@ export const renderFlow = (
 };
 
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
-  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { configuremode, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
 
   const htmlPreviewRef = useRef<any>(null);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
+
+  const [model, setModel] = useState<TextFlowModel>(props.model);
+
+  useEffect(() => {
+    setModel(props.model);
+  }, [props.model]);
 
   useEffect(() => {
     // console.log('TF REF CHANGE', htmlPreviewRef.current);
@@ -223,9 +229,11 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         return;
       } // not mine
       const { payload, callback } = e.detail;
-      console.log('TF EDITOR SAVE', { payload, callback, props });
+      // console.log('TF EDITOR SAVE', { payload, callback, props });
       const modelClone = clone(model);
       modelClone.nodes = payload;
+      // optimistic update
+      setModel(modelClone);
       onSaveConfigure({
         id,
         snapshot: modelClone,
@@ -236,7 +244,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       if (!inConfigureMode) {
         return;
       } // not mine
-      console.log('TF EDITOR CANCEL');
+      // console.log('TF EDITOR CANCEL');
       setInConfigureMode(false);
       onCancelConfigure({ id });
     };
@@ -250,13 +258,16 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
-  }, [ready, inConfigureMode]);
+  }, [ready, inConfigureMode, model]);
 
-  const Editor = () =>
-    React.createElement(quillEditorTagName, {
-      /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
-      html: htmlPreview,
-    });
+  const Editor = () => (
+    <div style={{ padding: 20 }}>
+      {React.createElement(quillEditorTagName, {
+        /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
+        html: htmlPreview,
+      })}
+    </div>
+  );
 
   const renderIt = inConfigureMode ? (
     ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)

@@ -179,11 +179,13 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
 
   const handlePartSaveConfigure = useCallback(
     async ({ id, snapshot }: { id: string; snapshot: any }) => {
-      console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot });
       const modelClone = clone(props.model);
       const part = modelClone.content.partsLayout.find((p: any) => p.id === id);
       if (part) {
         part.custom = snapshot;
+
+        // console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot, modelClone: clone(modelClone) });
+
         props.onEdit(modelClone);
       }
       setConfigurePartId('');
@@ -192,6 +194,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   );
 
   const handlePortalBgClick = (e: any) => {
+    // console.log('BG CLICK', { e });
     if (e.target.getAttribute('class') === 'part-config-container') {
       setConfigurePartId('');
     }
