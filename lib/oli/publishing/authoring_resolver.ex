@@ -218,8 +218,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       %HierarchyNode{
         numbering: %Numbering{
           index: numbering_index,
-          level: level,
-          revision: revision
+          level: level
         },
         children: children,
         resource_id: revision.resource_id,

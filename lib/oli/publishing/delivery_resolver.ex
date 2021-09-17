@@ -188,8 +188,7 @@ defmodule Oli.Publishing.DeliveryResolver do
         node = %HierarchyNode{
           numbering: %Numbering{
             index: sr.numbering_index,
-            level: sr.numbering_level,
-            revision: rev
+            level: sr.numbering_level
           },
           children: sr.children,
           resource_id: rev.resource_id,

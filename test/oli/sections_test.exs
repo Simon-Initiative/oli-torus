@@ -393,27 +393,26 @@ defmodule Oli.SectionsTest do
       assert Enum.at(updated_container_node.children, 1).revision == nested_revision1
 
       # # verify new numberings are correct
-      assert hierarchy.section_resource.numbering_level == 0
-      assert hierarchy.section_resource.numbering_index == 1
+      assert hierarchy.numbering.level == 0
+      assert hierarchy.numbering.index == 1
 
-      assert Enum.at(hierarchy.children, 0).section_resource.numbering_level == 1
-      assert Enum.at(hierarchy.children, 0).section_resource.numbering_index == 1
-      assert Enum.at(hierarchy.children, 1).section_resource.numbering_level == 1
-      assert Enum.at(hierarchy.children, 1).section_resource.numbering_index == 2
-      assert Enum.at(hierarchy.children, 2).section_resource.numbering_level == 1
-      assert Enum.at(hierarchy.children, 2).section_resource.numbering_index == 3
+      assert Enum.at(hierarchy.children, 0).numbering.level == 1
+      assert Enum.at(hierarchy.children, 0).numbering.index == 1
+      assert Enum.at(hierarchy.children, 1).numbering.level == 1
+      assert Enum.at(hierarchy.children, 1).numbering.index == 2
 
-      assert Enum.at(hierarchy.children, 2).children
-             |> Enum.at(0).section_resource.numbering_level == 2
+      # containers are numbered separately from pages, therefore
+      # since this is the first container its numbering should be 1, 1
+      assert Enum.at(hierarchy.children, 2).numbering.level == 1
+      assert Enum.at(hierarchy.children, 2).numbering.index == 1
 
-      assert Enum.at(hierarchy.children, 2).children
-             |> Enum.at(0).section_resource.numbering_index == 1
+      # even though this page is at a lower level, pages are numbered
+      # contiguously regardless of level. Therefore, this is page 3
+      assert Enum.at(Enum.at(hierarchy.children, 2).children, 0).numbering.level == 2
+      assert Enum.at(Enum.at(hierarchy.children, 2).children, 0).numbering.index == 3
 
-      assert Enum.at(hierarchy.children, 2).children
-             |> Enum.at(1).section_resource.numbering_level == 2
-
-      assert Enum.at(hierarchy.children, 2).children
-             |> Enum.at(1).section_resource.numbering_index == 2
+      assert Enum.at(Enum.at(hierarchy.children, 2).children, 1).numbering.level == 2
+      assert Enum.at(Enum.at(hierarchy.children, 2).children, 1).numbering.index == 4
     end
   end
 end

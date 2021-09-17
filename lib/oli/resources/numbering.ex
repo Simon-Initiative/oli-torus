@@ -48,8 +48,7 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Publishing.HierarchyNode
 
   defstruct level: 0,
-            index: 0,
-            revision: nil
+            index: 0
 
   def container_type(level) do
     case level do
@@ -188,7 +187,7 @@ defmodule Oli.Resources.Numbering do
     |> Enum.map(fn id -> Map.get(by_id, id) end)
     |> Enum.reduce({numbering_tracker, numberings}, fn child, {numbering_tracker, numberings} ->
       {index, numbering_tracker} = next_index(numbering_tracker, level, child)
-      numbering = %__MODULE__{level: level, index: index, revision: child}
+      numbering = %__MODULE__{level: level, index: index}
 
       number_helper(
         child,
@@ -254,7 +253,7 @@ defmodule Oli.Resources.Numbering do
        ) do
     {numbering_index, numbering_tracker} = next_index(numbering_tracker, level, node.revision)
 
-    numbering = %__MODULE__{level: level, index: numbering_index, revision: node.revision}
+    numbering = %__MODULE__{level: level, index: numbering_index}
     numberings = Map.put(numberings, node.revision.id, numbering)
 
     {children, numbering_tracker, numberings} =
@@ -316,8 +315,11 @@ defmodule Oli.Resources.Numbering do
     else
       current_node.children
       |> Enum.filter(fn %{revision: r} -> r.resource_type_id == container end)
-      |> Enum.reduce({:not_found, path}, fn child, path_tracker ->
-        path_helper(child, node, path_tracker)
+      |> Enum.reduce_while({:not_found, path}, fn child, path_tracker ->
+        case path_helper(child, node, path_tracker) do
+          {:ok, _path} = result -> {:halt, result}
+          {:not_found, _} -> {:cont, {:not_found, path}}
+        end
       end)
     end
   end

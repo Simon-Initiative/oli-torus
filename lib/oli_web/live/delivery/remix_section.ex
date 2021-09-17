@@ -134,8 +134,6 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("reorder", %{"sourceIndex" => source_index, "dropIndex" => drop_index}, socket) do
     %{active: active, hierarchy: hierarchy} = socket.assigns
 
-    IO.inspect(%{"sourceIndex" => source_index, "dropIndex" => drop_index})
-
     source_index = String.to_integer(source_index)
     destination_index = String.to_integer(drop_index)
 

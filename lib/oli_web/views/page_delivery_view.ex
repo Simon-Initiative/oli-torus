@@ -30,9 +30,9 @@ defmodule OliWeb.PageDeliveryView do
   def container_title(%HierarchyNode{
         numbering: %Numbering{
           level: level,
-          index: index,
-          revision: revision
-        }
+          index: index
+        },
+        revision: revision
       }) do
     Numbering.container_type(level) <> " #{index}: #{revision.title}"
   end

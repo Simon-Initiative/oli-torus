@@ -69,4 +69,21 @@ defmodule Oli.Publishing.HierarchyNode do
       }
     end
   end
+
+  @doc """
+  Debugging utility to inspect a hierarchy without all the noise. Choose which keys
+  to drop in the HierarchyNodes using the drop_keys option.
+  """
+  def inspect(%HierarchyNode{} = hierarchy, opts \\ []) do
+    label = Keyword.get(opts, :label)
+    drop_keys = Keyword.get(opts, :drop_keys, [:revision, :section_resource])
+
+    drop_r(hierarchy, drop_keys)
+    |> IO.inspect(label: label)
+  end
+
+  defp drop_r(%HierarchyNode{children: children} = node, drop_keys) do
+    %HierarchyNode{node | children: Enum.map(children, fn n -> drop_r(n, drop_keys) end)}
+    |> Map.drop([:__struct__ | drop_keys])
+  end
 end

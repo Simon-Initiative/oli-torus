@@ -13,7 +13,6 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section mount", %{
       conn: conn,
-      project: project,
       map: %{
         section_1: section_1,
         unit1_container: unit1_container,
@@ -33,18 +32,15 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     test "remix section navigation", %{
       conn: conn,
-      project: project,
       map: %{
-        section_1: section_1,
+        section_1: section1,
         unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2,
         nested_revision1: nested_revision1,
         nested_revision2: nested_revision2
       }
     } do
       conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section1.slug))
 
       {:ok, view, _html} = live(conn)
 
@@ -67,32 +63,26 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
     end
 
-    test "remix section save", %{
+    test "remix section reorder and save", %{
       conn: conn,
-      project: project,
       map: %{
-        section_1: section_1,
-        unit1_container: unit1_container,
-        revision1: revision1,
-        revision2: revision2
+        section_1: section
       }
     } do
       conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
 
       {:ok, view, _html} = live(conn)
 
       view
-      |> element("#save")
-      |> render_hook("reorder", %{"sourceIndex" => 0, "dropIndex" => 1})
+      |> render_hook("reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
       view
       |> element("#save")
       |> render_click()
 
-
+      assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
