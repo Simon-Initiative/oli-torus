@@ -85,8 +85,6 @@ export const OrderingComponent: React.FC = () => {
     return null;
   }
 
-  console.log('student input', uiState.partState[DEFAULT_PART_ID]?.studentInput);
-
   return (
     <div className="activity ordering-activity">
       <div className="activity-content">

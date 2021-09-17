@@ -150,7 +150,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
           // eslint-disable-next-line
           next: Function,
         ) => {
-          console.log('pasting');
           setIsPerformingAsyncAction(true);
           await onPaste(editor, e, props.commandContext.projectSlug);
           setIsPerformingAsyncAction(false);
