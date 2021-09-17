@@ -2,31 +2,31 @@
   <h1><%= @summary.title %></h1>
   <p class="text-secondary"><%= @summary.description %></p>
 
-  <%= if is_instructor?(@conn, @section_slug) do %>
+  <%= if is_section_instructor_or_admin?(@section_slug, @current_user) do %>
 
-  <div class="d-flex flex-row my-2">
-    <div class="flex-fill"></div>
-    <div>
-      <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm" %>
-    </div>
-
-    <%= if user_role(@section, @current_user) == :administrator do %>
+    <div class="d-flex flex-row my-2">
+      <div class="flex-fill"></div>
       <div>
-        <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm" %>
-      </div>
-    <% end %>
-
-    <div>
-      <%= link to: Routes.page_delivery_path(@conn, :updates, @section_slug), class: "btn btn-link btn-sm" do %>
-        <%= case Enum.count(@summary.updates) do %>
-          <% 0 -> %>
-            Updates
-          <% num_updates -> %>
-            Updates <span class="badge badge-primary"><%= num_updates %></span>
+        <%= link to: Routes.page_delivery_path(@conn, :updates, @section_slug), class: "btn btn-link btn-sm ml-1" do %>
+          <%= case Enum.count(@summary.updates) do %>
+            <% 0 -> %>
+              Updates
+            <% num_updates -> %>
+              Updates <span class="badge badge-primary"><%= num_updates %></span>
+          <% end %>
         <% end %>
+      </div>
+
+      <div>
+        <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm ml-1" %>
+      </div>
+
+      <%= if is_admin?(@section.slug, @current_user) do %>
+        <div>
+          <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
+        </div>
       <% end %>
     </div>
-  </div>
 
   <% end %>
 
