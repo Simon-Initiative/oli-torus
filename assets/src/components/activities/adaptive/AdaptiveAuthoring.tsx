@@ -43,7 +43,7 @@ const Adaptive = (
       const isInConfigMode = configurePartId !== '';
       // TODO: ability to click things underneath other things using path and selection
       if (!isInConfigMode && !isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
-        setSelectedPartId('');
+        handlePartClick({ id: '' });
       }
     };
     if (props.hostRef) {
@@ -100,7 +100,7 @@ const Adaptive = (
     setSelectedPartId(payload.id);
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('selectPart', payload);
-      console.log('got result from onSelect', result);
+      // console.log('got result from onSelect', result);
     }
   };
 
@@ -159,8 +159,9 @@ const Adaptive = (
     props.onEdit(modelClone);
     // optimistically remove part from model
     setParts(modelClone.content.partsLayout);
-    // just setting the part ID should trigger the selectedPart also to get reset
-    setSelectedPartId('');
+    // just setting the part ID should trigger the selectedPart also to get reset,
+    // calling the click handler will trigger the event to notify upstream
+    handlePartClick({ id: '' });
   }, [selectedPart, props.model]);
 
   const DeleteComponentHandler = useCallback(() => {

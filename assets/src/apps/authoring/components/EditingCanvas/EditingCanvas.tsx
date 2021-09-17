@@ -2,7 +2,11 @@ import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
+import {
+  selectBottomPanel,
+  selectRightPanelActiveTab,
+  setRightPanelActiveTab,
+} from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
@@ -12,6 +16,7 @@ const EditingCanvas: React.FC = () => {
   const bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentPartSelection = useSelector(selectCurrentSelection);
+  const currentRightPanelActiveTab = useSelector(selectRightPanelActiveTab);
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
@@ -24,6 +29,16 @@ const EditingCanvas: React.FC = () => {
     }
     setCurrentActivityId(current?.id || '');
   }, [currentActivityTree]);
+
+  useEffect(() => {
+    /* console.log('currentPartSelection CHANGEDDD', {
+      currentPartSelection,
+      currentRightPanelActiveTab,
+    }); */
+    if (!currentPartSelection && currentRightPanelActiveTab === RightPanelTabs.COMPONENT) {
+      dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+    }
+  }, [currentPartSelection, currentRightPanelActiveTab]);
 
   const handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
