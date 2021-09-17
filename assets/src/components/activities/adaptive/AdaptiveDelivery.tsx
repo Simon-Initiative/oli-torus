@@ -20,7 +20,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     content: { custom: config, partsLayout },
   } = props.model;
 
-  const [pusher, setPusher] = useState(new EventEmitter());
+  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
   const parts = partsLayout || [];
 

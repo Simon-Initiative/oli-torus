@@ -50,7 +50,7 @@ const CheckAllThatApply = () => {
       <TabbedNavigation.Tab label="Answer Key">
         <AnswerKey
           selectedChoiceIds={getCorrectChoiceIds(model)}
-          selectedIcon={<Checkbox.Correct />}
+          selectedIcon={<Checkbox.Checked />}
           unselectedIcon={<Checkbox.Unchecked />}
           onSelectChoiceId={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
         />

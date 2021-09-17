@@ -1,10 +1,10 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface AudioModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   customCssClass: string;
-  palette: any;
   triggerCheck: boolean;
   autoPlay: boolean;
   startTime: number;
@@ -21,16 +21,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   triggerCheck: {
     title: 'Trigger Check',
@@ -78,6 +68,20 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  exposureinSeconds: CapiVariableTypes.NUMBER,
+  exposurePercentage: CapiVariableTypes.NUMBER,
+  hasStarted: CapiVariableTypes.BOOLEAN,
+  hasCompleted: CapiVariableTypes.BOOLEAN,
+  totalSecondsWatched: CapiVariableTypes.NUMBER,
+  duration: CapiVariableTypes.NUMBER,
+  autoPlay: CapiVariableTypes.BOOLEAN,
+  state: CapiVariableTypes.ENUM,
+  startTime: CapiVariableTypes.NUMBER,
+  endTime: CapiVariableTypes.NUMBER,
+  currentTime: CapiVariableTypes.NUMBER,
+};
 
 export const createSchema = (): Partial<AudioModel> => ({
   src: '',

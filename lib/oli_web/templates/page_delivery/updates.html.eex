@@ -9,5 +9,7 @@
 
 <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
   "section" => @section,
-  "redirect_after_apply" => Routes.page_delivery_path(@conn, :updates, @section.slug)
+  "redirect_after_apply" => Routes.page_delivery_path(@conn, :updates, @section.slug),
+  "current_user" => @current_user,
+  "current_author" => nil
   }) %>

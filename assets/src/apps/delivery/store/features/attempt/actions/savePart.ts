@@ -3,7 +3,7 @@ import { writePartAttemptState } from 'data/persistence/state/intrinsic';
 import {
   defaultGlobalEnv,
   evalScript,
-  getAssignScript,
+  getAssignStatements,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
@@ -42,10 +42,17 @@ export const savePartState = createAsyncThunk(
     }
 
     // update scripting env with latest values
-    const assignScript = getAssignScript(response);
-
-    const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
-
+    const assignScripts = getAssignStatements(response);
+    const scriptResult: string[] = [];
+    if (Array.isArray(assignScripts)) {
+      //Need to execute scripts one-by-one so that error free expression are evaluated and only the expression with error fails. It should not have any impacts
+      assignScripts.forEach((variable: string) => {
+        // update scripting env with latest values
+        const { result } = evalScript(variable, defaultGlobalEnv);
+        //Usually, the result is always null if expression is executes successfully. If there are any errors only then the result contains the error message
+        if (result) scriptResult.push(result);
+      });
+    }
     /*  console.log('SAVE PART SCRIPT', { assignScript, scriptResult }); */
 
     // in preview mode we don't write to server, so we're done

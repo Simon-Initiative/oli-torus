@@ -169,6 +169,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     label,
     showLabel,
     showIncrementArrows,
+    prompt = '',
   } = model;
 
   const inputNumberDivStyles: CSSProperties = {
@@ -240,6 +241,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         id={`${id}-number-input`}
         min={minValue}
         max={maxValue}
+        placeholder={prompt}
         className={`${showIncrementArrows ? '' : 'hideIncrementArrows'}`}
         style={inputNumberCompStyles}
         value={inputNumberValue}

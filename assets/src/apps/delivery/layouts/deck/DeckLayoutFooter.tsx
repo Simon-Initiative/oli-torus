@@ -225,13 +225,16 @@ const DeckLayoutFooter: React.FC = () => {
         let scopedTarget = op.params.target;
 
         if (scopedTarget.indexOf('stage') === 0) {
-          const ownerActivity = currentActivityTree?.find(
-            (activity) =>
-              !!activity.content.partsLayout.find((p: any) => p.id === op.params.target),
-          );
-          scopedTarget = ownerActivity
-            ? `${ownerActivity}|${op.params.target}`
-            : `${currentActivityId}|${op.params.target}`;
+          const lstVar = scopedTarget.split('.');
+
+          if (lstVar?.length > 1) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            );
+            scopedTarget = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${currentActivityId}|${op.params.target}`;
+          }
         }
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,

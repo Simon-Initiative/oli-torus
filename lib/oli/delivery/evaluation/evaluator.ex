@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
         {:error, _} -> false
       end
 
-    if matches and best_score < score do
+    if matches and (best_score < score or is_nil(best_response)) do
       {context, current, score, out_of}
     else
       {context, best_response, best_score, out_of}

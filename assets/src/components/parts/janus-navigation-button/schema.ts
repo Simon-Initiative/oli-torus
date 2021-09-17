@@ -1,10 +1,10 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface NavButtonModel extends JanusAbsolutePositioned, JanusCustomCss {
   title: string;
   ariaLabel: string;
-  palette: string;
   visible: boolean;
   enabled: boolean;
   textColor: string;
@@ -24,16 +24,6 @@ export const schema: JSONSchema7Object = {
     title: 'Custom CSS Class',
     type: 'string',
   },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
-  },
   visible: {
     title: 'Visible',
     type: 'boolean',
@@ -49,6 +39,11 @@ export const schema: JSONSchema7Object = {
     type: 'string',
     description: 'hex color value for text',
   },
+  buttonColor: {
+    type: 'string',
+    title: 'Button Color',
+    description: 'background color for the button',
+  },
   transparent: {
     title: 'Transparent',
     type: 'boolean',
@@ -57,13 +52,34 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  textColor: {
+    'ui:widget': 'ColorPicker',
+  },
+  buttonColor: {
+    'ui:widget': 'ColorPicker',
+  },
+};
+
+export const adaptivitySchema = {
+  selected: CapiVariableTypes.BOOLEAN,
+  visible: CapiVariableTypes.BOOLEAN,
+  enabled: CapiVariableTypes.BOOLEAN,
+  title: CapiVariableTypes.STRING,
+  textColor: CapiVariableTypes.STRING,
+  backgroundColor: CapiVariableTypes.STRING,
+  transparent: CapiVariableTypes.BOOLEAN,
+  accessibilityText: CapiVariableTypes.STRING,
+  customCssClass: CapiVariableTypes.STRING,
+};
 
 export const createSchema = (): Partial<NavButtonModel> => ({
   enabled: true,
   visible: true,
   textColor: '#000',
   transparent: false,
-  title: 'Button',
-  ariaLabel: 'Button',
+  width: 100,
+  height: 30,
+  title: 'Nav Button',
+  ariaLabel: 'Nav Button',
 });

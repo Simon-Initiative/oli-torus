@@ -3,10 +3,20 @@
 ## Unreleased
 
 ### Bug Fixes
+- Fix activity choice icon selection in authoring
+- Fix targeted feedback not showing in delivery
+- Fix delivered activity choice input size changing with content
 
 - Fix an issue where platform roles were failing to update on LTI launch
 
 ### Enhancements
+
+## 0.13.1 (2021-09-14)
+
+### Bug Fixes
+
+- Fix an issue where platform roles were failing to update on LTI launch
+- Fix an issue that prevents projects page from loading when a project has no collaborators
 
 ## 0.13.0 (2021-09-07)
 

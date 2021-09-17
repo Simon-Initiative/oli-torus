@@ -15,6 +15,7 @@ defmodule OliWeb.LayoutView do
 
   import Oli.Branding
 
+  alias Oli.Accounts
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
 

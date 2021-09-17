@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
+import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
-import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { parseNumString } from 'utils/common';
+import { ColorPalette, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface PopupModel extends JanusAbsolutePositioned, JanusCustomCss {
-  palette: any;
   description: string;
   showLabel: boolean;
   openByDefault: boolean;
@@ -18,16 +21,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   description: {
     title: 'Description',
@@ -90,11 +83,89 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether popup will be visible on the screen',
     default: true,
   },
+  popup: {
+    type: 'object',
+    properties: {
+      Size: {
+        type: 'object',
+        title: 'Dimensions',
+        properties: {
+          width: { type: 'number' },
+          height: { type: 'number' },
+        },
+      },
+      Position: {
+        type: 'object',
+        title: 'Dimensions',
+        properties: {
+          x: { type: 'number' },
+          y: { type: 'number' },
+          z: { type: 'number' },
+        },
+      },
+      customCssClass: {
+        title: 'Custom CSS Class',
+        type: 'string',
+      },
+      palette: {
+        type: 'object',
+        properties: {
+          backgroundColor: { type: 'string', title: 'Background Color' },
+          borderColor: { type: 'string', title: 'Border Color' },
+          borderRadius: { type: 'string', title: 'Border Radius' },
+          borderStyle: { type: 'string', title: 'Border Style' },
+          borderWidth: { type: 'string', title: 'Border Width' },
+        },
+      },
+    },
+  },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  popup: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Popup Window',
+    Position: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Position',
+      x: {
+        classNames: 'col-4',
+      },
+      y: {
+        classNames: 'col-4',
+      },
+      z: {
+        classNames: 'col-4',
+      },
+    },
+    Size: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Dimensions',
+      width: {
+        classNames: 'col-6',
+      },
+      height: {
+        classNames: 'col-6',
+      },
+    },
+    palette: {
+      'ui:ObjectFieldTemplate': CustomFieldTemplate,
+      'ui:title': 'Background & Border',
+      backgroundColor: {
+        'ui:widget': 'ColorPicker',
+      },
+      borderColor: {
+        'ui:widget': 'ColorPicker',
+      },
+      borderStyle: { classNames: 'col-6' },
+      borderWidth: { classNames: 'col-6' },
+    },
+  },
+};
 
 export const createSchema = (): Partial<PopupModel> => ({
+  width: 32,
+  height: 32,
   customCssClass: '',
   description: '',
   questionFlow: 'LRTB',
@@ -114,6 +185,7 @@ export const createSchema = (): Partial<PopupModel> => ({
       width: 350,
       height: 350,
       palette: {
+        useHtmlProps: true,
         backgroundColor: '#ffffff',
         borderColor: '#ffffff',
         borderRadius: '0',
@@ -159,3 +231,103 @@ export const createSchema = (): Partial<PopupModel> => ({
     ],
   },
 });
+
+export const transformModelToSchema = (model: Partial<PopupModel>) => {
+  const { popup } = model;
+
+  if (!popup || !popup.custom) {
+    // TODO: fix it? or what?
+    console.warn('no popup???', { model });
+    return model;
+  }
+
+  const { x, y, z, width, height, palette } = popup.custom;
+
+  const paletteStyles: Partial<ColorPalette> = {
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderStyle: 'none',
+    borderWidth: 0,
+    borderRadius: 0,
+  };
+
+  if (palette) {
+    if (palette.useHtmlProps) {
+      paletteStyles.backgroundColor = palette.backgroundColor;
+      paletteStyles.borderColor = palette.borderColor;
+      paletteStyles.borderWidth = parseNumString(palette.borderWidth.toString());
+      paletteStyles.borderStyle = palette.borderStyle;
+      paletteStyles.borderRadius = parseNumString(palette.borderRadius.toString());
+    } else {
+      paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
+      paletteStyles.borderRadius = 0;
+      paletteStyles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      let borderColor = 'transparent';
+      if (palette.lineColor! >= 0) {
+        borderColor = chroma(palette.lineColor || 0)
+          .alpha(palette.lineAlpha || 0)
+          .css();
+      }
+      paletteStyles.borderColor = borderColor;
+
+      let bgColor = 'transparent';
+      if (palette.fillColor! >= 0) {
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha || 0)
+          .css();
+      }
+      paletteStyles.backgroundColor = bgColor;
+    }
+  }
+
+  const result = {
+    ...model,
+    popup: {
+      partsLayout: popup.partsLayout, // pass this along so we don't lose it, but it's not edited here
+      Size: { width, height },
+      Position: { x, y, z },
+      palette: paletteStyles,
+      customCssClass: popup.custom.customCssClass,
+    },
+  };
+
+  console.log('POPUP [transformModelToSchema]', { model, result });
+
+  return result;
+};
+
+// this should only be returning the contents of the *custom* section of a part
+export const transformSchemaToModel = (schema: Partial<PopupModel>) => {
+  const { popup: popupSchema } = schema;
+  const result: Partial<PopupModel> = {
+    ...schema,
+    // the parent needs to match the z of the popup, because the popup window lives inside of it
+    z: popupSchema.Position.z,
+    popup: {
+      partsLayout: popupSchema.partsLayout,
+      custom: {
+        x: popupSchema.Position.x,
+        y: popupSchema.Position.y,
+        z: popupSchema.Position.z,
+        width: popupSchema.Size.width,
+        height: popupSchema.Size.height,
+        customCssClass: popupSchema.customCssClass,
+      },
+    },
+  };
+
+  if (popupSchema.palette) {
+    result.popup.custom.palette = {
+      useHtmlProps: true,
+      backgroundColor: popupSchema.palette.backgroundColor || 'transparent',
+      borderColor: popupSchema.palette.borderColor || 'transparent',
+      borderRadius: parseNumString(popupSchema.palette.borderRadius.toString()) || 0,
+      borderWidth: parseNumString(popupSchema.palette.borderWidth.toString()) || 0,
+      borderStyle: popupSchema.palette.borderStyle || 'none',
+    };
+  }
+
+  console.log('POPUP [transformSchemaToModel]', { schema, result });
+
+  return result;
+};

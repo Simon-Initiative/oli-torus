@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -15,16 +16,6 @@ export const schema: JSONSchema7Object = {
   cssClasses: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   images: {
     title: 'Images',
@@ -61,6 +52,13 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  'Current Image': CapiVariableTypes.NUMBER,
+  'Viewed Images Count': CapiVariableTypes.NUMBER,
+  customCss: CapiVariableTypes.STRING,
+  zoom: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<CarouselModel> => ({
   customCss: '',

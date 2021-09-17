@@ -15,10 +15,12 @@ interface ScreenDropdownProps {
   label: string;
   value: string;
   onChange: (value?: string) => void;
+  dropDownCSSClass?: string;
+  buttonCSSClass?: string;
 }
 const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
-  const { id, label, value, onChange } = props;
-  console.log('ScreenDropdownTemplate', props);
+  const { id, label, value, onChange, dropDownCSSClass, buttonCSSClass } = props;
+  // console.log('ScreenDropdownTemplate', props);
   const sequence = useSelector(selectSequence);
 
   const [buttonLabel, setButtonLabel] = useState('Next Screen');
@@ -42,8 +44,8 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
   }, [value, sequence]);
 
   const onChangeHandler = (
-    e: React.MouseEvent,
     item: SequenceEntry<SequenceEntryChild> | null,
+    e: React.MouseEvent,
     isNext: boolean,
   ) => {
     const itemId = isNext ? 'next' : item?.custom.sequenceId;
@@ -52,10 +54,10 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
 
   return (
     <Fragment>
-      <span className="form-label">{label}</span>
-      <div className="dropdown screenDropdown">
+      {label && <span className="form-label">{label}</span>}
+      <div className={`dropdown ${dropDownCSSClass || 'screenDropdown'}`}>
         <button
-          className="btn btn-secondary dropdown-toggle d-flex justify-content-between"
+          className={`${buttonCSSClass} form-control dropdown-toggle d-flex justify-content-between`}
           type="button"
           id={id}
           data-toggle="dropdown"

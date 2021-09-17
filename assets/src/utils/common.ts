@@ -139,6 +139,7 @@ export const parseBool = (val: any) => {
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
 };
 
+/** returns a number if the string can be a number, else leaves it as a string */
 export const parseNumString = (item: string): string | number => {
   if (!item?.length) return item;
   // check if items are strings or numbers and converts if number
