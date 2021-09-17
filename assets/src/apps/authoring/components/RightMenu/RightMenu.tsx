@@ -234,7 +234,7 @@ const RightMenu: React.FC<any> = () => {
           console.log('JUST BEFOER', { modelChanges, properties });
           modelChanges.custom = {
             ...modelChanges.custom,
-            ...partInstance.transformSchemaToModel(properties.custom),
+            ...partInstance.transformSchemaToModel(modelChanges.custom),
           };
         }
 
@@ -309,6 +309,12 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
+
+          // For Number Input, do not show 'Delete Enable' to Authors
+          if (customPartSchema.deleteEnabled) {
+            delete customPartSchema.deleteEnabled;
+          }
+
           const newSchema: any = {
             ...partSchema,
             properties: {

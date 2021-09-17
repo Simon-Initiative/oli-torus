@@ -83,7 +83,7 @@ export const createSchema = (): Partial<InputNumberModel> => ({
   showIncrementArrows: false,
   showLabel: true,
   label: 'How many?',
-  unitsLabel: 'quarks',
+  unitsLabel: 'units',
   deleteEnabled: true,
   requireManualGrading: false,
   maxManualGrade: 0,
