@@ -39,8 +39,9 @@ const Adaptive = (
       const pathIds =
         path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
       // console.log('HOST CLICK', { pathIds, path, e });
+      const isToolbarClick = pathIds.includes(`active-selection-toolbar-${props.model.id}`);
       // TODO: ability to click things underneath other things using path and selection
-      if (!parts.find((p) => pathIds.includes(p.id))) {
+      if (!isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
         setSelectedPartId('');
       }
     };
@@ -291,6 +292,7 @@ const Adaptive = (
           <div id={`part-portal-${props.model.id}`} className="part-config-container-inner"></div>
         </div>
         <div
+          id={`active-selection-toolbar-${props.model.id}`}
           className="active-selection-toolbar"
           style={{
             display: selectedPart && !isDragging ? 'block' : 'none',
