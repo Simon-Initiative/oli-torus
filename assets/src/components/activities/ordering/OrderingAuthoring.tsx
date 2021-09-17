@@ -1,31 +1,30 @@
+import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
+import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
+import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
+import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import { Choices } from 'data/activities/model/choices';
+import { getCorrectChoiceIds } from 'data/activities/model/responses';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+import { Maybe } from 'tsmonad';
 import {
   AuthoringElement,
   AuthoringElementProps,
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
-import { Provider } from 'react-redux';
-import { configureStore } from 'state/store';
-import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { Choices } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
-import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
-import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
-import { getCorrectChoiceIds } from 'components/activities/common/responses/authoring/responseUtils';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { Maybe } from 'tsmonad';
-import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
-import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
+import { OrderingSchema } from './schema';
 
 const store = configureStore();
 
@@ -35,29 +34,27 @@ export const Ordering: React.FC = () => {
     <TabbedNavigation.Tabs>
       <TabbedNavigation.Tab label="Question">
         <Stem />
-        <Choices
+        <ChoicesAuthoring
           icon={(choice, index) => <span className="mr-1">{index + 1}.</span>}
           choices={model.choices}
           addOne={() => dispatch(Actions.addChoice(ActivityTypes.makeChoice('')))}
-          setAll={(choices: ActivityTypes.Choice[]) =>
-            dispatch(ChoiceActions.setAllChoices(choices))
-          }
-          onEdit={(id, content) => dispatch(ChoiceActions.editChoiceContent(id, content))}
+          setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+          onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
           onRemove={(id) => dispatch(Actions.removeChoiceAndUpdateRules(id))}
         />
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
         <ResponseChoices
-          choices={getCorrectChoiceIds(model).map((id) => getChoice(model, id))}
+          choices={getCorrectChoiceIds(model).map((id) => Choices.getOne(model, id))}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
-        <SimpleFeedback />
+        <SimpleFeedback partId={DEFAULT_PART_ID} />
         <TargetedFeedback />
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">
-        <Hints hintsPath="$.authoring.parts[0].hints" />
+        <Hints partId={DEFAULT_PART_ID} />
       </TabbedNavigation.Tab>
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
@@ -68,7 +65,7 @@ export const Ordering: React.FC = () => {
 export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
   migrateModelVersion(model: any) {
     return Maybe.maybe(model.authoring.version).caseOf({
-      just: (v2) => model,
+      just: (_v2) => model,
       nothing: () => orderingV1toV2(model),
     });
   }

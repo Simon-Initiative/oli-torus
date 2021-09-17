@@ -1,12 +1,12 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { getTargetedResponseMappings } from 'components/activities/common/responses/authoring/responseUtils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
 import { Actions } from 'components/activities/ordering/actions';
 import { OrderingSchema } from 'components/activities/ordering/schema';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import { Choices } from 'data/activities/model/choices';
+import { getTargetedResponseMappings } from 'data/activities/model/responses';
 import React from 'react';
 
 export const TargetedFeedback: React.FC = () => {
@@ -20,11 +20,11 @@ export const TargetedFeedback: React.FC = () => {
           updateFeedback={(id, content) =>
             dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
           }
-          onRemove={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
+          removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           key={mapping.response.id}
         >
           <ResponseChoices
-            choices={mapping.choiceIds.map((id) => getChoice(model, id))}
+            choices={mapping.choiceIds.map((id) => Choices.getOne(model, id))}
             setChoices={(choices) =>
               dispatch(
                 Actions.editTargetedFeedbackChoices(

@@ -3,16 +3,19 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
 
+- Add multi input activity
+
 ## 0.13.2 (2021-09-17)
+
 ### Bug Fixes
+
 - Fix activity choice icon selection in authoring
 - Fix targeted feedback not showing in delivery
 - Fix delivered activity choice input size changing with content
 - Fix an issue related to LTI roles and authorization
-
-### Enhancements
 
 ## 0.13.1 (2021-09-14)
 

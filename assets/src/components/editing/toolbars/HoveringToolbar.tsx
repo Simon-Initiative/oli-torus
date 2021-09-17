@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSlate, ReactEditor } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { Popover, ArrowContainer, ContentLocationGetter } from 'react-tiny-popover';
 
 type HoveringToolbarProps = {
@@ -10,7 +10,6 @@ type HoveringToolbarProps = {
   contentLocation?: ContentLocationGetter;
   target?: JSX.Element;
 };
-// eslint-disable-next-line
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const editor = useSlate();
 
@@ -72,3 +71,4 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
     </Popover>
   );
 });
+HoveringToolbar.displayName = 'HoveringToolbar';

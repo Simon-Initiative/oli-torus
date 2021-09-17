@@ -1,8 +1,15 @@
-import { ReactEditor } from 'slate-react';
-import * as Immutable from 'immutable';
-import { Node, NodeEntry, Editor as SlateEditor, Transforms, Path, Element } from 'slate';
-import { p, schema, SchemaConfig } from 'data/content/model';
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
+import { p, schema, SchemaConfig } from 'data/content/model';
+import * as Immutable from 'immutable';
+import { Editor as SlateEditor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
+import { ReactEditor } from 'slate-react';
+
+export interface NormalizerContext {
+  // Node types normally not allowed in an editor
+  whitelist?: string[];
+}
+
+const restrictedElements = new Set(['input_ref']);
 
 const spacesRequiredBetween = Immutable.Set<string>([
   'image',
@@ -14,11 +21,22 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'iframe',
 ]);
 
-export function installNormalizer(editor: SlateEditor & ReactEditor) {
+export function installNormalizer(
+  editor: SlateEditor & ReactEditor,
+  context: NormalizerContext = {},
+) {
   const { normalizeNode } = editor;
+
   editor.normalizeNode = (entry: NodeEntry<Node>) => {
     try {
       const [node, path] = entry;
+
+      if (Element.isElement(node) && restrictedElements.has(node.type as string)) {
+        if (!context?.whitelist?.includes(node.type as string)) {
+          Transforms.removeNodes(editor, { at: path });
+          return;
+        }
+      }
 
       // Ensure that we always have a paragraph as the last node in
       // the document, otherwise it can be impossible for a user

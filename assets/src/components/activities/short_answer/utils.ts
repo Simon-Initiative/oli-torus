@@ -1,11 +1,13 @@
-import { ShortAnswerModelSchema } from './schema';
-import { HasParts, makeHint, makeResponse, makeStem, ScoringStrategy } from '../types';
-import { containsRule, matchRule } from 'components/activities/common/responses/authoring/rules';
+import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import {
   getCorrectResponse,
   getIncorrectResponse,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
+  getResponsesByPartId,
+  Responses,
+} from 'data/activities/model/responses';
+import { HasParts, makeHint, makeStem, ScoringStrategy } from '../types';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {
@@ -14,12 +16,9 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: '1', // an short answer only has one part, so it is safe to hardcode the id
+          id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
-          responses: [
-            makeResponse(containsRule('answer'), 1, ''),
-            makeResponse(matchRule('.*'), 0, ''),
-          ],
+          responses: Responses.forTextInput(),
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
@@ -29,8 +28,15 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
   };
 };
 
-export const getTargetedResponses = (model: HasParts) =>
-  getResponses(model).filter(
+export const getTargetedResponses = (model: HasParts, partId: string) =>
+  getResponsesByPartId(model, partId).filter(
     (response) =>
-      response !== getCorrectResponse(model) && response !== getIncorrectResponse(model),
+      response !== getCorrectResponse(model, partId) &&
+      response !== getIncorrectResponse(model, partId),
   );
+
+export const shortAnswerOptions: SelectOption<InputType>[] = [
+  { value: 'numeric', displayValue: 'Number' },
+  { value: 'text', displayValue: 'Short Text' },
+  { value: 'textarea', displayValue: 'Paragraph' },
+];
