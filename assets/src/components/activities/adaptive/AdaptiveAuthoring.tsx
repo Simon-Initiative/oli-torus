@@ -366,10 +366,6 @@ const Adaptive = (
   ) : null;
 };
 
-const mainClickHandler = (e) => {
-  console.log('main adaptive clicked', e);
-};
-
 export class AdaptiveAuthoring extends AuthoringElement<AdaptiveModelSchema> {
   props() {
     const superProps = super.props();
