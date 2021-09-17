@@ -1,7 +1,6 @@
 defmodule OliWeb.PageDeliveryView do
   use OliWeb, :view
 
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
   alias Oli.Publishing.HierarchyNode
@@ -16,11 +15,6 @@ defmodule OliWeb.PageDeliveryView do
         |> round
         |> Integer.to_string()
     end
-  end
-
-  def is_instructor?(conn, section_slug) do
-    user = conn.assigns.current_user
-    ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor))
   end
 
   def container?(rev) do

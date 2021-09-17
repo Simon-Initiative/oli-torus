@@ -23,4 +23,6 @@ export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',
   src: '',
   configData: [],
+  width: 400,
+  height: 400,
 });

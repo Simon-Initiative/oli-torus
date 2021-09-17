@@ -5,7 +5,7 @@ import {
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
-import { createSchema, schema, uiSchema } from './schema';
+import { adaptivitySchema, createSchema, schema, uiSchema } from './schema';
 import SliderAuthor from './SliderAuthor';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
@@ -23,5 +23,6 @@ register(SliderAuthor, manifest.authoring.element, observedAttributes, {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
+    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });
