@@ -143,7 +143,7 @@ export const convertQuillToJanus = (delta: Delta) => {
     }
   });
 
-  console.log('J -> Q', { doc, nodes });
+  // console.log('J -> Q', { doc, nodes });
 
   return nodes;
 };
