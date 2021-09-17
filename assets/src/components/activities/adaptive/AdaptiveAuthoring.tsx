@@ -19,7 +19,9 @@ const defaultHandler = async () => {
 
 const toolBarTopOffset = -38;
 
-const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
+const Adaptive = (
+  props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
+) => {
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePartId, setConfigurePartId] = useState('');
@@ -30,6 +32,27 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
+
+  useEffect(() => {
+    const handleHostClick = (e: any) => {
+      const path = e.path;
+      const pathIds =
+        path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
+      // console.log('HOST CLICK', { pathIds, path, e });
+      // TODO: ability to click things underneath other things using path and selection
+      if (!parts.find((p) => pathIds.includes(p.id))) {
+        setSelectedPartId('');
+      }
+    };
+    if (props.hostRef) {
+      props.hostRef.addEventListener('click', handleHostClick);
+    }
+    return () => {
+      if (props.hostRef) {
+        props.hostRef.removeEventListener('click', handleHostClick);
+      }
+    };
+  }, [props, parts]);
 
   useEffect(() => {
     setParts(props.model?.content?.partsLayout || []);
@@ -343,7 +366,19 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   ) : null;
 };
 
+const mainClickHandler = (e) => {
+  console.log('main adaptive clicked', e);
+};
+
 export class AdaptiveAuthoring extends AuthoringElement<AdaptiveModelSchema> {
+  props() {
+    const superProps = super.props();
+    return {
+      ...superProps,
+      hostRef: this,
+    };
+  }
+
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<AdaptiveModelSchema>) {
     ReactDOM.render(<Adaptive {...props} />, mountPoint);
   }
