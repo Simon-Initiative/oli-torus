@@ -310,11 +310,6 @@ const RightMenu: React.FC<any> = () => {
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
 
-          // For Number Input, do not show 'Delete Enable' to Authors
-          if (customPartSchema.deleteEnabled) {
-            delete customPartSchema.deleteEnabled;
-          }
-
           const newSchema: any = {
             ...partSchema,
             properties: {
