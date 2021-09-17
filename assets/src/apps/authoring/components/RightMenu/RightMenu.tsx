@@ -234,7 +234,7 @@ const RightMenu: React.FC<any> = () => {
           console.log('JUST BEFOER', { modelChanges, properties });
           modelChanges.custom = {
             ...modelChanges.custom,
-            ...partInstance.transformSchemaToModel(modelChanges.custom),
+            ...partInstance.transformSchemaToModel(properties.custom),
           };
         }
 
