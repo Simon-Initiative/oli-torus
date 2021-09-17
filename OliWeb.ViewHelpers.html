@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.13.1">
+    <meta name="project" content="OLI Torus v0.13.2">
 
-    <title>OliWeb.ViewHelpers — OLI Torus v0.13.1</title>
+    <title>OliWeb.ViewHelpers — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-86a17473ad.js"></script>
+    <script src="dist/sidebar_items-5cdc866812.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.13.1
+        v0.13.2
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.13.1)</small>
+OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.13.2)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -128,7 +128,21 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.13.1)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#is_admin?/1">is_admin?(map)</a>
+    <a href="#is_admin?/2">is_admin?(section_slug, user)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#is_section_instructor?/2">is_section_instructor?(section_slug, user)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#is_section_instructor_or_admin?/2">is_section_instructor_or_admin?(section_slug, user)</a>
 
   </div>
 
@@ -143,13 +157,6 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.13.1)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#preview_mode/1">preview_mode(conn)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#user_role/2">user_role(section, user)</a>
 
   </div>
 
@@ -180,7 +187,7 @@ Functions
     </a>
     <h1 class="signature">brand_logo_html(conn_or_brand, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L12" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L13" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -204,7 +211,7 @@ Functions
     </a>
     <h1 class="signature">external_link(text, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L45" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -217,16 +224,60 @@ Functions
 <p>Renders a link with text and an external icon which opens in a new tab</p>
   </section>
 </section>
-<section class="detail" id="is_admin?/1">
+<section class="detail" id="is_admin?/2">
 
   <div class="detail-header">
-    <a href="#is_admin?/1" class="detail-link" title="Link to this function">
+    <a href="#is_admin?/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">is_admin?(map)</h1>
+    <h1 class="signature">is_admin?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L33" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L60" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="is_section_instructor?/2">
+
+  <div class="detail-header">
+    <a href="#is_section_instructor?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">is_section_instructor?(section_slug, user)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L51" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="is_section_instructor_or_admin?/2">
+
+  <div class="detail-header">
+    <a href="#is_section_instructor_or_admin?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">is_section_instructor_or_admin?(section_slug, user)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -248,7 +299,7 @@ Functions
     </a>
     <h1 class="signature">maybe_section_slug(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L111" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L72" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -270,29 +321,7 @@ Functions
     </a>
     <h1 class="signature">preview_mode(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L38" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="user_role/2">
-
-  <div class="detail-header">
-    <a href="#user_role/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">user_role(section, user)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L68" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
