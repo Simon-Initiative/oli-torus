@@ -40,8 +40,9 @@ const Adaptive = (
         path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
       // console.log('HOST CLICK', { pathIds, path, e });
       const isToolbarClick = pathIds.includes(`active-selection-toolbar-${props.model.id}`);
+      const isInConfigMode = configurePartId !== '';
       // TODO: ability to click things underneath other things using path and selection
-      if (!isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
+      if (!isInConfigMode && !isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
         setSelectedPartId('');
       }
     };
@@ -53,7 +54,7 @@ const Adaptive = (
         props.hostRef.removeEventListener('click', handleHostClick);
       }
     };
-  }, [props, parts]);
+  }, [props, parts, configurePartId]);
 
   useEffect(() => {
     setParts(props.model?.content?.partsLayout || []);
