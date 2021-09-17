@@ -95,7 +95,7 @@ export const DropdownToolbarButton = ({
 
   return (
     <Popover.Popover
-      onClickOutside={(e: any) => setIsPopoverOpen(false)}
+      onClickOutside={(_e) => setIsPopoverOpen(false)}
       isOpen={isPopoverOpen}
       padding={5}
       content={() => (

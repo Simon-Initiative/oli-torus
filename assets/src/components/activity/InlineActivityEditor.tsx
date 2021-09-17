@@ -91,27 +91,41 @@ export class InlineActivityEditor extends React.Component<
     this.props.onEdit(combined);
   }
 
+  // Parts can be added or removed in multi-part activities
   syncObjectivesWithParts(update: Partial<EditorUpdate>) {
     if (update.content !== undefined) {
       const objectives = this.props.objectives;
       const parts = valueOr(update.content.authoring.parts, []);
       const partIds = parts
-        .map((p: any) => valueOr(p.id, ''))
+        .map((p: any) => valueOr(String(p.id), ''))
         .reduce((m: any, id: string) => {
           m[id] = true;
           return m;
         }, {});
 
-      const keys = Object.keys(objectives);
-      keys.forEach((pId: string) => {
-        if (partIds[pId.toString()] === undefined) {
-          delete objectives[pId];
-        }
-      });
+      this.removeMissingPartIds(objectives, partIds);
+      this.addMissingPartIds(objectives, partIds);
 
       return Object.assign({}, update, { objectives });
     }
     return update;
+  }
+
+  removeMissingPartIds(objectives: ObjectiveMap, partIds: Record<string, boolean>): void {
+    Object.keys(objectives).forEach((pId) => {
+      if (partIds[pId] === undefined) {
+        delete objectives[pId];
+      }
+    });
+  }
+
+  // Newly added parts have no attached objectives
+  addMissingPartIds(objectives: ObjectiveMap, partIds: Record<string, boolean>): void {
+    Object.keys(partIds).forEach((pId) => {
+      if (objectives[pId.toString()] === undefined) {
+        objectives[pId] = [];
+      }
+    });
   }
 
   render() {

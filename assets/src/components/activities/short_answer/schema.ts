@@ -13,8 +13,3 @@ export interface ShortAnswerModelSchema extends ActivityModelSchema {
     previewText: string;
   };
 }
-
-export interface ModelEditorProps {
-  model: ShortAnswerModelSchema;
-  editMode: boolean;
-}

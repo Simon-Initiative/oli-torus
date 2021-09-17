@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@import 'delivery/variables';
 
 .activity {
   margin-top: 1em;
@@ -28,6 +28,20 @@
 
         .score {
           color: $feedback-correct-color;
+        }
+      }
+    }
+
+    &.partially-correct {
+      background-color: $feedback-partially-correct-bg;
+      color: $feedback-partially-correct-color;
+
+      .result {
+        border-color: $feedback-partially-correct-color;
+        color: $feedback-partially-correct-color;
+
+        .score {
+          color: $feedback-partially-correct-color;
         }
       }
     }

@@ -5,7 +5,7 @@ import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { removeEmpty } from 'utils/common';
 import produce from 'immer';
 
-export const defaultState = (model: ActivityModelSchema) => {
+export const xdefaultState = (model: ActivityModelSchema) => {
   const parts = model.authoring.parts.map((p: any) => ({
     attemptNumber: 1,
     attemptGuid: p.id,
@@ -156,7 +156,7 @@ export class TestModeHandler extends React.Component<TestModelHandlerProps, Test
         }),
       );
 
-      const attemptState = defaultState(model);
+      const attemptState = xdefaultState(model);
       continuation({ type: 'success', model, attemptState }, undefined);
     });
   }

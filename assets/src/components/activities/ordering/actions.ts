@@ -1,18 +1,28 @@
-import { OrderingSchema as Ordering } from './schema';
-import { Choice, ResponseId, PostUndoable, makeUndoable, ChoiceId, makeResponse } from '../types';
-import { createRuleForIdsOrdering } from 'components/activities/ordering/utils';
+import { DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
+import {
+  Choice,
+  ChoiceId,
+  makeResponse,
+  makeUndoable,
+  PostUndoable,
+  Response,
+  ResponseId,
+} from 'components/activities/types';
+import { Choices } from 'data/activities/model/choices';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
   getCorrectResponse,
-  getResponse,
+  getResponseBy,
   getResponseId,
   getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { remove } from 'components/activities/common/utils';
-import { getChoice, getChoices } from 'components/activities/common/choices/authoring/choiceUtils';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
+} from 'data/activities/model/responses';
+import { matchInOrderRule } from 'data/activities/model/rules';
+import jp from 'jsonpath';
 import { clone } from 'utils/common';
+import { Operations } from 'utils/pathOperations';
+import { RESPONSES_PATH } from '../../../data/activities/model/responses';
+import { OrderingSchema as Ordering } from './schema';
 
 export class Actions {
   static addChoice(choice: Choice) {
@@ -34,9 +44,9 @@ export class Actions {
 
   static removeChoiceAndUpdateRules(id: string) {
     return (model: Ordering, post: PostUndoable) => {
-      const choice = getChoice(model, id);
-      const index = getChoices(model).findIndex((c) => c.id === id);
-      ChoiceActions.removeChoice(id)(model, post);
+      const choice = Choices.getOne(model, id);
+      const index = Choices.getAll(model).findIndex((c) => c.id === id);
+      Choices.removeOne(id)(model);
 
       remove(id, getChoiceIds(model.authoring.correct));
       model.authoring.targeted.forEach((assoc: any) => remove(id, getChoiceIds(assoc)));
@@ -44,22 +54,25 @@ export class Actions {
       updateResponseRules(model);
 
       const undoable = makeUndoable('Removed a choice', [
-        { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
-        { type: 'InsertOperation', path: '$.choices', index, item: clone(choice) },
+        Operations.replace('$.authoring', clone(model.authoring)),
+        Operations.insert('$.choices', clone(choice), index),
       ]);
       post(undoable);
     };
   }
 
-  static addTargetedFeedback() {
+  static addTargetedFeedback(path = RESPONSES_PATH) {
     return (model: Ordering) => {
       const choiceIds = model.choices.map((c: any) => c.id);
-      const response = makeResponse(createRuleForIdsOrdering(choiceIds), 0, '');
+      const response = makeResponse(matchInOrderRule(choiceIds), 0, '');
 
       // Insert new targeted response before the last response, which is the
       // catch-all incorrect response. Response rules are evaluated in-order,
       // so the catch-all should be the last response.
-      getResponses(model).splice(getResponses(model).length - 1, 0, response);
+      jp.apply(model, path, (responses: Response[]) => {
+        responses.splice(getResponses(model).length - 1, 0, response);
+        return responses;
+      });
       model.authoring.targeted.push([choiceIds, response.id]);
     };
   }
@@ -79,9 +92,11 @@ export class Actions {
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
 const updateResponseRules = (model: Ordering) => {
-  getCorrectResponse(model).rule = createRuleForIdsOrdering(getCorrectChoiceIds(model));
+  getCorrectResponse(model, DEFAULT_PART_ID).rule = matchInOrderRule(getCorrectChoiceIds(model));
 
-  model.authoring.targeted.forEach((assoc: any) => {
-    getResponse(model, getResponseId(assoc)).rule = createRuleForIdsOrdering(getChoiceIds(assoc));
+  model.authoring.targeted.forEach((assoc) => {
+    getResponseBy(model, (r) => r.id === getResponseId(assoc)).rule = matchInOrderRule(
+      getChoiceIds(assoc),
+    );
   });
 };

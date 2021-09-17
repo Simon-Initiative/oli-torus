@@ -23,6 +23,7 @@ interface ItemProps {
   setItems?: (items: any[]) => void;
   items?: any[];
   index?: number;
+  displayOutline?: boolean;
 }
 const Item: React.FC<ItemProps> = ({
   id,
@@ -32,6 +33,7 @@ const Item: React.FC<ItemProps> = ({
   items = [],
   setItems = () => undefined,
   children,
+  displayOutline,
 }) => {
   return (
     <DraggableDND draggableId={id} key={id} index={index}>
@@ -40,7 +42,7 @@ const Item: React.FC<ItemProps> = ({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className="draggableColumn__card"
+          className={'draggableColumn__card' + (displayOutline ? ' draggableColumn__outlined' : '')}
           style={getStyle(provided.draggableProps.style, snapshot)}
           aria-label={itemAriaLabel || 'Item ' + index}
           onKeyDown={(e) => reorderByKey(e, index, items, item, setItems)}
@@ -55,8 +57,9 @@ const Item: React.FC<ItemProps> = ({
 interface ColumnProps {
   setItems: (items: any[]) => void;
   items: any[];
+  displayOutline?: boolean;
 }
-export const Column: React.FC<ColumnProps> = ({ items, setItems, children }) => {
+export const Column: React.FC<ColumnProps> = ({ items, setItems, children, displayOutline }) => {
   return (
     <DragDropContext onDragEnd={(result) => reorderByMouse(result, items, setItems)}>
       <Droppable droppableId={'items-' + guid()}>
@@ -68,7 +71,13 @@ export const Column: React.FC<ColumnProps> = ({ items, setItems, children }) => 
           >
             {React.Children.map(children, (c, index) =>
               React.isValidElement(c) && c.type === Item ? (
-                <Item {...c.props} index={index} items={items} setItems={setItems} />
+                <Item
+                  displayOutline={displayOutline}
+                  {...c.props}
+                  index={index}
+                  items={items}
+                  setItems={setItems}
+                />
               ) : (
                 c
               ),

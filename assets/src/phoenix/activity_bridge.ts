@@ -4,38 +4,16 @@ import {
   ActivityModelSchema,
   FeedbackAction,
   ClientEvaluation,
+  Part,
+  ActivityState,
+  PartState,
 } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
 import guid from 'utils/guid';
+import { defaultActivityState } from 'data/activities/utils';
 
 type Continuation = (success: any, error: any) => void;
-
-export const defaultState = (model: ActivityModelSchema) => {
-  const parts = model.authoring.parts.map((p: any) => ({
-    attemptNumber: 1,
-    attemptGuid: p.id,
-    dateEvaluated: null,
-    score: null,
-    outOf: null,
-    response: null,
-    feedback: null,
-    hints: [],
-    hasMoreHints: removeEmpty(p.hints).length > 0,
-    hasMoreAttempts: true,
-    partId: p.id,
-  }));
-
-  return {
-    attemptNumber: 1,
-    attemptGuid: guid(),
-    dateEvaluated: null,
-    score: null,
-    outOf: null,
-    hasMoreAttempts: true,
-    parts,
-  };
-};
 
 function makeRequest(url: string, method: string, body: any, continuation: any) {
   const params = {
@@ -246,7 +224,7 @@ export const initPreviewActivityBridge = (elementId: string) => {
         // reset the number of hints requested for this part
         hintRequestCounts[key(e.detail.attemptGuid, e.detail.partAttemptGuid)] = 0;
 
-        const attemptState = defaultState(model);
+        const attemptState = defaultActivityState(model);
         continuation({ type: 'success', model, attemptState }, undefined);
       });
     },

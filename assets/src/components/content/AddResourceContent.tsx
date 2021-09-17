@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import { invokeCreationFunc } from 'components/activities/creation';
+import { ActivityModelSchema } from 'components/activities/types';
+import { ActivityEditContext } from 'data/content/activity';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
+import { Objective, ResourceId } from 'data/content/objective';
 import {
+  ActivityReference,
+  createDefaultSelection,
+  createDefaultStructuredContent,
   ResourceContent,
   ResourceContext,
-  ActivityReference,
-  createDefaultStructuredContent,
-  createDefaultSelection,
 } from 'data/content/resource';
-import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { ActivityModelSchema } from 'components/activities/types';
-import { invokeCreationFunc } from 'components/activities/creation';
-import { Objective, ResourceId } from 'data/content/objective';
 import * as Persistence from 'data/persistence/activity';
-import guid from 'utils/guid';
-import { Popover } from 'react-tiny-popover';
-import { ActivityEditContext } from 'data/content/activity';
 import * as Immutable from 'immutable';
-
+import React, { useState } from 'react';
+import { Popover } from 'react-tiny-popover';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 
 type AddCallback = (content: ResourceContent, index: number, a?: ActivityEditContext) => void;
 
@@ -170,6 +169,7 @@ export const AddResourceContent = ({
           <React.Fragment>
             <div className="insert-button-container">
               <Popover
+                reposition={true}
                 containerClassName="add-resource-popover"
                 onClickOutside={(e: any) => {
                   if (e !== latestClickEvent) {
