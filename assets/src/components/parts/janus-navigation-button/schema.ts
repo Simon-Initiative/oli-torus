@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -58,6 +59,18 @@ export const uiSchema = {
   buttonColor: {
     'ui:widget': 'ColorPicker',
   },
+};
+
+export const adaptivitySchema = {
+  selected: CapiVariableTypes.BOOLEAN,
+  visible: CapiVariableTypes.BOOLEAN,
+  enabled: CapiVariableTypes.BOOLEAN,
+  title: CapiVariableTypes.STRING,
+  textColor: CapiVariableTypes.STRING,
+  backgroundColor: CapiVariableTypes.STRING,
+  transparent: CapiVariableTypes.BOOLEAN,
+  accessibilityText: CapiVariableTypes.STRING,
+  customCssClass: CapiVariableTypes.STRING,
 };
 
 export const createSchema = (): Partial<NavButtonModel> => ({

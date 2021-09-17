@@ -21,7 +21,6 @@ const toolBarTopOffset = -38;
 
 const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
-  const parts = props.model?.content?.partsLayout || [];
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePartId, setConfigurePartId] = useState('');
   const [selectedPart, setSelectedPart] = useState<any>(null);
@@ -29,6 +28,12 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
+
+  useEffect(() => {
+    setParts(props.model?.content?.partsLayout || []);
+  }, [props.model]);
 
   useEffect(() => {
     const x = selectedPart?.custom.x || 0;
@@ -106,10 +111,6 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     }`;
   });
 
-  const DeleteComponentHandler = () => {
-    handlePartDelete();
-    setShowConfirmDelete(false);
-  };
   const handlePartEdit = useCallback(async () => {
     console.log('AUTHOR PART EDIT', { selectedPart });
   }, [selectedPart]);
@@ -124,14 +125,23 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   }, [selectedPart, configurePartId]);
 
   const handlePartDelete = useCallback(async () => {
-    console.log('AUTHOR PART DELETE', { selectedPart });
+    // console.log('AUTHOR PART DELETE', { selectedPart });
     const modelClone = clone(props.model);
     modelClone.content.partsLayout = parts.filter((part) => part.id !== selectedPart.id);
     modelClone.authoring.parts = modelClone.authoring.parts.filter(
       (part: any) => part.id !== selectedPart.id,
     );
     props.onEdit(modelClone);
-  }, [selectedPart]);
+    // optimistically remove part from model
+    setParts(modelClone.content.partsLayout);
+    // just setting the part ID should trigger the selectedPart also to get reset
+    setSelectedPartId('');
+  }, [selectedPart, props.model]);
+
+  const DeleteComponentHandler = useCallback(() => {
+    handlePartDelete();
+    setShowConfirmDelete(false);
+  }, [handlePartDelete]);
 
   const handlePartMoveForward = useCallback(async () => {
     console.log('AUTHOR PART MOVE FWD', { selectedPart });
@@ -139,7 +149,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     const part = modelClone.content.partsLayout.find((p: any) => p.id === selectedPart.id);
     part.custom.z = part.custom.z + 1;
     props.onEdit(modelClone);
-  }, [selectedPart]);
+  }, [selectedPart, props.model]);
 
   const handlePartMoveBack = useCallback(async () => {
     console.log('AUTHOR PART MOVE BACK', { selectedPart });
@@ -147,7 +157,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
     const part = modelClone.content.partsLayout.find((p: any) => p.id === selectedPart.id);
     part.custom.z = part.custom.z - 1;
     props.onEdit(modelClone);
-  }, [selectedPart]);
+  }, [selectedPart, props.model]);
 
   const handlePartCancelConfigure = useCallback(
     async ({ id }: { id: string }) => {
@@ -178,7 +188,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
       }
       setConfigurePartId('');
     },
-    [],
+    [props.model],
   );
 
   const handlePortalBgClick = (e: any) => {

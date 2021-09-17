@@ -8,7 +8,7 @@ interface Props {
 
 const Checked = ({ className, disabled }: Props) => (
   <input
-    className={`oli-checkbox ${className || ''}`}
+    className={`oli-checkbox flex-shrink-0 ${className || ''}`}
     type="checkbox"
     checked
     disabled={disabled || false}
@@ -18,7 +18,7 @@ const Checked = ({ className, disabled }: Props) => (
 
 const Unchecked = ({ className, disabled }: Props) => (
   <input
-    className={`oli-checkbox ${className || ''}`}
+    className={`oli-checkbox flex-shrink-0 ${className || ''}`}
     type="checkbox"
     disabled={disabled || false}
     readOnly

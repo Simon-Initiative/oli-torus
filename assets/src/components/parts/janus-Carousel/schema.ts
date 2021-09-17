@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -51,6 +52,13 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  'Current Image': CapiVariableTypes.NUMBER,
+  'Viewed Images Count': CapiVariableTypes.NUMBER,
+  customCss: CapiVariableTypes.STRING,
+  zoom: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<CarouselModel> => ({
   customCss: '',

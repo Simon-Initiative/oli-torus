@@ -35,41 +35,43 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
 
   const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
+
   const handleStylingChanges = (currentStateSnapshot: Record<string, unknown>) => {
     const styleChanges: CSSProperties = {};
-    const sX: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
+    const sX = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
     if (sX !== undefined) {
-      styleChanges.left = sX;
+      styleChanges.left = sX as number;
     }
 
-    const sY: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
+    const sY = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
     if (sY !== undefined) {
-      styleChanges.top = sY;
+      styleChanges.top = sY as number;
     }
 
-    const sZ: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
+    const sZ = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
     if (sZ !== undefined) {
-      styleChanges.zIndex = sZ;
+      styleChanges.zIndex = sZ as number;
     }
 
-    const sWidth: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
+    const sWidth = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
     if (sWidth !== undefined) {
-      styleChanges.width = sWidth;
+      styleChanges.width = sWidth as number;
     }
 
-    const sHeight: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
+    const sHeight = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
     if (sHeight !== undefined) {
-      styleChanges.height = sHeight;
+      styleChanges.height = sHeight as number;
     }
     setComponentStyle((previousStyle) => {
       return { ...previousStyle, ...styleChanges };
     });
 
-    const sCssClass: any = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
+    const sCssClass = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
     if (sCssClass !== undefined) {
-      setCustomCssClass(sCssClass);
+      setCustomCssClass(sCssClass as string);
     }
   };
+
   const wcEvents: Record<string, any> = {
     init: props.onInit,
     ready: props.onReady,

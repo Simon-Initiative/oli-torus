@@ -25,7 +25,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
   const sequence = useSelector(selectSequence);
   // console.log(sequence);
 
-  const sequenceDropDownItems = (items: any) =>
+  const sequenceDropDownItems = (items: SequenceHierarchyItem<SequenceEntryType>[]) =>
     items.map((item: SequenceHierarchyItem<SequenceEntryType>, index: number) => {
       const title = item.custom?.sequenceName || item.activitySlug;
       return (
