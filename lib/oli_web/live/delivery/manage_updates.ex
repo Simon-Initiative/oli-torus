@@ -1,20 +1,48 @@
 defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
 
+  import OliWeb.ViewHelpers,
+    only: [
+      is_section_instructor_or_admin?: 2
+    ]
+
+  alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.Publication
-  alias Oli.Repo
 
   def mount(
         _params,
         %{
           "section" => section,
-          "redirect_after_apply" => redirect_after_apply
+          "redirect_after_apply" => redirect_after_apply,
+          "current_user" => current_user,
+          "current_author" => current_author
         },
         socket
       ) do
+    if section.open_and_free do
+      # only permit authoring admin level access
+      if Accounts.is_admin?(current_author) do
+        init_state(socket, section, redirect_after_apply)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
+    else
+      # only permit instructor or admin level access
+      current_user = current_user |> Repo.preload([:platform_roles, :author])
+
+      if is_section_instructor_or_admin?(section.slug, current_user) do
+        init_state(socket, section, redirect_after_apply)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
+    end
+  end
+
+  def init_state(socket, section, redirect_after_apply) do
     updates = Sections.check_for_available_publication_updates(section)
 
     socket =
