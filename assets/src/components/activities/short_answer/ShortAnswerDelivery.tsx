@@ -1,18 +1,10 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
-import { InputType, ShortAnswerModelSchema } from './schema';
-import * as ActivityTypes from '../types';
-import { valueOr } from 'utils/common';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { assertNever, valueOr } from 'utils/common';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -22,9 +14,22 @@ import {
   isEvaluated,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
-import { safelySelectInput } from 'data/content/activities/utils';
+import { safelySelectInputs } from 'data/activities/utils';
+import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
+import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  DeliveryElementProvider,
+  useDeliveryElementContext,
+} from 'components/activities/DeliveryElement';
+import { Manifest } from 'components/activities/types';
+import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Maybe } from 'tsmonad';
 
 type InputProps = {
   input: string;
@@ -34,43 +39,22 @@ type InputProps = {
 };
 
 const Input = (props: InputProps) => {
-  const input = valueOr(props.input, '');
+  const shared = {
+    onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
+    value: valueOr(props.input, ''),
+    disabled: props.isEvaluated,
+  };
 
-  if (props.inputType === 'numeric') {
-    return (
-      <input
-        type="number"
-        aria-label="answer submission textbox"
-        className="form-control"
-        onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}
-        disabled={props.isEvaluated}
-      />
-    );
+  switch (props.inputType) {
+    case 'numeric':
+      return <NumericInput {...shared} />;
+    case 'text':
+      return <TextInput {...shared} />;
+    case 'textarea':
+      return <TextareaInput {...shared} />;
+    default:
+      assertNever(props.inputType);
   }
-  if (props.inputType === 'text') {
-    return (
-      <input
-        type="text"
-        aria-label="answer submission textbox"
-        className="form-control"
-        onChange={(e: any) => props.onChange(e.target.value)}
-        value={input}
-        disabled={props.isEvaluated}
-      />
-    );
-  }
-  return (
-    <textarea
-      aria-label="answer submission textbox"
-      rows={5}
-      cols={80}
-      className="form-control"
-      onChange={(e: any) => props.onChange(e.target.value)}
-      value={input}
-      disabled={props.isEvaluated}
-    ></textarea>
-  );
 };
 
 export const ShortAnswerComponent: React.FC = () => {
@@ -90,21 +74,28 @@ export const ShortAnswerComponent: React.FC = () => {
         activityState,
         // Short answers only have one input, but the selection is modeled
         // as an array just to make it consistent with the other activity types
-        safelySelectInput(activityState).caseOf({
-          just: (input) => [input],
-          nothing: () => [''],
+        safelySelectInputs(activityState).caseOf({
+          just: (input) => input,
+          nothing: () => ({
+            [DEFAULT_PART_ID]: [''],
+          }),
         }),
       ),
     );
   }, []);
 
   // First render initializes state
-  if (!uiState.attemptState) {
+  if (!uiState.partState) {
     return null;
   }
 
   const onInputChange = (input: string) => {
-    dispatch(activityDeliverySlice.actions.setSelection([input]));
+    dispatch(
+      activityDeliverySlice.actions.setStudentInputForPart({
+        partId: DEFAULT_PART_ID,
+        studentInput: [input],
+      }),
+    );
 
     onSaveActivity(uiState.attemptState.attemptGuid, [
       { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
@@ -121,14 +112,16 @@ export const ShortAnswerComponent: React.FC = () => {
           inputType={model.inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
-          input={uiState.selection[0]}
+          input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}
           isEvaluated={isEvaluated(uiState)}
           onChange={onInputChange}
         />
 
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, ['']))} />
+        <ResetButtonConnected
+          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [''] }))}
+        />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected />
+        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />
       </div>
     </div>
@@ -152,5 +145,5 @@ export class ShortAnswerDelivery extends DeliveryElement<ShortAnswerModelSchema>
 
 // Register the web component:
 // eslint-disable-next-line
-const manifest = require('./manifest.json') as ActivityTypes.Manifest;
+const manifest = require('./manifest.json') as Manifest;
 window.customElements.define(manifest.delivery.element, ShortAnswerDelivery);

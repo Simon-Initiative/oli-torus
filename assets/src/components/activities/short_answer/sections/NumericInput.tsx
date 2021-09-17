@@ -1,6 +1,6 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import React from 'react';
-import { isOperator, RuleOperator } from 'components/activities/common/responses/authoring/rules';
+import { isOperator, RuleOperator } from 'data/activities/model/rules';
 
 const SimpleNumericInput: React.FC<InputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Choice, RichText } from 'components/activities/types';
+import { Choice, makeContent, RichText } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import './ChoicesAuthoring.scss';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { toSimpleText } from 'data/content/text';
 
 interface Props {
   icon: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
@@ -13,8 +14,17 @@ interface Props {
   setAll: (choices: Choice[]) => void;
   onEdit: (id: string, content: RichText) => void;
   onRemove: (id: string) => void;
+  simpleText?: boolean;
 }
-export const Choices: React.FC<Props> = ({ icon, choices, addOne, setAll, onEdit, onRemove }) => {
+export const Choices: React.FC<Props> = ({
+  icon,
+  choices,
+  addOne,
+  setAll,
+  onEdit,
+  onRemove,
+  simpleText,
+}) => {
   return (
     <>
       <Draggable.Column items={choices} setItems={setAll}>
@@ -26,12 +36,22 @@ export const Choices: React.FC<Props> = ({ icon, choices, addOne, setAll, onEdit
                 <div className="choicesAuthoring__choiceIcon">
                   {typeof icon === 'function' ? icon(choice, index) : icon}
                 </div>
-                <RichTextEditorConnected
-                  style={{ flexGrow: 1, cursor: 'text' }}
-                  placeholder="Answer choice"
-                  text={choice.content}
-                  onEdit={(content) => onEdit(choice.id, content)}
-                />
+                {simpleText ? (
+                  <input
+                    className="form-control"
+                    placeholder="Answer choice"
+                    value={toSimpleText({ children: choice.content.model })}
+                    onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}
+                  />
+                ) : (
+                  <RichTextEditorConnected
+                    style={{ flexGrow: 1, cursor: 'text' }}
+                    placeholder="Answer choice"
+                    text={choice.content}
+                    onEdit={(content) => onEdit(choice.id, content)}
+                  />
+                )}
+
                 {choices.length > 1 && (
                   <div className="choicesAuthoring__removeButtonContainer">
                     <RemoveButtonConnected onClick={() => onRemove(choice.id)} />

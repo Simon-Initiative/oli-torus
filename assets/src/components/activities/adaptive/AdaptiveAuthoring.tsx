@@ -19,7 +19,9 @@ const defaultHandler = async () => {
 
 const toolBarTopOffset = -38;
 
-const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
+const Adaptive = (
+  props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
+) => {
   const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
   const [selectedPartId, setSelectedPartId] = useState('');
   const [configurePartId, setConfigurePartId] = useState('');
@@ -30,6 +32,29 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
+
+  useEffect(() => {
+    const handleHostClick = (e: any) => {
+      const path = e.path;
+      const pathIds =
+        path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
+      // console.log('HOST CLICK', { pathIds, path, e });
+      const isToolbarClick = pathIds.includes(`active-selection-toolbar-${props.model.id}`);
+      const isInConfigMode = configurePartId !== '';
+      // TODO: ability to click things underneath other things using path and selection
+      if (!isInConfigMode && !isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
+        setSelectedPartId('');
+      }
+    };
+    if (props.hostRef) {
+      props.hostRef.addEventListener('click', handleHostClick);
+    }
+    return () => {
+      if (props.hostRef) {
+        props.hostRef.removeEventListener('click', handleHostClick);
+      }
+    };
+  }, [props, parts, configurePartId]);
 
   useEffect(() => {
     setParts(props.model?.content?.partsLayout || []);
@@ -179,11 +204,13 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
 
   const handlePartSaveConfigure = useCallback(
     async ({ id, snapshot }: { id: string; snapshot: any }) => {
-      console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot });
       const modelClone = clone(props.model);
       const part = modelClone.content.partsLayout.find((p: any) => p.id === id);
       if (part) {
         part.custom = snapshot;
+
+        // console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot, modelClone: clone(modelClone) });
+
         props.onEdit(modelClone);
       }
       setConfigurePartId('');
@@ -192,6 +219,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
   );
 
   const handlePortalBgClick = (e: any) => {
+    // console.log('BG CLICK', { e });
     if (e.target.getAttribute('class') === 'part-config-container') {
       setConfigurePartId('');
     }
@@ -265,6 +293,7 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
           <div id={`part-portal-${props.model.id}`} className="part-config-container-inner"></div>
         </div>
         <div
+          id={`active-selection-toolbar-${props.model.id}`}
           className="active-selection-toolbar"
           style={{
             display: selectedPart && !isDragging ? 'block' : 'none',
@@ -341,6 +370,14 @@ const Adaptive = (props: AuthoringElementProps<AdaptiveModelSchema>) => {
 };
 
 export class AdaptiveAuthoring extends AuthoringElement<AdaptiveModelSchema> {
+  props() {
+    const superProps = super.props();
+    return {
+      ...superProps,
+      hostRef: this,
+    };
+  }
+
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<AdaptiveModelSchema>) {
     ReactDOM.render(<Adaptive {...props} />, mountPoint);
   }
