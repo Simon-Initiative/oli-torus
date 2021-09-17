@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   import OliWeb.ViewHelpers,
     only: [
-      user_role: 2
+      is_section_instructor_or_admin?: 2
     ]
 
   import OliWeb.Curriculum.Utils,
@@ -35,7 +35,7 @@ defmodule OliWeb.Delivery.RemixSection do
     hierarchy = DeliveryResolver.full_hierarchy(section_slug)
 
     # only permit instructor level access
-    if is_instructor_or_admin?(section, current_user) do
+    if is_section_instructor_or_admin?(section.slug, current_user) do
       {:ok,
        assign(socket,
          section: section,
@@ -190,16 +190,6 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp new_container_name(%HierarchyNode{section_resource: sr} = _active) do
     Numbering.container_type(sr.numbering_level + 1)
-  end
-
-  defp is_instructor_or_admin?(section, current_user) do
-    case user_role(section, current_user) do
-      role when role == :administrator or role == :instructor ->
-        true
-
-      _ ->
-        false
-    end
   end
 
   defp render_breadcrumb(assigns) do
