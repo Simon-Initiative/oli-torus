@@ -309,7 +309,6 @@ const RightMenu: React.FC<any> = () => {
         // schema
         if (instance.getSchema) {
           const customPartSchema = instance.getSchema();
-
           const newSchema: any = {
             ...partSchema,
             properties: {
