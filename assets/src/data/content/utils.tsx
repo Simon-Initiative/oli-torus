@@ -80,7 +80,7 @@ const contentBfs = (
   cb: (c: ContentItem | ModelElement | Text) => any,
 ): void => {
   if (Array.isArray(content)) {
-    return content.forEach((c) => contentBfs(c, cb));
+    return content.forEach((c: ContentItem | ModelElement) => contentBfs(c, cb));
   }
 
   cb(content);
