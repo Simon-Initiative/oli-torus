@@ -72,7 +72,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     }
   };
 
-  const wcEvents: Record<string, any> = {
+  const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
@@ -81,7 +81,28 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
     cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
-  };
+  });
+
+  useEffect(() => {
+    setWcEvents({
+      init: props.onInit,
+      ready: props.onReady,
+      save: props.onSave,
+      submit: props.onSubmit,
+      // authoring
+      configure: (props as AuthorProps).onConfigure || stubHandler,
+      saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
+      cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
+    });
+  }, [
+    props.onInit,
+    props.onReady,
+    props.onSave,
+    props.onSubmit,
+    (props as AuthorProps).onConfigure,
+    (props as AuthorProps).onSaveConfigure,
+    (props as AuthorProps).onCancelConfigure,
+  ]);
 
   const ref = useRef<any>(null);
   useEffect(() => {
@@ -144,7 +165,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         document.removeEventListener(eventName, wcEventHandler);
       });
     };
-  }, []);
+  }, [wcEvents]);
 
   const webComponentProps: any = {
     ref,

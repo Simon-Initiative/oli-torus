@@ -18,6 +18,8 @@ $choice-selected-border-color: $primary !default;
 
 $feedback-correct-bg: lighten($green, 45%) !default;
 $feedback-correct-color: $green !default;
+$feedback-partially-correct-bg: lighten($yellow, 45%) !default;
+$feedback-partially-correct-color: $yellow !default;
 $feedback-incorrect-bg: lighten($red, 40%) !default;
 $feedback-incorrect-color: $red !default;
 $feedback-error-bg: lighten($orange, 42%) !default;

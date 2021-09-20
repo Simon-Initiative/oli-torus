@@ -64,7 +64,7 @@ const customHandlers = {
 const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave, onCancel }) => {
   const [contents, setContents] = React.useState<any>(tree);
 
-  console.log('[QuillEditor]', { tree, html });
+  // console.log('[QuillEditor]', { tree, html });
 
   const handleSave = React.useCallback(() => {
     if (!contents) {
@@ -75,9 +75,9 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
 
   const handleQuillChange = React.useCallback(
     (content, delta, source, editor) => {
-      console.log('quill changes', { content, delta, source, editor });
+      // console.log('quill changes', { content, delta, source, editor });
       const janusText = convertQuillToJanus(new Delta(editor.getContents().ops));
-      console.log('JANUS TEXT', janusText);
+      // console.log('JANUS TEXT', janusText);
       setContents(janusText);
       onChange({ value: janusText });
     },

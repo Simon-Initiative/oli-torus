@@ -29,7 +29,7 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
       // If the cursor is at the beginning of a list item
       if (Point.equals(editor.selection.anchor, start)) {
         const parentMatch = SlateEditor.parent(editor, path);
-        const [parent, parentPath] = parentMatch;
+        const [parent] = parentMatch;
 
         if (isList(parent)) {
           // Make sure the user is not on the first item

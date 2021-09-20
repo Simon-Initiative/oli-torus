@@ -17,6 +17,10 @@ export type PartObjectivesProps = {
 export const PartObjectives = (props: PartObjectivesProps) => {
   const { partIds, objectives, allObjectives, editMode, onEdit, onRegisterNewObjective } = props;
 
+  if (partIds.length === 0) {
+    return null;
+  }
+
   return (
     <div className="card">
       <div className="card-body">
@@ -24,13 +28,23 @@ export const PartObjectives = (props: PartObjectivesProps) => {
         <div className="d-flex flex-row align-items-baseline">
           <div className="flex-grow-1">
             {partIds.length > 1 ? (
-              partIds.map((id) => (
-                <div key={id} className="d-flex flex-row align-items-baseline">
-                  <div>Part {id}</div>
+              partIds.map((id, index) => (
+                <div
+                  key={id}
+                  className={`d-flex flex-row align-items-baseline${
+                    index === partIds.length - 1 ? '' : ' mb-1'
+                  }`}
+                >
+                  <div
+                    className="mr-2"
+                    style={{ flexBasis: partIds.length >= 10 ? '60px' : '50px' }}
+                  >
+                    Part {index + 1}
+                  </div>
                   <Objectives
                     editMode={editMode}
                     projectSlug={props.projectSlug}
-                    selected={objectives[id]}
+                    selected={objectives[id] || []}
                     objectives={allObjectives}
                     onRegisterNewObjective={onRegisterNewObjective}
                     onEdit={(objectives) =>

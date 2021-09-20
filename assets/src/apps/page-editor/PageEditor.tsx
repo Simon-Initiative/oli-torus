@@ -30,8 +30,8 @@ import { registerUnload, unregisterUnload } from './listeners';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Undoables, empty, PageUndoable } from './types';
+import { Operations } from 'utils/pathOperations';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
-import { applyOperations } from 'utils/undo';
 import { Tag } from 'data/content/tags';
 import './PageEditor.scss';
 import { guaranteeValididty } from 'data/content/bank';
@@ -141,7 +141,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.state = {
       activityContexts,
       messages: [],
-      editMode: true,
+      editMode: false,
       title,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
@@ -291,7 +291,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
   onRemove(key: string) {
     const item = this.state.content.get(key);
-    const index = this.state.content.toArray().findIndex(([k, item]) => k === key);
+    const index = this.state.content.toArray().findIndex(([k, _item]) => k === key);
 
     if (item !== undefined) {
       const undoable: PageUndoable = {
@@ -343,7 +343,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           const model = JSON.parse(JSON.stringify(context.model));
 
           // Apply the undo operations to the model
-          applyOperations(model as any, item.undoable.operations);
+          Operations.applyAll(model as any, item.undoable.operations);
 
           // Now save the change and push it down to the activity editor
           this.onActivityEdit(item.contentKey, {
@@ -359,7 +359,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.setState({ undoables: this.state.undoables.delete(guid) });
   }
 
-  createObjectiveErrorMessage(failure: any) {
+  createObjectiveErrorMessage(_failure: any) {
     const message = createMessage({
       guid: 'objective-error',
       canUserDismiss: true,
@@ -430,7 +430,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.toArray().map(([k, v]) => v) },
+      content: { model: this.state.content.toArray().map(([_k, v]) => v) },
       releaseLock: false,
     };
 
@@ -565,11 +565,11 @@ type OwnProps = {
   activities: ActivityMap;
 };
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (_state: State, _ownProps: OwnProps): StateProps => {
   return {};
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   return {
     onLoadPreferences: () => dispatch(loadPreferences()),
   };
