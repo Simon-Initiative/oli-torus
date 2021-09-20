@@ -10,8 +10,6 @@ mix deps.get --only prod
 MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 
 yarn --cwd ./assets
-
-NODE_OPTIONS='--max-old-space-size=2048'
 npm run deploy --prefix ./assets
 npm run deploy-node --prefix ./assets
 
