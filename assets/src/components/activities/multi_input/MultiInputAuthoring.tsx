@@ -45,8 +45,6 @@ export const MultiInputComponent = () => {
   const input = model.inputs.find((input) => input.id === selectedInputRef?.id);
   const index = model.inputs.findIndex((input) => input.id === selectedInputRef?.id);
 
-  console.log('model', model);
-
   return (
     <>
       <MultiInputStem
