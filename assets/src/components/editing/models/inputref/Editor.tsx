@@ -29,11 +29,14 @@ export const InputRefEditor = (props: InputRefProps) => {
       <span
         {...props.attributes}
         contentEditable={false}
-        style={Object.assign(borderStyle, {
-          border: '1px solid black',
-          borderRadius: 3,
-          padding: 4,
-        })}
+        style={Object.assign(
+          {
+            border: '1px solid black',
+            borderRadius: 3,
+            padding: 4,
+          },
+          borderStyle,
+        )}
       >
         Missing Input Ref (delete){props.children}
       </span>
