@@ -173,7 +173,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
   end
 
-  def handle_event("HierarchyPicker.select", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
     %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
 
     container =

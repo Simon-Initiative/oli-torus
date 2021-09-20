@@ -7,18 +7,24 @@ defmodule OliWeb.Delivery.Remix.Entry do
 
   use Phoenix.Component
 
-  def entry(%{index: index, revision: revision, selected: selected} = assigns) do
+  alias OliWeb.Delivery.Remix.Actions
+  alias Oli.Publishing.HierarchyNode
+
+  def entry(
+        %{index: index, node: %HierarchyNode{slug: slug, revision: revision}, selected: selected} =
+          assigns
+      ) do
     ~H"""
     <div
       tabindex="0"
       phx-keydown="keydown"
-      id={revision.resource_id}
+      id={slug}
       draggable="true"
       phx-click="select"
-      phx-value-slug={revision.slug}
+      phx-value-slug={slug}
       phx-value-index={index}
       data-drag-index={index}
-      data-drag-slug={revision.slug}
+      data-drag-slug={slug}
       phx-hook="DragSource"
       class={"p-2 flex-grow-1 d-flex curriculum-entry" <> if selected do " active" else "" end}>
 
@@ -26,7 +32,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
         <div class="flex-1">
           <%= icon(assigns) %>
           <%= if is_container?(revision) do %>
-            <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-slug={revision.slug}><%= revision.title %></button>
+            <button class="btn btn-link ml-1 mr-1 entry-title" phx-click="set_active" phx-value-slug={slug}><%= revision.title %></button>
           <% else %>
             <span class="ml-1 mr-1 entry-title"><%= revision.title %></span>
           <% end %>
@@ -35,13 +41,13 @@ defmodule OliWeb.Delivery.Remix.Entry do
 
       <%# prevent dragging of actions menu and modals using this draggable wrapper %>
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <%= # live_component Actions, assigns %>
+        <%= live_component Actions, slug: slug %>
       </div>
     </div>
     """
   end
 
-  def icon(%{revision: revision} = assigns) do
+  def icon(%{node: %HierarchyNode{revision: revision}} = assigns) do
     if is_container?(revision) do
       ~H"""
       <i class="las la-archive font-bold fa-lg mx-2"></i>

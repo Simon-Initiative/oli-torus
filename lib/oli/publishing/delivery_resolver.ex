@@ -186,6 +186,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       |> Repo.all()
       |> Enum.reduce({%{}, nil}, fn {sr, rev, is_root?}, {nodes, root} ->
         node = %HierarchyNode{
+          slug: sr.slug,
           numbering: %Numbering{
             index: sr.numbering_index,
             level: sr.numbering_level

@@ -216,6 +216,7 @@ defmodule Oli.Publishing.AuthoringResolver do
 
     {
       %HierarchyNode{
+        slug: revision.slug,
         numbering: %Numbering{
           index: numbering_index,
           level: level

@@ -37,5 +37,24 @@ defmodule Oli.Publishing.HierarchyNodeTest do
       assert node.resource_id == revision1.resource_id
       assert nested_node.resource_id == nested_revision1.resource_id
     end
+
+    test "find_and_remove_node/2", %{hierarchy: hierarchy} do
+      nested_node = HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one")
+
+      assert HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one") != nil
+
+      hierarchy = HierarchyNode.find_and_remove_node(hierarchy, nested_node)
+
+      assert HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one") == nil
+    end
+
+    test "move_node/3", %{hierarchy: hierarchy} do
+      node = HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one")
+
+      hierarchy = HierarchyNode.move_node(hierarchy, node, hierarchy.slug)
+
+      assert HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one") != nil
+      assert node in hierarchy.children
+    end
   end
 end

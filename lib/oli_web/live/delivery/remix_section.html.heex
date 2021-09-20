@@ -1,3 +1,9 @@
+<%= case @modal do %>
+  <% nil -> %>
+
+  <% %{component: component, assigns: assigns} -> %>
+    <%= live_component component, assigns %>
+<% end %>
 <div id="curriculum-container" class="container curriculum-editor">
   <h2><%= dgettext("section", "Curriculum Remix") %></h2>
   <div class="row">
@@ -25,12 +31,12 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {%HierarchyNode{revision: revision} = node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.revision.slug != @dragging end) do %>
+        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.section_resource.slug != @dragging end) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
               index={index}
-              selected={node == @selected}
-              revision={revision} />
+              selected={@selected == node.slug}
+              node={node} />
         <% end %>
         <DropTarget.droptarget id={"last"} index={length(@active.children)} />
       </div>

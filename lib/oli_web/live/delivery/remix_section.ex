@@ -24,6 +24,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.HierarchyNode
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Delivery.Remix.MoveModal
 
   def mount(
         _params,
@@ -45,7 +46,8 @@ defmodule OliWeb.Delivery.RemixSection do
          active: hierarchy,
          dragging: nil,
          selected: nil,
-         has_unsaved_changes: false
+         has_unsaved_changes: false,
+         modal: nil
        )}
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
@@ -55,18 +57,17 @@ defmodule OliWeb.Delivery.RemixSection do
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
     selected =
-      Enum.find(socket.assigns.active.children, fn %HierarchyNode{revision: r} ->
-        r.slug == slug
+      Enum.find(socket.assigns.active.children, fn node ->
+        node.slug == slug
       end)
 
     {:noreply, assign(socket, :selected, selected)}
   end
 
   def handle_event("set_active", %{"slug" => slug}, socket) do
-    active =
-      Enum.find(socket.assigns.active.children, fn %HierarchyNode{revision: r} ->
-        r.slug == slug
-      end)
+    %{hierarchy: hierarchy} = socket.assigns
+
+    active = HierarchyNode.find_in_hierarchy(hierarchy, slug)
 
     if is_container?(active.revision) do
       {:noreply, assign(socket, :active, active)}
@@ -164,14 +165,6 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  def handle_event("RemixSection.select", %{"slug" => slug}, socket) do
-    %{hierarchy: hierarchy} = socket.assigns
-
-    active = HierarchyNode.find_in_hierarchy(hierarchy, slug)
-
-    {:noreply, assign(socket, active: active)}
-  end
-
   def handle_event("cancel", _, socket) do
     %{section: section} = socket.assigns
 
@@ -188,6 +181,86 @@ defmodule OliWeb.Delivery.RemixSection do
      redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
   end
 
+  def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+    %{hierarchy: hierarchy, active: active} = socket.assigns
+
+    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+
+    assigns = %{
+      id: "move_#{slug}",
+      node: node,
+      old_container: active,
+      container: active,
+      breadcrumbs: breadcrumb_trail_to(hierarchy, active),
+      selection: nil
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: MoveModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
+    %{hierarchy: hierarchy, modal: modal} = socket.assigns
+
+    container = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    breadcrumbs = breadcrumb_trail_to(hierarchy, container)
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | container: container,
+            selection: slug,
+            breadcrumbs: breadcrumbs
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "MoveModal.move_item",
+        %{"slug" => slug, "selection" => selection},
+        socket
+      ) do
+    %{hierarchy: hierarchy, active: active} = socket.assigns
+
+    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    hierarchy = HierarchyNode.move_node(hierarchy, node, selection)
+
+    # refresh active node
+    active = HierarchyNode.find_in_hierarchy(hierarchy, active.slug)
+
+    {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
+  end
+
+  def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("show_remove_modal", %{"slug" => slug}, socket) do
+    %{container: container, project: project, author: author} = socket.assigns
+
+    assigns = %{
+      id: "delete_#{slug}",
+      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DeleteModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("cancel_modal", _, socket) do
+    {:noreply, assign(socket, modal: nil)}
+  end
+
   defp new_container_name(%HierarchyNode{section_resource: sr} = _active) do
     Numbering.container_type(sr.numbering_level + 1)
   end
@@ -198,7 +271,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     ~L"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="RemixSection.select" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{
@@ -215,7 +288,7 @@ defmodule OliWeb.Delivery.RemixSection do
          %{breadcrumb: breadcrumb, show_short: show_short, is_last: is_last} = assigns
        ) do
     ~L"""
-    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" <%= if is_last, do: "disabled" %> phx-click="RemixSection.select" phx-value-slug="<%= breadcrumb.slug %>">
+    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" <%= if is_last, do: "disabled" %> phx-click="set_active" phx-value-slug="<%= breadcrumb.slug %>">
       <%= get_title(breadcrumb, show_short) %>
     </button>
     """
@@ -251,21 +324,21 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  defp make_breadcrumb(%HierarchyNode{revision: rev, section_resource: sr}) do
+  defp make_breadcrumb(%HierarchyNode{slug: slug, revision: rev, numbering: numbering}) do
     case rev.resource_type do
       "container" ->
         Breadcrumb.new(%{
           full_title:
-            Numbering.prefix(%{level: sr.numbering_level, index: sr.numbering_index}) <>
+            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
               ": " <> rev.title,
-          short_title: Numbering.prefix(%{level: sr.numbering_level, index: sr.numbering_index}),
-          slug: sr.slug
+          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
+          slug: slug
         })
 
       _ ->
         Breadcrumb.new(%{
           full_title: rev.title,
-          slug: sr.slug
+          slug: slug
         })
     end
   end
