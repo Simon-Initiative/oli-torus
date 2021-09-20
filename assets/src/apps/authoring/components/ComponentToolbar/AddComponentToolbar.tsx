@@ -23,7 +23,7 @@ const AddComponentToolbar: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
 
-  console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
+  // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
