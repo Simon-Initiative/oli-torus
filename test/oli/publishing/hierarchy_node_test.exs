@@ -43,7 +43,7 @@ defmodule Oli.Publishing.HierarchyNodeTest do
 
       assert HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one") != nil
 
-      hierarchy = HierarchyNode.find_and_remove_node(hierarchy, nested_node)
+      hierarchy = HierarchyNode.find_and_remove_node(hierarchy, "nested_page_one")
 
       assert HierarchyNode.find_in_hierarchy(hierarchy, "nested_page_one") == nil
     end

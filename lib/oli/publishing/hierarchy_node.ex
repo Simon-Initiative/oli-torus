@@ -88,23 +88,23 @@ defmodule Oli.Publishing.HierarchyNode do
     end
   end
 
-  def find_and_remove_node(hierarchy, node) do
-    if node.slug in Enum.map(hierarchy.children, & &1.slug) do
+  def find_and_remove_node(hierarchy, slug) do
+    if slug in Enum.map(hierarchy.children, & &1.slug) do
       %HierarchyNode{
         hierarchy
-        | children: Enum.filter(hierarchy.children, fn child -> child.slug != node.slug end)
+        | children: Enum.filter(hierarchy.children, fn child -> child.slug != slug end)
       }
     else
       %HierarchyNode{
         hierarchy
         | children:
-            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, node) end)
+            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, slug) end)
       }
     end
   end
 
   def move_node(hierarchy, node, destination_slug) do
-    hierarchy = find_and_remove_node(hierarchy, node)
+    hierarchy = find_and_remove_node(hierarchy, node.slug)
     destination = find_in_hierarchy(hierarchy, destination_slug)
 
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}

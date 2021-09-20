@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.HierarchyNode
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Delivery.Remix.MoveModal
+  alias OliWeb.Delivery.Remix.{RemoveModal, MoveModal}
 
   def mount(
         _params,
@@ -241,20 +241,34 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("show_remove_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project, author: author} = socket.assigns
+    %{hierarchy: hierarchy} = socket.assigns
+
+    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
 
     assigns = %{
-      id: "delete_#{slug}",
-      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
-      container: container,
-      project: project,
-      author: author
+      id: "remove_#{slug}",
+      node: node
     }
 
     {:noreply,
      assign(socket,
-       modal: %{component: DeleteModal, assigns: assigns}
+       modal: %{component: RemoveModal, assigns: assigns}
      )}
+  end
+
+  def handle_event("RemoveModal.remove", %{"slug" => slug}, socket) do
+    %{hierarchy: hierarchy, active: active} = socket.assigns
+
+    hierarchy = HierarchyNode.find_and_remove_node(hierarchy, slug)
+
+    # refresh active node
+    active = HierarchyNode.find_in_hierarchy(hierarchy, active.slug)
+
+    {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
+  end
+
+  def handle_event("RemoveModal.cancel", _, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("cancel_modal", _, socket) do
