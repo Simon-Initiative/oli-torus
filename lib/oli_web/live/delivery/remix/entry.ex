@@ -11,14 +11,17 @@ defmodule OliWeb.Delivery.Remix.Entry do
   alias Oli.Publishing.HierarchyNode
 
   def entry(
-        %{index: index, node: %HierarchyNode{slug: slug, revision: revision}, selected: selected} =
-          assigns
+        %{
+          index: index,
+          node: %HierarchyNode{slug: slug, revision: revision, resource_id: resource_id},
+          selected: selected
+        } = assigns
       ) do
     ~H"""
     <div
       tabindex="0"
       phx-keydown="keydown"
-      id={slug}
+      id={resource_id}
       draggable="true"
       phx-click="select"
       phx-value-slug={slug}

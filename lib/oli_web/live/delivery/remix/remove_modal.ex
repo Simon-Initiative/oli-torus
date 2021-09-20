@@ -4,8 +4,6 @@ defmodule OliWeb.Delivery.Remix.RemoveModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.HierarchyNode
 
   def render(%{node: %HierarchyNode{slug: slug, revision: revision}} = assigns) do
