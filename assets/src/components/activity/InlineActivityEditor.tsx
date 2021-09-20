@@ -1,15 +1,14 @@
-import React from 'react';
+import { ActivityModelSchema, Undoable } from 'components/activities/types';
+import { PartObjectives } from 'components/activity/PartObjectives';
+import { selectImage } from 'components/editing/commands/ImageCmd';
+import { Tags } from 'components/resource/Tags';
 import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
-import { TitleBar } from '../content/TitleBar';
-import { ActivityModelSchema } from 'components/activities/types';
-import { PartObjectives } from 'components/activity/PartObjectives';
-import { Tags } from 'components/resource/Tags';
-import { valueOr } from 'utils/common';
-import { Undoable } from 'components/activities/types';
 import { Tag } from 'data/content/tags';
-import { selectImage } from 'components/editing/commands/ImageCmd';
 import { ResourceId } from 'data/types';
+import React from 'react';
+import { valueOr } from 'utils/common';
+import { TitleBar } from '../content/TitleBar';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   onEdit: (state: EditorUpdate) => void;
