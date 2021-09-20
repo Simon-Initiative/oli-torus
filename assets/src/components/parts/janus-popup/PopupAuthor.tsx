@@ -33,6 +33,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     ...popup.custom,
     x: popup.custom.x - (x || 0),
     y: popup.custom.y - (y || 0),
+    z: Math.max(z || 0, popup.custom.z || 0),
   };
 
   const [windowConfig, setWindowConfig] = useState<any>(offsetWindowConfig);

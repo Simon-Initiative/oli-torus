@@ -41,17 +41,17 @@ const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClo
   }
 
   // position is an offset from the parent element now
-  popupModalStyles.left = config?.x || 0;
-  popupModalStyles.top = config?.y || 0;
-  popupModalStyles.zIndex = config?.z ? config?.z : 1000;
-  popupModalStyles.height = config?.height;
+  popupModalStyles.left = config.x || 0;
+  popupModalStyles.top = config.y || 0;
+  popupModalStyles.zIndex = config.z || 0;
+  popupModalStyles.height = config.height || 0;
   popupModalStyles.overflow = 'hidden';
   popupModalStyles.position = 'absolute';
 
   const popupCloseStyles: CSSProperties = {
     position: 'absolute',
     padding: 0,
-    zIndex: 5000,
+    zIndex: (config.z || 0) + 1,
     background: 'transparent',
     textDecoration: 'none',
     width: '25px',
