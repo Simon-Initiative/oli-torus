@@ -1,7 +1,7 @@
-import { WriterContext } from './context';
-import { ModelElement } from '../model';
-import { Text } from 'slate';
 import React from 'react';
+import { Text } from 'slate';
+import { ModelElement } from '../model';
+import { WriterContext } from './context';
 
 export type Next = () => React.ReactElement;
 type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => React.ReactElement;
@@ -36,12 +36,12 @@ export interface WriterImpl {
   unsupported: (ctx: WriterContext, element: ModelElement) => React.ReactElement;
 }
 
-type ContentItem = { type: 'content'; children: ModelElement[] };
+export type ContentItem = { type: 'content'; children: ModelElement[] };
 function isContentItem(value: any): value is ContentItem {
   return value && value.type === 'content' && value.children !== undefined;
 }
 
-type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
+export type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
 
 export class ContentWriter {
   render(context: WriterContext, content: ContentItem[], impl: WriterImpl): React.ReactElement;

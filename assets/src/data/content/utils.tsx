@@ -1,7 +1,9 @@
+import { ContentItem, ContentTypes } from 'data/content/writers/writer';
 import * as React from 'react';
+import { Text } from 'slate';
+import { isModelElement, MediaDisplayMode, ModelElement } from './model';
 import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
-import { MediaDisplayMode } from './model';
 
 // float_left and float_right no longer supported as options
 export function displayModelToClassName(display: MediaDisplayMode | undefined) {
@@ -71,4 +73,29 @@ export const centeredAbove = ({
     top: childRect.top + window.pageYOffset - 50,
     left: childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,
   };
+};
+
+const contentBfs = (
+  content: ContentTypes,
+  cb: (c: ContentItem | ModelElement | Text) => any,
+): void => {
+  if (Array.isArray(content)) {
+    return content.forEach((c) => contentBfs(c, cb));
+  }
+
+  cb(content);
+
+  if (Array.isArray(content.children)) {
+    return contentBfs(content.children, cb);
+  }
+};
+
+export const elementsOfType = (content: ContentTypes, type: string): ModelElement[] => {
+  const elements: ModelElement[] = [];
+  contentBfs(content, (elem) => {
+    if (isModelElement(elem) && elem.type === type) {
+      elements.push(elem);
+    }
+  });
+  return elements;
 };

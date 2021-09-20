@@ -19,16 +19,28 @@ export const InputRefEditor = (props: InputRefProps) => {
 
   const input = inputRefContext?.inputs.get(props.model.id);
 
-  if (!inputRefContext || !input) {
-    return <span style={{ border: '1px solid black' }}>Input Ref {props.children}</span>;
-  }
-
-  const commands = initCommands(input, inputRefContext.setInputType);
-
   const borderStyle =
     focused && selected
       ? { border: 'solid 3px lightblue', borderRadius: '0.25rem' }
       : { border: 'solid 3px transparent' };
+
+  if (!inputRefContext || !input) {
+    return (
+      <span
+        {...props.attributes}
+        contentEditable={false}
+        style={Object.assign(borderStyle, {
+          border: '1px solid black',
+          borderRadius: 3,
+          padding: 4,
+        })}
+      >
+        Missing Input Ref (delete){props.children}
+      </span>
+    );
+  }
+
+  const commands = initCommands(input, inputRefContext.setInputType);
 
   const activeStyle =
     inputRefContext.selectedInputRef?.id === props.model.id
