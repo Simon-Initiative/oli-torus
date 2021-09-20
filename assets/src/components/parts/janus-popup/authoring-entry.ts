@@ -12,6 +12,7 @@ import {
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
+  getCapabilities,
 } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
@@ -31,5 +32,6 @@ register(PopupAuthor, manifest.authoring.element, observedAttributes, {
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
+    getCapabilities,
   },
 });
