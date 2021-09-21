@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
@@ -146,12 +147,13 @@ export const initializeActivity = createAsyncThunk(
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
+      const modifiedValue = handleValueExpression(currentActivityTree, s.value);
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
-        return { ...s };
+        return { ...s, value: modifiedValue };
       }
       arrInitFacts.push(`${ownerActivity.id}|${s.target}`);
-      return { ...s, target: `${ownerActivity.id}|${s.target}` };
+      return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
