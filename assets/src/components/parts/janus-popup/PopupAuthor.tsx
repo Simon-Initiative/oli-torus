@@ -1,12 +1,21 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { parseBoolean } from 'utils/common';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
+import PopupWindowDesigner from './PopupWindowDesigner';
 import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
-  const { id, model } = props;
+  const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
+
+  const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+  useEffect(() => {
+    // console.log('PopupAuthor configuremode changed!!', configuremode);
+    setInConfigureMode(parseBoolean(configuremode));
+  }, [configuremode]);
 
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
   const [showWindow, setShowWindow] = useState(false);
@@ -65,8 +74,17 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
+  const Designer = () => {
+    // console.log('PopupAuthor: Designer', props.portal);
+    return ReactDOM.createPortal(
+      <PopupWindowDesigner onSave={() => null} onCancel={() => null} />,
+      document.getElementById(props.portal) as Element,
+    );
+  };
+
   return (
     <React.Fragment>
+      {inConfigureMode && <Designer />}
       <input
         role="button"
         draggable="false"

@@ -15,7 +15,7 @@ import {
   getCapabilities,
 } from './schema';
 
-const observedAttributes: string[] = [...apiObservedAttributes];
+const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
 const customEvents: any = { ...apiCustomEvents };
 
 register(PopupAuthor, manifest.authoring.element, observedAttributes, {
