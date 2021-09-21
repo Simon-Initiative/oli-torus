@@ -23,6 +23,42 @@ defmodule OliWeb.ProductControllerTest do
       assert Enum.at(products, 0)["amount"] == "$100.00"
       assert Enum.at(products, 1)["amount"] == "$24.99"
     end
+
+    test "request fails when api key does not have product scope", %{
+      conn: conn,
+      api_key: api_key,
+      key: key
+    } do
+      conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
+
+      Oli.Interop.update_key(key, %{products_enabled: false})
+
+      conn =
+        get(
+          conn,
+          Routes.product_path(conn, :index)
+        )
+
+      assert response(conn, 401)
+    end
+
+    test "request fails when api key has been disabled", %{
+      conn: conn,
+      api_key: api_key,
+      key: key
+    } do
+      conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
+
+      Oli.Interop.update_key(key, %{status: :disabled})
+
+      conn =
+        get(
+          conn,
+          Routes.product_path(conn, :index)
+        )
+
+      assert response(conn, 401)
+    end
   end
 
   defp setup_session(%{conn: conn}) do
@@ -37,8 +73,8 @@ defmodule OliWeb.ProductControllerTest do
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
     api_key = UUID.uuid4()
-    Oli.Interop.create_key(api_key, "hint")
+    {:ok, key} = Oli.Interop.create_key(api_key, "hint")
 
-    {:ok, conn: conn, map: map, api_key: api_key}
+    {:ok, conn: conn, map: map, api_key: api_key, key: key}
   end
 end
