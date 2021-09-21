@@ -130,10 +130,16 @@ defmodule Oli.Delivery.Sections do
     Repo.all(Section)
   end
 
+  @doc """
+  List all sections of type blueprint.
+  """
   def list_blueprint_sections do
     list_by_type(:blueprint)
   end
 
+  @doc """
+  List all sections of type enrollable.
+  """
   def list_enrollable_sections do
     list_by_type(:enrollable)
   end

@@ -32,6 +32,8 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
     end
 
     create unique_index(:payments, [:code], name: :index_payments_code)
+    create index(:payments, [:enrollment_id])
+    create index(:payments, [:section_id])
 
     create table(:discounts) do
       add :type, :string, default: "percentage", null: false
@@ -42,6 +44,9 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
 
       timestamps()
     end
+
+    create index(:discounts, [:section_id])
+    create index(:discounts, [:institution_id])
 
     create table(:section_visibilities) do
       add :section_id, references(:sections)
@@ -63,6 +68,8 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
       add :grace_period_strategy, :string, default: "relative_to_section", null: false
       add(:blueprint_id, references(:sections))
     end
+
+    create index(:sections, [:type])
 
     flush()
 
