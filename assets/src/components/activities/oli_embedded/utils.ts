@@ -5,6 +5,9 @@ import { RichText, ScoringStrategy } from '../types';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {
+    baseUrl: '',
+    modelXml: '',
+    resourceUrls: [],
     stem: fromText(''),
     title: 'Embedded activity',
     authoring: {

@@ -138,6 +138,17 @@ defmodule OliWeb.Router do
     plug(:put_pow_mailer_layout, {OliWeb.LayoutView, :email})
   end
 
+  pipeline :superactivity do
+    plug Plug.Static,
+         at: "/superactivity",
+         from: {:oli, "priv/superactivity"}
+  end
+
+  scope "/superactivity", OliWeb do
+    pipe_through :superactivity
+    get "/*path", LegacySuperactivityController, :file_not_found
+  end
+
   ### HELPERS ###
 
   # with_session/1 used by authoring liveviews to load the current author id

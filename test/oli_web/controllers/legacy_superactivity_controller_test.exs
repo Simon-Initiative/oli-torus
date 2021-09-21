@@ -6,6 +6,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 #  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess, ActivityAttempt}
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Activities
 
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -30,6 +31,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
+      IO.inspect Activities.list_activity_registrations()
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -110,7 +112,10 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         },
         "id" => "1920924184"
       },
-      "title" => "Embedded activity"
+      "title" => "Embedded activity",
+      "baseUrl" => "/superactivity/embedded",
+      "modelUrl" => "http:://host/",
+      "resourceUrls" => []
     }
 
     map =
@@ -121,7 +126,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
            :publication,
            :project,
            :author,
-           :activity
+           :activity,
+           Activities.get_registration_by_slug("oli_embedded").id
          )
 
     attrs = %{

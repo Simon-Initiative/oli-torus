@@ -56,6 +56,12 @@ defmodule OliWeb.LegacySuperactivityController do
 
   end
 
+  def file_not_found(conn, _params) do
+    conn
+    |> put_status(404)
+    |> text("File Not Found")
+  end
+
   defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
     xml = SuperActivityClient.setup(%{
       context: context
