@@ -4,6 +4,13 @@ defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false
 
+  @doc """
+  From a slug, retrieve a valid section blueprint.  A section is a
+  valid blueprint when that section is of type :blueprint and the status
+  is active.
+
+  Returns nil when there is no matching valid blueprint for the slug.
+  """
   def get_active_blueprint(slug) do
     case Repo.get_by(Section, slug: slug) do
       nil -> nil
@@ -12,6 +19,12 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end
   end
 
+  @doc """
+  Given a base project slug and a title, create a course section blueprint.
+
+  This creates the "section" record and "section resource" records to mirror
+  the current published structure of the course project hierarchy.
+  """
   def create_blueprint(base_project_slug, title) do
     Repo.transaction(fn _ ->
       case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
@@ -29,7 +42,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "context_id" => UUID.uuid4(),
             "start_date" => now,
             "end_date" => now,
-            "title" => title
+            "title" => title,
+            "requires_payment" => false,
+            "amount" => Money.new(:USD, "25.00")
           }
 
           case Sections.create_section(new_blueprint) do

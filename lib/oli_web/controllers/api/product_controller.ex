@@ -12,6 +12,8 @@ defmodule OliWeb.Api.ProductController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
+  @moduledoc tags: ["Paywall Interop"]
+
   defmodule ProductListingResponse do
     require OpenApiSpex
 

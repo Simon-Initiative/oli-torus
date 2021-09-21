@@ -12,6 +12,8 @@ defmodule OliWeb.Api.PaymentController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
+  @moduledoc tags: ["Paywall Interop"]
+
   defmodule BatchPaymentCodeRequest do
     require OpenApiSpex
 

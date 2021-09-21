@@ -3,10 +3,16 @@ defmodule Oli.Interop do
   alias Oli.Repo
   alias Oli.Interop.ApiKey
 
+  @doc """
+  List all api keys.
+  """
   def list_api_keys do
     Repo.all(ApiKey)
   end
 
+  @doc """
+  Create a new api key, with the given code and hint.
+  """
   def create_key(code, hint) do
     %ApiKey{}
     |> ApiKey.changeset(%{
@@ -16,6 +22,9 @@ defmodule Oli.Interop do
     |> Repo.insert()
   end
 
+  @doc """
+  Retrieve a key by its id.
+  """
   def get_key(id) do
     Repo.get!(ApiKey, id)
   end
@@ -34,14 +43,27 @@ defmodule Oli.Interop do
     |> Repo.update()
   end
 
+  @doc """
+  Creates a changeset for a key.
+  """
   def change_key(%ApiKey{} = key) do
     ApiKey.changeset(key, %{})
   end
 
+  @doc """
+  Validates that a key can be used for the payments scope.
+
+  Returns true if valid, false if not.
+  """
   def validate_for_payments(code) do
     validate(code, :payments_enabled)
   end
 
+  @doc """
+  Validates that a key can be used for the products scope.
+
+  Returns true if valid, false if not.
+  """
   def validate_for_products(code) do
     validate(code, :products_enabled)
   end
