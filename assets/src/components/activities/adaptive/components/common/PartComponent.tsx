@@ -58,10 +58,6 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       styleChanges.width = sWidth as number;
     }
 
-    const sHeight = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
-    if (sHeight !== undefined) {
-      styleChanges.height = sHeight as number;
-    }
     setComponentStyle((previousStyle) => {
       return { ...previousStyle, ...styleChanges };
     });
