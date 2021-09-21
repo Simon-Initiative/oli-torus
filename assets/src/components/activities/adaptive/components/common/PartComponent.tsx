@@ -24,7 +24,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   let height = props.model.height;
   // TODO: figure out how to default TF *only* to height auto without hard coding type
-  if (props.type === 'janus-text-flow') {
+  if (props.type === 'janus-text-flow' || props.type === 'janus-mcq') {
     if (!props.model.overrideHeight) {
       height = 'auto';
     }
