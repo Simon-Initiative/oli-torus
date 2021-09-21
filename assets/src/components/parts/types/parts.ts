@@ -70,3 +70,13 @@ export interface ColorPalette {
   lineStyle?: number;
   lineThickness?: number;
 }
+
+export const defaultCapabilities = {
+  move: true,
+  resize: true,
+  rotate: false,
+  select: true,
+  delete: true,
+  duplicate: true,
+  configure: false,
+};

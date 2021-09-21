@@ -1,38 +1,42 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { State, Dispatch } from 'state';
+import { modalActions } from 'actions/modal';
+import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
+import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
+import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
+import {
+  EditorUpdate as ActivityEditorUpdate,
+  InlineActivityEditor,
+} from 'components/activity/InlineActivityEditor';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import { Banner } from 'components/messages/Banner';
+import ModalSelection from 'components/modal/ModalSelection';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
+import { ActivityEditContext } from 'data/content/activity';
+import * as BankTypes from 'data/content/bank';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
+import { Objective } from 'data/content/objective';
+import { ActivityMap } from 'data/content/resource';
+import { Tag } from 'data/content/tags';
+import { createMessage, Message, Severity } from 'data/messages/messages';
+import * as ActivityPersistence from 'data/persistence/activity';
+import * as BankPersistence from 'data/persistence/bank';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import * as Lock from 'data/persistence/lock';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { ProjectSlug } from 'data/types';
 import * as Immutable from 'immutable';
-import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
-import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
-import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { InlineActivityEditor } from 'components/activity/InlineActivityEditor';
-import { ActivityMap } from 'data/content/resource';
-import { Objective } from 'data/content/objective';
-import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import * as ActivityPersistence from 'data/persistence/activity';
-import { Message, Severity, createMessage } from 'data/messages/messages';
-import { Banner } from 'components/messages/Banner';
-import { ActivityEditContext } from 'data/content/activity';
-import { Undoable as ActivityUndoable } from 'components/activities/types';
-import * as BankTypes from 'data/content/bank';
-import * as BankPersistence from 'data/persistence/bank';
+import React from 'react';
+import { connect } from 'react-redux';
+import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
-import guid from 'utils/guid';
-import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
-import { UndoToasts } from 'components/resource/undo/UndoToasts';
-import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
-import { EditingLock } from './EditingLock';
-import { Paging } from './Paging';
-import * as Lock from 'data/persistence/lock';
-import { LogicFilter } from './LogicFilter';
-import { DeleteActivity } from './DeleteActivity';
-import { Tag } from 'data/content/tags';
-import { modalActions } from 'actions/modal';
-import ModalSelection from 'components/modal/ModalSelection';
+import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
+import { CreateActivity } from './CreateActivity';
+import { DeleteActivity } from './DeleteActivity';
+import { EditingLock } from './EditingLock';
+import { LogicFilter } from './LogicFilter';
+import { Paging } from './Paging';
 
 const PAGE_SIZE = 5;
 
@@ -268,11 +272,15 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   }
 
   onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+    const model = this.adjustActivityForConstraints(
+      this.state.activityContexts.get(key)?.typeSlug,
+      update.content,
+    );
     const withModel = {
-      title: update.title !== undefined ? update.title : undefined,
-      model: update.content !== undefined ? update.content : undefined,
-      objectives: update.objectives !== undefined ? update.objectives : undefined,
-      tags: update.tags !== undefined ? update.tags : undefined,
+      model: update.content,
+      title: update.title,
+      objectives: update.objectives,
+      tags: update.tags,
     };
 
     // apply the edit
@@ -286,12 +294,22 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           this.props.projectSlug,
           merged.activityId,
           merged.activityId,
-          update as any,
+          { ...update, content: model },
           releaseLock,
         );
 
       this.persistence.lift((p) => p.save(saveFn));
     });
+  }
+
+  adjustActivityForConstraints(
+    activityType: string | undefined,
+    model: ActivityModelSchema,
+  ): ActivityModelSchema {
+    if (activityType === 'oli_multi_input') {
+      return guaranteeMultiInputValidity(model as MultiInputSchema);
+    }
+    return model;
   }
 
   onPostUndoable(key: string, undoable: ActivityUndoable) {

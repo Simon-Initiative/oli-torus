@@ -1,6 +1,6 @@
-import { Element, Range } from 'slate';
-import guid from 'utils/guid';
 import { normalizeHref } from 'components/editing/models/link/utils';
+import { Element, Node, Range } from 'slate';
+import guid from 'utils/guid';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -71,6 +71,9 @@ export type ModelElement =
   | Blockquote
   | Hyperlink
   | InputRef;
+
+export const isModelElement = (n: Node): n is ModelElement =>
+  Element.isElement(n) && typeof n.type === 'string' && n.type in schema;
 
 export type TextElement =
   | Paragraph

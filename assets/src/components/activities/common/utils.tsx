@@ -1,5 +1,5 @@
-import { makeTransformation, Transform, Transformation } from '../types';
 import React from 'react';
+import { makeTransformation, Transform, Transformation } from '../types';
 
 // Activities with one part have a hard-coded ID. This makes some lookup logic simpler.
 export const DEFAULT_PART_ID = '1';
@@ -58,4 +58,8 @@ export function remove<T>(item: T, list: T[]) {
 
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
   return subtractedFrom.filter((x) => !toSubtract.includes(x));
+}
+
+export function setUnion<T>(list1: T[], list2: T[]) {
+  return [...list2.reduce((acc, curr) => acc.add(curr), new Set(list1))];
 }
