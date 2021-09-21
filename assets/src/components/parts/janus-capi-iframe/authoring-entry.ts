@@ -8,8 +8,13 @@ import {
 import CapiIframeAuthor from './CapiIframeAuthor';
 import { createSchema, schema, uiSchema } from './schema';
 
-const observedAttributes: string[] = [...apiObservedAttributes];
-const customEvents: any = { ...apiCustomEvents };
+const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
+const customEvents: any = {
+  ...apiCustomEvents,
+  onConfigure: 'configure',
+  onSaveConfigure: 'saveconfigure',
+  onCancelConfigure: 'cancelconfigure',
+};
 
 register(CapiIframeAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,

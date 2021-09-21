@@ -1,14 +1,23 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { parseBoolean } from 'utils/common';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
+import { CapiVariable } from 'adaptivity/capi';
+import CapiVariablePicker from './CapiVariablePicker';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
+  const { onCancelConfigure, onSaveConfigure } = props;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
-  const { model } = props;
+  const { model, configuremode } = props;
+  const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const { x, y, z, width, height, src } = model;
   const [configClicked, setconfigClicked] = useState(false);
+  const [ready, setReady] = useState<boolean>(false);
+  const id: string = props.id;
+  const [internalState, setInternalState] = useState<any>([]);
   const styles: CSSProperties = {
     width,
     height,
@@ -80,16 +89,30 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     type: JanusCAPIRequestTypes;
     values: any; // usually array, but sometimes more?
   }
+  useEffect(() => {
+    setInConfigureMode(parseBoolean(configuremode));
+  }, [configuremode]);
   const frameRef = useCallback((frame) => {
     /* console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame }); */
     if (frame) {
       setSimFrame(frame);
     }
   }, []);
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id: props.id,
+      responses: [],
+    });
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    initialize(model);
+  }, []);
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
-  }, []);
+  }, [ready]);
   const sendToIframe = (data: any) => {
     simFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
   };
@@ -121,6 +144,26 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
   };
+
+  const handleValueChange = (msgData: any) => {
+    // TODO: is it possible to set "other" values?
+    // like session.whatever from here? if so, the following won't work
+    const stateVarsFromSim = Object.keys(msgData.values).map((key) => {
+      if (!msgData.values[key].readonly) {
+        const variableObj: CapiVariable = {
+          key: key,
+          type: msgData.values[key] ? msgData.values[key].type : null,
+          value: msgData.values[key] ? msgData.values[key].value : null,
+          allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
+          bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
+          readonly: msgData.values[key] ? msgData.values[key].readonly : false,
+          writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
+        };
+        return variableObj;
+      }
+    });
+    setInternalState(stateVarsFromSim);
+  };
   useEffect(() => {
     if (!simFrame) {
       return;
@@ -149,11 +192,16 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
           break;
 
         case JanusCAPIRequestTypes.ON_READY:
-          console.log('ON_READY Called');
+          sendFormedResponse(
+            simLife.handshake,
+            {},
+            JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE,
+            {},
+          );
 
           break;
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          console.log('VALUE_CHANGE Called');
+          handleValueChange(data);
           break;
         default:
           break;
@@ -170,36 +218,78 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       window.removeEventListener('message', messageListener.current);
     };
   }, [simFrame]);
+  const handleValueChangeFromModal = (changedVar: any) => {
+    //const filterVars = createCapiObjectFromStateVars(changedVar);
+    //sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, changedVar);
+    console.log('handleValueChangeFromModal called', { changedVar });
+    //setInConfigureMode(false);
+  };
+  const handleEditorSave = (e: any) => {
+    if (!inConfigureMode) {
+      return;
+    }
+    console.log('handleEditorSave called');
 
-  return (
-    <div style={styles}>
-      {configClicked && (
-        <iframe
-          ref={frameRef}
-          style={{ height: '100%', width: '100%' }}
-          data-janus-type={tagName}
-          src={props.model.src}
-          scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
-        />
-      )}
-      {!configClicked && (
-        <div className="container h-100">
-          <div className="row h-100 justify-content-center align-items-center">
-            <div>
-              <label style={lableStyles}>{props.id}</label>
-              {src && !configClicked && (
-                <div style={configDivStyles} className="form-group">
-                  <a href="#!" onClick={() => setconfigClicked(true)} style={configAnchorStyles}>
-                    configure
-                  </a>
-                </div>
-              )}
+    setInConfigureMode(false);
+    onSaveConfigure({
+      id,
+      snapshot: {},
+    });
+  };
+
+  const handleEditorCancel = () => {
+    if (!inConfigureMode) {
+      return;
+    } // not mine
+    // console.log('TF EDITOR CANCEL');
+    setInConfigureMode(false);
+    onCancelConfigure({ id });
+  };
+  console.log({ inConfigureMode });
+
+  const renderIt = inConfigureMode ? (
+    ReactDOM.createPortal(
+      <CapiVariablePicker
+        label="Stage"
+        state={internalState}
+        onChange={handleValueChangeFromModal}
+        onSave={handleEditorSave}
+        onCancel={handleEditorCancel}
+      />,
+      document.getElementById(props.portal) as Element,
+    )
+  ) : (
+    <React.Fragment>
+      <div style={styles}>
+        {configClicked && (
+          <iframe
+            ref={frameRef}
+            style={{ height: '100%', width: '100%' }}
+            data-janus-type={tagName}
+            src={props.model.src}
+            scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
+          />
+        )}
+        {!configClicked && (
+          <div className="container h-100">
+            <div className="row h-100 justify-content-center align-items-center">
+              <div>
+                <label style={lableStyles}>{props.id}</label>
+                {src && !configClicked && (
+                  <div style={configDivStyles} className="form-group">
+                    <a href="#!" onClick={() => setconfigClicked(true)} style={configAnchorStyles}>
+                      configure
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </React.Fragment>
   );
+  return ready ? renderIt : null;
 };
 
 export const tagName = 'janus-capi-iframe';

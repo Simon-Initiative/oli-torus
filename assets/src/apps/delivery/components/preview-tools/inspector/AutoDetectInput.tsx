@@ -85,6 +85,7 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
         <input
           type="number"
           className="input-group-sm stateValue"
+          style={{ flex: '1', minWidth: 75 }}
           aria-label={label}
           value={internalValue}
           onKeyDown={handleValueChange}
@@ -99,6 +100,7 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
       return (
         <input
           type="text"
+          style={{ flex: '1', minWidth: 75 }}
           className="input-group-sm stateValue"
           aria-label={label}
           value={JSON.stringify(internalValue)}
@@ -110,20 +112,23 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
 
     case CapiVariableTypes.ENUM:
       return (
-        // TODO : wire this up
         <div className="user-input">
-          <span className="stateKey" title="session.visits.q:1541198781354:733">
-            q:1541198781354:733
-          </span>
-          {/* Dropdown example */}
-          <select className="custom-select custom-select-sm" defaultValue="3">
-            <option value="1">One</option>
-            <option value="2">Two</option>
-            <option value="3">Three</option>
-            <option value="4">
-              This option has a very long text node that may stretch out the drop down. What
-              happens?
-            </option>
+          <select className="custom-select custom-select-sm">
+            {value?.allowedValues?.map((item: any) => {
+              if (internalValue === item) {
+                return (
+                  <option key={item} value={item} selected={true}>
+                    {item}
+                  </option>
+                );
+              } else {
+                return (
+                  <option key={item} value={item} selected={false}>
+                    {item}
+                  </option>
+                );
+              }
+            })}
           </select>
         </div>
       );
@@ -132,6 +137,7 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
       return (
         <input
           type="text"
+          style={{ flex: '1', minWidth: 75 }}
           className="input-group-sm stateValue"
           aria-label={label}
           value={internalValue}
