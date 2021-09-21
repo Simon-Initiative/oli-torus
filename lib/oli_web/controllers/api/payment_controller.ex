@@ -34,8 +34,6 @@ defmodule OliWeb.Api.PaymentController do
   end
 
   defp serialize_payment(%Payment{} = payment) do
-    %{
-      code: Payment.to_human_readable(payment.code)
-    }
+    Payment.to_human_readable(payment.code)
   end
 end

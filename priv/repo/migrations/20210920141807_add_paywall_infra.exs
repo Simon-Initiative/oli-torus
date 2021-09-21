@@ -19,8 +19,8 @@ defmodule Oli.Repo.Migrations.AddPaywallInfra do
 
     create unique_index(:api_keys, [:hash], name: :index_api_keys_hash)
 
-    create table(:payments, primary_key: false) do
-      add :code, :uuid, primary_key: true
+    create table(:payments) do
+      add :code, :bigint
       add :type, :string, default: "direct", null: false
       add :generation_date, :utc_datetime
       add :application_date, :utc_datetime

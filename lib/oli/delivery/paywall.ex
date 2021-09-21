@@ -38,27 +38,54 @@ defmodule Oli.Delivery.Paywall do
     now = DateTime.utc_now()
 
     Repo.transaction(fn _ ->
-      result =
-        [1..number_of_codes]
-        |> Enum.reduce_while([], fn _, all ->
-          case create_payment(%{
-                 type: :deferred,
-                 generation_date: now,
-                 application_date: nil,
-                 amount: amount,
-                 section_id: id,
-                 enrollment_id: nil
-               }) do
-            {:ok, payment} -> {:cont, [payment | all]}
-            {:error, e} -> {:halt, e}
-          end
-        end)
+      case unique_codes(number_of_codes) do
+        {:ok, codes} ->
+          result =
+            Enum.reverse(codes)
+            |> Enum.reduce_while([], fn code, all ->
+              case create_payment(%{
+                     type: :deferred,
+                     code: code,
+                     generation_date: now,
+                     application_date: nil,
+                     amount: amount,
+                     section_id: id,
+                     enrollment_id: nil
+                   }) do
+                {:ok, payment} -> {:cont, [payment | all]}
+                {:error, e} -> {:halt, {:error, e}}
+              end
+            end)
 
-      case result do
-        all when is_list(all) -> all
-        e -> Repo.rollback(e)
+          case result do
+            {:error, e} -> Repo.rollback(e)
+            all -> all
+          end
+
+        {:error, e} ->
+          Repo.rollback(e)
       end
     end)
+  end
+
+  defp unique_codes(count) do
+    # Generate a batch of unique integer codes, in one query
+    query =
+      Ecto.Adapters.SQL.query(
+        Oli.Repo,
+        "SELECT * FROM (SELECT trunc(random() * (10000000000 - 100000000) + 100000000) AS new_id
+        FROM generate_series(1, #{count})) AS x
+        WHERE x.new_id NOT IN (SELECT code FROM payments)",
+        []
+      )
+
+    case query do
+      {:ok, %{num_rows: ^count, rows: rows}} ->
+        {:ok, List.flatten(rows) |> Enum.map(fn c -> trunc(c) end)}
+
+      {:error, _} ->
+        {:error, "could not generate random codes"}
+    end
   end
 
   @doc """
