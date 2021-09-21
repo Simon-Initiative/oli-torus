@@ -74,7 +74,7 @@ defmodule OliWeb.Api.PaymentController do
           OliWeb.Api.PaymentController.BatchPaymentCodeRequest, required: true},
        responses: %{
          200 =>
-           {"Media Item Upload Response", "application/json",
+           {"Payment code batch", "application/json",
             OliWeb.Api.PaymentController.PaymentCodeBatch}
        }
   def new(conn, %{"product_slug" => product_slug, "batch_size" => batch_size}) do
