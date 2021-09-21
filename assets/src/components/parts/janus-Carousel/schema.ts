@@ -1,32 +1,21 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface CarouselModel extends JanusAbsolutePositioned, JanusCustomCss {
-  cssClasses: string;
+  customCssClass: string;
   images: { url: string; caption: string; alt: string }[];
   zoom: boolean;
 }
 
 export const schema: JSONSchema7Object = {
-  customCss: {
-    title: 'Custom CSS',
-    type: 'string',
-  },
-  cssClasses: {
+  customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
   },
-  images: {
-    title: 'Images',
-    type: 'array',
-    description: 'Images to display in the carousel',
-    items: {
-      $ref: '#/definitions/image',
-    },
-  },
   zoom: {
     type: 'boolean',
+    title: 'Enable Zoom',
     description: 'Enables image zoom on double-click',
     default: false,
   },
@@ -56,13 +45,11 @@ export const uiSchema = {};
 export const adaptivitySchema = {
   'Current Image': CapiVariableTypes.NUMBER,
   'Viewed Images Count': CapiVariableTypes.NUMBER,
-  customCss: CapiVariableTypes.STRING,
   zoom: CapiVariableTypes.BOOLEAN,
 };
 
 export const createSchema = (): Partial<CarouselModel> => ({
-  customCss: '',
-  cssClasses: '',
+  customCssClass: '',
   zoom: true,
   images: [{ url: '/images/placeholder-image.svg', caption: 'an image at night', alt: 'an image' }],
 });
