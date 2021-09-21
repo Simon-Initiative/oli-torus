@@ -300,6 +300,7 @@ defmodule OliWeb.DeliveryController do
     Repo.transaction(fn ->
       {:ok, section} =
         Sections.create_section(%{
+          type: :enrollable,
           timezone: institution.timezone,
           title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
           context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
