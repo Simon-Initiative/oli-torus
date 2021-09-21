@@ -7,7 +7,15 @@ interface PopupWindowDesignerProps {
 
 const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
   return (
-    <div>
+    <div className="popup-window-designer">
+      <style>
+        {`
+          .popup-window-designer {
+            width: 50%;
+            height: 50%;
+          }
+        `}
+      </style>
       <header>
         <h2>Toolbar</h2>
       </header>
