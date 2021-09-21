@@ -42,12 +42,7 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   return state.length > 0 ? (
     <div>
       <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-secondary mr-1"
-          onClick={handleCancelChanges}
-        >
+        <button type="button" className="btn btn-secondary mr-1" onClick={handleCancelChanges}>
           Cancel
         </button>
         <button

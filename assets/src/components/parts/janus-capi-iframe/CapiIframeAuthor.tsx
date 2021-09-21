@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import { parseBoolean } from 'utils/common';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
-import { CapiVariable } from 'adaptivity/capi';
+import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
@@ -13,8 +13,9 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   const messageListener = useRef<any>(null);
   const { model, configuremode } = props;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
-  const { x, y, z, width, height, src } = model;
+  const { x, y, z, width, height, src, configData } = model;
   const [configClicked, setconfigClicked] = useState(false);
+  const [key, setKey] = useState(props.id);
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [internalState, setInternalState] = useState<any>([]);
@@ -164,6 +165,33 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     });
     setInternalState(stateVarsFromSim);
   };
+
+  const handleOnReady = (data: any) => {
+    if (simLife.ready) {
+      return;
+    }
+    simLife.ready = true;
+    const updateSimLife = { ...simLife };
+    updateSimLife.ready = true;
+    setSimLife(updateSimLife);
+    simLife.currentState.reduce((collect: Record<string, any>, variable: any) => {
+      const baseKey = variable.key;
+      const value = variable.value;
+      const type = variable.type;
+
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
+      });
+      collect[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, collect);
+      return collect;
+    }, {});
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+
+    return;
+  };
   useEffect(() => {
     if (!simFrame) {
       return;
@@ -172,6 +200,15 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // whenever src changes, need to reset life
     const newLife = getCleanSimLife();
     setSimLife(newLife);
+
+    const configDataState: any = [
+      ...configData.map((cdVar: { key: any }) => {
+        return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
+      }),
+    ];
+    setInternalState(configDataState);
+
+    simLife.currentState = configDataState;
 
     // Catch post messages from our iFrame
     const messageListenerRef = window.addEventListener('message', (evnt) => {
@@ -192,12 +229,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
           break;
 
         case JanusCAPIRequestTypes.ON_READY:
-          sendFormedResponse(
-            simLife.handshake,
-            {},
-            JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE,
-            {},
-          );
+          handleOnReady(data);
 
           break;
         case JanusCAPIRequestTypes.VALUE_CHANGE:
@@ -229,12 +261,13 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       return;
     }
     console.log('handleEditorSave called');
-
+    setconfigClicked(false);
     setInConfigureMode(false);
-    onSaveConfigure({
+    /* onSaveConfigure({
       id,
       snapshot: {},
-    });
+    }); */
+    setKey(`${props.id}_${configClicked}`);
   };
 
   const handleEditorCancel = () => {
@@ -244,8 +277,9 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // console.log('TF EDITOR CANCEL');
     setInConfigureMode(false);
     onCancelConfigure({ id });
+    setconfigClicked(false);
+    setKey(`${props.id}_${configClicked}`);
   };
-  console.log({ inConfigureMode });
 
   const renderIt = inConfigureMode ? (
     ReactDOM.createPortal(
@@ -263,6 +297,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       <div style={styles}>
         {configClicked && (
           <iframe
+            key={key}
             ref={frameRef}
             style={{ height: '100%', width: '100%' }}
             data-janus-type={tagName}
