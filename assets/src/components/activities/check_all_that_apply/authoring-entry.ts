@@ -26,7 +26,7 @@ import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<CATASchema> {
+function createFn(_context: CreationContext): Promise<CATASchema> {
   return Promise.resolve(Object.assign({}, defaultCATAModel()));
 }
 

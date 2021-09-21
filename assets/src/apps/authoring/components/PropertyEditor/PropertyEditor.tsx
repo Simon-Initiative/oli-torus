@@ -3,6 +3,7 @@ import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import React, { Fragment } from 'react';
+import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
 
@@ -14,6 +15,7 @@ interface PropertyEditorProps {
 }
 
 const widgets: any = {
+  ColorPicker: ColorPickerWidget,
   CheckboxWidget: CustomCheckbox,
   ScreenDropdownTemplate: ScreenDropdownTemplate,
 };

@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -5,7 +6,6 @@ export interface InputTextModel extends JanusAbsolutePositioned, JanusCustomCss 
   enabled: boolean;
   prompt: string;
   defaultID: string;
-  palette: any;
   fontSize?: number;
   showLabel: boolean;
   label: string;
@@ -19,16 +19,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   fontSize: {
     title: 'Font Size',
@@ -60,6 +50,12 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  text: CapiVariableTypes.STRING,
+  textLength: CapiVariableTypes.NUMBER,
+  enabled: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<InputTextModel> => ({
   enabled: true,

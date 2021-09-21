@@ -12,13 +12,14 @@ import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
 import * as Immutable from 'immutable';
-import { defaultState } from '../TestModeHandler';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
 import { Undoable } from 'components/activities/types';
 import { ActivityBankSelection } from './ActivityBankSelection';
+import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
+import { defaultActivityState } from 'data/activities/utils';
 
 // content or referenced activities
 export const createEditor = (
@@ -33,11 +34,13 @@ export const createEditor = (
   objectivesMap: any,
   editorProps: any,
   allObjectives: Objective[],
+  allTags: Tag[],
   editorMap: ActivityEditorMap,
   onEdit: (content: ResourceContent) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
+  onRegisterNewTag: (o: Tag) => void,
 ): JSX.Element => {
   if (content.type === 'selection') {
     return (
@@ -50,7 +53,9 @@ export const createEditor = (
           onChange={onEdit}
           projectSlug={projectSlug}
           allObjectives={Immutable.List<Objective>(allObjectives)}
+          allTags={Immutable.List<Tag>(allTags)}
           onRegisterNewObjective={onRegisterNewObjective}
+          onRegisterNewTag={onRegisterNewTag}
         />
       </ContentBlock>
     );
@@ -91,7 +96,7 @@ export const createEditor = (
     const props = {
       model: activity.model,
       activitySlug: activity.activitySlug,
-      state: defaultState(activity.model),
+      state: defaultActivityState(activity.model),
       typeSlug: activity.typeSlug,
       editMode: editMode,
       graded: false,
@@ -103,12 +108,16 @@ export const createEditor = (
       friendlyName: activity.friendlyName,
       description: activity.description,
       objectives: activity.objectives,
-      allObjectives: allObjectives,
+      allObjectives,
+      tags: activity.tags,
+      allTags,
       activityId: activity.activityId,
       title: activity.title,
       onEdit: (update: EditorUpdate) => onActivityEdit(activity.activitySlug, update),
       onPostUndoable: (undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable),
       onRegisterNewObjective,
+      onRegisterNewTag,
+      banked: false,
     };
 
     return (

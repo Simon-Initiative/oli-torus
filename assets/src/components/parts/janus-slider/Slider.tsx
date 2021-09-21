@@ -249,17 +249,19 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     }
   });
 
+  const internalId = `${id}__slider`;
+
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`slider ${cssClass}`}>
+    <div data-janus-type={tagName} style={styles} className={`slider`}>
       <div className="sliderInner">
-        {showValueLabels && <label htmlFor={id}>{invertScale ? maximum : minimum}</label>}
+        {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
           <div style={divStyles}>
             {showDataTip && (
-              <div className="rangeValue" id={`rangeV-${id}`}>
+              <div className="rangeValue" id={`rangeV-${internalId}`}>
                 <span
                   ref={divTargetRef}
-                  id={`slider-thumb-${id}`}
+                  id={`slider-thumb-${internalId}`}
                   style={{
                     left: `${invertScale ? undefined : thumbPosition}px`,
                     marginLeft: `${invertScale ? undefined : thumbMargin}px`,
@@ -280,16 +282,16 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               type={'range'}
               value={sliderValue}
               step={snapInterval}
-              className={` slider ` + customCssClass}
-              id={id}
+              className={` slider `}
+              id={internalId}
               onChange={handleSliderChange}
             />
           </div>
         </div>
-        {showValueLabels && <label htmlFor={id}>{invertScale ? minimum : maximum}</label>}
+        {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
       </div>
       {showLabel && (
-        <label className="input-label" htmlFor={id}>
+        <label className="input-label" htmlFor={internalId}>
           {label}
         </label>
       )}

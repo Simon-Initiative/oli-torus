@@ -1,4 +1,12 @@
-import { isNumber, isString, isStringArray, parseArray, parseBoolean, valueOr } from 'utils/common';
+import {
+  isNumber,
+  isString,
+  isStringArray,
+  parseArray,
+  parseBoolean,
+  valueOr,
+  zip,
+} from 'utils/common';
 
 describe('common valueOr', () => {
   it('should use default value when null', () => {
@@ -98,8 +106,8 @@ describe('common parseArray', () => {
   });
 
   it('should parse an array-like string into a valid array', () => {
-    const str = '["some", "thing", "silly"]';
-    const expected = ['some', 'thing', 'silly'];
+    const str = '["some", "thing", "silly","-56.5/-13/70"]';
+    const expected = ['some', 'thing', 'silly', '-56.5/-13/70'];
     expect(parseArray(str)).toEqual(expected);
   });
 
@@ -110,5 +118,26 @@ describe('common parseArray', () => {
       [3, 4],
     ];
     expect(parseArray(str)).toEqual(expected);
+  });
+});
+
+describe('zip', () => {
+  const xs1 = ['a', 'b', 'c'];
+  const xs2 = ['d', 'e', 'f'];
+  const xs3 = ['g', 'h', 'i', 'j'];
+  const xs4: string[] = [];
+  it('should zip', () => {
+    expect(zip(xs1, xs2)).toEqual([
+      ['a', 'd'],
+      ['b', 'e'],
+      ['c', 'f'],
+    ]);
+    expect(zip(xs1, xs3)).toEqual([
+      ['a', 'g'],
+      ['b', 'h'],
+      ['c', 'i'],
+    ]);
+    expect(zip(xs1, xs4)).toEqual([]);
+    expect(zip(xs4, xs1)).toEqual([]);
   });
 });

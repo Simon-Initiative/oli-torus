@@ -1,12 +1,11 @@
 <div class="workspace-sidebar pt-2">
-
-  <button type="button" class="btn btn-light my-1" onclick="location.href='<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>'">
+  <a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>">
     <img src="/images/icons/icon-projects-light.svg" height="30px" width="32px"/>
     <div class="label mt-1">Projects</div>
-  </button>
+  </a>
 
   <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-create-light.svg" height="35px" width="32px"/>
       <div class="label mt-1">Create</div>
     </button>
@@ -19,7 +18,7 @@
   </div>
 
   <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-publish-light.svg" height="32px" width="32px"/>
       <div class="label mt-1">Publish</div>
     </button>
@@ -30,7 +29,7 @@
   </div>
 
   <div class="btn-group dropright hoverdriven my-1">
-    <button type="button" class="btn btn-light " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <button type="button" class="sidebar-item btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <img src="/images/icons/icon-improve-light.svg" height="35px" width="32px"/>
       <div class="label mt-1">Improve</div>
     </button>
@@ -39,7 +38,7 @@
     </div>
   </div>
 
-  <%= if is_admin?(@conn) do %>
+  <%= if Accounts.is_admin?(@current_author) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
   <% end %>
 

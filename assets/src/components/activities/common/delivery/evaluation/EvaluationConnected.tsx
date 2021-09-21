@@ -1,6 +1,6 @@
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import { ActivityDeliveryState, isEvaluated } from 'data/content/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
 

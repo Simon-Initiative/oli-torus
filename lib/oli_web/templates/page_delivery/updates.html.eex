@@ -1,0 +1,15 @@
+
+<div class="mb-2">
+  <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
+    <i class="las la-arrow-left"></i> Back
+  <% end %>
+</div>
+
+<h2><%= dgettext("available_updates", "Available Updates") %></h2>
+
+<%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
+  "section" => @section,
+  "redirect_after_apply" => Routes.page_delivery_path(@conn, :updates, @section.slug),
+  "current_user" => @current_user,
+  "current_author" => nil
+  }) %>

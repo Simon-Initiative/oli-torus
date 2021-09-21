@@ -303,6 +303,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
   const styles: CSSProperties = {
     display: visible ? 'block' : 'none',
+    width,
+    height,
   };
 
   const janusButtonStyle: CSSProperties = {
@@ -367,7 +369,6 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     onClick: handleButtonPress,
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
-    className: `${cssClass}`,
   };
 
   return ready && buttonVisible ? (

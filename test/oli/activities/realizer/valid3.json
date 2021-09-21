@@ -5,7 +5,7 @@
         "operator": "any",
         "children": [{
           "fact": "tags",
-          "operator": "doesNotContain",
+          "operator": "does_not_contain",
           "value": [1]
         },
         {

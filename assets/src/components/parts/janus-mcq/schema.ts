@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
@@ -8,7 +9,6 @@ export interface McqItem {
   [key: string]: any;
 }
 export interface McqModel extends JanusAbsolutePositioned, JanusCustomCss {
-  palette: any;
   fontSize?: number;
   overrideHeight?: boolean;
   layoutType: 'horizontalLayout' | 'verticalLayout';
@@ -31,16 +31,6 @@ export const schema: JSONSchema7Object = {
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   fontSize: {
     title: 'Font Size',
@@ -88,6 +78,16 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether MCQ is enabled',
     default: true,
   },
+};
+
+export const adaptivitySchema = {
+  enabled: CapiVariableTypes.BOOLEAN,
+  randomize: CapiVariableTypes.BOOLEAN,
+  numberOfSelectedChoices: CapiVariableTypes.NUMBER,
+  selectedChoice: CapiVariableTypes.NUMBER,
+  selectedChoiceText: CapiVariableTypes.STRING,
+  selectedChoices: CapiVariableTypes.ARRAY,
+  selectedChoicesText: CapiVariableTypes.ARRAY,
 };
 
 export const uiSchema = {};

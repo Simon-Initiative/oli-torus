@@ -6,7 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import FIBAuthor from './FIBAuthor';
-import { createSchema, schema, uiSchema } from './schema';
+import { adaptivitySchema, createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -23,5 +23,6 @@ register(FIBAuthor, manifest.authoring.element, observedAttributes, {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
+    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });

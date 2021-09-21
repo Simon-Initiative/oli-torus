@@ -1,20 +1,25 @@
-import React from 'react';
+import { ActivityModelSchema, Undoable } from 'components/activities/types';
+import { PartObjectives } from 'components/activity/PartObjectives';
+import { selectImage } from 'components/editing/commands/ImageCmd';
+import { Tags } from 'components/resource/Tags';
 import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
-import { TitleBar } from '../content/TitleBar';
-import { ActivityModelSchema } from 'components/activities/types';
-import { PartObjectives } from 'components/activity/PartObjectives';
+import { Tag } from 'data/content/tags';
+import { ResourceId } from 'data/types';
+import React from 'react';
 import { valueOr } from 'utils/common';
-import { Undoable } from 'components/activities/types';
-import { selectImage } from 'components/editing/commands/ImageCmd';
+import { TitleBar } from '../content/TitleBar';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
+  onRegisterNewTag: (o: Tag) => void;
   editMode: boolean;
   projectSlug: string;
   allObjectives: Objective[];
+  allTags: Tag[];
+  banked: boolean;
 }
 
 // This is the state of our activity editing that is undoable
@@ -22,6 +27,7 @@ export type EditorUpdate = {
   title: string;
   content: ActivityModelSchema;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
 };
 
 // The activity editor
@@ -76,6 +82,7 @@ export class InlineActivityEditor extends React.Component<
         title: this.props.title,
         content: this.props.model,
         objectives: this.props.objectives,
+        tags: this.props.tags,
       },
       syncedUpdate,
     );
@@ -83,27 +90,41 @@ export class InlineActivityEditor extends React.Component<
     this.props.onEdit(combined);
   }
 
+  // Parts can be added or removed in multi-part activities
   syncObjectivesWithParts(update: Partial<EditorUpdate>) {
     if (update.content !== undefined) {
       const objectives = this.props.objectives;
       const parts = valueOr(update.content.authoring.parts, []);
       const partIds = parts
-        .map((p: any) => valueOr(p.id, ''))
+        .map((p: any) => valueOr(String(p.id), ''))
         .reduce((m: any, id: string) => {
           m[id] = true;
           return m;
         }, {});
 
-      const keys = Object.keys(objectives);
-      keys.forEach((pId: string) => {
-        if (partIds[pId.toString()] === undefined) {
-          delete objectives[pId];
-        }
-      });
+      this.removeMissingPartIds(objectives, partIds);
+      this.addMissingPartIds(objectives, partIds);
 
       return Object.assign({}, update, { objectives });
     }
     return update;
+  }
+
+  removeMissingPartIds(objectives: ObjectiveMap, partIds: Record<string, boolean>): void {
+    Object.keys(objectives).forEach((pId) => {
+      if (partIds[pId] === undefined) {
+        delete objectives[pId];
+      }
+    });
+  }
+
+  // Newly added parts have no attached objectives
+  addMissingPartIds(objectives: ObjectiveMap, partIds: Record<string, boolean>): void {
+    Object.keys(partIds).forEach((pId) => {
+      if (objectives[pId.toString()] === undefined) {
+        objectives[pId] = [];
+      }
+    });
   }
 
   render() {
@@ -121,6 +142,22 @@ export class InlineActivityEditor extends React.Component<
     };
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
+
+    const maybeTags = this.props.banked ? (
+      <div className="card">
+        <div className="card-body">
+          <div className="card-title">Tags</div>
+          <Tags
+            selected={this.props.tags}
+            editMode={this.props.editMode}
+            projectSlug={webComponentProps.projectslug}
+            tags={this.props.allTags}
+            onRegisterNewTag={this.props.onRegisterNewTag}
+            onEdit={(tags) => this.update({ tags })}
+          />
+        </div>
+      </div>
+    ) : null;
 
     return (
       <div className="col-12">
@@ -141,6 +178,7 @@ export class InlineActivityEditor extends React.Component<
             onRegisterNewObjective={this.props.onRegisterNewObjective}
             onEdit={(objectives) => this.update({ objectives })}
           />
+          {maybeTags}
           <div ref={this.ref}>
             {React.createElement(authoringElement, webComponentProps as any)}
           </div>

@@ -21,10 +21,14 @@ defmodule Oli.Plugs.SetCurrentUser do
     if author = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_author = Repo.get(Author, author.id) ->
-          assign(conn, :current_author, current_author)
+          conn
+          |> put_session(:current_author_id, current_author.id)
+          |> assign(:current_author, current_author)
 
         true ->
-          assign(conn, :current_author, nil)
+          conn
+          |> delete_session(:current_author_id)
+          |> assign(:current_author, nil)
       end
     else
       conn
@@ -37,10 +41,14 @@ defmodule Oli.Plugs.SetCurrentUser do
     if user = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_user = Repo.get(User, user.id) |> Repo.preload([:platform_roles, :author]) ->
-          assign(conn, :current_user, current_user)
+          conn
+          |> put_session(:current_user_id, current_user.id)
+          |> assign(:current_user, current_user)
 
         true ->
-          assign(conn, :current_user, nil)
+          conn
+          |> delete_session(:current_user_id)
+          |> assign(:current_user, nil)
       end
     else
       conn

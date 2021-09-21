@@ -8,7 +8,7 @@ export const valueOr = <T>(value: T | null | undefined, defaultValue: T): T =>
   value === null || value === undefined ? defaultValue : value;
 
 // Allows completeness checking in discriminated union based switch statements
-export function assertNever(x: never): never {
+export function assertNever(x: any): never {
   throw new Error('Unexpected object: ' + x);
 }
 
@@ -139,7 +139,13 @@ export const parseBool = (val: any) => {
   return !isNaN(num) ? !!num : !!String(val).toLowerCase().replace('false', '');
 };
 
+/** returns a number if the string can be a number, else leaves it as a string */
 export const parseNumString = (item: string): string | number => {
+  if (!item?.length) return item;
   // check if items are strings or numbers and converts if number
-  return !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item;
+  return !Number.isNaN(Number(item)) ? parseFloat(item) : item;
 };
+
+// Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]
+export const zip = <T, U>(xs1: T[], xs2: U[]): [T, U][] =>
+  xs1.reduce((acc, x, i) => (i > xs2.length - 1 ? acc : acc.concat([[x, xs2[i]]])), [] as [T, U][]);

@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { isOperator, RuleOperator } from 'components/activities/common/responses/authoring/rules';
+import { isOperator, RuleOperator } from 'data/activities/model/rules';
 import React from 'react';
 
 interface State {

@@ -1,35 +1,31 @@
-import React from 'react';
-import { Accordion, ListGroup } from 'react-bootstrap';
 import {
   SequenceEntryChild,
-  SequenceHierarchyItem,
   SequenceEntryType,
-  SequenceEntry,
+  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
-import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
-import {
-  selectCurrentSequenceId,
-  selectSequence,
-} from 'apps/delivery/store/features/groups/selectors/deck';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import React from 'react';
+import { Accordion, ListGroup } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
+import ContextAwareToggle from '../../Accordion/ContextAwareToggle';
 
 interface SeqDropdownProps {
   items: SequenceHierarchyItem<SequenceEntryChild>[];
   onChange: (
-    e: React.MouseEvent,
     item: null | SequenceHierarchyItem<SequenceEntryChild>,
-    isNextButton: boolean,
+    e?: React.MouseEvent,
+    isNextButton?: boolean,
   ) => void;
-  value: string;
+  value?: string;
   showNextBtn: boolean;
 }
 
 export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
   const { items, onChange, value, showNextBtn } = props;
   const sequence = useSelector(selectSequence);
-  console.log(sequence);
+  // console.log(sequence);
 
-  const sequenceDropDownItems = (items: any) =>
+  const sequenceDropDownItems = (items: SequenceHierarchyItem<SequenceEntryType>[]) =>
     items.map((item: SequenceHierarchyItem<SequenceEntryType>, index: number) => {
       const title = item.custom?.sequenceName || item.activitySlug;
       return (
@@ -42,7 +38,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
             key={`${item.custom.sequenceId}`}
             tabIndex={0}
           >
-            <div className="aa-sequence-details-wrapper" onClick={(e) => onChange(e, item, false)}>
+            <div className="aa-sequence-details-wrapper" onClick={(e) => onChange(item, e, false)}>
               <div className="details">
                 {item.children.length ? (
                   <ContextAwareToggle eventKey={`${index}`} className={`aa-sequence-item-toggle`} />
@@ -70,7 +66,7 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
             as="li"
             className={`aa-sequence-item`}
             key="next"
-            onClick={(e) => onChange(e, null, true)}
+            onClick={(e) => onChange(null, e, true)}
             tabIndex={0}
           >
             <div className="aa-sequence-details-wrapper">

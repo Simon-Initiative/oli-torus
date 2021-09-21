@@ -3,7 +3,10 @@ defmodule OliWeb.Projects.Table do
   alias OliWeb.Router.Helpers, as: Routes
 
   defp authors(assigns, project_id) do
-    Map.get(assigns.authors, project_id)
+    case Map.get(assigns.authors, project_id) do
+      nil -> []
+      authors -> authors
+    end
   end
 
   def th(assigns, label, sort_by, sort_order, column) do
@@ -32,32 +35,40 @@ defmodule OliWeb.Projects.Table do
       </thead>
       <tbody>
         <%= for project <- @projects do %>
-          <tr>
-          <td>
-            <%= if project.status == :deleted do %>
-              <span><%= project.title %></span>
-            <% else %>
-              <a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></a>
-            <% end %>
-          </td>
-          <td><%= time_ago(assigns, project.inserted_at) %></td>
-          <td>
-            <ul>
-            <%= for author <- authors(assigns, project.id) do %>
-              <li><%= author.name %> (<%= author.email %>)</li>
-            <% end %>
-            </ul>
-          </td>
-          <%= if @is_admin do %>
+          <%= if project.status == :active or @show_deleted do %>
+            <tr>
             <td>
               <%= if project.status == :deleted do %>
-                <span class="text-danger">Deleted</span>
+                <span><%= project.title %></span>
               <% else %>
-                <span class="text-success">Active</span>
+                <a href="<%= Routes.project_path(OliWeb.Endpoint, :overview, project) %>"><%= project.title %></a>
               <% end %>
             </td>
+            <td><%= time_ago(assigns, project.inserted_at) %></td>
+            <td>
+              <ul>
+              <%= case authors(assigns, project.id) do %>
+                <% [] -> %>
+                  <span class="text-secondary">None</span>
+
+                <% authors -> %>
+                  <%= for author <- authors do %>
+                    <li><%= author.name %> (<%= author.email %>)</li>
+                  <% end %>
+              <% end %>
+              </ul>
+            </td>
+            <%= if @is_admin do %>
+              <td>
+                <%= if project.status == :deleted do %>
+                  <span class="text-danger">Deleted</span>
+                <% else %>
+                  <span class="text-success">Active</span>
+                <% end %>
+              </td>
+            <% end %>
+            </tr>
           <% end %>
-          </tr>
         <% end %>
       </tbody>
     </table>

@@ -1,37 +1,42 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { State, Dispatch } from 'state';
+import { modalActions } from 'actions/modal';
+import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
+import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
+import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
+import {
+  EditorUpdate as ActivityEditorUpdate,
+  InlineActivityEditor,
+} from 'components/activity/InlineActivityEditor';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import { Banner } from 'components/messages/Banner';
+import ModalSelection from 'components/modal/ModalSelection';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
+import { ActivityEditContext } from 'data/content/activity';
+import * as BankTypes from 'data/content/bank';
+import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
+import { Objective } from 'data/content/objective';
+import { ActivityMap } from 'data/content/resource';
+import { Tag } from 'data/content/tags';
+import { createMessage, Message, Severity } from 'data/messages/messages';
+import * as ActivityPersistence from 'data/persistence/activity';
+import * as BankPersistence from 'data/persistence/bank';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import * as Lock from 'data/persistence/lock';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
 import { ProjectSlug } from 'data/types';
 import * as Immutable from 'immutable';
-import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
-import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
-import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
-import { InlineActivityEditor } from 'components/activity/InlineActivityEditor';
-import { ActivityMap } from 'data/content/resource';
-import { Objective } from 'data/content/objective';
-import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import * as ActivityPersistence from 'data/persistence/activity';
-import { Message, Severity, createMessage } from 'data/messages/messages';
-import { Banner } from 'components/messages/Banner';
-import { ActivityEditContext } from 'data/content/activity';
-import { Undoable as ActivityUndoable } from 'components/activities/types';
-import * as BankTypes from 'data/content/bank';
-import * as BankPersistence from 'data/persistence/bank';
+import React from 'react';
+import { connect } from 'react-redux';
+import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
-import guid from 'utils/guid';
-import { ActivityUndoables, ActivityUndoAction } from 'apps/page-editor/types';
-import { UndoToasts } from 'components/resource/undo/UndoToasts';
-import { applyOperations } from 'utils/undo';
-import { CreateActivity } from './CreateActivity';
 import { Maybe } from 'tsmonad';
-import { EditingLock } from './EditingLock';
-import { Paging } from './Paging';
-import * as Lock from 'data/persistence/lock';
-import { LogicFilter } from './LogicFilter';
+import guid from 'utils/guid';
+import { Operations } from 'utils/pathOperations';
+import { CreateActivity } from './CreateActivity';
 import { DeleteActivity } from './DeleteActivity';
-import { modalActions } from 'actions/modal';
-import ModalSelection from 'components/modal/ModalSelection';
+import { EditingLock } from './EditingLock';
+import { LogicFilter } from './LogicFilter';
+import { Paging } from './Paging';
 
 const PAGE_SIZE = 5;
 
@@ -39,6 +44,7 @@ export interface ActivityBankProps {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   projectSlug: ProjectSlug;
   allObjectives: Objective[]; // All objectives
+  allTags: Tag[]; // All tags
   totalCount: number;
 }
 
@@ -46,6 +52,7 @@ type ActivityBankState = {
   messages: Message[];
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   allObjectives: Immutable.List<Objective>;
+  allTags: Immutable.List<Tag>;
   persistence: 'idle' | 'pending' | 'inflight';
   metaModifier: boolean;
   undoables: ActivityUndoables;
@@ -62,7 +69,7 @@ const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     const mediaLibrary = (
       <ModalSelection
         title="Delete Activity"
@@ -88,7 +95,7 @@ export function confirmDelete(): Promise<boolean> {
 }
 
 export function showFailedToLockMessage(): Promise<boolean> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     const mediaLibrary = (
       <ModalSelection
         title="Edit Activity"
@@ -121,6 +128,7 @@ function defaultFilters() {
     { fact: BankTypes.Fact.objectives, operator: BankTypes.ExpressionOperator.contains, value: [] },
     { fact: BankTypes.Fact.text, operator: BankTypes.ExpressionOperator.contains, value: '' },
     { fact: BankTypes.Fact.type, operator: BankTypes.ExpressionOperator.contains, value: [] },
+    { fact: BankTypes.Fact.tags, operator: BankTypes.ExpressionOperator.contains, value: [] },
   ];
 }
 
@@ -144,6 +152,9 @@ function translateFilterToLogic(expressions: BankTypes.Expression[]): BankTypes.
   if (expressions[2].value.length !== 0) {
     nonEmptyExpressions.push(expressions[2]);
   }
+  if (expressions[3].value.length !== 0) {
+    nonEmptyExpressions.push(expressions[3]);
+  }
 
   let conditions = null;
 
@@ -165,7 +176,8 @@ function isEmptyFilterLogic(expressions: BankTypes.Expression[]): boolean {
   return (
     expressions[0].value.length === 0 &&
     expressions[1].value === '' &&
-    expressions[2].value.length === 0
+    expressions[2].value.length === 0 &&
+    expressions[3].value.length === 0
   );
 }
 
@@ -180,6 +192,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       messages: [],
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(props.allObjectives),
+      allTags: Immutable.List<Tag>(props.allTags),
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
       paging: defaultPaging(),
@@ -201,6 +214,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
 
     this.persistence = Maybe.nothing<PersistenceStrategy>();
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
+    this.onRegisterNewTag = this.onRegisterNewTag.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
@@ -258,13 +272,20 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   }
 
   onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+    const model = this.adjustActivityForConstraints(
+      this.state.activityContexts.get(key)?.typeSlug,
+      update.content,
+    );
     const withModel = {
-      title: update.title !== undefined ? update.title : undefined,
-      model: update.content !== undefined ? update.content : undefined,
-      objectives: update.objectives !== undefined ? update.objectives : undefined,
+      model: update.content,
+      title: update.title,
+      objectives: update.objectives,
+      tags: update.tags,
     };
+
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
+
     const activityContexts = this.state.activityContexts.set(key, merged);
 
     this.setState({ activityContexts }, () => {
@@ -273,12 +294,22 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
           this.props.projectSlug,
           merged.activityId,
           merged.activityId,
-          update as any,
+          { ...update, content: model },
           releaseLock,
         );
 
       this.persistence.lift((p) => p.save(saveFn));
     });
+  }
+
+  adjustActivityForConstraints(
+    activityType: string | undefined,
+    model: ActivityModelSchema,
+  ): ActivityModelSchema {
+    if (activityType === 'oli_multi_input') {
+      return guaranteeMultiInputValidity(model as MultiInputSchema);
+    }
+    return model;
   }
 
   onPostUndoable(key: string, undoable: ActivityUndoable) {
@@ -312,13 +343,14 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         const model = JSON.parse(JSON.stringify(context.model));
 
         // Apply the undo operations to the model
-        applyOperations(model as any, item.undoable.operations);
+        Operations.applyAll(model as any, item.undoable.operations);
 
         // Now save the change and push it down to the activity editor
         this.onActivityEdit(item.contentKey, {
           content: model,
           title: context.title,
           objectives: context.objectives,
+          tags: context.tags,
         });
       }
     }
@@ -326,7 +358,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.setState({ undoables: this.state.undoables.delete(guid) });
   }
 
-  createObjectiveErrorMessage(failure: any) {
+  createObjectiveErrorMessage(_failure: any) {
     const message = createMessage({
       guid: 'objective-error',
       canUserDismiss: true,
@@ -339,6 +371,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   onRegisterNewObjective(objective: Objective) {
     this.setState({
       allObjectives: this.state.allObjectives.push(objective),
+    });
+  }
+
+  onRegisterNewTag(tag: Tag) {
+    this.setState({
+      allTags: this.state.allTags.push(tag),
     });
   }
 
@@ -375,7 +413,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       const persistence = new DeferredPersistenceStrategy();
 
       const lockFn = (): Promise<Lock.LockResult> => {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve, _reject) => {
           Lock.acquireLock(this.props.projectSlug, key, true).then((result) => {
             if (result.type === 'acquired') {
               // Update our local context given the latest from the server
@@ -446,9 +484,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             projectSlug={this.props.projectSlug}
             editMode={editMode}
             allObjectives={this.state.allObjectives.toArray()}
+            allTags={this.state.allTags.toArray()}
             onPostUndoable={this.onPostUndoable.bind(this, key)}
             onEdit={this.onActivityEdit.bind(this, key)}
             onRegisterNewObjective={this.onRegisterNewObjective}
+            onRegisterNewTag={this.onRegisterNewTag}
+            banked={true}
             {...context}
           />
         </div>
@@ -473,6 +514,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
               title: r.title,
               model: r.content,
               objectives: r.objectives,
+              tags: r.tags,
             } as ActivityEditContext;
           })
           .map((c) => [c.activitySlug, c]);
@@ -498,6 +540,12 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     const onRegisterNewObjective = (objective: Objective) => {
       this.setState({
         allObjectives: this.state.allObjectives.push(objective),
+      });
+    };
+
+    const onRegisterNewTag = (tag: Tag) => {
+      this.setState({
+        allTags: this.state.allTags.push(tag),
       });
     };
 
@@ -551,7 +599,9 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             projectSlug={props.projectSlug}
             editorMap={props.editorMap}
             allObjectives={this.state.allObjectives}
+            allTags={this.state.allTags}
             onRegisterNewObjective={onRegisterNewObjective}
+            onRegisterNewTag={onRegisterNewTag}
             onChange={(filterExpressions) => {
               this.setState({ filterExpressions, canBeUpdated: true });
             }}
@@ -608,11 +658,11 @@ type OwnProps = {
   activities: ActivityMap;
 };
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (_state: State, _ownProps: OwnProps): StateProps => {
   return {};
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   return {
     onLoadPreferences: () => dispatch(loadPreferences()),
   };

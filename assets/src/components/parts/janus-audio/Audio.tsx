@@ -222,6 +222,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     width,
     height,
     zIndex: z, */
+    width,
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };

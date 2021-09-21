@@ -40,26 +40,6 @@ $body-bg: $white;
 $body-color: $gray-900;
 
 /** OLI specific variables **/
-$choice-selected-bg: lighten($primary, 42%);
-$choice-selected-color: $primary;
-$choice-selected-border-color: $primary;
-
-$feedback-correct-bg: lighten($green, 45%);
-$feedback-correct-color: $green;
-$feedback-incorrect-bg: lighten($red, 40%);
-$feedback-incorrect-color: $red;
-$feedback-error-bg: lighten($orange, 42%);
-$feedback-error-color: $orange;
-
-$hint-bg: lighten($yellow, 45%);
-$hint-border-color: $yellow;
-
-$content-purpose-example-color: lighten($blue, 20%);
-$content-purpose-learnmore-color: lighten($teal, 20%);
-$activity-purpose-checkpoint-color: lighten($blue, 10%);
-$activity-purpose-didigetthis-color: lighten($purple, 10%);
-$activity-purpose-learnbydoing-color: lighten($green, 10%);
-$activity-purpose-manystudentswonder-color: lighten($cyan, 10%);
 
 ///////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: DO NOT MODIFY IMPORT

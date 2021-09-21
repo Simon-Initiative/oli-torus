@@ -1,5 +1,5 @@
 import chroma from 'chroma-js';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { clone, parseBoolean } from 'utils/common';
 import guid from 'utils/guid';
@@ -16,10 +16,14 @@ export interface MarkupTree {
   style?: any;
   text?: string;
   children?: MarkupTree[];
+  customCssClass?: string;
 }
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
   const style: any = {};
+  if (!node.style) {
+    return style;
+  }
   if (
     (node.style.styleName === 'Heading' || node.style.styleName === 'Title') &&
     node.children?.length === 1 &&
@@ -79,6 +83,7 @@ export const renderFlow = (
       style={styles}
       text={treeNode.text}
       state={state}
+      customCssClass={treeNode.customCssClass}
       displayRawText={true}
     >
       {treeNode.children &&
@@ -97,10 +102,26 @@ export const renderFlow = (
 };
 
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
-  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { configuremode, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+
+  const htmlPreviewRef = useRef<any>(null);
+  const [htmlPreview, setHtmlPreview] = useState<string>('');
+
+  const [model, setModel] = useState<TextFlowModel>(props.model);
+
+  useEffect(() => {
+    setModel(props.model);
+  }, [props.model]);
+
+  useEffect(() => {
+    // console.log('TF REF CHANGE', htmlPreviewRef.current);
+    if (htmlPreviewRef.current) {
+      setHtmlPreview(htmlPreviewRef.current?.innerHTML || '');
+    }
+  }, [htmlPreviewRef.current]);
 
   useEffect(() => {
     setInConfigureMode(parseBoolean(configuremode));
@@ -141,19 +162,34 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }
+
   if (palette) {
-    styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
-    (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${
-        palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${
-        palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.fillAlpha})`);
+    if (palette.useHtmlProps) {
+      styles.backgroundColor = palette.backgroundColor;
+      styles.borderColor = palette.borderColor;
+      styles.borderWidth = palette.borderWidth;
+      styles.borderStyle = palette.borderStyle;
+      styles.borderRadius = palette.borderRadius;
+    } else {
+      styles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
+      styles.borderRadius = 0;
+      styles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      let borderColor = 'transparent';
+      if (palette.lineColor! >= 0) {
+        borderColor = chroma(palette.lineColor || 0)
+          .alpha(palette.lineAlpha || 0)
+          .css();
+      }
+      styles.borderColor = borderColor;
+
+      let bgColor = 'transparent';
+      if (palette.fillColor! >= 0) {
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha || 0)
+          .css();
+      }
+      styles.backgroundColor = bgColor;
+    }
   }
 
   // TODO: preprocess model to find required variables and/or expressions
@@ -193,9 +229,11 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         return;
       } // not mine
       const { payload, callback } = e.detail;
-      console.log('TF EDITOR SAVE', { payload, callback, props });
+      // console.log('TF EDITOR SAVE', { payload, callback, props });
       const modelClone = clone(model);
       modelClone.nodes = payload;
+      // optimistic update
+      setModel(modelClone);
       onSaveConfigure({
         id,
         snapshot: modelClone,
@@ -206,7 +244,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       if (!inConfigureMode) {
         return;
       } // not mine
-      console.log('TF EDITOR CANCEL');
+      // console.log('TF EDITOR CANCEL');
       setInConfigureMode(false);
       onCancelConfigure({ id });
     };
@@ -220,12 +258,16 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
-  }, [ready, inConfigureMode]);
+  }, [ready, inConfigureMode, model]);
 
-  const Editor = () =>
-    React.createElement(quillEditorTagName, {
-      tree: JSON.stringify(tree),
-    });
+  const Editor = () => (
+    <div style={{ padding: 20 }}>
+      {React.createElement(quillEditorTagName, {
+        /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
+        html: htmlPreview,
+      })}
+    </div>
+  );
 
   const renderIt = inConfigureMode ? (
     ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)
@@ -245,7 +287,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         }
       `}
       </style>
-      <div className="text-flow-authoring-preview" style={styles}>
+      <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
         {tree?.map((subtree: MarkupTree) =>
           renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
         )}

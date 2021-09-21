@@ -10,6 +10,11 @@ import {
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
 import {
+  findInSequence,
+  SequenceBank,
+  SequenceEntry,
+} from '../../../delivery/store/features/groups/actions/sequence';
+import {
   selectCurrentActivityTree,
   selectCurrentSequenceId,
   selectSequence,
@@ -23,11 +28,15 @@ import {
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
-import ColorPickerWidget from '../PropertyEditor/custom/ColorPickerWidget';
-import CustomFieldTemplate from '../PropertyEditor/custom/CustomFieldTemplate';
 import CompJsonEditor from '../PropertyEditor/custom/CompJsonEditor';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
+import bankSchema, {
+  bankUiSchema,
+  transformBankModeltoSchema,
+  transformBankSchematoModel,
+} from '../PropertyEditor/schemas/bank';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
@@ -43,16 +52,6 @@ import screenSchema, {
   transformScreenModeltoSchema,
   transformScreenSchematoModel,
 } from '../PropertyEditor/schemas/screen';
-import bankSchema, {
-  bankUiSchema,
-  transformBankModeltoSchema,
-  transformBankSchematoModel,
-} from '../PropertyEditor/schemas/bank';
-import {
-  findInSequence,
-  SequenceBank,
-  SequenceEntry,
-} from '../../../delivery/store/features/groups/actions/sequence';
 
 export enum RightPanelTabs {
   LESSON = 'lesson',
@@ -82,6 +81,7 @@ const RightMenu: React.FC<any> = () => {
   const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
   const [questionBankData, setBankData] = useState<any>();
   const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   useEffect(() => {
     if (!currentActivity) {
       return;
@@ -229,10 +229,15 @@ const RightMenu: React.FC<any> = () => {
     debounce(
       (properties, partInstance, origActivity, origId) => {
         let modelChanges = properties;
-        if (partInstance && partInstance.transformSchemaToModel) {
-          modelChanges.custom = partInstance.transformSchemaToModel(properties.custom);
-        }
         modelChanges = transformPartSchemaToModel(modelChanges);
+        if (partInstance && partInstance.transformSchemaToModel) {
+          console.log('JUST BEFOER', { modelChanges, properties });
+          modelChanges.custom = {
+            ...modelChanges.custom,
+            ...partInstance.transformSchemaToModel(modelChanges.custom),
+          };
+        }
+
         console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
 
         const cloneActivity = clone(origActivity);
@@ -269,7 +274,7 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const [currentComponentData, setCurrentComponentData] = useState(null);
+  const [currentComponentData, setCurrentComponentData] = useState<any>();
   const [currentPartInstance, setCurrentPartInstance] = useState(null);
   const [existingIds, setExistingIds] = useState<string[]>([]);
   useEffect(() => {
@@ -296,7 +301,7 @@ const RightMenu: React.FC<any> = () => {
         let data = clone(partDef);
         if (instance.transformModelToSchema) {
           // because the part schema below only knows about the "custom" block
-          data.custom = instance.transformModelToSchema(partDef.custom);
+          data.custom = { ...data.custom, ...instance.transformModelToSchema(partDef.custom) };
         }
         data = transformPartModelToSchema(data);
         setCurrentComponentData(data);
@@ -329,24 +334,6 @@ const RightMenu: React.FC<any> = () => {
               ...customPartUiSchema,
             },
           };
-          const customPartSchema = instance.getSchema();
-          if (customPartSchema.palette) {
-            newUiSchema.custom = {
-              ...newUiSchema.custom,
-              palette: {
-                'ui:ObjectFieldTemplate': CustomFieldTemplate,
-                'ui:title': 'Palette',
-                backgroundColor: {
-                  'ui:widget': ColorPickerWidget,
-                },
-                borderColor: {
-                  'ui:widget': ColorPickerWidget,
-                },
-                borderStyle: { classNames: 'col-6' },
-                borderWidth: { classNames: 'col-6' },
-              },
-            };
-          }
           setComponentUiSchema(newUiSchema);
         }
       }
@@ -392,6 +379,10 @@ const RightMenu: React.FC<any> = () => {
     if (!isEqual(cloneActivity, currentActivity)) {
       dispatch(saveActivity({ activity: cloneActivity }));
     }
+  };
+  const DeleteComponentHandler = () => {
+    handleDeleteComponent();
+    setShowConfirmDelete(false);
   };
   const handleDeleteComponent = useCallback(() => {
     // only allow delete of "owned" parts
@@ -477,9 +468,18 @@ const RightMenu: React.FC<any> = () => {
                   jsonValue={currentComponentData}
                   existingPartIds={existingIds}
                 />
-                <Button variant="danger" onClick={handleDeleteComponent}>
+                <Button variant="danger" onClick={() => setShowConfirmDelete(true)}>
                   <i className="fas fa-trash mr-2" />
                 </Button>
+                <ConfirmDelete
+                  show={showConfirmDelete}
+                  elementType="Component"
+                  elementName={currentComponentData?.id}
+                  deleteHandler={DeleteComponentHandler}
+                  cancelHandler={() => {
+                    setShowConfirmDelete(false);
+                  }}
+                />
               </ButtonGroup>
             </ButtonToolbar>
             <PropertyEditor

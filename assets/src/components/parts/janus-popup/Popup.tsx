@@ -11,7 +11,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { PartComponentProps } from '../types/parts';
-import { getIcon } from './GetIcon';
+import { getIcon, getIconSrc } from './GetIcon';
 import { PopupModel } from './schema';
 interface ContextProps {
   currentActivity: string;
@@ -62,6 +62,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     if (isOpen !== undefined) {
       setShowPopup(isOpen);
     }
+    const openByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
+    if (openByDefault !== undefined) {
+      setShowPopup(openByDefault);
+    }
     const isVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (isVisible !== undefined) {
       setPopupVisible(isVisible);
@@ -104,19 +108,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     }
 
     const { iconURL, defaultURL } = pModel;
-    const getIconSrc = () => {
-      if (iconURL && getIcon(iconURL)) {
-        return getIcon(iconURL);
-      } else if (iconURL) {
-        return iconURL;
-      } else {
-        return getIcon(defaultURL!);
-      }
-    };
 
     setShowPopup(!!pModel.openByDefault);
     setPopupVisible(!!pModel.visible);
-    setIconSrc(getIconSrc());
+    setIconSrc(getIconSrc(iconURL, defaultURL));
 
     initialize(pModel);
   }, [props]);
@@ -160,7 +155,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           case NotificationType.STATE_CHANGED:
             {
               const { mutateChanges: changes } = payload;
-              const isOpen = changes[`stage.${id}.isOpen`];
+              const isOpen: boolean | undefined = changes[`stage.${id}.isOpen`];
               if (isOpen !== undefined) {
                 setShowPopup(isOpen);
                 props.onSave({
@@ -195,7 +190,37 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { snapshot: changes } = payload;
+
+              const isOpen: boolean | undefined = changes[`stage.${id}.isOpen`];
+              if (isOpen !== undefined) {
+                setShowPopup(isOpen);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'isOpen',
+                      type: CapiVariableTypes.BOOLEAN,
+                      value: isOpen,
+                    },
+                  ],
+                });
+              }
+              const isVisible = changes[`stage.${id}.visible`];
+              if (isVisible !== undefined) {
+                setPopupVisible(isVisible);
+              }
+
+              const initIconUrl = changes[`stage.${id}.iconURL`];
+              if (initIconUrl !== undefined) {
+                if (getIcon(initIconUrl)) {
+                  setIconSrc(getIcon(initIconUrl));
+                } else {
+                  setIconSrc(initIconUrl);
+                }
+              }
+            }
             break;
         }
       };
@@ -302,6 +327,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     width: '100%',
     height: '100%',
   };
+
+  if (showPopup) {
+    console.log('SHOW POPUP: ', { model, popupModalStyles });
+  }
+
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
@@ -317,7 +347,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
             : {
                 type: 'button',
               })}
-          className={`info-icon ${customCssClass}`}
+          className={`info-icon`}
           aria-controls={id}
           aria-haspopup="true"
           aria-label={description}

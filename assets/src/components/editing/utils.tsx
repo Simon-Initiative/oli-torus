@@ -1,6 +1,6 @@
-import { Node, Editor, Text } from 'slate';
+import { Mark, Marks, schema } from 'data/content/model';
+import { Editor, Element, Node, Operation, Text } from 'slate';
 import { ReactEditor } from 'slate-react';
-import { Marks, schema, Mark } from 'data/content/model';
 import { Maybe } from 'tsmonad';
 
 // Native input selection -- not slate
@@ -14,6 +14,34 @@ export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
 // Returns true if a text node contains the mark string key
 export function hasMark(textNode: Text, mark: string): boolean {
   return Object.keys(textNode).some((k) => k === mark);
+}
+
+export function elementsOfType<T extends Element>(root: ReactEditor, type: string): T[] {
+  return [...Node.elements(root)]
+    .map(([element]) => element)
+    .filter((elem) => Element.isElement(elem) && elem.type === type) as T[];
+}
+
+export function elementsAdded<T extends Element>(operations: Operation[], type: string): T[] {
+  return operations
+    .filter(
+      (operation) =>
+        operation.type === 'insert_node' &&
+        Element.isElement(operation.node) &&
+        operation.node.type === type,
+    )
+    .map((operation) => operation.node as T);
+}
+
+export function elementsRemoved<T extends Element>(operations: Operation[], type: string): T[] {
+  return operations
+    .filter(
+      (operation) =>
+        operation.type === 'remove_node' &&
+        Element.isElement(operation.node) &&
+        operation.node.type === type,
+    )
+    .map((operation) => operation.node as T);
 }
 
 // Returns all the Text nodes in the current selection

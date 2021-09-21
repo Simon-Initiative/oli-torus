@@ -1,49 +1,30 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
-  defaultID: string;
-  palette: any;
   fontSize?: number;
-  number: number;
   maxValue: number;
   minValue: number;
   showLabel: boolean;
   label: string;
   unitsLabel: string;
-  deleteEnabled: boolean;
   enabled: boolean;
   showIncrementArrows: boolean;
+  prompt: string;
 }
 
 export const schema: JSONSchema7Object = {
-  defaultID: {
-    title: 'Default ID',
-    type: 'string',
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
-  },
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
   },
   fontSize: {
     title: 'Font Size',
     type: 'number',
     default: 12,
   },
-  number: {
-    title: 'Number',
-    type: 'number',
-  },
+
   maxValue: {
     title: 'Max Value',
     type: 'number',
@@ -68,10 +49,6 @@ export const schema: JSONSchema7Object = {
     type: 'string',
     description: 'text label appended to the input',
   },
-  deleteEnabled: {
-    title: 'Delete Enabled',
-    type: 'boolean',
-  },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
@@ -84,19 +61,27 @@ export const schema: JSONSchema7Object = {
     description: 'specifies whether increment arrows should be visible in number textbox',
     default: false,
   },
+  prompt: {
+    type: 'string',
+  },
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  value: CapiVariableTypes.NUMBER,
+  enabled: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<InputNumberModel> => ({
   enabled: true,
   showIncrementArrows: false,
   showLabel: true,
   label: 'How many?',
-  unitsLabel: 'quarks',
-  deleteEnabled: true,
+  unitsLabel: 'units',
   requireManualGrading: false,
   maxManualGrade: 0,
   maxValue: 1,
   minValue: 0,
+  prompt: 'enter a number...',
 });

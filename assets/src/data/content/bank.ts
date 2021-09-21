@@ -1,4 +1,4 @@
-import { Objectives } from 'components/resource/Objectives';
+import { ResourceId } from 'data/types';
 import { ObjectiveMap } from './activity';
 
 export interface Logic {
@@ -23,9 +23,9 @@ export enum ClauseOperator {
 
 export enum ExpressionOperator {
   contains = 'contains',
-  doesNotContain = 'doesNotContain',
+  doesNotContain = 'does_not_contain',
   equals = 'equals',
-  doesNotEqual = 'doesNotEqual',
+  doesNotEqual = 'does_not_equal',
 }
 
 export enum Fact {
@@ -44,6 +44,7 @@ export interface BankedActivity {
   content: any;
   title: string;
   objectives: ObjectiveMap;
+  tags: ResourceId[];
   resource_id: number;
   activity_type_id: number;
   slug: string;
@@ -75,7 +76,7 @@ function isEmptyValue(value: any) {
 
 // The idea here is to take a logic expression and adjust it to guarantee that it
 // will not produce an error when executed on the server.  Any expression whose value
-// is empty (an empty array or zero length string) will cause an erorr, so this impl
+// is empty (an empty array or zero length string) will cause an error, so this impl
 // seeks to find them and adjust to account for their removal.
 //
 // We leverage the fact that the UI is restricting logic to only contain one

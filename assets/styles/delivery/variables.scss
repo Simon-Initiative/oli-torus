@@ -18,20 +18,23 @@ $choice-selected-border-color: $primary !default;
 
 $feedback-correct-bg: lighten($green, 45%) !default;
 $feedback-correct-color: $green !default;
+$feedback-partially-correct-bg: lighten($yellow, 45%) !default;
+$feedback-partially-correct-color: $yellow !default;
 $feedback-incorrect-bg: lighten($red, 40%) !default;
 $feedback-incorrect-color: $red !default;
 $feedback-error-bg: lighten($orange, 42%) !default;
 $feedback-error-color: $orange !default;
 
-$hint-bg: lighten($yellow, 45%) !default;
-$hint-border-color: $yellow !default;
+$hints-color: $gray-700 !default;
+$hints-bg: $gray-200 !default;
+$hints-border: none !default;
 
-$content-purpose-example-color: lighten($blue, 20%) !default;
-$content-purpose-learnmore-color: lighten($teal, 20%) !default;
-$activity-purpose-checkpoint-color: lighten($blue, 10%) !default;
-$activity-purpose-didigetthis-color: lighten($purple, 10%) !default;
-$activity-purpose-learnbydoing-color: lighten($green, 10%) !default;
-$activity-purpose-manystudentswonder-color: lighten($cyan, 10%) !default;
+$content-purpose-example-color: lighten($blue, 30%) !default;
+$content-purpose-learnmore-color: lighten($teal, 30%) !default;
+$activity-purpose-checkpoint-color: lighten($blue, 20%) !default;
+$activity-purpose-didigetthis-color: lighten($purple, 20%) !default;
+$activity-purpose-learnbydoing-color: lighten($green, 20%) !default;
+$activity-purpose-manystudentswonder-color: lighten($cyan, 20%) !default;
 
 $title-color: $gray-800 !default;
 

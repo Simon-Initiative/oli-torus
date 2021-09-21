@@ -3,22 +3,26 @@ defmodule OliWeb.Delivery.ManageSection do
 
   import OliWeb.ViewHelpers,
     only: [
-      is_admin?: 1,
-      user_role: 2
+      is_section_instructor_or_admin?: 2,
+      is_admin?: 2
     ]
 
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Accounts
+  alias Oli.Repo
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
-    # only permit instructor level access
-    if is_admin?(%{assigns: %{current_author: current_user}}) or
-         ContextRoles.has_role?(
-           current_user,
-           section.slug,
-           ContextRoles.get_role(:context_instructor)
-         ) do
+  def mount(
+        _params,
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id},
+        socket
+      ) do
+    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
+
+    # only permit instructor or admin level access
+    if is_section_instructor_or_admin?(section_slug, current_user) do
+      section = Sections.get_section_by_slug(section_slug)
+
       socket =
         socket
         |> assign(:section, section)
@@ -26,7 +30,6 @@ defmodule OliWeb.Delivery.ManageSection do
 
       {:ok, socket}
     else
-      IO.inspect("REDDDDD")
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
@@ -43,7 +46,7 @@ defmodule OliWeb.Delivery.ManageSection do
 
       <h2><%= dgettext("section", "Manage Section") %></h2>
 
-      <%= if user_role(@section, @current_user) == :administrator do %>
+      <%= if is_admin?(@section.slug, @current_user) do %>
         <div class="card border-warning my-4">
           <h6 class="card-header">
             Admin Tools

@@ -662,7 +662,6 @@ defmodule Oli.Publishing do
     get_published_resources_by_publication(publication.id)
     |> Enum.map(&Repo.preload(&1, :revision))
     |> Enum.map(&Map.get(&1, :revision))
-    |> Enum.filter(&(!&1.deleted))
   end
 
   @doc """

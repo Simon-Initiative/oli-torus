@@ -1,87 +1,63 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import React, { Fragment, useState } from 'react';
-import { SequenceDropdown } from './SequenceDropdown';
 import {
-  findInHierarchy,
+  findInSequence,
   getHierarchy,
   SequenceEntry,
   SequenceEntryChild,
-  SequenceEntryType,
-  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
-import {
-  selectCurrentSequenceId,
-  selectSequence,
-} from 'apps/delivery/store/features/groups/selectors/deck';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import React, { Fragment, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Dropdown, DropdownButton } from 'react-bootstrap';
+import { SequenceDropdown } from './SequenceDropdown';
 
 interface ScreenDropdownProps {
   id: string;
   label: string;
   value: string;
   onChange: (value?: string) => void;
+  dropDownCSSClass?: string;
+  buttonCSSClass?: string;
 }
 const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
-  const { id, label, value, onChange } = props;
-  const currentSequenceId = useSelector(selectCurrentSequenceId);
+  const { id, label, value, onChange, dropDownCSSClass, buttonCSSClass } = props;
+  // console.log('ScreenDropdownTemplate', props);
   const sequence = useSelector(selectSequence);
-  const hierarchy = getHierarchy(sequence);
-  const seq = findInHierarchy(hierarchy, value);
 
-  const getNextScreen = () => {
-    const currentIndex = sequence.findIndex(
-      (entry) => entry.custom.sequenceId === currentSequenceId,
-    );
-    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
-    let nextIndex = currentIndex + 1;
-    nextSequenceEntry = sequence[nextIndex];
-    while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
-      // for layers if you try to navigate it should go to first child
-      const firstChild = sequence.find(
-        (entry) =>
-          entry.custom?.layerRef ===
-          (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
-      );
-      if (!firstChild) {
-        continue;
+  const [buttonLabel, setButtonLabel] = useState('Next Screen');
+  const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
+
+  useEffect(() => {
+    if (value === 'next') {
+      setButtonLabel('Next Screen');
+      return;
+    }
+    if (sequence) {
+      setHierarchy(getHierarchy(sequence));
+      const entry = findInSequence(sequence, value);
+      if (entry) {
+        setButtonLabel(entry.custom.sequenceName);
+        return;
       }
-      nextSequenceEntry = firstChild;
     }
-    while (nextSequenceEntry?.custom.layerRef === currentSequenceId) {
-      nextIndex++;
-      nextSequenceEntry = sequence[nextIndex];
-    }
-    return nextSequenceEntry as SequenceHierarchyItem<SequenceEntryChild>;
-  };
-
-  const setButtonLabel = (seq?: SequenceHierarchyItem<SequenceEntryChild>) => {
-    const nextSequenceEntry = getNextScreen();
-    if (seq && seq.custom.sequenceId !== nextSequenceEntry.custom.sequenceId) {
-      return seq.custom.sequenceName;
-    }
-    return 'Next Screen';
-  };
+    // TODO: should probably handle this scenario earlier in the data and auto correct
+    setButtonLabel('Missing Screen!');
+  }, [value, sequence]);
 
   const onChangeHandler = (
-    e: React.MouseEvent,
     item: SequenceEntry<SequenceEntryChild> | null,
+    e: React.MouseEvent,
     isNext: boolean,
   ) => {
-    if (isNext) {
-      item = getNextScreen();
-    }
-    onChange(item?.custom.sequenceId);
+    const itemId = isNext ? 'next' : item?.custom.sequenceId;
+    onChange(itemId);
   };
-
-  const buttonLabel = setButtonLabel(seq);
 
   return (
     <Fragment>
-      <span className="form-label">{label}</span>
-      <div className="dropdown screenDropdown">
+      {label && <span className="form-label">{label}</span>}
+      <div className={`dropdown ${dropDownCSSClass || 'screenDropdown'}`}>
         <button
-          className="btn btn-secondary dropdown-toggle d-flex justify-content-between"
+          className={`${buttonCSSClass} form-control dropdown-toggle d-flex justify-content-between`}
           type="button"
           id={id}
           data-toggle="dropdown"

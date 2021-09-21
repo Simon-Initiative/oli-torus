@@ -12,7 +12,7 @@ export const onKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
 // Pressing the Enter key on any void block should insert an empty
 // paragraph after that node
-function handleVoidNewline(editor: ReactEditor, e: KeyboardEvent) {
+function handleVoidNewline(editor: ReactEditor, _e: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     getNearestBlock(editor).lift((node: Node) => {
       const nodeType = node.type as string;

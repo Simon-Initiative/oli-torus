@@ -21,6 +21,9 @@ export interface MarkupTree {
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
   const style: any = {};
+  if (!node.style) {
+    return style;
+  }
   if (
     (node.style.styleName === 'Heading' || node.style.styleName === 'Title') &&
     node.children?.length === 1 &&
@@ -192,10 +195,6 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   } = model;
 
   const styles: any = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    zIndex: z, */
     wordWrap: 'break-word',
     lineHeight: 'inherit',
   };
@@ -208,19 +207,34 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   if (fontSize) {
     styles.fontSize = `${fontSize}px`;
   }
+
   if (palette) {
-    styles.borderWidth = `${palette?.lineThickness ? palette?.lineThickness + 'px' : '1px'}`;
-    (styles.borderStyle = 'solid'),
-      (styles.borderColor = `rgba(${
-        palette?.lineColor || palette?.lineColor === 0
-          ? chroma(palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.lineAlpha})`),
-      (styles.backgroundColor = `rgba(${
-        palette?.fillColor || palette?.fillColor === 0
-          ? chroma(palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${palette?.fillAlpha})`);
+    if (palette.useHtmlProps) {
+      styles.backgroundColor = palette.backgroundColor;
+      styles.borderColor = palette.borderColor;
+      styles.borderWidth = palette.borderWidth;
+      styles.borderStyle = palette.borderStyle;
+      styles.borderRadius = palette.borderRadius;
+    } else {
+      styles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
+      styles.borderRadius = 0;
+      styles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      let borderColor = 'transparent';
+      if (palette.lineColor >= 0) {
+        borderColor = chroma(palette.lineColor || 0)
+          .alpha(palette.lineAlpha || 0)
+          .css();
+      }
+      styles.borderColor = borderColor;
+
+      let bgColor = 'transparent';
+      if (palette.fillColor >= 0) {
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha || 0)
+          .css();
+      }
+      styles.backgroundColor = bgColor;
+    }
   }
 
   // TODO: preprocess model to find required variables and/or expressions

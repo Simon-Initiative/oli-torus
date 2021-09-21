@@ -10,8 +10,17 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
+  alias Oli.Accounts
+  alias Oli.Repo
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
+  def mount(
+        _params,
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id},
+        socket
+      ) do
+    section = Sections.get_section_by_slug(section_slug)
+    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
+
     if ContextRoles.has_role?(
          current_user,
          section.slug,
@@ -47,7 +56,6 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   def render(assigns) do
-    iss = assigns.registration.issuer
     has_tasks? = length(assigns.task_queue) > 0
 
     progress_visible =
@@ -73,7 +81,7 @@ defmodule OliWeb.Grades.GradesLive do
     <h2><%= dgettext("grades", "Manage Grades") %></h2>
 
     <p>
-      <%= dgettext("grades", "Grades for OLI graded pages for this course are accessed by students and instructors from the LMS gradebook at") %> <a href="<%= iss %>"><%= iss %></a>.
+      <%= dgettext("grades", "Grades for this section can be viewed by students and instructors using the LMS gradebook.") %>
     </p>
 
     <div class="card-group">

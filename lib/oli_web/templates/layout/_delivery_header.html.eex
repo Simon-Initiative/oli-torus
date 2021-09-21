@@ -1,8 +1,12 @@
 <nav class="navbar navbar-expand">
   <div class="container">
 
-    <a class="navbar-brand torus-logo mr-auto" href="<%= if Map.get(assigns, :block_logo_link) !== nil and
-     Map.get(assigns, :block_logo_link) === true, do: "#", else: logo_link_path(@conn) %>">
+    <a class="navbar-brand torus-logo mr-auto" href="<%= case assigns[:logo_link] do
+      nil ->
+        logo_link_path(@conn)
+      logo_link ->
+        logo_link
+      end %>">
       <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
     </a>
 
@@ -13,6 +17,7 @@
     <% end %>
 
     <%= cond do %>
+      <% assigns[:hide_user] == true -> %>
 
       <% preview_mode(@conn) -> %>
         <div class="nav-item dropdown form-inline my-2 my-lg-0">

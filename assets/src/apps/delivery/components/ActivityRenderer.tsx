@@ -9,6 +9,7 @@ import {
   ActivityModelSchema,
   ActivityState,
   ClientEvaluation,
+  makeFeedback,
   PartResponse,
   PartState,
   StudentResponse,
@@ -21,6 +22,7 @@ import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
+  selectInitStateFacts,
   selectLastCheckResults,
   selectLastCheckTriggered,
   selectLastMutateChanges,
@@ -89,7 +91,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     score: null,
     outOf: null,
     response: '',
-    feedback: '',
+    feedback: makeFeedback(''),
     hints: [],
     partId: 1,
     hasMoreAttempts: false,
@@ -286,6 +288,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   // TODO: check if it needs to come from somewhere higher
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
+  const initStateFacts = useSelector(selectInitStateFacts);
   const notifyContextChanged = async () => {
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
@@ -296,6 +299,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
+      initStateFacts,
     });
   };
 

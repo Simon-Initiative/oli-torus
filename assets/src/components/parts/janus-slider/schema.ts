@@ -1,8 +1,8 @@
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
-  palette: any;
   showLabel: boolean;
   label: string;
   showDataTip: boolean;
@@ -17,16 +17,6 @@ export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
 }
 
 export const schema: JSONSchema7Object = {
-  palette: {
-    type: 'object',
-    properties: {
-      backgroundColor: { type: 'string', title: 'Background Color' },
-      borderColor: { type: 'string', title: 'Border Color' },
-      borderRadius: { type: 'string', title: 'Border Radius' },
-      borderStyle: { type: 'string', title: 'Border Style' },
-      borderWidth: { type: 'string', title: 'Border Width' },
-    },
-  },
   customCssClass: {
     title: 'Custom CSS Class',
     type: 'string',
@@ -83,6 +73,12 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
+
+export const adaptivitySchema = {
+  value: CapiVariableTypes.NUMBER,
+  userModified: CapiVariableTypes.BOOLEAN,
+  enabled: CapiVariableTypes.BOOLEAN,
+};
 
 export const createSchema = (): Partial<SliderModel> => ({
   enabled: true,

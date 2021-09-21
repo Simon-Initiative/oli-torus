@@ -22,6 +22,7 @@ defmodule OliWeb.Router do
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
+    plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
   end
 
@@ -151,18 +152,6 @@ defmodule OliWeb.Router do
 
   ### HELPERS ###
 
-  # with_session/1 used by authoring liveviews to load the current author id
-  def with_session(conn) do
-    %{"current_author_id" => conn.assigns.current_author.id}
-  end
-
-  def with_section_user(conn) do
-    %{
-      "section" => conn.assigns.section,
-      "current_user" => conn.assigns.current_user
-    }
-  end
-
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
 
   ### ROUTES ###
@@ -236,7 +225,7 @@ defmodule OliWeb.Router do
   scope "/authoring", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
 
-    live("/projects", Projects.ProjectsLive, session: {__MODULE__, :with_session, []})
+    live("/projects", Projects.ProjectsLive)
     get("/account", WorkspaceController, :account)
     put("/account", WorkspaceController, :update_author)
     post("/account/theme", WorkspaceController, :update_theme)
@@ -271,28 +260,21 @@ defmodule OliWeb.Router do
     get("/:project_id/bank", ActivityBankController, :index)
 
     # Objectives
-    live("/:project_id/objectives", Objectives.Objectives,
-      session: {__MODULE__, :with_session, []}
-    )
+    live("/:project_id/objectives", Objectives.Objectives)
 
     # Curriculum
     live(
       "/:project_id/curriculum/:container_slug/edit/:revision_slug",
       Curriculum.ContainerLive,
-      :edit,
-      session: {__MODULE__, :with_session, []}
+      :edit
     )
 
-    live("/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index,
-      session: {__MODULE__, :with_session, []}
-    )
+    live("/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index)
 
-    live("/:project_id/curriculum/", Curriculum.ContainerLive, :index,
-      session: {__MODULE__, :with_session, []}
-    )
+    live("/:project_id/curriculum/", Curriculum.ContainerLive, :index)
 
     # Review/QA
-    live("/:project_id/review", Qa.QaLive, session: {__MODULE__, :with_session, []})
+    live("/:project_id/review", Qa.QaLive)
 
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
@@ -325,7 +307,7 @@ defmodule OliWeb.Router do
     # Ideally, analytics should be live-routed to preserve forward/back button when toggling
     # between analytics groupings and sorting. I could not get it to run through the project authorization
     # plugs when live-routing, however.
-    # live "/:project_id/insights", Insights, session: {__MODULE__, :with_session, []}
+    # live "/:project_id/insights", Insights
   end
 
   if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
@@ -405,6 +387,14 @@ defmodule OliWeb.Router do
     post("/", Api.ObjectivesController, :create)
     get("/", Api.ObjectivesController, :index)
     put("/objective/:objective", Api.ObjectivesController, :update)
+  end
+
+  # Tags Service
+  scope "/api/v1/tags/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.TagController, :new)
+    get("/", Api.TagController, :index)
   end
 
   # User State Service, instrinsic state
@@ -519,6 +509,8 @@ defmodule OliWeb.Router do
     ])
 
     get("/:section_slug", PageDeliveryController, :index)
+    get("/:section_slug/updates", PageDeliveryController, :updates)
+
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -534,15 +526,9 @@ defmodule OliWeb.Router do
       :review_attempt
     )
 
-    live("/:section_slug/grades", Grades.GradesLive, session: {__MODULE__, :with_section_user, []})
+    live("/:section_slug/grades", Grades.GradesLive)
 
-    live("/:section_slug/manage", Delivery.ManageSection,
-      session: {__MODULE__, :with_section_user, []}
-    )
-
-    live("/:section_slug/updates", Delivery.ManageUpdates,
-      session: {__MODULE__, :with_section_user, []}
-    )
+    live("/:section_slug/manage", Delivery.ManageSection)
 
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
   end
@@ -603,7 +589,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/accounts", Accounts.AccountsLive, session: {__MODULE__, :with_session, []})
+    live("/accounts", Accounts.AccountsLive)
     live("/features", Features.FeaturesLive)
 
     resources "/institutions", InstitutionController do
@@ -658,7 +644,7 @@ defmodule OliWeb.Router do
       :admin
     ])
 
-    live("/:project_id/history/:slug", RevisionHistory, session: {__MODULE__, :with_session, []})
+    live("/:project_id/history/:slug", RevisionHistory)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

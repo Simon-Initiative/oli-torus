@@ -22,7 +22,57 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
-  const wcEvents: Record<string, any> = {
+  const initialStyles: CSSProperties = {
+    display: 'block',
+    position: 'absolute',
+    top: props.model.y,
+    left: props.model.x,
+    zIndex: props.model.z || 0,
+    width: props.model.width,
+    height: props.model.overrideHeight ? props.model.height : 'auto',
+  };
+
+  const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
+
+  const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
+
+  const handleStylingChanges = (currentStateSnapshot: Record<string, unknown>) => {
+    const styleChanges: CSSProperties = {};
+    const sX = currentStateSnapshot[`stage.${props.id}.IFRAME_frameX`];
+    if (sX !== undefined) {
+      styleChanges.left = sX as number;
+    }
+
+    const sY = currentStateSnapshot[`stage.${props.id}.IFRAME_frameY`];
+    if (sY !== undefined) {
+      styleChanges.top = sY as number;
+    }
+
+    const sZ = currentStateSnapshot[`stage.${props.id}.IFRAME_frameZ`];
+    if (sZ !== undefined) {
+      styleChanges.zIndex = sZ as number;
+    }
+
+    const sWidth = currentStateSnapshot[`stage.${props.id}.IFRAME_frameWidth`];
+    if (sWidth !== undefined) {
+      styleChanges.width = sWidth as number;
+    }
+
+    const sHeight = currentStateSnapshot[`stage.${props.id}.IFRAME_frameHeight`];
+    if (sHeight !== undefined) {
+      styleChanges.height = sHeight as number;
+    }
+    setComponentStyle((previousStyle) => {
+      return { ...previousStyle, ...styleChanges };
+    });
+
+    const sCssClass = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
+    if (sCssClass !== undefined) {
+      setCustomCssClass(sCssClass as string);
+    }
+  };
+
+  const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
@@ -31,7 +81,28 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
     cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
-  };
+  });
+
+  useEffect(() => {
+    setWcEvents({
+      init: props.onInit,
+      ready: props.onReady,
+      save: props.onSave,
+      submit: props.onSubmit,
+      // authoring
+      configure: (props as AuthorProps).onConfigure || stubHandler,
+      saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
+      cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
+    });
+  }, [
+    props.onInit,
+    props.onReady,
+    props.onSave,
+    props.onSubmit,
+    (props as AuthorProps).onConfigure,
+    (props as AuthorProps).onSaveConfigure,
+    (props as AuthorProps).onCancelConfigure,
+  ]);
 
   const ref = useRef<any>(null);
   useEffect(() => {
@@ -50,6 +121,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         const el = ref.current;
         if (el) {
           if (el.notify) {
+            if (notificationType === NotificationType.CONTEXT_CHANGED) {
+              handleStylingChanges(e.snapshot);
+            }
             el.notify(notificationType.toString(), e);
           }
         }
@@ -91,30 +165,14 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         document.removeEventListener(eventName, wcEventHandler);
       });
     };
-  }, []);
-
-  const compStyles: CSSProperties = {
-    display: 'block',
-  };
-
-  if (props.model) {
-    compStyles.position = 'absolute';
-    compStyles.top = props.model.y;
-    compStyles.left = props.model.x;
-    compStyles.zIndex = props.model.z || 0;
-    compStyles.width = props.model.width;
-
-    // almost always height is meant to be auto, when not we'll have to let
-    // the component handle it
-    // compStyles.height = props.model.height;
-  }
+  }, [wcEvents]);
 
   const webComponentProps: any = {
     ref,
     ...props,
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
-    customCssClass: props.model.customCssClass || '',
+    customCssClass,
   };
 
   let wcTagName = props.type;
@@ -124,7 +182,8 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
-    webComponentProps.style = compStyles;
+    webComponentProps.style = componentStyle;
+    // console.log('DELIVERY RENDER:', wcTagName, props);
   }
 
   // don't render until we're listening because otherwise the init event will post too fast

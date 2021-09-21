@@ -10,7 +10,7 @@ interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
-  onPartChangePosition?: (partId: string, x: number, y: number) => Promise<any>;
+  onPartChangePosition?: (activityId: string, partId: string, dragData: any) => Promise<any>;
 }
 
 // the authoring activity renderer should be capable of handling *any* activity type, not just adaptive
@@ -21,11 +21,15 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   onSelectPart,
   onPartChangePosition,
 }) => {
-  console.log('AAR', { activityModel });
   const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
 
   const selectedPartId = useSelector(selectCurrentSelection);
+
+  if (!activityModel.authoring || !activityModel.activityType) {
+    console.warn('Bad Activity Data', activityModel);
+    return null;
+  }
 
   const elementProps = {
     id: `activity-${activityModel.id}`,
@@ -33,8 +37,10 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     editMode,
     style: {
       position: 'absolute',
-      top: '10%',
-      left: '25%',
+      top: '65px',
+      left: '300px',
+      paddingRight: '300px',
+      paddingBottom: '300px',
     },
     authoringContext: JSON.stringify({
       selectedPartId,
@@ -52,9 +58,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         }
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(
-            payload.payload.id,
-            payload.payload.x,
-            payload.payload.y,
+            payload.payload.activityId,
+            payload.payload.partId,
+            payload.payload.dragData,
           );
         }
         if (continuation) {
@@ -71,8 +77,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         const { model } = e.detail;
         console.log('AAR handleActivityEdit', { model });
         dispatch(saveActivity({ activity: model }));
-        dispatch(setCurrentSelection({ selection: '' }));
-        dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
+        // why were we clearing the selection on edit?...
+        // dispatch(setCurrentSelection({ selection: '' }));
+        // dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
       }
     };
     document.addEventListener('modelUpdated', handleActivityEdit);

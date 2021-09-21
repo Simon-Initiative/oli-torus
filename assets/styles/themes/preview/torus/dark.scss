@@ -176,6 +176,7 @@ $close-text-shadow: none;
 $pre-color: inherit;
 
 /** OLI specific variables **/
+
 $choice-selected-bg: lighten($primary, 42%);
 $choice-selected-bg-hover: darken($choice-selected-bg, 42%);
 $choice-selected-color: $primary;
@@ -187,9 +188,6 @@ $feedback-incorrect-bg: lighten($red, 40%);
 $feedback-incorrect-color: $red;
 $feedback-error-bg: lighten($orange, 42%);
 $feedback-error-color: $orange;
-
-$hint-bg: lighten($yellow, 45%);
-$hint-border-color: $yellow;
 
 $content-purpose-example-color: lighten($blue, 20%);
 $content-purpose-learnmore-color: lighten($teal, 20%);

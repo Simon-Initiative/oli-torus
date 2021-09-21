@@ -42,6 +42,8 @@ defmodule Oli.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  def get_user!(id, preload: preloads), do: Repo.get!(User, id) |> Repo.preload(preloads)
+
   @doc """
   Gets a single user by query parameter
   ## Examples
@@ -112,16 +114,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user changes.
-  ## Examples
-      iex> change_user(user)
-      %Ecto.Changeset{source: %User{}}
-  """
-  def change_user(%User{} = user, attrs \\ %{}) do
-    User.changeset(user, attrs)
-  end
-
-  @doc """
   Returns user details if a record matches sub, or creates and returns a new user
 
   ## Examples
@@ -154,7 +146,7 @@ defmodule Oli.Accounts do
 
     user
     |> Repo.preload([:platform_roles])
-    |> User.changeset()
+    |> User.noauth_changeset()
     |> Ecto.Changeset.put_assoc(:platform_roles, roles)
     |> Repo.update()
   end
@@ -281,6 +273,18 @@ defmodule Oli.Accounts do
   """
   def get_author_by_email(email) do
     Repo.get_by(Author, email: email)
+  end
+
+  @doc """
+  Deletes an author.
+  ## Examples
+      iex> delete_author(author)
+      {:ok, %Author{}}
+      iex> delete_author(author)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_author(%Author{} = author) do
+    Repo.delete(author)
   end
 
   @doc """

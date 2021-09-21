@@ -68,17 +68,25 @@ defmodule OliWeb.Projects.ProjectsLive do
         <div class="row">
           <div class="col-12">
             <div class="d-flex justify-content-between align-items-baseline">
-              <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
-                  <input type="radio" name="options" id="option1"
-                    <%= if @display_mode == "cards" do "checked" else "" end %>
-                  > <span><i class="las la-grip-horizontal"></i> Card</span>
-                </label>
-                <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-light <%= if @display_mode == "table" do "active" else "" end %>">
-                  <input type="radio" name="options" id="option2"
-                    <%= if @display_mode == "table" do "checked" else "" end %>
-                  > <span><i class="las la-th-list"></i> Table</span>
-                </label>
+              <div>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
+                    <input type="radio" name="options" id="option1"
+                      <%= if @display_mode == "cards" do "checked" else "" end %>
+                    > <span><i class="las la-grip-horizontal"></i> Card</span>
+                  </label>
+                  <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-light <%= if @display_mode == "table" do "active" else "" end %>">
+                    <input type="radio" name="options" id="option2"
+                      <%= if @display_mode == "table" do "checked" else "" end %>
+                    > <span><i class="las la-th-list"></i> Table</span>
+                  </label>
+                </div>
+                <%= if @is_admin do %>
+                  <div class="form-check ml-4" style="display: inline;">
+                    <input type="checkbox" class="form-check-input" id="exampleCheck1" <%= if @show_deleted do "checked" else "" end %> phx-click="toggle_show_deleted">
+                    <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
+                  </div>
+                <% end %>
               </div>
 
               <div class="flex-grow-1"></div>
@@ -97,12 +105,12 @@ defmodule OliWeb.Projects.ProjectsLive do
     </div>
     <%= case @display_mode do %>
       <% "cards" -> %>
-        <%= live_component Cards, projects: @projects, authors: @authors %>
+        <%= live_component Cards, projects: @projects, authors: @authors, show_deleted: @show_deleted %>
       <% "table" -> %>
         <div class="container">
           <div class="row">
             <div class="col-12">
-              <%= live_component Table, projects: @projects, authors: @authors, sort_by: @sort_by, sort_order: @sort_order, is_admin: @is_admin %>
+              <%= live_component Table, projects: @projects, authors: @authors, sort_by: @sort_by, sort_order: @sort_order, is_admin: @is_admin, show_deleted: @show_deleted %>
             </div>
           </div>
         </div>
@@ -164,6 +172,10 @@ defmodule OliWeb.Projects.ProjectsLive do
              })
          )}
     end
+  end
+
+  def handle_event("toggle_show_deleted", _, socket) do
+    {:noreply, assign(socket, State.toggle_show_deleted(socket.assigns))}
   end
 
   # handle change of selection

@@ -1,35 +1,59 @@
 defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
 
-  alias Lti_1p3.Tool.ContextRoles
+  import OliWeb.ViewHelpers,
+    only: [
+      is_section_instructor_or_admin?: 2
+    ]
+
+  alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.Publication
-  alias Oli.Repo
 
-  def mount(_params, %{"section" => section, "current_user" => current_user}, socket) do
-    # only permit instructor level access
-    if ContextRoles.has_role?(
-         current_user,
-         section.slug,
-         ContextRoles.get_role(:context_instructor)
-       ) do
-      updates = Sections.check_for_available_publication_updates(section)
-
-      socket =
+  def mount(
+        _params,
+        %{
+          "section" => section,
+          "redirect_after_apply" => redirect_after_apply,
+          "current_user" => current_user,
+          "current_author" => current_author
+        },
         socket
-        |> assign(:section, section)
-        |> assign(:current_user, current_user)
-        |> assign(:updates, updates)
-        |> assign(:modal, nil)
-        |> assign(:selection, nil)
-
-      {:ok, socket}
+      ) do
+    if section.open_and_free do
+      # only permit authoring admin level access
+      if Accounts.is_admin?(current_author) do
+        init_state(socket, section, redirect_after_apply)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
     else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      # only permit instructor or admin level access
+      current_user = current_user |> Repo.preload([:platform_roles, :author])
+
+      if is_section_instructor_or_admin?(section.slug, current_user) do
+        init_state(socket, section, redirect_after_apply)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
     end
+  end
+
+  def init_state(socket, section, redirect_after_apply) do
+    updates = Sections.check_for_available_publication_updates(section)
+
+    socket =
+      socket
+      |> assign(:section, section)
+      |> assign(:updates, updates)
+      |> assign(:modal, nil)
+      |> assign(:selection, nil)
+      |> assign(:redirect_after_apply, redirect_after_apply)
+
+    {:ok, socket}
   end
 
   def render(assigns) do
@@ -38,14 +62,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
     } = assigns
 
     ~L"""
-      <div class="mb-2">
-        <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
-          <i class="las la-arrow-left"></i> Back
-        <% end %>
-      </div>
-
-      <h2><%= dgettext("available_updates", "Available Updates") %></h2>
-
       <p class="my-4">
         <%= case Enum.count(updates) do %>
             <% 0 -> %>
@@ -90,7 +106,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
             <% end %>
           </p>
 
-          <div class="alert alert-warning" role="alert">
+          <div class="alert alert-warning my-2" role="alert">
             <b>This action cannot be undone.</b>
           </div>
         <% end %>
@@ -177,7 +193,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      selection: %{project_id: project_id, publication_id: publication_id}
+      selection: %{project_id: project_id, publication_id: publication_id},
+      redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
     publication = Publishing.get_publication!(publication_id)
@@ -189,7 +206,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
     {:noreply,
      push_redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)
+       to: redirect_after_apply
      )}
   end
 end

@@ -17,8 +17,6 @@ export const setCookies = (cookies: CookieDetails[]) => {
     cookie.durationUtc = d.toUTCString();
     cookie.expiresIso = d.toISOString();
 
-    console.log('the cookie ' + JSON.stringify(cookie));
-
     setCookie(cookie.name, cookie.value, cookie.durationUtc);
   });
   persistCookie(cookies);
