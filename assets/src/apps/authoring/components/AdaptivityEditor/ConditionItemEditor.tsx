@@ -8,7 +8,7 @@ import { VariablePicker, OverlayPlacements } from './VariablePicker';
 const conditionOperatorOptions = [
   { key: 'equal', text: '=', value: 'equal' },
   { key: 'lessThan', text: '<', value: 'lessThan' },
-  { key: 'lessThanInclusive', text: '<=', value: 'equlessThanInclusiveal' },
+  { key: 'lessThanInclusive', text: '<=', value: 'lessThanInclusive' },
   { key: 'notEqual', text: '!=', value: 'notEqual' },
   { key: 'greaterThan', text: '>', value: 'greaterThan' },
   { key: 'greaterThanInclusive', text: '>=', value: 'greaterThanInclusive' },
