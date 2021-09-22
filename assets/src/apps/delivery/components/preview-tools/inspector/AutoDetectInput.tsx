@@ -115,19 +115,11 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
         <div className="user-input">
           <select onChange={handleValueChange} className="custom-select custom-select-sm">
             {value?.allowedValues?.map((item: any) => {
-              if (internalValue === item) {
-                return (
-                  <option key={item} value={item} selected={true}>
-                    {item}
-                  </option>
-                );
-              } else {
-                return (
-                  <option key={item} value={item} selected={false}>
-                    {item}
-                  </option>
-                );
-              }
+              return (
+                <option key={item} value={item} selected={internalValue === item}>
+                  {item}
+                </option>
+              );
             })}
           </select>
         </div>
