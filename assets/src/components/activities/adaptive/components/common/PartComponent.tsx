@@ -79,11 +79,31 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     }
   };
 
+  const onResize = async (payload: any) => {
+    const data = payload.responses;
+    const styleChanges: CSSProperties = {};
+    if (componentStyle.width && data?.width) {
+      let newW: string | number = parseFloat(data.width.value);
+      newW = newW < componentStyle.width ? componentStyle.width : newW;
+      styleChanges.width = newW as number;
+    }
+    if (componentStyle.height && data?.height) {
+      let newH: string | number = parseFloat(data?.height.value);
+      newH = newH < componentStyle.height ? componentStyle.height : newH;
+      styleChanges.height = newH as number;
+    }
+    setComponentStyle((previousStyle) => {
+      return { ...previousStyle, ...styleChanges };
+    });
+    return true;
+  };
+
   const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
     submit: props.onSubmit,
+    resize: props.onResize,
     // authoring
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -96,6 +116,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       ready: props.onReady,
       save: props.onSave,
       submit: props.onSubmit,
+      resize: props.onResize,
       // authoring
       configure: (props as AuthorProps).onConfigure || stubHandler,
       saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -106,6 +127,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     props.onReady,
     props.onSave,
     props.onSubmit,
+    props.onResize,
     (props as AuthorProps).onConfigure,
     (props as AuthorProps).onSaveConfigure,
     (props as AuthorProps).onCancelConfigure,
@@ -158,6 +180,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
         const result = await handler(payload);
+        if (e.type === 'resize') {
+          onResize(payload);
+        }
         if (callback) {
           callback(result);
         }

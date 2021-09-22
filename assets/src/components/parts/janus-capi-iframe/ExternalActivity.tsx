@@ -259,8 +259,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     /* position: 'absolute',
     top: frameY,
     left: frameX, */
-    width: frameWidth,
-    height: frameHeight,
+    width: '100%',
+    height: '100%',
     zIndex: frameZ,
     // writing 'visible' by default will take precedence (inline styles) over
     // any (legacy) override css attempt at hiding it
@@ -630,22 +630,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   };
 
   const handleResizeParentContainer = (data: any) => {
-    // check if is positive or negative value
-    // do nothing if negative, add if positive
-    if (frameWidth && data?.width) {
-      let newW = parseFloat(data.width.value);
-
-      newW = newW < frameWidth ? frameWidth : newW;
-
-      setFrameWidth(newW);
-    }
-    if (frameHeight && data?.height) {
-      let newH = parseFloat(data.height.value);
-
-      newH = newH < frameHeight ? frameHeight : newH;
-
-      setFrameHeight(newH);
-    }
+    props.onResize({ id: `${id}`, responses: data });
     sendFormedResponse(
       simLife.handshake,
       {},

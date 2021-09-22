@@ -193,6 +193,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return { ...results, ...result };
   };
 
+  const onResize = async (attemptGuid: string) => {
+    // no need to do anything for now.
+    /*  console.log('onResize called'); */
+  };
+
   const bridgeEvents: Record<string, any> = {
     saveActivity: onSaveActivity,
     submitActivity: onSubmitActivity,
@@ -203,6 +208,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     requestHint: onRequestHint,
     submitEvaluations: onSubmitEvaluations,
     activityReady: onReady,
+    resizePart: onResize,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -346,6 +352,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSubmitEvaluations,
     onSubmitPart,
     onReady,
+    onResize,
   };
 
   // don't render until we're already listening!

@@ -32,6 +32,7 @@ export interface PartComponentProps<T extends CustomProperties> {
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+  onResize: (payload: any) => Promise<any>;
 }
 
 export interface AuthorPartComponentProps<T extends CustomProperties>
