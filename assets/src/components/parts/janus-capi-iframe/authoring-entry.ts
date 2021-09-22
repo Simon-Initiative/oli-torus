@@ -6,7 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import CapiIframeAuthor from './CapiIframeAuthor';
-import { createSchema, schema, uiSchema } from './schema';
+import { createSchema, getCapabilities, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
 const customEvents: any = {
@@ -28,5 +28,6 @@ register(CapiIframeAuthor, manifest.authoring.element, observedAttributes, {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
+    getCapabilities,
   },
 });
