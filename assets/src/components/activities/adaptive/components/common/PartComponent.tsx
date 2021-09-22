@@ -79,11 +79,40 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     }
   };
 
+  const onResize = async (payload: any) => {
+    const settings = payload.settings;
+    const styleChanges: CSSProperties = {};
+
+    if (componentStyle.width && settings?.width) {
+      const newW = settings.width.value;
+      if (settings.width.type === 'relative') {
+        styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
+      } else {
+        styleChanges.width = newW;
+      }
+    }
+
+    if (componentStyle.height && settings?.height) {
+      const newH = settings.height.value;
+      if (settings.height.type === 'relative') {
+        styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
+      } else {
+        styleChanges.height = newH;
+      }
+    }
+
+    setComponentStyle((previousStyle) => {
+      return { ...previousStyle, ...styleChanges };
+    });
+    return true;
+  };
+
   const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
     ready: props.onReady,
     save: props.onSave,
     submit: props.onSubmit,
+    resize: props.onResize,
     // authoring
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -96,6 +125,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       ready: props.onReady,
       save: props.onSave,
       submit: props.onSubmit,
+      resize: props.onResize,
       // authoring
       configure: (props as AuthorProps).onConfigure || stubHandler,
       saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -106,6 +136,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     props.onReady,
     props.onSave,
     props.onSubmit,
+    props.onResize,
     (props as AuthorProps).onConfigure,
     (props as AuthorProps).onSaveConfigure,
     (props as AuthorProps).onCancelConfigure,
@@ -158,6 +189,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
         const result = await handler(payload);
+        if (e.type === 'resize') {
+          onResize(payload);
+        }
         if (callback) {
           callback(result);
         }

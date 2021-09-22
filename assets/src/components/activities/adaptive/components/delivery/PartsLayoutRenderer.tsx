@@ -9,6 +9,7 @@ interface PartsLayoutRendererProps {
   onPartReady?: any;
   onPartSave?: any;
   onPartSubmit?: any;
+  onPartResize?: any;
 }
 
 const defaultHandler = async () => {
@@ -25,6 +26,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   onPartReady = defaultHandler,
   onPartSave = defaultHandler,
   onPartSubmit = defaultHandler,
+  onPartResize = defaultHandler,
 }) => {
   const popups = parts.filter((part) => part.type === 'janus-popup');
   const partsWithoutPopups = parts.filter((part) => part.type !== 'janus-popup');
@@ -42,6 +44,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
           onReady: onPartReady,
           onSave: onPartSave,
           onSubmit: onPartSubmit,
+          onResize: onPartResize,
         };
         return <PartComponent key={partDefinition.id} {...partProps} />;
       })}
