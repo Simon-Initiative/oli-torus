@@ -214,7 +214,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
 
     live("/projects", Projects.ProjectsLive)
-    live("/products/:product_id", Products.EditView)
+    live("/products/:product_id", Products.DetailsView)
     get("/account", WorkspaceController, :account)
     put("/account", WorkspaceController, :update_author)
     post("/account/theme", WorkspaceController, :update_theme)

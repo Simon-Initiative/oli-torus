@@ -29,7 +29,7 @@ defmodule OliWeb.Products.Listing do
               <td>
                 <Link
                   label={product.title}
-                  to={Routes.live_path(@socket, OliWeb.Products.EditView, product.slug)}
+                  to={Routes.live_path(@socket, OliWeb.Products.DetailsView, product.slug)}
                 />
               </td>
               <td>{product.status}</td>
