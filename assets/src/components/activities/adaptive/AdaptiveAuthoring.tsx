@@ -363,6 +363,7 @@ const Adaptive = (
             onReady: defaultHandler,
             onSave: defaultHandler,
             onSubmit: defaultHandler,
+            onResize: defaultHandler,
           };
           const disableDrag =
             selectedPartId !== part.id ||
