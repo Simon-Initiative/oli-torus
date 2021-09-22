@@ -1,7 +1,7 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { parseBoolean } from 'utils/common';
+import { clone, parseBoolean } from 'utils/common';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 import { CapiVariable } from '../../../adaptivity/capi';
@@ -247,15 +247,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       window.removeEventListener('message', messageListener.current);
     };
   }, [simFrame]);
-  /**
-   * Performs a deep copy, or clone, of an object.
-   *
-   * @param o the object to clone
-   * @returns the cloned object
-   */
-  const clone = (o: any) => {
-    return JSON.parse(JSON.stringify(o));
-  };
+
   const handleValueChangeFromModal = (changedVar: any) => {
     //const filterVars = createCapiObjectFromStateVars(changedVar);
     //sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, changedVar);
