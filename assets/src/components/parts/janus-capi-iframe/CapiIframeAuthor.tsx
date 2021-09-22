@@ -243,9 +243,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
 
     // Introducing listeners requires returning a function that also un-listens
     return () => {
-      /* console.log('%c MESSAGE LISTENER UNLOADED', 'background: darkred; color: #fff;', {
-        activityId: id,
-      }); */
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
