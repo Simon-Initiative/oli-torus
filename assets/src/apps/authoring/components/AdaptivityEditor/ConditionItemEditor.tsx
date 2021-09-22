@@ -104,6 +104,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
             targetRef={targetRef}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
+            context="condition"
           />
         </div>
         <label className="sr-only" htmlFor={`target-${uuid}`}>

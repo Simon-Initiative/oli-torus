@@ -29,6 +29,16 @@ interface InitStateItemProps {
 const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
+
+  // update adding operator if targetType changes from number
+  useEffect(() => {
+    if (state.type !== 1) {
+      if (state.operator === 'adding') {
+        onChange(state.id, 'operator', '=');
+      }
+    }
+  }, [state.type]);
+
   return (
     <div
       key={state.id}
@@ -40,6 +50,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
             targetRef={targetRef}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
+            context="init"
           />
         </div>
         <label className="sr-only" htmlFor={`target-${state.id}`}>
@@ -66,7 +77,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         key={`type-${state.id}`}
         className="custom-select mr-2 form-control form-control-sm"
         id={`type-${state.id}`}
-        defaultValue={state.type}
+        value={state.type}
         onChange={(e) => onChange(state.id, 'type', e.target.value)}
         title="Type"
         tabIndex={0}
@@ -85,13 +96,17 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         key={`operator-${state.id}`}
         className="custom-select mr-2 form-control form-control-sm"
         id={`operator-${state.id}`}
-        defaultValue={state.operator}
+        value={state.operator}
         onChange={(e) => onChange(state.id, 'operator', e.target.value)}
         title="Operator"
         tabIndex={0}
       >
         {opOptions.map((option: OperatorOption, index: number) => (
-          <option key={`option${index}-${state.id}`} value={option.value}>
+          <option
+            key={`option${index}-${state.id}`}
+            value={option.value}
+            style={state.type !== 1 && option.key === 'add' ? { display: 'none' } : undefined}
+          >
             {option.text}
           </option>
         ))}
@@ -142,8 +157,8 @@ interface TypeOption {
   value: number;
 }
 const typeOptions: TypeOption[] = [
-  { key: 'number', text: 'Number', value: 1 },
   { key: 'string', text: 'String', value: 2 },
+  { key: 'number', text: 'Number', value: 1 },
   { key: 'array', text: 'Array', value: 3 },
   { key: 'boolean', text: 'Boolean', value: 4 },
   { key: 'enum', text: 'Enum', value: 5 },
@@ -157,10 +172,10 @@ interface OperatorOption {
   value: string;
 }
 const opOptions: OperatorOption[] = [
+  { key: 'equal', text: '=', value: '=' },
   { key: 'add', text: 'Adding', value: 'adding' },
   { key: 'bind', text: 'Bind To', value: 'bind to' },
   { key: 'set', text: 'Setting To', value: 'setting to' },
-  { key: 'equal', text: '=', value: '=' },
 ];
 
 export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
