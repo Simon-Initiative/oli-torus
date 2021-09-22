@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false
@@ -15,6 +16,21 @@ defmodule Oli.Delivery.Sections.Blueprint do
     case Repo.get_by(Section, slug: slug) do
       nil -> nil
       %Section{type: :blueprint, status: :active} = section -> section
+      _ -> nil
+    end
+  end
+
+  @doc """
+  From a slug, retrieve a valid section blueprint.  A section is a
+  valid blueprint when that section is of type :blueprint and the status
+  is active.
+
+  Returns nil when there is no matching valid blueprint for the slug.
+  """
+  def get_blueprint(slug) do
+    case Repo.get_by(Section, slug: slug) do
+      nil -> nil
+      %Section{type: :blueprint} = section -> section
       _ -> nil
     end
   end
@@ -44,6 +60,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "end_date" => now,
             "title" => title,
             "requires_payment" => false,
+            "registration_open" => false,
+            "timezone" => "America/New_York",
             "amount" => Money.new(:USD, "25.00")
           }
 
@@ -62,5 +80,29 @@ defmodule Oli.Delivery.Sections.Blueprint do
           end
       end
     end)
+  end
+
+  def list_for_project(%Project{id: id}) do
+    query =
+      from(
+        s in Section,
+        where: s.type == :blueprint and s.base_project_id == ^id,
+        select: s,
+        preload: [:base_project]
+      )
+
+    Repo.all(query)
+  end
+
+  def list() do
+    query =
+      from(
+        s in Section,
+        where: s.type == :blueprint,
+        select: s,
+        preload: [:base_project]
+      )
+
+    Repo.all(query)
   end
 end

@@ -81,6 +81,7 @@ defmodule Oli.Delivery.Sections.Section do
       :end_date,
       :timezone,
       :registration_open,
+      :description,
       :context_id,
       :slug,
       :open_and_free,
@@ -112,6 +113,16 @@ defmodule Oli.Delivery.Sections.Section do
       :registration_open,
       :base_project_id
     ])
+    |> validate_positive_grace_period()
     |> Slug.update_never("sections")
+  end
+
+  def validate_positive_grace_period(changeset) do
+    validate_change(changeset, :grace_period_days, fn _, days ->
+      case days >= 0 do
+        true -> []
+        false -> [{:grace_period_days, "must be greater than or equal to zero"}]
+      end
+    end)
   end
 end
