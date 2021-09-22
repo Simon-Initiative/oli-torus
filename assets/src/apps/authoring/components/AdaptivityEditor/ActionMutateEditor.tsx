@@ -96,7 +96,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
 
   // update adding operator if targetType changes from number
   useEffect(() => {
-    if (targetType !== ('1' as unknown)) {
+    if (targetType !== CapiVariableTypes.NUMBER) {
       if (operator === 'adding') {
         setTimeout(() => {
           setOperator('=');
@@ -156,19 +156,18 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         value={operator}
         onChange={(e) => handleOperatorChange(e)}
       >
-        {opOptions.map((option) => (
-          <option
-            key={option.key}
-            value={option.value}
-            style={
-              targetType !== ('1' as unknown) && option.key === 'add'
-                ? { display: 'none' }
-                : undefined
+        {opOptions
+          .filter((option) => {
+            if (parseInt(targetType.toString(), 10) !== CapiVariableTypes.NUMBER) {
+              return option.key !== 'add';
             }
-          >
-            {option.text}
-          </option>
-        ))}
+            return true;
+          })
+          .map((option) => (
+            <option key={option.key} value={option.value}>
+              {option.text}
+            </option>
+          ))}
       </select>
       <label className="sr-only" htmlFor={`action-mutate-value-${uuid}`}>
         value
@@ -206,22 +205,6 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </span>
       </OverlayTrigger>
     </div>
-
-    // <Fragment>
-    //   <Icon name="edit" size="large" />
-    //   <List.Content>
-    //     Change State:
-    //     <Input fluid placeholder="Target" defaultValue={target} onBlur={handleTargetChange} />
-    //     <Select options={typeOptions} defaultValue={targetType} onChange={handleTargetTypeChange} />
-    //     <Select
-    //       options={opOptions}
-    //       placeholder="Operator"
-    //       defaultValue={operator}
-    //       onChange={handleOperatorChange}
-    //     />
-    //     <Input fluid placeholder="Value" defaultValue={value} onBlur={handleValueChange} />
-    //   </List.Content>
-    // </Fragment>
   );
 };
 

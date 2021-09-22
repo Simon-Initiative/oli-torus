@@ -33,7 +33,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
 
   // update adding operator if targetType changes from number
   useEffect(() => {
-    if (state.type !== 1) {
+    if (state.type !== CapiVariableTypes.NUMBER) {
       if (state.operator === 'adding') {
         onChange(state.id, 'operator', '=');
       }
@@ -102,15 +102,18 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         title="Operator"
         tabIndex={0}
       >
-        {opOptions.map((option: OperatorOption, index: number) => (
-          <option
-            key={`option${index}-${state.id}`}
-            value={option.value}
-            style={state.type !== 1 && option.key === 'add' ? { display: 'none' } : undefined}
-          >
-            {option.text}
-          </option>
-        ))}
+        {opOptions
+          .filter((option) => {
+            if (state.type !== CapiVariableTypes.NUMBER) {
+              return option.key !== 'add';
+            }
+            return true;
+          })
+          .map((option: OperatorOption, index: number) => (
+            <option key={`option${index}-${state.id}`} value={option.value}>
+              {option.text}
+            </option>
+          ))}
       </select>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="Value">
