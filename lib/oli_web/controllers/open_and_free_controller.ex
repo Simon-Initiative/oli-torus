@@ -49,6 +49,7 @@ defmodule OliWeb.OpenAndFreeController do
 
       section_params =
         section_params
+        |> Map.put("type", :enrollable)
         |> Map.put("base_project_id", project_id)
         |> Map.put("open_and_free", true)
         |> Map.put("context_id", UUID.uuid4())

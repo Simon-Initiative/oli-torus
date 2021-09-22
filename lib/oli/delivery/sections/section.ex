@@ -12,6 +12,8 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   schema "sections" do
+    field :type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable
+
     field :registration_open, :boolean, default: false
     field :start_date, :utc_datetime
     field :end_date, :utc_datetime
@@ -24,6 +26,16 @@ defmodule Oli.Delivery.Sections.Section do
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
     field :invite_token, :string
     field :passcode, :string
+
+    field :visibility, Ecto.Enum, values: [:selected, :global], default: :global
+    field :requires_payment, :boolean, default: false
+    field :amount, Money.Ecto.Map.Type
+    field :has_grace_period, :boolean, default: true
+    field :grace_period_days, :integer
+
+    field :grace_period_strategy, Ecto.Enum,
+      values: [:relative_to_section, :relative_to_student],
+      default: :relative_to_section
 
     field :grade_passback_enabled, :boolean, default: false
     field :line_items_service_url, :string
@@ -50,6 +62,8 @@ defmodule Oli.Delivery.Sections.Section do
     # section delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
 
+    belongs_to :blueprint, Oli.Delivery.Sections.Section
+
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
     has_many :section_project_publications, SectionsProjectsPublications, on_replace: :delete
@@ -61,6 +75,7 @@ defmodule Oli.Delivery.Sections.Section do
   def changeset(section, attrs \\ %{}) do
     section
     |> cast(attrs, [
+      :type,
       :title,
       :start_date,
       :end_date,
@@ -72,6 +87,12 @@ defmodule Oli.Delivery.Sections.Section do
       :status,
       :invite_token,
       :passcode,
+      :visibility,
+      :requires_payment,
+      :amount,
+      :has_grace_period,
+      :grace_period_days,
+      :grace_period_strategy,
       :grade_passback_enabled,
       :line_items_service_url,
       :nrps_enabled,
@@ -81,9 +102,11 @@ defmodule Oli.Delivery.Sections.Section do
       :base_project_id,
       :brand_id,
       :delivery_policy_id,
+      :blueprint_id,
       :root_section_resource_id
     ])
     |> validate_required([
+      :type,
       :title,
       :timezone,
       :registration_open,
