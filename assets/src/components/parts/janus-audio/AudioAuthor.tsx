@@ -3,15 +3,14 @@ import React, { CSSProperties, useEffect } from 'react';
 import { AudioModel } from './schema';
 
 const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
-  const { model } = props;
+  const { id, model } = props;
 
-  const { x, y, z, width } = model;
+  const { x, y, z, width, src } = model;
   const styles: CSSProperties = {
+    cursor: 'move',
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
+    outline: 'none',
+    filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
 
   useEffect(() => {
@@ -19,11 +18,7 @@ const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
-  return (
-    <div style={styles}>
-      <p>Audio</p>
-    </div>
-  );
+  return <audio data-janus-type={tagName} style={styles} controls={true} />;
 };
 
 export const tagName = 'janus-audio';

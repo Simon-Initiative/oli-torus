@@ -22,6 +22,13 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
+  let height = props.model.height;
+  // TODO: figure out how to default TF *only* to height auto without hard coding type
+  if (props.type === 'janus-text-flow' || props.type === 'janus-mcq') {
+    if (!props.model.overrideHeight) {
+      height = 'auto';
+    }
+  }
   const initialStyles: CSSProperties = {
     display: 'block',
     position: 'absolute',
@@ -29,7 +36,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     left: props.model.x,
     zIndex: props.model.z || 0,
     width: props.model.width,
-    height: props.model.overrideHeight ? props.model.height : 'auto',
+    height,
   };
 
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);

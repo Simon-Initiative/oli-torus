@@ -393,6 +393,30 @@ defmodule Oli.Seeder do
     Map.put(map, :section, section)
   end
 
+  def create_product(map, attrs, tag) do
+    params =
+      Map.merge(
+        %{
+          end_date: ~U[2010-04-17 00:00:00.000000Z],
+          type: :blueprint,
+          registration_open: true,
+          start_date: ~U[2010-04-17 00:00:00.000000Z],
+          timezone: "some timezone",
+          title: "some title",
+          context_id: "context_id",
+          base_project_id: map.project.id,
+          institution_id: map.institution.id
+        },
+        attrs
+      )
+
+    {:ok, section} =
+      Section.changeset(%Section{}, params)
+      |> Repo.insert()
+
+    Map.put(map, tag, section)
+  end
+
   def create_section_resources(%{section: section, publication: publication} = map) do
     {:ok, section} =
       section

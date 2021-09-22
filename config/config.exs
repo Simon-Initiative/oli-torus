@@ -69,6 +69,11 @@ config :oli, Oban,
   plugins: [Oban.Plugins.Pruner],
   queues: [default: 10, snapshots: 20, selections: 2]
 
+config :ex_money,
+  auto_start_exchange_rate_service: false,
+  default_cldr_backend: Oli.Cldr,
+  json_library: Jason
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",
