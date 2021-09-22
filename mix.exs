@@ -69,6 +69,7 @@ defmodule Oli.MixProject do
     [
       {:bamboo, "~> 1.6"},
       {:bamboo_ses, "~> 0.1.0"},
+      {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:csv, "~> 2.3"},
@@ -78,6 +79,8 @@ defmodule Oli.MixProject do
       {:ecto_psql_extras, "~> 0.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
+      {:ex_money, "~> 5.0"},
+      {:ex_money_sql, "~> 1.0"},
       {:excoveralls, "~> 0.10", only: :test},
       {:ex_doc, "~> 0.23", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},

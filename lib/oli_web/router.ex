@@ -385,6 +385,18 @@ defmodule OliWeb.Router do
     get("/", Api.TagController, :index)
   end
 
+  scope "/api/v1/products", OliWeb do
+    pipe_through([:api])
+
+    get("/", Api.ProductController, :index)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:api])
+
+    post("/", Api.PaymentController, :new)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -579,6 +591,7 @@ defmodule OliWeb.Router do
 
     live("/accounts", Accounts.AccountsLive)
     live("/features", Features.FeaturesLive)
+    live("/api_keys", ApiKeys.ApiKeysLive)
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do

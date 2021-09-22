@@ -1,24 +1,10 @@
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
-
-const typeOptions = [
-  { key: 'number', text: 'Number', value: 1 },
-  { key: 'string', text: 'String', value: 2 },
-  { key: 'array', text: 'Array', value: 3 },
-  { key: 'boolean', text: 'Boolean', value: 4 },
-  { key: 'enum', text: 'Enum', value: 5 },
-  { key: 'math', text: 'Math Expression', value: 6 },
-  { key: 'parray', text: 'Point Array', value: 7 },
-];
-const opOptions = [
-  { key: 'add', text: 'Adding', value: 'adding' },
-  { key: 'bind', text: 'Bind To', value: 'bind to' },
-  { key: 'set', text: 'Setting To', value: 'setting to' },
-  { key: 'equal', text: '=', value: '=' },
-];
+import { OperatorOption, operatorOptions, TypeOption, typeOptions } from './AdaptiveItemOptions';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -93,6 +79,18 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
     }
   }, [isDirty]);
 
+  // update adding operator if targetType changes from number
+  useEffect(() => {
+    if (targetType !== CapiVariableTypes.NUMBER) {
+      if (operator === 'adding') {
+        setTimeout(() => {
+          setOperator('=');
+          setIsDirty(true);
+        });
+      }
+    }
+  }, [targetType]);
+
   return (
     <div className="aa-action aa-mutate d-flex mb-2 form-inline align-items-center flex-nowrap">
       <label className="sr-only" htmlFor={`action-mutate-target-${uuid}`}>
@@ -104,6 +102,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
             targetRef={targetRef}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
+            context="mutate"
           />
         </div>
         <input
@@ -113,6 +112,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           defaultValue={target}
           onBlur={(e) => handleTargetChange(e)}
           title={target}
+          placeholder="Target"
           ref={targetRef}
         />
       </div>
@@ -122,11 +122,11 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
       <select
         className="custom-select mr-2 form-control form-control-sm"
         id={`action-mutate-type-${uuid}`}
-        defaultValue={targetType}
+        value={targetType}
         onChange={(e) => handleTargetTypeChange(e)}
         ref={typeRef}
       >
-        {typeOptions.map((type) => (
+        {typeOptions.map((type: TypeOption) => (
           <option key={type.key} value={type.value}>
             {type.text}
           </option>
@@ -138,14 +138,21 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
       <select
         className="custom-select mr-2 form-control form-control-sm"
         id={`action-mutate-operator-${uuid}`}
-        defaultValue={operator}
+        value={operator}
         onChange={(e) => handleOperatorChange(e)}
       >
-        {opOptions.map((option) => (
-          <option key={option.key} value={option.value}>
-            {option.text}
-          </option>
-        ))}
+        {operatorOptions
+          .filter((option) => {
+            if (parseInt(targetType.toString(), 10) !== CapiVariableTypes.NUMBER) {
+              return option.key !== 'add';
+            }
+            return true;
+          })
+          .map((option: OperatorOption) => (
+            <option key={option.key} value={option.value}>
+              {option.text}
+            </option>
+          ))}
       </select>
       <label className="sr-only" htmlFor={`action-mutate-value-${uuid}`}>
         value
@@ -163,6 +170,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           value={value}
           onChange={(e) => handleValueChange(e)}
           title={value}
+          placeholder="Value"
         />
       </div>
 
@@ -182,22 +190,6 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         </span>
       </OverlayTrigger>
     </div>
-
-    // <Fragment>
-    //   <Icon name="edit" size="large" />
-    //   <List.Content>
-    //     Change State:
-    //     <Input fluid placeholder="Target" defaultValue={target} onBlur={handleTargetChange} />
-    //     <Select options={typeOptions} defaultValue={targetType} onChange={handleTargetTypeChange} />
-    //     <Select
-    //       options={opOptions}
-    //       placeholder="Operator"
-    //       defaultValue={operator}
-    //       onChange={handleOperatorChange}
-    //     />
-    //     <Input fluid placeholder="Value" defaultValue={value} onBlur={handleValueChange} />
-    //   </List.Content>
-    // </Fragment>
   );
 };
 

@@ -17,6 +17,11 @@ export const schema: JSONSchema7Object = {
   },
 };
 
+export const getCapabilities = () => ({
+  configure: true,
+  save: true,
+});
+
 export const uiSchema = {};
 
 export const createSchema = (): Partial<CapiIframeModel> => ({

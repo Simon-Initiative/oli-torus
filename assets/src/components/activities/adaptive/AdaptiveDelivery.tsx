@@ -185,6 +185,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return true;
   };
 
+  const handlePartResize = async (payload: { id: string | number }) => {
+    // no need to do anything for now.
+    /*  console.log('handlePartResize called'); */
+    return true;
+  };
+
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSave', { id, responses }); */
     if (!responses || !responses.length) {
@@ -241,6 +247,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         onPartReady={handlePartReady}
         onPartSave={handlePartSave}
         onPartSubmit={handlePartSubmit}
+        onPartResize={handlePartResize}
       />
     </NotificationContext.Provider>
   ) : null;
