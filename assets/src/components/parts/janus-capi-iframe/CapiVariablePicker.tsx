@@ -17,48 +17,36 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   onSave,
   onCancel,
 }) => {
-  const [expandedPanels, setExpandedPanels]: any = useState({});
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
+  const [expandedPanels, setExpandedPanels]: any = useState([]);
   const handleValueChange = (changeOp: ApplyStateOperation) =>
-    setChangeOperations([...changeOperations, changeOp]);
-  const handleApplyChanges = useCallback(
-    (e) => {
-      if (changeOperations.length === 0) {
-        return;
-      }
-      setChangeOperations([]);
-      onSave(changeOperations);
-    },
-    [changeOperations],
-  );
+    setChangeOperations((previousChanges) => {
+      return [...previousChanges, changeOp];
+    });
+  const handleApplyChanges = () => {
+    onSave(changeOperations);
+  };
 
   const handleCancelChanges = (e: any) => {
     setChangeOperations([]);
     onCancel(changeOperations);
   };
 
-  const changeCount = changeOperations.length;
-  const hasChanges = changeCount > 0;
   return state.length > 0 ? (
     <div>
       <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
         <button type="button" className="btn btn-secondary mr-1" onClick={handleCancelChanges}>
           Cancel
         </button>
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-primary ml-1"
-          onClick={handleApplyChanges}
-        >
-          Apply {hasChanges ? `(${changeCount})` : null}
+        <button type="button" className="btn btn-primary ml-1" onClick={handleApplyChanges}>
+          Save
         </button>
       </div>
       <div
         id={`collapseRoot${label}`}
         className={`${expandedPanels[`panel-Root${label}`] ? '' : 'visually-hidden'}`}
         aria-labelledby={`headingRoot${label}`}
-        style={{ maxWidth: 450, overflowY: 'auto', maxHeight: 550 }}
+        style={{ maxWidth: 450, overflowY: 'auto', maxHeight: 450 }}
       >
         <div className="card-body py-2">
           <ul className="list-group list-group-flush">

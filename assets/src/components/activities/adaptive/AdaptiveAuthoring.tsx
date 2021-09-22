@@ -278,7 +278,7 @@ const Adaptive = (
           }
           .part-config-container-inner > :first-child {
             position: absolute;
-            top: 15%;
+            top: 15px;
             left: 25%;
             background-color: #fff;
           }

@@ -253,14 +253,14 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   const handleValueChangeFromModal = (changedVar: any) => {
     //const filterVars = createCapiObjectFromStateVars(changedVar);
     //sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, changedVar);
-    console.log('handleValueChangeFromModal called', { changedVar });
+    /*  console.log('handleValueChangeFromModal called', { changedVar }); */
     //setInConfigureMode(false);
   };
-  const handleEditorSave = (e: any) => {
+  const handleEditorSave = (changeOperations: any) => {
     if (!inConfigureMode) {
       return;
     }
-    console.log('handleEditorSave called');
+    console.log('handleEditorSave called', { changeOperations });
     setconfigClicked(false);
     setInConfigureMode(false);
     /* onSaveConfigure({
