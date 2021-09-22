@@ -315,7 +315,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       <div style={styles}>
         {configClicked && (
           <iframe
-            key={key}
             ref={frameRef}
             style={{ height: '100%', width: '100%' }}
             data-janus-type={tagName}
