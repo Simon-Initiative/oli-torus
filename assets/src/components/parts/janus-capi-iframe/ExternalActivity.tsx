@@ -630,7 +630,16 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   };
 
   const handleResizeParentContainer = (data: any) => {
-    props.onResize({ id: `${id}`, responses: data });
+    const modifiedData = data;
+    if (frameWidth && data?.width) {
+      const newW = parseFloat(data.width.value);
+      modifiedData.width.value = newW;
+    }
+    if (frameHeight && data?.height) {
+      const newH = parseFloat(data.height.value);
+      modifiedData.height.value = newH;
+    }
+    props.onResize({ id: `${id}`, settings: modifiedData });
     sendFormedResponse(
       simLife.handshake,
       {},

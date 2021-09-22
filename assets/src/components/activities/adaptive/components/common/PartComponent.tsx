@@ -80,18 +80,27 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   };
 
   const onResize = async (payload: any) => {
-    const data = payload.responses;
+    const settings = payload.settings;
     const styleChanges: CSSProperties = {};
-    if (componentStyle.width && data?.width) {
-      let newW: string | number = parseFloat(data.width.value);
-      newW = newW < componentStyle.width ? componentStyle.width : newW;
-      styleChanges.width = newW as number;
+
+    if (componentStyle.width && settings?.width) {
+      const newW = settings.width.value;
+      if (settings.width.type === 'relative') {
+        styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
+      } else {
+        styleChanges.width = newW;
+      }
     }
-    if (componentStyle.height && data?.height) {
-      let newH: string | number = parseFloat(data?.height.value);
-      newH = newH < componentStyle.height ? componentStyle.height : newH;
-      styleChanges.height = newH as number;
+
+    if (componentStyle.height && settings?.height) {
+      const newH = settings.height.value;
+      if (settings.height.type === 'relative') {
+        styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
+      } else {
+        styleChanges.height = newH;
+      }
     }
+
     setComponentStyle((previousStyle) => {
       return { ...previousStyle, ...styleChanges };
     });
