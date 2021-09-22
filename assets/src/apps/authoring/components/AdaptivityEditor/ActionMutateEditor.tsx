@@ -4,22 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
-
-const typeOptions = [
-  { key: 'string', text: 'String', value: CapiVariableTypes.STRING },
-  { key: 'number', text: 'Number', value: CapiVariableTypes.NUMBER },
-  { key: 'array', text: 'Array', value: CapiVariableTypes.ARRAY },
-  { key: 'boolean', text: 'Boolean', value: CapiVariableTypes.BOOLEAN },
-  { key: 'enum', text: 'Enum', value: CapiVariableTypes.ENUM },
-  { key: 'math', text: 'Math Expression', value: CapiVariableTypes.MATH_EXPR },
-  { key: 'parray', text: 'Point Array', value: CapiVariableTypes.ARRAY_POINT },
-];
-const opOptions = [
-  { key: 'equal', text: '=', value: '=' },
-  { key: 'add', text: 'Adding', value: 'adding' },
-  { key: 'bind', text: 'Bind To', value: 'bind to' },
-  { key: 'set', text: 'Setting To', value: 'setting to' },
-];
+import { OperatorOption, operatorOptions, TypeOption, typeOptions } from './AdaptiveItemOptions';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -141,7 +126,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         onChange={(e) => handleTargetTypeChange(e)}
         ref={typeRef}
       >
-        {typeOptions.map((type) => (
+        {typeOptions.map((type: TypeOption) => (
           <option key={type.key} value={type.value}>
             {type.text}
           </option>
@@ -156,14 +141,14 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         value={operator}
         onChange={(e) => handleOperatorChange(e)}
       >
-        {opOptions
+        {operatorOptions
           .filter((option) => {
             if (parseInt(targetType.toString(), 10) !== CapiVariableTypes.NUMBER) {
               return option.key !== 'add';
             }
             return true;
           })
-          .map((option) => (
+          .map((option: OperatorOption) => (
             <option key={option.key} value={option.value}>
               {option.text}
             </option>

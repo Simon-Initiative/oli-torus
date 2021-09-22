@@ -9,6 +9,7 @@ import { selectCurrentActivity } from '../../../delivery/store/features/activiti
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { OperatorOption, operatorOptions, TypeOption, typeOptions } from './AdaptiveItemOptions';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -102,7 +103,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         title="Operator"
         tabIndex={0}
       >
-        {opOptions
+        {operatorOptions
           .filter((option) => {
             if (state.type !== CapiVariableTypes.NUMBER) {
               return option.key !== 'add';
@@ -155,33 +156,6 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   );
 };
 
-interface TypeOption {
-  key: string;
-  text: string;
-  value: number;
-}
-const typeOptions: TypeOption[] = [
-  { key: 'string', text: 'String', value: CapiVariableTypes.STRING },
-  { key: 'number', text: 'Number', value: CapiVariableTypes.NUMBER },
-  { key: 'array', text: 'Array', value: CapiVariableTypes.ARRAY },
-  { key: 'boolean', text: 'Boolean', value: CapiVariableTypes.BOOLEAN },
-  { key: 'enum', text: 'Enum', value: CapiVariableTypes.ENUM },
-  { key: 'math', text: 'Math Expression', value: CapiVariableTypes.MATH_EXPR },
-  { key: 'parray', text: 'Point Array', value: CapiVariableTypes.ARRAY_POINT },
-];
-
-interface OperatorOption {
-  key: string;
-  text: string;
-  value: string;
-}
-const opOptions: OperatorOption[] = [
-  { key: 'equal', text: '=', value: '=' },
-  { key: 'add', text: 'Adding', value: 'adding' },
-  { key: 'bind', text: 'Bind To', value: 'bind to' },
-  { key: 'set', text: 'Setting To', value: 'setting to' },
-];
-
 export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
@@ -225,7 +199,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
       target: '',
       value: '',
       type: typeOptions[0].value,
-      operator: opOptions[0].value,
+      operator: operatorOptions[0].value,
     };
     tempRules.push(tempRule);
     setInitState(tempRules);
