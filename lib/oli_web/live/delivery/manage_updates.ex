@@ -197,15 +197,11 @@ defmodule OliWeb.Delivery.ManageUpdates do
       redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
-    publication = Publishing.get_publication!(publication_id)
-
-    Repo.transaction(fn ->
-      Sections.update_section_project_publication(section, project_id, publication_id)
-
-      # TODO: This must change to keep the section resource hierarchy in-tact while adding
-      # any new containers/pages - Sections.update_section_resources
-      Sections.rebuild_section_resources(section: section, publication: publication)
-    end)
+    Sections.apply_publication_update(
+      section,
+      project_id,
+      publication_id
+    )
 
     {:noreply,
      push_redirect(socket,

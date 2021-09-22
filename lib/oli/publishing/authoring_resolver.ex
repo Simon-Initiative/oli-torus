@@ -11,6 +11,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Authoring.Course.Project
   alias Oli.Publishing.HierarchyNode
   alias Oli.Resources.Numbering
+  alias Oli.Authoring.Course
 
   @behaviour Resolver
 
@@ -173,6 +174,7 @@ defmodule Oli.Publishing.AuthoringResolver do
       all_revisions_in_hierarchy(project_slug)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
+    project = Course.get_project_by_slug(project_slug)
     root_revision = root_container(project_slug)
     numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
@@ -180,6 +182,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     {root_node, _numbering_tracker} =
       hierarchy_node_with_children(
         root_revision,
+        project.id,
         revisions_by_resource_id,
         numbering_tracker,
         level
@@ -188,7 +191,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     root_node
   end
 
-  def hierarchy_node_with_children(revision, revisions_by_resource_id, numbering_tracker, level) do
+  def hierarchy_node_with_children(revision, project_id, revisions_by_resource_id, numbering_tracker, level) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
@@ -200,6 +203,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           {node, numbering_tracker} =
             hierarchy_node_with_children(
               revisions_by_resource_id[resource_id],
+              project_id,
               revisions_by_resource_id,
               numbering_tracker,
               level + 1
@@ -223,6 +227,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         },
         children: children,
         resource_id: revision.resource_id,
+        project_id: project_id,
         revision: revision,
         section_resource: nil
       },

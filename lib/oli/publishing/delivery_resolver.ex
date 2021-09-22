@@ -193,6 +193,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           },
           children: sr.children,
           resource_id: rev.resource_id,
+          project_id: sr.project_id,
           revision: rev,
           section_resource: sr
         }

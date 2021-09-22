@@ -17,11 +17,14 @@ defmodule Oli.Publishing.HierarchyNode do
   necessarily important other than to uniquely identify the node in the hierarchy.
   """
   alias Oli.Publishing.HierarchyNode
+  alias Oli.Resources.Numbering
+  alias Oli.Publishing.PublishedResource
 
   defstruct slug: nil,
             numbering: nil,
             children: [],
             resource_id: nil,
+            project_id: nil,
             revision: nil,
             section_resource: nil
 
@@ -43,15 +46,80 @@ defmodule Oli.Publishing.HierarchyNode do
     end
   end
 
+  @doc """
+  From a constructed hierarchy root node return an ordered flat list of all the nodes
+  in the hierarchy. Containers appear before their contents
+  """
+  def flatten_hierarchy(%HierarchyNode{} = node),
+    do: flatten_hierarchy(node, []) |> Enum.reverse()
+
+  defp flatten_hierarchy(%HierarchyNode{} = node, all) do
+    all = [node | all]
+
+    Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
+  end
+
+  def create_hierarchy(revision, published_resources_resource_id) do
+    numbering_tracker = Numbering.init_numbering_tracker()
+    level = 0
+
+    create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker)
+  end
+
+  defp create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker) do
+    {index, numbering_tracker} = Numbering.next_index(numbering_tracker, level, revision)
+
+    children =
+      Enum.map(revision.children, fn child_id ->
+        %PublishedResource{revision: child_revision} = published_resources_resource_id[child_id]
+
+        create_hierarchy(
+          child_revision,
+          published_resources_resource_id,
+          level + 1,
+          numbering_tracker
+        )
+      end)
+
+    %PublishedResource{publication: pub} = published_resources_resource_id[revision.resource_id]
+
+    %HierarchyNode{
+      slug: revision.slug,
+      numbering: %Numbering{
+        index: index,
+        level: level
+      },
+      revision: revision,
+      resource_id: revision.resource_id,
+      project_id: pub.project_id,
+      children: children
+    }
+  end
+
   def find_in_hierarchy(
         %HierarchyNode{slug: slug, children: children} = node,
         slug_to_find
-      ) do
+      )
+      when is_binary(slug_to_find) do
     if slug == slug_to_find do
       node
     else
       Enum.reduce(children, nil, fn child, acc ->
         if acc == nil, do: find_in_hierarchy(child, slug_to_find), else: acc
+      end)
+    end
+  end
+
+  def find_in_hierarchy(
+        %HierarchyNode{children: children} = node,
+        find_by
+      )
+      when is_function(find_by) do
+    if find_by.(node) do
+      node
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_in_hierarchy(child, find_by), else: acc
       end)
     end
   end
@@ -77,7 +145,7 @@ defmodule Oli.Publishing.HierarchyNode do
   end
 
   def find_and_update_node(hierarchy, node) do
-    if hierarchy.section_resource.id == node.section_resource.id do
+    if hierarchy.slug == node.slug do
       node
     else
       %HierarchyNode{
@@ -127,7 +195,7 @@ defmodule Oli.Publishing.HierarchyNode do
   end
 
   defp drop_r(%HierarchyNode{children: children} = node, drop_keys) do
-    %HierarchyNode{node | children: Enum.map(children, fn n -> drop_r(n, drop_keys) end)}
+    %HierarchyNode{node | children: Enum.map(children, &drop_r(&1, drop_keys))}
     |> Map.drop([:__struct__ | drop_keys])
   end
 end

@@ -24,6 +24,19 @@ defmodule Oli.Publishing.HierarchyNodeTest do
              ]
     end
 
+    test "flatten_hierarchy/1", %{hierarchy: hierarchy} do
+      flattened = HierarchyNode.flatten_hierarchy(hierarchy)
+
+      assert Enum.map(flattened, & &1.section_resource.slug) == [
+               "root_container",
+               "page_one",
+               "page_two",
+               "unit_1",
+               "nested_page_one",
+               "nested_page_two"
+             ]
+    end
+
     test "find_in_hierarchy/2", %{
       hierarchy: hierarchy,
       revision1: revision1,
