@@ -295,11 +295,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
+    const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
+      acc[key] = snapshot[key];
+      return acc;
+    }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
-      initStateFacts,
+      initStateFacts: finalInitSnapshot,
     });
   };
 
