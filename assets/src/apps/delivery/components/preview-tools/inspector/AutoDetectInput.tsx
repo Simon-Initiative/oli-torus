@@ -113,7 +113,7 @@ const AutoDetectInput: React.FC<AutoDetectInputProps> = ({
     case CapiVariableTypes.ENUM:
       return (
         <div className="user-input">
-          <select className="custom-select custom-select-sm">
+          <select onChange={handleValueChange} className="custom-select custom-select-sm">
             {value?.allowedValues?.map((item: any) => {
               if (internalValue === item) {
                 return (

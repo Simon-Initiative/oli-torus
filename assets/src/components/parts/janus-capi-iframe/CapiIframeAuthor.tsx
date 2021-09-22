@@ -163,7 +163,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
         return variableObj;
       }
     });
-    setInternalState(stateVarsFromSim);
+    setInternalState(stateVarsFromSim.filter((item) => item !== undefined));
   };
 
   const handleOnReady = (data: any) => {
@@ -250,11 +250,26 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       window.removeEventListener('message', messageListener.current);
     };
   }, [simFrame]);
+  /**
+   * Performs a deep copy, or clone, of an object.
+   *
+   * @param o the object to clone
+   * @returns the cloned object
+   */
+  const clone = (o: any) => {
+    return JSON.parse(JSON.stringify(o));
+  };
   const handleValueChangeFromModal = (changedVar: any) => {
     //const filterVars = createCapiObjectFromStateVars(changedVar);
     //sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, changedVar);
-    /*  console.log('handleValueChangeFromModal called', { changedVar }); */
     //setInConfigureMode(false);
+    const finalConfigData = internalState.map((variable: CapiVariable) => {
+      if (variable.key === changedVar.key) {
+        variable.value = changedVar.value;
+      }
+      return variable;
+    });
+    setInternalState(finalConfigData);
   };
   const handleEditorSave = (changeOperations: any) => {
     if (!inConfigureMode) {
@@ -263,10 +278,13 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     console.log('handleEditorSave called', { changeOperations });
     setconfigClicked(false);
     setInConfigureMode(false);
-    /* onSaveConfigure({
+    const modelClone = clone(model);
+
+    modelClone.configData = internalState;
+    onSaveConfigure({
       id,
-      snapshot: {},
-    }); */
+      snapshot: modelClone,
+    });
     setKey(`${props.id}_${configClicked}`);
   };
 

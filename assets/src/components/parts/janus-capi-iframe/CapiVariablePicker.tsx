@@ -6,7 +6,7 @@ import AutoDetectInput from '../../../../src/apps/delivery/components/preview-to
 interface StateDisplayProps {
   label: string;
   state: any;
-  onChange?: (changeOp: ApplyStateOperation) => void;
+  onChange: (changeOp: ApplyStateOperation) => void;
   onSave: (changeOp: ApplyStateOperation[]) => void;
   onCancel: (changeOp: ApplyStateOperation[]) => void;
 }
@@ -19,12 +19,13 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
 }) => {
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
   const [expandedPanels, setExpandedPanels]: any = useState([]);
-  const handleValueChange = (changeOp: ApplyStateOperation) =>
-    setChangeOperations((previousChanges) => {
-      return [...previousChanges, changeOp];
-    });
+  const handleValueChange = (changeOp: ApplyStateOperation) => {
+
+    onChange(changeOp);
+  };
+
   const handleApplyChanges = () => {
-    onSave(changeOperations);
+    onSave([]);
   };
 
   const handleCancelChanges = (e: any) => {
