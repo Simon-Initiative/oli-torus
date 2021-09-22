@@ -20,7 +20,6 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
   const [expandedPanels, setExpandedPanels]: any = useState([]);
   const handleValueChange = (changeOp: ApplyStateOperation) => {
-
     onChange(changeOp);
   };
 
