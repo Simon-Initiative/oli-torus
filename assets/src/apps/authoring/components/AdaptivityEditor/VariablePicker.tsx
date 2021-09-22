@@ -32,12 +32,14 @@ interface VariablePickerProps {
   placement?: OverlayPlacements;
   targetRef: React.RefObject<HTMLInputElement>;
   typeRef: React.RefObject<HTMLSelectElement>;
+  context: 'init' | 'mutate' | 'condition';
 }
 
 export const VariablePicker: React.FC<VariablePickerProps> = ({
   placement = OverlayPlacements.TOP,
   targetRef,
   typeRef,
+  context,
 }) => {
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
@@ -141,7 +143,11 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     className="pb-2 pl-1 ml-4"
                     key={index}
                     onClick={() => {
-                      setTargetRef(`${specificSequenceId}.${part.id}.${key}`);
+                      setTargetRef(
+                        `${
+                          specificSequenceId === 'stage' ? 'stage.' : `${specificSequenceId}|stage.`
+                        }${part.id}.${key}`,
+                      );
                       setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
                     }}
                   >
@@ -249,37 +255,41 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     >
                       {FilterItems.SCREEN}
                     </Dropdown.Item>
-                    <Dropdown.Item
-                      disabled
-                      active={activeFilter === FilterItems.SESSION}
-                      onClick={() => {
-                        setActiveFilter(FilterItems.SESSION);
-                        setSpecificSequenceId('session');
-                      }}
-                    >
-                      {FilterItems.SESSION}
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                      disabled
-                      active={activeFilter === FilterItems.VARIABLES}
-                      onClick={() => {
-                        setActiveFilter(FilterItems.VARIABLES);
-                        setSpecificSequenceId('variables');
-                      }}
-                    >
-                      {FilterItems.VARIABLES}
-                    </Dropdown.Item>
-                    <Dropdown.Divider />
-                    {/* TODO: re-enable this for part2 */}
-                    {/* <Dropdown.Header>Other Screens</Dropdown.Header>
-                    <div className="screen-picker-container">
-                      <SequenceDropdown
-                        items={hierarchy}
-                        onChange={onChangeHandler}
-                        value={'next'}
-                        showNextBtn={false}
-                      />
-                    </div> */}
+                    {context !== 'init' && context !== 'mutate' && (
+                      <>
+                        <Dropdown.Item
+                          disabled
+                          active={activeFilter === FilterItems.SESSION}
+                          onClick={() => {
+                            setActiveFilter(FilterItems.SESSION);
+                            setSpecificSequenceId('session');
+                          }}
+                        >
+                          {FilterItems.SESSION}
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          disabled
+                          active={activeFilter === FilterItems.VARIABLES}
+                          onClick={() => {
+                            setActiveFilter(FilterItems.VARIABLES);
+                            setSpecificSequenceId('variables');
+                          }}
+                        >
+                          {FilterItems.VARIABLES}
+                        </Dropdown.Item>
+
+                        <Dropdown.Divider />
+                        <Dropdown.Header>Other Screens</Dropdown.Header>
+                        <div className="screen-picker-container">
+                          <SequenceDropdown
+                            items={hierarchy}
+                            onChange={onChangeHandler}
+                            value={'next'}
+                            showNextBtn={false}
+                          />
+                        </div>
+                      </>
+                    )}
                   </Dropdown.Menu>
                 </Dropdown>
               </div>

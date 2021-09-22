@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import state from 'state';
 import guid from 'utils/guid';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
@@ -8,7 +7,7 @@ import { VariablePicker, OverlayPlacements } from './VariablePicker';
 const conditionOperatorOptions = [
   { key: 'equal', text: '=', value: 'equal' },
   { key: 'lessThan', text: '<', value: 'lessThan' },
-  { key: 'lessThanInclusive', text: '<=', value: 'equlessThanInclusiveal' },
+  { key: 'lessThanInclusive', text: '<=', value: 'lessThanInclusive' },
   { key: 'notEqual', text: '!=', value: 'notEqual' },
   { key: 'greaterThan', text: '>', value: 'greaterThan' },
   { key: 'greaterThanInclusive', text: '>=', value: 'greaterThanInclusive' },
@@ -104,6 +103,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
             targetRef={targetRef}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
+            context="condition"
           />
         </div>
         <label className="sr-only" htmlFor={`target-${uuid}`}>
