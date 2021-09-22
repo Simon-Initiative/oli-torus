@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import state from 'state';
 import guid from 'utils/guid';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
