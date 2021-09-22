@@ -8,6 +8,7 @@ import { saveActivity } from '../../../authoring/store/activities/actions/saveAc
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -157,13 +158,13 @@ interface TypeOption {
   value: number;
 }
 const typeOptions: TypeOption[] = [
-  { key: 'string', text: 'String', value: 2 },
-  { key: 'number', text: 'Number', value: 1 },
-  { key: 'array', text: 'Array', value: 3 },
-  { key: 'boolean', text: 'Boolean', value: 4 },
-  { key: 'enum', text: 'Enum', value: 5 },
-  { key: 'math', text: 'Math Expression', value: 6 },
-  { key: 'parray', text: 'Point Array', value: 7 },
+  { key: 'string', text: 'String', value: CapiVariableTypes.STRING },
+  { key: 'number', text: 'Number', value: CapiVariableTypes.NUMBER },
+  { key: 'array', text: 'Array', value: CapiVariableTypes.ARRAY },
+  { key: 'boolean', text: 'Boolean', value: CapiVariableTypes.BOOLEAN },
+  { key: 'enum', text: 'Enum', value: CapiVariableTypes.ENUM },
+  { key: 'math', text: 'Math Expression', value: CapiVariableTypes.MATH_EXPR },
+  { key: 'parray', text: 'Point Array', value: CapiVariableTypes.ARRAY_POINT },
 ];
 
 interface OperatorOption {

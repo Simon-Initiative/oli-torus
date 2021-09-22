@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
@@ -5,13 +6,13 @@ import guid from 'utils/guid';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
 
 const typeOptions = [
-  { key: 'string', text: 'String', value: 2 },
-  { key: 'number', text: 'Number', value: 1 },
-  { key: 'array', text: 'Array', value: 3 },
-  { key: 'boolean', text: 'Boolean', value: 4 },
-  { key: 'enum', text: 'Enum', value: 5 },
-  { key: 'math', text: 'Math Expression', value: 6 },
-  { key: 'parray', text: 'Point Array', value: 7 },
+  { key: 'string', text: 'String', value: CapiVariableTypes.STRING },
+  { key: 'number', text: 'Number', value: CapiVariableTypes.NUMBER },
+  { key: 'array', text: 'Array', value: CapiVariableTypes.ARRAY },
+  { key: 'boolean', text: 'Boolean', value: CapiVariableTypes.BOOLEAN },
+  { key: 'enum', text: 'Enum', value: CapiVariableTypes.ENUM },
+  { key: 'math', text: 'Math Expression', value: CapiVariableTypes.MATH_EXPR },
+  { key: 'parray', text: 'Point Array', value: CapiVariableTypes.ARRAY_POINT },
 ];
 const opOptions = [
   { key: 'equal', text: '=', value: '=' },
