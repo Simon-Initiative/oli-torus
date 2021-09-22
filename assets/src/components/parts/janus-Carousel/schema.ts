@@ -19,6 +19,14 @@ export const schema: JSONSchema7Object = {
     description: 'Enables image zoom on double-click',
     default: false,
   },
+  images: {
+    title: 'Images',
+    type: 'array',
+    description: 'Images to display in the carousel',
+    items: {
+      $ref: '#/definitions/image',
+    },
+  },
   definitions: {
     image: {
       type: 'object',
