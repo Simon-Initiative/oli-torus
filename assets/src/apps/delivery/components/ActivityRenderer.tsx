@@ -193,6 +193,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return { ...results, ...result };
   };
 
+  const onResize = async (attemptGuid: string) => {
+    // no need to do anything for now.
+    /*  console.log('onResize called'); */
+  };
+
   const bridgeEvents: Record<string, any> = {
     saveActivity: onSaveActivity,
     submitActivity: onSubmitActivity,
@@ -203,6 +208,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     requestHint: onRequestHint,
     submitEvaluations: onSubmitEvaluations,
     activityReady: onReady,
+    resizePart: onResize,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -295,11 +301,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
+    const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
+      acc[key] = snapshot[key];
+      return acc;
+    }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
-      initStateFacts,
+      initStateFacts: finalInitSnapshot,
     });
   };
 
@@ -342,6 +352,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSubmitEvaluations,
     onSubmitPart,
     onReady,
+    onResize,
   };
 
   // don't render until we're already listening!
