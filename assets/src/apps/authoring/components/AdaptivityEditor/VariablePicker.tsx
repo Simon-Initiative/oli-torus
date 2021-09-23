@@ -185,7 +185,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           }
           if (instance.getCapabilities) {
             const capabilities = instance.getCapabilities();
-            if (capabilities.isCapi) {
+            if (capabilities.capi) {
               const custom: any = part.custom;
               if (Array.isArray(custom.configData)) {
                 adaptivitySchema = custom.configData.reduce(
