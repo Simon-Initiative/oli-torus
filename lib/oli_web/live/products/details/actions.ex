@@ -6,10 +6,9 @@ defmodule OliWeb.Products.Details.Actions do
   def render(assigns) do
     ~F"""
     <div>
-
       <div class="d-flex align-items-center">
         <p>
-          <button class="btn btn-link action-button">
+          <button class="btn btn-link action-button" :on-click="request_duplicate">
             Duplicate
           </button>
         </p>

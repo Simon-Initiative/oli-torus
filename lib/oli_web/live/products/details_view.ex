@@ -8,10 +8,13 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Branding
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Confirm
   alias OliWeb.Products.Details.{Actions, Edit, Content}
 
   data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Product"})]
   data product, :any, default: nil
+  data show_confirm, :boolean, default: false
   prop author, :any
 
   def mount(%{"product_id" => product_slug}, %{"current_author_id" => author_id}, socket) do
@@ -67,6 +70,11 @@ defmodule OliWeb.Products.DetailsView do
           <Actions product={@product}/>
         </div>
       </div>
+      {#if @show_confirm}
+        <Confirm title="Confirm Duplication" id="dialog" ok="duplicate" cancel="cancel_modal">
+          Are you sure that you wish to duplicate this product?
+        </Confirm>
+      {/if}
     </div>
     """
   end
@@ -77,6 +85,27 @@ defmodule OliWeb.Products.DetailsView do
       |> Sections.change_section(params)
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("request_duplicate", _, socket) do
+    {:noreply, assign(socket, show_confirm: true)}
+  end
+
+  def handle_event("cancel_modal", _, socket) do
+    {:noreply, assign(socket, show_confirm: false)}
+  end
+
+  def handle_event("duplicate", _, socket) do
+    case Blueprint.duplicate(socket.assigns.product) do
+      {:ok, duplicate} ->
+        {:noreply,
+         redirect(socket,
+           to: Routes.live_path(socket, OliWeb.Products.DetailsView, duplicate.slug)
+         )}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not duplicate product")}
+    end
   end
 
   def handle_event("save", %{"section" => params}, socket) do

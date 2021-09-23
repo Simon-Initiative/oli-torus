@@ -111,7 +111,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
       Map.from_struct(section),
       %{
         type: :blueprint,
-        section: :active,
+        status: :active,
         base_project_id: section.base_project_id,
         open_and_free: false,
         context_id: UUID.uuid4(),
