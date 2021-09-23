@@ -11,6 +11,36 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       Seeder.base_project_with_resource2()
     end
 
+    test "is_author_of_blueprint?/2 correctly identifies authors", %{
+      project: project,
+      institution: institution,
+      author: author
+    } do
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+
+      # Create a course section using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
+      {:ok, duplicate} = Blueprint.duplicate(section)
+
+      assert duplicate.type == :blueprint
+      refute duplicate.id == section.id
+      refute duplicate.slug == section.slug
+
+      assert Blueprint.is_author_of_blueprint?(duplicate.slug, author.id)
+      refute Blueprint.is_author_of_blueprint?(section.slug, author.id)
+    end
+
     test "duplicate/1 deep copies a course section, turning it into a blueprint", %{
       project: project,
       institution: institution

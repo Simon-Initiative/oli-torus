@@ -17,13 +17,13 @@ defmodule OliWeb.Products.Details.Content do
        <p>There is <b>one</b> update available for this product.</p>
        <Link
           label={"Manage updates"}
-          to={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @product.slug)}
+          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @product.slug)}
         />
      {#else}
        <p>There are <b>{update_count}</b> updates available for this product.</p>
        <Link
           label={"Manage updates"}
-          to={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @product.slug)}
+          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @product.slug)}
         />
      {/if}
       <p><button class="btn btn-primary">Customize Content</button></p>

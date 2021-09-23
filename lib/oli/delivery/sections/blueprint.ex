@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
+  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false
@@ -32,6 +33,24 @@ defmodule Oli.Delivery.Sections.Blueprint do
       nil -> nil
       %Section{type: :blueprint} = section -> section
       _ -> nil
+    end
+  end
+
+  def is_author_of_blueprint?(section_slug, author_id) do
+    query =
+      from(
+        s in Oli.Delivery.Sections.Section,
+        join: p in Project,
+        on: s.base_project_id == p.id,
+        join: a in Oli.Authoring.Authors.AuthorProject,
+        on: a.project_id == p.id,
+        where: s.slug == ^section_slug and s.type == :blueprint and a.author_id == ^author_id,
+        select: s
+      )
+
+    case Repo.aggregate(query, :count, :id) do
+      0 -> false
+      _ -> true
     end
   end
 

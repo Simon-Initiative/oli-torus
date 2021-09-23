@@ -215,6 +215,8 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
+    live("/products/:section_slug/updates", Delivery.ManageUpdates)
+
     get("/account", WorkspaceController, :account)
     put("/account", WorkspaceController, :update_author)
     post("/account/theme", WorkspaceController, :update_theme)
