@@ -81,7 +81,7 @@ const Adaptive = (
         // attempt to get an instance of the part class
         const PartClass = customElements.get(part.type);
         if (PartClass) {
-          const instance = new PartClass();
+          const instance = new PartClass() as any; // TODO: extend HTMLElement?
           if (instance.getCapabilities) {
             capabilities = { ...capabilities, ...instance.getCapabilities() };
           }

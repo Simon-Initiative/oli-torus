@@ -77,7 +77,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const Designer = () => {
     // console.log('PopupAuthor: Designer', props.portal);
     return ReactDOM.createPortal(
-      <PopupWindowDesigner onSave={() => null} onCancel={() => null} />,
+      <PopupWindowDesigner parts={windowParts} onSave={() => null} onCancel={() => null} />,
       document.getElementById(props.portal) as Element,
     );
   };
