@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
@@ -146,25 +147,20 @@ export const initializeActivity = createAsyncThunk(
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
+      const modifiedValue = handleValueExpression(currentActivityTree, s.value);
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
-        return { ...s };
+        return { ...s, value: modifiedValue };
       }
-      arrInitFacts.push(`${ownerActivity.id}|${s.target}`);
-      return { ...s, target: `${ownerActivity.id}|${s.target}` };
+      arrInitFacts.push(`${s.target}`);
+      return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
 
+    thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
     // now that the scripting env should be up to date, need to update attempt state in redux and server
     const currentState = getEnvState(defaultGlobalEnv);
 
-    const currentInitiSnapshot = arrInitFacts.reduce((collect: any, element: string) => {
-      const key = element.split('|');
-      collect[key[1]] = currentState[element];
-      return collect;
-    }, {});
-
-    thunkApi.dispatch(setInitStateFacts({ facts: currentInitiSnapshot }));
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {
         collect[key] = currentState[key];

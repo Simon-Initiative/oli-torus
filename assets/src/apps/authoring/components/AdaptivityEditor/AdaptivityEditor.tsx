@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
-import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
@@ -132,13 +131,12 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
     setConditions(conds);
     debounceNotifyChanges();
   };
-
-  const getActionEditor = (action: any) => {
+  const getActionEditor = (action: any, index: number) => {
     switch (action.type as ActionType) {
       case 'feedback':
         return (
           <ActionFeedbackEditor
-            key={guid()}
+            key={index}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);
@@ -149,7 +147,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       case 'navigation':
         return (
           <ActionNavigationEditor
-            key={guid()}
+            key={index}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);
@@ -160,7 +158,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       case 'mutateState':
         return (
           <ActionMutateEditor
-            key={guid()}
+            key={index}
             action={action}
             onChange={(changes: any) => {
               handleActionChange(action, changes);
@@ -190,10 +188,10 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         newAction = {
           type: 'mutateState',
           params: {
-            operator: 'adding',
-            target: 'session.currentQuestionScore',
-            targetType: CapiVariableTypes.NUMBER,
-            value: 1,
+            operator: '=',
+            target: 'stage.',
+            targetType: CapiVariableTypes.STRING,
+            value: undefined,
           },
         };
         break;
@@ -272,7 +270,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
                 data-toggle="dropdown"
                 aria-haspopup="true"
                 aria-expanded="false"
-                onClick={(e) => {
+                onClick={() => {
                   ($(`#adaptive-editor-add-context-trigger`) as any).dropdown('toggle');
                 }}
               >
@@ -302,7 +300,8 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
               {actions.length === 0 && (
                 <div className="text-danger">No actions. This rule will not do anything.</div>
               )}
-              {actions.length > 0 && actions.map((action: any) => getActionEditor(action))}
+              {actions.length > 0 &&
+                actions.map((action: any, index: number) => getActionEditor(action, index))}
             </div>
           </div>
         </>
