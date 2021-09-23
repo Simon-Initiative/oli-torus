@@ -165,7 +165,9 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
     }
     return writeVal;
   });
-  const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
+  const letStatements = vars.map(
+    (v) => `let {${v.key.trim()}} = ${getExpressionStringForValue(v)};`,
+  );
   return letStatements;
 };
 
@@ -213,7 +215,7 @@ export const applyState = (
   operation: ApplyStateOperation,
   env: Environment = defaultGlobalEnv,
 ): any => {
-  const targetKey = operation.target;
+  const targetKey = operation.target.trim();
   const targetType = operation.type || operation.targetType || CapiVariableTypes.UNKNOWN;
 
   let script = `let {${targetKey}} `;
