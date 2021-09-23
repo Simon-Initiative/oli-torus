@@ -10,7 +10,7 @@
     <title>OliWeb.Common.Breadcrumb — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b64c3f5953.js"></script>
+    <script src="dist/sidebar_items-df7eb3f889.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -130,7 +130,7 @@ OliWeb.Common.Breadcrumb <small class="app-vsn">(OLI Torus v0.13.2)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#trail_to/2">trail_to(project_slug, revision_slug)</a>
+    <a href="#trail_to/3">trail_to(project_or_section_slug, revision_slug, resolver)</a>
 
   </div>
 
@@ -161,7 +161,7 @@ Functions
     </a>
     <h1 class="signature">curriculum(project_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L108" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L110" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -192,7 +192,7 @@ Functions
     </a>
     <h1 class="signature">new(params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -220,16 +220,16 @@ action_descriptions: optional list of dropdown menu actions
    %Breadcrumb{ full_title: &quot;Title&quot;, short_title: &quot;Title&quot; }</p>
   </section>
 </section>
-<section class="detail" id="trail_to/2">
+<section class="detail" id="trail_to/3">
 
   <div class="detail-header">
-    <a href="#trail_to/2" class="detail-link" title="Link to this function">
+    <a href="#trail_to/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">trail_to(project_slug, revision_slug)</h1>
+    <h1 class="signature">trail_to(project_or_section_slug, revision_slug, resolver)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L54" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L56" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -239,12 +239,12 @@ action_descriptions: optional list of dropdown menu actions
 
   <section class="docstring">
 
-<p>Makes a breadcrumb trail (<code class="inline">%Breadcrumb{}[]</code>) from the curriculum through all the containers leading to the revision passed as an argument. A Breadcrumb is also created for the <code class="inline">revision_slug</code> at the end of the list.</p><h2 id="trail_to/2-parameters" class="section-heading">
-  <a href="#trail_to/2-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<p>Makes a breadcrumb trail (<code class="inline">%Breadcrumb{}[]</code>) from the curriculum through all the containers leading to the revision passed as an argument. A Breadcrumb is also created for the <code class="inline">revision_slug</code> at the end of the list.</p><h2 id="trail_to/3-parameters" class="section-heading">
+  <a href="#trail_to/3-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Parameters
 </h2>
-<ul><li>project_slug</li><li>revision_slug</li></ul><h2 id="trail_to/2-examples" class="section-heading">
-  <a href="#trail_to/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li>project_slug</li><li>revision_slug</li></ul><h2 id="trail_to/3-examples" class="section-heading">
+  <a href="#trail_to/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
 <p>   iex&gt; Breadcrumb.trail_to(project_slug, revision_slug)

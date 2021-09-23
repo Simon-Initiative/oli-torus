@@ -10,7 +10,7 @@
     <title>Oli.Publishing — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b64c3f5953.js"></script>
+    <script src="dist/sidebar_items-df7eb3f889.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -198,8 +198,8 @@ find and retrieve all revisions for the pages that contain the activities.</p></
   </div>
 
     <div class="summary-synopsis"><p>Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-and a map that contains any changes where the key is the resource id which points to a tuple with the
-first element being the change status (:changed|:added|:deleted) and the second is a
+with a version number and a map that contains any changes where the key is the resource id which points to
+a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
 map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}</p></div>
 
 </div>
@@ -307,7 +307,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_published_resources_by_publication/1">get_published_resources_by_publication(publication_id)</a>
+    <a href="#get_published_resources_by_publication/2">get_published_resources_by_publication(publication_id, opts \\ [])</a>
 
   </div>
 
@@ -525,11 +525,11 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#available_publications/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">available_publications</span><span class="p" data-group-id="0698726821-1">(</span><span class="p" data-group-id="0698726821-1">)</span><span class="w">
-</span><span class="p" data-group-id="0698726821-2">[</span><span class="p" data-group-id="0698726821-3">%</span><span class="nc" data-group-id="0698726821-3">Publication</span><span class="p" data-group-id="0698726821-3">{</span><span class="p" data-group-id="0698726821-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0698726821-2">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">available_publications</span><span class="p" data-group-id="1742110576-1">(</span><span class="p" data-group-id="1742110576-1">)</span><span class="w">
+</span><span class="p" data-group-id="1742110576-2">[</span><span class="p" data-group-id="1742110576-3">%</span><span class="nc" data-group-id="1742110576-3">Publication</span><span class="p" data-group-id="1742110576-3">{</span><span class="p" data-group-id="1742110576-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1742110576-2">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">available_publications</span><span class="p" data-group-id="0698726821-4">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="n">institution</span><span class="p" data-group-id="0698726821-4">)</span><span class="w">
-</span><span class="p" data-group-id="0698726821-5">[</span><span class="p" data-group-id="0698726821-6">%</span><span class="nc" data-group-id="0698726821-6">Publication</span><span class="p" data-group-id="0698726821-6">{</span><span class="p" data-group-id="0698726821-6">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0698726821-5">]</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">available_publications</span><span class="p" data-group-id="1742110576-4">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="n">institution</span><span class="p" data-group-id="1742110576-4">)</span><span class="w">
+</span><span class="p" data-group-id="1742110576-5">[</span><span class="p" data-group-id="1742110576-6">%</span><span class="nc" data-group-id="1742110576-6">Publication</span><span class="p" data-group-id="1742110576-6">{</span><span class="p" data-group-id="1742110576-6">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1742110576-5">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="available_publications/2">
@@ -577,8 +577,8 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#change_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_publication</span><span class="p" data-group-id="1811481514-1">(</span><span class="n">publication</span><span class="p" data-group-id="1811481514-1">)</span><span class="w">
-</span><span class="p" data-group-id="1811481514-2">%</span><span class="nc" data-group-id="1811481514-2">Ecto.Changeset</span><span class="p" data-group-id="1811481514-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1811481514-3">%</span><span class="nc" data-group-id="1811481514-3">Publication</span><span class="p" data-group-id="1811481514-3">{</span><span class="p" data-group-id="1811481514-3">}</span><span class="p" data-group-id="1811481514-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_publication</span><span class="p" data-group-id="6259939809-1">(</span><span class="n">publication</span><span class="p" data-group-id="6259939809-1">)</span><span class="w">
+</span><span class="p" data-group-id="6259939809-2">%</span><span class="nc" data-group-id="6259939809-2">Ecto.Changeset</span><span class="p" data-group-id="6259939809-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6259939809-3">%</span><span class="nc" data-group-id="6259939809-3">Publication</span><span class="p" data-group-id="6259939809-3">{</span><span class="p" data-group-id="6259939809-3">}</span><span class="p" data-group-id="6259939809-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="change_published_resource/2">
@@ -592,7 +592,7 @@ then it will only return publicly available publications.</p><h2 id="available_p
     </a>
     <h1 class="signature">change_published_resource(published_resource, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L466" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L468" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -606,8 +606,8 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#change_published_resource/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_published_resource</span><span class="p" data-group-id="7662208132-1">(</span><span class="n">published_resource</span><span class="p" data-group-id="7662208132-1">)</span><span class="w">
-</span><span class="p" data-group-id="7662208132-2">%</span><span class="nc" data-group-id="7662208132-2">Ecto.Changeset</span><span class="p" data-group-id="7662208132-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7662208132-3">%</span><span class="nc" data-group-id="7662208132-3">PublishedResource</span><span class="p" data-group-id="7662208132-3">{</span><span class="p" data-group-id="7662208132-3">}</span><span class="p" data-group-id="7662208132-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_published_resource</span><span class="p" data-group-id="3753111852-1">(</span><span class="n">published_resource</span><span class="p" data-group-id="3753111852-1">)</span><span class="w">
+</span><span class="p" data-group-id="3753111852-2">%</span><span class="nc" data-group-id="3753111852-2">Ecto.Changeset</span><span class="p" data-group-id="3753111852-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3753111852-3">%</span><span class="nc" data-group-id="3753111852-3">PublishedResource</span><span class="p" data-group-id="3753111852-3">{</span><span class="p" data-group-id="3753111852-3">}</span><span class="p" data-group-id="3753111852-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_publication/1">
@@ -635,10 +635,10 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#create_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_publication</span><span class="p" data-group-id="8355105894-1">(</span><span class="p" data-group-id="8355105894-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8355105894-2">}</span><span class="p" data-group-id="8355105894-1">)</span><span class="w">
-</span><span class="p" data-group-id="8355105894-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8355105894-4">%</span><span class="nc" data-group-id="8355105894-4">Publication</span><span class="p" data-group-id="8355105894-4">{</span><span class="p" data-group-id="8355105894-4">}</span><span class="p" data-group-id="8355105894-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_publication</span><span class="p" data-group-id="8355105894-5">(</span><span class="p" data-group-id="8355105894-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8355105894-6">}</span><span class="p" data-group-id="8355105894-5">)</span><span class="w">
-</span><span class="p" data-group-id="8355105894-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8355105894-8">%</span><span class="nc" data-group-id="8355105894-8">Ecto.Changeset</span><span class="p" data-group-id="8355105894-8">{</span><span class="p" data-group-id="8355105894-8">}</span><span class="p" data-group-id="8355105894-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_publication</span><span class="p" data-group-id="7805537472-1">(</span><span class="p" data-group-id="7805537472-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7805537472-2">}</span><span class="p" data-group-id="7805537472-1">)</span><span class="w">
+</span><span class="p" data-group-id="7805537472-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7805537472-4">%</span><span class="nc" data-group-id="7805537472-4">Publication</span><span class="p" data-group-id="7805537472-4">{</span><span class="p" data-group-id="7805537472-4">}</span><span class="p" data-group-id="7805537472-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_publication</span><span class="p" data-group-id="7805537472-5">(</span><span class="p" data-group-id="7805537472-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7805537472-6">}</span><span class="p" data-group-id="7805537472-5">)</span><span class="w">
+</span><span class="p" data-group-id="7805537472-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7805537472-8">%</span><span class="nc" data-group-id="7805537472-8">Ecto.Changeset</span><span class="p" data-group-id="7805537472-8">{</span><span class="p" data-group-id="7805537472-8">}</span><span class="p" data-group-id="7805537472-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_published_resource/1">
@@ -652,7 +652,7 @@ then it will only return publicly available publications.</p><h2 id="available_p
     </a>
     <h1 class="signature">create_published_resource(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L440" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L442" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -666,10 +666,10 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#create_published_resource/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_published_resource</span><span class="p" data-group-id="1669357230-1">(</span><span class="p" data-group-id="1669357230-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1669357230-2">}</span><span class="p" data-group-id="1669357230-1">)</span><span class="w">
-</span><span class="p" data-group-id="1669357230-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1669357230-4">%</span><span class="nc" data-group-id="1669357230-4">PublishedResource</span><span class="p" data-group-id="1669357230-4">{</span><span class="p" data-group-id="1669357230-4">}</span><span class="p" data-group-id="1669357230-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_published_resource</span><span class="p" data-group-id="1669357230-5">(</span><span class="p" data-group-id="1669357230-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1669357230-6">}</span><span class="p" data-group-id="1669357230-5">)</span><span class="w">
-</span><span class="p" data-group-id="1669357230-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1669357230-8">%</span><span class="nc" data-group-id="1669357230-8">Ecto.Changeset</span><span class="p" data-group-id="1669357230-8">{</span><span class="p" data-group-id="1669357230-8">}</span><span class="p" data-group-id="1669357230-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_published_resource</span><span class="p" data-group-id="1988418604-1">(</span><span class="p" data-group-id="1988418604-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1988418604-2">}</span><span class="p" data-group-id="1988418604-1">)</span><span class="w">
+</span><span class="p" data-group-id="1988418604-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1988418604-4">%</span><span class="nc" data-group-id="1988418604-4">PublishedResource</span><span class="p" data-group-id="1988418604-4">{</span><span class="p" data-group-id="1988418604-4">}</span><span class="p" data-group-id="1988418604-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_published_resource</span><span class="p" data-group-id="1988418604-5">(</span><span class="p" data-group-id="1988418604-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1988418604-6">}</span><span class="p" data-group-id="1988418604-5">)</span><span class="w">
+</span><span class="p" data-group-id="1988418604-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1988418604-8">%</span><span class="nc" data-group-id="1988418604-8">Ecto.Changeset</span><span class="p" data-group-id="1988418604-8">{</span><span class="p" data-group-id="1988418604-8">}</span><span class="p" data-group-id="1988418604-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_publication/1">
@@ -695,10 +695,10 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#delete_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_publication</span><span class="p" data-group-id="0130767282-1">(</span><span class="n">publication</span><span class="p" data-group-id="0130767282-1">)</span><span class="w">
-</span><span class="p" data-group-id="0130767282-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0130767282-3">%</span><span class="nc" data-group-id="0130767282-3">Publication</span><span class="p" data-group-id="0130767282-3">{</span><span class="p" data-group-id="0130767282-3">}</span><span class="p" data-group-id="0130767282-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_publication</span><span class="p" data-group-id="0130767282-4">(</span><span class="n">publication</span><span class="p" data-group-id="0130767282-4">)</span><span class="w">
-</span><span class="p" data-group-id="0130767282-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0130767282-6">%</span><span class="nc" data-group-id="0130767282-6">Ecto.Changeset</span><span class="p" data-group-id="0130767282-6">{</span><span class="p" data-group-id="0130767282-6">}</span><span class="p" data-group-id="0130767282-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_publication</span><span class="p" data-group-id="3251794617-1">(</span><span class="n">publication</span><span class="p" data-group-id="3251794617-1">)</span><span class="w">
+</span><span class="p" data-group-id="3251794617-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3251794617-3">%</span><span class="nc" data-group-id="3251794617-3">Publication</span><span class="p" data-group-id="3251794617-3">{</span><span class="p" data-group-id="3251794617-3">}</span><span class="p" data-group-id="3251794617-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_publication</span><span class="p" data-group-id="3251794617-4">(</span><span class="n">publication</span><span class="p" data-group-id="3251794617-4">)</span><span class="w">
+</span><span class="p" data-group-id="3251794617-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3251794617-6">%</span><span class="nc" data-group-id="3251794617-6">Ecto.Changeset</span><span class="p" data-group-id="3251794617-6">{</span><span class="p" data-group-id="3251794617-6">}</span><span class="p" data-group-id="3251794617-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_published_resource/1">
@@ -710,7 +710,7 @@ then it will only return publicly available publications.</p><h2 id="available_p
     </a>
     <h1 class="signature">delete_published_resource(published_resource)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L478" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L480" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -724,10 +724,10 @@ then it will only return publicly available publications.</p><h2 id="available_p
   <a href="#delete_published_resource/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_published_resource</span><span class="p" data-group-id="7327805444-1">(</span><span class="n">published_resource</span><span class="p" data-group-id="7327805444-1">)</span><span class="w">
-</span><span class="p" data-group-id="7327805444-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7327805444-3">%</span><span class="nc" data-group-id="7327805444-3">PublishedResource</span><span class="p" data-group-id="7327805444-3">{</span><span class="p" data-group-id="7327805444-3">}</span><span class="p" data-group-id="7327805444-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_published_resource</span><span class="p" data-group-id="7327805444-4">(</span><span class="n">published_resource</span><span class="p" data-group-id="7327805444-4">)</span><span class="w">
-</span><span class="p" data-group-id="7327805444-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7327805444-6">%</span><span class="nc" data-group-id="7327805444-6">Ecto.Changeset</span><span class="p" data-group-id="7327805444-6">{</span><span class="p" data-group-id="7327805444-6">}</span><span class="p" data-group-id="7327805444-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_published_resource</span><span class="p" data-group-id="7679032514-1">(</span><span class="n">published_resource</span><span class="p" data-group-id="7679032514-1">)</span><span class="w">
+</span><span class="p" data-group-id="7679032514-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7679032514-3">%</span><span class="nc" data-group-id="7679032514-3">PublishedResource</span><span class="p" data-group-id="7679032514-3">{</span><span class="p" data-group-id="7679032514-3">}</span><span class="p" data-group-id="7679032514-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_published_resource</span><span class="p" data-group-id="7679032514-4">(</span><span class="n">published_resource</span><span class="p" data-group-id="7679032514-4">)</span><span class="w">
+</span><span class="p" data-group-id="7679032514-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7679032514-6">%</span><span class="nc" data-group-id="7679032514-6">Ecto.Changeset</span><span class="p" data-group-id="7679032514-6">{</span><span class="p" data-group-id="7679032514-6">}</span><span class="p" data-group-id="7679032514-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="determine_parent_pages/2">
@@ -739,7 +739,7 @@ then it will only return publicly available publications.</p><h2 id="available_p
     </a>
     <h1 class="signature">determine_parent_pages(activity_resource_ids, publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L766" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L767" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -763,7 +763,7 @@ page that encloses it</p>
     </a>
     <h1 class="signature">diff_publications(p1, p2)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L589" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L591" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -774,28 +774,28 @@ page that encloses it</p>
   <section class="docstring">
 
 <p>Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-and a map that contains any changes where the key is the resource id which points to a tuple with the
-first element being the change status (:changed|:added|:deleted) and the second is a
+with a version number and a map that contains any changes where the key is the resource id which points to
+a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
 map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}</p><h2 id="diff_publications/2-examples" class="section-heading">
   <a href="#diff_publications/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="8216199470-1">(</span><span class="n">publication1</span><span class="p">,</span><span class="w"> </span><span class="n">publication2</span><span class="p" data-group-id="8216199470-1">)</span><span class="w">
-</span><span class="p" data-group-id="8216199470-2">{</span><span class="ss">:major</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-3">%{</span><span class="w">
-  </span><span class="mi">23</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-4">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-5">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res1</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev1</span><span class="p" data-group-id="8216199470-5">}</span><span class="p" data-group-id="8216199470-4">}</span><span class="w">
-  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-6">{</span><span class="ss">:added</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-7">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res2</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev2</span><span class="p" data-group-id="8216199470-7">}</span><span class="p" data-group-id="8216199470-6">}</span><span class="w">
-  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-8">{</span><span class="ss">:added</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-9">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res3</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev3</span><span class="p" data-group-id="8216199470-9">}</span><span class="p" data-group-id="8216199470-8">}</span><span class="w">
-  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-10">{</span><span class="ss">:deleted</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-11">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res4</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev4</span><span class="p" data-group-id="8216199470-11">}</span><span class="p" data-group-id="8216199470-10">}</span><span class="w">
-</span><span class="p" data-group-id="8216199470-3">}</span><span class="p" data-group-id="8216199470-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="5840217814-1">(</span><span class="n">publication1</span><span class="p">,</span><span class="w"> </span><span class="n">publication2</span><span class="p" data-group-id="5840217814-1">)</span><span class="w">
+</span><span class="p" data-group-id="5840217814-2">{</span><span class="p" data-group-id="5840217814-3">{</span><span class="ss">:major</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-4">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p" data-group-id="5840217814-4">}</span><span class="p" data-group-id="5840217814-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-5">%{</span><span class="w">
+  </span><span class="mi">23</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-6">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-7">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res1</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev1</span><span class="p" data-group-id="5840217814-7">}</span><span class="p" data-group-id="5840217814-6">}</span><span class="w">
+  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-8">{</span><span class="ss">:added</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-9">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res2</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev2</span><span class="p" data-group-id="5840217814-9">}</span><span class="p" data-group-id="5840217814-8">}</span><span class="w">
+  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-10">{</span><span class="ss">:added</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-11">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res3</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev3</span><span class="p" data-group-id="5840217814-11">}</span><span class="p" data-group-id="5840217814-10">}</span><span class="w">
+  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-12">{</span><span class="ss">:deleted</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-13">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res4</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev4</span><span class="p" data-group-id="5840217814-13">}</span><span class="p" data-group-id="5840217814-12">}</span><span class="w">
+</span><span class="p" data-group-id="5840217814-5">}</span><span class="p" data-group-id="5840217814-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="8216199470-12">(</span><span class="n">publication2</span><span class="p">,</span><span class="w"> </span><span class="n">publication3</span><span class="p" data-group-id="8216199470-12">)</span><span class="w">
-</span><span class="p" data-group-id="8216199470-13">{</span><span class="ss">:minor</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-14">%{</span><span class="w">
-  </span><span class="mi">23</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-15">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-16">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res1</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev1</span><span class="p" data-group-id="8216199470-16">}</span><span class="p" data-group-id="8216199470-15">}</span><span class="w">
-  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8216199470-17">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-18">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res2</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev2</span><span class="p" data-group-id="8216199470-18">}</span><span class="p" data-group-id="8216199470-17">}</span><span class="w">
-</span><span class="p" data-group-id="8216199470-14">}</span><span class="p" data-group-id="8216199470-13">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="5840217814-14">(</span><span class="n">publication2</span><span class="p">,</span><span class="w"> </span><span class="n">publication3</span><span class="p" data-group-id="5840217814-14">)</span><span class="w">
+</span><span class="p" data-group-id="5840217814-15">{</span><span class="p" data-group-id="5840217814-16">{</span><span class="ss">:minor</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-17">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="5840217814-17">}</span><span class="p" data-group-id="5840217814-16">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-18">%{</span><span class="w">
+  </span><span class="mi">23</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-19">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-20">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res1</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev1</span><span class="p" data-group-id="5840217814-20">}</span><span class="p" data-group-id="5840217814-19">}</span><span class="w">
+  </span><span class="mi">24</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="5840217814-21">{</span><span class="ss">:changed</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-22">%{</span><span class="ss">resource</span><span class="p">:</span><span class="w"> </span><span class="n">res2</span><span class="p">,</span><span class="w"> </span><span class="ss">revision</span><span class="p">:</span><span class="w"> </span><span class="n">rev2</span><span class="p" data-group-id="5840217814-22">}</span><span class="p" data-group-id="5840217814-21">}</span><span class="w">
+</span><span class="p" data-group-id="5840217814-18">}</span><span class="p" data-group-id="5840217814-15">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="8216199470-19">(</span><span class="n">publication1</span><span class="p">,</span><span class="w"> </span><span class="n">publication1</span><span class="p" data-group-id="8216199470-19">)</span><span class="w">
-</span><span class="p" data-group-id="8216199470-20">{</span><span class="ss">:no_changes</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8216199470-21">%{</span><span class="p" data-group-id="8216199470-21">}</span><span class="p" data-group-id="8216199470-20">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">diff_publications</span><span class="p" data-group-id="5840217814-23">(</span><span class="n">publication1</span><span class="p">,</span><span class="w"> </span><span class="n">publication1</span><span class="p" data-group-id="5840217814-23">)</span><span class="w">
+</span><span class="p" data-group-id="5840217814-24">{</span><span class="ss">:no_changes</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5840217814-25">%{</span><span class="p" data-group-id="5840217814-25">}</span><span class="p" data-group-id="5840217814-24">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="find_objective_attachments/2">
@@ -807,7 +807,7 @@ map containing the resource and revision e.g. {:changed, %{resource: res_p2, rev
     </a>
     <h1 class="signature">find_objective_attachments(resource_id, publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L709" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L710" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -839,7 +839,7 @@ contains multiple parts with the objective attached to it.</p><p>The return valu
     </a>
     <h1 class="signature">get_all_mappings_for_resource(resource_id, project_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L551" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L553" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -861,7 +861,7 @@ contains multiple parts with the objective attached to it.</p><p>The return valu
     </a>
     <h1 class="signature">get_all_project_visibilities(project_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L813" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L814" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -894,10 +894,10 @@ contains multiple parts with the objective attached to it.</p><p>The return valu
   <section class="docstring">
 
 <p>Gets the latest published publication for a project from slug.
- ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_latest_published_publication_by_slug</span><span class="p" data-group-id="8374594958-1">(</span><span class="s">&quot;my-project-slug&quot;</span><span class="p" data-group-id="8374594958-1">)</span><span class="w">
-</span><span class="p" data-group-id="8374594958-2">%</span><span class="nc" data-group-id="8374594958-2">Publication</span><span class="p" data-group-id="8374594958-2">{</span><span class="p" data-group-id="8374594958-2">}</span><span class="w">
+ ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_latest_published_publication_by_slug</span><span class="p" data-group-id="5151301570-1">(</span><span class="s">&quot;my-project-slug&quot;</span><span class="p" data-group-id="5151301570-1">)</span><span class="w">
+</span><span class="p" data-group-id="5151301570-2">%</span><span class="nc" data-group-id="5151301570-2">Publication</span><span class="p" data-group-id="5151301570-2">{</span><span class="p" data-group-id="5151301570-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_latest_published_publication_by_slug</span><span class="p" data-group-id="8374594958-3">(</span><span class="s">&quot;invalid-slug&quot;</span><span class="p" data-group-id="8374594958-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_latest_published_publication_by_slug</span><span class="p" data-group-id="5151301570-3">(</span><span class="s">&quot;invalid-slug&quot;</span><span class="p" data-group-id="5151301570-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -910,7 +910,7 @@ contains multiple parts with the objective attached to it.</p><p>The return valu
     </a>
     <h1 class="signature">get_objective_mappings_by_publication(publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L362" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L364" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -947,9 +947,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_publication!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_publication!</span><span class="p" data-group-id="4935435914-1">(</span><span class="mi">123</span><span class="p" data-group-id="4935435914-1">)</span><span class="w">
-</span><span class="p" data-group-id="4935435914-2">%</span><span class="nc" data-group-id="4935435914-2">Publication</span><span class="p" data-group-id="4935435914-2">{</span><span class="p" data-group-id="4935435914-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_publication!</span><span class="p" data-group-id="4935435914-3">(</span><span class="mi">456</span><span class="p" data-group-id="4935435914-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_publication!</span><span class="p" data-group-id="6151938692-1">(</span><span class="mi">123</span><span class="p" data-group-id="6151938692-1">)</span><span class="w">
+</span><span class="p" data-group-id="6151938692-2">%</span><span class="nc" data-group-id="6151938692-2">Publication</span><span class="p" data-group-id="6151938692-2">{</span><span class="p" data-group-id="6151938692-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_publication!</span><span class="p" data-group-id="6151938692-3">(</span><span class="mi">456</span><span class="p" data-group-id="6151938692-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -1029,7 +1029,7 @@ that pertain to a given publication.</p>
     </a>
     <h1 class="signature">get_published_resource(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L395" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L397" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1051,7 +1051,7 @@ that pertain to a given publication.</p>
     </a>
     <h1 class="signature">get_published_resource!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L386" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L388" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1066,9 +1066,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_published_resource!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resource!</span><span class="p" data-group-id="8597825583-1">(</span><span class="mi">123</span><span class="p" data-group-id="8597825583-1">)</span><span class="w">
-</span><span class="p" data-group-id="8597825583-2">%</span><span class="nc" data-group-id="8597825583-2">PublishedResource</span><span class="p" data-group-id="8597825583-2">{</span><span class="p" data-group-id="8597825583-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resource!</span><span class="p" data-group-id="8597825583-3">(</span><span class="mi">456</span><span class="p" data-group-id="8597825583-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resource!</span><span class="p" data-group-id="4730253214-1">(</span><span class="mi">123</span><span class="p" data-group-id="4730253214-1">)</span><span class="w">
+</span><span class="p" data-group-id="4730253214-2">%</span><span class="nc" data-group-id="4730253214-2">PublishedResource</span><span class="p" data-group-id="4730253214-2">{</span><span class="p" data-group-id="4730253214-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resource!</span><span class="p" data-group-id="4730253214-3">(</span><span class="mi">456</span><span class="p" data-group-id="4730253214-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -1081,7 +1081,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_published_resource!(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L388" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L390" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1094,14 +1094,16 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 
   </section>
 </section>
-<section class="detail" id="get_published_resources_by_publication/1">
+<section class="detail" id="get_published_resources_by_publication/2">
+
+    <span id="get_published_resources_by_publication/1"></span>
 
   <div class="detail-header">
-    <a href="#get_published_resources_by_publication/1" class="detail-link" title="Link to this function">
+    <a href="#get_published_resources_by_publication/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_published_resources_by_publication(publication_id)</h1>
+    <h1 class="signature">get_published_resources_by_publication(publication_id, opts \\ [])</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L354" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -1113,12 +1115,12 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 
   <section class="docstring">
 
-<p>Returns the list of published_resources for a given publication.</p><h2 id="get_published_resources_by_publication/1-examples" class="section-heading">
-  <a href="#get_published_resources_by_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<p>Returns the list of published_resources for a given publication.</p><h2 id="get_published_resources_by_publication/2-examples" class="section-heading">
+  <a href="#get_published_resources_by_publication/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resources_for_publication</span><span class="p" data-group-id="4498291564-1">(</span><span class="p" data-group-id="4498291564-1">)</span><span class="w">
-</span><span class="p" data-group-id="4498291564-2">[</span><span class="p" data-group-id="4498291564-3">%</span><span class="nc" data-group-id="4498291564-3">PublishedResource</span><span class="p" data-group-id="4498291564-3">{</span><span class="p" data-group-id="4498291564-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4498291564-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_published_resources_for_publication</span><span class="p" data-group-id="9444211571-1">(</span><span class="p" data-group-id="9444211571-1">)</span><span class="w">
+</span><span class="p" data-group-id="9444211571-2">[</span><span class="p" data-group-id="9444211571-3">%</span><span class="nc" data-group-id="9444211571-3">PublishedResource</span><span class="p" data-group-id="9444211571-3">{</span><span class="p" data-group-id="9444211571-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9444211571-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_published_revision/2">
@@ -1130,7 +1132,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_published_revision(publication_id, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L485" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L487" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1152,7 +1154,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_published_revisions(publication)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L661" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L663" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1174,7 +1176,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_resource_revisions_for_publication(publication)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L674" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L675" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1188,8 +1190,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_resource_revisions_for_publication/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_revisions_for_publication</span><span class="p" data-group-id="2976801050-1">(</span><span class="mi">123</span><span class="p" data-group-id="2976801050-1">)</span><span class="w">
-</span><span class="p" data-group-id="2976801050-2">%{</span><span class="mi">124</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2976801050-3">[</span><span class="p" data-group-id="2976801050-4">{</span><span class="p" data-group-id="2976801050-5">%</span><span class="nc" data-group-id="2976801050-5">Resource</span><span class="p" data-group-id="2976801050-5">{</span><span class="p" data-group-id="2976801050-5">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2976801050-6">%</span><span class="nc" data-group-id="2976801050-6">Revision</span><span class="p" data-group-id="2976801050-6">{</span><span class="p" data-group-id="2976801050-6">}</span><span class="p" data-group-id="2976801050-4">}</span><span class="p" data-group-id="2976801050-3">]</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2976801050-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_resource_revisions_for_publication</span><span class="p" data-group-id="2473608154-1">(</span><span class="mi">123</span><span class="p" data-group-id="2473608154-1">)</span><span class="w">
+</span><span class="p" data-group-id="2473608154-2">%{</span><span class="mi">124</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2473608154-3">[</span><span class="p" data-group-id="2473608154-4">{</span><span class="p" data-group-id="2473608154-5">%</span><span class="nc" data-group-id="2473608154-5">Resource</span><span class="p" data-group-id="2473608154-5">{</span><span class="p" data-group-id="2473608154-5">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2473608154-6">%</span><span class="nc" data-group-id="2473608154-6">Revision</span><span class="p" data-group-id="2473608154-6">{</span><span class="p" data-group-id="2473608154-6">}</span><span class="p" data-group-id="2473608154-4">}</span><span class="p" data-group-id="2473608154-3">]</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2473608154-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_unpublished_publication_id!/1">
@@ -1212,10 +1214,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <section class="docstring">
 
 <p>Gets the ID of the unpublished publication for a project. This assumes there is only one unpublished publication per project.
- ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_unpublished_publication_id!</span><span class="p" data-group-id="7926854979-1">(</span><span class="mi">123</span><span class="p" data-group-id="7926854979-1">)</span><span class="w">
-</span><span class="p" data-group-id="7926854979-2">%</span><span class="nc" data-group-id="7926854979-2">Publication</span><span class="p" data-group-id="7926854979-2">{</span><span class="p" data-group-id="7926854979-2">}</span><span class="w">
+ ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_unpublished_publication_id!</span><span class="p" data-group-id="6528205786-1">(</span><span class="mi">123</span><span class="p" data-group-id="6528205786-1">)</span><span class="w">
+</span><span class="p" data-group-id="6528205786-2">%</span><span class="nc" data-group-id="6528205786-2">Publication</span><span class="p" data-group-id="6528205786-2">{</span><span class="p" data-group-id="6528205786-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_unpublished_publication_id!</span><span class="p" data-group-id="7926854979-3">(</span><span class="mi">456</span><span class="p" data-group-id="7926854979-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_unpublished_publication_id!</span><span class="p" data-group-id="6528205786-3">(</span><span class="mi">456</span><span class="p" data-group-id="6528205786-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -1294,7 +1296,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">insert_visibility(attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L797" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L798" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1330,8 +1332,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_publications/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_publications</span><span class="p" data-group-id="4772095470-1">(</span><span class="p" data-group-id="4772095470-1">)</span><span class="w">
-</span><span class="p" data-group-id="4772095470-2">[</span><span class="p" data-group-id="4772095470-3">%</span><span class="nc" data-group-id="4772095470-3">Publication</span><span class="p" data-group-id="4772095470-3">{</span><span class="p" data-group-id="4772095470-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4772095470-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_publications</span><span class="p" data-group-id="4176032726-1">(</span><span class="p" data-group-id="4176032726-1">)</span><span class="w">
+</span><span class="p" data-group-id="4176032726-2">[</span><span class="p" data-group-id="4176032726-3">%</span><span class="nc" data-group-id="4176032726-3">Publication</span><span class="p" data-group-id="4176032726-3">{</span><span class="p" data-group-id="4176032726-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4176032726-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_published_resources/0">
@@ -1357,8 +1359,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_published_resources/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_published_resources</span><span class="p" data-group-id="3284401653-1">(</span><span class="p" data-group-id="3284401653-1">)</span><span class="w">
-</span><span class="p" data-group-id="3284401653-2">[</span><span class="p" data-group-id="3284401653-3">%</span><span class="nc" data-group-id="3284401653-3">PublishedResource</span><span class="p" data-group-id="3284401653-3">{</span><span class="p" data-group-id="3284401653-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3284401653-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_published_resources</span><span class="p" data-group-id="4617307150-1">(</span><span class="p" data-group-id="4617307150-1">)</span><span class="w">
+</span><span class="p" data-group-id="4617307150-2">[</span><span class="p" data-group-id="4617307150-3">%</span><span class="nc" data-group-id="4617307150-3">PublishedResource</span><span class="p" data-group-id="4617307150-3">{</span><span class="p" data-group-id="4617307150-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4617307150-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="new_project_publication/2">
@@ -1403,10 +1405,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <section class="docstring">
 
 <p>Get unpublished publication for a project from slug. This assumes there is only one unpublished publication per project.
- ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">project_working_publication</span><span class="p" data-group-id="2437617740-1">(</span><span class="s">&quot;my-project-slug&quot;</span><span class="p" data-group-id="2437617740-1">)</span><span class="w">
-</span><span class="p" data-group-id="2437617740-2">%</span><span class="nc" data-group-id="2437617740-2">Publication</span><span class="p" data-group-id="2437617740-2">{</span><span class="p" data-group-id="2437617740-2">}</span><span class="w">
+ ## Examples</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">project_working_publication</span><span class="p" data-group-id="7906964827-1">(</span><span class="s">&quot;my-project-slug&quot;</span><span class="p" data-group-id="7906964827-1">)</span><span class="w">
+</span><span class="p" data-group-id="7906964827-2">%</span><span class="nc" data-group-id="7906964827-2">Publication</span><span class="p" data-group-id="7906964827-2">{</span><span class="p" data-group-id="7906964827-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">project_working_publication</span><span class="p" data-group-id="2437617740-3">(</span><span class="s">&quot;invalid-slug&quot;</span><span class="p" data-group-id="2437617740-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">project_working_publication</span><span class="p" data-group-id="7906964827-3">(</span><span class="s">&quot;invalid-slug&quot;</span><span class="p" data-group-id="7906964827-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -1419,7 +1421,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">publish_new_revision(previous_revision, changes, publication, author_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L423" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L425" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1441,7 +1443,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">publish_project(project, description)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L506" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L508" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1503,8 +1505,8 @@ Returns the published publication</p><h2 id="publish_project/2-examples" class="
   <a href="#publish_project/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">publish_project</span><span class="p" data-group-id="2803062893-1">(</span><span class="n">project</span><span class="p" data-group-id="2803062893-1">)</span><span class="w">
-</span><span class="p" data-group-id="2803062893-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2803062893-3">%</span><span class="nc" data-group-id="2803062893-3">Publication</span><span class="p" data-group-id="2803062893-3">{</span><span class="p" data-group-id="2803062893-3">}</span><span class="p" data-group-id="2803062893-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">publish_project</span><span class="p" data-group-id="0350530415-1">(</span><span class="n">project</span><span class="p" data-group-id="0350530415-1">)</span><span class="w">
+</span><span class="p" data-group-id="0350530415-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0350530415-3">%</span><span class="nc" data-group-id="0350530415-3">Publication</span><span class="p" data-group-id="0350530415-3">{</span><span class="p" data-group-id="0350530415-3">}</span><span class="p" data-group-id="0350530415-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="query_unpublished_revisions_by_type/2">
@@ -1538,7 +1540,7 @@ Returns the published publication</p><h2 id="publish_project/2-examples" class="
     </a>
     <h1 class="signature">remove_visibility(project_visibility)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L806" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L807" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1560,7 +1562,7 @@ Returns the published publication</p><h2 id="publish_project/2-examples" class="
     </a>
     <h1 class="signature">retrieve_lock_info(resource_ids, publication_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L749" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L750" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1598,10 +1600,10 @@ locked_by_id to allow access to the user that might have the resource locked.</p
   <a href="#update_publication/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_publication</span><span class="p" data-group-id="1788753004-1">(</span><span class="n">publication</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1788753004-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1788753004-2">}</span><span class="p" data-group-id="1788753004-1">)</span><span class="w">
-</span><span class="p" data-group-id="1788753004-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1788753004-4">%</span><span class="nc" data-group-id="1788753004-4">Publication</span><span class="p" data-group-id="1788753004-4">{</span><span class="p" data-group-id="1788753004-4">}</span><span class="p" data-group-id="1788753004-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_publication</span><span class="p" data-group-id="1788753004-5">(</span><span class="n">publication</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1788753004-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1788753004-6">}</span><span class="p" data-group-id="1788753004-5">)</span><span class="w">
-</span><span class="p" data-group-id="1788753004-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1788753004-8">%</span><span class="nc" data-group-id="1788753004-8">Ecto.Changeset</span><span class="p" data-group-id="1788753004-8">{</span><span class="p" data-group-id="1788753004-8">}</span><span class="p" data-group-id="1788753004-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_publication</span><span class="p" data-group-id="7921194881-1">(</span><span class="n">publication</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7921194881-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7921194881-2">}</span><span class="p" data-group-id="7921194881-1">)</span><span class="w">
+</span><span class="p" data-group-id="7921194881-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7921194881-4">%</span><span class="nc" data-group-id="7921194881-4">Publication</span><span class="p" data-group-id="7921194881-4">{</span><span class="p" data-group-id="7921194881-4">}</span><span class="p" data-group-id="7921194881-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_publication</span><span class="p" data-group-id="7921194881-5">(</span><span class="n">publication</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7921194881-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7921194881-6">}</span><span class="p" data-group-id="7921194881-5">)</span><span class="w">
+</span><span class="p" data-group-id="7921194881-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7921194881-8">%</span><span class="nc" data-group-id="7921194881-8">Ecto.Changeset</span><span class="p" data-group-id="7921194881-8">{</span><span class="p" data-group-id="7921194881-8">}</span><span class="p" data-group-id="7921194881-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_published_resource/2">
@@ -1613,7 +1615,7 @@ locked_by_id to allow access to the user that might have the resource locked.</p
     </a>
     <h1 class="signature">update_published_resource(published_resource, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L454" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L456" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1627,10 +1629,10 @@ locked_by_id to allow access to the user that might have the resource locked.</p
   <a href="#update_published_resource/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_published_resource</span><span class="p" data-group-id="7070658441-1">(</span><span class="n">published_resource</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7070658441-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7070658441-2">}</span><span class="p" data-group-id="7070658441-1">)</span><span class="w">
-</span><span class="p" data-group-id="7070658441-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7070658441-4">%</span><span class="nc" data-group-id="7070658441-4">PublishedResource</span><span class="p" data-group-id="7070658441-4">{</span><span class="p" data-group-id="7070658441-4">}</span><span class="p" data-group-id="7070658441-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_published_resource</span><span class="p" data-group-id="7070658441-5">(</span><span class="n">published_resource</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7070658441-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7070658441-6">}</span><span class="p" data-group-id="7070658441-5">)</span><span class="w">
-</span><span class="p" data-group-id="7070658441-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7070658441-8">%</span><span class="nc" data-group-id="7070658441-8">Ecto.Changeset</span><span class="p" data-group-id="7070658441-8">{</span><span class="p" data-group-id="7070658441-8">}</span><span class="p" data-group-id="7070658441-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_published_resource</span><span class="p" data-group-id="9837247335-1">(</span><span class="n">published_resource</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9837247335-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9837247335-2">}</span><span class="p" data-group-id="9837247335-1">)</span><span class="w">
+</span><span class="p" data-group-id="9837247335-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9837247335-4">%</span><span class="nc" data-group-id="9837247335-4">PublishedResource</span><span class="p" data-group-id="9837247335-4">{</span><span class="p" data-group-id="9837247335-4">}</span><span class="p" data-group-id="9837247335-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_published_resource</span><span class="p" data-group-id="9837247335-5">(</span><span class="n">published_resource</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9837247335-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9837247335-6">}</span><span class="p" data-group-id="9837247335-5">)</span><span class="w">
+</span><span class="p" data-group-id="9837247335-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9837247335-8">%</span><span class="nc" data-group-id="9837247335-8">Ecto.Changeset</span><span class="p" data-group-id="9837247335-8">{</span><span class="p" data-group-id="9837247335-8">}</span><span class="p" data-group-id="9837247335-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="upsert_published_resource/2">
@@ -1642,7 +1644,7 @@ locked_by_id to allow access to the user that might have the resource locked.</p
     </a>
     <h1 class="signature">upsert_published_resource(publication, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L406" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/publishing.ex#L408" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

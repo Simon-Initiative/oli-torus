@@ -10,7 +10,7 @@
     <title>Oli.Resources.Numbering — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b64c3f5953.js"></script>
+    <script src="dist/sidebar_items-df7eb3f889.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -152,14 +152,14 @@ conceptualized (and navigated via previous/next) as a contiguous list of resourc
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#init_numberings/0">init_numberings()</a>
+    <a href="#init_numbering_tracker/0">init_numbering_tracker()</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#next_index/3">next_index(numberings, level, revision)</a>
+    <a href="#next_index/3">next_index(numbering_tracker, level, revision)</a>
 
   </div>
 
@@ -182,6 +182,15 @@ conceptualized (and navigated via previous/next) as a contiguous list of resourc
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#path_from_root_to/2">path_from_root_to(hierarchy, node)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the path from a hierarchy's root to a given node</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#path_from_root_to/3">path_from_root_to(resolver, project_or_section_slug, revision_slug)</a>
 
   </div>
@@ -194,6 +203,16 @@ conceptualized (and navigated via previous/next) as a contiguous list of resourc
     <a href="#prefix/1">prefix(numbering)</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#renumber_hierarchy/1">renumber_hierarchy(root)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Renumbers the section resources in a hierarchy. Takes the hierarchy root and returns the
+updated hierarchy root and generated numberings.</p></div>
 
 </div>
 
@@ -233,16 +252,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="init_numberings/0">
+<section class="detail" id="init_numbering_tracker/0">
 
   <div class="detail-header">
-    <a href="#init_numberings/0" class="detail-link" title="Link to this function">
+    <a href="#init_numbering_tracker/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">init_numberings()</h1>
+    <h1 class="signature">init_numbering_tracker()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L224" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L225" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -262,9 +281,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">next_index(numberings, level, revision)</h1>
+    <h1 class="signature">next_index(numbering_tracker, level, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L201" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L202" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,8 +321,7 @@ Functions
           <pre>number_full_tree(resolver(), project_or_section_slug()) :: %{
   required(revision_id()) =&gt; %Oli.Resources.Numbering{
     index: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 }</pre>
 
@@ -406,14 +424,79 @@ Functions
 ) :: %{
   required(revision_id()) =&gt; %Oli.Resources.Numbering{
     index: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 }</pre>
 
       </div>
 
 
+  </section>
+</section>
+<section class="detail" id="path_from_root_to/2">
+
+  <div class="detail-header">
+    <a href="#path_from_root_to/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">path_from_root_to(hierarchy, node)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L296" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>path_from_root_to(
+  %Oli.Delivery.Hierarchy.HierarchyNode{
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    project_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  %Oli.Delivery.Hierarchy.HierarchyNode{
+    children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    project_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  }
+) ::
+  {:ok,
+   [
+     %Oli.Delivery.Hierarchy.HierarchyNode{
+       children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       numbering: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       project_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+       slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+     }
+   ]}
+  | {:not_found, []}</pre>
+
+      </div>
+
+<p>Returns the path from a hierarchy's root to a given node</p><h2 id="path_from_root_to/2-examples" class="section-heading">
+  <a href="#path_from_root_to/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<p>   iex&gt; Numbering.path_from_root_to(hierarchy, node)
+   [%HierarchyNode{}, %HierarchyNode{}, %HierarchyNode{}]</p>
   </section>
 </section>
 <section class="detail" id="path_from_root_to/3">
@@ -512,6 +595,34 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="renumber_hierarchy/1">
+
+  <div class="detail-header">
+    <a href="#renumber_hierarchy/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">renumber_hierarchy(root)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L237" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Renumbers the section resources in a hierarchy. Takes the hierarchy root and returns the
+updated hierarchy root and generated numberings.</p><h2 id="renumber_hierarchy/1-examples" class="section-heading">
+  <a href="#renumber_hierarchy/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">renumber_hierarchy</span><span class="p" data-group-id="4473489790-1">(</span><span class="n">hierarchy</span><span class="p" data-group-id="4473489790-1">)</span><span class="w">
+</span><span class="p" data-group-id="4473489790-2">{</span><span class="n">updated_hierarchy</span><span class="p">,</span><span class="w"> </span><span class="n">numberings</span><span class="p" data-group-id="4473489790-2">}</span></code></pre>
   </section>
 </section>
 

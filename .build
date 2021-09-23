@@ -142,6 +142,8 @@ Oli.Delivery.Evaluation.Rule.html
 Oli.Delivery.Evaluation.Standard.html
 Oli.Delivery.Evaluation.html
 Oli.Delivery.ExtrinsicState.html
+Oli.Delivery.Hierarchy.HierarchyNode.html
+Oli.Delivery.Hierarchy.html
 Oli.Delivery.Page.ActivityContext.html
 Oli.Delivery.Page.ModelPruner.html
 Oli.Delivery.Page.ObjectivesRollup.html
@@ -214,7 +216,6 @@ Oli.Predefined.html
 Oli.Publishing.AuthoringResolver.html
 Oli.Publishing.ChangeTracker.html
 Oli.Publishing.DeliveryResolver.html
-Oli.Publishing.HierarchyNode.html
 Oli.Publishing.ObjectiveMappingTransfer.html
 Oli.Publishing.Publication.html
 Oli.Publishing.PublishedResource.html
@@ -328,6 +329,7 @@ OliWeb.ApiSchemas.html
 OliWeb.ApiSpec.html
 OliWeb.BrandController.html
 OliWeb.BrandView.html
+OliWeb.Breadcrumb.Breadcrumb.html
 OliWeb.Breadcrumb.BreadcrumbLive.html
 OliWeb.Breadcrumb.BreadcrumbTrailLive.html
 OliWeb.ChangesetView.html
@@ -359,6 +361,12 @@ OliWeb.Curriculum.Rollup.html
 OliWeb.Curriculum.Utils.html
 OliWeb.Delivery.ManageSection.html
 OliWeb.Delivery.ManageUpdates.html
+OliWeb.Delivery.Remix.Actions.html
+OliWeb.Delivery.Remix.DropTarget.html
+OliWeb.Delivery.Remix.Entry.html
+OliWeb.Delivery.Remix.MoveModal.html
+OliWeb.Delivery.Remix.RemoveModal.html
+OliWeb.Delivery.RemixSection.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
@@ -479,8 +487,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-6de9e9ecca.js
-dist/sidebar_items-b64c3f5953.js
+dist/search_items-3e34e6c768.js
+dist/sidebar_items-df7eb3f889.js
 index.html
 license.html
 readme.html
