@@ -190,7 +190,13 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
               if (Array.isArray(custom.configData)) {
                 adaptivitySchema = custom.configData.reduce(
                   (acc: any, typeToAdaptivitySchemaMap: any) => {
-                    acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+                    if (context === 'mutate') {
+                      if (!typeToAdaptivitySchemaMap.readonly) {
+                        acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+                      }
+                    } else {
+                      acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+                    }
                     return acc;
                   },
                   {},
