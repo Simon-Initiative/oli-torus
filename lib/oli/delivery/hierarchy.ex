@@ -1,32 +1,18 @@
-defmodule Oli.Publishing.HierarchyNode do
+defmodule Oli.Delivery.Hierarchy do
   @moduledoc """
-  HierarchyNode is a generic in-memory representation of a node within a hierarchy. This struct
-  is shared accross authoring and delivery and allows gerneralized components to work in both.
+  A module for hierarchy and HierarchyNode operations and utilities
 
-  A hierarchy is a single root node which contains children. The children in a node are intended
-  to be fully instantiated structs (as opposed to just identifiers. However during the process of
-  instantiateing the hierarchy, children may temporarily be set as an identifer until the full
-  hierarchy is instantiated).
+  A delivery hierarchy is the main structure in which a course curriculum is organized
+  to be delivered. It is mainly persisted through section resource records. A hierarchy is
+  also a generic in-memory representation of a curriculum which can be passed into
+  delivery-centric functions from an authoring context, in which case the hierarchy could
+  be ephemeral and section_resources are empty (e.g. course preview)
 
-  Notice that the hierarhcy node also has a "slug" value. This value is used to uniquely identify
-  the node within a set of nodes and therefore can be set to the revision's slug or section_resource's
-  slug depending on which is more applicable. For example, a section's hierarchy could theoretically
-  contain multiple nodes that have the same revision, and therefore using the section reource slug
-  is more appropriate in the delivery context. However, since section resources do not exist in the
-  authoring context, using the revision slug will be more appropriate. The actual values used are not
-  necessarily important other than to uniquely identify the node in the hierarchy.
+  See also HierarchyNode for more details
   """
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
-
-  defstruct slug: nil,
-            numbering: nil,
-            children: [],
-            resource_id: nil,
-            project_id: nil,
-            revision: nil,
-            section_resource: nil
 
   @doc """
   From a constructed hierarchy root node, or a collection of hierarchy nodes, return

@@ -45,7 +45,7 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   defstruct level: 0,
             index: 0

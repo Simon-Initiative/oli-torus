@@ -8,7 +8,8 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Numbering
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   describe "enrollments" do
     @valid_attrs %{
@@ -525,7 +526,7 @@ defmodule Oli.SectionsTest do
       node = Enum.at(container_node.children, source_index)
 
       children =
-        HierarchyNode.reorder_children(
+        Hierarchy.reorder_children(
           container_node.children,
           node,
           source_index,
@@ -533,7 +534,7 @@ defmodule Oli.SectionsTest do
         )
 
       updated = %HierarchyNode{container_node | children: children}
-      hierarchy = HierarchyNode.find_and_update_node(hierarchy, updated)
+      hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
 
       {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
 

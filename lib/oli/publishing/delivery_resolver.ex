@@ -9,7 +9,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
 
   defp section_resources(section_slug) do

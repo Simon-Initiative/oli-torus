@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Remix.RemoveModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def render(%{node: %HierarchyNode{slug: slug, revision: revision}} = assigns) do
     ~L"""

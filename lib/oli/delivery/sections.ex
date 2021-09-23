@@ -17,7 +17,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
@@ -670,14 +671,14 @@ defmodule Oli.Delivery.Sections do
           current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
           new_hierarchy =
-            HierarchyNode.create_hierarchy(root_revision, published_resources_by_resource_id)
+            Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
 
           # processed_resource_ids = Map.put(%{}, root_revision.resource_id, true)
           processed_resource_ids = %{}
 
           {updated_hierarchy, _} =
             new_hierarchy
-            |> HierarchyNode.flatten_hierarchy()
+            |> Hierarchy.flatten_hierarchy()
             |> Enum.reduce(
               {current_hierarchy, processed_resource_ids},
               fn node, {hierarchy, processed_resource_ids} ->
@@ -724,7 +725,7 @@ defmodule Oli.Delivery.Sections do
               parent = %HierarchyNode{parent | children: parent.children ++ [node]}
 
               # update the hierarchy
-              hierarchy = HierarchyNode.find_and_update_node(hierarchy, parent)
+              hierarchy = Hierarchy.find_and_update_node(hierarchy, parent)
 
               # we now consider all descendants to be processed, so that we dont
               # process them again we add them to the filter
@@ -778,7 +779,7 @@ defmodule Oli.Delivery.Sections do
         }
 
         # update the hierarchy
-        hierarchy = HierarchyNode.find_and_update_node(hierarchy, parent)
+        hierarchy = Hierarchy.find_and_update_node(hierarchy, parent)
 
         # we now consider all descendants to be processed, so that we dont process them again
         processed_resource_ids = add_descendant_resource_ids(node, processed_resource_ids)
@@ -792,7 +793,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp add_descendant_resource_ids(node, processed_resource_ids) do
-    HierarchyNode.flatten_hierarchy(node)
+    Hierarchy.flatten_hierarchy(node)
     |> Enum.reduce(processed_resource_ids, fn n, acc ->
       Map.put(acc, n.resource_id, true)
     end)
@@ -800,7 +801,7 @@ defmodule Oli.Delivery.Sections do
 
   # finds the node in the hierarchy with the given resource id
   defp hierarchy_node(hierarchy, resource_id) do
-    HierarchyNode.find_in_hierarchy(
+    Hierarchy.find_in_hierarchy(
       hierarchy,
       fn %HierarchyNode{
            resource_id: node_resource_id
@@ -822,7 +823,7 @@ defmodule Oli.Delivery.Sections do
   defp parent_node(hierarchy, resource_id) do
     container = ResourceType.get_id_by_type("container")
 
-    HierarchyNode.find_in_hierarchy(hierarchy, fn %HierarchyNode{revision: revision} ->
+    Hierarchy.find_in_hierarchy(hierarchy, fn %HierarchyNode{revision: revision} ->
       # only search containers, skip pages and other resource types
       if revision.resource_type_id == container do
         resource_id in Enum.map(revision.children, & &1)

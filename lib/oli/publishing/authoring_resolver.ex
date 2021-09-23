@@ -9,7 +9,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   alias Oli.Publishing.Publication
   alias Oli.Publishing.PublishedResource
   alias Oli.Authoring.Course.Project
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course
 
@@ -191,7 +191,13 @@ defmodule Oli.Publishing.AuthoringResolver do
     root_node
   end
 
-  def hierarchy_node_with_children(revision, project_id, revisions_by_resource_id, numbering_tracker, level) do
+  def hierarchy_node_with_children(
+        revision,
+        project_id,
+        revisions_by_resource_id,
+        numbering_tracker,
+        level
+      ) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 

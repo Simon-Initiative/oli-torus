@@ -22,7 +22,8 @@ defmodule OliWeb.Delivery.RemixSection do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Numbering
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.Remix.{RemoveModal, MoveModal}
 
@@ -67,7 +68,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("set_active", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy} = socket.assigns
 
-    active = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
 
     if is_container?(active.revision) do
       {:noreply, assign(socket, :active, active)}
@@ -141,7 +142,7 @@ defmodule OliWeb.Delivery.RemixSection do
     node = Enum.at(active.children, source_index)
 
     children =
-      HierarchyNode.reorder_children(
+      Hierarchy.reorder_children(
         active.children,
         node,
         source_index,
@@ -149,7 +150,7 @@ defmodule OliWeb.Delivery.RemixSection do
       )
 
     updated = %HierarchyNode{active | children: children}
-    hierarchy = HierarchyNode.find_and_update_node(hierarchy, updated)
+    hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
 
     {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
 
@@ -184,7 +185,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
 
     assigns = %{
       id: "move_#{slug}",
@@ -204,7 +205,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy, modal: modal} = socket.assigns
 
-    container = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    container = Hierarchy.find_in_hierarchy(hierarchy, slug)
     breadcrumbs = breadcrumb_trail_to(hierarchy, container)
 
     modal = %{
@@ -227,11 +228,11 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
-    hierarchy = HierarchyNode.move_node(hierarchy, node, selection)
+    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    hierarchy = Hierarchy.move_node(hierarchy, node, selection)
 
     # refresh active node
-    active = HierarchyNode.find_in_hierarchy(hierarchy, active.slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
   end
@@ -243,7 +244,7 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("show_remove_modal", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy} = socket.assigns
 
-    node = HierarchyNode.find_in_hierarchy(hierarchy, slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
 
     assigns = %{
       id: "remove_#{slug}",
@@ -259,10 +260,10 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("RemoveModal.remove", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    hierarchy = HierarchyNode.find_and_remove_node(hierarchy, slug)
+    hierarchy = Hierarchy.find_and_remove_node(hierarchy, slug)
 
     # refresh active node
-    active = HierarchyNode.find_in_hierarchy(hierarchy, active.slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
   end

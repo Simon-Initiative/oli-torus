@@ -3,7 +3,7 @@ defmodule OliWeb.PageDeliveryView do
 
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def show_score(score, out_of) do
     cond do
@@ -43,7 +43,7 @@ defmodule OliWeb.PageDeliveryView do
   end
 
   def encode_pages(conn, section_slug, hierarchy) do
-    Oli.Publishing.HierarchyNode.flatten_pages(hierarchy)
+    Oli.Delivery.Hierarchy.flatten_pages(hierarchy)
     |> Enum.map(fn %{revision: revision} ->
       %{
         slug: revision.slug,

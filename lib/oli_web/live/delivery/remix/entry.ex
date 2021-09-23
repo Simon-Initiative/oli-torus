@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
   use Phoenix.Component
 
   alias OliWeb.Delivery.Remix.Actions
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def entry(
         %{

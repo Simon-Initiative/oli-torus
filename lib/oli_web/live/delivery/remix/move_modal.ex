@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.Remix.MoveModal do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.HierarchyPicker
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def render(
         %{
