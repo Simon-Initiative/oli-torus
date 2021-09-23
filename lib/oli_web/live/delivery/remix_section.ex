@@ -32,16 +32,22 @@ defmodule OliWeb.Delivery.RemixSection do
         _params,
         %{
           "section_slug" => section_slug,
-          "redirect_after_save" => redirect_after_save,
-          "current_user_id" => current_user_id,
-          "current_author" => current_author
-        } = _session,
+          "current_user_id" => current_user_id
+        } = session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
-    current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+
+    redirect_after_save =
+      Map.get(
+        session,
+        "redirect_after_save",
+        Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+      )
 
     if section.open_and_free do
+      current_author = Map.get(session, "current_author")
+
       # only permit authoring admin level access
       if Accounts.is_admin?(current_author) do
         init_state(socket, section, redirect_after_save)
@@ -50,10 +56,10 @@ defmodule OliWeb.Delivery.RemixSection do
       end
     else
       # only permit instructor or admin level access
-      current_user = current_user |> Repo.preload([:platform_roles, :author])
+      current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+        |> Repo.preload([:platform_roles, :author])
 
       if is_section_instructor_or_admin?(section.slug, current_user) do
-        redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
         init_state(socket, section, redirect_after_save)
       else
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
