@@ -141,20 +141,18 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // TODO: is it possible to set "other" values?
     // like session.whatever from here? if so, the following won't work
     const stateVarsFromSim = Object.keys(msgData.values).map((key) => {
-      if (!msgData.values[key].readonly) {
-        const variableObj: CapiVariable = {
-          key: key,
-          type: msgData.values[key] ? msgData.values[key].type : null,
-          value: msgData.values[key] ? msgData.values[key].value : null,
-          allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
-          bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
-          readonly: msgData.values[key] ? msgData.values[key].readonly : false,
-          writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
-        };
-        return variableObj;
-      }
+      const variableObj: CapiVariable = {
+        key: key,
+        type: msgData.values[key] ? msgData.values[key].type : null,
+        value: msgData.values[key] ? msgData.values[key].value : null,
+        allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
+        bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
+        readonly: msgData.values[key] ? msgData.values[key].readonly : false,
+        writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
+      };
+      return variableObj;
     });
-    setInternalState(stateVarsFromSim.filter((item) => item !== undefined));
+    setInternalState(stateVarsFromSim);
   };
 
   const handleOnReady = (data: any) => {
@@ -281,7 +279,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     ReactDOM.createPortal(
       <CapiVariablePicker
         label="Stage"
-        state={internalState}
+        state={internalState.filter((item: CapiVariable) => !item.readonly)}
         onChange={handleValueChangeFromModal}
         onSave={handleEditorSave}
         onCancel={handleEditorCancel}
