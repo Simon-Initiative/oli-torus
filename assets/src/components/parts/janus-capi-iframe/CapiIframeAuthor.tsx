@@ -93,12 +93,13 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   useEffect(() => {
     setInConfigureMode(parseBoolean(configuremode));
   }, [configuremode]);
-  const frameRef = useCallback((frame) => {
+  const frameRef = (frame: HTMLIFrameElement) => {
     /* console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame }); */
     if (frame) {
       setSimFrame(frame);
     }
-  }, []);
+  };
+
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id: props.id,
@@ -167,9 +168,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   };
 
   const handleOnReady = (data: any) => {
-    if (simLife.ready) {
-      return;
-    }
     simLife.ready = true;
     const updateSimLife = { ...simLife };
     updateSimLife.ready = true;
@@ -182,6 +180,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       const cVar = new CapiVariable({
         key: baseKey,
         value,
+        type,
       });
       collect[baseKey] = cVar;
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, collect);
