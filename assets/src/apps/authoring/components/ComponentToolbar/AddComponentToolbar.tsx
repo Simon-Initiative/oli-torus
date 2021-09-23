@@ -48,7 +48,7 @@ const AddComponentToolbar: React.FC = () => {
           currentActivity.resourceId,
         );
 
-        const part = new PartClass();
+        const part = new PartClass() as any;
         const newPartData = {
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
