@@ -351,10 +351,12 @@ defmodule Oli.Publishing do
       [%PublishedResource{}, ...]
 
   """
-  def get_published_resources_by_publication(publication_id) do
+  def get_published_resources_by_publication(publication_id, opts \\ []) do
+    preload = Keyword.get(opts, :preload, [:resource, :revision])
+
     from(p in PublishedResource,
       where: p.publication_id == ^publication_id,
-      preload: [:resource, :revision, :publication]
+      preload: ^preload
     )
     |> Repo.all()
   end

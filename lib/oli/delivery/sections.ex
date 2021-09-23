@@ -629,20 +629,23 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Gracefully applies the specified update to a given section by leaving the existing
+  Gracefully applies the specified publication update to a given section by leaving the existing
   curriculum and section modifications in-tact while applying the structural changes that
   occurred between the old and new publication.
 
   This implementation makes the assumption that a resource_id is unique within a curriculum.
   That is, a resource can only allowed to be added once in a single location within a curriculum.
+  This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
+  could be extended to not just apply the changes to the first node found that contains the changed resource,
+  but any/all nodes in the hierarchy which reference the changed resource.
   """
   def apply_publication_update(
         %Section{id: section_id} = section,
-        project_id,
         publication_id
       ) do
-    current_publication = get_current_publication(section_id, project_id)
     new_publication = Publishing.get_publication!(publication_id)
+    project_id = new_publication.project_id
+    current_publication = get_current_publication(section_id, project_id)
 
     # generate a diff between the old and new publication
     case Publishing.diff_publications(current_publication, new_publication) do
@@ -763,8 +766,6 @@ defmodule Oli.Delivery.Sections do
          %HierarchyNode{} = parent,
          diff
        ) do
-    HierarchyNode.inspect(node, label: "maybe_process_deleted_node")
-
     case diff[resource_id] do
       {:deleted, _} ->
         # remove child from from parent's children
@@ -833,7 +834,9 @@ defmodule Oli.Delivery.Sections do
 
   # returns a map of resource_id to published resource
   defp published_resources_map(publication_id) do
-    Publishing.get_published_resources_by_publication(publication_id)
+    Publishing.get_published_resources_by_publication(publication_id,
+      preload: [:resource, :revision, :publication]
+    )
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
   end
 
