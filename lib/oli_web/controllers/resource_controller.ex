@@ -9,7 +9,7 @@ defmodule OliWeb.ResourceController do
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
   alias Oli.PartComponents
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy
 
   plug :fetch_project
   plug :authorize_project
@@ -24,7 +24,8 @@ defmodule OliWeb.ResourceController do
       {:ok, context} ->
         render(conn, determine_editor(context),
           active: :curriculum,
-          breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+          breadcrumbs:
+            Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
           is_admin?: is_admin?,
           context: Jason.encode!(context),
           raw_context: context,
@@ -34,7 +35,7 @@ defmodule OliWeb.ResourceController do
           revision_slug: revision_slug,
           activity_types: Activities.activities_for_project(project),
           part_component_types: PartComponents.part_components_for_project(project),
-          graded: context.graded,
+          graded: context.graded
         )
 
       {:error, :not_found} ->
@@ -87,7 +88,8 @@ defmodule OliWeb.ResourceController do
         case PageEditor.create_context(project_slug, revision_slug, author) do
           {:ok, context} ->
             render(conn, "page_preview.html",
-              breadcrumbs: Breadcrumb.trail_to(project_slug, revision_slug),
+              breadcrumbs:
+                Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
                   activity_revisions,
@@ -114,7 +116,7 @@ defmodule OliWeb.ResourceController do
     # but it should suffice for now until an improved preview landing page is added
     [first | _] =
       AuthoringResolver.full_hierarchy(project_slug)
-      |> HierarchyNode.flatten_pages()
+      |> Hierarchy.flatten_pages()
 
     conn
     |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
