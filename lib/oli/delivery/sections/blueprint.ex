@@ -1,7 +1,6 @@
 defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
-  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false

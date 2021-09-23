@@ -26,7 +26,12 @@ defmodule OliWeb.Products.Details.Content do
           to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @product.slug)}
         />
      {/if}
-      <p><button class="btn btn-primary">Customize Content</button></p>
+      <p>
+        <Link
+          label={"Customize content"}
+          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
+        />
+      </p>
     </div>
 
     """
