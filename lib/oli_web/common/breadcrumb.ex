@@ -7,6 +7,8 @@ defmodule OliWeb.Common.Breadcrumb do
   defstruct full_title: "",
             short_title: "",
             link: nil,
+            phx_click: nil,
+            phx_value: nil,
             slug: nil,
             action_descriptions: []
 
@@ -51,25 +53,25 @@ defmodule OliWeb.Common.Breadcrumb do
      [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
 
   """
-  def trail_to(project_slug, revision_slug) do
-    [curriculum(project_slug) | trail_to_helper(project_slug, revision_slug)]
+  def trail_to(project_or_section_slug, revision_slug, resolver) do
+    [curriculum(project_or_section_slug) | trail_to_helper(project_or_section_slug, revision_slug, resolver)]
   end
 
-  defp trail_to_helper(project_slug, revision_slug) do
-    with numberings <- Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
+  defp trail_to_helper(project_or_section_slug, revision_slug, resolver) do
+    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug),
          {:ok, [_root | path]} =
            Numbering.path_from_root_to(
-             Oli.Publishing.AuthoringResolver,
-             project_slug,
+             resolver,
+             project_or_section_slug,
              revision_slug
            ) do
-      Enum.map(path, fn revision -> make_breadcrumb(project_slug, revision, numberings) end)
+      Enum.map(path, fn revision -> make_breadcrumb(project_or_section_slug, revision, numberings) end)
     end
   end
 
-  defp make_breadcrumb(project_slug, revision, numberings) do
+  defp make_breadcrumb(project_or_section_slug, revision, numberings) do
     with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id),
-         link <- Links.resource_path(revision, [], project_slug),
+         link <- Links.resource_path(revision, [], project_or_section_slug),
          numbering <- Map.get(numberings, revision.id) do
       case resource_type do
         "container" ->

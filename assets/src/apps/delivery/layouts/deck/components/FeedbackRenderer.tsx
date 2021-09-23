@@ -33,7 +33,14 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
   // TODO: other handlers for parts, "advanced" things like tracking part responses within feedback??
 
   return (
-    <div className="feedback-item" style={{ overflow: 'hidden auto' }}>
+    <div className="feedback-item">
+      <style>
+        {`
+          .feedback-item > janus-text-flow {
+            position: inherit !important;
+          }
+        `}
+      </style>
       <PartsLayoutRenderer key={renderId} parts={parts} onPartInit={handlePartInit} />
     </div>
   );
