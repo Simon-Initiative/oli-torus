@@ -170,7 +170,9 @@ defmodule OliWeb.Delivery.RemixSection do
     %{section: section} = socket.assigns
 
     {:noreply,
-     redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
+     redirect(socket,
+       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, section.slug)
+     )}
   end
 
   def handle_event("save", _, socket) do

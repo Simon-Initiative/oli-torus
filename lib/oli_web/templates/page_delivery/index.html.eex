@@ -7,29 +7,8 @@
     <div class="d-flex flex-row my-2">
       <div class="flex-fill"></div>
       <div>
-        <%= link to: Routes.page_delivery_path(@conn, :updates, @section_slug), class: "btn btn-link btn-sm ml-1" do %>
-          <%= case Enum.count(@summary.updates) do %>
-            <% 0 -> %>
-              Updates
-            <% num_updates -> %>
-              Updates <span class="badge badge-primary"><%= num_updates %></span>
-          <% end %>
-        <% end %>
+        <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
       </div>
-
-      <div>
-        <%= link "Remix", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section_slug), class: "btn btn-link btn-sm" %>
-      </div>
-
-      <div>
-        <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section_slug), class: "btn btn-link btn-sm ml-1" %>
-      </div>
-
-      <%= if is_admin?(@section.slug, @current_user) do %>
-        <div>
-          <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
-        </div>
-      <% end %>
     </div>
 
   <% end %>
