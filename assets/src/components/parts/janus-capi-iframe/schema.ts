@@ -19,7 +19,7 @@ export const schema: JSONSchema7Object = {
 
 export const getCapabilities = () => ({
   configure: true,
-  save: true,
+  isCapi: true,
 });
 
 export const uiSchema = {};

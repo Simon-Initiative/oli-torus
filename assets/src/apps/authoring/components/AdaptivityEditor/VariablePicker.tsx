@@ -183,6 +183,21 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           if (instance.getAdaptivitySchema) {
             adaptivitySchema = await instance.getAdaptivitySchema();
           }
+          if (instance.getCapabilities) {
+            const capabilities = instance.getCapabilities();
+            if (capabilities.isCapi) {
+              const custom: any = part.custom;
+              if (Array.isArray(custom.configData)) {
+                adaptivitySchema = custom.configData.reduce(
+                  (acc: any, typeToAdaptivitySchemaMap: any) => {
+                    acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+                    return acc;
+                  },
+                  {},
+                );
+              }
+            }
+          }
         }
       }
       return { adaptivitySchema, type: part.type };
