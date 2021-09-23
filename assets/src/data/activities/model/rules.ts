@@ -147,6 +147,9 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
   }
 };
 
+export const isTextRule = (rule: string): boolean =>
+  !!rule.match(/contains/) || !!rule.match(/like/);
+
 // Explicitly match all ids in `toMatch` and do not match any ids in `allChoiceIds` \ `toMatch`
 export const matchListRule = (all: string[], toMatch: string[]) => {
   const notToMatch = setDifference(all, toMatch);

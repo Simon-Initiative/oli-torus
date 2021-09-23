@@ -1,5 +1,6 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
+import { defaultCapabilities } from 'components/parts/types/parts';
 import EventEmitter from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -33,6 +34,7 @@ const Adaptive = (
 
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
 
+  // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
     const handleHostClick = (e: any) => {
       const path = e.path;
@@ -56,10 +58,12 @@ const Adaptive = (
     };
   }, [props, parts, configurePartId]);
 
+  // this effect keeps the local parts state in sync with the props
   useEffect(() => {
     setParts(props.model?.content?.partsLayout || []);
   }, [props.model]);
 
+  // this effect keeps the toolbar positioned next to the selected part
   useEffect(() => {
     const x = selectedPart?.custom.x || 0;
     const y = (selectedPart?.custom.y || 0) + toolBarTopOffset;
@@ -68,19 +72,31 @@ const Adaptive = (
     }
   }, [selectedPart]);
 
+  // this keeps a reference to the actual part data of the selected part id in local state
   useEffect(() => {
     if (selectedPartId) {
       const part = parts.find((p) => p.id === selectedPartId);
       if (part) {
-        setSelectedPart(part);
+        let capabilities = { ...defaultCapabilities };
+        // attempt to get an instance of the part class
+        const PartClass = customElements.get(part.type);
+        if (PartClass) {
+          const instance = new PartClass();
+          if (instance.getCapabilities) {
+            capabilities = { ...capabilities, ...instance.getCapabilities() };
+          }
+        }
+        setSelectedPart({ ...part, capabilities });
       }
     } else {
       setSelectedPart(null);
     }
     // any time selection changes we need to stop editing
     setConfigurePartId('');
+    console.log('PART SELECTION CHANGED', { selectedPartId, selectedPart });
   }, [selectedPartId, parts]);
 
+  // this effect sets the selection from the outside based on authoring context
   useEffect(() => {
     if (props.authoringContext) {
       setSelectedPartId(props.authoringContext.selectedPartId);
@@ -278,7 +294,7 @@ const Adaptive = (
           }
           .part-config-container-inner > :first-child {
             position: absolute;
-            top: 15%;
+            top: 15px;
             left: 25%;
             background-color: #fff;
           }
@@ -301,21 +317,29 @@ const Adaptive = (
             left: toolbarPosition.x,
           }}
         >
-          <button title="Edit" onClick={handlePartConfigure}>
-            <i className="las la-edit"></i>
-          </button>
+          {selectedPart && selectedPart.capabilities.configure && (
+            <button title="Edit" onClick={handlePartConfigure}>
+              <i className="las la-edit"></i>
+            </button>
+          )}
           {/* <button title="Configure" onClick={handlePartConfigure}>
             <i className="las la-cog"></i>
           </button> */}
-          <button title="Move Forward" onClick={handlePartMoveForward}>
-            <i className="las la-plus"></i>
-          </button>
-          <button title="Move Back" onClick={handlePartMoveBack}>
-            <i className="las la-minus"></i>
-          </button>
-          <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
-            <i className="las la-trash"></i>
-          </button>
+          {selectedPart && selectedPart.capabilities.move && (
+            <button title="Move Forward" onClick={handlePartMoveForward}>
+              <i className="las la-plus"></i>
+            </button>
+          )}
+          {selectedPart && selectedPart.capabilities.move && (
+            <button title="Move Back" onClick={handlePartMoveBack}>
+              <i className="las la-minus"></i>
+            </button>
+          )}
+          {selectedPart && selectedPart.capabilities.delete && (
+            <button title="Delete" onClick={() => setShowConfirmDelete(true)}>
+              <i className="las la-trash"></i>
+            </button>
+          )}
           <ConfirmDelete
             show={showConfirmDelete}
             elementType="Component"
@@ -339,13 +363,18 @@ const Adaptive = (
             onReady: defaultHandler,
             onSave: defaultHandler,
             onSubmit: defaultHandler,
+            onResize: defaultHandler,
           };
+          const disableDrag =
+            selectedPartId !== part.id ||
+            part.id === configurePartId ||
+            (selectedPart && !selectedPart.capabilities.move);
           return (
             <Draggable
               key={part.id}
               grid={[5, 5]}
               defaultPosition={{ x: part.custom.x, y: part.custom.y }}
-              disabled={selectedPartId !== part.id || part.id === configurePartId}
+              disabled={disableDrag}
               onStart={() => {
                 setIsDragging(true);
               }}

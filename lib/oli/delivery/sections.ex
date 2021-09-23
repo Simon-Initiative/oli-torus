@@ -138,6 +138,30 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  List all sections of type blueprint.
+  """
+  def list_blueprint_sections do
+    list_by_type(:blueprint)
+  end
+
+  @doc """
+  List all sections of type enrollable.
+  """
+  def list_enrollable_sections do
+    list_by_type(:enrollable)
+  end
+
+  defp list_by_type(type) do
+    Repo.all(
+      from(
+        s in Section,
+        where: s.type == ^type,
+        select: s
+      )
+    )
+  end
+
+  @doc """
   Returns the list of open and free sections.
   ## Examples
       iex> list_open_and_free_sections()

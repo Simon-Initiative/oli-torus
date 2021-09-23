@@ -154,3 +154,7 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
 
   return result;
 };
+
+export const getCapabilities = () => ({
+  configure: true,
+});

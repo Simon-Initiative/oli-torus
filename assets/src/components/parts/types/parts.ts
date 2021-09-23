@@ -32,6 +32,7 @@ export interface PartComponentProps<T extends CustomProperties> {
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+  onResize: (payload: any) => Promise<any>;
 }
 
 export interface AuthorPartComponentProps<T extends CustomProperties>
@@ -70,3 +71,13 @@ export interface ColorPalette {
   lineStyle?: number;
   lineThickness?: number;
 }
+
+export const defaultCapabilities = {
+  move: true,
+  resize: true,
+  rotate: false,
+  select: true,
+  delete: true,
+  duplicate: true,
+  configure: false,
+};

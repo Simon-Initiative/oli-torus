@@ -259,8 +259,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     return match && match[1].length == 11 ? match[1] : false;
   };
   const youtubeOpts: Options = {
-    width: '100%', // width?.toString(),
-    height: '100%', // height?.toString(),
+    width: width ? width.toString() : '100%',
+    height: height ? height.toString() : '100%',
     playerVars: {
       autoplay: autoPlay ? 1 : 0,
       loop: autoPlay ? 1 : 0,

@@ -38,6 +38,16 @@ export const MultiInputActions = {
   ) {
     return (model: MultiInputSchema, post: PostUndoable) => {
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
+
+      // Handle error condition - removing an extra input ref that is not present in the model
+      if (
+        removedInputRefs.length > 0 &&
+        removedInputRefs.every((ref) => !model.inputs.find((input) => input.id === ref.id))
+      ) {
+        StemActions.editStemAndPreviewText(content)(model);
+        return;
+      }
+
       if (getParts(model).length - removedInputRefs.length < 1) {
         return;
       }
