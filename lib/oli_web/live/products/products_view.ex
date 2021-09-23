@@ -13,7 +13,7 @@ defmodule OliWeb.Products.ProductsView do
   data products, :list, default: []
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
-  data limit, :integer, default: 5
+  data limit, :integer, default: 20
   prop is_admin_view, :boolean
   prop project, :any
   prop author, :any
@@ -80,6 +80,8 @@ defmodule OliWeb.Products.ProductsView do
   def handle_event("create", _, socket) do
     case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
       {:ok, blueprint} ->
+        blueprint = Repo.preload(blueprint, :base_project)
+
         {:noreply,
          assign(socket,
            products: List.insert_at(socket.assigns.products, socket.assigns.offset, blueprint),

@@ -26,6 +26,7 @@ defmodule OliWeb.Products.Details.Content do
           to={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @product.slug)}
         />
      {/if}
+      <p><button class="btn btn-primary">Customize Content</button></p>
     </div>
 
     """
