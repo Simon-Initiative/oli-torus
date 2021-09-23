@@ -620,6 +620,7 @@ defmodule OliWeb.Router do
 
     # Open and free sections
     resources("/open_and_free", OpenAndFreeController)
+    get("/open_and_free/:id/remix", OpenAndFreeController, :remix)
 
     # Branding
     resources("/brands", BrandController)

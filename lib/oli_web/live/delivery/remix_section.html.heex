@@ -5,7 +5,8 @@
     <%= live_component component, assigns %>
 <% end %>
 <div id="curriculum-container" class="container curriculum-editor">
-  <h2><%= dgettext("section", "Curriculum Remix") %></h2>
+  <h3><%= @section.title %></h3>
+
   <div class="row">
     <div class="col-12">
       <div class="mb-3 d-flex flex-row flex-nowrap">

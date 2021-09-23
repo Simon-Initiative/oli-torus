@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.RemixSection do
       is_container?: 1
     ]
 
+  alias Oli.Repo
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
@@ -29,30 +30,52 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def mount(
         _params,
-        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = _session,
+        %{
+          "section_slug" => section_slug,
+          "redirect_after_save" => redirect_after_save,
+          "current_user_id" => current_user_id,
+          "current_author" => current_author
+        } = _session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
     current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
-    hierarchy = DeliveryResolver.full_hierarchy(section_slug)
 
-    # only permit instructor level access
-    if is_section_instructor_or_admin?(section.slug, current_user) do
-      {:ok,
-       assign(socket,
-         section: section,
-         current_user: current_user,
-         previous_hierarchy: hierarchy,
-         hierarchy: hierarchy,
-         active: hierarchy,
-         dragging: nil,
-         selected: nil,
-         has_unsaved_changes: false,
-         modal: nil
-       )}
+    if section.open_and_free do
+      # only permit authoring admin level access
+      if Accounts.is_admin?(current_author) do
+        init_state(socket, section, redirect_after_save)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
     else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      # only permit instructor or admin level access
+      current_user = current_user |> Repo.preload([:platform_roles, :author])
+
+      if is_section_instructor_or_admin?(section.slug, current_user) do
+        redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+        init_state(socket, section, redirect_after_save)
+      else
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+      end
     end
+  end
+
+  def init_state(socket, section, redirect_after_save) do
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+    {:ok,
+     assign(socket,
+       section: section,
+       previous_hierarchy: hierarchy,
+       hierarchy: hierarchy,
+       active: hierarchy,
+       dragging: nil,
+       selected: nil,
+       has_unsaved_changes: false,
+       modal: nil,
+       redirect_after_save: redirect_after_save
+     )}
   end
 
   # handle change of selection
@@ -167,21 +190,21 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("cancel", _, socket) do
-    %{section: section} = socket.assigns
+    %{redirect_after_save: redirect_after_save} = socket.assigns
 
     {:noreply,
      redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, section.slug)
+       to: redirect_after_save
      )}
   end
 
   def handle_event("save", _, socket) do
-    %{section: section, hierarchy: hierarchy} = socket.assigns
+    %{section: section, hierarchy: hierarchy, redirect_after_save: redirect_after_save} =
+      socket.assigns
 
     Sections.rebuild_section_curriculum(section, hierarchy)
 
-    {:noreply,
-     redirect(socket, to: Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug))}
+    {:noreply, redirect(socket, to: redirect_after_save)}
   end
 
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
