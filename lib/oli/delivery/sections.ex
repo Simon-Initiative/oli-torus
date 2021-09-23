@@ -320,6 +320,48 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Creates a section resource.
+  ## Examples
+      iex> create_section_resource(%{field: value})
+      {:ok, %SectionResource{}}
+      iex> create_section_resource(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_section_resource(attrs \\ %{}) do
+    %SectionResource{}
+    |> SectionResource.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a section resource.
+  ## Examples
+      iex> update_section_resource(section, %{field: new_value})
+      {:ok, %SectionResource{}}
+      iex> update_section_resource(section, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_section_resource(%SectionResource{} = section, attrs) do
+    section
+    |> SectionResource.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Creates a section projects publication record.
+  ## Examples
+      iex> create_section_project_publication(%{field: value})
+      {:ok, %SectionsProjectsPublications{}}
+      iex> create_section_project_publication(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_section_project_publication(attrs \\ %{}) do
+    %SectionsProjectsPublications{}
+    |> SectionsProjectsPublications.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Creates a section.
   ## Examples
       iex> create_section(%{field: value})
