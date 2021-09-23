@@ -129,7 +129,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           ) {
             expr = parseArray(expr);
           }
-          const stmt = `let {variables.${v.name}} = ${expr};`;
+          const stmt = `let {variables.${v.name.trim()}} = ${expr};`;
           return stmt;
         })
         .filter((s: any) => s);
