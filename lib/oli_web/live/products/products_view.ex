@@ -24,6 +24,7 @@ defmodule OliWeb.Products.ProductsView do
   data offset, :integer, default: 0
   data limit, :integer, default: 20
   data fitler, :string, default: ""
+  data show_feature_overview, :boolean, default: true
 
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -61,6 +62,29 @@ defmodule OliWeb.Products.ProductsView do
     <div>
 
       {#if @is_admin_view == false}
+        {#if @show_feature_overview}
+          <div class="alert alert-dismissable alert-info" role="alert" style="max-width: 800px;">
+
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close" :on-click="hide_overview">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <p><strong>Course Products</strong> are a new concept and feature that will allow a project author to: </p>
+
+            <ul>
+            <li>Provide alternate arrangements of their project content.</li>
+            <li>Incorporate content from other projects.</li>
+            <li>Associate a required a payment for content.</li>
+            </ul>
+
+            <hr>
+            <p class="mb-0">
+              Not all of these features are available right now, but feel free to begin experimenting with creating products
+              for your course.
+            </p>
+
+          </div>
+        {/if}
+
         <Create id="creation" title={@creation_title} change="title" click="create"/>
       {#else}
         <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
@@ -168,6 +192,10 @@ defmodule OliWeb.Products.ProductsView do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}
     end
+  end
+
+  def handle_event("hide_overview", _, socket) do
+    {:noreply, assign(socket, show_feature_overview: false)}
   end
 
   defp get_patch_params(table_model, offset, filter) do
