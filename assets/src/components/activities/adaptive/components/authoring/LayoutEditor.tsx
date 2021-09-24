@@ -96,6 +96,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       // TODO: ability to click things underneath other things using path and selection
       if (!isInConfigMode && !isToolbarClick && !parts.find((p) => pathIds.includes(p.id))) {
         setSelectedPartId('');
+        props.onSelect('');
       }
     };
     if (props.hostRef) {
@@ -166,6 +167,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     setParts(filteredParts);
     // just setting the part ID should trigger the selectedPart also to get reset
     setSelectedPartId('');
+    props.onSelect('');
   }, [selectedPart, parts]);
 
   const DeleteComponentHandler = useCallback(() => {
