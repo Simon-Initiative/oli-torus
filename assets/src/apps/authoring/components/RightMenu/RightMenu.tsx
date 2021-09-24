@@ -42,7 +42,7 @@ import bankPropsSchema, {
   BankPropsUiSchema,
   transformBankPropsModeltoSchema,
   transformBankPropsSchematoModel,
-} from '../PropertyEditor/schemas/bankProps';
+} from '../PropertyEditor/schemas/bankScreen';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
