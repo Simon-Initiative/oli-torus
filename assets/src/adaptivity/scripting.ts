@@ -165,7 +165,9 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
     }
     return writeVal;
   });
-  const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
+  const letStatements = vars.map(
+    (v) => `let {${v.key.trim()}} = ${getExpressionStringForValue(v)};`,
+  );
   return letStatements;
 };
 
@@ -213,9 +215,9 @@ export const applyState = (
   operation: ApplyStateOperation,
   env: Environment = defaultGlobalEnv,
 ): any => {
-  const targetKey = operation.target;
+  const targetKey = operation.target.trim();
   const targetType = operation.type || operation.targetType || CapiVariableTypes.UNKNOWN;
-
+  let errorMsg = '';
   let script = `let {${targetKey}} `;
   switch (operation.operator) {
     case 'adding':
@@ -238,7 +240,8 @@ export const applyState = (
       // binding is a special case, it MUST be a string because it's binding to a variable
       // it should not be wrapped in curlies already
       if (typeof operation.value !== 'string') {
-        throw new Error(`bind to value must be a string, got ${typeof operation.value}`);
+        errorMsg = `bind to value must be a string, got ${typeof operation.value}`;
+        break;
       }
       if (operation.value[0] === '{' && operation.value.slice(-1) === '}') {
         script += `= ${operation.value};`;
@@ -254,10 +257,18 @@ export const applyState = (
       })};`;
       break;
     default:
-      console.warn(`Unknown applyState operator ${operation.operator}!`);
+      errorMsg = `Unknown applyState operator ${JSON.stringify(operation.operator)}!`;
+      console.warn(errorMsg, {
+        operation,
+      });
       break;
   }
-  const result = evalScript(script, env);
+  let result;
+  if (errorMsg) {
+    result = { env, result: { error: true, message: errorMsg, details: operation } };
+  } else {
+    result = evalScript(script, env);
+  }
   /* console.log('APPLY STATE RESULTS: ', { script, result }); */
   return result;
 };

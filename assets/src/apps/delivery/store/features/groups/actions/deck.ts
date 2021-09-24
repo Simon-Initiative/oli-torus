@@ -16,8 +16,6 @@ import {
   evalScript,
   getAssignScript,
   getEnvState,
-  getLocalizedStateSnapshot,
-  removeStateValues,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
@@ -158,6 +156,10 @@ export const initializeActivity = createAsyncThunk(
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    const applyStateHasErrors = results.some((r) => r !== null);
+    if (applyStateHasErrors) {
+      console.warn('[INIT STATE] applyState has errors', results);
+    }
     // now that the scripting env should be up to date, need to update attempt state in redux and server
     const currentState = getEnvState(defaultGlobalEnv);
 
