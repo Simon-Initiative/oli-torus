@@ -19,7 +19,6 @@ export const schema: JSONSchema7Object = {
 
 export const getCapabilities = () => ({
   configure: true,
-  capi: true,
 });
 
 export const uiSchema = {};
