@@ -2,6 +2,7 @@ defmodule OliWeb.Products.ProductsView do
   use Surface.LiveView
   alias Oli.Repo
   alias OliWeb.Products.Create
+  alias OliWeb.Products.Filter
   alias OliWeb.Products.Listing
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
@@ -13,7 +14,7 @@ defmodule OliWeb.Products.ProductsView do
   prop is_admin_view, :boolean
   prop project, :any
   prop author, :any
-  prop breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Products"})]
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Products"})]
   data title, :string, default: "Course Products"
 
   data creation_title, :string, default: ""
@@ -22,6 +23,7 @@ defmodule OliWeb.Products.ProductsView do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
+  data fitler, :string, default: ""
 
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -57,14 +59,17 @@ defmodule OliWeb.Products.ProductsView do
   def render(assigns) do
     ~F"""
     <div>
-      <h3>Course Products</h3>
 
       {#if @is_admin_view == false}
         <Create id="creation" title={@creation_title} change="title" click="create"/>
-        <hr/>
+      {#else}
+        <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
       {/if}
 
+      <div class="mb-3"/>
+
       <Listing
+        filter={@filter}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
@@ -81,6 +86,38 @@ defmodule OliWeb.Products.ProductsView do
     {:noreply, assign(socket, creation_title: title)}
   end
 
+  def handle_event("change_filter", %{"text" => filter}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           get_patch_params(
+             socket.assigns.table_model,
+             socket.assigns.offset,
+             filter
+           )
+         )
+     )}
+  end
+
+  def handle_event("reset_filter", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           get_patch_params(
+             socket.assigns.table_model,
+             socket.assigns.offset,
+             ""
+           )
+         )
+     )}
+  end
+
   def handle_event("page_change", %{"offset" => offset}, socket) do
     {:noreply,
      push_patch(socket,
@@ -88,7 +125,11 @@ defmodule OliWeb.Products.ProductsView do
          Routes.live_path(
            socket,
            __MODULE__,
-           get_patch_params(socket.assigns.table_model, String.to_integer(offset))
+           get_patch_params(
+             socket.assigns.table_model,
+             String.to_integer(offset),
+             socket.assigns.filter
+           )
          )
      )}
   end
@@ -104,7 +145,12 @@ defmodule OliWeb.Products.ProductsView do
 
     {:noreply,
      push_patch(socket,
-       to: Routes.live_path(socket, __MODULE__, get_patch_params(table_model, offset))
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           get_patch_params(table_model, offset, socket.assigns.filter)
+         )
      )}
   end
 
@@ -124,8 +170,8 @@ defmodule OliWeb.Products.ProductsView do
     end
   end
 
-  defp get_patch_params(table_model, offset) do
-    Map.merge(%{offset: offset}, SortableTableModel.to_params(table_model))
+  defp get_patch_params(table_model, offset, filter) do
+    Map.merge(%{offset: offset, filter: filter}, SortableTableModel.to_params(table_model))
   end
 
   def handle_params(params, _, socket) do
@@ -140,16 +186,46 @@ defmodule OliWeb.Products.ProductsView do
         _ -> 0
       end
 
+    filter = get_str_param(params, "filter", "")
+
     # First update the rows of the sortable table model to be all products, then apply the sort,
     # then slice the model rows according to the paging settings
+
+    filtered =
+      case String.downcase(filter) do
+        "" ->
+          socket.assigns.products
+
+        str ->
+          Enum.filter(socket.assigns.products, fn p ->
+            amount_str =
+              if p.requires_payment do
+                case Money.to_string(p.amount) do
+                  {:ok, money} -> String.downcase(money)
+                  _ -> ""
+                end
+              else
+                "none"
+              end
+
+            String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
+          end)
+      end
+
     table_model =
-      Map.put(socket.assigns.table_model, :rows, socket.assigns.products)
+      Map.put(socket.assigns.table_model, :rows, filtered)
       |> SortableTableModel.update_from_params(params)
       |> then(fn table_model ->
         Map.put(table_model, :rows, Enum.slice(table_model.rows, offset, socket.assigns.limit))
       end)
 
-    {:noreply, assign(socket, table_model: table_model, offset: offset)}
+    {:noreply,
+     assign(socket,
+       table_model: table_model,
+       offset: offset,
+       filter: filter,
+       total_count: length(filtered)
+     )}
   end
 
   defp get_int_param(params, name, default_value) do
@@ -157,11 +233,21 @@ defmodule OliWeb.Products.ProductsView do
       nil ->
         default_value
 
-      offset ->
-        case Integer.parse(offset) do
+      value ->
+        case Integer.parse(value) do
           {num, _} -> num
           _ -> default_value
         end
+    end
+  end
+
+  defp get_str_param(params, name, default_value) do
+    case params[name] do
+      nil ->
+        default_value
+
+      value ->
+        value
     end
   end
 end
