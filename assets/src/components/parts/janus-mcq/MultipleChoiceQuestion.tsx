@@ -47,7 +47,7 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   );
 };
 
-const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
+export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   nodes,
   state,
   multipleSelection,
