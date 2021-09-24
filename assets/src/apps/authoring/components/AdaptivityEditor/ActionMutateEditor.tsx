@@ -4,7 +4,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
-import { OperatorOption, operatorOptions, TypeOption, typeOptions } from './AdaptiveItemOptions';
+import {
+  ActionOperatorOption,
+  actionOperatorOptions,
+  TypeOption,
+  typeOptions,
+} from './AdaptiveItemOptions';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -45,7 +50,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   };
 
   const handleTargetTypeChange = (e: any) => {
-    const val = e.target.value;
+    const val = parseInt(e.target.value);
     if (val === targetType) {
       return;
     }
@@ -141,14 +146,14 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         value={operator}
         onChange={(e) => handleOperatorChange(e)}
       >
-        {operatorOptions
-          .filter((option) => {
+        {actionOperatorOptions
+          .filter((option: ActionOperatorOption) => {
             if (parseInt(targetType.toString(), 10) !== CapiVariableTypes.NUMBER) {
               return option.key !== 'add';
             }
             return true;
           })
-          .map((option: OperatorOption) => (
+          .map((option: ActionOperatorOption) => (
             <option key={option.key} value={option.value}>
               {option.text}
             </option>
