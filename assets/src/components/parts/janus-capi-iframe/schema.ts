@@ -21,6 +21,31 @@ export const getCapabilities = () => ({
   configure: true,
 });
 
+export const adaptivitySchema = ({
+  currentModel,
+  editorContext,
+}: {
+  currentModel: any;
+  editorContext: string;
+}) => {
+  const context = editorContext;
+  let adaptivitySchema = {};
+  const configData: any = currentModel?.custom?.configData;
+  if (configData && Array.isArray(configData)) {
+    adaptivitySchema = configData.reduce((acc: any, typeToAdaptivitySchemaMap: any) => {
+      if (context === 'mutate') {
+        if (!typeToAdaptivitySchemaMap.readonly) {
+          acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+        }
+      } else {
+        acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+      }
+      return acc;
+    }, {});
+  }
+  return adaptivitySchema;
+};
+
 export const uiSchema = {};
 
 export const createSchema = (): Partial<CapiIframeModel> => ({
