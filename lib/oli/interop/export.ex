@@ -4,6 +4,7 @@ defmodule Oli.Interop.Export do
   alias Oli.Activities
   alias Oli.Authoring.MediaLibrary
   alias Oli.Authoring.MediaLibrary.ItemOptions
+  alias Oli.Utils
 
   @doc """
   Generates a course digest for an existing course project.
@@ -21,19 +22,7 @@ defmodule Oli.Interop.Export do
        objectives(resources) ++
        activities(resources) ++
        pages(resources))
-    |> zip
-  end
-
-  # zip up the given filename and content tuples
-  defp zip(filename_content_tuples) do
-    {:ok, {_filename, data}} =
-      :zip.create(
-        "export.zip",
-        filename_content_tuples,
-        [:memory]
-      )
-
-    data
+    |> Utils.zip("export.zip")
   end
 
   defp tags(resources) do

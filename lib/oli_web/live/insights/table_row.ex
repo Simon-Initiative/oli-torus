@@ -1,6 +1,7 @@
 defmodule OliWeb.Insights.TableRow do
   use Phoenix.LiveComponent
   alias OliWeb.Common.Links
+  alias OliWeb.Insights
 
   def render(assigns) do
     # slice is a page, activity, or objective revision
@@ -23,18 +24,11 @@ defmodule OliWeb.Insights.TableRow do
         </td>
       <% end %>
       <td><%= if number_of_attempts == nil do "No attempts" else number_of_attempts end %></td>
-      <td><%= truncate(relative_difficulty) %></td>
-      <td><%= format_percent(eventually_correct) %></td>
-      <td><%= format_percent(first_try_correct) %></td>
+      <td><%= Insights.truncate(relative_difficulty) %></td>
+      <td><%= Insights.format_percent(eventually_correct) %></td>
+      <td><%= Insights.format_percent(first_try_correct) %></td>
     </tr>
     """
   end
 
-  defp truncate(float_or_nil) when is_nil(float_or_nil), do: nil
-  defp truncate(float_or_nil) when is_float(float_or_nil), do: Float.round(float_or_nil, 2)
-
-  defp format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
-
-  defp format_percent(float_or_nil) when is_float(float_or_nil),
-    do: "#{round(100 * float_or_nil)}%"
 end

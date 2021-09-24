@@ -138,4 +138,18 @@ defmodule Oli.Utils do
     {:ok, uuid} = ShortUUID.encode(UUID.uuid4())
     uuid
   end
+
+  @doc """
+  Zip up the given filename and content tuples
+  """
+  def zip(filename_content_tuples, zip_filename) do
+    {:ok, {_filename, data}} =
+      :zip.create(
+        zip_filename,
+        filename_content_tuples,
+        [:memory]
+      )
+
+    data
+  end
 end

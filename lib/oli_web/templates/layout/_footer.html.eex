@@ -1,7 +1,7 @@
 <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
 
 <footer>
-  <div class="container">
+  <%# <div class="container">
     <div class="row">
       <div class="col-sm text-left">
         <a href='javascript:;' onclick="OLI.selectCookiePreferences()">Cookie Preferences</a>
@@ -9,10 +9,10 @@
       <div class="col-sm text-center">
       </div>
       <div class="col-sm text-right">
-        Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
-      </div>
+        Version <%= Application.fetch_env!(:oli, :build).version %>
+      <%# </div>
     </div>
-  </div>
+  </div> %>
   <script>
     OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>'));
   </script>
