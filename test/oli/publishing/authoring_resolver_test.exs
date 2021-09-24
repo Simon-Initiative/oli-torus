@@ -114,7 +114,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       revision2: revision2,
       project: project
     } do
-      r = AuthoringResolver.from_resource_id(project.slug, [revision2.resource_id, 1337])
+      r =
+        AuthoringResolver.from_resource_id(project.slug, [revision2.resource_id, 123_123_123_123])
 
       assert length(r) == 2
       assert Enum.at(r, 0) == latest2

@@ -193,16 +193,14 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      selection: %{project_id: project_id, publication_id: publication_id},
+      selection: %{publication_id: publication_id},
       redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
-    publication = Publishing.get_publication!(publication_id)
-
-    Repo.transaction(fn ->
-      Sections.update_section_project_publication(section, project_id, publication_id)
-      Sections.rebuild_section_resources(section: section, publication: publication)
-    end)
+    Sections.apply_publication_update(
+      section,
+      publication_id
+    )
 
     {:noreply,
      push_redirect(socket,
