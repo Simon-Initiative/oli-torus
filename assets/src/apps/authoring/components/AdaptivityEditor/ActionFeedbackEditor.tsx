@@ -1,6 +1,7 @@
-import { FeedbackAction, NavigationAction } from 'apps/authoring/types';
+import { FeedbackAction } from 'apps/authoring/types';
+import LayoutEditor from 'components/activities/adaptive/components/authoring/LayoutEditor';
 import React, { useEffect, useState } from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 
 interface ActionFeedbackEditorProps {
@@ -80,6 +81,29 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
   //   });
   // };
 
+  const [showEditor, setShowEditor] = useState(false);
+
+  const handleShowFeedbackClick = () => {
+    console.log('show feedback editor');
+    setShowEditor(true);
+  };
+
+  const handleCancelEdit = () => {
+    setShowEditor(false);
+  };
+
+  const handleSaveEdit = () => {
+    setShowEditor(false);
+  };
+
+  const handleEditorChange = (parts: any[]) => {
+    console.log('FEEDBACK: EDITOR CHANGE', { parts });
+  };
+
+  const handleEditorSelect = (partId: string) => {
+    console.log('FEEDBACK: EDITOR SELECT', { partId });
+  };
+
   return (
     <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
       <label className="sr-only" htmlFor={`action-feedback-${uuid}`}>
@@ -87,7 +111,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
       </label>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend">
-          <div className="input-group-text">
+          <div className="input-group-text" onClick={handleShowFeedbackClick}>
             <i className="fa fa-comment mr-1" />
             Show Feedback
           </div>
@@ -118,6 +142,31 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
           </button>
         </span>
       </OverlayTrigger>
+      <Modal show={showEditor} onHide={handleCancelEdit}>
+        <Modal.Header closeButton={true}>
+          <h3 className="modal-title">Feedback</h3>
+        </Modal.Header>
+        <Modal.Body>
+          <LayoutEditor
+            id="feedback-designer-1"
+            width={350}
+            height={400}
+            backgroundColor={'lightblue'}
+            parts={action.params.feedback.partsLayout}
+            selected={''}
+            onChange={handleEditorChange}
+            onSelect={handleEditorSelect}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <button className="btn btn-secondary" onClick={handleCancelEdit}>
+            Cancel
+          </button>
+          <button className="btn btn-danger" onClick={handleSaveEdit}>
+            Save
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
     // <Fragment>
     //   <Icon name="comment" size="large" />
