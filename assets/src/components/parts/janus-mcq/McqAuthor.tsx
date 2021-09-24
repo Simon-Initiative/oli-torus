@@ -20,10 +20,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   } = model;
   const styles: CSSProperties = {
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
   };
 
   useEffect(() => {
