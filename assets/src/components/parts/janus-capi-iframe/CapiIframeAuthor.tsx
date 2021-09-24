@@ -266,7 +266,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   const handleEditorCancel = () => {
     if (!inConfigureMode) {
       return;
-    } // not mine
+    }
     setInConfigureMode(false);
     onCancelConfigure({ id });
     setconfigClicked(false);
