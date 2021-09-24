@@ -36,7 +36,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -150,7 +150,7 @@ defmodule Oli.Delivery.Page.PageContext do
   end
 
   def determine_previous_next(hierarchy, revision) do
-    flattened_hierarchy = HierarchyNode.flatten_pages(hierarchy)
+    flattened_hierarchy = Hierarchy.flatten_pages(hierarchy)
 
     index =
       Enum.find_index(flattened_hierarchy, fn node ->

@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.DeliveryPolicy
@@ -47,6 +48,24 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :resource_id,
       :project_id,
       :section_id
+    ])
+  end
+
+  def to_map(%SectionResource{} = section_resource) do
+    section_resource
+    |> Map.from_struct()
+    |> Map.take([
+      :id,
+      :numbering_index,
+      :numbering_level,
+      :children,
+      :slug,
+      :resource_id,
+      :project_id,
+      :section_id,
+      :delivery_policy_id,
+      :inserted_at,
+      :updated_at
     ])
   end
 end
