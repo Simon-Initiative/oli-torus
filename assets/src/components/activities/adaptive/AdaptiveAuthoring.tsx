@@ -1,6 +1,7 @@
 import { AnyPartComponent } from 'components/parts/types/parts';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import LayoutEditor from './components/authoring/LayoutEditor';
@@ -27,6 +28,9 @@ const Adaptive = (
   const handleLayoutChange = useCallback(
     async (parts: AnyPartComponent[]) => {
       console.log('Layout Change!', parts);
+      const modelClone = clone(props.model);
+      modelClone.content.partsLayout = parts;
+      props.onEdit(modelClone);
     },
     [props.model],
   );

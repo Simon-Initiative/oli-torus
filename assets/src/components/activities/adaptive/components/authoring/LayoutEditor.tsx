@@ -150,14 +150,25 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     [parts],
   );
 
-  const handlePartConfigure = useCallback(async () => {
-    console.log('AUTHOR PART CONFIGURE', { selectedPart, configurePartId });
-    if (configurePartId === selectedPart.id) {
-      setConfigurePartId('');
-    } else {
-      setConfigurePartId(selectedPart?.id);
-    }
-  }, [selectedPart, configurePartId]);
+  const handlePartConfigure = useCallback(
+    async (partId, configure) => {
+      console.log('AUTHOR PART CONFIGURE', { configurePartId, partId, configure });
+      if (partId !== selectedPartId) {
+        console.error('trying to enable configure for a not selected partId!');
+        return;
+      }
+      if (configurePartId === partId && configure) {
+        return;
+      }
+
+      if (configure) {
+        setConfigurePartId(partId);
+      } else {
+        setConfigurePartId('');
+      }
+    },
+    [selectedPartId, configurePartId],
+  );
 
   const handlePartDelete = useCallback(async () => {
     // console.log('AUTHOR PART DELETE', { selectedPart });
@@ -237,17 +248,32 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   };
 
-  const partStyles = parts.map((part) => {
-    return `#${part.id.replace(/:/g, '\\:')} {
-      display: block;
-      position: absolute;
-      width: ${part.custom.width}px;
-      top: 0px;
-      left: 0px;
-      transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);
-      z-index: ${part.custom.z};
-    }`;
-  });
+  const [partStyles, setPartStyles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const styles = parts.map((part) => {
+      return `#${part.id.replace(/:/g, '\\:')} {
+        display: block;
+        position: absolute;
+        width: ${part.custom.width}px;
+        top: 0px;
+        left: 0px;
+        transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);
+        z-index: ${part.custom.z};
+      }`;
+    });
+    setPartStyles(styles);
+    parts.forEach((part) => {
+      const partId = part.id.replace(/:/g, '\\:');
+      const partElement = document.getElementById(partId);
+      if (partElement) {
+        partElement.setAttribute(
+          'style',
+          `transform: translate(${part.custom.x || 0}px, ${part.custom.y || 0}px);`,
+        );
+      }
+    });
+  }, [parts]);
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
@@ -326,7 +352,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           }}
         >
           {selectedPart && selectedPart.capabilities.configure && (
-            <button title="Edit" onClick={handlePartConfigure}>
+            <button title="Edit" onClick={() => handlePartConfigure(selectedPart.id, true)}>
               <i className="las la-edit"></i>
             </button>
           )}
@@ -395,6 +421,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 {...partProps}
                 className={selectedPartId === part.id ? 'selected' : ''}
                 onClick={() => handlePartClick({ id: part.id })}
+                onConfigure={({ configure }) => handlePartConfigure(part.id, configure)}
                 onSaveConfigure={handlePartSaveConfigure}
                 onCancelConfigure={handlePartCancelConfigure}
               />

@@ -16,7 +16,12 @@ import {
 } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
-const customEvents: any = { ...apiCustomEvents };
+const customEvents: any = {
+  ...apiCustomEvents,
+  onConfigure: 'configure',
+  onSaveConfigure: 'saveconfigure',
+  onCancelConfigure: 'cancelconfigure',
+};
 
 register(PopupAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,

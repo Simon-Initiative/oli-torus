@@ -1,4 +1,4 @@
-import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { AnyPartComponent, AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { parseBoolean } from 'utils/common';
@@ -74,10 +74,24 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
+  const handleDesignerSave = (parts: AnyPartComponent[]) => {
+    console.log('POPUP AUTHOR DESIGNER SAVE', parts);
+  };
+
+  const handleDesignerCancel = () => {
+    onConfigure({ id: `${props.id}`, configure: false });
+    setInConfigureMode(false);
+  };
+
   const Designer = () => {
     // console.log('PopupAuthor: Designer', props.portal);
     return ReactDOM.createPortal(
-      <PopupWindowDesigner parts={windowParts} onSave={() => null} onCancel={() => null} />,
+      <PopupWindowDesigner
+        config={windowConfig}
+        parts={windowParts}
+        onSave={handleDesignerSave}
+        onCancel={handleDesignerCancel}
+      />,
       document.getElementById(props.portal) as Element,
     );
   };
