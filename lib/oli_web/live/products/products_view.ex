@@ -129,26 +129,39 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_params(params, _, socket) do
-    offset =
-      case params["offset"] do
-        nil ->
-          0
+    offset = get_int_param(params, "offset", 0)
 
-        offset ->
-          case Integer.parse(offset) do
-            {num, _} -> num
-            _ -> 0
-          end
+    # Ensure that the offset is 0 or one minus a factor of the limit. So for a
+    # limit of 20, valid offsets or 0, 20, 40, etc.  This logic overrides any attempt
+    # to manually change URL offset param.
+    offset =
+      case rem(offset, socket.assigns.limit) do
+        0 -> offset
+        _ -> 0
       end
 
-    tabel_model =
-      Map.put(
-        socket.assigns.table_model,
-        :rows,
-        Enum.slice(socket.assigns.products, offset, socket.assigns.limit)
-      )
+    # First update the rows of the sortable table model to be all products, then apply the sort,
+    # then slice the model rows according to the paging settings
+    table_model =
+      Map.put(socket.assigns.table_model, :rows, socket.assigns.products)
       |> SortableTableModel.update_from_params(params)
+      |> then(fn table_model ->
+        Map.put(table_model, :rows, Enum.slice(table_model.rows, offset, socket.assigns.limit))
+      end)
 
-    {:noreply, assign(socket, table_model: tabel_model, offset: offset)}
+    {:noreply, assign(socket, table_model: table_model, offset: offset)}
+  end
+
+  defp get_int_param(params, name, default_value) do
+    case params[name] do
+      nil ->
+        default_value
+
+      offset ->
+        case Integer.parse(offset) do
+          {num, _} -> num
+          _ -> default_value
+        end
+    end
   end
 end
