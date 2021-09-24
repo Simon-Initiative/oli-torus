@@ -90,9 +90,9 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
     end
 
     alter table(:sections) do
-      modify :start_date, :utc_datetime, from: :date
-      modify :end_date, :utc_datetime, from: :date
-      remove :publication_id, references(:projects)
+      modify(:start_date, :utc_datetime, from: :date)
+      modify(:end_date, :utc_datetime, from: :date)
+      remove(:publication_id, references(:projects))
       add(:invite_token, :string)
       add(:passcode, :string)
       add(:description, :text)
@@ -107,9 +107,9 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
   # Migrates all section resources. Based off the implementation in Sections.create_section_resources
   # but doesn't use schemas and wont change with the codebase
   defp migrate_section_resources(
-        section_id,
-        publication_id
-      ) do
+         section_id,
+         publication_id
+       ) do
     {root_resource_id, project_id} =
       from(p in "publications",
         where: p.id == ^publication_id,
@@ -123,7 +123,7 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       get_published_revisions(publication_id)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
 
-    numberings = Numbering.init_numberings()
+    numberings = Numbering.init_numbering_tracker()
     level = 0
     processed_ids = []
 
@@ -145,6 +145,7 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
     |> Enum.filter(fn {id, _rev} -> id not in processed_ids end)
     |> Enum.map(fn {_id, revision} ->
       inserted_updated_at = now()
+
       [
         slug: Utils.Slug.generate(:section_resources, revision.title),
         resource_id: revision.resource_id,
@@ -160,17 +161,21 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       where: s.id == ^section_id,
       select: s.id
     )
-    |> Repo.update_all(set: [root_section_resource_id: root_section_resource_id, updated_at: now()])
+    |> Repo.update_all(
+      set: [root_section_resource_id: root_section_resource_id, updated_at: now()]
+    )
     |> then(fn {_, results} -> Enum.at(results, 0) end)
     |> then(fn section_id ->
-        # create a section project publication association
-        Repo.insert_all("sections_projects_publications", [%{
+      # create a section project publication association
+      Repo.insert_all("sections_projects_publications", [
+        %{
           section_id: section_id,
           project_id: project_id,
           publication_id: publication_id,
           inserted_at: now(),
           updated_at: now()
-        }])
+        }
+      ])
     end)
   end
 
@@ -211,18 +216,23 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
       end)
 
     %{id: section_resource_id} =
-      Oli.Repo.insert_all("section_resources", [%{
-        numbering_index: numbering_index,
-        numbering_level: level,
-        children: children,
-        slug: Utils.Slug.generate(:section_resources, revision.title),
-        resource_id: revision.resource_id,
-        project_id: project_id,
-        section_id: section_id,
-        inserted_at: now(),
-        updated_at: now()
-
-      }], returning: [:id])
+      Oli.Repo.insert_all(
+        "section_resources",
+        [
+          %{
+            numbering_index: numbering_index,
+            numbering_level: level,
+            children: children,
+            slug: Utils.Slug.generate(:section_resources, revision.title),
+            resource_id: revision.resource_id,
+            project_id: project_id,
+            section_id: section_id,
+            inserted_at: now(),
+            updated_at: now()
+          }
+        ],
+        returning: [:id]
+      )
       |> then(fn {_, results} -> Enum.at(results, 0) end)
 
     {section_resource_id, numberings, processed_ids}
@@ -246,5 +256,4 @@ defmodule Oli.Repo.Migrations.AdvancedSection do
     )
     |> Repo.all()
   end
-
 end

@@ -8,6 +8,7 @@
 
 - Add multi input activity
 - Add multi input model validation
+- Add advanced section creation remix
 
 ## 0.13.2 (2021-09-17)
 

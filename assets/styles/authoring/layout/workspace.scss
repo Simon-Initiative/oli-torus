@@ -145,8 +145,6 @@ $workspace-sidebar-width: 65px;
     }
 
     .breadcrumb-item {
-      display: inline-flex;
-
       & + .breadcrumb-item {
         padding-left: 0.35rem;
 
