@@ -9,7 +9,12 @@ import { selectCurrentActivity } from '../../../delivery/store/features/activiti
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
-import { OperatorOption, operatorOptions, TypeOption, typeOptions } from './AdaptiveItemOptions';
+import {
+  ActionOperatorOption,
+  actionOperatorOptions,
+  TypeOption,
+  typeOptions,
+} from './AdaptiveItemOptions';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -73,7 +78,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
       </div>
 
       <label className="sr-only" htmlFor={`operator-${state.id}`}>
-        operator
+        type
       </label>
       <select
         key={`type-${state.id}`}
@@ -103,14 +108,14 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         title="Operator"
         tabIndex={0}
       >
-        {operatorOptions
-          .filter((option) => {
+        {actionOperatorOptions
+          .filter((option: ActionOperatorOption) => {
             if (state.type !== CapiVariableTypes.NUMBER) {
               return option.key !== 'add';
             }
             return true;
           })
-          .map((option: OperatorOption, index: number) => (
+          .map((option: ActionOperatorOption, index: number) => (
             <option key={`option${index}-${state.id}`} value={option.value}>
               {option.text}
             </option>
@@ -196,10 +201,10 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
     const tempRules = clone(initState);
     const tempRule = {
       id: `is:${guid()}`,
-      target: '',
+      target: 'stage.',
       value: '',
       type: typeOptions[0].value,
-      operator: operatorOptions[0].value,
+      operator: actionOperatorOptions[0].value,
     };
     tempRules.push(tempRule);
     setInitState(tempRules);
