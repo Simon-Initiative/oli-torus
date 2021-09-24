@@ -1,67 +1,31 @@
-import React, { useRef, useState } from 'react';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import guid from 'utils/guid';
+import {
+  ConditionOperatorOption,
+  conditionOperatorOptions,
+  ConditionTypeOperatorCombo,
+  conditionTypeOperatorCombos,
+  TypeOption,
+  typeOptions,
+} from './AdaptiveItemOptions';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
 
-const conditionOperatorOptions = [
-  { key: 'equal', text: '=', value: 'equal' },
-  { key: 'lessThan', text: '<', value: 'lessThan' },
-  { key: 'lessThanInclusive', text: '<=', value: 'lessThanInclusive' },
-  { key: 'notEqual', text: '!=', value: 'notEqual' },
-  { key: 'greaterThan', text: '>', value: 'greaterThan' },
-  { key: 'greaterThanInclusive', text: '>=', value: 'greaterThanInclusive' },
-  { key: 'in', text: 'In', value: 'in' },
-  { key: 'notIn', text: 'Not In', value: 'notIn' },
-  { key: 'contains', text: 'Contains', value: 'contains' },
-  { key: 'notContains', text: 'Not Contains', value: 'notContains' },
-  { key: 'containsAnyOf', text: 'Contains Any', value: 'containsAnyOf' },
-  {
-    key: 'notContainsAnyOf',
-    text: 'Not Contains Any',
-    value: 'notContainsAnyOf',
-  },
-  { key: 'containsOnly', text: 'Contains Only', value: 'containsOnly' },
-  { key: 'isAnyOf', text: 'Any Of', value: 'isAnyOf' },
-  { key: 'notIsAnyOf', text: 'Not Any Of', value: 'notIsAnyOf' },
-  { key: 'isNaN', text: 'Is NaN', value: 'isNaN' },
-  { key: 'equalWithTolerance', text: '~==', value: 'equalWithTolerance' },
-  {
-    key: 'notEqualWithTolerance',
-    text: '~!=',
-    value: 'notEqualWithTolerance',
-  },
-  { key: 'inRange', text: 'In Range', value: 'inRange' },
-  { key: 'notInRange', text: 'Not In Range', value: 'notInRange' },
-  {
-    key: 'containsExactly',
-    text: 'Contains Exactly',
-    value: 'containsExactly',
-  },
-  {
-    key: 'notContainsExactly',
-    text: 'Not Contains Exactly',
-    value: 'notContainsExactly',
-  },
-  { key: 'endsWith', text: 'Ends With', value: 'endsWith' },
-  { key: 'is', text: 'Is', value: 'is' },
-  { key: 'notIs', text: 'Not Is', value: 'notIs' },
-  { key: 'hasSameTerms', text: 'Has Same Terms', value: 'hasSameTerms' },
-  { key: 'isEquivalentOf', text: 'Is Equivalent', value: 'isEquivalentOf' },
-  { key: 'isExactly', text: 'Is Exactly', value: 'isExactly' },
-  { key: 'notIsExactly', text: 'Not Is Exactly', value: 'notIsExactly' },
-];
-
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;
+  parentIndex: number;
   onChange: (condition: Partial<JanusConditionProperties>) => void;
   onDelete: () => void;
 }
 
 const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
-  const { condition, onChange, onDelete } = props;
+  const { condition, parentIndex, onChange, onDelete } = props;
 
   const [fact, setFact] = useState<string>(condition.fact);
+  const [targetType, setTargetType] = useState<CapiVariableTypes>(
+    condition.type || CapiVariableTypes.STRING,
+  );
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
 
@@ -72,6 +36,15 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
     }
     setFact(val);
     onChange({ fact: val });
+  };
+
+  const handleTargetTypeChange = (e: any) => {
+    const val = parseInt(e.target.value);
+    if (val === targetType) {
+      return;
+    }
+    setTargetType(val);
+    onChange({ type: val });
   };
 
   const handleOperatorChange = (e: any) => {
@@ -92,11 +65,38 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
     onChange({ value: val });
   };
 
-  const uuid = guid();
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
+
+  const getFilteredConditionOperatorOptions = (): ConditionOperatorOption[] => {
+    const filteredConditionOperatorOptions: ConditionOperatorOption[] = [];
+    const filteredCombo: ConditionTypeOperatorCombo[] = conditionTypeOperatorCombos.filter(
+      (combo) => combo.type === targetType,
+    );
+    filteredCombo[0].operators.forEach((comboOperator) => {
+      conditionOperatorOptions.forEach((conditionOperator) => {
+        if (conditionOperator.key === comboOperator) {
+          filteredConditionOperatorOptions.push(conditionOperator);
+        }
+      });
+    });
+    return filteredConditionOperatorOptions;
+  };
+
+  useEffect(() => {
+    // when the targetType is manually changed, we may need to also set the operator
+    setTimeout(() => {
+      const updatedOperator = getFilteredConditionOperatorOptions()[0].value;
+      if (updatedOperator === operator) {
+        return;
+      }
+      setOperator(updatedOperator);
+      onChange({ operator: updatedOperator });
+    }, 10);
+  }, [targetType]);
+
   return (
-    <div className="d-flex mt-1">
+    <div key={parentIndex} className="d-flex mt-1">
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="Target">
           <VariablePicker
@@ -106,12 +106,12 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
             context="condition"
           />
         </div>
-        <label className="sr-only" htmlFor={`target-${uuid}`}>
+        <label className="sr-only" htmlFor={`target-${parentIndex}`}>
           target
         </label>
         <input
-          key={`target-${uuid}`}
-          id={`target-${uuid}`}
+          key={`target-${parentIndex}`}
+          id={`target-${parentIndex}`}
           className="form-control form-control-sm flex-grow-1 mr-2"
           type="text"
           placeholder="Target"
@@ -122,33 +122,51 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
           ref={targetRef}
         />
       </div>
-      <label className="sr-only" htmlFor={`operator-${uuid}`}>
+      <label className="sr-only" htmlFor={`target-type-${parentIndex}`}>
+        type
+      </label>
+      <select
+        className="custom-select mr-2 form-control form-control-sm"
+        id={`target-type-${parentIndex}`}
+        defaultValue={targetType}
+        onChange={(e) => handleTargetTypeChange(e)}
+        ref={typeRef}
+      >
+        {typeOptions.map((type: TypeOption) => (
+          <option key={type.key} value={type.value}>
+            {type.text}
+          </option>
+        ))}
+      </select>
+      <label className="sr-only" htmlFor={`operator-${parentIndex}`}>
         operator
       </label>
       <select
-        key={`operator-${uuid}`}
+        key={`operator-${parentIndex}`}
         className="custom-select mr-2 form-control form-control-sm flex-grow-1 mw-25"
-        id={`operator-${uuid}`}
+        id={`operator-${parentIndex}`}
         placeholder="Operator"
         defaultValue={operator}
         onChange={(e) => handleOperatorChange(e)}
         title={operator}
         tabIndex={0}
       >
-        {conditionOperatorOptions.map((option, index) => (
-          <option key={`option${index}-${uuid}`} value={option.value} title={option.key}>
-            {option.text}
-          </option>
-        ))}
+        {getFilteredConditionOperatorOptions().map(
+          (option: ConditionOperatorOption, index: number) => (
+            <option key={`option${index}-${parentIndex}`} value={option.value} title={option.key}>
+              {option.text}
+            </option>
+          ),
+        )}
       </select>
-      <label className="sr-only" htmlFor={`value-${uuid}`}>
+      <label className="sr-only" htmlFor={`value-${parentIndex}`}>
         value
       </label>
       <input
         type="text"
         className="form-control form-control-sm flex-grow-1 mw-25"
-        key={`value-${uuid}`}
-        id={`value-${uuid}`}
+        key={`value-${parentIndex}`}
+        id={`value-${parentIndex}`}
         defaultValue={value}
         onBlur={(e) => handleValueChange(e)}
         title={value}
