@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-df7eb3f889.js"></script>
+    <script src="dist/sidebar_items-f3668f7251.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -2700,6 +2700,28 @@ and update the objectives present in a course project.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.Common.Confirm.html">OliWeb.Common.Confirm</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties" class="section-heading">
+  <a href="#properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li><li><strong>title</strong> <em>:string, required: true</em></li></ul><h2 id="slots" class="section-heading">
+  <a href="#slots" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Slots
+</h2>
+<ul><li><strong>default</strong></li></ul><h2 id="events" class="section-heading">
+  <a href="#events" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>ok, required: true</strong></li><li><strong>cancel, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.Common.Links.html">OliWeb.Common.Links</a>
 
   </div>
@@ -2746,6 +2768,41 @@ must be added and removed from a parent LiveView programmatically when it needs 
   </div>
 
     <div class="summary-synopsis"><p>A reusable LivewComponent for a Bootstrap modal.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.Paging.html">OliWeb.Common.Paging</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-1" class="section-heading">
+  <a href="#properties-1" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li></ul><h2 id="events-1" class="section-heading">
+  <a href="#events-1" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>click, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.SortableTable.Table.html">OliWeb.Common.SortableTable.Table</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-2" class="section-heading">
+  <a href="#properties-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-2" class="section-heading">
+  <a href="#events-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>sort, required: true</strong></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -3466,6 +3523,144 @@ must be added and removed from a parent LiveView programmatically when it needs 
     <a href="OliWeb.PowResetPassword.ResetPasswordView.html">OliWeb.PowResetPassword.ResetPasswordView</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Create.html">OliWeb.Products.Create</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-3" class="section-heading">
+  <a href="#properties-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li><li><strong>title</strong> <em>:string, required: true</em></li></ul><h2 id="events-3" class="section-heading">
+  <a href="#events-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>click, required: true</strong></li><li><strong>change, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Details.Actions.html">OliWeb.Products.Details.Actions</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-4" class="section-heading">
+  <a href="#properties-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>product</strong> <em>:any, required: true</em></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Details.Content.html">OliWeb.Products.Details.Content</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-5" class="section-heading">
+  <a href="#properties-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>product</strong> <em>:any, required: true</em></li><li><strong>updates</strong> <em>:any, required: true</em></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Details.Edit.html">OliWeb.Products.Details.Edit</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-6" class="section-heading">
+  <a href="#properties-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>product</strong> <em>:any, default: nil</em></li><li><strong>changeset</strong> <em>:any, default: nil</em></li><li><strong>available_brands</strong> <em>:any, default: nil</em></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.DetailsView.html">OliWeb.Products.DetailsView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-7" class="section-heading">
+  <a href="#properties-7" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li><li><strong>author</strong> <em>:any</em></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Filter.html">OliWeb.Products.Filter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-8" class="section-heading">
+  <a href="#properties-8" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul><h2 id="events-4" class="section-heading">
+  <a href="#events-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>change, required: true</strong></li><li><strong>reset, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Listing.html">OliWeb.Products.Listing</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-9" class="section-heading">
+  <a href="#properties-9" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-5" class="section-heading">
+  <a href="#events-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>sort, required: true</strong></li><li><strong>page_change, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.ProductsTableModel.html">OliWeb.Products.ProductsTableModel</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-10" class="section-heading">
+  <a href="#properties-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.ProductsView.html">OliWeb.Products.ProductsView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-11" class="section-heading">
+  <a href="#properties-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li><li><strong>is_admin_view</strong> <em>:boolean</em></li><li><strong>project</strong> <em>:any</em></li><li><strong>author</strong> <em>:any</em></li></ul></div>
 
 </div>
 <div class="summary-row">

@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Sections.Blueprint — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-df7eb3f889.js"></script>
+    <script src="dist/sidebar_items-f3668f7251.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -121,6 +121,16 @@ Oli.Delivery.Sections.Blueprint <small class="app-vsn">(OLI Torus v0.13.2)</smal
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#duplicate/1">duplicate(section)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Duplicates a blueprint section, creating a new top-level section record
+as well as deep copying all SectionResource and SectionProjectPublication records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_active_blueprint/1">get_active_blueprint(slug)</a>
 
   </div>
@@ -128,6 +138,38 @@ Oli.Delivery.Sections.Blueprint <small class="app-vsn">(OLI Torus v0.13.2)</smal
     <div class="summary-synopsis"><p>From a slug, retrieve a valid section blueprint.  A section is a
 valid blueprint when that section is of type :blueprint and the status
 is active.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_blueprint/1">get_blueprint(slug)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>From a slug, retrieve a valid section blueprint.  A section is a
+valid blueprint when that section is of type :blueprint and the status
+is active.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#is_author_of_blueprint?/2">is_author_of_blueprint?(section_slug, author_id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list/0">list()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#list_for_project/1">list_for_project(project)</a>
+
+  </div>
 
 </div>
 
@@ -154,7 +196,7 @@ Functions
     </a>
     <h1 class="signature">create_blueprint(base_project_slug, title)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L62" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -168,6 +210,29 @@ Functions
 the current published structure of the course project hierarchy.</p>
   </section>
 </section>
+<section class="detail" id="duplicate/1">
+
+  <div class="detail-header">
+    <a href="#duplicate/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">duplicate(section)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L109" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Duplicates a blueprint section, creating a new top-level section record
+as well as deep copying all SectionResource and SectionProjectPublication records.</p><p>This method supports duplication of enrollable sections to create a blueprint.</p>
+  </section>
+</section>
 <section class="detail" id="get_active_blueprint/1">
 
   <div class="detail-header">
@@ -177,7 +242,7 @@ the current published structure of the course project hierarchy.</p>
     </a>
     <h1 class="signature">get_active_blueprint(slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L15" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -190,6 +255,96 @@ the current published structure of the course project hierarchy.</p>
 <p>From a slug, retrieve a valid section blueprint.  A section is a
 valid blueprint when that section is of type :blueprint and the status
 is active.</p><p>Returns nil when there is no matching valid blueprint for the slug.</p>
+  </section>
+</section>
+<section class="detail" id="get_blueprint/1">
+
+  <div class="detail-header">
+    <a href="#get_blueprint/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_blueprint(slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L30" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>From a slug, retrieve a valid section blueprint.  A section is a
+valid blueprint when that section is of type :blueprint and the status
+is active.</p><p>Returns nil when there is no matching valid blueprint for the slug.</p>
+  </section>
+</section>
+<section class="detail" id="is_author_of_blueprint?/2">
+
+  <div class="detail-header">
+    <a href="#is_author_of_blueprint?/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">is_author_of_blueprint?(section_slug, author_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="list/0">
+
+  <div class="detail-header">
+    <a href="#list/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L253" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="list_for_project/1">
+
+  <div class="detail-header">
+    <a href="#list_for_project/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">list_for_project(project)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L241" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 
