@@ -57,6 +57,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end
   end
 
+  @doc """
+  For a given author that belongs to a specific institution, return all active
+  prodcuts that this author has visibility to.
+  """
   def available_products(%Author{} = author, %Institution{} = institution) do
     query =
       from section in Section,
@@ -78,6 +82,19 @@ defmodule Oli.Delivery.Sections.Blueprint do
         select: section
 
     Repo.all(query)
+  end
+
+  @doc """
+  From a list of visible products and visible publciations of projects, filter out
+  the project publications that have at least one paid product.
+  """
+  def filter_for_free_projects(all_products, publications) do
+    has_paid_product =
+      Enum.filter(all_products, fn p -> p.status == :active and p.requires_payment end)
+      |> Enum.map(fn p -> p.base_project_id end)
+      |> MapSet.new()
+
+    Enum.filter(publications, fn pub -> !MapSet.member?(has_paid_product, pub.project_id) end)
   end
 
   @doc """
