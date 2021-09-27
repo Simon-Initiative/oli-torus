@@ -36,6 +36,30 @@ defmodule OliWeb.Delivery.RemixSection do
         } = session,
         socket
       ) do
+    mount_as_instructor(section_slug, current_user_id, session, socket)
+  end
+
+  def mount(
+        %{
+          "section_slug" => section_slug
+        },
+        %{
+          "current_author_id" => current_author_id
+        },
+        socket
+      ) do
+    section = Sections.get_section_by_slug(section_slug)
+
+    redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section_slug)
+
+    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section_slug, current_author_id) do
+      init_state(socket, section, redirect_after_save)
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
+  end
+
+  def mount_as_instructor(section_slug, current_user_id, session, socket) do
     section = Sections.get_section_by_slug(section_slug)
 
     redirect_after_save =
@@ -56,7 +80,8 @@ defmodule OliWeb.Delivery.RemixSection do
       end
     else
       # only permit instructor or admin level access
-      current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+      current_user =
+        Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
         |> Repo.preload([:platform_roles, :author])
 
       if is_section_instructor_or_admin?(section.slug, current_user) do
@@ -72,6 +97,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     {:ok,
      assign(socket,
+       title: "Customize Content",
        section: section,
        previous_hierarchy: hierarchy,
        hierarchy: hierarchy,

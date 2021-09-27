@@ -10,6 +10,7 @@
 - Add multi input model validation
 - Add advanced section creation remix
 - Add analytics / insights data export button
+- Add course products
 
 ## 0.13.2 (2021-09-17)
 

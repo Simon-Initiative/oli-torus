@@ -113,6 +113,7 @@ defmodule Oli.MixProject do
       {:pow_assent, "~> 0.4.9"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
+      {:surface, "~> 0.5.1"},
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},

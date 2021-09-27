@@ -152,4 +152,10 @@ defmodule Oli.Utils do
 
     data
   end
+
+  # ensure that the JSON that we write to files is nicely formatted
+  def pretty(map) do
+    Jason.encode_to_iodata!(map)
+    |> Jason.Formatter.pretty_print()
+  end
 end

@@ -179,13 +179,7 @@ defmodule Oli.Interop.Export do
 
   # helper to create a zip entry tuple
   defp entry(contents, name) do
-    {String.to_charlist(name), pretty(contents)}
-  end
-
-  # ensure that the JSON that we write to files is nicely formatted
-  defp pretty(map) do
-    Jason.encode_to_iodata!(map)
-    |> Jason.Formatter.pretty_print()
+    {String.to_charlist(name), Utils.pretty(contents)}
   end
 
   # recursive impl to build out the nested, digest specific representation of the course hierarchy

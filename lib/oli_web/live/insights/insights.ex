@@ -146,10 +146,55 @@ defmodule OliWeb.Insights do
 
   def export(project) do
     filenames =
-      ["by_page.tsv", "by_activity.tsv", "by_objective.tsv"]
+      ["raw_analytics.tsv", "by_page.tsv", "by_activity.tsv", "by_objective.tsv"]
+      # CSV Encoder expects charlists for filenames, not strings
       |> Enum.map(&String.to_charlist(&1))
 
-    title_row = [
+    analytics =
+      raw_snapshot_data(project.slug)
+      |> Enum.concat(derived_analytics_data(project.slug))
+      |> Enum.map(&CSV.encode(&1, separator: ?\t))
+      |> Enum.map(&Enum.join(&1, ""))
+
+    Enum.zip(filenames, analytics)
+    # Convert to tuples of {filename, CSV table rows}
+    |> Enum.map(&{elem(&1, 0), elem(&1, 1)})
+    |> Utils.zip("analytics.zip")
+  end
+
+  def raw_snapshot_data(project_slug) do
+    snapshots_title_row = [
+      "Activity Title",
+      "Objective Title",
+      "Attempt Number",
+      "Graded?",
+      "Correct?",
+      "Activity Score",
+      "Activity Out Of",
+      "Hints Requested",
+      "Part Score",
+      "Part Out Of",
+      "Student Response",
+      "Feedback"
+    ]
+
+    [
+      [
+        snapshots_title_row
+        | Oli.Analytics.Common.snapshots_for_project(project_slug)
+          |> Enum.map(
+            &(&1
+              # Query returns a list of fields -> JSON stringify the
+              # student response / feedback values
+              |> List.replace_at(10, Utils.pretty(Enum.at(&1, 10)))
+              |> List.replace_at(11, Utils.pretty(Enum.at(&1, 11))))
+          )
+      ]
+    ]
+  end
+
+  def derived_analytics_data(project_slug) do
+    analytics_title_row = [
       "Resource Title",
       "Activity Title",
       "Number of Attempts",
@@ -158,19 +203,12 @@ defmodule OliWeb.Insights do
       "First Try Correct"
     ]
 
-    analytics =
-      [
-        Oli.Analytics.ByPage.query_against_project_slug(project.slug),
-        Oli.Analytics.ByActivity.query_against_project_slug(project.slug),
-        Oli.Analytics.ByObjective.query_against_project_slug(project.slug)
-      ]
-      |> Enum.map(&([title_row] ++ extract_analytics(&1)))
-      |> Enum.map(&CSV.encode(&1, separator: ?\t))
-      |> Enum.map(&Enum.join(&1, ""))
-
-    Enum.zip(filenames, analytics)
-    |> Enum.map(&{elem(&1, 0), elem(&1, 1)})
-    |> Utils.zip("analytics.zip")
+    [
+      Oli.Analytics.ByPage.query_against_project_slug(project_slug),
+      Oli.Analytics.ByActivity.query_against_project_slug(project_slug),
+      Oli.Analytics.ByObjective.query_against_project_slug(project_slug)
+    ]
+    |> Enum.map(&[analytics_title_row | extract_analytics(&1)])
   end
 
   def extract_analytics([

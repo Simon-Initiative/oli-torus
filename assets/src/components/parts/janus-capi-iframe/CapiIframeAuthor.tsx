@@ -8,17 +8,16 @@ import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
-  const { onCancelConfigure, onSaveConfigure } = props;
+  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { x, y, z, width, height, src, configData } = model;
+  const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
-  const { model, configuremode } = props;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
-  const { x, y, z, width, height, src, configData } = model;
   const [configClicked, setconfigClicked] = useState(false);
-  const [key, setKey] = useState(props.id);
   const [ready, setReady] = useState<boolean>(false);
-  const id: string = props.id;
   const [internalState, setInternalState] = useState<any>([]);
+
   const styles: CSSProperties = {
     width,
     height,
@@ -52,53 +51,40 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     authToken: string;
     version?: string;
     config: any;
-    /*
-      config:
-          context: "VIEWER"
-          lessonAttempt: 0
-          lessonId: 109535
-          questionId: "q:1540493294565:499"
-          servicesBaseUrl: "https://api.smartsparrow.com"
-          userData:
-              givenName: "Ben"
-              id: "4261745"
-              surname: "Sparks"
-  */
   }
-  const getCleanSimLife = () => ({
-    // these 2 are mysterious
-    key: '',
-    simId: '',
-    // ...
-    handshakeMade: false,
-    handshake: {
-      // should be of type CapiHandshake
-      requestToken: '',
-      authToken: props.id,
-      config: {},
-    },
-    init: false, // initial setup complete; this might be init state?
-    ready: false,
-    currentState: [],
-    ownerActivityId: 0,
-  });
-
-  const [simLife, setSimLife] = useState(getCleanSimLife());
   interface CapiMessage {
     handshake: CapiHandshake;
     options?: any; // ?? dunno
     type: JanusCAPIRequestTypes;
     values: any; // usually array, but sometimes more?
   }
-  useEffect(() => {
-    setInConfigureMode(parseBoolean(configuremode));
-  }, [configuremode]);
-  const frameRef = useCallback((frame) => {
-    /* console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame }); */
+
+  const getCleanSimLife = () => ({
+    key: '',
+    simId: '',
+    handshakeMade: false,
+    handshake: {
+      requestToken: '',
+      authToken: props.id,
+      config: {},
+    },
+    init: false,
+    ready: false,
+    currentState: [],
+    ownerActivityId: 0,
+  });
+
+  const [simLife, setSimLife] = useState(getCleanSimLife());
+  const frameRef = (frame: HTMLIFrameElement) => {
     if (frame) {
       setSimFrame(frame);
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    setInConfigureMode(parseBoolean(configuremode));
+  }, [configuremode]);
+
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id: props.id,
@@ -110,13 +96,18 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   useEffect(() => {
     initialize(model);
   }, []);
+
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
   }, [ready]);
+
+  //Methods for CAPI listener starts from her. Eventually this will move to a common place where authroing and delivery both can share the same JS file
+
   const sendToIframe = (data: any) => {
     simFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
   };
+
   const sendFormedResponse = (
     handshake: CapiHandshake,
     options: any,
@@ -150,26 +141,21 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // TODO: is it possible to set "other" values?
     // like session.whatever from here? if so, the following won't work
     const stateVarsFromSim = Object.keys(msgData.values).map((key) => {
-      if (!msgData.values[key].readonly) {
-        const variableObj: CapiVariable = {
-          key: key,
-          type: msgData.values[key] ? msgData.values[key].type : null,
-          value: msgData.values[key] ? msgData.values[key].value : null,
-          allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
-          bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
-          readonly: msgData.values[key] ? msgData.values[key].readonly : false,
-          writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
-        };
-        return variableObj;
-      }
+      const variableObj: CapiVariable = {
+        key: key,
+        type: msgData.values[key] ? msgData.values[key].type : null,
+        value: msgData.values[key] ? msgData.values[key].value : null,
+        allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
+        bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
+        readonly: msgData.values[key] ? msgData.values[key].readonly : false,
+        writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
+      };
+      return variableObj;
     });
-    setInternalState(stateVarsFromSim.filter((item) => item !== undefined));
+    setInternalState(stateVarsFromSim);
   };
 
   const handleOnReady = (data: any) => {
-    if (simLife.ready) {
-      return;
-    }
     simLife.ready = true;
     const updateSimLife = { ...simLife };
     updateSimLife.ready = true;
@@ -182,6 +168,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       const cVar = new CapiVariable({
         key: baseKey,
         value,
+        type,
       });
       collect[baseKey] = cVar;
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, collect);
@@ -192,6 +179,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
 
     return;
   };
+
   useEffect(() => {
     if (!simFrame) {
       return;
@@ -248,10 +236,9 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     };
   }, [simFrame]);
 
+  //Methods for CAPI listener End her
+
   const handleValueChangeFromModal = (changedVar: any) => {
-    //const filterVars = createCapiObjectFromStateVars(changedVar);
-    //sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, changedVar);
-    //setInConfigureMode(false);
     const finalConfigData = internalState.map((variable: CapiVariable) => {
       if (variable.key === changedVar.key) {
         variable.value = changedVar.value;
@@ -260,11 +247,11 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     });
     setInternalState(finalConfigData);
   };
+
   const handleEditorSave = (changeOperations: any) => {
     if (!inConfigureMode) {
       return;
     }
-    console.log('handleEditorSave called', { changeOperations });
     setconfigClicked(false);
     setInConfigureMode(false);
     const modelClone = clone(model);
@@ -274,25 +261,25 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
       id,
       snapshot: modelClone,
     });
-    setKey(`${props.id}_${configClicked}`);
   };
 
   const handleEditorCancel = () => {
     if (!inConfigureMode) {
       return;
-    } // not mine
-    // console.log('TF EDITOR CANCEL');
+    }
     setInConfigureMode(false);
     onCancelConfigure({ id });
     setconfigClicked(false);
-    setKey(`${props.id}_${configClicked}`);
   };
+
+  //inConfigureMode = true means user has clicked on the Edit button that opens modal for updating the CAPI variables.
+  //configClicked = true means user has clicked on the link to load the capi in auhtoring mode.
 
   const renderIt = inConfigureMode ? (
     ReactDOM.createPortal(
       <CapiVariablePicker
         label="Stage"
-        state={internalState}
+        state={internalState.filter((item: CapiVariable) => !item.readonly)}
         onChange={handleValueChangeFromModal}
         onSave={handleEditorSave}
         onCancel={handleEditorCancel}
@@ -302,7 +289,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   ) : (
     <React.Fragment>
       <div style={styles}>
-        {configClicked && (
+        {configClicked ? (
           <iframe
             ref={frameRef}
             style={{ height: '100%', width: '100%' }}
@@ -310,8 +297,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             src={props.model.src}
             scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
           />
-        )}
-        {!configClicked && (
+        ) : (
           <div className="container h-100">
             <div className="row h-100 justify-content-center align-items-center">
               <div>

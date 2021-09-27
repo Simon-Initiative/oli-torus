@@ -181,7 +181,10 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
         const instance: any = new PartClass();
         if (instance) {
           if (instance.getAdaptivitySchema) {
-            adaptivitySchema = await instance.getAdaptivitySchema();
+            adaptivitySchema = await instance.getAdaptivitySchema({
+              currentModel: part,
+              editorContext: context,
+            });
           }
         }
       }
