@@ -588,22 +588,6 @@ defmodule Oli.Delivery.Sections do
     |> Enum.sort_by(fn a, b -> get_title(a) < get_title(b) end)
   end
 
-  def retrieve_all_sources() do
-    products = Oli.Delivery.Sections.Blueprint.list()
-    publications = Publishing.available_publications()
-
-    filtered =
-      Enum.filter(publications, fn p -> p.published end)
-      |> then(fn publications ->
-        Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-          products,
-          publications
-        )
-      end)
-
-    filtered ++ products
-  end
-
   defp get_title(pub_or_prod) do
     case Map.get(pub_or_prod, :title) do
       nil -> pub_or_prod.project.title
