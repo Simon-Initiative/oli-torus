@@ -33,12 +33,14 @@ export const adaptivitySchema = ({
   const configData: any = currentModel?.custom?.configData;
   if (configData && Array.isArray(configData)) {
     adaptivitySchema = configData.reduce((acc: any, typeToAdaptivitySchemaMap: any) => {
-      if (context === 'mutate') {
-        if (!typeToAdaptivitySchemaMap.readonly) {
+      if (typeToAdaptivitySchemaMap.type) {
+        if (context === 'mutate') {
+          if (!typeToAdaptivitySchemaMap.readonly) {
+            acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
+          }
+        } else {
           acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
         }
-      } else {
-        acc[typeToAdaptivitySchemaMap.key] = typeToAdaptivitySchemaMap.type;
       }
       return acc;
     }, {});
