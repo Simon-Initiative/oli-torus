@@ -1,6 +1,10 @@
 defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
+  alias Oli.Accounts.Author
+  alias Oli.Institutions.Institution
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectVisibility
+  alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false
@@ -51,6 +55,29 @@ defmodule Oli.Delivery.Sections.Blueprint do
       0 -> false
       _ -> true
     end
+  end
+
+  def available_products(%Author{} = author, %Institution{} = institution) do
+    query =
+      from section in Section,
+        join: proj in Project,
+        on: proj.id == section.base_project_id,
+        join: pub in Publication,
+        on: pub.project_id == proj.id,
+        left_join: a in assoc(proj, :authors),
+        left_join: v in ProjectVisibility,
+        on: proj.id == v.project_id,
+        where:
+          section.type == :blueprint and
+            section.status == :active and
+            not is_nil(pub.published) and proj.status == :active and
+            (a.id == ^author.id or proj.visibility == :global or
+               (proj.visibility == :selected and
+                  (v.author_id == ^author.id or v.institution_id == ^institution.id))),
+        distinct: true,
+        select: section
+
+    Repo.all(query)
   end
 
   @doc """
