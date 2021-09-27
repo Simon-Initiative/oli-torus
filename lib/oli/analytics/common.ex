@@ -36,7 +36,8 @@ defmodule Oli.Analytics.Common do
           pattempt.response,
           pattempt.feedback,
           section.title,
-          section.slug
+          section.slug,
+          snapshot.inserted_at
         ]
       )
     )

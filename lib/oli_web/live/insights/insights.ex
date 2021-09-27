@@ -179,7 +179,8 @@ defmodule OliWeb.Insights do
       "Student Response",
       "Feedback",
       "Section Title",
-      "Section Slug"
+      "Section Slug",
+      "Date Created"
     ]
 
     [
