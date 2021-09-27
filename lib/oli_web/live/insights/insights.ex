@@ -189,11 +189,15 @@ defmodule OliWeb.Insights do
         | Oli.Analytics.Common.snapshots_for_project(project_slug)
           |> Enum.map(
             &(&1
-              # Query returns a list of fields -> JSON stringify the
-              # student response / feedback values and pull out activity type
+              # Query returns a list of fields
+              # Get activity type
               |> List.replace_at(1, Activities.get_registration!(Enum.at(&1, 1)).title)
+              # JSON format student response
               |> List.replace_at(11, Utils.pretty(Enum.at(&1, 11)))
-              |> List.replace_at(12, Utils.pretty(Enum.at(&1, 12))))
+              # JSON format feedback
+              |> List.replace_at(12, Utils.pretty(Enum.at(&1, 12)))
+              # JSON format date
+              |> List.replace_at(15, Utils.format_datetime(Enum.at(&1, 15))))
           )
       ]
     ]
