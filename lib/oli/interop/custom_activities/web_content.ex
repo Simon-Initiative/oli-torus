@@ -10,7 +10,7 @@ defmodule Oli.Interop.CustomActivities.WebContent do
     element(
       :web_content,
       %{
-        href: "https://localhost/repository/webcontent/879446d40a00005672dbed23ee6ca868/"
+        href: context.web_content_url
       }
     )
   end

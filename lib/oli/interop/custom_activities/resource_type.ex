@@ -4,15 +4,14 @@ defmodule Oli.Interop.CustomActivities.ResourceType do
 
   def setup(
         %{
-          id: id,
-          name: name
+          context: context
         }
       ) do
     element(
       :resource_type,
       %{
-        id: id,
-        name: name
+        id: context.activity_attempt.revision.activity_type.slug,
+        name: context.activity_attempt.revision.activity_type.title
       }
     )
   end

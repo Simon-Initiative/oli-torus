@@ -16,17 +16,24 @@ defmodule Oli.Interop.CustomActivities.SuperActivityClient do
       [
         ResourceType.setup(
           %{
-            id: context.activity_attempt.revision.activity_type.slug,
-            name: context.activity_attempt.revision.activity_type.title
+            context: context
           }
         ),
-        ActivityBase.setup(%{href: "https:/host/superactivity/embed/"}),
-        Authentication.setup(%{user_guid: context.user.email}),
+        ActivityBase.setup(
+          %{
+            context: context
+          }
+        ),
+        Authentication.setup(
+          %{
+            context: context
+          }
+        ),
         Logging.setup(
           %{
             session_id: Base.encode64(context.section.slug),
             source_id: context.activity_attempt.revision.activity_type.slug,
-            logging_url: "https://host/jcourse/dashboard/log/server"
+            logging_url: "#{context.host_url}/jcourse/dashboard/log/server"
           }
         )
       ]

@@ -4,13 +4,13 @@ defmodule Oli.Interop.CustomActivities.ActivityBase do
 
   def setup(
         %{
-          href: href
+          context: context
         }
       ) do
     element(
       :base,
       %{
-        href: href
+        href: "#{context.host_url}/superactivity/#{context.activity_attempt.revision.activity_type.slug}"
       }
     )
   end

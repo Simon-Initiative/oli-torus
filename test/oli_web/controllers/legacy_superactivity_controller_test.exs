@@ -31,7 +31,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      IO.inspect Activities.list_activity_registrations()
+#      IO.inspect
+      Activities.list_activity_registrations()
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
 
@@ -73,7 +74,45 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
       )
 
-      IO.write conn.resp_body
+#      IO.write conn.resp_body
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = post(
+        conn,
+        Routes.legacy_superactivity_path(
+          conn,
+          :process,
+          %{
+            "commandName" => "loadContentFile",
+            "attempt_guid" => activity_attempt.attempt_guid,
+            "others" => "others"
+          }
+        )
+      )
+
+#      IO.write conn.resp_body
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = post(
+        conn,
+        Routes.legacy_superactivity_path(
+          conn,
+          :process,
+          %{
+            "commandName" => "startAttempt",
+            "attempt_guid" => activity_attempt.attempt_guid,
+            "others" => "others"
+          }
+        )
+      )
+
+#      IO.write conn.resp_body
 
       conn =
         recycle(conn)
@@ -92,7 +131,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         )
       )
 
-      IO.write conn.resp_body
+#      IO.write conn.resp_body
     end
 
   end
@@ -114,7 +153,20 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       },
       "title" => "Embedded activity",
       "baseUrl" => "/superactivity/embedded",
-      "modelUrl" => "http:://host/",
+      "modelXml" => ~s(<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">
+<embed_activity id="dndembed" width="670" height="700">
+<title>Drag and Drop Activity</title>
+<source>webcontent/customact/dragdrop.js</source>
+	<assets>
+		<asset name="layout">webcontent/customact/layout1.html</asset>
+		<asset name="controls">webcontent/customact/controls.html</asset>
+		<!-- This is a global asset for activity -->
+		<asset name="dndstyles">webcontent/customact/dndstyles1.css</asset>
+		<asset name="questions">webcontent/customact/parts1.xml</asset>
+	</assets>
+</embed_activity>
+),
       "resourceUrls" => []
     }
 

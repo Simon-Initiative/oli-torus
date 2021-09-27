@@ -2,32 +2,56 @@ defmodule OliWeb.LegacySuperactivityController do
   use OliWeb, :controller
 
   alias XmlBuilder
-  alias Oli.Interop.CustomActivities.{SuperActivityClient, SuperActivitySession}
+  alias Oli.Interop.CustomActivities.{SuperActivityClient, SuperActivitySession, AttemptHistory}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Grading
   alias Oli.Repo
 
-  def process(conn,  %{"commandName" => command_name, "attempt_guid" => attempt_guid} = params) do
+  def context(conn, %{"attempt_guid" => attempt_guid} = params) do
+
+    IO.inspect params
+#    IO.inspect(conn, limit: :infinity)
+
+    user = conn.assigns.current_user
+    host_url = "https://#{conn.host}"
+
+    activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
+                       |> Repo.preload([revision: [:scoring_strategy]])
+
+    context = %{
+      src_url: "#{host_url}/superactivity/#{activity_attempt.revision.activity_type.slug}/index.html",
+      activity_type: activity_attempt.revision.activity_type.slug,
+      server_url: "#{host_url}/jcourse/superactivity/server",
+      user_guid: user.id,
+      mode: "delivery"
+    }
+
+    json(conn, context)
+  end
+
+  def process(conn, %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params) do
     user = conn.assigns.current_user
 
-    context = fetch_context(user, attempt_guid)
+    #    IO.inspect(conn, limit: :infinity)
+
+    context = fetch_context(conn, user, attempt_guid)
 
     xml_response = process_command(command_name, context, params)
     case xml_response do
-       {:ok, xml} ->
-         conn
-         |> put_resp_content_type("text/xml")
-         |> send_resp(200, xml)
-       {:error, error} ->
-         conn
-         |> put_resp_content_type("text/text")
-         |> send_resp(500, error)
+      {:ok, xml} ->
+        conn
+        |> put_resp_content_type("text/xml")
+        |> send_resp(200, xml)
+      {:error, error} ->
+        conn
+        |> put_resp_content_type("text/text")
+        |> send_resp(500, error)
     end
 
   end
 
-  defp fetch_context(user, attempt_guid) do
+  defp fetch_context(conn, user, attempt_guid) do
     activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
                        |> Repo.preload([revision: [:scoring_strategy]])
 
@@ -43,6 +67,12 @@ defmodule OliWeb.LegacySuperactivityController do
     enrollment = Sections.get_enrollment(section.slug, user.id)
                  |> Repo.preload([:context_roles])
 
+    project = Sections.get_project_by_section_resource(section.id, activity_attempt.resource_id)
+    path = "media/" <> project.slug
+    web_content_url = "https://#{Application.fetch_env!(:oli, :media_url)}/#{path}/webcontent/"
+
+    host_url = "https://#{conn.host}"
+
     %{
       server_time_zone: get_timezone(),
       user: user,
@@ -51,7 +81,9 @@ defmodule OliWeb.LegacySuperactivityController do
       resource_attempt: resource_attempt,
       resource_access: resource_access,
       instructors: instructors,
-      enrollment: enrollment
+      enrollment: enrollment,
+      web_content_url: web_content_url,
+      host_url: host_url
     }
 
   end
@@ -63,17 +95,97 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
-    xml = SuperActivityClient.setup(%{
-      context: context
-    }) |> XmlBuilder.document |> XmlBuilder.generate
+    xml = SuperActivityClient.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
     {:ok, xml}
   end
 
   defp process_command(command_name, context, _params) when command_name === "beginSession" do
-#    IO.inspect(context, limit: :infinity)
-    xml = SuperActivitySession.setup(%{
-      context: context
-    }) |> XmlBuilder.document |> XmlBuilder.generate
+
+    #    IO.inspect(context, limit: :infinity)
+    xml = SuperActivitySession.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "loadContentFile" do
+    %{"modelXml" => modelXml} = context.activity_attempt.transformed_model
+    {:ok, modelXml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "startAttempt" do
+    xml = AttemptHistory.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "scoreAttempt" do
+    xml = AttemptHistory.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "endAttempt" do
+    xml = SuperActivityClient.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "writeFileRecord" do
+    xml = SuperActivityClient.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "loadFileRecord" do
+    xml = SuperActivityClient.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
+    {:ok, xml}
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
+    xml = SuperActivityClient.setup(
+            %{
+              context: context
+            }
+          )
+          |> XmlBuilder.document
+          |> XmlBuilder.generate
     {:ok, xml}
   end
 

@@ -14,6 +14,12 @@ import * as ActivityTypes from "components/activities/types";
 const store = configureStore();
 
 const Embedded: React.FC = () => {
+
+  const onFileUpload = (files: FileList) => {
+
+
+  }
+
   return (
     <>
       <Heading
@@ -21,6 +27,17 @@ const Embedded: React.FC = () => {
         subtitle="Embedded Activity subtitle"
         id="embedded"
       />
+      {/*<div>*/}
+      {/*  <input*/}
+      {/*    id={id}*/}
+      {/*    style={{ display: 'none' }}*/}
+      {/*    disabled={disabled}*/}
+      {/*    accept={mimeFilter && `${mimeFilter}`}*/}
+      {/*    multiple*/}
+      {/*    onChange={({ target: { files } }) => onFileUpload(files as FileList)}*/}
+      {/*    type="file"*/}
+      {/*  />*/}
+      {/*</div>*/}
     </>
   );
 };

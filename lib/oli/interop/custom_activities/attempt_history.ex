@@ -22,7 +22,7 @@ defmodule Oli.Interop.CustomActivities.AttemptHistory do
         last_modified: DateTime.to_unix(context.resource_attempt.updated_at),
         max_attempts: context.resource_attempt.revision.max_attempts,
         overall_attempt: "",
-        user_guid: context.user.email
+        user_guid: context.user.id
       },
       [
         Problem.setup(

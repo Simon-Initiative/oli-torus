@@ -61,7 +61,7 @@
     "slate-history": "^0.62.0",
     "slate-react": "^0.58.1",
     "swiper": "^6.4.7",
-    "terser-webpack-plugin": "^5.1.2",
+    "terser-webpack-plugin": "^5.2.4",
     "tsmonad": "^0.8.0",
     "typescript": "^3.7.5",
     "uuid": "^8.3.2",

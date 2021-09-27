@@ -166,7 +166,8 @@ defmodule OliWeb.Router do
 
   scope "/" do
     pipe_through([:delivery, :skip_csrf_protection])
-
+    post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
+    get("/jcourse/superactivity/context/:attempt_guid", OliWeb.LegacySuperactivityController, :context)
     pow_assent_authorization_post_callback_routes()
   end
 
@@ -200,7 +201,7 @@ defmodule OliWeb.Router do
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
-    post("/jcourse/superactivity/server", LegacySuperactivityController, :process)
+
   end
 
   scope "/", OliWeb do

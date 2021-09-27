@@ -1,5 +1,5 @@
 import {configureStore} from "state/store";
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import {Heading} from "components/misc/Heading";
 
 import {OliEmbeddedModelSchema} from "components/activities/oli_embedded/schema";
@@ -12,7 +12,17 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext
 } from "components/activities/DeliveryElement";
-import {activityDeliverySlice, initializeState} from "data/content/activities/DeliveryState";
+import {activityDeliverySlice} from "data/activities/DeliveryState";
+// import {getCookie} from "components/cookies/utils";
+// import {activityDeliverySlice, initializeState} from "data/content/activities/DeliveryState";
+
+interface Context {
+  src_url: string,
+  activity_type: string,
+  server_url: string,
+  user_guid: string,
+  mode: string
+}
 
 const Embedded: React.FC = () => {
   const {
@@ -21,9 +31,27 @@ const Embedded: React.FC = () => {
     onResetActivity,
   } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
+  const [context, setContext] = useState<Context>();
+
   useEffect(() => {
     console.log(JSON.stringify(activityState));
+    fetchContext();
   }, []);
+
+  const fetchContext = () => {
+    fetch('/jcourse/superactivity/context/'+activityState.attemptGuid, {
+      method: 'GET',
+    })
+      .then((response) => response.json())
+      .then((json) => {
+        console.log(json);
+        setContext(json);
+      })
+      .catch((error) => {
+        // :TODO: display error somehow
+        // return error;
+      });
+  }
 
   return (
     <>
@@ -32,6 +60,13 @@ const Embedded: React.FC = () => {
         subtitle="Embedded Activity subtitle"
         id="embedded"
       />
+      {context &&  (
+        <iframe src={context.src_url} width="100%" height="700" frameBorder={0}
+                data-authenticationtoken="none" data-sessionid="1958e2f50a0000562295c9a569354ab5"
+                data-resourcetypeid={context.activity_type} data-superactivityserver={context.server_url}
+                data-activitymode={context.mode} allowFullScreen={true} data-activitycontextguid={activityState.attemptGuid}
+            data-activityguid={activityState.attemptGuid} data-userguid={context.user_guid} data-mode="oli" />
+      )}
     </>
   );
 };

@@ -5,8 +5,20 @@ import { RichText, ScoringStrategy } from '../types';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {
-    baseUrl: '',
-    modelXml: '',
+    baseUrl: '/superactivity/embedded',
+    modelXml: '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">\n' +
+      '<embed_activity id="dndembed" width="670" height="700">\n' +
+      '<title>Drag and Drop Activity</title>\n' +
+      '<source>webcontent/customact/dragdrop.js</source>\n' +
+      '\t<assets>\n' +
+      '\t\t<asset name="layout">webcontent/customact/layout1.html</asset>\n' +
+      '\t\t<asset name="controls">webcontent/customact/controls.html</asset>\n' +
+      '\t\t<!-- This is a global asset for activity -->\n' +
+      '\t\t<asset name="dndstyles">webcontent/customact/dndstyles1.css</asset>\n' +
+      '\t\t<asset name="questions">webcontent/customact/parts1.xml</asset>\n' +
+      '\t</assets>\n' +
+      '</embed_activity>',
     resourceUrls: [],
     stem: fromText(''),
     title: 'Embedded activity',

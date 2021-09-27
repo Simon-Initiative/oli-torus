@@ -4,13 +4,13 @@ defmodule Oli.Interop.CustomActivities.Authentication do
 
   def setup(
         %{
-          user_guid: user_guid
+          context: context
         }
       ) do
     element(
       :authentication,
       %{
-        user_guid: user_guid
+        user_guid: context.user.id
       }
     )
   end
