@@ -84,6 +84,26 @@ defmodule Oli.Delivery.Sections.Blueprint do
     Repo.all(query)
   end
 
+  def available_products() do
+    query =
+      from section in Section,
+        join: proj in Project,
+        on: proj.id == section.base_project_id,
+        join: pub in Publication,
+        on: pub.project_id == proj.id,
+        left_join: a in assoc(proj, :authors),
+        left_join: v in ProjectVisibility,
+        on: proj.id == v.project_id,
+        where:
+          section.type == :blueprint and
+            section.status == :active and
+            not is_nil(pub.published) and proj.status == :active and proj.visibility == :global,
+        distinct: true,
+        select: section
+
+    Repo.all(query)
+  end
+
   @doc """
   From a list of visible products and visible publciations of projects, filter out
   the project publications that have at least one paid product.
@@ -150,9 +170,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   This method supports duplication of enrollable sections to create a blueprint.
   """
-  def duplicate(%Section{} = section) do
+  def duplicate(%Section{} = section, attrs \\ %{}) do
     Repo.transaction(fn _ ->
-      with {:ok, blueprint} <- dupe_section(section),
+      with {:ok, blueprint} <- dupe_section(section, attrs),
            {:ok, _} <- dupe_section_project_publications(section, blueprint),
            {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint),
            {:ok, blueprint} <-
@@ -166,28 +186,34 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  defp dupe_section(%Section{} = section) do
+  defp dupe_section(%Section{} = section, attrs) do
     now = DateTime.utc_now()
+
+    params =
+      Map.merge(
+        %{
+          type: :blueprint,
+          status: :active,
+          base_project_id: section.base_project_id,
+          open_and_free: false,
+          context_id: UUID.uuid4(),
+          start_date: now,
+          end_date: now,
+          title: section.title <> " Copy",
+          invite_token: nil,
+          passcode: nil,
+          blueprint_id: nil,
+          lti_1p3_deployment_id: nil,
+          institution_id: nil,
+          brand_id: nil,
+          delivery_policy_id: nil
+        },
+        attrs
+      )
 
     Map.merge(
       Map.from_struct(section),
-      %{
-        type: :blueprint,
-        status: :active,
-        base_project_id: section.base_project_id,
-        open_and_free: false,
-        context_id: UUID.uuid4(),
-        start_date: now,
-        end_date: now,
-        title: section.title <> " Copy",
-        invite_token: nil,
-        passcode: nil,
-        blueprint_id: nil,
-        lti_1p3_deployment_id: nil,
-        institution_id: nil,
-        brand_id: nil,
-        delivery_policy_id: nil
-      }
+      params
     )
     |> Map.delete(:id)
     |> Map.delete(:slug)
