@@ -36,6 +36,7 @@ defmodule Oli.Analytics.Common do
         # group_by: [snapshot.activity_id, snapshot.objective_id],
         select: [
           activity.title,
+          activity.activity_type_id,
           objective.title,
           snapshot.attempt_number,
           snapshot.graded,
@@ -47,6 +48,8 @@ defmodule Oli.Analytics.Common do
           pattempt.out_of,
           pattempt.response,
           pattempt.feedback,
+          section.title,
+          section.slug
         ]
       )
     )

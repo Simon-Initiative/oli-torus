@@ -4,6 +4,7 @@ defmodule OliWeb.Insights do
   alias Oli.Authoring.Course
   alias Oli.Utils
   alias CSV
+  alias Oli.Activities
 
   def mount(_params, %{"project_slug" => project_slug} = _session, socket) do
     by_activity_rows = Oli.Analytics.ByActivity.query_against_project_slug(project_slug)
@@ -165,6 +166,7 @@ defmodule OliWeb.Insights do
   def raw_snapshot_data(project_slug) do
     snapshots_title_row = [
       "Activity Title",
+      "Activity Type",
       "Objective Title",
       "Attempt Number",
       "Graded?",
@@ -175,7 +177,9 @@ defmodule OliWeb.Insights do
       "Part Score",
       "Part Out Of",
       "Student Response",
-      "Feedback"
+      "Feedback",
+      "Section Title",
+      "Section Slug"
     ]
 
     [
@@ -185,9 +189,10 @@ defmodule OliWeb.Insights do
           |> Enum.map(
             &(&1
               # Query returns a list of fields -> JSON stringify the
-              # student response / feedback values
-              |> List.replace_at(10, Utils.pretty(Enum.at(&1, 10)))
-              |> List.replace_at(11, Utils.pretty(Enum.at(&1, 11))))
+              # student response / feedback values and pull out activity type
+              |> List.replace_at(1, Activities.get_registration!(Enum.at(&1, 1)).title)
+              |> List.replace_at(11, Utils.pretty(Enum.at(&1, 11)))
+              |> List.replace_at(12, Utils.pretty(Enum.at(&1, 12))))
           )
       ]
     ]
