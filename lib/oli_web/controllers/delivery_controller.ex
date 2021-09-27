@@ -327,7 +327,7 @@ defmodule OliWeb.DeliveryController do
     # create section, section resources and enroll instructor
     {:ok, section} =
       case source_id do
-        "publication" <> publication_id ->
+        "publication:" <> publication_id ->
           create_from_publication(
             String.to_integer(publication_id),
             user,
