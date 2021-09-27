@@ -10,7 +10,7 @@
     <title>OliWeb.Insights — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-f3668f7251.js"></script>
+    <script src="dist/sidebar_items-8489a45162.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,34 @@ OliWeb.Insights <small class="app-vsn">(OLI Torus v0.13.2)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#derived_analytics_data/1">derived_analytics_data(project_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#export/1">export(project)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#extract_analytics/1">extract_analytics(list)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#format_percent/1">format_percent(float_or_nil)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#handle_event/3">handle_event(binary, event, socket)</a>
 
   </div>
@@ -130,11 +158,25 @@ OliWeb.Insights <small class="app-vsn">(OLI Torus v0.13.2)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#raw_snapshot_data/1">raw_snapshot_data(project_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#render/1">render(assigns)</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#truncate/1">truncate(float_or_nil)</a>
+
+  </div>
 
 </div>
 
@@ -152,6 +194,94 @@ OliWeb.Insights <small class="app-vsn">(OLI Torus v0.13.2)</small>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="derived_analytics_data/1">
+
+  <div class="detail-header">
+    <a href="#derived_analytics_data/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">derived_analytics_data(project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L206" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="export/1">
+
+  <div class="detail-header">
+    <a href="#export/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">export(project)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L148" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="extract_analytics/1">
+
+  <div class="detail-header">
+    <a href="#extract_analytics/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">extract_analytics(list)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L224" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="format_percent/1">
+
+  <div class="detail-header">
+    <a href="#format_percent/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">format_percent(float_or_nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L272" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="handle_event/3">
 
   <div class="detail-header">
@@ -161,7 +291,7 @@ Functions
     </a>
     <h1 class="signature">handle_event(binary, event, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L89" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L92" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -183,7 +313,7 @@ Functions
     </a>
     <h1 class="signature">mount(params, session, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L6" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L9" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -196,6 +326,28 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:mount/3"><code class="inline">Phoenix.LiveView.mount/3</code></a>.</p>
   </section>
 </section>
+<section class="detail" id="raw_snapshot_data/1">
+
+  <div class="detail-header">
+    <a href="#raw_snapshot_data/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">raw_snapshot_data(project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L166" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="render/1">
 
   <div class="detail-header">
@@ -205,7 +357,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L33" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -216,6 +368,28 @@ Functions
   <section class="docstring">
 
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="truncate/1">
+
+  <div class="detail-header">
+    <a href="#truncate/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">truncate(float_or_nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/insights/insights.ex#L269" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 
