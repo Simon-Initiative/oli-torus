@@ -185,7 +185,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         if (changes.operator) {
           (c as JanusConditionProperties).operator = changes.operator;
         }
-        if (changes.value) {
+        if (changes.value !== undefined) {
           (c as JanusConditionProperties).value = changes.value;
         }
       }
