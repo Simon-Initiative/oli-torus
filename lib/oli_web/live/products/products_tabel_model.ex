@@ -30,7 +30,7 @@ defmodule OliWeb.Products.ProductsTableModel do
           render_fn: &__MODULE__.render_date_column/3
         }
       ],
-      event_suffix: "_authors",
+      event_suffix: "",
       id_field: [:id]
     )
   end

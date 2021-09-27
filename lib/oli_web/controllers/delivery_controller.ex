@@ -78,38 +78,6 @@ defmodule OliWeb.DeliveryController do
     |> render("research_consent.html")
   end
 
-  defp get_title(pub_or_prod) do
-    case Map.get(pub_or_prod, :title) do
-      nil -> pub_or_prod.project.title
-      title -> title
-    end
-  end
-
-  defp retrieve_visible_sources(user, institution) do
-    case user.author do
-      nil ->
-        {Oli.Delivery.Sections.Blueprint.available_products(),
-         Publishing.available_publications()}
-
-      author ->
-        {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-         Publishing.available_publications(author, institution)}
-    end
-    |> then(fn {products, publications} ->
-      filtered =
-        Enum.filter(publications, fn p -> p.published end)
-        |> then(fn publications ->
-          Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-            products,
-            publications
-          )
-        end)
-
-      filtered ++ products
-    end)
-    |> Enum.sort_by(fn a, b -> get_title(a) < get_title(b) end)
-  end
-
   def select_project(conn, params) do
     user = conn.assigns.current_user
     lti_params = conn.assigns.lti_params
@@ -122,7 +90,7 @@ defmodule OliWeb.DeliveryController do
 
     render(conn, "select_project.html",
       author: user.author,
-      sources: retrieve_visible_sources(user, institution),
+      sources: Sections.retrieve_visible_sources(user, institution),
       remix: Map.get(params, "remix", "false")
     )
   end
