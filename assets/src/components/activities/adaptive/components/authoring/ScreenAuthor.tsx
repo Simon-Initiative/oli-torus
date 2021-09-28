@@ -3,17 +3,21 @@ import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEdi
 import partSchema, {
   partUiSchema,
   transformModelToSchema as transformPartModelToSchema,
+  transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
 import { AnyPartComponent } from 'components/parts/types/parts';
 import { JSONSchema7 } from 'json-schema';
+import { isEqual } from 'lodash';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { clone } from 'utils/common';
+import { convertPalette } from '../common/util';
 import AddPartToolbar from './AddPartToolbar';
 import LayoutEditor from './LayoutEditor';
 
 interface ScreenAuthorProps {
   screen: any;
+  onChange?: (screen: any) => void;
 }
 
 const screenSchema: JSONSchema7 = {
@@ -88,8 +92,14 @@ const screenUiSchema = {
   },
 };
 
-const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
+const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
   const [currentScreenData, setCurrentScreenData] = useState(screen);
+
+  useEffect(() => {
+    if (onChange && !isEqual(screen, currentScreenData)) {
+      onChange(currentScreenData);
+    }
+  }, [screen, currentScreenData, onChange]);
 
   const [screenWidth, setScreenWidth] = useState(screen.custom.width);
   const [screenHeight, setScreenHeight] = useState(screen.custom.height);
@@ -102,7 +112,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
   const [partsList, setPartsList] = useState<AnyPartComponent[]>([]);
 
   useEffect(() => {
-    console.log('SA:Screen Changed', { screen });
+    // console.log('SA:Screen Changed', { screen });
     setCurrentScreenData(screen);
     setPartsList([...screen.partsLayout]);
     setScreenHeight(screen.custom.height);
@@ -116,7 +126,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
   useEffect(() => {
     if (!selectedPartId) {
       // current should be screen, formatted to match the schema
-      console.log('screen selected', currentScreenData);
+      // console.log('screen selected', currentScreenData);
       const data = {
         Position: {
           x: currentScreenData.custom.x || 0,
@@ -127,13 +137,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
           width: currentScreenData.custom.width,
           height: currentScreenData.custom.height,
         },
-        palette: {
-          backgroundColor: currentScreenData.custom.palette.backgroundColor,
-          borderColor: currentScreenData.custom.palette.borderColor,
-          borderRadius: currentScreenData.custom.palette.borderRadius,
-          borderStyle: currentScreenData.custom.palette.borderStyle,
-          borderWidth: currentScreenData.custom.palette.borderWidth,
-        },
+        palette: convertPalette(currentScreenData.custom.palette),
       };
       setCurrentPropertyData(data);
       setCurrentPropertySchema(screenSchema);
@@ -191,7 +195,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
 
   const handleEditorChange = useCallback(
     (parts: any[]) => {
-      console.log('FEEDBACK: EDITOR CHANGE', { parts });
+      // console.log('SA:LE CHANGE', { parts });
       const newScreenData = clone(currentScreenData);
       newScreenData.partsLayout = parts;
       setCurrentScreenData(newScreenData);
@@ -201,13 +205,13 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
   );
 
   const handleEditorSelect = (partId: string) => {
-    console.log('SA:LE SELECT', { partId });
+    // console.log('SA:LE SELECT', { partId });
     setSelectedPartId(partId);
   };
 
   const handlePropertyEditorChange = useCallback(
     (properties: any) => {
-      console.log('SA:PE:Change', properties);
+      // console.log('SA:PE:Change', properties);
       const newScreenData = clone(currentScreenData);
       if (!selectedPartId) {
         // modifying screen properties
@@ -217,8 +221,35 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
         setScreenHeight(newHeight);
         newScreenData.custom.width = newWidth;
         newScreenData.custom.height = newHeight;
+        newScreenData.custom.palette = properties.palette;
+        setScreenBackgroundColor(properties.palette.backgroundColor);
       } else {
         // modifying part properties
+        const partChanges = transformPartSchemaToModel(properties);
+        // console.log('FIRST', { partChanges: clone(partChanges), properties });
+        // select by selected part id because id might have been modified
+        const part = partsList.find((part: AnyPartComponent) => part.id === selectedPartId);
+        if (part) {
+          const PartClass = customElements.get(part.type);
+          if (PartClass) {
+            const instance = new PartClass() as any;
+            if (instance.transformSchemaToModel) {
+              partChanges.custom = {
+                ...partChanges.custom,
+                ...instance.transformSchemaToModel(partChanges.custom),
+              };
+              // console.log('SECOND', { partChanges: clone(partChanges) });
+            }
+          }
+          // the id may have changed, and the new one should be fully updated, replace it in array
+          const clonePartsList = clone(partsList);
+          const index = clonePartsList.findIndex((p: AnyPartComponent) => p.id === part.id);
+          clonePartsList.splice(index, 1, partChanges);
+          // console.log('CHANGING!', { partChanges, clonePartsList });
+          setPartsList(clonePartsList);
+          setSelectedPartId(partChanges.id);
+          newScreenData.partsLayout = clonePartsList;
+        }
       }
 
       setCurrentScreenData(newScreenData);
@@ -274,10 +305,12 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen }) => {
         </Col>
         <Col sm={3}>
           <PropertyEditor
+            key={currentPropertyData.id || 'screen'}
             schema={currentPropertySchema}
             uiSchema={currentPropertyUiSchema}
             value={currentPropertyData}
             onChangeHandler={handlePropertyEditorChange}
+            triggerOnChange={true}
           />
         </Col>
       </Row>

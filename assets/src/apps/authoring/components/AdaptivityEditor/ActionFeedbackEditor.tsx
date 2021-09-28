@@ -1,10 +1,8 @@
 import { FeedbackAction } from 'apps/authoring/types';
-import LayoutEditor from 'components/activities/adaptive/components/authoring/LayoutEditor';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import React, { useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
-import AddComponentToolbar from '../ComponentToolbar/AddComponentToolbar';
 
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;
@@ -12,20 +10,20 @@ interface ActionFeedbackEditorProps {
   onDelete: (changes: FeedbackAction) => void;
 }
 
-const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
-  // const textFlowSchema:any = ContentService.getInstance().getComponentSchema('janus-text-flow');
-  const { action, onDelete } = props;
+const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({ action, onDelete }) => {
   const [fakeFeedback, setFakeFeedback] = useState<string>('');
   const uuid = guid();
 
+  const [feedback, setFeedback] = useState<any>(action.params?.feedback || {});
+
   useEffect(() => {
-    action.params?.feedback?.partsLayout?.forEach((part: any) =>
+    feedback.partsLayout?.forEach((part: any) =>
       part.custom?.nodes?.forEach((node: any) => {
         const feedbackText = getFeedbackTextFromNode(node);
         setFakeFeedback(feedbackText);
       }),
     );
-  }, []);
+  }, [feedback]);
 
   const getFeedbackTextFromNode = (node: any): any => {
     let nodeText = '';
@@ -39,58 +37,16 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
     return nodeText;
   };
 
-  // const handleOpenModal = async () => {
-  //   const feedbackEnsemble = await ContentService.getInstance().getEnsembleById(
-  //     action.params.idref,
-  //   );
-  //   if (!feedbackEnsemble) {
-  //     console.error('couldnt find ensemble!', action.params.idref);
-  //     return;
-  //   }
-  //   // for now we'll assume feedback *only* has a single text entry
-  //   if (feedbackEnsemble.activityRefs.length !== 1) {
-  //     console.warn('feedback ensemble is not how we expect', {
-  //       feedbackEnsemble,
-  //     });
-  //   }
-  //   const tfActivity:any= await ContentService.getInstance().getActivityById(
-  //     feedbackEnsemble.activityRefs[0].idref,
-  //   );
-  //   if (tfActivity?.type !== 'janus-text-flow') {
-  //     console.error('first activity isnt a text flow!', { tfActivity });
-  //     return;
-  //   }
-  //   if (tfActivity) {
-  //     setTextData(tfActivity);
-  //   }
-  //   setOpen(true);
-  // };
-
-  // const handleFeedbackEdit = (editor:any) => {
-  //   console.log('edit feedback text', { action, editor });
-  //   editor.getEditor('root.id')?.disable();
-  //   editor.getEditor('root.type')?.disable();
-
-  //   editor.on('change', () => {
-  //     const value = editor.getValue();
-  //     console.log('FEEDBACK: ACTIVITY EDITOR CHANGE', {
-  //       value,
-  //     });
-  //     if (!value || !value.id) {
-  //       return;
-  //     }
-  //     ContentService.getInstance().updateActivity(value);
-  //   });
-  // };
-
   const [showEditor, setShowEditor] = useState(false);
 
   const handleShowFeedbackClick = () => {
-    console.log('show feedback editor');
+    // console.log('show feedback editor');
     setShowEditor(true);
   };
 
   const handleCancelEdit = () => {
+    // TODO: this revert causes infinite loop
+    // setFeedback(action.params?.feedback || {});
     setShowEditor(false);
   };
 
@@ -98,12 +54,9 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
     setShowEditor(false);
   };
 
-  const handleEditorChange = (parts: any[]) => {
-    console.log('FEEDBACK: EDITOR CHANGE', { parts });
-  };
-
-  const handleEditorSelect = (partId: string) => {
-    console.log('FEEDBACK: EDITOR SELECT', { partId });
+  const handleScreenAuthorChange = (screen: any) => {
+    console.log('ActionFeedbackEditor Screen Author Change', { screen });
+    setFeedback(screen);
   };
 
   return (
@@ -149,7 +102,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
           <h3 className="modal-title">Feedback</h3>
         </Modal.Header>
         <Modal.Body>
-          <ScreenAuthor screen={action.params.feedback} />
+          <ScreenAuthor screen={feedback} onChange={handleScreenAuthorChange} />
         </Modal.Body>
         <Modal.Footer>
           <button className="btn btn-secondary" onClick={handleCancelEdit}>
@@ -161,38 +114,6 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
         </Modal.Footer>
       </Modal>
     </div>
-    // <Fragment>
-    //   <Icon name="comment" size="large" />
-    //   <List.Content>
-    //     Show Feedback:{' '}
-    //     <Modal
-    //       onClose={() => setOpen(false)}
-    //       onOpen={handleOpenModal}
-    //       open={open}
-    //       trigger={<Button>Edit</Button>}
-    //     >
-    //       <Modal.Header>Edit Feedback</Modal.Header>
-    //       <Modal.Content>
-    //         <Modal.Description>
-    //           <p>Edit teh textflow here</p>
-    //         </Modal.Description>
-    //         {open ? (
-    //           <JsonEditor
-    //             schema={textFlowSchema}
-    //             item={textData}
-    //             onEditorReady={handleFeedbackEdit}
-    //           />
-    //         ) : null}
-    //       </Modal.Content>
-    //       <Modal.Actions>
-    //         <Button color="black" onClick={() => setOpen(false)}>
-    //           Done
-    //         </Button>
-    //       </Modal.Actions>
-    //     </Modal>
-    //     <sub>{action.params.idref}</sub>
-    //   </List.Content>
-    // </Fragment>
   );
 };
 
