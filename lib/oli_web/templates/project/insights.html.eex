@@ -5,6 +5,9 @@
       Insights can help you improve your course by providing a statistical analysis of
       the skills covered by each question to find areas where students are struggling.
       </p>
+      <div class="d-flex align-items-center">
+        <%= button("Download Raw Data", to: Routes.project_path(@conn, :download_analytics, @project), method: :post, class: "btn btn-link action-button") %>
+      </div>
     </div>
   </div>
   <div class="row mt-4">

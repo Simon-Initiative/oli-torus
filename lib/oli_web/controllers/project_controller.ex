@@ -11,6 +11,7 @@ defmodule OliWeb.ProjectController do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Clone
   alias Oli.Activities
+  alias OliWeb.Insights
 
   def overview(conn, project_params) do
     project = conn.assigns.project
@@ -204,6 +205,15 @@ defmodule OliWeb.ProjectController do
     conn
     |> send_download({:binary, Oli.Interop.Export.export(project)},
       filename: "export_#{project.slug}.zip"
+    )
+  end
+
+  def download_analytics(conn, _project_params) do
+    project = conn.assigns.project
+
+    conn
+    |> send_download({:binary, Insights.export(project)},
+      filename: "analytics_#{project.slug}.zip"
     )
   end
 
