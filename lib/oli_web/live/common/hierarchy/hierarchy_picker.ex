@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.HierarchyPicker do
+defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   @moduledoc """
   Hierarchy Picker Component
 
@@ -23,14 +23,14 @@ defmodule OliWeb.Curriculum.HierarchyPicker do
   def render(
         %{
           node: %HierarchyNode{slug: slug, revision: revision},
-          container: %HierarchyNode{children: children},
-          breadcrumbs: breadcrumbs
+          hierarchy: %HierarchyNode{},
+          selection: %HierarchyNode{children: children}
         } = assigns
       ) do
     ~L"""
     <div id="hierarchy-picker" class="hierarchy-picker">
       <div class="hierarchy-navigation">
-        <%= render_breadcrumb assigns, breadcrumbs %>
+        <%= render_breadcrumb assigns %>
       </div>
       <div class="hierarchy">
         <div class="text-center text-secondary mt-2">
@@ -55,7 +55,9 @@ defmodule OliWeb.Curriculum.HierarchyPicker do
     """
   end
 
-  def render_breadcrumb(assigns, breadcrumbs) do
+  def render_breadcrumb(%{hierarchy: hierarchy, selection: selection} = assigns) do
+    breadcrumbs = Breadcrumb.breadcrumb_trail_to(hierarchy, selection)
+
     ~L"""
       <ol class="breadcrumb custom-breadcrumb p-1 px-2">
           <button class="btn btn-sm btn-link" phx-click="HierarchyPicker.update_selection" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>

@@ -88,7 +88,7 @@ defmodule Oli.Resources.Numbering do
   def path_from_root_to(resolver, project_or_section_slug, revision_slug) do
     with root_container <- resolver.root_container(project_or_section_slug),
          path <-
-           path_helper(
+           revision_path_helper(
              revision_slug,
              root_container.children,
              resource_id_to_revision_map(resolver, project_or_section_slug),
@@ -108,6 +108,26 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
+  @doc """
+  Returns the path from a hierarchy's root to a given node
+
+  ## Examples
+
+     iex> Numbering.path_from_root_to(hierarchy, node)
+     [%HierarchyNode{}, %HierarchyNode{}, %HierarchyNode{}]
+
+  """
+  @spec path_from_root_to(%HierarchyNode{}, %HierarchyNode{}) ::
+          {:ok, [%HierarchyNode{}]} | {:not_found, []}
+  def path_from_root_to(%HierarchyNode{} = hierarchy, %HierarchyNode{} = node) do
+    hierachy_path_helper(
+      hierarchy,
+      node,
+      {:not_found, []}
+    )
+    |> then(fn {status, path} -> {status, Enum.reverse(path)} end)
+  end
+
   @spec resource_id_to_revision_map(resolver, project_or_section_slug) :: %{
           resource_id => %Revision{}
         }
@@ -117,11 +137,11 @@ defmodule Oli.Resources.Numbering do
         do: {rev.resource_id, rev}
   end
 
-  defp path_helper(_target_slug, [] = _resource_ids, _revisions, _path) do
+  defp revision_path_helper(_target_slug, [] = _resource_ids, _revisions, _path) do
     []
   end
 
-  defp path_helper(
+  defp revision_path_helper(
          target_slug,
          [resource_id | rest],
          resource_id_to_revision_map,
@@ -129,7 +149,7 @@ defmodule Oli.Resources.Numbering do
        ) do
     with revision <- Map.get(resource_id_to_revision_map, resource_id),
          path_using_revision <-
-           path_helper(
+           revision_path_helper(
              target_slug,
              revision.children,
              resource_id_to_revision_map,
@@ -143,8 +163,30 @@ defmodule Oli.Resources.Numbering do
           path_using_revision
 
         true ->
-          path_helper(target_slug, rest, resource_id_to_revision_map, path)
+          revision_path_helper(target_slug, rest, resource_id_to_revision_map, path)
       end
+    end
+  end
+
+  defp hierachy_path_helper(
+         %HierarchyNode{} = current_node,
+         %HierarchyNode{} = node,
+         {:not_found, path}
+       ) do
+    container = ResourceType.get_id_by_type("container")
+    path = [current_node | path]
+
+    if current_node.slug == node.slug do
+      {:ok, path}
+    else
+      current_node.children
+      |> Enum.filter(fn %{revision: r} -> r.resource_type_id == container end)
+      |> Enum.reduce_while({:not_found, path}, fn child, path_tracker ->
+        case hierachy_path_helper(child, node, path_tracker) do
+          {:ok, _path} = result -> {:halt, result}
+          {:not_found, _} -> {:cont, {:not_found, path}}
+        end
+      end)
     end
   end
 
@@ -280,47 +322,5 @@ defmodule Oli.Resources.Numbering do
 
     {%HierarchyNode{node | numbering: numbering, children: children}, numbering_tracker,
      numberings}
-  end
-
-  @doc """
-  Returns the path from a hierarchy's root to a given node
-
-  ## Examples
-
-     iex> Numbering.path_from_root_to(hierarchy, node)
-     [%HierarchyNode{}, %HierarchyNode{}, %HierarchyNode{}]
-
-  """
-  @spec path_from_root_to(%HierarchyNode{}, %HierarchyNode{}) ::
-          {:ok, [%HierarchyNode{}]} | {:not_found, []}
-  def path_from_root_to(%HierarchyNode{} = hierarchy, %HierarchyNode{} = node) do
-    path_helper(
-      hierarchy,
-      node,
-      {:not_found, []}
-    )
-    |> then(fn {status, path} -> {status, Enum.reverse(path)} end)
-  end
-
-  defp path_helper(
-         %HierarchyNode{} = current_node,
-         %HierarchyNode{} = node,
-         {:not_found, path}
-       ) do
-    container = ResourceType.get_id_by_type("container")
-    path = [current_node | path]
-
-    if current_node.section_resource.slug == node.section_resource.slug do
-      {:ok, path}
-    else
-      current_node.children
-      |> Enum.filter(fn %{revision: r} -> r.resource_type_id == container end)
-      |> Enum.reduce_while({:not_found, path}, fn child, path_tracker ->
-        case path_helper(child, node, path_tracker) do
-          {:ok, _path} = result -> {:halt, result}
-          {:not_found, _} -> {:cont, {:not_found, path}}
-        end
-      end)
-    end
   end
 end

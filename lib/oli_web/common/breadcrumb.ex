@@ -1,7 +1,16 @@
 defmodule OliWeb.Common.Breadcrumb do
+  @moduledoc """
+    Breadcrumb struct that powers the breadcrumb UI
+
+    Breadcrumbs can either contain links to other pages or have a phx-click and phx-value
+    associated with them.
+  """
+
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   @enforce_keys [:full_title]
   defstruct full_title: "",
@@ -117,5 +126,49 @@ defmodule OliWeb.Common.Breadcrumb do
           project_slug
         )
     })
+  end
+
+  @doc """
+  Generates a breadcrumb trail to the given node using a hierarchy
+  """
+  def breadcrumb_trail_to(%HierarchyNode{slug: slug} = hierarchy, active) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Curriculum",
+        slug: slug
+      })
+      | trail_to_helper(hierarchy, active)
+    ]
+  end
+
+  defp trail_to_helper(%HierarchyNode{} = hierarchy, active) do
+    with {:ok, [_root | path]} =
+           Numbering.path_from_root_to(
+             hierarchy,
+             active
+           ) do
+      Enum.map(path, fn node ->
+        make_breadcrumb(node)
+      end)
+    end
+  end
+
+  defp make_breadcrumb(%HierarchyNode{slug: slug, revision: rev, numbering: numbering}) do
+    case rev.resource_type do
+      "container" ->
+        Breadcrumb.new(%{
+          full_title:
+            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
+              ": " <> rev.title,
+          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
+          slug: slug
+        })
+
+      _ ->
+        Breadcrumb.new(%{
+          full_title: rev.title,
+          slug: slug
+        })
+    end
   end
 end

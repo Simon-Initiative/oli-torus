@@ -56,7 +56,8 @@ defmodule OliWeb.Delivery.RemixSection do
       end
     else
       # only permit instructor or admin level access
-      current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+      current_user =
+        Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
         |> Repo.preload([:platform_roles, :author])
 
       if is_section_instructor_or_admin?(section.slug, current_user) do
@@ -221,10 +222,9 @@ defmodule OliWeb.Delivery.RemixSection do
     assigns = %{
       id: "move_#{slug}",
       node: node,
-      old_container: active,
-      container: active,
-      breadcrumbs: breadcrumb_trail_to(hierarchy, active),
-      selection: nil
+      hierarchy: hierarchy,
+      from_container: active,
+      selection: active
     }
 
     {:noreply,
@@ -236,16 +236,13 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
     %{hierarchy: hierarchy, modal: modal} = socket.assigns
 
-    container = Hierarchy.find_in_hierarchy(hierarchy, slug)
-    breadcrumbs = breadcrumb_trail_to(hierarchy, container)
+    selection = Hierarchy.find_in_hierarchy(hierarchy, slug)
 
     modal = %{
       modal
       | assigns: %{
           modal.assigns
-          | container: container,
-            selection: slug,
-            breadcrumbs: breadcrumbs
+          | selection: selection
         }
     }
 
@@ -254,13 +251,13 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"slug" => slug, "selection" => selection},
+        %{"item_slug" => item_slug, "to_slug" => to_slug},
         socket
       ) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
-    hierarchy = Hierarchy.move_node(hierarchy, node, selection)
+    node = Hierarchy.find_in_hierarchy(hierarchy, item_slug)
+    hierarchy = Hierarchy.move_node(hierarchy, node, to_slug)
 
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
@@ -313,7 +310,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp render_breadcrumb(assigns) do
     %{hierarchy: hierarchy, active: active} = assigns
-    breadcrumbs = breadcrumb_trail_to(hierarchy, active)
+    breadcrumbs = Breadcrumb.breadcrumb_trail_to(hierarchy, active)
 
     ~L"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
@@ -346,46 +343,5 @@ defmodule OliWeb.Delivery.RemixSection do
   defp previous_slug(breadcrumbs) do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
-  end
-
-  def breadcrumb_trail_to(hierarchy, active) do
-    [
-      Breadcrumb.new(%{
-        full_title: "Curriculum",
-        slug: hierarchy.section_resource.slug
-      })
-      | trail_to_helper(hierarchy, active)
-    ]
-  end
-
-  defp trail_to_helper(hierarchy, active) do
-    with {:ok, [_root | path]} =
-           Numbering.path_from_root_to(
-             hierarchy,
-             active
-           ) do
-      Enum.map(path, fn node ->
-        make_breadcrumb(node)
-      end)
-    end
-  end
-
-  defp make_breadcrumb(%HierarchyNode{slug: slug, revision: rev, numbering: numbering}) do
-    case rev.resource_type do
-      "container" ->
-        Breadcrumb.new(%{
-          full_title:
-            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
-              ": " <> rev.title,
-          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
-          slug: slug
-        })
-
-      _ ->
-        Breadcrumb.new(%{
-          full_title: rev.title,
-          slug: slug
-        })
-    end
   end
 end
