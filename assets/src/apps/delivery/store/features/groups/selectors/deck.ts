@@ -69,3 +69,21 @@ export const selectCurrentActivityTreeAttemptState = createSelector(
     return mappedTree;
   },
 );
+
+export const selectCoppiedObject = createSelector(
+  (state: RootState) => {
+    const currentTree = selectCurrentActivityTree(state);
+    const attempts = currentTree?.map((t) => selectActivtyAttemptState(state, t.resourceId));
+    return [currentTree, attempts];
+  },
+  ([currentTree, attempts]: [any[], ActivityState[]]) => {
+    if (!currentTree?.length || !attempts?.length) {
+      return;
+    }
+    const mappedTree = currentTree.map((activity) => {
+      const attempt = attempts.find((a) => a.activityId === activity.resourceId);
+      return attempt;
+    });
+    return mappedTree;
+  },
+);

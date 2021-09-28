@@ -1,10 +1,12 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
+import { setCopiedComponent } from 'apps/authoring/store/app/slice';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import { defaultCapabilities } from 'components/parts/types/parts';
 import EventEmitter from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
+import { useDispatch } from 'react-redux';
 import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
@@ -33,6 +35,7 @@ const Adaptive = (
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
 
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
+  const dispatch = useDispatch();
 
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
@@ -192,6 +195,11 @@ const Adaptive = (
     props.onEdit(modelClone);
   }, [selectedPart, props.model]);
 
+  const handleCopyComponent = useCallback(async () => {
+    console.log('AUTHOR PART COPY', { selectedPart });
+    dispatch(setCopiedComponent({ copiedComponent: selectedPart }));
+  }, [selectedPart, props.model]);
+
   const handlePartMoveBack = useCallback(async () => {
     console.log('AUTHOR PART MOVE BACK', { selectedPart });
     const modelClone = clone(props.model);
@@ -320,6 +328,11 @@ const Adaptive = (
           {selectedPart && selectedPart.capabilities.configure && (
             <button title="Edit" onClick={handlePartConfigure}>
               <i className="las la-edit"></i>
+            </button>
+          )}
+          {selectedPart && selectedPart.capabilities.move && (
+            <button title="Copy" onClick={handleCopyComponent}>
+              <i className="las la-copy"></i>
             </button>
           )}
           {/* <button title="Configure" onClick={handlePartConfigure}>

@@ -1,5 +1,9 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import { selectPartComponentTypes, selectPaths } from 'apps/authoring/store/app/slice';
+import {
+  selectCopiedComponent,
+  selectPartComponentTypes,
+  selectPaths,
+} from 'apps/authoring/store/app/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
@@ -22,7 +26,7 @@ const AddComponentToolbar: React.FC = () => {
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
-
+  const copiedComponent = useSelector(selectCopiedComponent);
   console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const handleAddComponent = useCallback(
@@ -132,6 +136,23 @@ const AddComponentToolbar: React.FC = () => {
           ))}
       </div>
       <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
+        {copiedComponent ? (
+          <OverlayTrigger
+            placement="bottom"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                Paste Component
+              </Tooltip>
+            }
+          >
+            <span>
+              <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
+                <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
+              </button>
+            </span>
+          </OverlayTrigger>
+        ) : null}
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 150 }}
