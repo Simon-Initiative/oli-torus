@@ -98,9 +98,27 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     fontFamily: 'revert',
   };
   const initialize = useCallback(async (pModel) => {
+    const partResponses: any[] = pModel?.elements?.map((el: any) => {
+      const val: string = getElementValueByKey(el.key);
+      const index: number = pModel?.elements?.findIndex((o: any) => o.key === el.key);
+
+      return [
+        {
+          key: `Input ${index + 1}.Value`,
+          type: CapiVariableTypes.STRING,
+          value: val || '',
+        },
+        {
+          key: `Input ${index + 1}.Correct`,
+          type: CapiVariableTypes.BOOLEAN,
+          value: isCorrect(val, el.correct, el.alternateCorrect),
+        },
+      ];
+    });
+    const elementPartResponses = [].concat(...partResponses);
     const initResult = await props.onInit({
       id,
-      responses: [],
+      responses: [...elementPartResponses],
     });
     //customCss comes from model and it was assigning blank value to customCss variable on line #85. Once model is updated
     //need to assign the update values to the variable
