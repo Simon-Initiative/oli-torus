@@ -1,6 +1,6 @@
 import { FeedbackAction } from 'apps/authoring/types';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
 
@@ -10,7 +10,11 @@ interface ActionFeedbackEditorProps {
   onDelete: (changes: FeedbackAction) => void;
 }
 
-const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({ action, onDelete }) => {
+const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
+  action,
+  onDelete,
+  onChange,
+}) => {
   const [fakeFeedback, setFakeFeedback] = useState<string>('');
   const uuid = guid();
 
@@ -50,9 +54,10 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({ action, onD
     setShowEditor(false);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = useCallback(() => {
     setShowEditor(false);
-  };
+    onChange({ feedback });
+  }, [feedback]);
 
   const handleScreenAuthorChange = (screen: any) => {
     console.log('ActionFeedbackEditor Screen Author Change', { screen });

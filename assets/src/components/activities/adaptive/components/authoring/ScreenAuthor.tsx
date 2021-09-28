@@ -117,6 +117,8 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
     setPartsList([...screen.partsLayout]);
     setScreenHeight(screen.custom.height);
     setScreenWidth(screen.custom.width);
+    const palette = convertPalette(screen.custom.palette);
+    setScreenBackgroundColor(palette.backgroundColor);
   }, [screen]);
 
   const [currentPropertySchema, setCurrentPropertySchema] = useState<JSONSchema7>(screenSchema);
