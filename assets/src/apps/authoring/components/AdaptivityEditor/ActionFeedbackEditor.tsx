@@ -1,8 +1,10 @@
 import { FeedbackAction } from 'apps/authoring/types';
 import LayoutEditor from 'components/activities/adaptive/components/authoring/LayoutEditor';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import React, { useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
+import AddComponentToolbar from '../ComponentToolbar/AddComponentToolbar';
 
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;
@@ -142,21 +144,12 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = (props) => {
           </button>
         </span>
       </OverlayTrigger>
-      <Modal show={showEditor} onHide={handleCancelEdit}>
+      <Modal dialogClassName="modal-90w" show={showEditor} onHide={handleCancelEdit}>
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Feedback</h3>
         </Modal.Header>
         <Modal.Body>
-          <LayoutEditor
-            id="feedback-designer-1"
-            width={350}
-            height={400}
-            backgroundColor={'lightblue'}
-            parts={action.params.feedback.partsLayout}
-            selected={''}
-            onChange={handleEditorChange}
-            onSelect={handleEditorSelect}
-          />
+          <ScreenAuthor screen={action.params.feedback} />
         </Modal.Body>
         <Modal.Footer>
           <button className="btn btn-secondary" onClick={handleCancelEdit}>

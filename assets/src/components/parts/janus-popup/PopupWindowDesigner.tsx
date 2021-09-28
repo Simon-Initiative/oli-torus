@@ -81,6 +81,10 @@ const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
             width: 100%;
             background-color: #eee;
           }
+          .popup-designer-properties {
+            height: 128px;
+            background-color: whitesmoke;
+          }
         `}
       </style>
       <header className="popup-designer-toolbar">
@@ -105,6 +109,8 @@ const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
         <button className="px-2 btn btn-link" onClick={props.onCancel}>
           Cancel
         </button>
+        <hr />
+        <div className="popup-designer-properties"></div>
       </header>
       <section ref={canvasRef} className="popup-designer-canvas">
         <LayoutEditor

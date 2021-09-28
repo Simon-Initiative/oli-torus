@@ -73,15 +73,23 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           if (instance.getCapabilities) {
             capabilities = { ...capabilities, ...instance.getCapabilities() };
           }
+          const partWithCapabilities = { ...part, capabilities };
+          setSelectedPart(partWithCapabilities);
+          console.log('PART SELECTION CHANGED', {
+            selectedPartId,
+            selectedPart: partWithCapabilities,
+          });
         }
-        setSelectedPart({ ...part, capabilities });
       }
     } else {
       setSelectedPart(null);
+      console.log('PART SELECTION CHANGED', {
+        selectedPartId,
+        selectedPart: null,
+      });
     }
     // any time selection changes we need to stop editing
     setConfigurePartId('');
-    console.log('PART SELECTION CHANGED', { selectedPartId, selectedPart });
   }, [selectedPartId, parts]);
 
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
@@ -281,6 +289,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         <style>
           {`
           .activity-content {
+            position: absolute;
             border: 1px solid #ccc;
             background-color: ${props.backgroundColor || '#fff'};
             width: ${props.width || 1000}px;
