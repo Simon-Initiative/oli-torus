@@ -1,7 +1,6 @@
 defmodule OliWeb.Delivery.SelectSource do
   use Surface.LiveView
 
-  alias Oli.Repo
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Products.Filter
   alias OliWeb.Products.Listing

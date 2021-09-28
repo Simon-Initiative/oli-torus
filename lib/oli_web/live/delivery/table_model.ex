@@ -84,10 +84,10 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
     id =
       case is_product?(item) do
         true ->
-          id = "product:#{item.id}"
+          "product:#{item.id}"
 
         _ ->
-          id = "publication:#{item.id}"
+          "publication:#{item.id}"
       end
 
     ~F"""

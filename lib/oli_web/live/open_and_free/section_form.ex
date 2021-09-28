@@ -5,12 +5,11 @@ defmodule OliWeb.OpenAndFree.SectionForm do
   import Oli.Utils
   import OliWeb.ErrorHelpers
   alias Oli.Predefined
-  alias Oli.Authoring.Course
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Branding
 
   @impl true
-  def mount(params, session, socket) do
+  def mount(_, session, socket) do
     %{
       "changeset" => changeset,
       "action" => action,
