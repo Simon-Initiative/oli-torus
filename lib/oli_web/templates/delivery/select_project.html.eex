@@ -46,7 +46,8 @@ $(function() {
           <thead>
             <tr>
               <th scope="col" style="width: 5%"></th>
-              <th scope="col" style="width: 50%">Title</th>
+              <th scope="col" style="width: 35%">Title</th>
+              <th scope="col" style="width: 15%">Cost</th>
               <th scope="col" style="width: 15%">Description</th>
               <th scope="col" style="width: 30%">Date Created</th>
             </tr>
@@ -61,6 +62,24 @@ $(function() {
                       title -> title
                     end
                     %>
+                </td>
+                <td>
+                  <%=
+                  case Map.has_key?(source, :type) and Map.get(source, :type) == :blueprint do
+                    true ->
+                      if source.requires_payment do
+                        case Money.to_string(source.amount) do
+                          {:ok, m} -> m
+                          _ -> "Yes"
+                        end
+                      else
+                        "None"
+                      end
+
+                    _ ->
+                      "None"
+                  end
+                  %>
                 </td>
                 <td><%= source.description %></td>
                 <td><%= format_datetime(source.inserted_at) %></td>
