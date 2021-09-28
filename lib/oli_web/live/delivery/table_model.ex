@@ -81,17 +81,18 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   end
 
   def render_action_column(assigns, item, _) do
-    case is_product?(item) do
-      true ->
-        ~F"""
-        <button class="btn btn-primary">Select</button>
-        """
+    id =
+      case is_product?(item) do
+        true ->
+          id = "product:#{item.id}"
 
-      _ ->
-        ~F"""
-        <button class="btn btn-primary">Select</button>
-        """
-    end
+        _ ->
+          id = "publication:#{item.id}"
+      end
+
+    ~F"""
+    <button class="btn btn-primary" phx-click="selected" phx-value-id={id}>Select</button>
+    """
   end
 
   def render_type_column(_, item, _) do

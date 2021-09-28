@@ -10,7 +10,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
   alias Oli.Branding
 
   @impl true
-  def mount(_params, session, socket) do
+  def mount(params, session, socket) do
     %{
       "changeset" => changeset,
       "action" => action,
@@ -31,11 +31,23 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       |> assign(:cancel, cancel)
       |> assign(:changeset, changeset)
 
+    socket =
+      case Map.has_key?(session, "source") do
+        true -> assign(socket, :source, Map.get(session, "source"))
+        _ -> socket
+      end
+
     {:ok, socket}
   end
 
   @impl true
   def render(assigns) do
+    {source_label, source_param_name} =
+      case Map.has_key?(assigns, :source) and Map.get(assigns.source, :type) == :blueprint do
+        true -> {"Source Product", :product_slug}
+        _ -> {"Source Project", :project_slug}
+      end
+
     ~L"""
     <%= form_for @changeset, @action, fn f -> %>
       <%= if @changeset.action do %>
@@ -45,15 +57,11 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       <% end %>
 
       <%= if @action == Routes.open_and_free_path(@socket, :create) do %>
-        <div id="projects-typeahead" class="form-label-group"
-          phx-hook="ProjectsTypeahead"
-          phx-update="ignore">
-          <%= text_input f, :project_name, class: "project-name typeahead form-control " <> error_class(f, :project_id, "is-invalid"),
-            placeholder: "Project", required: true, autofocus: focusHelper(f, :project_name, default: true), autocomplete: "off" %>
-          <%= label f, :project_name, "Project", class: "control-label" %>
-          <%= error_tag f, :project_id %>
-
-          <%= hidden_input f, :project_slug, value: "" %>
+        <div class="form-label-group"
+          >
+          <%= hidden_input f, source_param_name, value: @source.slug %>
+          <input type="text" value="<%= @source.title %>" disabled class="form-control"/>
+          <label class="control-label"><%= source_label %></label>
         </div>
       <% end %>
 
@@ -158,12 +166,5 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       </div>
     <% end %>
     """
-  end
-
-  @impl true
-  def handle_event("search", %{"search" => search}, socket) do
-    projects = Course.search_published_projects(search)
-
-    {:noreply, push_event(socket, "projects", %{projects: projects})}
   end
 end

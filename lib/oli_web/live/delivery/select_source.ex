@@ -1,9 +1,8 @@
 defmodule OliWeb.Delivery.SelectSource do
   use Surface.LiveView
 
-
   alias Oli.Repo
-
+  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Products.Filter
   alias OliWeb.Products.Listing
   alias OliWeb.Common.Breadcrumb
@@ -75,6 +74,20 @@ defmodule OliWeb.Delivery.SelectSource do
     </div>
 
     """
+  end
+
+  def handle_event("selected", %{"id" => source}, socket) do
+    path =
+      Routes.open_and_free_path(
+        OliWeb.Endpoint,
+        :new,
+        %{"source_id" => source}
+      )
+
+    {:noreply,
+     redirect(socket,
+       to: path
+     )}
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
