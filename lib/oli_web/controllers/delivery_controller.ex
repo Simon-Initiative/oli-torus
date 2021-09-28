@@ -88,9 +88,6 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    IO.inspect(user)
-    IO.inspect(institution)
-
     render(conn, "select_project.html",
       author: user.author,
       sources: Sections.retrieve_visible_sources(user, institution),
@@ -330,6 +327,15 @@ defmodule OliWeb.DeliveryController do
     blueprint = Oli.Delivery.Sections.get_section!(product_id)
 
     Repo.transaction(fn ->
+      # calculate a cost, if an error, fallback to the amount in the blueprint
+      # TODO: we may need to move this to AFTER a remix if the cost calculation factors
+      # in the percentage project usage
+      amount =
+        case Oli.Delivery.Paywall.calculate_product_cost(blueprint, institution) do
+          {:ok, amount} -> amount
+          _ -> blueprint.amount
+        end
+
       {:ok, section} =
         Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
           type: :enrollable,
@@ -337,7 +343,8 @@ defmodule OliWeb.DeliveryController do
           title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
           context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
           institution_id: institution.id,
-          lti_1p3_deployment_id: deployment.id
+          lti_1p3_deployment_id: deployment.id,
+          amount: amount
         })
 
       # Enroll this user with their proper roles (instructor)
