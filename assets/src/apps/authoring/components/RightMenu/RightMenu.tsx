@@ -211,33 +211,36 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const lessonPropertyChangeHandler = (properties: object) => {
-    const modelChanges = transformLessonSchema(properties);
+  const lessonPropertyChangeHandler = useCallback(
+    (properties: object) => {
+      const modelChanges = transformLessonSchema(properties);
 
-    // special consideration for legacy stylesheets
-    if (modelChanges.additionalStylesheets[0] === null) {
-      modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
-    }
+      // special consideration for legacy stylesheets
+      if (modelChanges.additionalStylesheets[0] === null) {
+        modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
+      }
 
-    const lessonChanges = {
-      ...currentLesson,
-      ...modelChanges,
-      custom: { ...currentLesson.custom, ...modelChanges.custom },
-    };
-    //need to remove the allowNavigation property
-    //making sure the enableHistory is present before removing that.
-    if (
-      lessonChanges.custom.enableHistory !== undefined &&
-      lessonChanges.custom.allowNavigation !== undefined
-    ) {
-      delete lessonChanges.custom.allowNavigation;
-    }
-    console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
+      const lessonChanges = {
+        ...currentLesson,
+        ...modelChanges,
+        custom: { ...currentLesson.custom, ...modelChanges.custom },
+      };
+      //need to remove the allowNavigation property
+      //making sure the enableHistory is present before removing that.
+      if (
+        lessonChanges.custom.enableHistory !== undefined &&
+        lessonChanges.custom.allowNavigation !== undefined
+      ) {
+        delete lessonChanges.custom.allowNavigation;
+      }
+      console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
-    // need to put a healthy debounce in here, this fires every keystroke
-    // save the page
-    debounceSavePage(lessonChanges);
-  };
+      // need to put a healthy debounce in here, this fires every keystroke
+      // save the page
+      debounceSavePage(lessonChanges);
+    },
+    [currentLesson],
+  );
 
   const debouncePartPropertyChanges = useCallback(
     debounce(
