@@ -88,6 +88,9 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
+    IO.inspect(user)
+    IO.inspect(institution)
+
     render(conn, "select_project.html",
       author: user.author,
       sources: Sections.retrieve_visible_sources(user, institution),

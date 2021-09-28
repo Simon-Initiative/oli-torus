@@ -8,8 +8,8 @@ defmodule OliWeb.DeliveryView do
 
   def source_id(source) do
     case Map.get(source, :type, nil) do
-      nil -> "publication:" <> source.id
-      _ -> "product:" <> source.id
+      nil -> "publication:#{source.id}"
+      _ -> "product:#{source.id}"
     end
   end
 

@@ -564,28 +564,30 @@ defmodule Oli.Delivery.Sections do
   end
 
   def retrieve_visible_sources(user, institution) do
-    case user.author do
-      nil ->
-        {Oli.Delivery.Sections.Blueprint.available_products(),
-         Publishing.available_publications()}
+    all =
+      case user.author do
+        nil ->
+          {Oli.Delivery.Sections.Blueprint.available_products(),
+           Publishing.available_publications()}
 
-      author ->
-        {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-         Publishing.available_publications(author, institution)}
-    end
-    |> then(fn {products, publications} ->
-      filtered =
-        Enum.filter(publications, fn p -> p.published end)
-        |> then(fn publications ->
-          Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-            products,
-            publications
-          )
-        end)
+        author ->
+          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
+           Publishing.available_publications(author, institution)}
+      end
+      |> then(fn {products, publications} ->
+        filtered =
+          Enum.filter(publications, fn p -> p.published end)
+          |> then(fn publications ->
+            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
+              products,
+              publications
+            )
+          end)
 
-      filtered ++ products
-    end)
-    |> Enum.sort_by(fn a, b -> get_title(a) < get_title(b) end)
+        filtered ++ products
+      end)
+
+    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
   end
 
   defp get_title(pub_or_prod) do

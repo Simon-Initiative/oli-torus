@@ -14,10 +14,10 @@ $(function() {
 
 <script>
 $(function() {
-  $('input[name="publication_id"]').on('change', function() {
-    $('input[name="publication_id"]').not(this).prop('checked', false);
+  $('input[name="source_id"]').on('change', function() {
+    $('input[name="source_id"]').not(this).prop('checked', false);
 
-    if ($('input[name="publication_id"]:checked').length > 0) {
+    if ($('input[name="source_id"]:checked').length > 0) {
       $('#select-submit').prop('disabled', false);
     } else {
       $('#select-submit').prop('disabled', true);
