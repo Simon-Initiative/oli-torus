@@ -216,6 +216,10 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
 
     live("/projects", Projects.ProjectsLive)
+    live("/products/:product_id", Products.DetailsView)
+    live("/products/:section_slug/updates", Delivery.ManageUpdates)
+    live("/products/:section_slug/remix", Delivery.RemixSection, as: :authoring_remix)
+
     get("/account", WorkspaceController, :account)
     put("/account", WorkspaceController, :update_author)
     post("/account/theme", WorkspaceController, :update_theme)
@@ -240,6 +244,7 @@ defmodule OliWeb.Router do
     post("/:project_id/publish", ProjectController, :publish_active)
     post("/:project_id/datashop", ProjectController, :download_datashop)
     post("/:project_id/export", ProjectController, :download_export)
+    post("/:project_id/insights", ProjectController, :download_analytics)
     post("/:project_id/duplicate", ProjectController, :clone_project)
 
     # Project
@@ -265,6 +270,9 @@ defmodule OliWeb.Router do
 
     # Review/QA
     live("/:project_id/review", Qa.QaLive)
+
+    # Author facing product view
+    live("/:project_id/products", Products.ProductsView)
 
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
@@ -598,6 +606,7 @@ defmodule OliWeb.Router do
     live("/accounts", Accounts.AccountsLive)
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
+    live("/products", Products.ProductsView)
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do
