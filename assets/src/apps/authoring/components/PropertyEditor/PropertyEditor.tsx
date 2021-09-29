@@ -2,7 +2,7 @@
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
@@ -26,13 +26,23 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   value,
   onChangeHandler,
 }) => {
-  /* console.log({ value, uiSchema }); */
+  const [formData, setFormData] = useState(value);
+
+  useEffect(() => {
+    setFormData(value);
+  }, [value]);
+
   return (
     <Form
       schema={schema}
-      formData={value}
+      formData={formData}
       onChange={(e) => {
-        onChangeHandler(e.formData);
+        // console.log('ONCHANGE P EDITOR', e.formData);
+        setFormData(e.formData);
+      }}
+      onBlur={(...args) => {
+        // console.log('ONBLUR', { args, formData });
+        onChangeHandler(formData);
       }}
       uiSchema={uiSchema}
       widgets={widgets}
