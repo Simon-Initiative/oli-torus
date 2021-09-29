@@ -172,7 +172,9 @@ const RightMenu: React.FC<any> = () => {
         if (title) {
           cloneActivity.title = title;
         }
-        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+        if (JSON.stringify(cloneActivity) !== JSON.stringify(currentActivity)) {
+          debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+        }
       }
     },
     [currentActivity],
@@ -237,7 +239,9 @@ const RightMenu: React.FC<any> = () => {
 
       // need to put a healthy debounce in here, this fires every keystroke
       // save the page
-      debounceSavePage(lessonChanges);
+      if (JSON.stringify(lessonChanges) !== JSON.stringify(currentLesson)) {
+        debounceSavePage(lessonChanges);
+      }
     },
     [currentLesson],
   );
@@ -281,7 +285,7 @@ const RightMenu: React.FC<any> = () => {
         }
         ogPart.custom = modelChanges.custom;
 
-        if (!isEqual(cloneActivity, origActivity)) {
+        if (JSON.stringify(cloneActivity) !== JSON.stringify(origActivity)) {
           dispatch(saveActivity({ activity: cloneActivity }));
         }
       },
