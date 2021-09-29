@@ -16,6 +16,7 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
     height,
     prompt,
     showLabel,
+    initValue,
     showCharacterCount,
   } = model;
   const wrapperStyles: CSSProperties = {
@@ -43,11 +44,11 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
         {label}
       </label>
       <textarea
-        name="test"
+        name={`name-${id}`}
         id={`${id}-input`}
         style={inputStyles}
         placeholder={prompt}
-        value=""
+        value={initValue || ''}
         disabled={true}
       />
       <div
