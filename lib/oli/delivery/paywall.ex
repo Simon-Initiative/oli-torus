@@ -1,13 +1,58 @@
 defmodule Oli.Delivery.Paywall do
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Accounts.User
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
 
   @maximum_batch_size 500
+
+  def can_access?(_, %Section{requires_payment: false}), do: true
+
+  def can_access?(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
+    if Sections.is_instructor?(user, slug) or Sections.is_admin?(user, slug) do
+      true
+    else
+      enrollment = Sections.get_enrollment(slug, id)
+
+      # A student can access a paywalled section if the following two conditions hold:
+      # 1. They are enrolled in the section
+      # 2. They have either made a payment OR they are within the grace period (if there is one)
+      !is_nil(enrollment) and (has_paid?(enrollment) or within_grace_period?(enrollment, section))
+    end
+  end
+
+  defp has_paid?(%Enrollment{id: id}) do
+    query =
+      from(
+        p in Payment,
+        where: p.enrollment_id == ^id,
+        select: p
+      )
+
+    !is_nil(Repo.one(query))
+  end
+
+  defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
+
+  defp within_grace_period?(%Enrollment{inserted_at: inserted_at}, %Section{
+         grace_period_days: days,
+         grace_period_strategy: strategy,
+         start_date: start_date
+       }) do
+    case strategy do
+      :relative_to_section ->
+        Date.compare(Date.utc_today(), Date.add(start_date, days)) == :lt
+
+      :relative_to_student ->
+        Date.compare(Date.utc_today(), Date.add(inserted_at, days)) == :lt
+    end
+  end
 
   @doc """
   Generates a batch of payment codes (aka deferred payments).
@@ -147,6 +192,72 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Redeems a payment code for a given course section.
+
+  Returns {:ok, %Payment{}} on success, otherwise:
+  {:error, {:already_paid}} if the student has already paid for this section
+  {:error, {:not_enrolled}} if the student is not enrolled in the section
+  {:error, {:unknown_section}} when the section slug does not pertain to a valid section
+  {:error, {:unknown_code}} when no deferred payment record is found for `code`
+  {:error, {:invalid_code}} when the code is invalid, whether it has already been redeemed or
+    if it doesn't pertain to this section or blueprint product
+
+  """
+  def redeem_code(human_readable_code, %User{} = user, section_slug) do
+    case Payment.from_human_readable(human_readable_code) do
+      {:ok, code} ->
+        case Sections.get_section_by_slug(section_slug) do
+          nil ->
+            {:error, {:unknown_section}}
+
+          %Section{blueprint_id: blueprint_id, id: id} = section ->
+            case Repo.get_by(Payment, code: code) do
+              nil ->
+                {:error, {:unknown_code}}
+
+              %Payment{
+                type: :deferred,
+                application_date: nil,
+                section_id: ^id,
+                enrollment_id: nil
+              } = payment ->
+                apply_payment(payment, user, section)
+
+              %Payment{
+                type: :deferred,
+                application_date: nil,
+                section_id: ^blueprint_id,
+                enrollment_id: nil
+              } = payment ->
+                apply_payment(payment, user, section)
+
+              _ ->
+                {:error, {:invalid_code}}
+            end
+        end
+
+      _ ->
+        {:error, {:invalid_code}}
+    end
+  end
+
+  defp apply_payment(payment, user, section) do
+    case Sections.get_enrollment(section.slug, user.id) do
+      nil ->
+        {:error, {:not_enrolled}}
+
+      %{id: id} ->
+        case Repo.get_by(Payment, enrollment_id: id) do
+          nil ->
+            update_payment(payment, %{enrollment_id: id, application_date: DateTime.utc_now()})
+
+          _ ->
+            {:error, {:already_paid}}
+        end
+    end
+  end
+
+  @doc """
   Creates a payment.
   ## Examples
       iex> create_payment(%{field: value})
@@ -158,6 +269,12 @@ defmodule Oli.Delivery.Paywall do
     %Payment{}
     |> Payment.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def update_payment(%Payment{} = p, attrs) do
+    p
+    |> Payment.changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

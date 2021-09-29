@@ -85,6 +85,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
+  pipeline :enforce_paywall do
+    plug(Oli.Plugs.EnforcePaywall)
+  end
+
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug(Oli.Plugs.SetDefaultPow, :user)
@@ -518,9 +522,35 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug", PageDeliveryController, :index)
     get("/:section_slug/updates", PageDeliveryController, :updates)
 
+    live("/:section_slug/grades", Grades.GradesLive)
+
+    live("/:section_slug/manage", Delivery.ManageSection)
+
+    live("/:section_slug/remix", Delivery.RemixSection)
+    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
+
+    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
+
+    get("/:section_slug/payment", PaymentController, :guard)
+    get("/:section_slug/payment/new", PaymentController, :make_payment)
+    get("/:section_slug/payment/code", PaymentController, :use_code)
+    post("/:section_slug/payment/code", PaymentController, :apply_code)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :maybe_enroll_open_and_free,
+      :delivery_protected,
+      :enforce_paywall,
+      :pow_email_layout
+    ])
+
+    get("/:section_slug", PageDeliveryController, :index)
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -535,15 +565,6 @@ defmodule OliWeb.Router do
       PageDeliveryController,
       :review_attempt
     )
-
-    live("/:section_slug/grades", Grades.GradesLive)
-
-    live("/:section_slug/manage", Delivery.ManageSection)
-
-    live("/:section_slug/remix", Delivery.RemixSection)
-    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
   end
 
   scope "/sections", OliWeb do
