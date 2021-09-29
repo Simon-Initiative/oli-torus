@@ -2,11 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { debounce } from 'lodash';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  IActivity,
-  selectCurrentActivity,
-  upsertActivity,
-} from '../delivery/store/features/activities/slice';
+import { IActivity, selectCurrentActivity } from '../delivery/store/features/activities/slice';
 import { selectCurrentRule, setCurrentRule } from './store/app/slice';
 import { clone } from '../../utils/common';
 import { saveActivity } from './store/activities/actions/saveActivity';
@@ -74,12 +70,41 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     [],
   );
 
+  const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {
+    // process the rules to make a defaultRule sandwich before displaying them
+    const defaultCorrectIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && rule.correct,
+    );
+    const defaultWrongIndex = rules.findIndex(
+      (rule: AdaptiveRule) => rule.default && !rule.correct,
+    );
+
+    if (defaultCorrectIndex === 0 && defaultWrongIndex === rules.length - 1) return rules;
+    const rulesClone = clone(rules);
+
+    // set the defaultCorrect to the first position
+    rulesClone.unshift(rulesClone.splice(defaultCorrectIndex, 1)[0]);
+
+    // set the defaultWrong rule to the last position
+    rulesClone.push(rulesClone.splice(defaultWrongIndex, 1)[0]);
+
+    if (saveChanges) {
+      const activityClone: IActivity = clone(currentActivity);
+      activityClone.authoring.rules = rulesClone;
+      debounceSaveChanges(activityClone);
+    } else return rulesClone;
+  };
+
   const handleAddCorrectRule = async () => {
     const { payload: newCorrectRule } = await dispatch<any>(
       createCorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newCorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newCorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     dispatch(setCurrentRule({ currentRule: newCorrectRule }));
     debounceSaveChanges(activityClone);
   };
@@ -89,7 +114,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       createIncorrectRule({ isDefault: false }),
     );
     const activityClone: IActivity = clone(currentActivity);
-    activityClone.authoring.rules.push(newIncorrectRule);
+    const currentRuleIndex = activityClone.authoring.rules.findIndex(
+      (rule: AdaptiveRule) => rule.id === currentRule.id,
+    );
+    activityClone.authoring.rules.splice(currentRuleIndex + 1, 0, newIncorrectRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     dispatch(setCurrentRule({ currentRule: newIncorrectRule }));
     debounceSaveChanges(activityClone);
   };
@@ -202,7 +231,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                       data-toggle="dropdown"
                       aria-haspopup="true"
                       aria-expanded="false"
-                      onClick={(e) => {
+                      onClick={() => {
                         ($(`#bottom-panel-add-context-trigger`) as any).dropdown('toggle');
                       }}
                     >
@@ -223,7 +252,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                       </button>
                       <button
                         className="dropdown-item"
-                        onClick={(e) => {
+                        onClick={() => {
                           handleAddIncorrectRule();
                         }}
                       >
