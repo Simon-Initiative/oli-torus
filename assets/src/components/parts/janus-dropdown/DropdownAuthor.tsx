@@ -8,15 +8,19 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   const { x, y, z, width, showLabel, label, prompt, optionLabels } = model;
   const styles: CSSProperties = {
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
   };
   const dropDownStyle: CSSProperties = {
     width: 'auto',
     height: 'auto',
   };
+  if (!(showLabel && label)) {
+    dropDownStyle.width = `${Number(width) - 10}px`;
+  }
+  if (showLabel && label && width) {
+    //is this the best way to handle?
+    //if lable is visible then need to set the maxWidth otherwise it gets out of the container
+    dropDownStyle.maxWidth = `${Number(width * 0.63)}px`;
+  }
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
