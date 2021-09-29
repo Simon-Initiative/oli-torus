@@ -21,6 +21,10 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   const [feedback, setFeedback] = useState<any>(action.params?.feedback || {});
 
   useEffect(() => {
+    setFeedback(action.params?.feedback || {});
+  }, [action.params]);
+
+  useEffect(() => {
     feedback.partsLayout?.forEach((part: any) =>
       part.custom?.nodes?.forEach((node: any) => {
         const feedbackText = getFeedbackTextFromNode(node);
@@ -48,11 +52,11 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
     setShowEditor(true);
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     // TODO: this revert causes infinite loop
     // setFeedback(action.params?.feedback || {});
     setShowEditor(false);
-  };
+  }, [feedback]);
 
   const handleSaveEdit = useCallback(() => {
     setShowEditor(false);
@@ -71,7 +75,11 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
       </label>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend">
-          <div className="input-group-text" onClick={handleShowFeedbackClick}>
+          <div
+            className="input-group-text"
+            onClick={handleShowFeedbackClick}
+            style={{ cursor: 'pointer' }}
+          >
             <i className="fa fa-comment mr-1" />
             Show Feedback
           </div>
