@@ -1,6 +1,6 @@
 defmodule OliWeb.OpenAndFreeController do
   use OliWeb, :controller
-
+  alias Oli.Repo
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Predefined
@@ -29,9 +29,68 @@ defmodule OliWeb.OpenAndFreeController do
     json(conn, sections)
   end
 
-  def new(conn, _params) do
+  def new(conn, %{"source_id" => id}) do
+    source =
+      case id do
+        "product:" <> id ->
+          IO.inspect(id)
+
+          Sections.get_section!(String.to_integer(id))
+
+        "publication:" <> id ->
+          publication =
+            Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
+
+          publication.project
+      end
+
     changeset = Sections.change_section(%Section{open_and_free: true, registration_open: true})
-    render_workspace_page(conn, "new.html", changeset: changeset)
+    render_workspace_page(conn, "new.html", changeset: changeset, source: source)
+  end
+
+  def create(conn, %{"section" => %{"product_slug" => _} = section_params}) do
+    with %{
+           "product_slug" => product_slug,
+           "start_date" => start_date,
+           "end_date" => end_date,
+           "timezone" => timezone
+         } <-
+           section_params,
+         blueprint <- Sections.get_section_by_slug(product_slug) do
+      {utc_start_date, utc_end_date} =
+        parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+
+      section_params = %{
+        type: :enrollable,
+        open_and_free: true,
+        context_id: UUID.uuid4(),
+        start_date: utc_start_date,
+        end_date: utc_end_date,
+        timezone: timezone
+      }
+
+      case Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params) do
+        {:ok, section} ->
+          conn
+          |> put_flash(:info, "Open and free created successfully.")
+          |> redirect(to: Routes.open_and_free_path(conn, :show, section))
+
+        _ ->
+          changeset =
+            Sections.change_section(%Section{open_and_free: true})
+            |> Ecto.Changeset.add_error(:title, "invalid settings")
+
+          render_workspace_page(conn, "new.html", changeset: changeset)
+          # Enroll this user with their proper roles (instructor)
+      end
+    else
+      _ ->
+        changeset =
+          Sections.change_section(%Section{open_and_free: true})
+          |> Ecto.Changeset.add_error(:title, "invalid settings")
+
+        render_workspace_page(conn, "new.html", changeset: changeset)
+    end
   end
 
   def create(conn, %{"section" => section_params}) do
@@ -49,6 +108,7 @@ defmodule OliWeb.OpenAndFreeController do
 
       section_params =
         section_params
+        |> Map.put("type", :enrollable)
         |> Map.put("base_project_id", project_id)
         |> Map.put("open_and_free", true)
         |> Map.put("context_id", UUID.uuid4())
@@ -83,6 +143,14 @@ defmodule OliWeb.OpenAndFreeController do
 
     updates = Sections.check_for_available_publication_updates(section)
     render_workspace_page(conn, "show.html", section: section, updates: updates)
+  end
+
+  def remix(conn, %{"id" => id}) do
+    section =
+      Sections.get_section_preloaded!(id)
+      |> convert_utc_to_section_tz()
+
+    render_workspace_page(conn, "remix.html", section: section)
   end
 
   def edit(conn, %{"id" => id}) do

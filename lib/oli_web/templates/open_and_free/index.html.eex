@@ -12,7 +12,7 @@
 <div class="container mt-3">
   <div class="d-flex flex-row mb-2">
     <div class="flex-grow-1"></div>
-    <div><%= link "New Open and Free", to: Routes.open_and_free_path(@conn, :new), class: "btn btn-md btn-outline-primary" %></div>
+    <div><%= link "New Open and Free", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.SelectSource), class: "btn btn-md btn-outline-primary" %></div>
   </div>
 
   <%= if Enum.count(@sections) == 0 do %>

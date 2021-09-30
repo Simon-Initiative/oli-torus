@@ -1,40 +1,42 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { State, Dispatch } from 'state';
-import * as Immutable from 'immutable';
+import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
+import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
-import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
-import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { PersistenceStatus } from 'components/content/PersistenceStatus';
+import { TitleBar } from 'components/content/TitleBar';
+import { Banner } from 'components/messages/Banner';
+import { Editors } from 'components/resource/editors/Editors';
+import { UndoToasts } from 'components/resource/undo/UndoToasts';
+import { ActivityEditContext } from 'data/content/activity';
+import { guaranteeValididty } from 'data/content/bank';
+import { ActivityEditorMap } from 'data/content/editors';
+import { Objective } from 'data/content/objective';
 import {
+  ActivityMap,
+  ActivityReference,
+  createDefaultStructuredContent,
   ResourceContent,
   ResourceContext,
-  ActivityMap,
-  createDefaultStructuredContent,
   StructuredContent,
-  ActivityReference,
 } from 'data/content/resource';
-import { Objective } from 'data/content/objective';
-import { ActivityEditorMap } from 'data/content/editors';
-import { Editors } from 'components/resource/editors/Editors';
-import { TitleBar } from 'components/content/TitleBar';
-import { PersistenceStatus } from 'components/content/PersistenceStatus';
-import { ProjectSlug, ResourceSlug, ResourceId } from 'data/types';
-import * as Persistence from 'data/persistence/resource';
+import { Tag } from 'data/content/tags';
+import { createMessage, Message, Severity } from 'data/messages/messages';
 import * as ActivityPersistence from 'data/persistence/activity';
-import { releaseLock, acquireLock, NotAcquired } from 'data/persistence/lock';
-import { Message, Severity, createMessage } from 'data/messages/messages';
-import { Banner } from 'components/messages/Banner';
-import { ActivityEditContext } from 'data/content/activity';
-import { Undoable as ActivityUndoable } from 'components/activities/types';
-import { registerUnload, unregisterUnload } from './listeners';
+import { DeferredPersistenceStrategy } from 'data/persistence/DeferredPersistenceStrategy';
+import { acquireLock, NotAcquired, releaseLock } from 'data/persistence/lock';
+import { PersistenceStrategy } from 'data/persistence/PersistenceStrategy';
+import * as Persistence from 'data/persistence/resource';
+import { ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
+import * as Immutable from 'immutable';
+import React from 'react';
+import { connect } from 'react-redux';
+import { Dispatch, State } from 'state';
 import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
-import { Undoables, empty, PageUndoable } from './types';
-import { UndoToasts } from 'components/resource/undo/UndoToasts';
-import { applyOperations } from 'utils/undo';
-import { Tag } from 'data/content/tags';
+import { Operations } from 'utils/pathOperations';
+import { registerUnload, unregisterUnload } from './listeners';
 import './PageEditor.scss';
-import { guaranteeValididty } from 'data/content/bank';
+import { empty, PageUndoable, Undoables } from './types';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -141,7 +143,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.state = {
       activityContexts,
       messages: [],
-      editMode: true,
+      editMode: false,
       title,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
@@ -265,11 +267,15 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+    const model = this.adjustActivityForConstraints(
+      this.state.activityContexts.get(key)?.typeSlug,
+      update.content,
+    );
     const withModel = {
-      title: update.title !== undefined ? update.title : undefined,
-      model: update.content !== undefined ? update.content : undefined,
-      objectives: update.objectives !== undefined ? update.objectives : undefined,
-      tags: update.tags !== undefined ? update.tags : undefined,
+      model: update.content,
+      title: update.title,
+      objectives: update.objectives,
+      tags: update.tags,
     };
     // apply the edit
     const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
@@ -281,7 +287,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           this.props.projectSlug,
           this.props.resourceId,
           merged.activityId,
-          update as any,
+          { ...update, content: model },
           releaseLock,
         );
 
@@ -291,7 +297,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
   onRemove(key: string) {
     const item = this.state.content.get(key);
-    const index = this.state.content.toArray().findIndex(([k, item]) => k === key);
+    const index = this.state.content.toArray().findIndex(([k, _item]) => k === key);
 
     if (item !== undefined) {
       const undoable: PageUndoable = {
@@ -343,7 +349,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           const model = JSON.parse(JSON.stringify(context.model));
 
           // Apply the undo operations to the model
-          applyOperations(model as any, item.undoable.operations);
+          Operations.applyAll(model as any, item.undoable.operations);
 
           // Now save the change and push it down to the activity editor
           this.onActivityEdit(item.contentKey, {
@@ -359,7 +365,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.setState({ undoables: this.state.undoables.delete(guid) });
   }
 
-  createObjectiveErrorMessage(failure: any) {
+  createObjectiveErrorMessage(_failure: any) {
     const message = createMessage({
       guid: 'objective-error',
       canUserDismiss: true,
@@ -409,6 +415,16 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     });
   }
 
+  adjustActivityForConstraints(
+    activityType: string | undefined,
+    model: ActivityModelSchema,
+  ): ActivityModelSchema {
+    if (activityType === 'oli_multi_input') {
+      return guaranteeMultiInputValidity(model as MultiInputSchema);
+    }
+    return model;
+  }
+
   save() {
     const { projectSlug, resourceSlug } = this.props;
 
@@ -430,7 +446,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.toArray().map(([k, v]) => v) },
+      content: { model: this.state.content.toArray().map(([_k, v]) => v) },
       releaseLock: false,
     };
 
@@ -565,11 +581,11 @@ type OwnProps = {
   activities: ActivityMap;
 };
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (_state: State, _ownProps: OwnProps): StateProps => {
   return {};
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   return {
     onLoadPreferences: () => dispatch(loadPreferences()),
   };

@@ -7,10 +7,11 @@ defmodule OliWeb.Delivery.ManageSection do
       is_admin?: 2
     ]
 
+  alias Oli.Repo
   alias Oli.Delivery.Sections
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
-  alias Oli.Repo
+  alias Oli.Delivery.Student.Summary
 
   def mount(
         _params,
@@ -22,11 +23,13 @@ defmodule OliWeb.Delivery.ManageSection do
     # only permit instructor or admin level access
     if is_section_instructor_or_admin?(section_slug, current_user) do
       section = Sections.get_section_by_slug(section_slug)
+      {:ok, summary} = Summary.get_summary(section_slug, current_user)
 
       socket =
         socket
         |> assign(:section, section)
         |> assign(:current_user, current_user)
+        |> assign(:summary, summary)
 
       {:ok, socket}
     else
@@ -46,6 +49,41 @@ defmodule OliWeb.Delivery.ManageSection do
 
       <h2><%= dgettext("section", "Manage Section") %></h2>
 
+      <div class="card my-4">
+        <h6 class="card-header">
+          Grades
+        </h6>
+        <div class="card-body">
+          <p class="card-text">Synchronize LMS grade book and export grades.</p>
+          <%= link "Manage Grades", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug), class: "btn btn-sm btn-primary" %>
+        </div>
+      </div>
+
+      <div class="card my-4">
+        <h6 class="card-header">
+          <%= case Enum.count(@summary.updates) do %>
+            <% 0 -> %>
+              Updates
+            <% num_updates -> %>
+              Updates <span class="badge badge-primary"><%= num_updates %></span>
+          <% end %>
+        </h6>
+        <div class="card-body">
+          <p class="card-text">Course material updates will become available when changes to source projects are published.</p>
+          <%= link "Manage Updates", to: Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug), class: "btn btn-sm btn-primary" %>
+        </div>
+      </div>
+
+      <div class="card my-4">
+        <h6 class="card-header">
+          Remix
+        </h6>
+        <div class="card-body">
+          <p class="card-text">Customize your curriculum by adding, removing and rearranging course materials.</p>
+          <%= link "Curriculum Remix", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug), class: "btn btn-sm btn-primary" %>
+        </div>
+      </div>
+
       <%= if is_admin?(@section.slug, @current_user) do %>
         <div class="card border-warning my-4">
           <h6 class="card-header">
@@ -54,7 +92,7 @@ defmodule OliWeb.Delivery.ManageSection do
           <div class="card-body border-warning">
             <h5 class="card-title">Unlink this Section</h5>
             <p class="card-text">If your section was created from the wrong project or you simply wish to start over, you can unlink this section.</p>
-            <button type="button" class="btn btn-sm btn-outline-danger float-right" data-toggle="modal" data-target="#deleteSectionModal">Unlink Section</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-toggle="modal" data-target="#deleteSectionModal">Unlink Section</button>
           </div>
         </div>
 

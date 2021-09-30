@@ -16,9 +16,18 @@
         "no-consecutive-blank-lines": false,
         "ter-func-call-spacing": false,
         "prefer-template": false,
-        "align": [true, "statements"],
-        "no-console": [true, "log"],
-        "ter-arrow-parens": [true, "always"],
+        "align": [
+            true,
+            "statements"
+        ],
+        "no-console": [
+            true,
+            "log"
+        ],
+        "ter-arrow-parens": [
+            true,
+            "always"
+        ],
         "semicolon": false,
         "ter-indent": false
     },

@@ -13,14 +13,7 @@ export interface LoadingSpinnerProps {
   size?: LoadingSpinnerSize;
 }
 
-// eslint-disable-next-line
-export interface LoadingSpinnerState {
-
-}
-
-/**
- * LoadingSpinner React Component
- */
+export interface LoadingSpinnerState {}
 export class LoadingSpinner extends React.PureComponent<LoadingSpinnerProps, LoadingSpinnerState> {
   constructor(props: LoadingSpinnerProps) {
     super(props);

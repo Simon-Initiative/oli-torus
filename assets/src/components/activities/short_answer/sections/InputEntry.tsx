@@ -3,7 +3,7 @@ import {
   parseInputFromRule,
   parseOperatorFromRule,
   RuleOperator,
-} from 'components/activities/common/responses/authoring/rules';
+} from 'data/activities/model/rules';
 import { InputType } from 'components/activities/short_answer/schema';
 import { Response } from 'components/activities/types';
 import { useState } from 'react';

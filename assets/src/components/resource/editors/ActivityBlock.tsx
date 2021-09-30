@@ -60,7 +60,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
-      <div className="card-body">{props.children}</div>
+      <div className="card-body p-2">{props.children}</div>
       <div className="reorder-mode-description">{getDescription(props)}</div>
     </div>
   );

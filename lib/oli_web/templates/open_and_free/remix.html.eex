@@ -1,0 +1,8 @@
+<div class="container">
+  <%= live_render(@conn, OliWeb.Delivery.RemixSection, session: %{
+    "section_slug" => @section.slug,
+    "current_user_id" => nil,
+    "redirect_after_save" => Routes.open_and_free_path(@conn, :show, @section),
+    "current_author" => @current_author
+    }) %>
+</div>

@@ -1,5 +1,5 @@
 @use 'delivery/variables' as delivery;
-@import "authoring/variables.scss";
+@import 'authoring/variables.scss';
 
 .slate-editor {
   padding: 0.5rem;
@@ -10,7 +10,7 @@
 .activity,
 .activity-editor {
   max-width: 768px;
-  margin: 20px auto;
+  margin: 0px auto;
 
   .card {
     border: 0;

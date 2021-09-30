@@ -1,7 +1,9 @@
 import { CATAActions } from 'components/activities/check_all_that_apply/actions';
 import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { makeChoice } from 'components/activities/types';
-import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
+import { Hints } from 'data/activities/model/hints';
 import {
   getChoiceIds,
   getCorrectResponse,
@@ -9,8 +11,7 @@ import {
   getResponseId,
   getResponses,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
+} from 'data/activities/model/responses';
 import { dispatch } from 'utils/test_utils';
 
 const testDefaultModel = defaultCATAModel;
@@ -61,11 +62,11 @@ describe('check all that apply question functionality', () => {
   });
 
   it('has one correct response', () => {
-    expect(getCorrectResponse(model)).toBeTruthy();
+    expect(getCorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('has one incorrect response', () => {
-    expect(getIncorrectResponse(model)).toBeTruthy();
+    expect(getIncorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('can add a targeted feedback', () => {
@@ -86,6 +87,6 @@ describe('check all that apply question functionality', () => {
   });
 
   it('has at least 3 hints', () => {
-    expect(getHints(model).length).toBeGreaterThanOrEqual(3);
+    expect(Hints.byPart(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -7,7 +7,7 @@ import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
 
 interface HintsProps {
-  onAddHint: () => void;
+  onaddCognitiveHint: () => void;
   onEditHint: (id: string, content: RichText) => void;
   onRemoveHint: (id: string) => void;
   projectSlug: ProjectSlug;
@@ -16,7 +16,7 @@ interface HintsProps {
 }
 
 export const Hints = ({
-  onAddHint,
+  onaddCognitiveHint,
   onEditHint,
   onRemoveHint,
   hints,
@@ -86,7 +86,11 @@ export const Hints = ({
       />
 
       <div>
-        <button disabled={!editMode} onClick={onAddHint} className="btn btn-sm btn-primary">
+        <button
+          disabled={!editMode}
+          onClick={onaddCognitiveHint}
+          className="btn btn-sm btn-primary"
+        >
           Add cognitive hint
         </button>
       </div>

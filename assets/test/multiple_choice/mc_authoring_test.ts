@@ -1,8 +1,8 @@
-import { MCActions } from 'components/activities/multiple_choice/actions';
-import { makeChoice } from 'components/activities/types';
+import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { defaultMCModel } from 'components/activities/multiple_choice/utils';
+import { makeChoice } from 'components/activities/types';
+import { Choices } from 'data/activities/model/choices';
 import { dispatch } from 'utils/test_utils';
-import { ChoiceActions } from 'components/activities/common/choices/authoring/choiceActions';
 
 describe('multiple choice question', () => {
   const model = defaultMCModel();
@@ -17,7 +17,7 @@ describe('multiple choice question', () => {
   });
 
   it('can add a choice', () => {
-    expect(dispatch(model, ChoiceActions.addChoice(makeChoice(''))).choices.length).toBeGreaterThan(
+    expect(dispatch(model, Choices.addOne(makeChoice(''))).choices.length).toBeGreaterThan(
       model.choices.length,
     );
   });
@@ -26,7 +26,7 @@ describe('multiple choice question', () => {
     const newChoiceContent = makeChoice('new content').content;
     const firstChoice = model.choices[0];
     expect(
-      dispatch(model, ChoiceActions.editChoiceContent(firstChoice.id, newChoiceContent)).choices[0],
+      dispatch(model, Choices.setContent(firstChoice.id, newChoiceContent)).choices[0],
     ).toHaveProperty('content', newChoiceContent);
   });
 

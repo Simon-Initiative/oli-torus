@@ -2,33 +2,31 @@ import { ID } from 'data/content/model';
 import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Response, RichText } from 'components/activities/types';
-import { Tooltip } from 'components/misc/Tooltip';
 import { Card } from 'components/misc/Card';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 
-export const ResponseCard: React.FC<{
+interface Props {
   title: React.ReactNode;
   response: Response;
-  updateFeedback: (id: ID, content: RichText) => void;
-  onRemove: (responseId: ID) => void;
-}> = ({ title, response, updateFeedback, onRemove, children }) => {
+  updateFeedback: (responseId: ID, content: RichText) => void;
+  removeResponse: (responseId: ID) => void;
+}
+export const ResponseCard: React.FC<Props> = (props) => {
   return (
     <Card.Card>
       <Card.Title>
-        <>
-          {title}
-          <Tooltip
-            title={'Shown only when a student response matches this answer choice combination'}
-          />
-          <RemoveButtonConnected onClick={() => onRemove(response.id)} />
-        </>
+        <div className="d-flex justify-content-between w-100">
+          {props.title}
+          <div className="flex-grow-1"></div>
+          <RemoveButtonConnected onClick={() => props.removeResponse(props.response.id)} />
+        </div>
       </Card.Title>
       <Card.Content>
-        {children}
+        {props.children}
         <RichTextEditorConnected
-          placeholder="Enter feedback"
-          text={response.feedback.content}
-          onEdit={(content) => updateFeedback(response.feedback.id, content)}
+          placeholder="Explain why the student might have arrived at this answer"
+          text={props.response.feedback.content}
+          onEdit={(content) => props.updateFeedback(props.response.id, content)}
         />
       </Card.Content>
     </Card.Card>

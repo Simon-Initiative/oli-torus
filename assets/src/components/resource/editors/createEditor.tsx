@@ -12,7 +12,6 @@ import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
 import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
 import * as Immutable from 'immutable';
-import { defaultState } from '../TestModeHandler';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Objective } from 'data/content/objective';
@@ -20,6 +19,7 @@ import { Undoable } from 'components/activities/types';
 import { ActivityBankSelection } from './ActivityBankSelection';
 import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
+import { defaultActivityState } from 'data/activities/utils';
 
 // content or referenced activities
 export const createEditor = (
@@ -96,7 +96,7 @@ export const createEditor = (
     const props = {
       model: activity.model,
       activitySlug: activity.activitySlug,
-      state: defaultState(activity.model),
+      state: defaultActivityState(activity.model),
       typeSlug: activity.typeSlug,
       editMode: editMode,
       graded: false,

@@ -1,0 +1,19 @@
+{
+  "id": "oli_multi_input",
+  "friendlyName": "Multi Input",
+  "description": "A question with a multiple inline inputs in the stem",
+  "delivery": {
+    "element": "oli-multi-input-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-multi-input-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": [
+      "feedback"
+    ]
+  }
+}

@@ -12,10 +12,16 @@ import {
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
+  getCapabilities,
 } from './schema';
 
-const observedAttributes: string[] = [...apiObservedAttributes];
-const customEvents: any = { ...apiCustomEvents };
+const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
+const customEvents: any = {
+  ...apiCustomEvents,
+  onConfigure: 'configure',
+  onSaveConfigure: 'saveconfigure',
+  onCancelConfigure: 'cancelconfigure',
+};
 
 register(PopupAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
@@ -31,5 +37,6 @@ register(PopupAuthor, manifest.authoring.element, observedAttributes, {
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
+    getCapabilities,
   },
 });

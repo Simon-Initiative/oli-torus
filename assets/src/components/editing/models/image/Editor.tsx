@@ -8,10 +8,9 @@ import { Transforms } from 'slate';
 import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
-import { displayModelToClassName } from 'data/content/utils';
+import { centeredAbove, displayModelToClassName } from 'data/content/utils';
 import { Resizer } from 'components/misc/resizer/Resizer';
 
-// eslint-disable-next-line
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps): JSX.Element => {
   const { attributes, children, editor, model } = props;
@@ -66,13 +65,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
               />
             </div>
           }
-          contentLocation={({ popoverRect, childRect }) => {
-            return {
-              top: childRect.top + window.pageYOffset - 50,
-              left:
-                childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,
-            };
-          }}
+          contentLocation={centeredAbove}
         >
           <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
         </HoveringToolbar>
