@@ -4,7 +4,6 @@ import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/stor
 import { ActivityModelSchema } from 'components/activities/types';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
