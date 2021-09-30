@@ -1,8 +1,9 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
-  selectCopiedComponent,
+  selectcopiedPart,
   selectPartComponentTypes,
   selectPaths,
+  setcopiedPart,
 } from 'apps/authoring/store/app/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
@@ -26,7 +27,7 @@ const AddComponentToolbar: React.FC = () => {
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
-  const copiedComponent = useSelector(selectCopiedComponent);
+  const copiedPart = useSelector(selectcopiedPart);
   console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const handleAddComponent = useCallback(
@@ -103,7 +104,30 @@ const AddComponentToolbar: React.FC = () => {
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
   };
+  const handlePartPasteClick = (event: any) => {
+    if (currentActivityTree) {
+      const [currentActivity] = currentActivityTree.slice(-1);
+      const clonedActivity = clone(currentActivity);
+      const sequenceEntry = findInSequenceByResourceId(currentSequence, currentActivity.resourceId);
+      const newPartData = {
+        id: `${copiedPart.type}-${guid()}`,
+        type: copiedPart.type,
+        custom: copiedPart.custom,
+      };
+      const partIdentifier = {
+        id: newPartData.id,
+        type: newPartData.type,
+        owner: sequenceEntry?.custom?.sequenceId || '',
+        inherited: false,
+      };
 
+      clonedActivity.authoring.parts.push(partIdentifier);
+      clonedActivity.content.partsLayout.push(newPartData);
+      console.log('pasting copied part', { newPartData, clonedActivity, currentSequence });
+      dispatch(saveActivity({ activity: clonedActivity }));
+      dispatch(setcopiedPart({ copiedPart: null }));
+    }
+  };
   return (
     <Fragment>
       <div className="btn-group align-items-center" role="group">
@@ -136,7 +160,7 @@ const AddComponentToolbar: React.FC = () => {
           ))}
       </div>
       <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
-        {copiedComponent ? (
+        {copiedPart ? (
           <OverlayTrigger
             placement="bottom"
             delay={{ show: 150, hide: 150 }}
@@ -147,8 +171,8 @@ const AddComponentToolbar: React.FC = () => {
             }
           >
             <span>
-              <button className="px-2 btn btn-link" onClick={handlePartMenuButtonClick}>
-                <img src={`${imgsPath}/icons/icon-componentList.svg`}></img>
+              <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
+                <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
               </button>
             </span>
           </OverlayTrigger>

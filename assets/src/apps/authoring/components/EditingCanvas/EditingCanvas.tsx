@@ -2,7 +2,7 @@ import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel, setRightPanelActiveTab } from '../../store/app/slice';
+import { selectBottomPanel, setcopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
@@ -63,7 +63,11 @@ const EditingCanvas: React.FC = () => {
 
     return true;
   };
-
+  const handlePartCopy = async (part: any) => {
+    console.log('[handlePartSelect]', { part });
+    dispatch(setcopiedPart({ copiedPart: part }));
+    return true;
+  };
   const handleStageClick = (e: any) => {
     if (e.target.className !== 'aa-stage') {
       return;
@@ -91,6 +95,7 @@ const EditingCanvas: React.FC = () => {
               activityModel={activity}
               editMode={activity.id === currentActivityId}
               onSelectPart={handlePartSelect}
+              onCopyPart={handlePartCopy}
               onPartChangePosition={handlePositionChanged}
             />
           ))}
