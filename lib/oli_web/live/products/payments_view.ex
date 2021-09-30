@@ -1,7 +1,8 @@
 defmodule OliWeb.Products.PaymentsView do
   use Surface.LiveView
-  alias Oli.Repo
-  alias OliWeb.Products.Filter
+
+  alias(OliWeb.Products.Filter)
+
   alias OliWeb.Products.Listing
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Products.Payments.CreateCodes

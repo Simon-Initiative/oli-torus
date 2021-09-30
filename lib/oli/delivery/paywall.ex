@@ -237,7 +237,7 @@ defmodule Oli.Delivery.Paywall do
               } = payment ->
                 apply_payment(payment, user, section)
 
-              p ->
+              _ ->
                 {:error, {:invalid_code}}
             end
         end

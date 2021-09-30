@@ -1,7 +1,6 @@
 defmodule OliWeb.Products.Payments.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Surface.Components.Link
-  alias OliWeb.Router.Helpers, as: Routes
+
   use Surface.LiveComponent
 
   @fake_date_for_sorting ~D[1984-07-01]
