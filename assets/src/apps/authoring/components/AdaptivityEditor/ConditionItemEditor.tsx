@@ -170,6 +170,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         defaultValue={value}
         onBlur={(e) => handleValueChange(e)}
         title={value}
+        placeholder="Value"
         tabIndex={0}
       />
       <OverlayTrigger

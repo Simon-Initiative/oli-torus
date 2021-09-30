@@ -168,3 +168,14 @@ export const conditionTypeOperatorCombos: ConditionTypeOperatorCombo[] = [
     operators: ['equal', 'notEqual', 'is', 'notIs', 'contains', 'notContains'],
   },
 ];
+
+export const sessionVariables: Record<string, unknown> = {
+  attemptNumber: 0,
+  currentQuestionScore: 0,
+  graded: false,
+  questionTimeExceeded: false,
+  timeOnQuestion: 0,
+  timeStartQuestion: 0,
+  tutorialScore: 0,
+  visits: [],
+};
