@@ -14,7 +14,7 @@ const getRGBColorValue = (value?: string): RGBColor => {
   if (value) {
     const parts = value.replace('rgba(', '').replace(')', '').split(',');
     const [r, g, b, a = '100'] = parts;
-    return { r: parseInt(r, 10), g: parseInt(g, 10), b: parseInt(b, 10), a: parseInt(a, 10) };
+    return { r: parseInt(r, 10), g: parseInt(g, 10), b: parseInt(b, 10), a: parseFloat(a) };
   }
   return { r: 255, g: 255, b: 255, a: 100 };
 };
