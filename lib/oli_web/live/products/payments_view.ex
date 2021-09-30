@@ -35,7 +35,8 @@ defmodule OliWeb.Products.PaymentsView do
               false -> p.section.title
             end
 
-          String.contains?(String.downcase(title), str)
+          String.contains?(String.downcase(p.code), str) or
+            String.contains?(String.downcase(title), str)
         end)
     end
   end

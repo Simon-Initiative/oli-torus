@@ -23,7 +23,7 @@ const AddComponentToolbar: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
 
-  console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
+  // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
@@ -48,7 +48,7 @@ const AddComponentToolbar: React.FC = () => {
           currentActivity.resourceId,
         );
 
-        const part = new PartClass();
+        const part = new PartClass() as any;
         const newPartData = {
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,

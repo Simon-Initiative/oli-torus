@@ -12,6 +12,7 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  triggerOnChange?: boolean;
 }
 
 const widgets: any = {
@@ -25,8 +26,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   uiSchema,
   value,
   onChangeHandler,
+  triggerOnChange = false,
 }) => {
-  const [formData, setFormData] = useState(value);
+  const [formData, setFormData] = useState<any>(value);
 
   useEffect(() => {
     setFormData(value);
@@ -37,8 +39,15 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
       schema={schema}
       formData={formData}
       onChange={(e) => {
-        // console.log('ONCHANGE P EDITOR', e.formData);
-        setFormData(e.formData);
+        console.log('ONCHANGE P EDITOR', e.formData);
+        const updatedData = e.formData;
+        setFormData(updatedData);
+        if (triggerOnChange) {
+          // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
+          if (updatedData.id === formData.id) {
+            onChangeHandler(updatedData);
+          }
+        }
       }}
       onBlur={(...args) => {
         // console.log('ONBLUR', { args, formData });
