@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Paywall — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-8489a45162.js"></script>
+    <script src="dist/sidebar_items-4cfeced768.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,26 @@ Oli.Delivery.Paywall <small class="app-vsn">(OLI Torus v0.13.2)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#calculate_product_cost/2">calculate_product_cost(section, arg2)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Given a section blueprint (aka a product), calculate the cost to use this product for
+a specific insituttion, taking into account any product-wide and product-specific discounts
+this instituttion has.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#create_discount/1">create_discount(attrs \\ %{})</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Creates a discount.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#create_payment/1">create_payment(attrs \\ %{})</a>
 
   </div>
@@ -143,6 +163,61 @@ Oli.Delivery.Paywall <small class="app-vsn">(OLI Torus v0.13.2)</small>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="calculate_product_cost/2">
+
+  <div class="detail-header">
+    <a href="#calculate_product_cost/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">calculate_product_cost(section, arg2)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L101" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Given a section blueprint (aka a product), calculate the cost to use this product for
+a specific insituttion, taking into account any product-wide and product-specific discounts
+this instituttion has.</p><p>Returns {:ok, %Money{}} or {:error, reason}</p>
+  </section>
+</section>
+<section class="detail" id="create_discount/1">
+
+    <span id="create_discount/0"></span>
+
+  <div class="detail-header">
+    <a href="#create_discount/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">create_discount(attrs \\ %{})</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L171" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Creates a discount.</p><h2 id="create_discount/1-examples" class="section-heading">
+  <a href="#create_discount/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="8151112478-1">(</span><span class="p" data-group-id="8151112478-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8151112478-2">}</span><span class="p" data-group-id="8151112478-1">)</span><span class="w">
+</span><span class="p" data-group-id="8151112478-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8151112478-4">%</span><span class="nc" data-group-id="8151112478-4">Discount</span><span class="p" data-group-id="8151112478-4">{</span><span class="p" data-group-id="8151112478-4">}</span><span class="p" data-group-id="8151112478-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="8151112478-5">(</span><span class="p" data-group-id="8151112478-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8151112478-6">}</span><span class="p" data-group-id="8151112478-5">)</span><span class="w">
+</span><span class="p" data-group-id="8151112478-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8151112478-8">%</span><span class="nc" data-group-id="8151112478-8">Ecto.Changeset</span><span class="p" data-group-id="8151112478-8">{</span><span class="p" data-group-id="8151112478-8">}</span><span class="p" data-group-id="8151112478-7">}</span></code></pre>
+  </section>
+</section>
 <section class="detail" id="create_payment/1">
 
     <span id="create_payment/0"></span>
@@ -154,7 +229,7 @@ Functions
     </a>
     <h1 class="signature">create_payment(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L99" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L157" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -168,10 +243,10 @@ Functions
   <a href="#create_payment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="4327596983-1">(</span><span class="p" data-group-id="4327596983-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4327596983-2">}</span><span class="p" data-group-id="4327596983-1">)</span><span class="w">
-</span><span class="p" data-group-id="4327596983-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4327596983-4">%</span><span class="nc" data-group-id="4327596983-4">Payment</span><span class="p" data-group-id="4327596983-4">{</span><span class="p" data-group-id="4327596983-4">}</span><span class="p" data-group-id="4327596983-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="4327596983-5">(</span><span class="p" data-group-id="4327596983-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4327596983-6">}</span><span class="p" data-group-id="4327596983-5">)</span><span class="w">
-</span><span class="p" data-group-id="4327596983-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4327596983-8">%</span><span class="nc" data-group-id="4327596983-8">Ecto.Changeset</span><span class="p" data-group-id="4327596983-8">{</span><span class="p" data-group-id="4327596983-8">}</span><span class="p" data-group-id="4327596983-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="6086315066-1">(</span><span class="p" data-group-id="6086315066-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="6086315066-2">}</span><span class="p" data-group-id="6086315066-1">)</span><span class="w">
+</span><span class="p" data-group-id="6086315066-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6086315066-4">%</span><span class="nc" data-group-id="6086315066-4">Payment</span><span class="p" data-group-id="6086315066-4">{</span><span class="p" data-group-id="6086315066-4">}</span><span class="p" data-group-id="6086315066-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="6086315066-5">(</span><span class="p" data-group-id="6086315066-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6086315066-6">}</span><span class="p" data-group-id="6086315066-5">)</span><span class="w">
+</span><span class="p" data-group-id="6086315066-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6086315066-8">%</span><span class="nc" data-group-id="6086315066-8">Ecto.Changeset</span><span class="p" data-group-id="6086315066-8">{</span><span class="p" data-group-id="6086315066-8">}</span><span class="p" data-group-id="6086315066-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_payment_codes/2">
@@ -183,7 +258,7 @@ Functions
     </a>
     <h1 class="signature">create_payment_codes(product_slug, number_of_codes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L24" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

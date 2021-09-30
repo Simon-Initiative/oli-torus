@@ -165,6 +165,7 @@ Oli.Delivery.Snapshots.Utils.html
 Oli.Delivery.Snapshots.Worker.html
 Oli.Delivery.Snapshots.html
 Oli.Delivery.Student.Summary.html
+Oli.Delivery.Utils.html
 Oli.Delivery.html
 Oli.Email.html
 Oli.Features.Feature.html
@@ -345,6 +346,7 @@ OliWeb.Common.MinimalModal.html
 OliWeb.Common.Modal.html
 OliWeb.Common.Paging.html
 OliWeb.Common.SortableTable.Table.html
+OliWeb.Common.SortableTable.TableHandlers.html
 OliWeb.Common.Table.ColumnSpec.html
 OliWeb.Common.Table.SortableTable.html
 OliWeb.Common.Table.SortableTableModel.html
@@ -370,6 +372,8 @@ OliWeb.Delivery.Remix.Entry.html
 OliWeb.Delivery.Remix.MoveModal.html
 OliWeb.Delivery.Remix.RemoveModal.html
 OliWeb.Delivery.RemixSection.html
+OliWeb.Delivery.SelectSource.TableModel.html
+OliWeb.Delivery.SelectSource.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
@@ -499,8 +503,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-dfdcc0a9ef.js
-dist/sidebar_items-8489a45162.js
+dist/search_items-4396a9fc4b.js
+dist/sidebar_items-4cfeced768.js
 index.html
 license.html
 readme.html

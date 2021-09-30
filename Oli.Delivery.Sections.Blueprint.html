@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Sections.Blueprint — OLI Torus v0.13.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-8489a45162.js"></script>
+    <script src="dist/sidebar_items-4cfeced768.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,23 @@ Oli.Delivery.Sections.Blueprint <small class="app-vsn">(OLI Torus v0.13.2)</smal
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#available_products/0">available_products()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#available_products/2">available_products(author, institution)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>For a given author that belongs to a specific institution, return all active
+prodcuts that this author has visibility to.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#create_blueprint/2">create_blueprint(base_project_slug, title)</a>
 
   </div>
@@ -121,12 +138,22 @@ Oli.Delivery.Sections.Blueprint <small class="app-vsn">(OLI Torus v0.13.2)</smal
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#duplicate/1">duplicate(section)</a>
+    <a href="#duplicate/2">duplicate(section, attrs \\ %{})</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Duplicates a blueprint section, creating a new top-level section record
 as well as deep copying all SectionResource and SectionProjectPublication records.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#filter_for_free_projects/2">filter_for_free_projects(all_products, publications)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>From a list of visible products and visible publciations of projects, filter out
+the project publications that have at least one paid product.</p></div>
 
 </div>
 <div class="summary-row">
@@ -187,6 +214,51 @@ is active.</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="available_products/0">
+
+  <div class="detail-header">
+    <a href="#available_products/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">available_products()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L87" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="available_products/2">
+
+  <div class="detail-header">
+    <a href="#available_products/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">available_products(author, institution)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L64" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>For a given author that belongs to a specific institution, return all active
+prodcuts that this author has visibility to.</p>
+  </section>
+</section>
 <section class="detail" id="create_blueprint/2">
 
   <div class="detail-header">
@@ -196,7 +268,7 @@ Functions
     </a>
     <h1 class="signature">create_blueprint(base_project_slug, title)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L62" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L126" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -210,16 +282,18 @@ Functions
 the current published structure of the course project hierarchy.</p>
   </section>
 </section>
-<section class="detail" id="duplicate/1">
+<section class="detail" id="duplicate/2">
+
+    <span id="duplicate/1"></span>
 
   <div class="detail-header">
-    <a href="#duplicate/1" class="detail-link" title="Link to this function">
+    <a href="#duplicate/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">duplicate(section)</h1>
+    <h1 class="signature">duplicate(section, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -233,6 +307,29 @@ the current published structure of the course project hierarchy.</p>
 as well as deep copying all SectionResource and SectionProjectPublication records.</p><p>This method supports duplication of enrollable sections to create a blueprint.</p>
   </section>
 </section>
+<section class="detail" id="filter_for_free_projects/2">
+
+  <div class="detail-header">
+    <a href="#filter_for_free_projects/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">filter_for_free_projects(all_products, publications)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L111" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>From a list of visible products and visible publciations of projects, filter out
+the project publications that have at least one paid product.</p>
+  </section>
+</section>
 <section class="detail" id="get_active_blueprint/1">
 
   <div class="detail-header">
@@ -242,7 +339,7 @@ as well as deep copying all SectionResource and SectionProjectPublication record
     </a>
     <h1 class="signature">get_active_blueprint(slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L19" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -266,7 +363,7 @@ is active.</p><p>Returns nil when there is no matching valid blueprint for the s
     </a>
     <h1 class="signature">get_blueprint(slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L30" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -290,7 +387,7 @@ is active.</p><p>Returns nil when there is no matching valid blueprint for the s
     </a>
     <h1 class="signature">is_author_of_blueprint?(section_slug, author_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L38" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -312,7 +409,7 @@ is active.</p><p>Returns nil when there is no matching valid blueprint for the s
     </a>
     <h1 class="signature">list()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L253" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L323" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -334,7 +431,7 @@ is active.</p><p>Returns nil when there is no matching valid blueprint for the s
     </a>
     <h1 class="signature">list_for_project(project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L241" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/sections/blueprint.ex#L311" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
