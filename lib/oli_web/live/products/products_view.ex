@@ -26,6 +26,39 @@ defmodule OliWeb.Products.ProductsView do
   data filter, :string, default: ""
   data show_feature_overview, :boolean, default: true
 
+  @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/2
+  @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
+
+  def filter_rows(socket, filter) do
+    case String.downcase(filter) do
+      "" ->
+        socket.assigns.products
+
+      str ->
+        Enum.filter(socket.assigns.products, fn p ->
+          amount_str =
+            if p.requires_payment do
+              case Money.to_string(p.amount) do
+                {:ok, money} -> String.downcase(money)
+                _ -> ""
+              end
+            else
+              "none"
+            end
+
+          String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
+        end)
+    end
+  end
+
+  def live_path(socket, params) do
+    if socket.assigns.is_admin_view do
+      Routes.live_path(socket, OliWeb.Products.ProductsView, params)
+    else
+      Routes.live_path(socket, OliWeb.Products.ProductsView, socket.assigns.project.slug, params)
+    end
+  end
+
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
@@ -131,26 +164,4 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
-
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.products
-
-      str ->
-        Enum.filter(socket.assigns.products, fn p ->
-          amount_str =
-            if p.requires_payment do
-              case Money.to_string(p.amount) do
-                {:ok, money} -> String.downcase(money)
-                _ -> ""
-              end
-            else
-              "none"
-            end
-
-          String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
-        end)
-    end
-  end
 end

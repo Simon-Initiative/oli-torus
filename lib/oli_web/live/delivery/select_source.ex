@@ -20,6 +20,32 @@ defmodule OliWeb.Delivery.SelectSource do
   data limit, :integer, default: 20
   data filter, :string, default: ""
 
+  @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/2
+  @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
+
+  def filter_rows(socket, filter) do
+    case String.downcase(filter) do
+      "" ->
+        socket.assigns.sources
+
+      str ->
+        Enum.filter(socket.assigns.sources, fn p ->
+          title =
+            case Map.get(p, :type) do
+              nil -> p.project.title
+              :blueprint -> p.title
+            end
+
+          String.downcase(title)
+          |> String.contains?(str)
+        end)
+    end
+  end
+
+  def live_path(socket, params) do
+    Routes.live_path(socket, OliWeb.Delivery.SelectSource, params)
+  end
+
   defp retrieve_all_sources() do
     products = Blueprint.list()
     publications = Oli.Publishing.all_publications()
@@ -90,23 +116,4 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
-
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.sources
-
-      str ->
-        Enum.filter(socket.assigns.sources, fn p ->
-          title =
-            case Map.get(p, :type) do
-              nil -> p.project.title
-              :blueprint -> p.title
-            end
-
-          String.downcase(title)
-          |> String.contains?(str)
-        end)
-    end
-  end
 end

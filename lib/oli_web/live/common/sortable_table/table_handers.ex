@@ -39,9 +39,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         {:noreply,
          push_patch(socket,
            to:
-             Routes.live_path(
+             @table_push_patch_path.(
                socket,
-               __MODULE__,
                get_patch_params(
                  socket.assigns.table_model,
                  socket.assigns.offset,
@@ -55,9 +54,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         {:noreply,
          push_patch(socket,
            to:
-             Routes.live_path(
+             @table_push_patch_path.(
                socket,
-               __MODULE__,
                get_patch_params(
                  socket.assigns.table_model,
                  socket.assigns.offset,
@@ -71,9 +69,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         {:noreply,
          push_patch(socket,
            to:
-             Routes.live_path(
+             @table_push_patch_path.(
                socket,
-               __MODULE__,
                get_patch_params(
                  socket.assigns.table_model,
                  String.to_integer(offset),
@@ -95,9 +92,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         {:noreply,
          push_patch(socket,
            to:
-             Routes.live_path(
+             @table_push_patch_path.(
                socket,
-               __MODULE__,
                get_patch_params(table_model, offset, socket.assigns.filter)
              )
          )}
@@ -127,7 +123,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
         # First update the rows of the sortable table model to be all products, then apply the sort,
         # then slice the model rows according to the paging settings
 
-        filtered = filter_rows(socket, filter)
+        filtered = @table_filter_fn.(socket, filter)
 
         table_model =
           Map.put(socket.assigns.table_model, :rows, filtered)

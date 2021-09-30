@@ -19,8 +19,36 @@ defmodule OliWeb.Products.PaymentsView do
   data limit, :integer, default: 20
   data filter, :string, default: ""
 
+  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/2
+  @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
+
+  def filter_rows(socket, filter) do
+    case String.downcase(filter) do
+      "" ->
+        socket.assigns.payments
+
+      str ->
+        Enum.filter(socket.assigns.payments, fn p ->
+          title =
+            case is_nil(p.section) do
+              true -> ""
+              false -> p.section.title
+            end
+
+          String.contains?(String.downcase(title), str)
+        end)
+    end
+  end
+
+  def live_path(socket, params) do
+    Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
+  end
+
   def mount(%{"product_id" => product_slug}, _, socket) do
-    payments = Oli.Delivery.Paywall.list_payments(product_slug)
+    payments =
+      Oli.Delivery.Paywall.list_payments(product_slug)
+      |> Enum.map(fn element -> Map.put(element, :unique_id, element.payment.id) end)
+
     total_count = length(payments)
 
     {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments)
@@ -69,22 +97,4 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
-
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.payments
-
-      str ->
-        Enum.filter(socket.assigns.payments, fn p ->
-          title =
-            case is_nil(p.section) do
-              true -> ""
-              false -> p.section.title
-            end
-
-          String.contains?(String.downcase(title), str)
-        end)
-    end
-  end
 end
