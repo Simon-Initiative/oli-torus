@@ -433,8 +433,6 @@ defmodule OliWeb.DeliveryController do
             PlatformRoles.get_role(:institution_learner)
           ])
 
-          IO.inspect("DC create_user")
-
           conn
           |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
           |> Pow.Plug.create(user)
