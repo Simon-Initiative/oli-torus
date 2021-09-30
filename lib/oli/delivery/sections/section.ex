@@ -114,7 +114,7 @@ defmodule Oli.Delivery.Sections.Section do
       :base_project_id
     ])
     |> validate_positive_grace_period()
-    |> validate_positive_amount()
+    |> Oli.Delivery.Utils.validate_positive_money(:amount)
     |> Slug.update_never("sections")
   end
 
@@ -123,15 +123,6 @@ defmodule Oli.Delivery.Sections.Section do
       case days >= 0 do
         true -> []
         false -> [{:grace_period_days, "must be greater than or equal to zero"}]
-      end
-    end)
-  end
-
-  def validate_positive_amount(changeset) do
-    validate_change(changeset, :amount, fn _, amount ->
-      case Money.compare(Money.new(:USD, 0), amount) do
-        :gt -> [{:amount, "must be greater than or equal to zero"}]
-        _ -> []
       end
     end)
   end
