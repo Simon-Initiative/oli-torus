@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import PartsLayoutRenderer from '../../../../../components/activities/adaptive/components/delivery/PartsLayoutRenderer';
 
 interface FeedbackRendererProps {
@@ -7,19 +7,13 @@ interface FeedbackRendererProps {
 }
 
 const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot = {} }) => {
-  const [parts, setParts] = useState<any[]>([]);
   // use a key to force re-render when feedback array changes
   // feedback might be the same but needs to refresh
   const [renderId, setRenderId] = useState<number>(Date.now());
 
   useEffect(() => {
-    // console.log('FEEDBACK ARRAY CHANGED', { feedbacks, snapshot });
-    const combinedParts = feedbacks.reduce((collect: any[], feedback) => {
-      collect.push(...feedback.partsLayout);
-      return collect;
-    }, []);
+    console.log('FEEDBACK ARRAY CHANGED', { feedbacks, snapshot });
     setRenderId(Date.now());
-    setParts(combinedParts);
   }, [feedbacks]);
 
   const handlePartInit = useCallback(
@@ -30,19 +24,34 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
     [snapshot],
   );
 
-  // TODO: other handlers for parts, "advanced" things like tracking part responses within feedback??
-
   return (
-    <div className="feedback-item">
+    <Fragment>
       <style>
         {`
-          .feedback-item > janus-text-flow {
-            position: inherit !important;
+          .feedback-item > * {
+            position: relative !important;
+            width: auto !important;
           }
         `}
       </style>
-      <PartsLayoutRenderer key={renderId} parts={parts} onPartInit={handlePartInit} />
-    </div>
+      {feedbacks.map((feedback) => (
+        <div
+          key={`${feedback.id}_${renderId}`}
+          style={{
+            width: feedback.custom.width,
+            height: feedback.custom.height,
+            backgroundColor: feedback.custom.palette.backgroundColor,
+            borderWidth: feedback.custom.palette.borderWidth,
+            borderColor: feedback.custom.palette.borderColor,
+            borderStyle: feedback.custom.palette.borderStyle,
+            borderRadius: feedback.custom.palette.borderRadius,
+          }}
+          className="feedback-item"
+        >
+          <PartsLayoutRenderer parts={feedback.partsLayout} onPartInit={handlePartInit} />
+        </div>
+      ))}
+    </Fragment>
   );
 };
 
