@@ -11,7 +11,8 @@ defmodule OliWeb.Products.Payments.TableModel do
         %ColumnSpec{
           name: :type,
           label: "Type",
-          render_fn: &__MODULE__.render_type_column/3
+          render_fn: &__MODULE__.render_type_column/3,
+          sort_fn: &__MODULE__.sort/2
         },
         %ColumnSpec{
           name: :generated_date,
@@ -53,10 +54,36 @@ defmodule OliWeb.Products.Payments.TableModel do
     end
   end
 
-  def render_type_column(_, %{payment: payment}, _) do
+  def render_type_column(assigns, %{payment: payment, code: code}, _) do
     case payment.type do
-      :direct -> "Direct"
-      :deferred -> "Code"
+      :direct ->
+        "Direct"
+
+      :deferred ->
+        ~F"""
+        Code: <code>{code}</code>
+        """
+    end
+  end
+
+  def sort(direction, spec) do
+    fn row1, row2 ->
+      value1 =
+        case row1.payment.type do
+          :direct -> "Direct"
+          :deferred -> "Code: [#{row1.code}]"
+        end
+
+      value2 =
+        case row2.payment.type do
+          :direct -> "Direct"
+          :deferred -> "Code: [#{row2.code}]"
+        end
+
+      case direction do
+        :asc -> value1 < value2
+        _ -> value2 < value1
+      end
     end
   end
 

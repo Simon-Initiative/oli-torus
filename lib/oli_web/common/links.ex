@@ -41,6 +41,13 @@ defmodule OliWeb.Common.Links do
           project_slug,
           revision.slug
         )
+
+      "tags" ->
+        Routes.activity_bank_path(
+          OliWeb.Endpoint,
+          :index,
+          project_slug
+        )
     end
   end
 

@@ -47,7 +47,14 @@ defmodule OliWeb.Products.PaymentsView do
   def mount(%{"product_id" => product_slug}, _, socket) do
     payments =
       Oli.Delivery.Paywall.list_payments(product_slug)
-      |> Enum.map(fn element -> Map.put(element, :unique_id, element.payment.id) end)
+      |> Enum.map(fn element ->
+        Map.put(
+          element,
+          :code,
+          Oli.Delivery.Paywall.Payment.to_human_readable(element.payment.code)
+        )
+        |> Map.put(:unique_id, element.payment.id)
+      end)
 
     total_count = length(payments)
 
@@ -68,7 +75,7 @@ defmodule OliWeb.Products.PaymentsView do
 
       <CreateCodes count={@code_count} product_slug={@product_slug} click="create_codes" change="change_count"/>
 
-      <hr class="mt-2 mb-2"/>
+      <hr class="mt-5 mb-5"/>
 
       <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
 
@@ -88,12 +95,14 @@ defmodule OliWeb.Products.PaymentsView do
     """
   end
 
-  def handle_event("create_codes", _, socket) do
-    {:noreply, assign(socket, show_feature_overview: false)}
-  end
-
   def handle_event("change_count", %{"value" => count}, socket) do
-    {:noreply, assign(socket, code_count: String.to_integer(count))}
+    count =
+      case String.to_integer(count) do
+        i when i > 0 -> i
+        _ -> 1
+      end
+
+    {:noreply, assign(socket, code_count: count)}
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
