@@ -9,7 +9,7 @@ defmodule Oli.Plugs.EnforcePaywall do
 
   def call(conn, _opts) do
     section = conn.assigns.section
-    user = get_session(conn, :current_user)
+    user = conn.assigns.current_user
 
     if Paywall.can_access?(user, section) do
       conn

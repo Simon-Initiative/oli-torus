@@ -61,6 +61,7 @@ defmodule OliWeb.OpenAndFreeController do
         parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
 
       section_params = %{
+        blueprint_id: blueprint.id,
         type: :enrollable,
         open_and_free: true,
         context_id: UUID.uuid4(),

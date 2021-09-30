@@ -12,6 +12,9 @@ defmodule Oli.Delivery.Paywall do
 
   @maximum_batch_size 500
 
+  @doc """
+  Determines if a user can access a course section, taking into account paywall settings.
+  """
   def can_access?(_, %Section{requires_payment: false}), do: true
 
   def can_access?(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
@@ -47,7 +50,10 @@ defmodule Oli.Delivery.Paywall do
        }) do
     case strategy do
       :relative_to_section ->
-        Date.compare(Date.utc_today(), Date.add(start_date, days)) == :lt
+        case start_date do
+          nil -> false
+          _ -> Date.compare(Date.utc_today(), Date.add(start_date, days)) == :lt
+        end
 
       :relative_to_student ->
         Date.compare(Date.utc_today(), Date.add(inserted_at, days)) == :lt
@@ -231,7 +237,7 @@ defmodule Oli.Delivery.Paywall do
               } = payment ->
                 apply_payment(payment, user, section)
 
-              _ ->
+              p ->
                 {:error, {:invalid_code}}
             end
         end
@@ -257,6 +263,10 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
+  @doc """
+  List all payments for a product, joined with the enrollment (user and section) if
+  the payment has been applied.
+  """
   def list_payments(product_slug) do
     case Oli.Delivery.Sections.get_section_by_slug(product_slug) do
       nil ->

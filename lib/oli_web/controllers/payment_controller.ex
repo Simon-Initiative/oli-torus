@@ -1,18 +1,32 @@
 defmodule OliWeb.PaymentController do
   use OliWeb, :controller
 
+  @doc """
+  Render the page to show a student that they do not have access because
+  of the paywall state.  This is the route that the enforce paywall plug
+  redirects to.
+  """
   def guard(conn, %{"section_slug" => section_slug}) do
     render(conn, "guard.html", section_slug: section_slug)
   end
 
+  @doc """
+  Renders the page to start the direct payment processing flow.
+  """
   def make_payment(conn, _params) do
     render(conn, "new.html")
   end
 
+  @doc """
+  Renders the page to allow payment code redemption.
+  """
   def use_code(conn, %{"section_slug" => section_slug}) do
     render(conn, "code.html", section_slug: section_slug)
   end
 
+  @doc """
+  Endpoint that triggers creation and download of a batch of payemnt codes.
+  """
   def download_codes(conn, %{"count" => count, "product_id" => product_slug}) do
     case Oli.Delivery.Paywall.create_payment_codes(product_slug, String.to_integer(count)) do
       {:ok, payments} ->
@@ -35,6 +49,9 @@ defmodule OliWeb.PaymentController do
     end
   end
 
+  @doc """
+  Handles applying a user supplied code as a payment code.
+  """
   def apply_code(conn, %{
         "g-recaptcha-response" => g_recaptcha_response,
         "section_slug" => section_slug,

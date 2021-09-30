@@ -4,6 +4,8 @@ defmodule OliWeb.Products.Payments.TableModel do
   alias OliWeb.Router.Helpers, as: Routes
   use Surface.LiveComponent
 
+  @fake_date_for_sorting ~D[1984-07-01]
+
   def new(payments) do
     SortableTableModel.new(
       rows: payments,
@@ -15,14 +17,16 @@ defmodule OliWeb.Products.Payments.TableModel do
           sort_fn: &__MODULE__.sort/2
         },
         %ColumnSpec{
-          name: :generated_date,
+          name: :generation_date,
           label: "Created Date",
-          render_fn: &__MODULE__.render_gen_date_column/3
+          render_fn: &__MODULE__.render_gen_date_column/3,
+          sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
-          name: :applicaton_date,
+          name: :application_date,
           label: "Application Date",
-          render_fn: &__MODULE__.render_app_date_column/3
+          render_fn: &__MODULE__.render_app_date_column/3,
+          sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
           name: :user,
@@ -30,7 +34,7 @@ defmodule OliWeb.Products.Payments.TableModel do
           render_fn: &__MODULE__.render_user_column/3
         },
         %ColumnSpec{
-          name: :user,
+          name: :section,
           label: "Section",
           render_fn: &__MODULE__.render_section_column/3
         }
@@ -49,8 +53,18 @@ defmodule OliWeb.Products.Payments.TableModel do
 
   def render_user_column(_, %{user: user}, _) do
     case user do
-      nil -> ""
-      user -> user.family_name <> ", " <> user.given_name
+      nil ->
+        ""
+
+      user ->
+        safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
+    end
+  end
+
+  defp safe_get(item, default_value) do
+    case item do
+      nil -> default_value
+      item -> item
     end
   end
 
@@ -66,38 +80,38 @@ defmodule OliWeb.Products.Payments.TableModel do
     end
   end
 
-  def sort(direction, spec) do
-    fn row1, row2 ->
-      value1 =
-        case row1.payment.type do
-          :direct -> "Direct"
-          :deferred -> "Code: [#{row1.code}]"
-        end
+  def sort(direction, _) do
+    {fn v ->
+       case v.payment.type do
+         :direct -> "zzzDirect"
+         :deferred -> "Code: [#{v.code}]"
+       end
+     end, direction}
+  end
 
-      value2 =
-        case row2.payment.type do
-          :direct -> "Direct"
-          :deferred -> "Code: [#{row2.code}]"
-        end
+  def sort_date(direction, spec) do
+    {fn r ->
+       case Map.get(r.payment, spec.name) do
+         nil ->
+           @fake_date_for_sorting
 
-      case direction do
-        :asc -> value1 < value2
-        _ -> value2 < value1
-      end
-    end
+         d ->
+           d
+       end
+     end, {direction, Date}}
   end
 
   def render_gen_date_column(_, %{payment: payment}, _) do
     case payment.generation_date do
       nil -> ""
-      d -> Timex.format!(d, "{relative}", :relative)
+      d -> Timex.format!(d, "{RFC1123}")
     end
   end
 
   def render_app_date_column(_, %{payment: payment}, _) do
     case payment.application_date do
       nil -> ""
-      d -> Timex.format!(d, "{relative}", :relative)
+      d -> Timex.format!(d, "{RFC1123}")
     end
   end
 

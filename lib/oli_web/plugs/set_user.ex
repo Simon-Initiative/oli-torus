@@ -41,11 +41,15 @@ defmodule Oli.Plugs.SetCurrentUser do
     if user = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_user = Repo.get(User, user.id) |> Repo.preload([:platform_roles, :author]) ->
+          IO.inspect("plug settign ")
+
           conn
           |> put_session(:current_user_id, current_user.id)
           |> assign(:current_user, current_user)
 
         true ->
+          IO.inspect("plug CLEARNING ")
+
           conn
           |> delete_session(:current_user_id)
           |> assign(:current_user, nil)
