@@ -257,6 +257,29 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
+  def list_payments(product_slug) do
+    case Oli.Delivery.Sections.get_section_by_slug(product_slug) do
+      nil ->
+        []
+
+      %Section{id: id} ->
+        query =
+          from(
+            p in Payment,
+            left_join: e in Enrollment,
+            on: e.id == p.enrollment_id,
+            left_join: u in User,
+            on: e.user_id == u.id,
+            left_join: s2 in Section,
+            on: e.section_id == s2.id,
+            where: p.section_id == ^id,
+            select: %{payment: p, section: s2, user: u}
+          )
+
+        Repo.all(query)
+    end
+  end
+
   @doc """
   Creates a payment.
   ## Examples

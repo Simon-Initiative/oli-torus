@@ -13,6 +13,28 @@ defmodule OliWeb.PaymentController do
     render(conn, "code.html", section_slug: section_slug)
   end
 
+  def download_codes(conn, %{"count" => count, "product_id" => product_slug}) do
+    case Oli.Delivery.Paywall.create_payment_codes(product_slug, String.to_integer(count)) do
+      {:ok, payments} ->
+        contents =
+          Enum.map(payments, fn p ->
+            Oli.Delivery.Paywall.Payment.to_human_readable(p.code)
+          end)
+          |> Enum.join("\n")
+
+        conn
+        |> send_download({:binary, contents},
+          filename: "codes_#{product_slug}.txt"
+        )
+
+      _ ->
+        conn
+        |> send_download({:binary, "Error in generating codes"},
+          filename: "ERROR_codes_#{product_slug}.txt"
+        )
+    end
+  end
+
   def apply_code(conn, %{
         "g-recaptcha-response" => g_recaptcha_response,
         "section_slug" => section_slug,

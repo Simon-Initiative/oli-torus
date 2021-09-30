@@ -104,7 +104,10 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       end
 
       defp get_patch_params(table_model, offset, filter) do
-        Map.merge(%{offset: offset, filter: filter}, SortableTableModel.to_params(table_model))
+        Map.merge(
+          %{"offset" => offset, "filter" => filter},
+          SortableTableModel.to_params(table_model)
+        )
       end
 
       def handle_params(params, _, socket) do

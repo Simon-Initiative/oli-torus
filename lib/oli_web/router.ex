@@ -221,8 +221,11 @@ defmodule OliWeb.Router do
 
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
+    live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/updates", Delivery.ManageUpdates)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :authoring_remix)
+
+    get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
     get("/account", WorkspaceController, :account)
     put("/account", WorkspaceController, :update_author)
