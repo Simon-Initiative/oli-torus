@@ -5,6 +5,10 @@
 ### Bug Fixes
 ### Enhancements
 
+## 0.13.3 (2021-09-30)
+### Bug Fixes
+- Fix an issue where generating resource links for tag types throws a server error
+
 ## 0.13.2 (2021-09-17)
 ### Bug Fixes
 - Fix activity choice icon selection in authoring
