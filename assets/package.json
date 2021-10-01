@@ -24,6 +24,7 @@
     "@types/react-color": "^3.0.5",
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
+    "deep-object-diff": "^1.1.0",
     "immer": "^9.0.5",
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
