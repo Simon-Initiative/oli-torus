@@ -1,12 +1,10 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
-import { setcopiedPart } from 'apps/authoring/store/app/slice';
 import { NotificationContext } from 'apps/delivery/components/NotificationContext';
 import { defaultCapabilities } from 'components/parts/types/parts';
 import EventEmitter from 'events';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
-import { useDispatch } from 'react-redux';
 import { clone } from 'utils/common';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
@@ -199,7 +197,7 @@ const Adaptive = (
     if (props.onCustomEvent) {
       const result = await props.onCustomEvent('copyPart', { copiedPart: selectedPart });
     }
-    //dispatch(setcopiedPart({ copiedPart: selectedPart }));
+    //dispatch(setCopiedPart({ copiedPart: selectedPart }));
   }, [selectedPart, props.model]);
 
   const handlePartMoveBack = useCallback(async () => {
@@ -332,7 +330,7 @@ const Adaptive = (
               <i className="las la-edit"></i>
             </button>
           )}
-          {selectedPart && selectedPart.capabilities.move && (
+          {selectedPart && selectedPart.capabilities.copy && (
             <button title="Copy" onClick={handleCopyComponent}>
               <i className="las la-copy"></i>
             </button>

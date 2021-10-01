@@ -253,6 +253,11 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
 
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
+      {showLabel && (
+        <label className="input-label" htmlFor={internalId}>
+          {label}
+        </label>
+      )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
@@ -282,19 +287,22 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               type={'range'}
               value={sliderValue}
               step={snapInterval}
-              className={` slider `}
+              //className={` slider `}
               id={internalId}
               onChange={handleSliderChange}
+              list="steplist"
             />
+            <datalist id="steplist">
+              <option value="0"></option>
+              <option value="25"></option>
+              <option value="50"></option>
+              <option value="75"></option>
+              <option value="100"></option>
+            </datalist>
           </div>
         </div>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
       </div>
-      {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
-      )}
     </div>
   ) : null;
 };

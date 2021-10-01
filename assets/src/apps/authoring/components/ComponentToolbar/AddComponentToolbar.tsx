@@ -1,9 +1,9 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
-  selectcopiedPart,
+  selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
-  setcopiedPart,
+  setCopiedPart,
 } from 'apps/authoring/store/app/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
@@ -27,7 +27,7 @@ const AddComponentToolbar: React.FC = () => {
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
-  const copiedPart = useSelector(selectcopiedPart);
+  const copiedPart = useSelector(selectCopiedPart);
   console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const handleAddComponent = useCallback(
@@ -125,7 +125,7 @@ const AddComponentToolbar: React.FC = () => {
       clonedActivity.content.partsLayout.push(newPartData);
       console.log('pasting copied part', { newPartData, clonedActivity, currentSequence });
       dispatch(saveActivity({ activity: clonedActivity }));
-      dispatch(setcopiedPart({ copiedPart: null }));
+      dispatch(setCopiedPart({ copiedPart: null }));
     }
   };
   return (

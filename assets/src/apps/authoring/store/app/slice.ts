@@ -111,7 +111,7 @@ const slice: Slice<AppState> = createSlice({
     setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
       state.currentRule = action.payload.currentRule;
     },
-    setcopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
+    setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
     },
   },
@@ -125,7 +125,7 @@ export const {
   setVisible,
   setRightPanelActiveTab,
   setCurrentRule,
-  setcopiedPart,
+  setCopiedPart,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -153,7 +153,7 @@ export const selectCurrentRule = createSelector(
   selectState,
   (state: AppState) => state.currentRule,
 );
-export const selectcopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
+export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
 

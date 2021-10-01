@@ -74,6 +74,7 @@ export interface ColorPalette {
 
 export const defaultCapabilities = {
   move: true,
+  copy: true,
   resize: true,
   rotate: false,
   select: true,
