@@ -12,7 +12,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
   const [renderId, setRenderId] = useState<number>(Date.now());
 
   useEffect(() => {
-    console.log('FEEDBACK ARRAY CHANGED', { feedbacks, snapshot });
+    // console.log('FEEDBACK ARRAY CHANGED', { feedbacks, snapshot });
     setRenderId(Date.now());
   }, [feedbacks]);
 
