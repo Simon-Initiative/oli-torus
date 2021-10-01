@@ -30,10 +30,29 @@ const AddComponentToolbar: React.FC = () => {
   const copiedPart = useSelector(selectCopiedPart);
   console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
+  const addPartToCurrentScreen = (newPartData: any) => {
+    if (currentActivityTree) {
+      const [currentActivity] = currentActivityTree.slice(-1);
+      const clonedActivity = clone(currentActivity);
+      const sequenceEntry = findInSequenceByResourceId(currentSequence, currentActivity.resourceId);
+      const partIdentifier = {
+        id: newPartData.id,
+        type: newPartData.type,
+        owner: sequenceEntry?.custom?.sequenceId || '',
+        inherited: false,
+        // objectives: [],
+      };
+      clonedActivity.authoring.parts.push(partIdentifier);
+      clonedActivity.content.partsLayout.push(newPartData);
+
+      console.log('adding new part', { newPartData, clonedActivity, currentSequence });
+      dispatch(saveActivity({ activity: clonedActivity }));
+    }
+  };
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
       setShowPartsMenu(false);
-      if (!availablePartComponents || !currentActivityTree) {
+      if (!availablePartComponents) {
         return;
       }
       const partComponent = availablePartComponents.find((p) => p.slug === partComponentType);
@@ -46,12 +65,6 @@ const AddComponentToolbar: React.FC = () => {
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
         // only ever add to the current activity, not a layer
-        const [currentActivity] = currentActivityTree.slice(-1);
-        const clonedActivity = clone(currentActivity);
-        const sequenceEntry = findInSequenceByResourceId(
-          currentSequence,
-          currentActivity.resourceId,
-        );
 
         const part = new PartClass();
         const newPartData = {
@@ -69,20 +82,7 @@ const AddComponentToolbar: React.FC = () => {
         if (part.createSchema) {
           newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
         }
-        const partIdentifier = {
-          id: newPartData.id,
-          type: newPartData.type,
-          owner: sequenceEntry?.custom?.sequenceId || '',
-          inherited: false,
-          // objectives: [],
-        };
-
-        clonedActivity.authoring.parts.push(partIdentifier);
-        clonedActivity.content.partsLayout.push(newPartData);
-
-        console.log('creating new part', { newPartData, clonedActivity, currentSequence });
-
-        dispatch(saveActivity({ activity: clonedActivity }));
+        addPartToCurrentScreen(newPartData);
       }
     },
     [availablePartComponents, currentActivityTree, currentSequence],
@@ -105,28 +105,13 @@ const AddComponentToolbar: React.FC = () => {
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = (event: any) => {
-    if (currentActivityTree) {
-      const [currentActivity] = currentActivityTree.slice(-1);
-      const clonedActivity = clone(currentActivity);
-      const sequenceEntry = findInSequenceByResourceId(currentSequence, currentActivity.resourceId);
-      const newPartData = {
-        id: `${copiedPart.type}-${guid()}`,
-        type: copiedPart.type,
-        custom: copiedPart.custom,
-      };
-      const partIdentifier = {
-        id: newPartData.id,
-        type: newPartData.type,
-        owner: sequenceEntry?.custom?.sequenceId || '',
-        inherited: false,
-      };
-
-      clonedActivity.authoring.parts.push(partIdentifier);
-      clonedActivity.content.partsLayout.push(newPartData);
-      console.log('pasting copied part', { newPartData, clonedActivity, currentSequence });
-      dispatch(saveActivity({ activity: clonedActivity }));
-      dispatch(setCopiedPart({ copiedPart: null }));
-    }
+    const newPartData = {
+      id: `${copiedPart.type}-${guid()}`,
+      type: copiedPart.type,
+      custom: copiedPart.custom,
+    };
+    addPartToCurrentScreen(newPartData);
+    dispatch(setCopiedPart({ copiedPart: null }));
   };
   return (
     <Fragment>
