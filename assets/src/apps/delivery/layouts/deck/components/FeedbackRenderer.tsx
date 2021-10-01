@@ -29,7 +29,9 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
       <style>
         {`
           .feedback-item > * {
-            position: relative !important;
+            position: static !important;
+          }
+          .feedback-item janus-text-flow {
             width: auto !important;
           }
         `}
