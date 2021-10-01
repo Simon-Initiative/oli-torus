@@ -204,7 +204,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       node: node,
       hierarchy: hierarchy,
       from_container: active,
-      selection: active
+      active: active
     }
 
     {:noreply,
@@ -237,16 +237,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
   # handle any cancel events a modal might generate from being closed
   def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
-  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_active", %{"slug" => slug}, socket) do
     %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
 
-    selection = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
 
     modal = %{
       modal
       | assigns: %{
           modal.assigns
-          | selection: selection
+          | active: active
         }
     }
 

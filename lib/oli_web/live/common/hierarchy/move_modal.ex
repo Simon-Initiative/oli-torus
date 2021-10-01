@@ -9,14 +9,15 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
 
   def render(
         %{
+          id: id,
           node: %HierarchyNode{slug: slug, revision: revision} = node,
           hierarchy: %HierarchyNode{} = hierarchy,
           from_container: %HierarchyNode{} = from_container,
-          selection: %HierarchyNode{} = selection
+          active: %HierarchyNode{} = active
         } = assigns
       ) do
     ~L"""
-    <div class="modal fade show" style="display: block" id="move_<%= slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div class="modal fade show" style="display: block" id="<%= id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -26,11 +27,16 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
               </button>
             </div>
             <div class="modal-body">
-            <%= live_component HierarchyPicker,
-              id: "hierarchy_picker_#{slug}",
-              node: node,
-              hierarchy: hierarchy,
-              selection: selection %>
+              <%= live_component HierarchyPicker,
+                id: "#{id}_hierarchy_picker",
+                hierarchy: hierarchy,
+                active: active,
+                filter_items_fn: fn items -> Enum.filter(items, &(&1.slug != slug)) end %>
+
+              <div class="text-center text-secondary mt-2">
+                <b><%= revision.title %></b> will be placed here
+              </div>
+
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="MoveModal.cancel">Cancel</button>
@@ -40,8 +46,8 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
                 phx-click="MoveModal.move_item"
                 phx-value-item_slug="<%= node.slug %>"
                 phx-value-from_slug="<%= from_container.slug %>"
-                phx-value-to_slug="<%= selection.slug %>"
-                <%= if can_move?(from_container, selection) , do: "", else: "disabled" %>>
+                phx-value-to_slug="<%= active.slug %>"
+                <%= if can_move?(from_container, active) , do: "", else: "disabled" %>>
                 Move
               </button>
             </div>
@@ -51,7 +57,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
     """
   end
 
-  defp can_move?(from_container, selection) do
-    selection.slug != nil && selection.slug != from_container.slug
+  defp can_move?(from_container, active) do
+    active.slug != nil && active.slug != from_container.slug
   end
 end

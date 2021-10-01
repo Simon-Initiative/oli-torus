@@ -88,15 +88,7 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    available_publications =
-      case user.author do
-        nil ->
-          []
-
-        author ->
-          Publishing.available_publications(author, institution)
-          |> Enum.filter(fn p -> p.published end)
-      end
+    available_publications = Publishing.available_publications(user.author, institution)
 
     render(conn, "select_project.html",
       author: user.author,
@@ -295,45 +287,56 @@ defmodule OliWeb.DeliveryController do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
 
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    # guard against creating a new section if one already exists
+    case Sections.get_section_from_lti_params(lti_params) do
+      nil ->
+        issuer = lti_params["iss"]
+        client_id = lti_params["aud"]
+        deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
-    {institution, _registration, deployment} =
-      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+        {institution, _registration, deployment} =
+          Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    publication = Publishing.get_publication!(publication_id)
+        publication = Publishing.get_publication!(publication_id)
 
-    # create section, section resources and enroll instructor
-    {:ok, section} =
-      Repo.transaction(fn ->
+        # create section, section resources and enroll instructor
         {:ok, section} =
-          Sections.create_section(%{
-            type: :enrollable,
-            timezone: institution.timezone,
-            title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
-            context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-            institution_id: institution.id,
-            base_project_id: publication.project_id,
-            lti_1p3_deployment_id: deployment.id
-          })
+          Repo.transaction(fn ->
+            {:ok, section} =
+              Sections.create_section(%{
+                type: :enrollable,
+                timezone: institution.timezone,
+                title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+                context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
+                institution_id: institution.id,
+                base_project_id: publication.project_id,
+                lti_1p3_deployment_id: deployment.id
+              })
 
-        {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
+            {:ok, %Section{id: section_id}} =
+              Sections.create_section_resources(section, publication)
 
-        # Enroll this user with their proper roles (instructor)
-        lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-        context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-        Sections.enroll(user.id, section_id, context_roles)
+            # Enroll this user with their proper roles (instructor)
+            lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+            context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+            Sections.enroll(user.id, section_id, context_roles)
 
-        section
-      end)
+            section
+          end)
 
-    if is_remix?(params) do
-      conn
-      |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
-    else
-      conn
-      |> redirect(to: Routes.delivery_path(conn, :index))
+        if is_remix?(params) do
+          conn
+          |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
+        else
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :index))
+        end
+
+      section ->
+        # a section already exists, redirect to index
+        conn
+        |> put_flash(:error, "Unable to create new section. This section already exists.")
+        |> redirect_to_page_delivery(section)
     end
   end
 

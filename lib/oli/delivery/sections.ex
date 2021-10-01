@@ -763,6 +763,16 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @doc """
+  Returns a map of resource_id to published resource
+  """
+  def published_resources_map(publication_id) do
+    Publishing.get_published_resources_by_publication(publication_id,
+      preload: [:resource, :revision, :publication]
+    )
+    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
+
   defp maybe_process_added_or_changed_node(
          {hierarchy, processed_resource_ids},
          %HierarchyNode{resource_id: resource_id} = node,
@@ -897,14 +907,6 @@ defmodule Oli.Delivery.Sections do
         false
       end
     end)
-  end
-
-  # returns a map of resource_id to published resource
-  defp published_resources_map(publication_id) do
-    Publishing.get_published_resources_by_publication(publication_id,
-      preload: [:resource, :revision, :publication]
-    )
-    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
   end
 
   # Takes a hierarchy node and a accumulator list of section resources and returns the

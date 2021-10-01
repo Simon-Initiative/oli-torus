@@ -26,7 +26,10 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Delivery.Remix.{RemoveModal, MoveModal}
+  alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
+  alias OliWeb.Common.Hierarchy.MoveModal
+  alias Oli.Publishing
+  alias Oli.Publishing.PublishedResource
 
   def mount(
         _params,
@@ -36,7 +39,13 @@ defmodule OliWeb.Delivery.RemixSection do
         } = session,
         socket
       ) do
-    mount_as_instructor(section_slug, current_user_id, session, socket)
+    section = Sections.get_section_by_slug(section_slug)
+
+    if section.open_and_free do
+      mount_as_open_and_free(socket, section, current_user_id, session)
+    else
+      mount_as_instructor(socket, section, current_user_id, session)
+    end
   end
 
   def mount(
@@ -50,50 +59,78 @@ defmodule OliWeb.Delivery.RemixSection do
       ) do
     section = Sections.get_section_by_slug(section_slug)
 
-    redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section_slug)
+    mount_as_product_creator(socket, section, current_author_id)
+  end
 
-    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section_slug, current_author_id) do
-      init_state(socket, section, redirect_after_save)
+  def mount_as_instructor(socket, section, current_user_id, session) do
+    current_user =
+      Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
+      |> Repo.preload([:platform_roles, :author])
+
+    redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+
+    section =
+      section
+      |> Repo.preload(:institution)
+
+    available_publications =
+      Publishing.available_publications(current_user.author, section.institution)
+
+    # only permit instructor or admin level access
+    if is_section_instructor_or_admin?(section.slug, current_user) do
+      init_state(socket,
+        section: section,
+        redirect_after_save: redirect_after_save,
+        available_publications: available_publications
+      )
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
 
-  def mount_as_instructor(section_slug, current_user_id, session, socket) do
-    section = Sections.get_section_by_slug(section_slug)
+  def mount_as_open_and_free(socket, section, current_user_id, session) do
+    current_author = Map.get(session, "current_author")
 
     redirect_after_save =
       Map.get(
         session,
-        "redirect_after_save",
-        Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+        "redirect_after_save"
       )
 
-    if section.open_and_free do
-      current_author = Map.get(session, "current_author")
+    available_publications = Publishing.available_publications()
 
-      # only permit authoring admin level access
-      if Accounts.is_admin?(current_author) do
-        init_state(socket, section, redirect_after_save)
-      else
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-      end
+    # only permit authoring admin level access
+    if Accounts.is_admin?(current_author) do
+      init_state(socket,
+        section: section,
+        redirect_after_save: redirect_after_save,
+        available_publications: available_publications
+      )
     else
-      # only permit instructor or admin level access
-      current_user =
-        Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
-        |> Repo.preload([:platform_roles, :author])
-
-      if is_section_instructor_or_admin?(section.slug, current_user) do
-        init_state(socket, section, redirect_after_save)
-      else
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-      end
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
     end
   end
 
-  def init_state(socket, section, redirect_after_save) do
+  def mount_as_product_creator(socket, section, current_author_id) do
+    redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
+    available_publications = Publishing.available_publications()
+
+    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) do
+      init_state(socket,
+        section: section,
+        redirect_after_save: redirect_after_save,
+        available_publications: available_publications
+      )
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
+  end
+
+  def init_state(socket, opts) do
+    section = Keyword.get(opts, :section)
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    redirect_after_save = Keyword.get(opts, :redirect_after_save)
+    available_publications = Keyword.get(opts, :available_publications)
 
     {:ok,
      assign(socket,
@@ -106,7 +143,8 @@ defmodule OliWeb.Delivery.RemixSection do
        selected: nil,
        has_unsaved_changes: false,
        modal: nil,
-       redirect_after_save: redirect_after_save
+       redirect_after_save: redirect_after_save,
+       available_publications: available_publications
      )}
   end
 
@@ -249,7 +287,7 @@ defmodule OliWeb.Delivery.RemixSection do
       node: node,
       hierarchy: hierarchy,
       from_container: active,
-      selection: active
+      active: active
     }
 
     {:noreply,
@@ -258,16 +296,93 @@ defmodule OliWeb.Delivery.RemixSection do
      )}
   end
 
-  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
-    %{hierarchy: hierarchy, modal: modal} = socket.assigns
+  def handle_event("show_add_materials_modal", _, socket) do
+    %{available_publications: available_publications} = socket.assigns
 
-    selection = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    assigns = %{
+      id: "add_materials_modal",
+      hierarchy: nil,
+      active: nil,
+      selection: [],
+      publications: available_publications,
+      selected_publication: nil
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: AddMaterialsModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event("AddMaterialsModal.cancel", _, socket) do
+    {:noreply, assign(socket, modal: nil)}
+  end
+
+  def handle_event("HierarchyPicker.select_publication", %{"id" => publication_id}, socket) do
+    %{modal: modal} = socket.assigns
+
+    publication =
+      Publishing.get_publication!(publication_id)
+      |> Repo.preload([:project])
+
+    hierarchy = publication_hierarchy(publication)
 
     modal = %{
       modal
       | assigns: %{
           modal.assigns
-          | selection: selection
+          | hierarchy: hierarchy,
+            active: hierarchy,
+            selected_publication: publication
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("HierarchyPicker.clear_publication", _, socket) do
+    %{modal: modal} = socket.assigns
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | hierarchy: nil,
+            active: nil
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("HierarchyPicker.update_active", %{"slug" => slug}, socket) do
+    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | active: active
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "HierarchyPicker.select",
+        %{"publication_id" => publication_id, "slug" => slug},
+        socket
+      ) do
+    %{modal: %{assigns: %{selection: selection}} = modal} = socket.assigns
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | selection: xor(selection, {String.to_integer(publication_id), slug})
         }
     }
 
@@ -327,6 +442,23 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("cancel_modal", _, socket) do
     {:noreply, assign(socket, modal: nil)}
+  end
+
+  defp xor(list, item) do
+    if item in list do
+      Enum.filter(list, fn i -> i != item end)
+    else
+      [item | list]
+    end
+  end
+
+  defp publication_hierarchy(publication) do
+    published_resources_by_resource_id = Sections.published_resources_map(publication.id)
+
+    %PublishedResource{revision: root_revision} =
+      published_resources_by_resource_id[publication.root_resource_id]
+
+    Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
   end
 
   defp new_container_name(%HierarchyNode{section_resource: sr} = _active) do
