@@ -106,6 +106,8 @@ export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
       return <sub>{children}</sub>;
     case 'sup':
       return <sup>{children}</sup>;
+    case 'u':
+      return <u>{children}</u>;
     default:
       return <span>{children}</span>;
   }

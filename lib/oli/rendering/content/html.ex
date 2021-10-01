@@ -284,7 +284,8 @@ defmodule Oli.Rendering.Content.Html do
       "var" => "var",
       "code" => "code",
       "sub" => "sub",
-      "sup" => "sup"
+      "sup" => "sup",
+      "u" => "u"
     }
 
     marks =

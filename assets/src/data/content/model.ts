@@ -219,7 +219,7 @@ export interface InputRef extends Element, Identifiable {
   type: 'input_ref';
 }
 
-export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
+export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup' | 'u';
 
 export enum Marks {
   'em',
@@ -230,6 +230,7 @@ export enum Marks {
   'code',
   'sub',
   'sup',
+  'u'
 }
 
 export enum CodeLanguages {

@@ -62,6 +62,7 @@ export class HtmlParser implements WriterImpl {
       code: (e) => <code>{e}</code>,
       sub: (e) => <sub>{e}</sub>,
       sup: (e) => <sup>{e}</sup>,
+      u: (e) => <u>{e}</u>,
     };
     return Object.keys(textEntity)
       .filter((attr) => textEntity[attr] === true)

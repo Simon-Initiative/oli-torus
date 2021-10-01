@@ -184,6 +184,13 @@ const Markup: React.FC<any> = ({
           {children}
         </em>
       );
+    case 'u':
+      return (
+        <u ref={el} key={key} className={customCssClass} style={renderStyles}>
+          {processedText}
+          {children}
+        </u>
+      );
     case 'div':
       return (
         <div ref={el} key={key} className={customCssClass} style={renderStyles}>

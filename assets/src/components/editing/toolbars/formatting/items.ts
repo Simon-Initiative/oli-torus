@@ -12,6 +12,7 @@ export const formatMenuCommands = [
   [
     format({ icon: 'format_bold', mark: 'strong', description: 'Bold (⌘B)' }),
     format({ icon: 'format_italic', mark: 'em', description: 'Italic (⌘I)' }),
+    format({ icon: 'format_underline', mark: 'u', description: 'Underline (⌘U)' }),
     linkCmd,
     format({
       icon: 'code',
