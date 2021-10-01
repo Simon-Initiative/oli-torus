@@ -75,11 +75,6 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
 
   return (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
-      {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
-      )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
@@ -116,6 +111,11 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
         </div>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
       </div>
+      {showLabel && (
+        <label className="input-label" htmlFor={internalId}>
+          {label}
+        </label>
+      )}
     </div>
   );
 };
