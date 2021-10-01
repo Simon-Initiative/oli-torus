@@ -136,6 +136,38 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
+  @doc """
+  Returns the list of publications available to an author. If no author is specified,
+  then it will only return publicly available publications.
+
+  ## Examples
+      iex> available_publications()
+      [%Publication{}, ...]
+
+      iex> available_publications(author, institution)
+      [%Publication{}, ...]
+  """
+  def all_publications() do
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
+        group_by: t.project_id
+
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: not is_nil(pub.published) and proj.status == :active,
+        preload: [:project],
+        distinct: true,
+        select: pub
+
+    Repo.all(query)
+  end
+
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
       from t in Publication,

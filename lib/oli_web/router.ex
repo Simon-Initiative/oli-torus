@@ -607,6 +607,8 @@ defmodule OliWeb.Router do
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+    live("/open_and_free/create", Delivery.SelectSource)
+    live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
 
     resources "/institutions", InstitutionController do
       resources "/registrations", RegistrationController, except: [:index, :show] do
