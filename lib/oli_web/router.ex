@@ -412,6 +412,10 @@ defmodule OliWeb.Router do
     pipe_through([:api])
 
     post("/", Api.PaymentController, :new)
+
+    # String payment intent creation
+    post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
+    post("/s/success", PaymentProviders.StripeController, :success)
   end
 
   # User State Service, instrinsic state

@@ -291,6 +291,20 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Retrieve a payment for a specific provider and id.
+  """
+  def get_provider_payment(provider_type, provider_id) do
+    query =
+      from(
+        p in Payment,
+        where: p.provider_type == ^provider_type and p.provider_id == ^provider_id,
+        select: p
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
   Creates a payment.
   ## Examples
       iex> create_payment(%{field: value})

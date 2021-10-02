@@ -53,7 +53,11 @@ defmodule OliWeb.Products.PaymentsView do
         Map.put(
           element,
           :code,
-          Oli.Delivery.Paywall.Payment.to_human_readable(element.payment.code)
+          if is_nil(element.payment.code) do
+            ""
+          else
+            Oli.Delivery.Paywall.Payment.to_human_readable(element.payment.code)
+          end
         )
         |> Map.put(:unique_id, element.payment.id)
       end)

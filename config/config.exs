@@ -53,6 +53,12 @@ config :oli,
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ]
 
+config :oli, :payment_provider, provider: OliWeb.PaymentProviders.StripeController
+
+config :oli, :stripe_provider,
+  public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
+  private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
+
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 

@@ -13,8 +13,21 @@ defmodule OliWeb.PaymentController do
   @doc """
   Renders the page to start the direct payment processing flow.
   """
-  def make_payment(conn, _params) do
-    render(conn, "new.html")
+  def make_payment(conn, _) do
+    # Dynamically dispatch to the "index" method of the registered
+    # payment provider implementation
+    section = conn.assigns.section
+    user = conn.assigns.current_user
+
+    # perform this check in the case that a user refreshes the payment page
+    # after already paying.  This will simply redirect them to their course.
+    if Oli.Delivery.Paywall.can_access?(user, section) do
+      conn
+      |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+    else
+      Application.fetch_env!(:oli, :payment_provider)[:provider]
+      |> apply(:index, [conn, section, user])
+    end
   end
 
   @doc """

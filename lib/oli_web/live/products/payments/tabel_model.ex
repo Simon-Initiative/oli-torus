@@ -28,6 +28,11 @@ defmodule OliWeb.Products.Payments.TableModel do
           sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
+          name: :details,
+          label: "Details",
+          render_fn: &__MODULE__.render_details_column/3
+        },
+        %ColumnSpec{
           name: :user,
           label: "User",
           render_fn: &__MODULE__.render_user_column/3
@@ -70,7 +75,9 @@ defmodule OliWeb.Products.Payments.TableModel do
   def render_type_column(assigns, %{payment: payment, code: code}, _) do
     case payment.type do
       :direct ->
-        "Direct"
+        ~F"""
+        Direct: <span class="badge badge-success">{payment.provider_type}</span>
+        """
 
       :deferred ->
         ~F"""
@@ -79,10 +86,22 @@ defmodule OliWeb.Products.Payments.TableModel do
     end
   end
 
+  def render_details_column(assigns, %{payment: payment}, _) do
+    case payment.provider_type do
+      :stripe ->
+        ~F"""
+        <a href={"https://dashboard.stripe.com/test/payments/#{payment.provider_payload["id"]}"}>Details</a>
+        """
+
+      _ ->
+        ""
+    end
+  end
+
   def sort(direction, _) do
     {fn v ->
        case v.payment.type do
-         :direct -> "zzzDirect"
+         :direct -> "zzzDirect: #{v.payment.provider_type}"
          :deferred -> "Code: [#{v.code}]"
        end
      end, direction}
