@@ -1,7 +1,11 @@
 defmodule OliWeb.PaymentProviders.StripeController do
   use OliWeb, :controller
   import OliWeb.Api.Helpers
+  alias Oli.Delivery.Paywall.Providers.Stripe
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Paywall
+  import Oli.Utils
 
   @doc """
   Render the page to show a student that they do not have access because
@@ -21,113 +25,48 @@ defmodule OliWeb.PaymentProviders.StripeController do
   @doc """
   Renders the page to start the direct payment processing flow.
   """
-  def success(conn, %{"intent" => %{"id" => id} = intent}) do
+  def success(conn, %{"intent" => intent}) do
     # get payment, stamp it as having been finalized
 
-    case Oli.Delivery.Paywall.get_provider_payment(:stripe, id) do
-      nil ->
+    case Stripe.finalize_payment(intent) do
+      {:ok, %{slug: slug}} ->
         json(conn, %{
-          result: "failure",
-          reason: "No payment exists"
+          result: "success",
+          url: Routes.page_delivery_path(conn, :index, slug)
         })
 
-      payment ->
-        section = Oli.Delivery.Sections.get_section!(payment.pending_section_id)
-        enrollment = Oli.Delivery.Sections.get_enrollment(section.slug, payment.pending_user_id)
-
-        case Oli.Delivery.Paywall.update_payment(payment, %{
-               enrollment_id: enrollment.id,
-               application_date: DateTime.utc_now(),
-               provider_payload: intent
-             }) do
-          {:ok, _} ->
-            json(conn, %{
-              result: "success",
-              url: Routes.page_delivery_path(conn, :index, section.slug)
-            })
-
-          _ ->
-            json(conn, %{
-              result: "failure",
-              reason: "Could not persist payment"
-            })
-        end
+      {:error, reason} ->
+        json(conn, %{
+          result: "failure",
+          reason: reason
+        })
     end
   end
 
   def init_intent(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
 
-    with {:ok, section} <-
-           Oli.Delivery.Sections.get_section_by_slug(section_slug) |> Oli.Utils.trap_nil(),
-         {:ok, section} <-
-           Oli.Repo.preload(section, [:institution, :blueprint]) |> Oli.Utils.trap_nil(),
-         {:ok, product} <-
-           (if is_nil(section.blueprint_id) do
-              section
-            else
-              section.blueprint
-            end)
-           |> Oli.Utils.trap_nil(),
-         {:ok, amount} <-
-           Oli.Delivery.Paywall.calculate_product_cost(product, section.institution) do
-      {stripe_value, stripe_currency} =
-        Oli.Delivery.Paywall.Providers.Stripe.convert_amount(amount)
-
-      body =
-        %{
-          amount: stripe_value,
-          currency: stripe_currency,
-          "payment_method_types[]": "card"
-        }
-        |> URI.encode_query()
-
-      private_secret = Application.fetch_env!(:oli, :stripe_provider)[:private_secret]
-
-      headers = [
-        Authorization: "Bearer #{private_secret}",
-        "Content-Type": "application/x-www-form-urlencoded"
-      ]
-
-      case HTTPoison.post(
-             "https://api.stripe.com/v1/payment_intents",
-             body,
-             headers
-           ) do
-        {:ok, %{status_code: 200, body: body}} ->
-          intent = Poison.decode!(body)
-
-          %{"client_secret" => client_secret, "id" => id} = intent
-
-          case Oli.Delivery.Paywall.create_payment(%{
-                 type: :direct,
-                 generation_date: DateTime.utc_now(),
-                 amount: amount,
-                 pending_user_id: user.id,
-                 pending_section_id: section.id,
-                 provider_payload: intent,
-                 provider_id: id,
-                 provider_type: :stripe,
-                 section_id: product.id
-               }) do
-            {:ok, _} ->
-              json(conn, %{
-                clientSecret: client_secret
-              })
-
-            _ ->
-              error(conn, 500, "server error")
-          end
-
-        {:ok, %{status_code: 404}} ->
-          error(conn, 404, "client error")
-
-        {:error, _} ->
-          error(conn, 500, "server error")
+    with {:ok, section} <- Sections.get_section_by_slug(section_slug) |> trap_nil(),
+         {:ok, section} <- Oli.Repo.preload(section, [:institution, :blueprint]) |> trap_nil(),
+         {:ok, product} <- determine_product(section),
+         {:ok, amount} <- Paywall.calculate_product_cost(product, section.institution) do
+      case Stripe.create_intent(amount, user, section, product) do
+        {:ok, %{"client_secret" => client_secret}} -> json(conn, %{clientSecret: client_secret})
+        {:error, reason} -> error(conn, 500, reason)
       end
     else
       _ ->
         error(conn, 400, "client error")
+    end
+  end
+
+  # Determines the product to apply a payment to.  If a section was not created
+  # from a product, the product is the section itself.
+  defp determine_product(section) do
+    if is_nil(section.blueprint_id) do
+      {:ok, section}
+    else
+      {:ok, section.blueprint}
     end
   end
 end
