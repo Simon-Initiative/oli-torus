@@ -69,18 +69,15 @@ defmodule OliWeb.PaymentProviders.StripeController do
               section.blueprint
             end)
            |> Oli.Utils.trap_nil(),
-         {:ok, %{amount: value} = amount} <-
+         {:ok, amount} <-
            Oli.Delivery.Paywall.calculate_product_cost(product, section.institution) do
-      numeric_value =
-        case value do
-          s when is_binary(s) -> Float.parse(s)
-          v -> v
-        end
+      {stripe_value, stripe_currency} =
+        Oli.Delivery.Paywall.Providers.Stripe.convert_amount(amount)
 
       body =
         %{
-          amount: 200,
-          currency: "usd",
+          amount: stripe_value,
+          currency: stripe_currency,
           "payment_method_types[]": "card"
         }
         |> URI.encode_query()
@@ -118,8 +115,7 @@ defmodule OliWeb.PaymentProviders.StripeController do
                 clientSecret: client_secret
               })
 
-            e ->
-              IO.inspect(e)
+            _ ->
               error(conn, 500, "server error")
           end
 
