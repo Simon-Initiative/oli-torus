@@ -17,11 +17,8 @@ const payWithCard = (stripe: any, card: any, clientSecret: any) => {
     })
     .then((result: any) => {
       if (result.error) {
-        // Show error to your customer
         showError(result.error.message);
       } else {
-        // The payment succeeded!
-        console.log(result);
         orderComplete(result.paymentIntent);
       }
     });

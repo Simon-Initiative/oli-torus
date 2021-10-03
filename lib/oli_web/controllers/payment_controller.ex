@@ -7,34 +7,72 @@ defmodule OliWeb.PaymentController do
   redirects to.
   """
   def guard(conn, %{"section_slug" => section_slug}) do
-    render(conn, "guard.html", section_slug: section_slug)
+    user = conn.assigns.current_user
+
+    if user.guest do
+      render(conn, "require_account.html", section_slug: section_slug)
+    else
+      render(conn, "guard.html", section_slug: section_slug)
+    end
   end
 
   @doc """
   Renders the page to start the direct payment processing flow.
   """
-  def make_payment(conn, _) do
+  def make_payment(conn, %{"section_slug" => section_slug}) do
     # Dynamically dispatch to the "index" method of the registered
     # payment provider implementation
     section = conn.assigns.section
     user = conn.assigns.current_user
 
+    if user.guest do
+      render(conn, "require_account.html", section_slug: section_slug)
+    else
+      if Oli.Delivery.Paywall.can_access?(user, section) do
+        conn
+        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+      else
+        case determine_cost(section) do
+          {:ok, amount} ->
+            Application.fetch_env!(:oli, :payment_provider)
+            |> apply(:index, [conn, section, user, amount])
+
+          _ ->
+            conn
+            |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+        end
+      end
+    end
+
     # perform this check in the case that a user refreshes the payment page
     # after already paying.  This will simply redirect them to their course.
-    if Oli.Delivery.Paywall.can_access?(user, section) do
-      conn
-      |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+  end
+
+  defp determine_product(section) do
+    if is_nil(section.blueprint_id) do
+      section
     else
-      Application.fetch_env!(:oli, :payment_provider)
-      |> apply(:index, [conn, section, user])
+      section.blueprint
     end
+  end
+
+  defp determine_cost(section) do
+    section = Oli.Repo.preload(section, [:institution, :blueprint])
+    product = determine_product(section)
+    Oli.Delivery.Paywall.calculate_product_cost(product, section.institution)
   end
 
   @doc """
   Renders the page to allow payment code redemption.
   """
   def use_code(conn, %{"section_slug" => section_slug}) do
-    render(conn, "code.html", section_slug: section_slug)
+    user = conn.assigns.current_user
+
+    if user.guest do
+      render(conn, "require_account.html", section_slug: section_slug)
+    else
+      render(conn, "code.html", section_slug: section_slug)
+    end
   end
 
   @doc """

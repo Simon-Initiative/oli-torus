@@ -12,14 +12,30 @@ defmodule OliWeb.PaymentProviders.StripeController do
   of the paywall state.  This is the route that the enforce paywall plug
   redirects to.
   """
-  def index(conn, section, user) do
+  def index(conn, section, user, %{amount: decimal} = amount) do
+    cost =
+      case Money.to_string(amount) do
+        {:ok, v} -> v
+        _ -> Decimal.to_string(decimal)
+      end
+
     conn
     |> Phoenix.Controller.put_view(OliWeb.PaymentProviders.StripeView)
     |> render("index.html",
       api_key: Application.fetch_env!(:oli, :stripe_provider)[:public_secret],
       purchase: Jason.encode!(%{user_id: user.id, section_slug: section.slug}),
-      section: section
+      section: section,
+      cost: cost,
+      user_name:
+        safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
     )
+  end
+
+  defp safe_get(item, default_value) do
+    case item do
+      nil -> default_value
+      item -> item
+    end
   end
 
   @doc """

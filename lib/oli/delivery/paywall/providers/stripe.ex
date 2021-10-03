@@ -49,12 +49,22 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
   def create_intent(%Money{} = amount, %User{} = user, %Section{} = section, %Section{} = product) do
     {stripe_value, stripe_currency} = convert_amount(amount)
 
+    # if the user has a verified email address, we include it to send
+    # a receipt
+    with_verified_email =
+      if user.email_verified do
+        %{receipt_email: user.email}
+      end
+
     body =
-      %{
-        amount: stripe_value,
-        currency: stripe_currency,
-        "payment_method_types[]": "card"
-      }
+      Map.merge(
+        %{
+          amount: stripe_value,
+          currency: stripe_currency,
+          "payment_method_types[]": "card"
+        },
+        with_verified_email
+      )
       |> URI.encode_query()
 
     private_secret = Application.fetch_env!(:oli, :stripe_provider)[:private_secret]
