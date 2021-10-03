@@ -35,7 +35,7 @@ defmodule OliWeb.PaymentController do
         case determine_cost(section) do
           {:ok, amount} ->
             Application.fetch_env!(:oli, :payment_provider)
-            |> apply(:index, [conn, section, user, amount])
+            |> apply(:show, [conn, section, user, amount])
 
           _ ->
             conn

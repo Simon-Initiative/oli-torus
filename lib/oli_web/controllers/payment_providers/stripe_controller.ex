@@ -12,7 +12,7 @@ defmodule OliWeb.PaymentProviders.StripeController do
   of the paywall state.  This is the route that the enforce paywall plug
   redirects to.
   """
-  def index(conn, section, user, %{amount: decimal} = amount) do
+  def show(conn, section, user, %{amount: decimal} = amount) do
     cost =
       case Money.to_string(amount) do
         {:ok, v} -> v
