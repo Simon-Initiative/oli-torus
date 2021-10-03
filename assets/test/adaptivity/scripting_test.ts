@@ -160,6 +160,32 @@ describe('Scripting Interface', () => {
       x = getValue('x', env);
       expect(x).toBe(75);
     });
+
+    it('should not return result errors rather than throw them', () => {
+      const env = new Environment();
+      evalScript('let x = 1;', env);
+      const applyOperation: ApplyStateOperation = {
+        target: 'x',
+        operator: '',
+        value: 7,
+        type: CapiVariableTypes.NUMBER,
+      };
+      const { result } = applyState(applyOperation, env);
+      expect(result.error).toEqual(true);
+    });
+
+    it('should trim target variables to prevent errors', () => {
+      const env = new Environment();
+      evalScript('let x = 1;', env);
+      const applyOperation: ApplyStateOperation = {
+        target: ' x',
+        operator: '+',
+        value: 7,
+        type: CapiVariableTypes.NUMBER,
+      };
+      const { result } = applyState(applyOperation, env);
+      expect(result).toEqual(null);
+    });
   });
 
   describe('getValue', () => {

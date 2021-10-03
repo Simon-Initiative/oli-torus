@@ -1,30 +1,33 @@
+import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
+import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import {
+  activityDeliverySlice,
+  ActivityDeliveryState,
+  initializeState,
+  resetAction,
+  StudentInput,
+} from 'data/activities/DeliveryState';
+import { Choices } from 'data/activities/model/choices';
+import { initialPartInputs, studentInputToString } from 'data/activities/utils';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { configureStore } from 'state/store';
+import { Maybe } from 'tsmonad';
 import {
   DeliveryElement,
   DeliveryElementProps,
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { OrderingSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { configureStore } from 'state/store';
-import {
-  ActivityDeliveryState,
-  initializeState,
-  activityDeliverySlice,
-  resetAction,
-} from 'data/content/activities/DeliveryState';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
-import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { initialSelection, selectionToInput } from 'data/content/activities/utils';
+import { OrderingSchema } from './schema';
 
 export const OrderingComponent: React.FC = () => {
   const {
@@ -36,13 +39,18 @@ export const OrderingComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
-  const onSelectionChange = (selection: ActivityTypes.ChoiceId[]) => {
-    dispatch(activityDeliverySlice.actions.setSelection(selection));
+  const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
+    dispatch(
+      activityDeliverySlice.actions.setStudentInputForPart({
+        partId: DEFAULT_PART_ID,
+        studentInput,
+      }),
+    );
 
     onSaveActivity(uiState.attemptState.attemptGuid, [
       {
         attemptGuid: uiState.attemptState.parts[0].attemptGuid,
-        response: { input: selectionToInput(selection) },
+        response: { input: studentInputToString(studentInput) },
       },
     ]);
   };
@@ -51,10 +59,7 @@ export const OrderingComponent: React.FC = () => {
     dispatch(
       initializeState(
         activityState,
-        initialSelection(
-          activityState,
-          model.choices.map((c) => c.id),
-        ),
+        initialPartInputs(activityState, { [DEFAULT_PART_ID]: model.choices.map((c) => c.id) }),
       ),
     );
 
@@ -64,7 +69,7 @@ export const OrderingComponent: React.FC = () => {
     setTimeout(() => {
       if (activityState.parts[0].response === null) {
         const selection = model.choices.map((choice) => choice.id);
-        const input = selectionToInput(selection);
+        const input = studentInputToString(selection);
         onSaveActivity(activityState.attemptGuid, [
           {
             attemptGuid: activityState.parts[0].attemptGuid,
@@ -76,7 +81,7 @@ export const OrderingComponent: React.FC = () => {
   }, []);
 
   // First render initializes state
-  if (!uiState.selection) {
+  if (!uiState.partState) {
     return null;
   }
 
@@ -86,24 +91,22 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={uiState.selection.map((id) => getChoice(model, id))}
+          choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
+            .valueOr<StudentInput>([])
+            .map((id) => Choices.getOne(model, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
         />
         <ResetButtonConnected
-          onReset={() => {
+          onReset={() =>
             dispatch(
-              resetAction(
-                onResetActivity,
-                model.choices.map((choice) => choice.id),
-              ),
-            );
-            dispatch(
-              activityDeliverySlice.actions.setSelection(model.choices.map((choice) => choice.id)),
-            );
-          }}
+              resetAction(onResetActivity, {
+                [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
+              }),
+            )
+          }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected />
+        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />
       </div>
     </div>

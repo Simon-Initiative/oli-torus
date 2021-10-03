@@ -78,7 +78,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
          assign(socket,
            children: children,
            active: :curriculum,
-           breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
+           breadcrumbs:
+             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -201,7 +202,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
   end
 
-  def handle_event("HierarchyPicker.select", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
     %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
 
     container =
@@ -214,7 +215,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
       end
 
     children = ContainerEditor.list_all_container_children(container, project)
-    breadcrumbs = Breadcrumb.trail_to(project.slug, container.slug)
+
+    breadcrumbs =
+      Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver)
 
     modal_assigns =
       modal_assigns
@@ -269,7 +272,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
       old_container: container,
       container: container,
       project: project,
-      breadcrumbs: Breadcrumb.trail_to(project.slug, container.slug),
+      breadcrumbs:
+        Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver),
       children: ContainerEditor.list_all_container_children(container, project),
       numberings: Numbering.number_full_tree(AuthoringResolver, project.slug),
       selection: nil

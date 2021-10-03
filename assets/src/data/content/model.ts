@@ -1,6 +1,6 @@
-import { Element, Range } from 'slate';
-import guid from 'utils/guid';
 import { normalizeHref } from 'components/editing/models/link/utils';
+import { Element, Node, Range } from 'slate';
+import guid from 'utils/guid';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -27,11 +27,13 @@ export const link = (href = '') =>
 export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
 export const p = () => create<Paragraph>({ type: 'p' });
-export const code = () => ({
+export const code = (): Code => ({
   type: 'code',
+  id: guid(),
   language: 'python',
-  children: [{ type: 'code_line', children: [{ text: '' }] }],
+  children: [{ type: 'code_line', id: guid(), children: [{ text: '' }] }],
 });
+export const inputRef = () => create<InputRef>({ type: 'input_ref' });
 
 // eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
@@ -67,7 +69,11 @@ export type ModelElement =
   | Code
   | CodeLine
   | Blockquote
-  | Hyperlink;
+  | Hyperlink
+  | InputRef;
+
+export const isModelElement = (n: Node): n is ModelElement =>
+  Element.isElement(n) && typeof n.type === 'string' && n.type in schema;
 
 export type TextElement =
   | Paragraph
@@ -209,6 +215,10 @@ export interface Hyperlink extends Element, Identifiable {
   target: string;
 }
 
+export interface InputRef extends Element, Identifiable {
+  type: 'input_ref';
+}
+
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
 
 export enum Marks {
@@ -268,7 +278,7 @@ export type SchemaConfig = {
   isBlock: boolean;
   isTopLevel: boolean;
   // eslint-disable-next-line
-  validChildren: Object,
+  validChildren: Object;
 };
 
 const header = {
@@ -304,7 +314,7 @@ export const schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
-    validChildren: {},
+    validChildren: toObj(['input_ref']),
   },
   h1: header,
   h2: header,
@@ -372,6 +382,12 @@ export const schema = {
   },
   a: {
     isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  input_ref: {
+    isVoid: true,
     isBlock: false,
     isTopLevel: false,
     validChildren: {},

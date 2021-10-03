@@ -3,7 +3,18 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+- Add multi input activity
+- Add multi input model validation
+- Add advanced section creation remix
+- Allow for section creation from course products
+- Add analytics / insights data export button
+
+## 0.13.3 (2021-09-30)
+
+### Bug Fixes
+- Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.4 (2021-10-03)
 ### Bug Fixes
@@ -16,13 +27,13 @@
 - Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.2 (2021-09-17)
+
 ### Bug Fixes
+
 - Fix activity choice icon selection in authoring
 - Fix targeted feedback not showing in delivery
 - Fix delivered activity choice input size changing with content
 - Fix an issue related to LTI roles and authorization
-
-### Enhancements
 
 ## 0.13.1 (2021-09-14)
 

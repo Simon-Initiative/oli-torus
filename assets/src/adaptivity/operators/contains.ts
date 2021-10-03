@@ -1,6 +1,11 @@
 import { isString, parseArray, parseNumString } from 'utils/common';
 
-const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOperator: boolean) => {
+const handleContainsOperator = (
+  factValue: any,
+  value: any,
+  isDoesNotContainsOperator: boolean,
+  isContainsAnyOperator = false,
+) => {
   // factValue contains value, can contain other items
   if (!value || !factValue) {
     return false;
@@ -43,8 +48,12 @@ const handleContainsOperator = (factValue: any, value: any, isDoesNotContainsOpe
           hitCount++;
         }
       });
-      if (hitCount === modifiedValue.length) {
+      if (isContainsAnyOperator && hitCount > 0) {
         return true;
+      } else if (hitCount === modifiedValue.length) {
+        return true;
+      } else {
+        return false;
       }
     }
   } else if (Array.isArray(factValue) && value) {
@@ -73,11 +82,11 @@ export const notContainsOperator = (factValue: any, value: any) =>
 
 export const containsAnyOfOperator = (factValue: any, value: any) =>
   // factValue contains any items in value
-  containsOperator(factValue, value);
+  handleContainsOperator(factValue, value, false, true);
 
 export const notContainsAnyOfOperator = (factValue: any, value: any) =>
   // factValue does not contain items in value
-  !containsAnyOfOperator(factValue, value);
+  !handleContainsOperator(factValue, value, false, true);
 
 export const containsOnlyOperator = (factValue: any, value: any) => {
   // factValue contains ONLY items in value

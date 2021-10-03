@@ -4,7 +4,7 @@ import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { isActive } from '../utils';
 
 const command: Command = {
-  execute: (context, editor, params) => {
+  execute: (context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;
 

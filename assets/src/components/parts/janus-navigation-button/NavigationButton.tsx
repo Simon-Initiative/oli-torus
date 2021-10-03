@@ -216,7 +216,25 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            // nothing to do
+            //as per the comments in the  ticket - At the end of a check event, the platform will set the .Selected property to false.
+            //This is so that on screens where the nav button is used to trigger some action on the current screen, and not navigate to a different screen,
+            //the button will reset
+            setButtonSelected(false);
+            props.onSave({
+              id: `${id}`,
+              responses: [
+                {
+                  key: 'Selected',
+                  type: CapiVariableTypes.BOOLEAN,
+                  value: false,
+                },
+                {
+                  key: 'selected',
+                  type: CapiVariableTypes.BOOLEAN,
+                  value: false,
+                },
+              ],
+            });
             break;
           case NotificationType.STATE_CHANGED:
             {
