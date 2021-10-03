@@ -25,7 +25,7 @@ defmodule OliWeb.PaymentController do
       conn
       |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
     else
-      Application.fetch_env!(:oli, :payment_provider)[:provider]
+      Application.fetch_env!(:oli, :payment_provider)
       |> apply(:index, [conn, section, user])
     end
   end

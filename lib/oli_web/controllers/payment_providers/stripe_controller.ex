@@ -43,6 +43,10 @@ defmodule OliWeb.PaymentProviders.StripeController do
     end
   end
 
+  @doc """
+  Handles client-side request to create a payment intent. Returns the intent `clientSecret`
+  to the client as a response.
+  """
   def init_intent(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
 

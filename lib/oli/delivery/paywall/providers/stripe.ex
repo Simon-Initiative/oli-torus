@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Paywall.Providers.Stripe do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
+  import Oli.HTTP
 
   @zero_decimal_currencies ~w"bif clp djf gnf jpy kmf krw mga pyg rwf ugx vnd vuv xaf xof xpf"
   @zero_decimal_currencies_set MapSet.new(@zero_decimal_currencies)
@@ -63,7 +64,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
       "Content-Type": "application/x-www-form-urlencoded"
     ]
 
-    case HTTPoison.post(
+    case http().post(
            "https://api.stripe.com/v1/payment_intents",
            body,
            headers
@@ -71,7 +72,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
       {:ok, %{status_code: 200, body: body}} ->
         intent = Poison.decode!(body)
 
-        %{"client_secret" => client_secret, "id" => id} = intent
+        %{"id" => id} = intent
 
         case Oli.Delivery.Paywall.create_payment(%{
                type: :direct,
@@ -89,7 +90,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
         end
 
       _ ->
-        {:error, "Coult not create stripe intent"}
+        {:error, "Could not create stripe intent"}
     end
   end
 
@@ -117,6 +118,9 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
           {:ok, _} -> {:ok, section}
           _ -> {:error, "Could not finalize payment"}
         end
+
+      _ ->
+        {:error, "Payment already finalized"}
     end
   end
 end

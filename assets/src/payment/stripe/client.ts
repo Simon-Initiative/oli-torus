@@ -84,7 +84,11 @@ function doPurchase(stripe: Stripe, purchase: any) {
     body: JSON.stringify(purchase),
   })
     .then((result) => {
-      return result.json();
+      if (!result.ok) {
+        result.text().then((text) => showError(text));
+      } else {
+        return result.json();
+      }
     })
     .then((data) => {
       const elements = stripe.elements();

@@ -51,9 +51,8 @@ config :oli,
         System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
-  ]
-
-config :oli, :payment_provider, provider: OliWeb.PaymentProviders.StripeController
+  ],
+  payment_provider: OliWeb.PaymentProviders.StripeController
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
