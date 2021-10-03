@@ -201,54 +201,66 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     # Get the resource id associated with the source revision
 
-    with {:ok, %{id: resource_id}} <- Resources.get_resource_from_slug(source) |> trap_nil() do
-      source_index = Enum.find_index(container.children, fn id -> id == resource_id end)
+    result =
+      Repo.transaction(fn ->
+        with {:ok, %{id: resource_id}} <- Resources.get_resource_from_slug(source) |> trap_nil() do
+          source_index = Enum.find_index(container.children, fn id -> id == resource_id end)
 
-      # Adjust the insert index based on whether
-      # first removing the source would throw off the
-      # insertion by 1
-      insert_index =
-        case source_index do
-          nil ->
-            index
+          # Adjust the insert index based on whether
+          # first removing the source would throw off the
+          # insertion by 1
+          insert_index =
+            case source_index do
+              nil ->
+                index
 
-          s ->
-            if s < index do
-              index - 1
-            else
-              index
+              s ->
+                if s < index do
+                  index - 1
+                else
+                  index
+                end
             end
+
+          # Apply the reordering in a way that is as robust as possible to situations
+          # where the user that originated the reorder was looking at an out of date
+          # version of the page
+
+          # Use filter here to remove the source from anywhere that it was actually found
+          children =
+            Enum.filter(container.children, fn id -> id !== resource_id end)
+            # And insert_at to insert it, in a way that is robust to index positions that
+            # don't even make sense
+            |> List.insert_at(insert_index, resource_id)
+
+          # Create a change that reorders the children
+          reordering = %{
+            children: children,
+            author_id: author.id
+          }
+
+          # Apply that change to the container, generating a new revision
+          case ChangeTracker.track_revision(project.slug, container, reordering) do
+            {:ok, rev} ->
+              updated_container = Oli.Repo.get(Oli.Resources.Revision, rev.revision_id)
+
+              {updated_container, rev}
+
+            e ->
+              Repo.rollback(e)
+          end
+        else
+          _ -> Repo.rollback(:not_found)
         end
+      end)
 
-      # Apply the reordering in a way that is as robust as possible to situations
-      # where the user that originated the reorder was looking at an out of date
-      # version of the page
+    case result do
+      {:ok, {updated_container, rev}} ->
+        Broadcaster.broadcast_revision(updated_container, project.slug)
+        {:ok, rev}
 
-      # Use filter here to remove the source from anywhere that it was actually found
-      children =
-        Enum.filter(container.children, fn id -> id !== resource_id end)
-        # And insert_at to insert it, in a way that is robust to index positions that
-        # don't even make sense
-        |> List.insert_at(insert_index, resource_id)
-
-      # Create a change that reorders the children
-      reordering = %{
-        children: children,
-        author_id: author.id
-      }
-
-      # Apply that change to the container, generating a new revision
-      case ChangeTracker.track_revision(project.slug, container, reordering) do
-        {:ok, rev} ->
-          updated_container = Oli.Repo.get(Oli.Resources.Revision, rev.revision_id)
-          Broadcaster.broadcast_revision(updated_container, project.slug)
-          {:ok, rev}
-
-        result ->
-          result
-      end
-    else
-      _ -> {:error, :not_found}
+      e ->
+        e
     end
   end
 
