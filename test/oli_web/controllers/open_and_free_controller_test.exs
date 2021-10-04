@@ -40,13 +40,6 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     end
   end
 
-  describe "new open_and_free" do
-    test "renders form", %{conn: conn} do
-      conn = get(conn, Routes.open_and_free_path(conn, :new))
-      assert html_response(conn, 200) =~ "Create Open and Free Section"
-    end
-  end
-
   describe "create open_and_free" do
     setup [:create_fixtures]
 
@@ -88,11 +81,6 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision1.slug))
 
       assert html_response(conn, 200) =~ "<h1 class=\"title\">"
-    end
-
-    test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.open_and_free_path(conn, :create), section: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Create Open and Free Section"
     end
   end
 

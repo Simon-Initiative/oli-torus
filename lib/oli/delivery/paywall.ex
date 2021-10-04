@@ -1,8 +1,11 @@
 defmodule Oli.Delivery.Paywall do
+  import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Paywall.Discount
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Institutions.Institution
 
   @maximum_batch_size 500
 
@@ -89,6 +92,61 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Given a section blueprint (aka a product), calculate the cost to use this product for
+  a specific insituttion, taking into account any product-wide and product-specific discounts
+  this instituttion has.
+
+  Returns {:ok, %Money{}} or {:error, reason}
+  """
+  def calculate_product_cost(
+        %Section{type: :blueprint, requires_payment: false},
+        _
+      ),
+      do: {:ok, Money.new(:USD, 0)}
+
+  def calculate_product_cost(
+        %Section{type: :blueprint, requires_payment: true, amount: amount},
+        nil
+      ),
+      do: {:ok, amount}
+
+  def calculate_product_cost(
+        %Section{type: :blueprint, requires_payment: true, id: id, amount: amount},
+        %Institution{id: institution_id}
+      ) do
+    discounts =
+      from(d in Discount,
+        where:
+          (is_nil(d.section_id) and d.institution_id == ^institution_id) or
+            (d.section_id == ^id and d.institution_id == ^institution_id),
+        select: d
+      )
+      |> Repo.all()
+
+    # Remove any institution-wide discounts if an institution and section specific discount exists
+    discounts =
+      case Enum.any?(discounts, fn d -> !is_nil(d.section_id) end) do
+        true ->
+          Enum.filter(discounts, fn d -> !is_nil(d.section_id) end)
+
+        false ->
+          discounts
+      end
+
+    # Now calculate the product cost, taking into account a discount
+    case discounts do
+      [] ->
+        {:ok, amount}
+
+      [%Discount{type: :percentage, percentage: percentage}] ->
+        Money.mult(amount, percentage)
+
+      [%Discount{amount: amount}] ->
+        {:ok, amount}
+    end
+  end
+
+  @doc """
   Creates a payment.
   ## Examples
       iex> create_payment(%{field: value})
@@ -99,6 +157,20 @@ defmodule Oli.Delivery.Paywall do
   def create_payment(attrs \\ %{}) do
     %Payment{}
     |> Payment.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a discount.
+  ## Examples
+      iex> create_discount(%{field: value})
+      {:ok, %Discount{}}
+      iex> create_discount(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_discount(attrs \\ %{}) do
+    %Discount{}
+    |> Discount.changeset(attrs)
     |> Repo.insert()
   end
 end

@@ -20,6 +20,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     DeleteModal
   }
 
+  alias Oli.Publishing.ChangeTracker
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
@@ -54,12 +55,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       # Implicitly routing to root container or explicitly routing to sub-container
       true ->
-        container =
-          if is_nil(container_slug) do
-            root_container
-          else
-            AuthoringResolver.from_revision_slug(project_slug, container_slug)
-          end
+        {:ok, container} = load_and_scrub_container(container_slug, project_slug, root_container)
 
         children = ContainerEditor.list_all_container_children(container, project)
 
@@ -97,6 +93,39 @@ defmodule OliWeb.Curriculum.ContainerLive do
            numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
            dragging: nil
          )}
+    end
+  end
+
+  # Load either a specific container, or if the slug is nil the root. After loaded,
+  # scrub the container's children to ensure that there a no duplicate ids that may
+  # have crept in.
+  defp load_and_scrub_container(container_slug, project_slug, root_container) do
+    container =
+      if is_nil(container_slug) do
+        root_container
+      else
+        AuthoringResolver.from_revision_slug(project_slug, container_slug)
+      end
+
+    {deduped, _} =
+      Enum.reduce(container.children, {[], MapSet.new()}, fn id, {all, map} ->
+        case MapSet.member?(map, id) do
+          true -> {all, map}
+          false -> {[id | all], MapSet.put(map, id)}
+        end
+      end)
+
+    # Now see if the deduping actually led to any change in the number of children,
+    # remembering though that the deduped children ids are in reverse order.
+    if length(deduped) != length(container.children) do
+      Repo.transaction(fn ->
+        ChangeTracker.track_revision(project_slug, container, %{
+          # restore correct order
+          children: Enum.reverse(deduped)
+        })
+      end)
+    else
+      {:ok, container}
     end
   end
 
