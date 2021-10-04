@@ -8,7 +8,6 @@ export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
   showDataTip: boolean;
   showValueLabels: boolean;
   showTicks: boolean;
-  showThumbByDefault: boolean;
   invertScale: boolean;
   minimum: number;
   maximum: number;
@@ -42,10 +41,6 @@ export const schema: JSONSchema7Object = {
   },
   showTicks: {
     title: 'Show Ticks',
-    type: 'boolean',
-  },
-  showThumbByDefault: {
-    title: 'Thumb By Default',
     type: 'boolean',
   },
   invertScale: {

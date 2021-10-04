@@ -219,6 +219,15 @@ defmodule OliWeb.ProjectController do
     )
   end
 
+  def download_analytics(conn, _project_params) do
+    project = conn.assigns.project
+
+    conn
+    |> send_download({:binary, Insights.export(project)},
+      filename: "analytics_#{project.slug}.zip"
+    )
+  end
+
   def clone_project(conn, _project_params) do
     case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
       {:ok, project} ->

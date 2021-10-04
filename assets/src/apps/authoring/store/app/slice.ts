@@ -1,4 +1,5 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { Activity } from 'data/content/resource';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { RootState } from '../rootReducer';
 
@@ -40,6 +41,7 @@ export interface AppState {
   currentRule: any;
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
+  copiedPart: any | null;
 }
 
 const initialState: AppState = {
@@ -56,6 +58,7 @@ const initialState: AppState = {
   currentRule: undefined,
   partComponentTypes: [],
   activityTypes: [],
+  copiedPart: null,
 };
 
 export interface AppConfig {
@@ -65,6 +68,7 @@ export interface AppConfig {
   revisionSlug?: string;
   partComponentTypes?: any[];
   activityTypes?: any[];
+  copiedPart?: any;
 }
 
 const slice: Slice<AppState> = createSlice({
@@ -79,6 +83,7 @@ const slice: Slice<AppState> = createSlice({
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
+      state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
     },
     setPanelState(
       state,
@@ -106,6 +111,9 @@ const slice: Slice<AppState> = createSlice({
     setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
       state.currentRule = action.payload.currentRule;
     },
+    setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
+      state.copiedPart = action.payload.copiedPart;
+    },
   },
 });
 
@@ -117,6 +125,7 @@ export const {
   setVisible,
   setRightPanelActiveTab,
   setCurrentRule,
+  setCopiedPart,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -144,6 +153,7 @@ export const selectCurrentRule = createSelector(
   selectState,
   (state: AppState) => state.currentRule,
 );
+export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
 

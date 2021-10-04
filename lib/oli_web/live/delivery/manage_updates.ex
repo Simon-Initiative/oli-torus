@@ -12,6 +12,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias Oli.Publishing
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.Publication
+  alias OliWeb.Router.Helpers, as: Routes
 
   def mount(
         _params,
@@ -42,11 +43,32 @@ defmodule OliWeb.Delivery.ManageUpdates do
     end
   end
 
+  def mount(
+        %{
+          "section_slug" => product_slug
+        },
+        %{
+          "current_author_id" => current_author_id
+        },
+        socket
+      ) do
+    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(product_slug, current_author_id) do
+      init_state(
+        socket,
+        Sections.get_section_by(slug: product_slug),
+        Routes.live_path(socket, OliWeb.Products.DetailsView, product_slug)
+      )
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
+  end
+
   def init_state(socket, section, redirect_after_apply) do
     updates = Sections.check_for_available_publication_updates(section)
 
     socket =
       socket
+      |> assign(:title, "Manage Updates")
       |> assign(:section, section)
       |> assign(:updates, updates)
       |> assign(:modal, nil)
@@ -193,16 +215,14 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      selection: %{project_id: project_id, publication_id: publication_id},
+      selection: %{publication_id: publication_id},
       redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
-    publication = Publishing.get_publication!(publication_id)
-
-    Repo.transaction(fn ->
-      Sections.update_section_project_publication(section, project_id, publication_id)
-      Sections.rebuild_section_resources(section: section, publication: publication)
-    end)
+    Sections.apply_publication_update(
+      section,
+      publication_id
+    )
 
     {:noreply,
      push_redirect(socket,

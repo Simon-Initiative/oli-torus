@@ -9,7 +9,6 @@ export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCs
   showLabel: boolean;
   label: string;
   unitsLabel: string;
-  deleteEnabled: boolean;
   enabled: boolean;
   showIncrementArrows: boolean;
   prompt: string;
@@ -50,10 +49,6 @@ export const schema: JSONSchema7Object = {
     type: 'string',
     description: 'text label appended to the input',
   },
-  deleteEnabled: {
-    title: 'Delete Enabled',
-    type: 'boolean',
-  },
   enabled: {
     title: 'Enabled',
     type: 'boolean',
@@ -83,8 +78,7 @@ export const createSchema = (): Partial<InputNumberModel> => ({
   showIncrementArrows: false,
   showLabel: true,
   label: 'How many?',
-  unitsLabel: 'quarks',
-  deleteEnabled: true,
+  unitsLabel: 'units',
   requireManualGrading: false,
   maxManualGrade: 0,
   maxValue: 1,

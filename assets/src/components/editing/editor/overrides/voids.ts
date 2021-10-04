@@ -1,5 +1,5 @@
-import { Editor } from 'slate';
 import { schema } from 'data/content/model';
+import { Editor } from 'slate';
 
 // Override isVoid to incorporate our schema's opinion on which
 export const withVoids = (editor: Editor) => {

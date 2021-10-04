@@ -680,3 +680,13 @@ $panel-section-title-bar-color: #e8ebed;
     color: $panel-font-color-light;
   }
 }
+
+.modal-dialog.modal-90w {
+  width: 90%;
+  max-width: none!important;
+}
+
+.canvas-dots {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
+      repeat;
+}

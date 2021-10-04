@@ -43,8 +43,7 @@ defmodule OliWeb.Accounts.AccountsLive do
     SortableTableModel.new(
       rows: Accounts.list_authors(),
       column_specs: [
-        %ColumnSpec{name: :given_name, label: "First Name"},
-        %ColumnSpec{name: :family_name, label: "Last Name"},
+        %ColumnSpec{name: :name, label: "Name"},
         %ColumnSpec{
           name: :email,
           label: "Email",
@@ -72,8 +71,7 @@ defmodule OliWeb.Accounts.AccountsLive do
     SortableTableModel.new(
       rows: Accounts.list_users(),
       column_specs: [
-        %ColumnSpec{name: :given_name, label: "First Name"},
-        %ColumnSpec{name: :family_name, label: "Last Name"},
+        %ColumnSpec{name: :name, label: "Name"},
         %ColumnSpec{
           name: :email,
           label: "Email",

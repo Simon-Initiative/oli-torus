@@ -221,11 +221,15 @@ html.authoring {
     background-color: $gray-800;
   }
 
-  .container-editor .curriculum-entries {
+  .curriculum-editor .curriculum-entries {
     .curriculum-entry {
       background-color: $gray-900;
       border: 1px solid $gray-600;
       box-shadow: none;
+
+      &.active {
+        border-color: $primary;
+      }
     }
   }
 
@@ -274,14 +278,6 @@ html.authoring {
     &.active {
       .review-link-header {
         color: $gray-800;
-      }
-    }
-  }
-
-  .container-editor {
-    .curriculum-entry {
-      &.active {
-        background-color: $gray-600;
       }
     }
   }
