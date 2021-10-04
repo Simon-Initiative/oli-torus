@@ -22,7 +22,7 @@ defmodule Oli.Interop.Export do
        objectives(resources) ++
        activities(resources) ++
        pages(resources))
-    |> Utils.zip()
+    |> Utils.zip("export.zip")
   end
 
   defp tags(resources) do
