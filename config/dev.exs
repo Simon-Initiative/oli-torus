@@ -34,6 +34,10 @@ config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
 
 config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.LocalAdapter
 
+config :oli, :stripe_provider,
+  public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
+  private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
+
 force_ssl =
   case System.get_env("FORCE_SSL", "false") do
     "true" -> [rewrite_on: [:x_forwarded_proto]]
