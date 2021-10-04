@@ -291,17 +291,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               className={` slider `}
               id={internalId}
               onChange={handleSliderChange}
-              list={showTicks ? `lst${internalId}` : ''}
             />
-            {showTicks && (
-              <datalist id={`lst${internalId}`}>
-                <option value="0"></option>
-                <option value="25"></option>
-                <option value="50"></option>
-                <option value="75"></option>
-                <option value="100"></option>
-              </datalist>
-            )}
           </div>
         </div>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
