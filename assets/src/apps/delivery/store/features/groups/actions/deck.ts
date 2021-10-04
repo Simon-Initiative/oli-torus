@@ -138,6 +138,7 @@ export const initializeActivity = createAsyncThunk(
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: string[] = [];
     const globalizedInitState = initState.map((s: any) => {
+      arrInitFacts.push(`${s.target}`);
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
       }
@@ -150,7 +151,6 @@ export const initializeActivity = createAsyncThunk(
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };
       }
-      arrInitFacts.push(`${s.target}`);
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
 
