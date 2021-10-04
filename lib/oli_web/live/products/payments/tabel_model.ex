@@ -111,12 +111,12 @@ defmodule OliWeb.Products.Payments.TableModel do
     {fn r ->
        case Map.get(r.payment, spec.name) do
          nil ->
-           @fake_date_for_sorting
+           0
 
          d ->
-           d
+           DateTime.to_unix(d)
        end
-     end, {direction, Date}}
+     end, direction}
   end
 
   def render_gen_date_column(_, %{payment: payment}, _) do

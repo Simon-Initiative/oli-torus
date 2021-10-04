@@ -78,8 +78,10 @@ const loading = (isLoading: boolean) => {
   }
 };
 
-function doPurchase(stripe: Stripe, purchase: any) {
-  get('#submit').disabled = true;
+// Ask the Torus server to create an intent with Stripe, and
+// after that succeeds finalize the intent directly from the client
+// to Stripe.
+function doPurchase(stripe: Stripe, card: any, purchase: any) {
   fetch('/api/v1/payments/s/create-payment-intent', {
     method: 'POST',
     headers: {
@@ -95,44 +97,51 @@ function doPurchase(stripe: Stripe, purchase: any) {
       }
     })
     .then((data) => {
-      const elements = stripe.elements();
-      const style = {
-        base: {
-          color: '#32325d',
-          fontFamily: 'Arial, sans-serif',
-          fontSmoothing: 'antialiased',
-          fontSize: '16px',
-          '::placeholder': {
-            color: '#32325d',
-          },
-        },
-        invalid: {
-          fontFamily: 'Arial, sans-serif',
-          color: '#fa755a',
-          iconColor: '#fa755a',
-        },
-      };
-      const card = elements.create('card', { style: style });
-      // Stripe injects an iframe into the DOM
-      card.mount('#card-element');
-      card.on('change', function (event: any) {
-        // Disable the Pay button if there are no card details in the Element
-        get('#submit').disabled = event.empty;
-        get('#card-error').textContent = event.error ? event.error.message : '';
-      });
-      const form = document.getElementById('payment-form') as any;
-      form.addEventListener('submit', (event: any) => {
-        event.preventDefault();
-        // Complete payment when the submit button is clicked
-        payWithCard(stripe, card, data.clientSecret);
-      });
+      payWithCard(stripe, card, data.clientSecret);
     });
+}
+
+// Create and init the payment form
+function initPaymentForm(stripe: Stripe, purchase: any) {
+  get('#submit').disabled = true;
+
+  const elements = stripe.elements();
+  const style = {
+    base: {
+      color: '#32325d',
+      fontFamily: 'Arial, sans-serif',
+      fontSmoothing: 'antialiased',
+      fontSize: '16px',
+      '::placeholder': {
+        color: '#32325d',
+      },
+    },
+    invalid: {
+      fontFamily: 'Arial, sans-serif',
+      color: '#fa755a',
+      iconColor: '#fa755a',
+    },
+  };
+  const card = elements.create('card', { style: style });
+  // Stripe injects an iframe into the DOM
+  card.mount('#card-element');
+  card.on('change', function (event: any) {
+    // Disable the Pay button if there are no card details in the Element
+    get('#submit').disabled = event.empty;
+    get('#card-error').textContent = event.error ? event.error.message : '';
+  });
+  const form = document.getElementById('payment-form') as any;
+  form.addEventListener('submit', (event: any) => {
+    event.preventDefault();
+    // Complete payment when the submit button is clicked
+    doPurchase(stripe, card, purchase);
+  });
 }
 
 function makePurchase(key: string, purchase: any) {
   loadStripe(key).then((stripe) => {
     if (stripe !== null) {
-      doPurchase(stripe, purchase);
+      initPaymentForm(stripe, purchase);
     }
   });
 }

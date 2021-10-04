@@ -56,8 +56,10 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
     # if the user has a verified email address, we include it to send
     # a receipt
     with_verified_email =
-      if user.email_verified do
+      if user.email_confirmed_at do
         %{receipt_email: user.email}
+      else
+        %{}
       end
 
     body =
