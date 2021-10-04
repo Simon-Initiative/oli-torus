@@ -49,6 +49,16 @@ const Adaptive = (
     [props.onCustomEvent, props.editMode, selectedPartId],
   );
 
+  const handleCopyComponent = useCallback(
+    async (selectedPart: any) => {
+      console.log('AUTHOR PART COPY', { selectedPart });
+      if (props.onCustomEvent) {
+        const result = await props.onCustomEvent('copyPart', { copiedPart: selectedPart });
+      }
+      //dispatch(setCopiedPart({ copiedPart: selectedPart }));
+    },
+    [props.onCustomEvent],
+  );
   return (
     <LayoutEditor
       id={props.model.id || ''}
@@ -59,6 +69,7 @@ const Adaptive = (
       selected={selectedPartId}
       parts={parts}
       onChange={handleLayoutChange}
+      onCopyPart={handleCopyComponent}
       onSelect={handlePartSelect}
     />
   );
