@@ -89,8 +89,10 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           className="form-control form-control-sm"
           id={`action-feedback-${uuid}`}
           placeholder="Enter feedback"
+          disabled={false}
+          onClick={handleShowFeedbackClick}
           value={fakeFeedback}
-          onChange={(e) => setFakeFeedback(e.target.value)}
+          // onChange={(e) => setFakeFeedback(e.target.value)}
           // onBlur={(e) => handleTargetChange(e)}
           title={fakeFeedback}
         />

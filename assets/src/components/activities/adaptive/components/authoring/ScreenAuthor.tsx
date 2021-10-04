@@ -1,3 +1,4 @@
+import ConfigurationModal from 'apps/authoring/components/EditingCanvas/ConfigurationModal';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import PropertyEditor from 'apps/authoring/components/PropertyEditor/PropertyEditor';
 import partSchema, {
@@ -110,6 +111,8 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
   const [selectedPartId, setSelectedPartId] = useState('');
 
   const [partsList, setPartsList] = useState<AnyPartComponent[]>([]);
+
+  const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
 
   useEffect(() => {
     // console.log('SA:Screen Changed', { screen });
@@ -280,43 +283,74 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
 
   const canvasRef = useRef<any>(null);
 
+  const configEditorId = `config-editor-${screen.id}`;
+
+  const handlePartConfigure = async (part: any) => {
+    console.log('[handlePartConfigure]', { part });
+    setShowConfigModal(true);
+  };
+
+  const handlePartCancelConfigure = async (partId: string) => {
+    console.log('[handlePartCancelConfigure]', { partId });
+    setShowConfigModal(false);
+  };
+
   return (
-    <Container>
-      <Row style={{ padding: 2, borderBottom: '2px solid #eee' }}>
-        <Col>
-          <AddPartToolbar
-            partTypes={allowedParts}
-            priorityTypes={allowedParts}
-            onAdd={handleAddPart}
-          />
-        </Col>
-      </Row>
-      <Row style={{ minHeight: (currentScreenData.custom.height || 0) + 100 }}>
-        <Col ref={canvasRef} className="canvas-dots" style={{ paddingTop: 50, paddingBottom: 50 }}>
-          <LayoutEditor
-            id="screen-designer-1"
-            hostRef={canvasRef.current}
-            width={screenWidth}
-            height={screenHeight}
-            backgroundColor={screenBackgroundColor}
-            parts={partsList}
-            selected={selectedPartId}
-            onChange={handleEditorChange}
-            onSelect={handleEditorSelect}
-          />
-        </Col>
-        <Col sm={3}>
-          <PropertyEditor
-            key={currentPropertyData.id || 'screen'}
-            schema={currentPropertySchema}
-            uiSchema={currentPropertyUiSchema}
-            value={currentPropertyData}
-            onChangeHandler={handlePropertyEditorChange}
-            triggerOnChange={true}
-          />
-        </Col>
-      </Row>
-    </Container>
+    <>
+      <ConfigurationModal
+        bodyId={configEditorId}
+        isOpen={showConfigModal}
+        onClose={() => {
+          setShowConfigModal(false);
+        }}
+        onSave={() => {
+          setShowConfigModal(false);
+        }}
+      />
+      <Container>
+        <Row style={{ padding: 2, borderBottom: '2px solid #eee' }}>
+          <Col>
+            <AddPartToolbar
+              partTypes={allowedParts}
+              priorityTypes={allowedParts}
+              onAdd={handleAddPart}
+            />
+          </Col>
+        </Row>
+        <Row style={{ minHeight: (currentScreenData.custom.height || 0) + 100 }}>
+          <Col
+            ref={canvasRef}
+            className="canvas-dots"
+            style={{ paddingTop: 50, paddingBottom: 50 }}
+          >
+            <LayoutEditor
+              id="screen-designer-1"
+              hostRef={canvasRef.current}
+              width={screenWidth}
+              height={screenHeight}
+              backgroundColor={screenBackgroundColor}
+              parts={partsList}
+              selected={selectedPartId}
+              onChange={handleEditorChange}
+              onSelect={handleEditorSelect}
+              onConfigurePart={handlePartConfigure}
+              onCancelConfigurePart={handlePartCancelConfigure}
+              configurePortalId={configEditorId}
+            />
+          </Col>
+          <Col sm={3}>
+            <PropertyEditor
+              key={currentPropertyData.id || 'screen'}
+              schema={currentPropertySchema}
+              uiSchema={currentPropertyUiSchema}
+              value={currentPropertyData}
+              onChangeHandler={handlePropertyEditorChange}
+              triggerOnChange={true}
+            />
+          </Col>
+        </Row>
+      </Container>
+    </>
   );
 };
 
