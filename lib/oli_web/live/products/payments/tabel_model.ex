@@ -85,8 +85,8 @@ defmodule OliWeb.Products.Payments.TableModel do
   end
 
   def render_details_column(assigns, %{payment: payment}, _) do
-    case payment.provider_type do
-      :stripe ->
+    case {payment.type, payment.provider_type} do
+      {:direct, :stripe} ->
         ~F"""
         <a href={"https://dashboard.stripe.com/test/payments/#{payment.provider_payload["id"]}"}>View <i class="las la-external-link-alt ml-1"></i></a>
         """

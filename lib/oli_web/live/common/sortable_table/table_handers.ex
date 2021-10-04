@@ -35,7 +35,11 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       alias OliWeb.Common.Table.SortableTableModel
       alias OliWeb.Router.Helpers, as: Routes
 
-      def handle_event("change_filter", %{"text" => filter}, socket) do
+      def handle_event("change_filter", %{"value" => filter}, socket) do
+        {:noreply, assign(socket, filter: filter)}
+      end
+
+      def handle_event("apply_filter", _, socket) do
         {:noreply,
          push_patch(socket,
            to:
@@ -44,7 +48,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                get_patch_params(
                  socket.assigns.table_model,
                  socket.assigns.offset,
-                 filter
+                 socket.assigns.filter
                )
              )
          )}
@@ -74,7 +78,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                get_patch_params(
                  socket.assigns.table_model,
                  String.to_integer(offset),
-                 socket.assigns.filter
+                 socket.assigns.applied_filter
                )
              )
          )}
@@ -94,7 +98,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
            to:
              @table_push_patch_path.(
                socket,
-               get_patch_params(table_model, offset, socket.assigns.filter)
+               get_patch_params(table_model, offset, socket.assigns.applied_filter)
              )
          )}
       end
@@ -140,6 +144,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
          assign(socket,
            table_model: table_model,
            offset: offset,
+           applied_filter: filter,
            filter: filter,
            total_count: length(filtered)
          )}

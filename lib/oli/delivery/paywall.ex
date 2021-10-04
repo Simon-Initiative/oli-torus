@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Paywall do
         Oli.Repo,
         "SELECT * FROM (SELECT trunc(random() * (10000000000 - 100000000) + 100000000) AS new_id
         FROM generate_series(1, #{count})) AS x
-        WHERE x.new_id NOT IN (SELECT code FROM payments)",
+        WHERE x.new_id NOT IN (SELECT code FROM payments WHERE type = \'deferred\')",
         []
       )
 
@@ -137,7 +137,8 @@ defmodule Oli.Delivery.Paywall do
       {:ok, %{num_rows: ^count, rows: rows}} ->
         {:ok, List.flatten(rows) |> Enum.map(fn c -> trunc(c) end)}
 
-      {:error, _} ->
+      {:error, e} ->
+        IO.inspect(e)
         {:error, "could not generate random codes"}
     end
   end

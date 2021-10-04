@@ -19,6 +19,7 @@ defmodule OliWeb.Products.PaymentsView do
   data offset, :integer, default: 0
   data limit, :integer, default: 20
   data filter, :string, default: ""
+  data applied_filter, :string, default: ""
 
   @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/2
   @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
@@ -83,12 +84,12 @@ defmodule OliWeb.Products.PaymentsView do
 
       <hr class="mt-5 mb-5"/>
 
-      <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
+      <Filter apply={"apply_filter"} change={"change_filter"} reset="reset_filter"/>
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@filter}
+        filter={@applied_filter}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
