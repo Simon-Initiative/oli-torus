@@ -3,8 +3,6 @@ defmodule OliWeb.Products.Payments.TableModel do
 
   use Surface.LiveComponent
 
-  @fake_date_for_sorting ~D[1984-07-01]
-
   def new(payments) do
     SortableTableModel.new(
       rows: payments,
