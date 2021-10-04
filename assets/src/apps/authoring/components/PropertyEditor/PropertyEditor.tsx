@@ -39,7 +39,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
       schema={schema}
       formData={formData}
       onChange={(e) => {
-        console.log('ONCHANGE P EDITOR', e.formData);
+        console.log('ONCHANGE P EDITOR', e);
         const updatedData = e.formData;
         setFormData(updatedData);
         if (triggerOnChange) {

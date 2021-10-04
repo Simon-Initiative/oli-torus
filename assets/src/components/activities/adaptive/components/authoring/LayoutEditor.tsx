@@ -15,9 +15,12 @@ interface LayoutEditorProps {
   parts: AnyPartComponent[];
   selected: string;
   hostRef?: HTMLElement;
+  configurePortalId?: string;
   onChange: (parts: AnyPartComponent[]) => void;
   onSelect: (partId: string) => void;
   onCopyPart?: (part: any) => Promise<any>;
+  onConfigurePart?: (part: any) => Promise<any>;
+  onCancelConfigurePart?: (partId: string) => Promise<any>;
 }
 
 const defaultHandler = async () => {
@@ -38,6 +41,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const [isDragging, setIsDragging] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [toolbarPosition, setToolbarPosition] = useState({ x: 0, y: 0 });
+
+  const fallbackPortalId = `part-portal-${props.id}`;
+  const [portalId, setPortalId] = useState(props.configurePortalId || fallbackPortalId);
+
+  useEffect(() => {
+    setPortalId(props.configurePortalId || fallbackPortalId);
+  }, [props.configurePortalId]);
 
   // this effect keeps the local parts state in sync with the props
   useEffect(() => {
@@ -161,7 +171,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartConfigure = useCallback(
     async (partId, configure) => {
-      console.log('AUTHOR PART CONFIGURE', { configurePartId, partId, configure });
+      console.log('AUTHOR PART CONFIGURE', { configurePartId, partId, configure, portalId });
       if (partId !== selectedPartId) {
         console.error('trying to enable configure for a not selected partId!');
         return;
@@ -171,12 +181,15 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       }
 
       if (configure) {
+        if (props.onConfigurePart) {
+          props.onConfigurePart(partId);
+        }
         setConfigurePartId(partId);
       } else {
         setConfigurePartId('');
       }
     },
-    [selectedPartId, configurePartId],
+    [selectedPartId, configurePartId, portalId],
   );
 
   const handlePartDelete = useCallback(async () => {
@@ -226,12 +239,10 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   const handlePartCancelConfigure = useCallback(
     async ({ id }: { id: string }) => {
       console.log('AUTHOR PART CANCEL CONFIGURE', { id, configurePartId });
-      if (!configurePartId) {
-        // why is this necessary?
-        setConfigurePartId('');
-        return true;
-      }
-      if (id === configurePartId) {
+      if (!configurePartId || id === configurePartId) {
+        if (props.onCancelConfigurePart) {
+          props.onCancelConfigurePart(configurePartId);
+        }
         setConfigurePartId('');
         return true;
       }
@@ -358,7 +369,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           style={{ display: configurePartId.trim() ? 'block' : 'none' }}
           onClick={handlePortalBgClick}
         >
-          <div id={`part-portal-${props.id}`} className="part-config-container-inner"></div>
+          <div id={fallbackPortalId} className="part-config-container-inner"></div>
         </div>
         <div
           id={`active-selection-toolbar-${props.id}`}
@@ -415,7 +426,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             state: {},
             configureMode: part.id === configurePartId,
             editMode: true,
-            portal: `part-portal-${props.id}`,
+            portal: portalId,
             onInit: defaultHandler,
             onReady: defaultHandler,
             onSave: defaultHandler,

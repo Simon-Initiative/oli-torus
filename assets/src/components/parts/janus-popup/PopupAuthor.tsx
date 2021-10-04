@@ -83,16 +83,21 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     setInConfigureMode(false);
   };
 
+  const portalEl = document.getElementById(props.portal) as Element;
+
   const Designer = () => {
     // console.log('PopupAuthor: Designer', props.portal);
-    return ReactDOM.createPortal(
-      <PopupWindowDesigner
-        config={windowConfig}
-        parts={windowParts}
-        onSave={handleDesignerSave}
-        onCancel={handleDesignerCancel}
-      />,
-      document.getElementById(props.portal) as Element,
+    return (
+      portalEl &&
+      ReactDOM.createPortal(
+        <PopupWindowDesigner
+          config={windowConfig}
+          parts={windowParts}
+          onSave={handleDesignerSave}
+          onCancel={handleDesignerCancel}
+        />,
+        portalEl,
+      )
     );
   };
 

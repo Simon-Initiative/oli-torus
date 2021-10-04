@@ -1,6 +1,5 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import { setRightPanelActiveTab } from 'apps/authoring/store/app/slice';
-import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { ActivityModelSchema } from 'components/activities/types';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,8 +7,11 @@ import { useDispatch, useSelector } from 'react-redux';
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
+  configEditorId: string;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
+  onConfigurePart?: (part: any) => Promise<any>;
+  onCancelConfigurePart?: (partId: string) => Promise<any>;
   onPartChangePosition?: (activityId: string, partId: string, dragData: any) => Promise<any>;
 }
 
@@ -18,8 +20,11 @@ interface AuthoringActivityRendererProps {
 const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   activityModel,
   editMode,
+  configEditorId,
   onSelectPart,
   onCopyPart,
+  onConfigurePart,
+  onCancelConfigurePart,
   onPartChangePosition,
 }) => {
   const dispatch = useDispatch();
@@ -45,6 +50,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     },
     authoringContext: JSON.stringify({
       selectedPartId,
+      configurePortalId: configEditorId,
     }),
   };
 
@@ -59,6 +65,12 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         }
         if (payload.eventName === 'copyPart' && onCopyPart) {
           result = await onCopyPart(payload.payload.copiedPart);
+        }
+        if (payload.eventName === 'configurePart' && onConfigurePart) {
+          result = await onConfigurePart(payload.payload.part);
+        }
+        if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
+          result = await onCancelConfigurePart(payload.payload.partId);
         }
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(

@@ -353,8 +353,11 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     </React.Fragment>
   );
 
+  const portalEl = document.getElementById(props.portal) as Element;
+
   const renderIt =
     inConfigureMode &&
+    portalEl &&
     ReactDOM.createPortal(
       <CapiVariablePicker
         label="Stage"
@@ -363,7 +366,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
         onSave={handleEditorSave}
         onCancel={handleEditorCancel}
       />,
-      document.getElementById(props.portal) as Element,
+      portalEl,
     );
   return ready ? (
     <React.Fragment>

@@ -1,11 +1,12 @@
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
+import ConfigurationModal from './ConfigurationModal';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -15,7 +16,9 @@ const EditingCanvas: React.FC = () => {
 
   const [currentActivity] = (currentActivityTree || []).slice(-1);
 
-  const [currentActivityId, setCurrentActivityId] = React.useState<string>('');
+  const [currentActivityId, setCurrentActivityId] = useState<string>('');
+
+  const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
 
   useEffect(() => {
     let current = null;
@@ -63,10 +66,12 @@ const EditingCanvas: React.FC = () => {
 
     return true;
   };
+
   const handlePartCopy = async (part: any) => {
     dispatch(setCopiedPart({ copiedPart: part }));
     return true;
   };
+
   const handleStageClick = (e: any) => {
     if (e.target.className !== 'aa-stage') {
       return;
@@ -77,12 +82,24 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
+  const handlePartConfigure = async (part: any) => {
+    console.log('[handlePartConfigure]', { part });
+    setShowConfigModal(true);
+  };
+
+  const handlePartCancelConfigure = async (partId: string) => {
+    console.log('[handlePartCancelConfigure]', { partId });
+    setShowConfigModal(false);
+  };
+
   // console.log('EC: RENDER', { layers });
 
   useEffect(() => {
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentActivityId]);
+
+  const configEditorId = `config-editor-${currentActivityId}`;
 
   return (
     <React.Fragment>
@@ -93,12 +110,25 @@ const EditingCanvas: React.FC = () => {
               key={activity.id}
               activityModel={activity}
               editMode={activity.id === currentActivityId}
+              configEditorId={configEditorId}
               onSelectPart={handlePartSelect}
               onCopyPart={handlePartCopy}
+              onConfigurePart={handlePartConfigure}
+              onCancelConfigurePart={handlePartCancelConfigure}
               onPartChangePosition={handlePositionChanged}
             />
           ))}
       </section>
+      <ConfigurationModal
+        bodyId={configEditorId}
+        isOpen={showConfigModal}
+        onClose={() => {
+          setShowConfigModal(false);
+        }}
+        onSave={() => {
+          setShowConfigModal(false);
+        }}
+      />
     </React.Fragment>
   );
 };

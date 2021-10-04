@@ -333,5 +333,5 @@ export const transformSchemaToModel = (schema: Partial<PopupModel>) => {
 };
 
 export const getCapabilities = () => ({
-  configure: false, // temp disable for now
+  configure: true,
 });

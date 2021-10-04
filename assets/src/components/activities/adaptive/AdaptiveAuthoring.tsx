@@ -11,6 +11,7 @@ const Adaptive = (
   props: AuthoringElementProps<AdaptiveModelSchema> & { hostRef?: HTMLElement },
 ) => {
   const [selectedPartId, setSelectedPartId] = useState('');
+  const [configurePortalId, setConfigurePortalId] = useState('');
   const [parts, setParts] = useState<any[]>(props.model?.content?.partsLayout || []);
 
   // this effect keeps the local parts state in sync with the props
@@ -21,7 +22,9 @@ const Adaptive = (
   // this effect sets the selection from the outside based on authoring context
   useEffect(() => {
     if (props.authoringContext) {
+      console.log('[AdaptiveAuthoring] AuthoringContext: ', props.authoringContext);
       setSelectedPartId(props.authoringContext.selectedPartId);
+      setConfigurePortalId(props.authoringContext.configurePortalId || '');
     }
   }, [props.authoringContext]);
 
@@ -59,6 +62,31 @@ const Adaptive = (
     },
     [props.onCustomEvent],
   );
+
+  const handleConfigurePart = useCallback(
+    async (part: any) => {
+      console.log('AUTHOR PART CONFIGURE', { part });
+      if (props.onCustomEvent) {
+        const result = await props.onCustomEvent('configurePart', {
+          part,
+        });
+      }
+    },
+    [props.onCustomEvent],
+  );
+
+  const handleCancelConfigurePart = useCallback(
+    async (partId: string) => {
+      console.log('AUTHOR PART CANCEL CONFIGURE', { partId });
+      if (props.onCustomEvent) {
+        const result = await props.onCustomEvent('cancelConfigurePart', {
+          partId,
+        });
+      }
+    },
+    [props.onCustomEvent],
+  );
+
   return (
     <LayoutEditor
       id={props.model.id || ''}
@@ -70,6 +98,9 @@ const Adaptive = (
       parts={parts}
       onChange={handleLayoutChange}
       onCopyPart={handleCopyComponent}
+      onConfigurePart={handleConfigurePart}
+      onCancelConfigurePart={handleCancelConfigurePart}
+      configurePortalId={configurePortalId}
       onSelect={handlePartSelect}
     />
   );

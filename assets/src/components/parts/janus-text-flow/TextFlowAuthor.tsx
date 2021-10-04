@@ -269,16 +269,21 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     </div>
   );
 
-  const renderIt = inConfigureMode ? (
-    ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)
-  ) : (
-    <React.Fragment>
-      <style>
-        {/*
+  /* console.log('TF RENDER: ', { props }); */
+
+  const portalEl = document.getElementById(props.portal) as Element;
+
+  const renderIt =
+    inConfigureMode && !!portalEl ? (
+      ReactDOM.createPortal(<Editor />, portalEl)
+    ) : (
+      <React.Fragment>
+        <style>
+          {/*
         note these custom styles are for dealing with KIP / legacy content * that are applied
         we may need to do something else for the new theme and/or the themeless?
       */}
-        {`
+          {`
         .text-flow-authoring-preview {
           font-size: 13px;
         }
@@ -286,14 +291,14 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
           margin: 0;
         }
       `}
-      </style>
-      <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
-        {tree?.map((subtree: MarkupTree) =>
-          renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
-        )}
-      </div>
-    </React.Fragment>
-  );
+        </style>
+        <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
+          {tree?.map((subtree: MarkupTree) =>
+            renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
+          )}
+        </div>
+      </React.Fragment>
+    );
 
   return ready ? renderIt : null;
 };
