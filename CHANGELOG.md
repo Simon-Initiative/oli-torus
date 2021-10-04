@@ -5,6 +5,11 @@
 ### Bug Fixes
 ### Enhancements
 
+## 0.13.5 (2021-10-04)
+### Bug Fixes
+
+- Fix an issue where a selection fact change can break the page
+
 ## 0.13.4 (2021-10-03)
 ### Bug Fixes
 

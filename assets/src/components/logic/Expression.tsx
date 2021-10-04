@@ -66,10 +66,10 @@ const textFact = { value: 'text', label: 'Activity Content' };
 
 export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) => {
   const onChangeFact = (fact: string) => {
-    const updated = Object.assign({}, props.expression, { fact });
+    // change fact and reset the value list
+    const updated = Object.assign({}, props.expression, { fact, value: [] });
 
     // As facts are changed, ensure the operator remains valid for that fact
-
     if (
       operatorsByFact[fact].filter((fo) => fo.operator === props.expression.operator).length === 0
     ) {

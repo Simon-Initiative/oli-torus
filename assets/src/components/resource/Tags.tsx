@@ -19,7 +19,7 @@ export type TagsProps = {
 export const Tags = (props: TagsProps) => {
   const { tags, editMode, selected, onEdit, onRegisterNewTag } = props;
 
-  // Typeahed throws a bunch of warnings if it doesn't contain
+  // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
 
