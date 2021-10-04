@@ -90,7 +90,7 @@
 
 .select2-container {
   width: auto !important;
-  height: auto;
+  height: auto !important;
   min-height: 26px;
   padding: 2rem 0 0 0;
   max-width: calc(100vw - 34px) !important;
@@ -152,7 +152,7 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   border: none;
   width: auto;
   outline: 0;
-  height: auto;
+  height: auto !important;
 }
 
 .select2-container--default .select2-selection--single .select2-selection__rendered {
@@ -168,7 +168,6 @@ blockquote .select2-container--default .select2-selection--single .select2-selec
   border-radius: 3px 3px 0 0;
   background-color: #f8f9fa;
   transition: background-color 0.3s ease-in-out;
-  border-bottom: 1px solid #253445;
   display: inline-block;
   padding: 0;
   font-size: 1em;
@@ -354,6 +353,7 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   line-height: 1.85em;
   min-height: 30px;
   margin-top: 1px;
+  max-height: 30px;
 }
 
 h1 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
