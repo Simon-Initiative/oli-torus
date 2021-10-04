@@ -31,7 +31,7 @@ const getNodeText = (node: any): any => {
 
 const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   return (
-    <div>
+    <div style={{ marginLeft: 18 }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
         if (subtree.tag === 'p') {
@@ -74,18 +74,16 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           child.tag === 'span' && child.children.length === 0,
       ),
     );
-    if (hasImages || hasBlankSpans) {
-      if (columns === 1) {
-        mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
-      } else {
-        mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
-      }
-      mcqItemStyles.position = `absolute`;
-
-      if (index !== 0) {
-        mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
-      }
+    if (columns === 1) {
+      mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
+    } else {
+      mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
     }
+    if (index !== 0) {
+      mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
+    }
+    mcqItemStyles.position = `absolute`;
+
     mcqItemStyles.display = `inline-block`;
   }
   if (layoutType === 'verticalLayout' && overrideHeight) {
@@ -107,6 +105,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     <React.Fragment>
       <div style={mcqItemStyles}>
         <input
+          style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
           id={itemId}
           type={multipleSelection ? 'checkbox' : 'radio'}
