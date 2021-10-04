@@ -150,6 +150,7 @@ Oli.Delivery.Page.ObjectivesRollup.html
 Oli.Delivery.Page.PageContext.html
 Oli.Delivery.Paywall.Discount.html
 Oli.Delivery.Paywall.Payment.html
+Oli.Delivery.Paywall.Providers.Stripe.html
 Oli.Delivery.Paywall.html
 Oli.Delivery.Sections.AuthorsSections.html
 Oli.Delivery.Sections.Blueprint.html
@@ -203,6 +204,7 @@ Oli.PartComponents.PartComponentRegistration.html
 Oli.PartComponents.PartComponentRegistrationProject.html
 Oli.PartComponents.html
 Oli.Plugs.AuthorizeProject.html
+Oli.Plugs.EnforcePaywall.html
 Oli.Plugs.EnsureAdmin.html
 Oli.Plugs.LoadTestingCSRFBypass.html
 Oli.Plugs.MaybeEnrollOpenAndFreeUser.html
@@ -425,6 +427,10 @@ OliWeb.OpenAndFreeController.html
 OliWeb.OpenAndFreeView.html
 OliWeb.PageDeliveryController.html
 OliWeb.PageDeliveryView.html
+OliWeb.PaymentController.html
+OliWeb.PaymentProviders.StripeController.html
+OliWeb.PaymentProviders.StripeView.html
+OliWeb.PaymentView.html
 OliWeb.PlatformInstanceController.html
 OliWeb.PlatformInstanceView.html
 OliWeb.Plugs.Guest.html
@@ -452,6 +458,9 @@ OliWeb.Products.Details.Edit.html
 OliWeb.Products.DetailsView.html
 OliWeb.Products.Filter.html
 OliWeb.Products.Listing.html
+OliWeb.Products.Payments.CreateCodes.html
+OliWeb.Products.Payments.TableModel.html
+OliWeb.Products.PaymentsView.html
 OliWeb.Products.ProductsTableModel.html
 OliWeb.Products.ProductsView.html
 OliWeb.ProjectActivityController.html
@@ -503,8 +512,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-9cd820a6f9.js
-dist/sidebar_items-4cfeced768.js
+dist/search_items-5818dc44be.js
+dist/sidebar_items-b16c2a9218.js
 index.html
 license.html
 readme.html

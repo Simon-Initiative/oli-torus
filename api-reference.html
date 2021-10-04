@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.13.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-4cfeced768.js"></script>
+    <script src="dist/sidebar_items-b16c2a9218.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -1317,6 +1317,13 @@ be safely delivered to a browser in delivery model.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="Oli.Delivery.Paywall.Providers.Stripe.html">Oli.Delivery.Paywall.Providers.Stripe</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="Oli.Delivery.Sections.html">Oli.Delivery.Sections</a>
 
   </div>
@@ -1685,6 +1692,13 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Plugs.AuthorizeProject.html">Oli.Plugs.AuthorizeProject</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Plugs.EnforcePaywall.html">Oli.Plugs.EnforcePaywall</a>
 
   </div>
 
@@ -3427,6 +3441,34 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.PaymentController.html">OliWeb.PaymentController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.PaymentProviders.StripeController.html">OliWeb.PaymentProviders.StripeController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.PaymentProviders.StripeView.html">OliWeb.PaymentProviders.StripeView</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.PaymentView.html">OliWeb.PaymentView</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.PlatformInstanceController.html">OliWeb.PlatformInstanceController</a>
 
   </div>
@@ -3597,7 +3639,7 @@ when the client connects, or reconnects to the stateful view.
   <a href="#properties-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>product</strong> <em>:any, required: true</em></li></ul></div>
+<ul><li><strong>product</strong> <em>:any, required: true</em></li><li><strong>is_admin</strong> <em>:boolean, required: true</em></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -3639,7 +3681,7 @@ when the client connects, or reconnects to the stateful view.
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
 The session is signed and stored on the client, then provided back to the server
 when the client connects, or reconnects to the stateful view.
-.</li><li><strong>author</strong> <em>:any</em></li></ul></div>
+.</li><li><strong>author</strong> <em>:any</em></li><li><strong>is_admin</strong> <em>:boolean</em></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -3648,16 +3690,11 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-10" class="section-heading">
-  <a href="#properties-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Properties
-</h2>
-<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li></ul><h2 id="events-4" class="section-heading">
+    <div class="summary-synopsis"><h2 id="events-4" class="section-heading">
   <a href="#events-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
-<ul><li><strong>change, required: true</strong></li><li><strong>reset, required: true</strong></li></ul></div>
+<ul><li><strong>change, required: true</strong></li><li><strong>apply, required: true</strong></li><li><strong>reset, required: true</strong></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -3666,8 +3703,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-11" class="section-heading">
-  <a href="#properties-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-10" class="section-heading">
+  <a href="#properties-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-5" class="section-heading">
@@ -3679,7 +3716,24 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.Products.ProductsTableModel.html">OliWeb.Products.ProductsTableModel</a>
+    <a href="OliWeb.Products.Payments.CreateCodes.html">OliWeb.Products.Payments.CreateCodes</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-11" class="section-heading">
+  <a href="#properties-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>product_slug</strong> <em>:string, required: true</em></li><li><strong>count</strong> <em>:integer, required: true</em></li></ul><h2 id="events-6" class="section-heading">
+  <a href="#events-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>click, required: true</strong></li><li><strong>change, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.Payments.TableModel.html">OliWeb.Products.Payments.TableModel</a>
 
   </div>
 
@@ -3693,12 +3747,42 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.Products.ProductsView.html">OliWeb.Products.ProductsView</a>
+    <a href="OliWeb.Products.PaymentsView.html">OliWeb.Products.PaymentsView</a>
 
   </div>
 
     <div class="summary-synopsis"><h2 id="properties-13" class="section-heading">
   <a href="#properties-13" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.ProductsTableModel.html">OliWeb.Products.ProductsTableModel</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-14" class="section-heading">
+  <a href="#properties-14" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Products.ProductsView.html">OliWeb.Products.ProductsView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-15" class="section-heading">
+  <a href="#properties-15" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
