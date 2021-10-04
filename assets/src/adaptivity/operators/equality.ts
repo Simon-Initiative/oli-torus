@@ -16,6 +16,7 @@ export const isEqual = (factValue: any, value: any): boolean => {
   if (Array.isArray(factValue)) {
     let compareValue = value;
     const updatedFactValue = parseArray(factValue);
+    //Need to parse before we check "if" condition else it will fail for cases where value = '[0,0]'.
     const updatedValue = parseArray(value);
     if (Array.isArray(updatedValue)) {
       // ** We are doing this for the cases where factValue comes [2 , 5] but the values comes as ['2','5'] */
