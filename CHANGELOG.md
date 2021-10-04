@@ -11,6 +11,7 @@
 ### Bug Fixes
 
 - Add ability to download raw analytic data
+- Fix a style issue with the workspace footer
 
 ## 0.13.5 (2021-10-04)
 

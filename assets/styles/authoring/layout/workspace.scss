@@ -11,6 +11,7 @@ $workspace-sidebar-width: 65px;
   display: flex;
   background-color: $workspace-bg;
   flex-direction: column;
+  position: relative;
 
   .workspace-top {
     height: $workspace-header-height;
@@ -177,7 +178,6 @@ $workspace-sidebar-width: 65px;
         // margin: 10px 0;
         color: $workspace-sidebar-link-color;
       }
-
     }
 
     .dropdown-item {
