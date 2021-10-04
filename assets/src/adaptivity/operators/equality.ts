@@ -16,10 +16,11 @@ export const isEqual = (factValue: any, value: any): boolean => {
   if (Array.isArray(factValue)) {
     let compareValue = value;
     const updatedFactValue = parseArray(factValue);
-    if (Array.isArray(value)) {
+    const updatedValue = parseArray(value);
+    if (Array.isArray(updatedValue)) {
       // ** We are doing this for the cases where factValue comes [2 , 5] but the values comes as ['2','5'] */
       // ** DT - making sure that value is of array type else value.map() will throw error. */
-      compareValue = parseArray(value).sort();
+      compareValue = updatedValue.sort();
     }
 
     // ** DT - Sorting both arrays. depending upon user selection in UI the array sometimes comes
