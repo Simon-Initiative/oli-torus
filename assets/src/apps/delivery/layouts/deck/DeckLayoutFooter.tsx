@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { CSSSelector } from 'swiper/types/shared';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -502,6 +501,7 @@ const DeckLayoutFooter: React.FC = () => {
             </div>
             <style type="text/css" aria-hidden="true" />
             <div className="content" style={{ overflow: 'hidden auto !important' }}>
+              {/* TODO: snapshot method causes constant re-render (props change) */}
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}

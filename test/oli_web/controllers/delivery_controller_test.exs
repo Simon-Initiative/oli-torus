@@ -33,9 +33,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
 
       assert html_response(conn, 200) =~
-               "Let's get started by creating a section for your course."
-
-      assert html_response(conn, 200) =~ "Link an Existing Account"
+               "Let's create a new section for your course. Please select one of the options below:"
     end
 
     test "handles student with section", %{conn: conn, cache_keys: cache_keys} do
@@ -60,9 +58,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
 
       assert html_response(conn, 200) =~
-               "Let's get started by creating a section for your course."
-
-      assert html_response(conn, 200) =~ "Link an Existing Account"
+               "Let's create a new section for your course. Please select one of the options below:"
     end
 
     test "handles instructor with no section", %{conn: conn, cache_keys: cache_keys, user: user} do
@@ -73,7 +69,8 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_user_params(cache_keys.instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Select a Project</h3>"
+      assert html_response(conn, 200) =~
+               "Let's create a new section for your course. Please select one of the options below:"
     end
 
     test "handles instructor with section", %{conn: conn, cache_keys: cache_keys, user: user} do
@@ -100,7 +97,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_user_params(cache_keys.instructor_no_section)
         |> post(
           Routes.delivery_path(conn, :create_section, %{
-            publication_id: publication.id
+            source_id: "publication:#{publication.id}"
           })
         )
 

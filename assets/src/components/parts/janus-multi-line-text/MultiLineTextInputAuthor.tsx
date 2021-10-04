@@ -5,15 +5,27 @@ import { MultiLineTextModel } from './schema';
 const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextModel>> = (
   props,
 ) => {
-  const { model } = props;
+  const { id, model } = props;
 
-  const { x, y, z, width } = model;
-  const styles: CSSProperties = {
+  const {
+    label,
+    x = 0,
+    y = 0,
+    z = 0,
     width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
+    height,
+    prompt,
+    showLabel,
+    initValue,
+    showCharacterCount,
+  } = model;
+  const wrapperStyles: CSSProperties = {
+    width,
+  };
+  const inputStyles: CSSProperties = {
+    width,
+    height,
+    resize: 'none',
   };
 
   useEffect(() => {
@@ -22,8 +34,46 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
   }, []);
 
   return (
-    <div style={styles}>
-      <p>Multi-Line Text Input</p>
+    <div data-janus-type={tagName} className={`long-text-input`} style={wrapperStyles}>
+      <label
+        htmlFor={`${id}-input`}
+        style={{
+          display: showLabel ? 'inline-block' : 'none',
+        }}
+      >
+        {label}
+      </label>
+      <textarea
+        name={`name-${id}`}
+        id={`${id}-input`}
+        style={inputStyles}
+        placeholder={prompt}
+        value={initValue || ''}
+        disabled={true}
+      />
+      <div
+        title="Number of characters"
+        className="characterCounter"
+        style={{
+          padding: '0px',
+          color: 'rgba(0,0,0,0.6)',
+          display: showCharacterCount ? 'block' : 'none',
+          width: '100%',
+          fontSize: '12px',
+          fontFamily: 'Arial',
+          textAlign: 'right',
+        }}
+      >
+        <span
+          className={`span_${id}`}
+          style={{
+            padding: '0px',
+            fontFamily: 'Arial',
+          }}
+        >
+          {0}
+        </span>
+      </div>
     </div>
   );
 };

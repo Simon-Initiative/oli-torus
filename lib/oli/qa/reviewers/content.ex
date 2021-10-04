@@ -12,10 +12,15 @@ defmodule Oli.Qa.Reviewers.Content do
 
     review
     |> broken_uris(project_slug)
+    |> broken_multi_input_activities(project_slug)
     |> unfulfilled_selections(project_slug)
     |> Reviews.mark_review_done()
 
     project_slug
+  end
+
+  def broken_multi_input_activities(review, _project_slug) do
+    review
   end
 
   def broken_uris(review, project_slug) do

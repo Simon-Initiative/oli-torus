@@ -54,7 +54,7 @@ const ComponentSearchContextMenu: React.FC = () => {
     return `${paths?.images}/icons/${part.icon}`;
   };
 
-  console.log('ALL PARTS', { allParts, currentActivityTree });
+  // console.log('ALL PARTS', { allParts, currentActivityTree });
 
   return (
     paths && (

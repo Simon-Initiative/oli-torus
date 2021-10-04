@@ -4,12 +4,12 @@ import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/stor
 import { ActivityModelSchema } from 'components/activities/types';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
   onSelectPart?: (partId: string) => Promise<any>;
+  onCopyPart?: (part: any) => Promise<any>;
   onPartChangePosition?: (activityId: string, partId: string, dragData: any) => Promise<any>;
 }
 
@@ -19,6 +19,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   activityModel,
   editMode,
   onSelectPart,
+  onCopyPart,
   onPartChangePosition,
 }) => {
   const dispatch = useDispatch();
@@ -55,6 +56,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         let result = null;
         if (payload.eventName === 'selectPart' && onSelectPart) {
           result = await onSelectPart(payload.payload.id);
+        }
+        if (payload.eventName === 'copyPart' && onCopyPart) {
+          result = await onCopyPart(payload.payload.copiedPart);
         }
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(

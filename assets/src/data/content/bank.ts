@@ -1,6 +1,5 @@
-import { Objectives } from 'components/resource/Objectives';
-import { ObjectiveMap } from './activity';
 import { ResourceId } from 'data/types';
+import { ObjectiveMap } from './activity';
 
 export interface Logic {
   conditions: null | Expression | Clause;
@@ -77,7 +76,7 @@ function isEmptyValue(value: any) {
 
 // The idea here is to take a logic expression and adjust it to guarantee that it
 // will not produce an error when executed on the server.  Any expression whose value
-// is empty (an empty array or zero length string) will cause an erorr, so this impl
+// is empty (an empty array or zero length string) will cause an error, so this impl
 // seeks to find them and adjust to account for their removal.
 //
 // We leverage the fact that the UI is restricting logic to only contain one

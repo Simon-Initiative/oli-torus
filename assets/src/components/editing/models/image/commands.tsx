@@ -15,12 +15,7 @@ interface Props {
 const ImageModal = ({ onDone, onCancel, model }: Props) => {
   const [value, setValue] = useState(model.alt);
   return (
-    <Modal
-      onCancel={(e) => {
-        onCancel();
-      }}
-      onDone={() => onDone(value)}
-    >
+    <Modal onCancel={(_e) => onCancel()} onDone={() => onDone(value)}>
       <div>
         <h3 className="mb-2">Alternative Text</h3>
         <p className="mb-4">
@@ -38,7 +33,7 @@ const ImageModal = ({ onDone, onCancel, model }: Props) => {
           }}
         ></div>
         <input
-          className="settings-input"
+          className="form-control"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
@@ -58,9 +53,6 @@ export const initCommands = (
   const setAlt = (alt: string) => {
     onEdit({ alt });
   };
-  const setDisplay = (display: ContentModel.MediaDisplayMode) => {
-    onEdit({ display });
-  };
 
   return [
     [
@@ -69,8 +61,7 @@ export const initCommands = (
         icon: () => 'insert_photo',
         description: () => 'Select Image',
         command: {
-          execute: (context, editor) => {
-            const at = editor.selection as any;
+          execute: (context, _editor) => {
             selectImage(context.projectSlug, model.src).then((selection) =>
               Maybe.maybe(selection).caseOf({
                 just: (src) => setSrc(src),
@@ -79,7 +70,7 @@ export const initCommands = (
               }),
             );
           },
-          precondition: (editor) => {
+          precondition: (_editor) => {
             return true;
           },
         },
@@ -91,7 +82,7 @@ export const initCommands = (
         icon: () => '',
         description: () => 'Alt text',
         command: {
-          execute: (context, editor, params) => {
+          execute: (_context, _editor, _params) => {
             const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
             const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
 

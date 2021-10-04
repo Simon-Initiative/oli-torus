@@ -2,7 +2,7 @@
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
@@ -12,6 +12,7 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  triggerOnChange?: boolean;
 }
 
 const widgets: any = {
@@ -25,14 +26,32 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   uiSchema,
   value,
   onChangeHandler,
+  triggerOnChange = false,
 }) => {
-  /* console.log({ value, uiSchema }); */
+  const [formData, setFormData] = useState<any>(value);
+
+  useEffect(() => {
+    setFormData(value);
+  }, [value]);
+
   return (
     <Form
       schema={schema}
-      formData={value}
+      formData={formData}
       onChange={(e) => {
-        onChangeHandler(e.formData);
+        console.log('ONCHANGE P EDITOR', e.formData);
+        const updatedData = e.formData;
+        setFormData(updatedData);
+        if (triggerOnChange) {
+          // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
+          if (updatedData.id === formData.id) {
+            onChangeHandler(updatedData);
+          }
+        }
+      }}
+      onBlur={(...args) => {
+        // console.log('ONBLUR', { args, formData });
+        onChangeHandler(formData);
       }}
       uiSchema={uiSchema}
       widgets={widgets}
