@@ -416,6 +416,7 @@ defmodule OliWeb.Router do
     # String payment intent creation
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
     post("/s/success", PaymentProviders.StripeController, :success)
+    post("/s/failure", PaymentProviders.StripeController, :failure)
   end
 
   # User State Service, instrinsic state

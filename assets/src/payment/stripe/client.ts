@@ -17,6 +17,13 @@ const payWithCard = (stripe: any, card: any, clientSecret: any) => {
     })
     .then((result: any) => {
       if (result.error) {
+        fetch('/api/v1/payments/s/failure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ clientSecret, reason: result.error.message }),
+        });
         showError(result.error.message);
       } else {
         orderComplete(result.paymentIntent);

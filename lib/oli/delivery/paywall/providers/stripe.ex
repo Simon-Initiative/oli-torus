@@ -10,9 +10,13 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
   Converts an ex_money amount to a valid Stripe value and
   currency code. Returns a two element tuple {value, currency code}.
 
-  Stripe reference on currencies: https://stripe.com/docs/currencies
+  "Valid" Stripe values do not contain decimal points. They are integer based
+  representations of the amount. As an example, consider the US dollar
+  amount of $79.99. Stripe expects that value to be expressed as the integer
+  7999
 
-  This impl supports zero-decimal currencies.
+  This impl supports zero-decimal currencies as well. Consult the Stripe reference
+  on currencies for more information: https://stripe.com/docs/currencies
   """
   def convert_amount(%Money{amount: amount, currency: currency}) do
     code =
