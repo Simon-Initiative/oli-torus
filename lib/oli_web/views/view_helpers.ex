@@ -4,8 +4,6 @@ defmodule OliWeb.ViewHelpers do
   import Oli.Branding
   import Oli.Utils, only: [value_or: 2]
 
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Branding.Brand
@@ -45,28 +43,15 @@ defmodule OliWeb.ViewHelpers do
   end
 
   def is_section_instructor_or_admin?(section_slug, user) do
-    is_section_instructor?(section_slug, user) || is_admin?(section_slug, user)
+    Sections.is_instructor?(user, section_slug) || Sections.is_admin?(user, section_slug)
   end
 
   def is_section_instructor?(section_slug, user) do
-    Sections.is_enrolled?(user.id, section_slug) &&
-      ContextRoles.has_role?(
-        user,
-        section_slug,
-        ContextRoles.get_role(:context_instructor)
-      )
+    Sections.is_instructor?(user, section_slug)
   end
 
   def is_admin?(section_slug, user) do
-    PlatformRoles.has_roles?(
-      user,
-      [
-        PlatformRoles.get_role(:system_administrator),
-        PlatformRoles.get_role(:institution_administrator)
-      ],
-      :any
-    ) ||
-      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+    Sections.is_admin?(user, section_slug)
   end
 
   def maybe_section_slug(conn) do

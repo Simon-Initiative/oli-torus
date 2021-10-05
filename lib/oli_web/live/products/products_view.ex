@@ -24,7 +24,40 @@ defmodule OliWeb.Products.ProductsView do
   data offset, :integer, default: 0
   data limit, :integer, default: 20
   data filter, :string, default: ""
-  data show_feature_overview, :boolean, default: true
+  data applied_filter, :string, default: ""
+
+  @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/2
+  @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
+
+  def filter_rows(socket, filter) do
+    case String.downcase(filter) do
+      "" ->
+        socket.assigns.products
+
+      str ->
+        Enum.filter(socket.assigns.products, fn p ->
+          amount_str =
+            if p.requires_payment do
+              case Money.to_string(p.amount) do
+                {:ok, money} -> String.downcase(money)
+                _ -> ""
+              end
+            else
+              "none"
+            end
+
+          String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
+        end)
+    end
+  end
+
+  def live_path(socket, params) do
+    if socket.assigns.is_admin_view do
+      Routes.live_path(socket, OliWeb.Products.ProductsView, params)
+    else
+      Routes.live_path(socket, OliWeb.Products.ProductsView, socket.assigns.project.slug, params)
+    end
+  end
 
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -62,32 +95,9 @@ defmodule OliWeb.Products.ProductsView do
     <div>
 
       {#if @is_admin_view == false}
-        {#if @show_feature_overview}
-          <div class="alert alert-dismissable alert-info" role="alert" style="max-width: 800px;">
-
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close" :on-click="hide_overview">
-              <span aria-hidden="true">&times;</span>
-            </button>
-            <p><strong>Course Products</strong> are a new concept and feature that will allow a project author to: </p>
-
-            <ul>
-            <li>Provide alternate arrangements of their project content.</li>
-            <li>Incorporate content from other projects.</li>
-            <li>Associate a required a payment for content.</li>
-            </ul>
-
-            <hr>
-            <p class="mb-0">
-              Not all of these features are available right now, but feel free to begin experimenting with creating products
-              for your course.
-            </p>
-
-          </div>
-        {/if}
-
         <Create id="creation" title={@creation_title} change="title" click="create"/>
       {#else}
-        <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
+        <Filter change={"change_filter"} reset="reset_filter" apply="apply_filter"/>
       {/if}
 
       <div class="mb-3"/>
@@ -114,10 +124,13 @@ defmodule OliWeb.Products.ProductsView do
     case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
       {:ok, blueprint} ->
         blueprint = Repo.preload(blueprint, :base_project)
+        products = [blueprint | socket.assigns.products]
+        table_model = Map.put(socket.assigns.table_model, :rows, products)
 
         {:noreply,
          assign(socket,
-           products: List.insert_at(socket.assigns.products, socket.assigns.offset, blueprint),
+           table_model: table_model,
+           products: products,
            total_count: socket.assigns.total_count + 1
          )}
 
@@ -131,26 +144,4 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
-
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.products
-
-      str ->
-        Enum.filter(socket.assigns.products, fn p ->
-          amount_str =
-            if p.requires_payment do
-              case Money.to_string(p.amount) do
-                {:ok, money} -> String.downcase(money)
-                _ -> ""
-              end
-            else
-              "none"
-            end
-
-          String.contains?(String.downcase(p.title), str) or String.contains?(amount_str, str)
-        end)
-    end
-  end
 end

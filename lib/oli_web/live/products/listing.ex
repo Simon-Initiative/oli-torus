@@ -22,7 +22,7 @@ defmodule OliWeb.Products.Listing do
         <Table model={@table_model} sort={@sort}/>
         <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
       {#else}
-        <p>No products exist</p>
+        <p>None exist</p>
       {/if}
       </div>
     """

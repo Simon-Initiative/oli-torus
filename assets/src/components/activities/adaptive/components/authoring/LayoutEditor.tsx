@@ -17,6 +17,7 @@ interface LayoutEditorProps {
   hostRef?: HTMLElement;
   onChange: (parts: AnyPartComponent[]) => void;
   onSelect: (partId: string) => void;
+  onCopyPart?: (part: any) => Promise<any>;
 }
 
 const defaultHandler = async () => {
@@ -194,6 +195,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     setShowConfirmDelete(false);
   }, [handlePartDelete]);
 
+  const handleCopyComponent = useCallback(async () => {
+    console.log('AUTHOR PART COPY', { selectedPart });
+    if (props.onCopyPart) {
+      props.onCopyPart(selectedPart);
+    }
+    //dispatch(setCopiedPart({ copiedPart: selectedPart }));
+  }, [selectedPart, parts]);
+
   const handlePartMoveForward = useCallback(async () => {
     console.log('AUTHOR PART MOVE FWD', { selectedPart });
     const partsClone = clone(parts);
@@ -363,6 +372,11 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           {selectedPart && selectedPart.capabilities.configure && (
             <button title="Edit" onClick={() => handlePartConfigure(selectedPart.id, true)}>
               <i className="las la-edit"></i>
+            </button>
+          )}
+          {selectedPart && selectedPart.capabilities.copy && (
+            <button title="Copy" onClick={handleCopyComponent}>
+              <i className="las la-copy"></i>
             </button>
           )}
           {/* <button title="Configure" onClick={handlePartConfigure}>

@@ -20,6 +20,7 @@
     "@restart/hooks": "^0.3.26",
     "@rjsf/bootstrap-4": "^3.0.0",
     "@rjsf/core": "^2.5.1",
+    "@stripe/stripe-js": "^1.18.0",
     "@types/jsonpath": "^0.2.0",
     "@types/react-color": "^3.0.5",
     "bootstrap": "^4.5.0",

@@ -19,6 +19,33 @@ defmodule OliWeb.Delivery.SelectSource do
   data offset, :integer, default: 0
   data limit, :integer, default: 20
   data filter, :string, default: ""
+  data applied_filter, :string, default: ""
+
+  @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/2
+  @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
+
+  def filter_rows(socket, filter) do
+    case String.downcase(filter) do
+      "" ->
+        socket.assigns.sources
+
+      str ->
+        Enum.filter(socket.assigns.sources, fn p ->
+          title =
+            case Map.get(p, :type) do
+              nil -> p.project.title
+              :blueprint -> p.title
+            end
+
+          String.downcase(title)
+          |> String.contains?(str)
+        end)
+    end
+  end
+
+  def live_path(socket, params) do
+    Routes.live_path(socket, OliWeb.Delivery.SelectSource, params)
+  end
 
   defp retrieve_all_sources() do
     products = Blueprint.list()
@@ -57,12 +84,12 @@ defmodule OliWeb.Delivery.SelectSource do
     ~F"""
     <div>
 
-      <Filter id="filter" change={"change_filter"} reset="reset_filter"/>
+      <Filter apply={"apply_filter"} change={"change_filter"} reset="reset_filter"/>
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@filter}
+        filter={@applied_filter}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
@@ -90,23 +117,4 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
-
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.sources
-
-      str ->
-        Enum.filter(socket.assigns.sources, fn p ->
-          title =
-            case Map.get(p, :type) do
-              nil -> p.project.title
-              :blueprint -> p.title
-            end
-
-          String.downcase(title)
-          |> String.contains?(str)
-        end)
-    end
-  end
 end

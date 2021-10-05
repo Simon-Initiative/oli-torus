@@ -23,6 +23,7 @@ import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
 import { Tag } from 'data/content/tags';
+import { EditorErrorBoundary } from './editor_error_boundary';
 
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
@@ -165,7 +166,7 @@ export const Editors = (props: EditorsProps) => {
           aria-describedby="content-list-operation"
           tabIndex={index + 1}
         >
-          {editor}
+          <EditorErrorBoundary id={contentKey}>{editor}</EditorErrorBoundary>
         </div>
       </div>
     );
