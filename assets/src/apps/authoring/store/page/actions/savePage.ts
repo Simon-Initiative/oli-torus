@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ResourceContent } from 'data/content/resource';
 import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-import { acquireEditingLock, releaseEditingLock } from '../../app/actions/locking';
 import { selectProjectSlug } from '../../app/slice';
 import { RootState } from '../../rootReducer';
 import { PageSlice, PageState, selectRevisionSlug, selectState, setRevisionSlug } from '../slice';
@@ -45,11 +44,7 @@ export const savePage = createAsyncThunk(
       releaseLock: false,
     };
 
-    await dispatch(acquireEditingLock());
-
     const saveResult = await edit(projectSlug, revisionSlug, update, false);
-
-    await dispatch(releaseEditingLock());
 
     if (saveResult.type === 'ServerError') {
       throw new Error(saveResult.message);
