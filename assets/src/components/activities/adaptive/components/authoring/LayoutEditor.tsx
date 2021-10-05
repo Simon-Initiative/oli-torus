@@ -1,8 +1,12 @@
 import ConfirmDelete from 'apps/authoring/components/Modal/DeleteConfirmationModal';
-import { NotificationContext } from 'apps/delivery/components/NotificationContext';
+import {
+  NotificationContext,
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import { AnyPartComponent, defaultCapabilities } from 'components/parts/types/parts';
 import EventEmitter from 'events';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import Draggable from 'react-draggable';
 import { clone } from 'utils/common';
 import PartComponent from '../common/PartComponent';
@@ -19,7 +23,7 @@ interface LayoutEditorProps {
   onChange: (parts: AnyPartComponent[]) => void;
   onSelect: (partId: string) => void;
   onCopyPart?: (part: any) => Promise<any>;
-  onConfigurePart?: (part: any) => Promise<any>;
+  onConfigurePart?: (part: any, context: any) => Promise<any>;
   onCancelConfigurePart?: (partId: string) => Promise<any>;
 }
 
@@ -33,7 +37,15 @@ const defaultHandler = async () => {
 const toolBarTopOffset = -38;
 
 const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
-  const [pusher, _setPusher] = useState(new EventEmitter().setMaxListeners(50));
+  const pusherContext = useContext(NotificationContext);
+  const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
+
+  useEffect(() => {
+    if (pusherContext) {
+      setPusher(pusherContext);
+    }
+  }, [pusherContext]);
+
   const [parts, setParts] = useState(props.parts);
   const [selectedPartId, setSelectedPartId] = useState(props.selected || '');
   const [configurePartId, setConfigurePartId] = useState('');
@@ -170,8 +182,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   );
 
   const handlePartConfigure = useCallback(
-    async (partId, configure) => {
-      console.log('AUTHOR PART CONFIGURE', { configurePartId, partId, configure, portalId });
+    async (partId, configure, context) => {
+      console.log('AUTHOR PART CONFIGURE', {
+        configurePartId,
+        partId,
+        configure,
+        portalId,
+        context,
+      });
       if (partId !== selectedPartId) {
         console.error('trying to enable configure for a not selected partId!');
         return;
@@ -182,15 +200,21 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
       if (configure) {
         if (props.onConfigurePart) {
-          props.onConfigurePart(partId);
+          props.onConfigurePart(partId, context);
         }
         setConfigurePartId(partId);
       } else {
         setConfigurePartId('');
       }
     },
-    [selectedPartId, configurePartId, portalId],
+    [selectedPartId, configurePartId, portalId, pusher],
   );
+
+  // the difference of this is that the toolbar just tells all the parts that this one is supposed to be in configuration mode
+  // that should trigger them to fire their own onConfigure callbacks so that they can send part specific context
+  const handleToolbarPartConfigure = (partId: string, configure: boolean) => {
+    pusher.emit(NotificationType.CONFIGURE.toString(), { partId, configure });
+  };
 
   const handlePartDelete = useCallback(async () => {
     // console.log('AUTHOR PART DELETE', { selectedPart });
@@ -303,6 +327,36 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     });
   }, [parts]);
 
+  useEffect(() => {
+    if (!pusher) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_CANCEL,
+      NotificationType.CONFIGURE_SAVE,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        // the layout renderer needs to handle some notifications to update the toolbar
+        // and configuration portal if it's being used
+        console.log(`LayoutEditor catching ${notificationType.toString()}`, { payload });
+        switch (notificationType) {
+          case NotificationType.CONFIGURE_CANCEL:
+            handlePartCancelConfigure(payload);
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(pusher, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [pusher]);
+
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
       <div className="activity-content">
@@ -381,7 +435,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           }}
         >
           {selectedPart && selectedPart.capabilities.configure && (
-            <button title="Edit" onClick={() => handlePartConfigure(selectedPart.id, true)}>
+            <button title="Edit" onClick={() => handleToolbarPartConfigure(selectedPart.id, true)}>
               <i className="las la-edit"></i>
             </button>
           )}
@@ -455,7 +509,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
                 {...partProps}
                 className={selectedPartId === part.id ? 'selected' : ''}
                 onClick={() => handlePartClick({ id: part.id })}
-                onConfigure={({ configure }) => handlePartConfigure(part.id, configure)}
+                onConfigure={({ configure, context }) =>
+                  handlePartConfigure(part.id, configure, context)
+                }
                 onSaveConfigure={handlePartSaveConfigure}
                 onCancelConfigure={handlePartCancelConfigure}
               />

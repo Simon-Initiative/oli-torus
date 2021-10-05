@@ -1,4 +1,5 @@
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
@@ -19,6 +20,14 @@ const EditingCanvas: React.FC = () => {
   const [currentActivityId, setCurrentActivityId] = useState<string>('');
 
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
+  const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
+  const [configPartId, setConfigPartId] = useState<string>('');
+
+  const [notificationStream, setNotificationStream] = useState<{
+    stamp: number;
+    type: NotificationType;
+    payload: any;
+  } | null>(null);
 
   useEffect(() => {
     let current = null;
@@ -82,13 +91,19 @@ const EditingCanvas: React.FC = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
-  const handlePartConfigure = async (part: any) => {
-    console.log('[handlePartConfigure]', { part });
+  // TODO: rename first param to partId
+  const handlePartConfigure = async (part: any, context: any) => {
+    console.log('[handlePartConfigure]', { part, context });
+    const { fullscreen = false } = context;
+    setConfigModalFullscreen(fullscreen);
+    setConfigPartId(part);
     setShowConfigModal(true);
   };
 
   const handlePartCancelConfigure = async (partId: string) => {
     console.log('[handlePartCancelConfigure]', { partId });
+    setConfigPartId('');
+    setConfigModalFullscreen(false);
     setShowConfigModal(false);
   };
 
@@ -116,17 +131,37 @@ const EditingCanvas: React.FC = () => {
               onConfigurePart={handlePartConfigure}
               onCancelConfigurePart={handlePartCancelConfigure}
               onPartChangePosition={handlePositionChanged}
+              notificationStream={notificationStream}
             />
           ))}
       </section>
       <ConfigurationModal
+        fullscreen={configModalFullscreen}
         bodyId={configEditorId}
         isOpen={showConfigModal}
         onClose={() => {
           setShowConfigModal(false);
+          setNotificationStream({
+            stamp: Date.now(),
+            type: NotificationType.CONFIGURE_CANCEL,
+            payload: { id: configPartId },
+          });
+          // after we send the notifcation we can clear the part id
+          setConfigPartId('');
+          // also reset fullscreen for the next part
+          setConfigModalFullscreen(false);
         }}
         onSave={() => {
           setShowConfigModal(false);
+          setNotificationStream({
+            stamp: Date.now(),
+            type: NotificationType.CONFIGURE_SAVE,
+            payload: { id: configPartId }, // no other details are known at this level
+          });
+          // after we send the notifcation we can clear the part id
+          setConfigPartId('');
+          // also reset fullscreen for the next part
+          setConfigModalFullscreen(false);
         }}
       />
     </React.Fragment>

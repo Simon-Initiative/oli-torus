@@ -1,3 +1,7 @@
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import { AnyPartComponent, AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -19,6 +23,65 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
   const [showWindow, setShowWindow] = useState(false);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_SAVE,
+      NotificationType.CONFIGURE_CANCEL,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload); */
+        if (!payload) {
+          // if we don't have anything, we won't even have an id to know who it's for
+          // for these events we need something, it's not for *all* of them
+          return;
+        }
+        switch (notificationType) {
+          case NotificationType.CONFIGURE:
+            {
+              const { partId, configure } = payload;
+              if (partId === id) {
+                console.log('PA:NotificationType.CONFIGURE', { partId, configure });
+                // if it's not us, then we shouldn't be configuring
+                setInConfigureMode(configure);
+                if (configure) {
+                  onConfigure({ id, configure, context: { fullscreen: true } });
+                }
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_SAVE:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                console.log('PA:NotificationType.CONFIGURE', { partId });
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_CANCEL:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                console.log('PA:NotificationType.CONFIGURE_CANCEL', { partId });
+              }
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify]);
 
   const {
     x,

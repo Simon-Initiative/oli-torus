@@ -1,5 +1,5 @@
-import LayoutEditor from 'components/activities/adaptive/components/authoring/LayoutEditor';
-import React, { useCallback } from 'react';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import React, { useCallback, useEffect } from 'react';
 import guid from 'utils/guid';
 import { AnyPartComponent } from '../types/parts';
 
@@ -13,6 +13,17 @@ interface PopupWindowDesignerProps {
 const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
   const canvasRef = React.useRef(null);
   const [parts, setParts] = React.useState<any[]>(props.parts || []);
+  const [screenData, setScreenData] = React.useState<any>({
+    custom: props.config,
+    partsLayout: parts,
+  });
+
+  useEffect(() => {
+    setScreenData({
+      custom: props.config,
+      partsLayout: parts,
+    });
+  }, [props.config, parts]);
 
   const handleChange = (parts: AnyPartComponent[]) => {
     console.log('popup designer layout change', parts);
@@ -57,6 +68,10 @@ const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
     },
     [parts],
   );
+
+  const handleScreenAuthorChange = (screenData: any) => {
+    console.log('popup designer screen author change', screenData);
+  };
 
   return (
     <div className="popup-window-designer">
@@ -113,16 +128,7 @@ const PopupWindowDesigner: React.FC<PopupWindowDesignerProps> = (props) => {
         <div className="popup-designer-properties"></div>
       </header>
       <section ref={canvasRef} className="popup-designer-canvas">
-        <LayoutEditor
-          id="popup-designer-1"
-          width={props.config.width}
-          height={props.config.height}
-          backgroundColor={'lightblue'}
-          parts={parts}
-          selected={''}
-          onChange={handleChange}
-          onSelect={handleSelect}
-        />
+        <ScreenAuthor screen={screenData} onChange={handleScreenAuthorChange} />
       </section>
     </div>
   );

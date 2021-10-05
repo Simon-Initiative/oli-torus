@@ -6,11 +6,13 @@ interface ConfigModalProps {
   onSave: () => void;
   isOpen: boolean;
   bodyId?: string;
+  fullscreen?: boolean;
 }
 
 const ConfigurationModal: React.FC<ConfigModalProps> = ({
   isOpen,
   bodyId = 'configuration-modal-body',
+  fullscreen = false,
   onClose,
   onSave,
 }) => {
@@ -31,7 +33,7 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   };
 
   return (
-    <Modal show={show} onHide={handleCancelClick}>
+    <Modal dialogClassName={fullscreen ? 'modal-90w' : ''} show={show} onHide={handleCancelClick}>
       <Modal.Header>Configuration</Modal.Header>
       <Modal.Body id={bodyId}></Modal.Body>
       <Modal.Footer>

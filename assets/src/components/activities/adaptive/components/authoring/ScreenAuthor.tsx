@@ -283,7 +283,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
 
   const canvasRef = useRef<any>(null);
 
-  const configEditorId = `config-editor-${screen.id}`;
+  const configEditorId = `config-editor-${screen.id || `screen${Date.now()}`}`;
 
   const handlePartConfigure = async (part: any) => {
     console.log('[handlePartConfigure]', { part });

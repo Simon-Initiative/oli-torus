@@ -28,6 +28,7 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
     let parsedPartComponentTypes: any = [];
     try {
       parsedPartComponentTypes = JSON.parse(b64DecodeUnicode(params.partComponentTypes));
+      (window as any)['partComponentTypes'] = parsedPartComponentTypes;
     } catch (err) {
       // should have been json, error handling
     }

@@ -16,9 +16,9 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
   priorityTypes = [],
   onAdd,
 }) => {
-  const paths = useSelector(selectPaths);
+  const paths = { images: '/images' }; // TODO: provide context to authoring
   const imgsPath = paths?.images || '';
-  const availablePartComponents = useSelector(selectPartComponentTypes);
+  const availablePartComponents = (window as any)['partComponentTypes'] || []; // TODO: replace with context
 
   const [priorityPartComponents, setPriorityPartComponents] = useState<any[]>([]);
   const [otherPartComponents, setOtherPartComponents] = useState<any[]>([]);
