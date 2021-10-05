@@ -4,7 +4,7 @@ defmodule OliWeb.Objectives.Objectives do
   """
 
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  import Ecto.Query, warn: false
+
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias OliWeb.Objectives.ObjectiveEntry
   alias OliWeb.Objectives.CreateNew
