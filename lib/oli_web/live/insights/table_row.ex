@@ -10,7 +10,7 @@ defmodule OliWeb.Insights.TableRow do
       number_of_attempts: number_of_attempts,
       relative_difficulty: relative_difficulty,
       eventually_correct: eventually_correct,
-      first_try_correct: first_try_correct,
+      first_try_correct: first_try_correct
     } = assigns.row
 
     ~L"""
@@ -30,5 +30,4 @@ defmodule OliWeb.Insights.TableRow do
     </tr>
     """
   end
-
 end
