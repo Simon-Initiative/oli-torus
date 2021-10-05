@@ -6,16 +6,17 @@ export const ModalLaunch = {
 
     this.lockScroll();
 
+    // wire up server-side hide event
+    (this as any).handleEvent('hide_modal', () => {
+      ($('#' + id) as any).modal('hide');
+    });
+
     // handle hiding of a modal as a result of many different methods
     // (modal close button, escape key, etc...)
     $(`#${id}`).on('hidden.bs.modal', () => {
-      (this as any).pushEvent('cancel_modal');
+      (this as any).pushEvent('unmount_modal');
       this.unlockScroll();
     });
-  },
-  destroyed(): void {
-    (this as any).pushEvent('cancel_modal');
-    this.unlockScroll();
   },
   lockScroll(): void {
     // From https://github.com/excid3/tailwindcss-stimulus-components/blob/master/src/modal.js

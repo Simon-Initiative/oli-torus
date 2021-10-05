@@ -1,15 +1,24 @@
 defmodule OliWeb.Accounts.AccountsLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.Modal
 
   alias Oli.Repo
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Table.{ColumnSpec, SortableTable, SortableTableModel}
-  alias OliWeb.Common.Modal
   alias Oli.Accounts.{Author, User, SystemRole}
   alias Oli.Accounts
   alias OliWeb.Accounts.AccountsModel
   alias OliWeb.Pow.UserContext
   alias OliWeb.Pow.AuthorContext
+
+  alias OliWeb.Accounts.Modals.{
+    ConfirmEmailModal,
+    GrantAdminModal,
+    RevokeAdminModal,
+    LockAccountModal,
+    UnlockAccountModal,
+    DeleteAccountModal
+  }
 
   def mount(
         _params,
@@ -34,8 +43,7 @@ defmodule OliWeb.Accounts.AccountsLive do
        model: model,
        title: "Manage Accounts",
        active: :accounts,
-       selected_author: nil,
-       selected_user: nil
+       modal: nil
      )}
   end
 
@@ -182,10 +190,10 @@ defmodule OliWeb.Accounts.AccountsLive do
           <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="las la-tools"></i> Manage
           </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
             <%= if email_confirmed_at == nil do %>
               <button type="submit" class="dropdown-item" form="resend-confirmation-<%= id %>">Resend confirmation link</button>
-              <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_user" phx-value-id="<%= id %>">Confirm email</button>
+              <button class="dropdown-item" phx-click="show_confirm_email_modal" phx-value-id="<%= id %>">Confirm email</button>
 
               <div class="dropdown-divider"></div>
             <% end %>
@@ -195,12 +203,12 @@ defmodule OliWeb.Accounts.AccountsLive do
             <div class="dropdown-divider"></div>
 
             <%= if locked_at != nil do %>
-              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#unlock_user" phx-click="select_user" phx-value-id="<%= id %>">Unlock Account</button>
+              <button class="dropdown-item text-warning" phx-click="show_unlock_account_modal" phx-value-id="<%= id %>">Unlock Account</button>
             <% else %>
-              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_user" phx-value-id="<%= id %>">Lock Account</button>
+              <button class="dropdown-item text-warning" phx-click="show_lock_account_modal" phx-value-id="<%= id %>">Lock Account</button>
             <% end %>
 
-            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_user" phx-value-id="<%= id %>">Delete</button>
+            <button class="dropdown-item text-danger" phx-click="show_delete_account_modal" phx-value-id="<%= id %>">Delete</button>
 
           </div>
         </div>
@@ -246,10 +254,10 @@ defmodule OliWeb.Accounts.AccountsLive do
           <button class="btn btn-xs btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <i class="las la-tools"></i> Manage
           </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
             <%= if email_confirmed_at == nil do %>
               <button type="submit" class="dropdown-item" form="resend-confirmation-<%= id %>">Resend confirmation link</button>
-              <button class="dropdown-item" data-toggle="modal" data-target="#confirm_email" phx-click="select_author" phx-value-id="<%= id %>">Confirm email</button>
+              <button class="dropdown-item" phx-click="show_confirm_email_modal" phx-value-id="<%= id %>">Confirm email</button>
 
               <div class="dropdown-divider"></div>
             <% end %>
@@ -260,22 +268,22 @@ defmodule OliWeb.Accounts.AccountsLive do
 
             <%= case system_role_id do %>
               <% ^admin_role_id -> %>
-                <button class="dropdown-item text-danger" data-toggle="modal" data-target="#revoke_admin" phx-click="select_author" phx-value-id="<%= id %>">Revoke admin</button>
+                <button class="dropdown-item text-warning" phx-click="show_revoke_admin_modal" phx-value-id="<%= id %>">Revoke admin</button>
 
               <% _ -> %>
-                <button class="dropdown-item text-warning" data-toggle="modal" data-target="#grant_admin" phx-click="select_author" phx-value-id="<%= id %>">Grant admin</button>
+                <button class="dropdown-item text-warning" phx-click="show_grant_admin_modal" phx-value-id="<%= id %>">Grant admin</button>
             <% end %>
 
             <div class="dropdown-divider"></div>
 
 
             <%= if locked_at != nil do %>
-              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#unlock_user" phx-click="select_author" phx-value-id="<%= id %>">Unlock Account</button>
+              <button class="dropdown-item text-warning" phx-click="show_unlock_account_modal" phx-value-id="<%= id %>">Unlock Account</button>
             <% else %>
-              <button class="dropdown-item text-warning" data-toggle="modal" data-target="#lock_user" phx-click="select_author" phx-value-id="<%= id %>">Lock Account</button>
+              <button class="dropdown-item text-warning" phx-click="show_lock_account_modal" phx-value-id="<%= id %>">Lock Account</button>
             <% end %>
 
-            <button class="dropdown-item text-danger" data-toggle="modal" data-target="#delete_user" phx-click="select_author" phx-value-id="<%= id %>">Delete</button>
+            <button class="dropdown-item text-danger" phx-click="show_delete_account_modal" phx-value-id="<%= id %>">Delete</button>
 
           </div>
         </div>
@@ -364,109 +372,263 @@ defmodule OliWeb.Accounts.AccountsLive do
      push_patch(socket, to: Routes.live_path(socket, __MODULE__, get_patch_params(model)))}
   end
 
-  def handle_event("select_user", %{"id" => id}, socket) do
-    user = Accounts.get_user!(id)
-    {:noreply, assign(socket, selected_user: user)}
+  def handle_event("show_confirm_email_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
+
+    modal = %{
+      component: ConfirmEmailModal,
+      assigns: %{
+        id: "confirm_email",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
   end
 
-  def handle_event("select_author", %{"id" => id}, socket) do
-    author = Accounts.get_author!(id)
-    {:noreply, assign(socket, selected_author: author)}
-  end
-
-  def handle_event("lock_user_users", _, socket) do
-    UserContext.lock(socket.assigns.selected_user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply, assign(socket, model: model, selected_user: nil)}
-  end
-
-  def handle_event("unlock_user_users", _, socket) do
-    UserContext.unlock(socket.assigns.selected_user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply, assign(socket, model: model, selected_user: nil)}
-  end
-
-  def handle_event("delete_user_users", _, socket) do
-    {:ok, _user} = Accounts.delete_user(socket.assigns.selected_user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply, assign(socket, model: model, selected_user: nil)}
-  end
-
-  def handle_event("confirm_email_users", _, socket) do
+  def handle_event(
+        "confirm_email",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :users}}} = socket
+      ) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    socket.assigns.selected_user
+    get_selected_user(id, :users)
     |> User.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
     |> Repo.update!()
 
     {:ok, users_model} = load_users_model()
     model = Map.merge(socket.assigns.model, %{users_model: users_model})
 
-    {:noreply, assign(socket, model: model, selected_user: nil)}
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
   end
 
-  def handle_event("lock_user_authors", _, socket) do
-    AuthorContext.lock(socket.assigns.selected_author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply, assign(socket, model: model, selected_author: nil)}
-  end
-
-  def handle_event("unlock_user_authors", _, socket) do
-    AuthorContext.unlock(socket.assigns.selected_author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply, assign(socket, model: model, selected_author: nil)}
-  end
-
-  def handle_event("delete_user_authors", _, socket) do
-    {:ok, _author} = Accounts.delete_author(socket.assigns.selected_author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply, assign(socket, model: model, selected_author: nil)}
-  end
-
-  def handle_event("confirm_email_authors", _, socket) do
+  def handle_event(
+        "confirm_email",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    socket.assigns.selected_author
+    get_selected_user(id, :authors)
     |> Author.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
     |> Repo.update!()
 
     {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
     model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
 
-    {:noreply, assign(socket, model: model, selected_author: nil)}
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
   end
 
-  def handle_event("grant_admin", _, socket) do
+  def handle_event("show_grant_admin_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
+
+    modal = %{
+      component: GrantAdminModal,
+      assigns: %{
+        id: "grant_admin",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("grant_admin", %{"id" => id}, socket) do
     admin_role_id = SystemRole.role_id().admin
-    {:noreply, change_system_role(admin_role_id, socket)}
+    author = Accounts.get_author!(id)
+
+    {:noreply,
+     socket
+     |> change_system_role(author, admin_role_id)
+     |> hide_modal()}
   end
 
-  def handle_event("revoke_admin", _, socket) do
+  def handle_event("show_revoke_admin_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
+
+    modal = %{
+      component: RevokeAdminModal,
+      assigns: %{
+        id: "revoke_admin",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("revoke_admin", %{"id" => id}, socket) do
     author_role_id = SystemRole.role_id().author
-    {:noreply, change_system_role(author_role_id, socket)}
+    author = Accounts.get_author!(id)
+
+    {:noreply,
+     socket
+     |> change_system_role(author, author_role_id)
+     |> hide_modal()}
   end
 
-  defp change_system_role(role_id, socket) do
-    author = Accounts.get_author!(socket.assigns.selection)
+  def handle_event("show_lock_account_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
 
+    modal = %{
+      component: LockAccountModal,
+      assigns: %{
+        id: "lock_account",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "lock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :users}}} = socket
+      ) do
+    user = Accounts.get_user!(id)
+    UserContext.lock(user)
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "lock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    AuthorContext.lock(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event("show_unlock_account_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
+
+    modal = %{
+      component: UnlockAccountModal,
+      assigns: %{
+        id: "unlock_account",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "unlock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :users}}} = socket
+      ) do
+    user = Accounts.get_user!(id)
+    UserContext.unlock(user)
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "unlock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    AuthorContext.unlock(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event("show_delete_account_modal", %{"id" => id}, socket) do
+    %{model: %{active_tab: active_tab}} = socket.assigns
+
+    modal = %{
+      component: DeleteAccountModal,
+      assigns: %{
+        id: "delete_account",
+        user: get_selected_user(id, active_tab)
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "delete_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :users}}} = socket
+      ) do
+    user = Accounts.get_user!(id)
+    {:ok, _user} = Accounts.delete_user(user)
+
+    {:ok, users_model} = load_users_model()
+    model = Map.merge(socket.assigns.model, %{users_model: users_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "delete_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    {:ok, _author} = Accounts.delete_author(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  defp get_selected_user(id, active_tab) do
+    case active_tab do
+      :authors ->
+        Accounts.get_author!(id)
+
+      :users ->
+        Accounts.get_user!(id)
+    end
+  end
+
+  defp change_system_role(socket, author, role_id) do
     case Accounts.update_author(author, %{system_role_id: role_id}) do
       {:ok, author} ->
         index =
@@ -511,6 +673,7 @@ defmodule OliWeb.Accounts.AccountsLive do
   @spec render(any) :: Phoenix.LiveView.Rendered.t()
   def render(%{csrf_token: csrf_token} = assigns) do
     ~L"""
+    <%= render_modal(assigns) %>
     <div class="container">
       <div class="row">
         <div class="col-12">
@@ -529,24 +692,6 @@ defmodule OliWeb.Accounts.AccountsLive do
           </div>
         </div>
       </div>
-      <%= live_component Modal, title: "Confirm", modal_id: "confirm_email", ok_action: "confirm_email_#{@model.active_tab}", ok_label: "Confirm", ok_style: "btn btn-primary" do %>
-        <p class="mb-4">Are you sure you want to <b>confirm email</b>?</p>
-      <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "grant_admin", ok_action: "grant_admin", ok_label: "Grant", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to grant <b>administrator privileges</b>?</p>
-      <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "revoke_admin", ok_action: "revoke_admin", ok_label: "Revoke", ok_style: "btn btn-danger" do %>
-        <p class="mb-4">Are you sure you want to revoke <b>administrator privileges</b>?</p>
-      <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "lock_user", ok_action: "lock_user_#{@model.active_tab}", ok_label: "Lock", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to <b>lock</b> access to this account?</p>
-      <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "unlock_user", ok_action: "unlock_user_#{@model.active_tab}", ok_label: "Unlock", ok_style: "btn btn-warning" do %>
-        <p class="mb-4">Are you sure you want to <b>unlock</b> access to this account?</p>
-      <% end %>
-      <%= live_component Modal, title: "Confirm", modal_id: "delete_user", ok_action: "delete_user_#{@model.active_tab}", ok_label: "Delete", ok_style: "btn btn-danger" do %>
-        <p class="mb-4">Are you sure you want to <b>delete</b> this account?</p>
-      <% end %>
     </div>
     <script>
       $("[data-toggle=tooltip").tooltip();

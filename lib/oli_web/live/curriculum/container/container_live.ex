@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   """
 
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
 
@@ -298,12 +299,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, modal: nil)}
-  end
-
   # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
+  def handle_event("cancel_modal", _params, socket), do: hide_modal(socket)
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
