@@ -165,6 +165,10 @@ defmodule OliWeb.Insights do
 
   def raw_snapshot_data(project_slug) do
     snapshots_title_row = [
+      "Part Attempt ID",
+      "Activity ID",
+      "Page ID",
+      "Objective ID",
       "Activity Title",
       "Activity Type",
       "Objective Title",
@@ -178,6 +182,7 @@ defmodule OliWeb.Insights do
       "Part Out Of",
       "Student Response",
       "Feedback",
+      "Activity Content",
       "Section Title",
       "Section Slug",
       "Date Created"
@@ -191,13 +196,14 @@ defmodule OliWeb.Insights do
             &(&1
               # Query returns a list of fields
               # Get activity type
-              |> List.replace_at(1, Activities.get_registration!(Enum.at(&1, 1)).title)
+              |> List.replace_at(5, Activities.get_registration!(Enum.at(&1, 5)).title)
               # JSON format student response
-              |> List.replace_at(11, Utils.pretty(Enum.at(&1, 11)))
+              |> List.replace_at(15, Jason.encode_to_iodata!(Enum.at(&1, 15)))
               # JSON format feedback
-              |> List.replace_at(12, Utils.pretty(Enum.at(&1, 12)))
+              |> List.replace_at(16, Jason.encode_to_iodata!(Enum.at(&1, 16)))
+              |> List.replace_at(17, Jason.encode_to_iodata!(Enum.at(&1, 17)))
               # JSON format date
-              |> List.replace_at(15, Utils.format_datetime(Enum.at(&1, 15))))
+              |> List.replace_at(20, Utils.format_datetime(Enum.at(&1, 20))))
           )
       ]
     ]

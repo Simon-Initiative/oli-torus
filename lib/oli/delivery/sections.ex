@@ -23,6 +23,36 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
+  alias Oli.Accounts.User
+  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
+
+  @doc """
+  Determines if a user is an instructor in a given section.
+  """
+  def is_instructor?(%User{id: id} = user, section_slug) do
+    is_enrolled?(id, section_slug) &&
+      ContextRoles.has_role?(
+        user,
+        section_slug,
+        ContextRoles.get_role(:context_instructor)
+      )
+  end
+
+  @doc """
+  Determines if a user is an administrator in a given section.
+  """
+  def is_admin?(%User{} = user, section_slug) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:system_administrator),
+        PlatformRoles.get_role(:institution_administrator)
+      ],
+      :any
+    ) ||
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
 
   @doc """
   Enrolls a user in a course section

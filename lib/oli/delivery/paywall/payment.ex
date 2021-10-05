@@ -25,6 +25,11 @@ defmodule Oli.Delivery.Paywall.Payment do
     field :generation_date, :utc_datetime
     field :application_date, :utc_datetime
     field :amount, Money.Ecto.Map.Type
+    field :provider_type, Ecto.Enum, values: [:stripe, :cashnet], default: :stripe
+    field :provider_id, :string
+    field :provider_payload, :map
+    field :pending_user_id, :integer
+    field :pending_section_id, :integer
 
     belongs_to :section, Oli.Delivery.Sections.Section
     belongs_to :enrollment, Oli.Delivery.Sections.Enrollment
@@ -41,10 +46,15 @@ defmodule Oli.Delivery.Paywall.Payment do
       :generation_date,
       :application_date,
       :amount,
+      :provider_type,
+      :provider_id,
+      :provider_payload,
+      :pending_user_id,
+      :pending_section_id,
       :section_id,
       :enrollment_id
     ])
-    |> validate_required([:type, :code, :generation_date, :amount, :section_id])
+    |> validate_required([:type, :generation_date, :amount, :section_id])
   end
 
   def to_human_readable(code) do
