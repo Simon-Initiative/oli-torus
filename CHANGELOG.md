@@ -3,6 +3,7 @@
 ## Unreleased
 ### Bug Fixes
 - Fix a style issue with the workspace footer
+- Fix datashop export dataset name, missing skills
 
 ### Enhancements
 - Add multi input activity
