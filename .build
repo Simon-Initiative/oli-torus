@@ -428,6 +428,8 @@ OliWeb.OpenAndFreeView.html
 OliWeb.PageDeliveryController.html
 OliWeb.PageDeliveryView.html
 OliWeb.PaymentController.html
+OliWeb.PaymentProviders.NoProviderController.html
+OliWeb.PaymentProviders.NoProviderView.html
 OliWeb.PaymentProviders.StripeController.html
 OliWeb.PaymentProviders.StripeView.html
 OliWeb.PaymentView.html
@@ -512,8 +514,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-5818dc44be.js
-dist/sidebar_items-b16c2a9218.js
+dist/search_items-65e1d75c25.js
+dist/sidebar_items-57f5365933.js
 index.html
 license.html
 readme.html
