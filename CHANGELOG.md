@@ -6,6 +6,11 @@
 
 ### Enhancements
 
+## 0.13.7 (2021-10-05)
+
+### Bug Fixes
+- Fix an issue where modals misbehaved sporadically
+
 ## 0.13.6 (2021-10-04)
 
 ### Bug Fixes
