@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.Updates.Utils do
-  use OliWeb, :live_view
+  use Phoenix.HTML
+  import Phoenix.LiveView.Helpers
 
   alias Oli.Publishing.Publication
 
