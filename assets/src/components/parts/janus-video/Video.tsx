@@ -14,7 +14,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [model, setModel] = useState<any>(typeof props.model === 'string' ? {} : props.model);
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-
+  const [videoType, setSetVideoType] = useState('');
   const [videoIsPlayerStarted, setVideoIsPlayerStarted] = useState(false);
   const [_videoIsCompleted, setVideoIsCompleted] = useState(false);
   const [videoAutoPlay, setVideoAutoPlay] = useState(false);
@@ -425,6 +425,15 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     />
   );
 
+  useEffect(() => {
+    if (!src) return;
+    const type = src.split('.');
+    if (type?.length > 1) {
+      const vType = `video/${type[type.length - 1]}`;
+      setSetVideoType(vType);
+    }
+  }, [src]);
+
   const videoTag = (
     <video
       width="100%"
@@ -437,7 +446,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
     >
-      <source src={src} />
+      <source src={src} type={videoType} />
       {subtitles &&
         subtitles.length > 0 &&
         subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
