@@ -1,10 +1,14 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
 - Fix a style issue with the workspace footer
+- Prevent objectives used in selections from being deleted
 
 ### Enhancements
+
 - Add multi input activity
 - Add multi input model validation
 - Add advanced section creation remix
@@ -12,15 +16,19 @@
 - Add analytics / insights data export button
 
 ## 0.13.5 (2021-10-04)
+
 ### Bug Fixes
+
 - Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.4 (2021-10-03)
+
 ### Bug Fixes
 
 - Fix an issue where a page can be duplicated within a container
 
 ## 0.13.3 (2021-09-30)
+
 ### Bug Fixes
 
 - Fix an issue where generating resource links for tag types throws a server error
@@ -50,6 +58,7 @@
 - Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.2 (2021-09-17)
+
 ### Bug Fixes
 
 - Fix activity choice icon selection in authoring

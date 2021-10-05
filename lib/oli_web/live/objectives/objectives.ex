@@ -4,12 +4,13 @@ defmodule OliWeb.Objectives.Objectives do
   """
 
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-
+  import Ecto.Query, warn: false
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias OliWeb.Objectives.ObjectiveEntry
   alias OliWeb.Objectives.CreateNew
   alias OliWeb.Objectives.Attachments
   alias OliWeb.Objectives.BreakdownModal
+  alias OliWeb.Objectives.SelectionsModal
   alias OliWeb.Common.ManualModal
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
@@ -49,7 +50,8 @@ defmodule OliWeb.Objectives.Objectives do
        force_render: 0,
        can_delete?: true,
        edit: :none,
-       breakdown: :none
+       breakdown: :none,
+       selections: nil
      )}
   end
 
@@ -95,6 +97,8 @@ defmodule OliWeb.Objectives.Objectives do
         <% end %>
       <% :breakdown -> %>
         <%= live_component BreakdownModal, changeset: @changeset, slug: @breakdown %>
+      <% :selections -> %>
+        <%= live_component SelectionsModal, selections: @selections, project_slug: @project.slug %>
       <% :none -> %>
 
     <% end %>
@@ -222,16 +226,29 @@ defmodule OliWeb.Objectives.Objectives do
       %{resource_id: resource_id} =
         AuthoringResolver.from_revision_slug(socket.assigns.project.slug, slug)
 
-      attachment_summary =
-        ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
+      publication_id = Oli.Publishing.get_unpublished_publication_id!(socket.assigns.project.id)
 
-      {:noreply,
-       assign(socket,
-         modal_shown: :delete,
-         attachment_summary: attachment_summary,
-         prepare_delete_slug: slug,
-         force_render: socket.assigns.force_render + 1
-       )}
+      case Oli.Publishing.find_objective_in_selections(resource_id, publication_id) do
+        [] ->
+          attachment_summary =
+            ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
+
+          {:noreply,
+           assign(socket,
+             modal_shown: :delete,
+             attachment_summary: attachment_summary,
+             prepare_delete_slug: slug,
+             force_render: socket.assigns.force_render + 1
+           )}
+
+        selections ->
+          {:noreply,
+           assign(socket,
+             modal_shown: :selections,
+             selections: selections,
+             force_render: socket.assigns.force_render + 1
+           )}
+      end
     else
       {:noreply, socket}
     end
