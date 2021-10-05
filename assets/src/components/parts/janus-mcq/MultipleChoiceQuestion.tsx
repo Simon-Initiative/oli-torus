@@ -118,7 +118,6 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
           <MCQItemContent nodes={nodes} state={state} />
         </label>
       </div>
-      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px;' }} />}
     </React.Fragment>
   );
 };

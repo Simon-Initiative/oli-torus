@@ -56,6 +56,9 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
             line-height: normal !important;
             vertical-align: middle;
           }
+          .mcq-input>div>label {
+            margin: 0 !important;
+          }
         `}
       </style>
       {options?.map((item, index) => (
