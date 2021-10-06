@@ -142,7 +142,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      modal: %{assigns: %{project_id: project_id, publication_id: publication_id}},
+      modal: %{assigns: %{publication_id: publication_id}},
       redirect_after_apply: redirect_after_apply
     } = socket.assigns
 
