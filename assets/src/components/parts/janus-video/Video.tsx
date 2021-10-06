@@ -440,7 +440,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
     >
-      <source src={isFirefox ? updatedFFSrc : src} />
+      <source src={src} />
+      {isFirefox && <source src={updatedFFSrc} />}
       {subtitles &&
         subtitles.length > 0 &&
         subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
