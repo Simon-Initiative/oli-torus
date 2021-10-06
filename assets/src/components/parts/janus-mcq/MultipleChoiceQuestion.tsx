@@ -31,7 +31,9 @@ const getNodeText = (node: any): any => {
 
 const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   return (
-    <div style={{ marginLeft: 18 }}>
+    // Need to set {{ left: 18, position: 'relative' }}. checked it in SS as well. This gets set for all the MCQ and external CSS override change it
+    //depending upon their needs
+    <div style={{ left: 18, position: 'relative' }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
         if (subtree.tag === 'p') {
