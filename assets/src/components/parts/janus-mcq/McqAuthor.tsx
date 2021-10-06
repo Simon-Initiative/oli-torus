@@ -15,7 +15,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     mcqItems,
     customCssClass,
     layoutType,
-    height,
     overrideHeight = false,
   } = model;
   const styles: CSSProperties = {
