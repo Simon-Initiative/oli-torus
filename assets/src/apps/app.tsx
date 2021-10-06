@@ -19,12 +19,8 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
     } catch (err) {
       // should have been json, error handling
     }
-    let parsedPageTitle = '';
-    try {
-      parsedPageTitle = b64DecodeUnicode(params.pageTitle);
-    } catch (err) {
-      // should have been json, error handling
-    }
+    const parsedPageTitle = b64DecodeUnicode(params.pageTitle);
+
     let parsedActivityTypes: any = [];
     try {
       parsedActivityTypes = JSON.parse(b64DecodeUnicode(params.activityTypes));
