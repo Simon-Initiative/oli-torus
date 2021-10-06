@@ -520,7 +520,6 @@ const RightMenu: React.FC<any> = () => {
               uiSchema={componentUiSchema}
               value={currentComponentData}
               onChangeHandler={componentPropertyChangeHandler}
-              triggerOnChange={true}
             />
           </div>
         )}
