@@ -6,128 +6,127 @@ $sliderShowCurrentValueLableBackgroundColor: #03a9f4;
 $sliderShowCurrentValueLableFontColor: #fff;
 
 @mixin track {
-    width: 100%;
-    height: 4px;
-    cursor: pointer;
-    animate: 0.2s;
-    background: $sliderTrackColor;
-    border-radius: 25px;
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: $sliderTrackColor;
+  border-radius: 25px;
 }
 @mixin trackHover {
-    background: rgb(230, 230, 230);
+  background: rgb(230, 230, 230);
 }
 @mixin trackFocus {
-    background: rgb(230, 230, 230);
+  background: rgb(230, 230, 230);
 }
 @mixin thumb {
-    height: 20px;
-    width: 20px;
-    border-radius: 50%;
-    background: $sliderThumbColor !important;
-    box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
-    cursor: pointer;
-    -webkit-appearance: none;
-    margin-top: -8px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: $sliderThumbColor !important;
+  box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -8px;
 }
 @mixin thumbHover {
-    box-shadow: 0 0 0 4px $sliderThumbHoverColor;
-    transform: scale(1.4);
+  box-shadow: 0 0 0 4px $sliderThumbHoverColor;
+  transform: scale(1.4);
 }
 
 input[type='range'] {
-    -webkit-appearance: none;
-    margin: 20px 0;
+  margin: 20px 0;
 
-    &::-webkit-slider-runnable-track {
-        @include track;
-    }
-    &::-moz-range-track {
-        @include track;
+  &::-webkit-slider-runnable-track {
+    @include track;
+  }
+  &::-moz-range-track {
+    @include track;
+  }
+  &::-webkit-slider-thumb {
+    @include thumb;
+  }
+  &::-moz-range-thumb {
+    @include thumb;
+  }
+  &:hover {
+    &::-moz-range-thumb {
+      @include thumbHover;
     }
     &::-webkit-slider-thumb {
-        @include thumb;
+      @include thumbHover;
+    }
+    &::-moz-range-track {
+      @include trackHover;
+    }
+    &::-webkit-slider-runnable-track {
+      @include trackHover;
+    }
+  }
+  &:focus {
+    outline: none;
+
+    &::-webkit-slider-runnable-track {
+      @include trackFocus;
+    }
+    &::-moz-range-track {
+      @include trackFocus;
+    }
+  }
+  &:disabled {
+    &::-webkit-slider-runnable-track {
+      @include track;
+      opacity: 0.75;
+    }
+    &::-moz-range-track {
+      @include track;
+      opacity: 0.75;
+    }
+    &::-webkit-slider-thumb {
+      @include thumb;
+      opacity: 0.75;
     }
     &::-moz-range-thumb {
-        @include thumb;
+      @include thumb;
+      opacity: 0.75;
     }
     &:hover {
-        &::-moz-range-thumb {
-            @include thumbHover;
-        }
-        &::-webkit-slider-thumb {
-            @include thumbHover;
-        }
-        &::-moz-range-track {
-            @include trackHover;
-        }
-        &::-webkit-slider-runnable-track {
-            @include trackHover;
-        }
+      &::-moz-range-thumb {
+        @include thumbHover;
+        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+        transform: scale(1);
+        cursor: default;
+      }
+      &::-webkit-slider-thumb {
+        @include thumbHover;
+        box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
+        transform: scale(1);
+        cursor: default;
+      }
+      &::-moz-range-track {
+        @include trackHover;
+        background: $sliderTrackColor;
+        cursor: default;
+      }
+      &::-webkit-slider-runnable-track {
+        @include trackHover;
+        background: $sliderTrackColor;
+        cursor: default;
+      }
     }
     &:focus {
-        outline: none;
+      outline: none;
 
-        &::-webkit-slider-runnable-track {
-            @include trackFocus;
-        }
-        &::-moz-range-track {
-            @include trackFocus;
-        }
+      &::-webkit-slider-runnable-track {
+        @include trackFocus;
+        background: $sliderTrackColor;
+      }
+      &::-moz-range-track {
+        @include trackFocus;
+        background: $sliderTrackColor;
+      }
     }
-    &:disabled {
-        &::-webkit-slider-runnable-track {
-            @include track;
-            opacity: 0.75;
-        }
-        &::-moz-range-track {
-            @include track;
-            opacity: 0.75;
-        }
-        &::-webkit-slider-thumb {
-            @include thumb;
-            opacity: 0.75;
-        }
-        &::-moz-range-thumb {
-            @include thumb;
-            opacity: 0.75;
-        }
-        &:hover {
-            &::-moz-range-thumb {
-                @include thumbHover;
-                box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
-                transform: scale(1);
-                cursor: default;
-            }
-            &::-webkit-slider-thumb {
-                @include thumbHover;
-                box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
-                transform: scale(1);
-                cursor: default;
-            }
-            &::-moz-range-track {
-                @include trackHover;
-                background: $sliderTrackColor;
-                cursor: default;
-            }
-            &::-webkit-slider-runnable-track {
-                @include trackHover;
-                background: $sliderTrackColor;
-                cursor: default;
-            }
-        }
-        &:focus {
-            outline: none;
-
-            &::-webkit-slider-runnable-track {
-                @include trackFocus;
-                background: $sliderTrackColor;
-            }
-            &::-moz-range-track {
-                @include trackFocus;
-                background: $sliderTrackColor;
-            }
-        }
-    }
+  }
 }
 
 .slider {
@@ -169,16 +168,16 @@ input[type='range'] {
       border-bottom: 10px solid $sliderShowCurrentValueLableBackgroundColor;
     }
     .slider label {
-        margin: 0 8px;
-        display: block;
+      margin: 0 8px;
+      display: block;
 
-        &.input-label {
-            text-align: center;
-            margin-top: 8px;
-        }
+      &.input-label {
+        text-align: center;
+        margin-top: 8px;
+      }
     }
+  }
 }
-
 .slider {
   display: flex !important;
   height: auto !important;
