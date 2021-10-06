@@ -53,7 +53,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
   // these rely on being set every render and the "model" useState value being set
-  const { src, title, customCssClass, configData } = model;
+  const { src, title, allowScrolling, configData } = model;
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -818,7 +818,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce]);
-
+  const scrolling = allowScrolling ? 'yes' : 'no';
   return initStateReceived ? (
     <iframe
       data-janus-type={tagName}
@@ -826,7 +826,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       style={externalActivityStyles}
       title={title}
       src={frameSrc}
-      scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
+      scrolling={scrolling}
     />
   ) : null;
 };
