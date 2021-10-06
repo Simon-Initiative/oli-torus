@@ -31,7 +31,7 @@ const getNodeText = (node: any): any => {
 
 const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   return (
-    <div style={{ marginLeft: 18 }}>
+    <div style={{ left: 18, position: 'relative' }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
         if (subtree.tag === 'p') {
