@@ -27,7 +27,7 @@ $sliderShowCurrentValueLableFontColor: #fff;
   box-shadow: 0 0 4px 0 $sliderThumbBoxShadowColor;
   cursor: pointer;
   -webkit-appearance: none;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 @mixin thumbHover {
   box-shadow: 0 0 0 4px $sliderThumbHoverColor;
@@ -35,7 +35,7 @@ $sliderShowCurrentValueLableFontColor: #fff;
 }
 
 input[type='range'] {
-  margin: 20px 0;
+  margin: 5px 0;
 
   &::-webkit-slider-runnable-track {
     @include track;
