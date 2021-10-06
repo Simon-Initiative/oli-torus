@@ -10,7 +10,17 @@ defmodule Oli.Delivery.HierarchyTest do
 
       hierarchy = DeliveryResolver.full_hierarchy(map.section_1.slug)
 
-      Map.put(map, :hierarchy, hierarchy)
+      page_one_node = hierarchy.children |> Enum.at(0)
+      page_two_node = hierarchy.children |> Enum.at(1)
+      nested_page_one_node = hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.at(0)
+      nested_page_two_node = hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.at(1)
+
+      map
+      |> Map.put(:hierarchy, hierarchy)
+      |> Map.put(:page_one_node, page_one_node)
+      |> Map.put(:page_two_node, page_two_node)
+      |> Map.put(:nested_page_one_node, nested_page_one_node)
+      |> Map.put(:nested_page_two_node, nested_page_two_node)
     end
 
     test "flatten_pages/1", %{hierarchy: hierarchy} do
@@ -40,31 +50,42 @@ defmodule Oli.Delivery.HierarchyTest do
     test "find_in_hierarchy/2", %{
       hierarchy: hierarchy,
       revision1: revision1,
-      nested_revision1: nested_revision1
+      nested_revision1: nested_revision1,
+      page_one_node: page_one_node,
+      nested_page_one_node: nested_page_one_node
     } do
-      root = Hierarchy.find_in_hierarchy(hierarchy, "root_container")
-      node = Hierarchy.find_in_hierarchy(hierarchy, "page_one")
-      nested_node = Hierarchy.find_in_hierarchy(hierarchy, "nested_page_one")
+      root = Hierarchy.find_in_hierarchy(hierarchy, hierarchy.uuid)
+
+      node = Hierarchy.find_in_hierarchy(hierarchy, page_one_node.uuid)
+
+      nested_node =
+        Hierarchy.find_in_hierarchy(
+          hierarchy,
+          nested_page_one_node.uuid
+        )
 
       assert root.resource_id == hierarchy.resource_id
       assert node.resource_id == revision1.resource_id
       assert nested_node.resource_id == nested_revision1.resource_id
     end
 
-    test "find_and_remove_node/2", %{hierarchy: hierarchy} do
-      assert Hierarchy.find_in_hierarchy(hierarchy, "nested_page_one") != nil
+    test "find_and_remove_node/2", %{
+      hierarchy: hierarchy,
+      nested_page_one_node: nested_page_one_node
+    } do
+      assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) != nil
 
-      hierarchy = Hierarchy.find_and_remove_node(hierarchy, "nested_page_one")
+      hierarchy = Hierarchy.find_and_remove_node(hierarchy, nested_page_one_node.uuid)
 
-      assert Hierarchy.find_in_hierarchy(hierarchy, "nested_page_one") == nil
+      assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) == nil
     end
 
-    test "move_node/3", %{hierarchy: hierarchy} do
-      node = Hierarchy.find_in_hierarchy(hierarchy, "nested_page_one")
+    test "move_node/3", %{hierarchy: hierarchy, nested_page_one_node: nested_page_one_node} do
+      node = Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid)
 
-      hierarchy = Hierarchy.move_node(hierarchy, node, hierarchy.slug)
+      hierarchy = Hierarchy.move_node(hierarchy, node, hierarchy.uuid)
 
-      assert Hierarchy.find_in_hierarchy(hierarchy, "nested_page_one") != nil
+      assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) != nil
       assert node in hierarchy.children
     end
   end

@@ -90,7 +90,7 @@ defmodule Oli.Delivery.Hierarchy do
         %HierarchyNode{uuid: uuid, children: children} = node,
         uuid_to_find
       )
-      when is_binary(uuid) do
+      when is_binary(uuid_to_find) do
     if uuid == uuid_to_find do
       node
     else
