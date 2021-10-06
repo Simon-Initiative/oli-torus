@@ -5,12 +5,12 @@ defmodule OliWeb.Objectives.BreakdownModal do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  def render(%{slug: slug} = assigns) do
+  def render(%{id: id, slug: slug} = assigns) do
     ~L"""
-    <div class="modal fade show" id="breakdown_<%= slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div class="modal fade show" id="<%= id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
-          <%= f = form_for @changeset, "#", [phx_submit: "perform_breakdown", id: "process-breakdown-" <> slug] %>
+          <%= f = form_for @changeset, "#", [phx_submit: "breakdown", id: "breakdown-" <> slug] %>
             <div class="modal-header">
               <h5 class="modal-title">Break down objective</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -51,8 +51,8 @@ defmodule OliWeb.Objectives.BreakdownModal do
               </p>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
-              <button type="submit" class="btn btn-primary" onclick="$('#breakdown_<%= slug %>').modal('hide')">Break down objective</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Break down objective</button>
             </div>
           </form>
         </div>

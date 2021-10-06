@@ -41,6 +41,15 @@ defmodule OliWeb.ProjectController do
     render(conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor)
   end
 
+  def download_analytics(conn, _project_params) do
+    project = conn.assigns.project
+
+    conn
+    |> send_download({:binary, Insights.export(project)},
+      filename: "analytics_#{project.slug}.zip"
+    )
+  end
+
   def publish(conn, _) do
     project = conn.assigns.project
 
@@ -207,15 +216,6 @@ defmodule OliWeb.ProjectController do
     conn
     |> send_download({:binary, Oli.Interop.Export.export(project)},
       filename: "export_#{project.slug}.zip"
-    )
-  end
-
-  def download_analytics(conn, _project_params) do
-    project = conn.assigns.project
-
-    conn
-    |> send_download({:binary, Insights.export(project)},
-      filename: "analytics_#{project.slug}.zip"
     )
   end
 

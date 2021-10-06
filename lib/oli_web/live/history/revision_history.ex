@@ -1,5 +1,6 @@
 defmodule OliWeb.RevisionHistory do
   use Phoenix.LiveView
+  use OliWeb.Common.Modal
 
   import Ecto.Query, warn: false
 
@@ -12,12 +13,12 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.RevisionHistory.Details
   alias OliWeb.RevisionHistory.Graph
   alias OliWeb.RevisionHistory.Table
-  alias OliWeb.Common.Modal
   alias OliWeb.RevisionHistory.Pagination
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.Breadcrumb
+  alias OliWeb.History.RestoreRevisionModal
 
   @page_size 15
 
@@ -63,7 +64,8 @@ defmodule OliWeb.RevisionHistory do
        page_offset: 0,
        initial_size: length(revisions),
        uploaded_files: [],
-       uploaded_content: nil
+       uploaded_content: nil,
+       modal: nil
      )
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
@@ -119,6 +121,8 @@ defmodule OliWeb.RevisionHistory do
     size = @page_size
 
     ~L"""
+    <%= render_modal(assigns) %>
+
     <h2>Revision History<h2>
     <h4>Resource ID: <%= @resource_id %></h4>
 
@@ -160,7 +164,7 @@ defmodule OliWeb.RevisionHistory do
           <div class="card-header">
             Selected Revision Details
             <div style="float: right;">
-              <button type="button" class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#restoreModal">
+              <button type="button" class="btn btn-outline-danger btn-sm" phx-click="show_restore_revision_modal">
                 Restore
               </button>
             </div>
@@ -199,14 +203,6 @@ defmodule OliWeb.RevisionHistory do
         </div>
       </div>
     </div>
-
-    <%= live_component Modal, title: "Restore Revision", modal_id: "restoreModal", ok_action: "restore", ok_label: "Proceed", ok_style: "btn-danger" do %>
-      <p class="mb-4">Are you sure you want to restore this revision?</p>
-
-      <p>This will end any active editing session for other users and will create a
-        new revision restoring this selected one. </p>
-    <% end %>
-
     """
   end
 
@@ -252,6 +248,17 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, socket}
   end
 
+  def handle_event("show_restore_revision_modal", _, socket) do
+    modal = %{
+      component: RestoreRevisionModal,
+      assigns: %{
+        id: "restore_revision"
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
   @impl Phoenix.LiveView
   def handle_event("validate", _params, socket) do
     {:noreply, socket}
@@ -278,7 +285,11 @@ defmodule OliWeb.RevisionHistory do
   # creates a new revision by restoring the state of the selected revision
   @impl Phoenix.LiveView
   def handle_event("restore", _, socket) do
-    mimic_edit(socket, socket.assigns.selected, socket.assigns.selected.content)
+    %{selected: selected} = socket.assigns
+
+    socket
+    |> hide_modal()
+    |> mimic_edit(selected, selected.content)
   end
 
   @impl Phoenix.LiveView
