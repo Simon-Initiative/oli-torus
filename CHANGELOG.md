@@ -3,6 +3,7 @@
 ## Unreleased
 ### Bug Fixes
 - Fix a style issue with the workspace footer
+- Fix an issue where modals misbehaved sporadically
 
 ### Enhancements
 - Add multi input activity
@@ -19,54 +20,6 @@ PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
-
-## 0.13.6 (2021-10-04)
-### Bug Fixes
-
-- Add ability to download raw analytic data
-
-## 0.13.5 (2021-10-04)
-### Bug Fixes
-- Fix an issue where generating resource links for tag types throws a server error
-
-## 0.13.4 (2021-10-03)
-### Bug Fixes
-
-- Fix an issue where a page can be duplicated within a container
-
-## 0.13.3 (2021-09-30)
-### Bug Fixes
-
-- Fix an issue where generating resource links for tag types throws a server error
-
-## 0.13.6 (2021-10-04)
-
-### Bug Fixes
-
-- Add ability to download raw analytic data
-
-## 0.13.5 (2021-10-04)
-
-### Bug Fixes
-
-- Fix an issue where a selection fact change can break the page
-
-## 0.13.4 (2021-10-03)
-
-### Bug Fixes
-
-- Fix an issue where a page can be duplicated within a container
-
-## 0.13.3 (2021-09-30)
-
-### Bug Fixes
-
-- Fix an issue where generating resource links for tag types throws a server error
-
-## 0.13.7 (2021-10-05)
-
-### Bug Fixes
-- Fix an issue where modals misbehaved sporadically
 
 ## 0.13.6 (2021-10-04)
 
