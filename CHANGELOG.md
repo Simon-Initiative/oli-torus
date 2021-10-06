@@ -6,6 +6,12 @@
 
 ### Enhancements
 
+## 0.13.7 (2021-10-06)
+
+### Bug Fixes
+
+- Fix datashop export dataset name, missing skills
+
 ## 0.13.6 (2021-10-04)
 
 ### Bug Fixes

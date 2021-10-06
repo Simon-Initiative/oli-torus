@@ -137,7 +137,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: user in Oli.Accounts.User,
         on: enrollment.user_id == user.id,
         join: raccess in ResourceAccess,
-        on: user.id == raccess.user_id,
+        on: user.id == raccess.user_id and section.id == raccess.section_id,
         join: rattempt in ResourceAttempt,
         on: raccess.id == rattempt.resource_access_id,
         join: aattempt in ActivityAttempt,
@@ -158,7 +158,6 @@ defmodule Oli.Delivery.Attempts.Core do
         select: %{part_attempt: pattempt, user: user}
       )
     )
-    # TODO: This should be done in the query, but can't get the syntax right
     |> Enum.map(
       &%{
         user: &1.user,
