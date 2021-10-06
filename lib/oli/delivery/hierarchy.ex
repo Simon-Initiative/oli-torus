@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Hierarchy do
 
   See also HierarchyNode for more details
   """
+  import Oli.Utils
+
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
@@ -72,7 +74,7 @@ defmodule Oli.Delivery.Hierarchy do
       published_resources_by_resource_id[revision.resource_id]
 
     %HierarchyNode{
-      slug: revision.slug,
+      uuid: uuid(),
       numbering: %Numbering{
         index: index,
         level: level
@@ -85,15 +87,15 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   def find_in_hierarchy(
-        %HierarchyNode{slug: slug, children: children} = node,
-        slug_to_find
+        %HierarchyNode{uuid: uuid, children: children} = node,
+        uuid_to_find
       )
-      when is_binary(slug_to_find) do
-    if slug == slug_to_find do
+      when is_binary(uuid) do
+    if uuid == uuid_to_find do
       node
     else
       Enum.reduce(children, nil, fn child, acc ->
-        if acc == nil, do: find_in_hierarchy(child, slug_to_find), else: acc
+        if acc == nil, do: find_in_hierarchy(child, uuid_to_find), else: acc
       end)
     end
   end
@@ -133,7 +135,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   def find_and_update_node(hierarchy, node) do
-    if hierarchy.slug == node.slug do
+    if hierarchy.uuid == node.uuid do
       node
     else
       %HierarchyNode{
@@ -144,24 +146,24 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
-  def find_and_remove_node(hierarchy, slug) do
-    if slug in Enum.map(hierarchy.children, & &1.slug) do
+  def find_and_remove_node(hierarchy, uuid) do
+    if uuid in Enum.map(hierarchy.children, & &1.uuid) do
       %HierarchyNode{
         hierarchy
-        | children: Enum.filter(hierarchy.children, fn child -> child.slug != slug end)
+        | children: Enum.filter(hierarchy.children, fn child -> child.uuid != uuid end)
       }
     else
       %HierarchyNode{
         hierarchy
         | children:
-            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, slug) end)
+            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, uuid) end)
       }
     end
   end
 
-  def move_node(hierarchy, node, destination_slug) do
-    hierarchy = find_and_remove_node(hierarchy, node.slug)
-    destination = find_in_hierarchy(hierarchy, destination_slug)
+  def move_node(hierarchy, node, destination_uuid) do
+    hierarchy = find_and_remove_node(hierarchy, node.uuid)
+    destination = find_in_hierarchy(hierarchy, destination_uuid)
 
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 

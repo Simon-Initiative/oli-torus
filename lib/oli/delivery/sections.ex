@@ -765,7 +765,6 @@ defmodule Oli.Delivery.Sections do
           new_hierarchy =
             Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
 
-          # processed_resource_ids = Map.put(%{}, root_revision.resource_id, true)
           processed_resource_ids = %{}
 
           {updated_hierarchy, _} =
@@ -859,21 +858,29 @@ defmodule Oli.Delivery.Sections do
           # container has changed, check to see if any children were deleted
           current_parent = hierarchy_node(hierarchy, resource_id)
 
-          Enum.reduce(
-            current_parent.children,
-            {hierarchy, processed_resource_ids},
-            fn child, {hierarchy, processed_resource_ids} ->
-              # fetch the latest parent on every call, as it may have changed
-              current_parent = hierarchy_node(hierarchy, resource_id)
+          # handle the case where the parent doesnt exist in the hierarchy, for example
+          # if the container was removed in remix
+          case current_parent do
+            nil ->
+              {hierarchy, processed_resource_ids}
 
-              maybe_process_deleted_node(
+            parent ->
+              Enum.reduce(
+                parent.children,
                 {hierarchy, processed_resource_ids},
-                child,
-                current_parent,
-                diff
+                fn child, {hierarchy, processed_resource_ids} ->
+                  # fetch the latest parent on every call, as it may have changed
+                  parent = hierarchy_node(hierarchy, resource_id)
+
+                  maybe_process_deleted_node(
+                    {hierarchy, processed_resource_ids},
+                    child,
+                    parent,
+                    diff
+                  )
+                end
               )
-            end
-          )
+          end
 
         _ ->
           # page wasn't added or deleted, so it is non-structural and is covered by spp update
@@ -937,7 +944,13 @@ defmodule Oli.Delivery.Sections do
   defp hierarchy_parent_node(current_hierarchy, new_hierarchy, resource_id) do
     new_hierarchy_parent = parent_node(new_hierarchy, resource_id)
 
-    hierarchy_node(current_hierarchy, new_hierarchy_parent.resource_id)
+    case new_hierarchy_parent do
+      nil ->
+        nil
+
+      %{resource_id: new_hierarchy_parent_resource_id} ->
+        hierarchy_node(current_hierarchy, new_hierarchy_parent_resource_id)
+    end
   end
 
   # finds the parent node of the given resource id

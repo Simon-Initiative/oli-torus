@@ -131,11 +131,11 @@ defmodule OliWeb.Common.Breadcrumb do
   @doc """
   Generates a breadcrumb trail to the given node using a hierarchy
   """
-  def breadcrumb_trail_to(%HierarchyNode{slug: slug} = hierarchy, active) do
+  def breadcrumb_trail_to(%HierarchyNode{uuid: uuid} = hierarchy, active) do
     [
       Breadcrumb.new(%{
         full_title: "Curriculum",
-        slug: slug
+        slug: uuid
       })
       | trail_to_helper(hierarchy, active)
     ]
@@ -153,7 +153,7 @@ defmodule OliWeb.Common.Breadcrumb do
     end
   end
 
-  defp make_breadcrumb(%HierarchyNode{slug: slug, revision: rev, numbering: numbering}) do
+  defp make_breadcrumb(%HierarchyNode{uuid: uuid, revision: rev, numbering: numbering}) do
     case rev.resource_type do
       "container" ->
         Breadcrumb.new(%{
@@ -161,13 +161,13 @@ defmodule OliWeb.Common.Breadcrumb do
             Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
               ": " <> rev.title,
           short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
-          slug: slug
+          slug: uuid
         })
 
       _ ->
         Breadcrumb.new(%{
           full_title: rev.title,
-          slug: slug
+          slug: uuid
         })
     end
   end

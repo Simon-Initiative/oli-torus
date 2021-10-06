@@ -1,6 +1,7 @@
 defmodule Oli.Publishing.AuthoringResolver do
   import Oli.Timing
   import Ecto.Query, warn: false
+  import Oli.Utils
 
   alias Oli.Repo
   alias Oli.Publishing.Resolver
@@ -226,7 +227,7 @@ defmodule Oli.Publishing.AuthoringResolver do
 
     {
       %HierarchyNode{
-        slug: revision.slug,
+        uuid: uuid(),
         numbering: %Numbering{
           index: numbering_index,
           level: level

@@ -10,7 +10,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
   def render(
         %{
           id: id,
-          node: %HierarchyNode{slug: slug, revision: revision} = node,
+          node: %HierarchyNode{uuid: uuid, revision: revision} = node,
           hierarchy: %HierarchyNode{} = hierarchy,
           from_container: %HierarchyNode{} = from_container,
           active: %HierarchyNode{} = active
@@ -31,7 +31,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
                 id: "#{id}_hierarchy_picker",
                 hierarchy: hierarchy,
                 active: active,
-                filter_items_fn: fn items -> Enum.filter(items, &(&1.slug != slug)) end %>
+                filter_items_fn: fn items -> Enum.filter(items, &(&1.uuid != uuid)) end %>
 
               <div class="text-center text-secondary mt-2">
                 <b><%= revision.title %></b> will be placed here
@@ -42,11 +42,10 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
               <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="MoveModal.cancel">Cancel</button>
               <button type="submit"
                 class="btn btn-primary"
-                onclick="$('#move_<%= slug %>').modal('hide')"
                 phx-click="MoveModal.move_item"
-                phx-value-item_slug="<%= node.slug %>"
-                phx-value-from_slug="<%= from_container.slug %>"
-                phx-value-to_slug="<%= active.slug %>"
+                phx-value-uuid="<%= node.uuid %>"
+                phx-value-from_uuid="<%= from_container.uuid %>"
+                phx-value-to_uuid="<%= active.uuid %>"
                 <%= if can_move?(from_container, active) , do: "", else: "disabled" %>>
                 Move
               </button>
@@ -58,6 +57,6 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
   end
 
   defp can_move?(from_container, active) do
-    active.slug != nil && active.slug != from_container.slug
+    active.uuid != nil && active.uuid != from_container.uuid
   end
 end

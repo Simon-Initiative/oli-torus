@@ -161,21 +161,21 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   # handle change of selection
-  def handle_event("select", %{"slug" => slug}, socket) do
+  def handle_event("select", %{"uuid" => uuid}, socket) do
     %{active: active} = socket.assigns
 
     selected =
       Enum.find(active.children, fn node ->
-        node.slug == slug
+        node.uuid == uuid
       end)
 
     {:noreply, assign(socket, :selected, selected)}
   end
 
-  def handle_event("set_active", %{"slug" => slug}, socket) do
+  def handle_event("set_active", %{"uuid" => uuid}, socket) do
     %{hierarchy: hierarchy} = socket.assigns
 
-    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     if is_container?(active.revision) do
       {:noreply, assign(socket, :active, active)}
@@ -265,8 +265,8 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   # handle drag events
-  def handle_event("dragstart", drag_slug, socket) do
-    {:noreply, assign(socket, dragging: drag_slug)}
+  def handle_event("dragstart", drag_uuid, socket) do
+    {:noreply, assign(socket, dragging: drag_uuid)}
   end
 
   def handle_event("dragend", _, socket) do
@@ -295,13 +295,13 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, redirect(socket, to: redirect_after_save)}
   end
 
-  def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+  def handle_event("show_move_modal", %{"uuid" => uuid}, socket) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     assigns = %{
-      id: "move_#{slug}",
+      id: "move_#{uuid}",
       node: node,
       hierarchy: hierarchy,
       from_container: active,
@@ -372,7 +372,7 @@ defmodule OliWeb.Delivery.RemixSection do
       end)
 
     # reload the updated active node
-    updated = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
+    updated = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
     {:noreply,
      assign(socket,
@@ -421,10 +421,10 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, assign(socket, modal: modal)}
   end
 
-  def handle_event("HierarchyPicker.update_active", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
     %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
 
-    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     modal = %{
       modal
@@ -458,16 +458,16 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"item_slug" => item_slug, "to_slug" => to_slug},
+        %{"uuid" => uuid, "to_uuid" => to_uuid},
         socket
       ) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(hierarchy, item_slug)
-    hierarchy = Hierarchy.move_node(hierarchy, node, to_slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    hierarchy = Hierarchy.move_node(hierarchy, node, to_uuid)
 
     # refresh active node
-    active = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
   end
@@ -476,13 +476,13 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply, socket}
   end
 
-  def handle_event("show_remove_modal", %{"slug" => slug}, socket) do
+  def handle_event("show_remove_modal", %{"uuid" => uuid}, socket) do
     %{hierarchy: hierarchy} = socket.assigns
 
-    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     assigns = %{
-      id: "remove_#{slug}",
+      id: "remove_#{uuid}",
       node: node
     }
 
@@ -492,13 +492,13 @@ defmodule OliWeb.Delivery.RemixSection do
      )}
   end
 
-  def handle_event("RemoveModal.remove", %{"slug" => slug}, socket) do
+  def handle_event("RemoveModal.remove", %{"uuid" => uuid}, socket) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    hierarchy = Hierarchy.find_and_remove_node(hierarchy, slug)
+    hierarchy = Hierarchy.find_and_remove_node(hierarchy, uuid)
 
     # refresh active node
-    active = Hierarchy.find_in_hierarchy(hierarchy, active.slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
   end
@@ -538,7 +538,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     ~L"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid="<%= previous_uuid(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{
@@ -555,7 +555,7 @@ defmodule OliWeb.Delivery.RemixSection do
          %{breadcrumb: breadcrumb, show_short: show_short, is_last: is_last} = assigns
        ) do
     ~L"""
-    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" <%= if is_last, do: "disabled" %> phx-click="set_active" phx-value-slug="<%= breadcrumb.slug %>">
+    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" <%= if is_last, do: "disabled" %> phx-click="set_active" phx-value-uuid="<%= breadcrumb.slug %>">
       <%= get_title(breadcrumb, show_short) %>
     </button>
     """
@@ -564,7 +564,7 @@ defmodule OliWeb.Delivery.RemixSection do
   defp get_title(breadcrumb, true = _show_short), do: breadcrumb.short_title
   defp get_title(breadcrumb, false = _show_short), do: breadcrumb.full_title
 
-  defp previous_slug(breadcrumbs) do
+  defp previous_uuid(breadcrumbs) do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
   end

@@ -176,7 +176,7 @@ defmodule Oli.Resources.Numbering do
     container = ResourceType.get_id_by_type("container")
     path = [current_node | path]
 
-    if current_node.slug == node.slug do
+    if current_node.uuid == node.uuid do
       {:ok, path}
     else
       current_node.children

@@ -32,8 +32,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   selected_publication:   The currently selected publication (used in multi-pub mode)
 
   ## Events:
-  "HierarchyPicker.update_active", %{"slug" => slug}
-  "HierarchyPicker.select", %{"slug" => slug}
+  "HierarchyPicker.update_active", %{"uuid" => uuid}
+  "HierarchyPicker.select", %{"uuid" => uuid}
   "HierarchyPicker.select_publication", %{"id" => id}
   "HierarchyPicker.clear_publication", %{"id" => id}
 
@@ -99,10 +99,10 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   def render_child(
         %{select_mode: :multi, selection: selection, selected_publication: pub} = assigns,
-        %{slug: slug, resource_id: resource_id, revision: revision} = child
+        %{uuid: uuid, resource_id: resource_id, revision: revision} = child
       ) do
     ~L"""
-    <div id="hierarchy_item_<%= slug %>" phx-click="HierarchyPicker.select" phx-value-publication_id="<%= pub.id %>" phx-value-resource_id="<%= resource_id %>">
+    <div id="hierarchy_item_<%= uuid %>" phx-click="HierarchyPicker.select" phx-value-publication_id="<%= pub.id %>" phx-value-resource_id="<%= resource_id %>">
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <input type="checkbox" <%= maybe_checked(selection, pub.id, resource_id) %>></input>
@@ -116,7 +116,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   def render_child(assigns, child) do
     ~L"""
-    <div id="hierarchy_item_<%= child.slug %>">
+    <div id="hierarchy_item_<%= child.uuid %>">
       <div class="flex-1 mx-2">
         <span class="align-middle">
           <%= OliWeb.Curriculum.EntryLive.icon(%{child: child.revision}) %>
@@ -158,7 +158,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             </div>
         <% end %>
 
-        <button class="btn btn-sm btn-link" <%= maybe_disabled(breadcrumbs) %> phx-click="HierarchyPicker.update_active" phx-value-slug="<%= previous_slug(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
+        <button class="btn btn-sm btn-link" <%= maybe_disabled(breadcrumbs) %> phx-click="HierarchyPicker.update_active" phx-value-uuid="<%= previous_uuid(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{
@@ -177,7 +177,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
        ) do
     ~L"""
     <li class="breadcrumb-item align-self-center pl-2">
-      <button class="btn btn-xs btn-link px-0" <%= if is_last, do: "disabled" %> phx-click="HierarchyPicker.update_active" phx-value-slug="<%= breadcrumb.slug %>">
+      <button class="btn btn-xs btn-link px-0" <%= if is_last, do: "disabled" %> phx-click="HierarchyPicker.update_active" phx-value-uuid="<%= breadcrumb.slug %>">
         <%= get_title(breadcrumb, show_short) %>
       </button>
     </li>
@@ -200,7 +200,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   end
 
   defp resource_link(assigns, %HierarchyNode{
-         slug: slug,
+         uuid: uuid,
          revision: revision,
          numbering: numbering
        }) do
@@ -215,7 +215,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
             end
 
           ~L"""
-            <button class="btn btn-link entry-title px-0" phx-click="HierarchyPicker.update_active" phx-value-slug="<%= slug %>">
+            <button class="btn btn-link entry-title px-0" phx-click="HierarchyPicker.update_active" phx-value-uuid="<%= uuid %>">
               <%= title %>
             </button>
           """
@@ -261,7 +261,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     end
   end
 
-  defp previous_slug(breadcrumbs) do
+  defp previous_uuid(breadcrumbs) do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
   end
