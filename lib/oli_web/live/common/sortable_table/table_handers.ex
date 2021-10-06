@@ -40,14 +40,14 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
 
   def get_atom_param(params, name, valid, default_value) do
     case params[name] do
+      nil ->
+        default_value
+
       value ->
         case MapSet.new(valid) |> MapSet.member?(value) do
           true -> String.to_existing_atom(value)
           _ -> default_value
         end
-
-      _ ->
-        default_value
     end
   end
 

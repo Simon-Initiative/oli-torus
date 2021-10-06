@@ -11,6 +11,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Authoring.Course.Project
   alias Oli.Accounts.{Author}
   alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.Filter
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
   alias OliWeb.Projects.TableModel
@@ -82,12 +83,15 @@ defmodule OliWeb.Projects.ProjectsLive do
     show_deleted =
       OliWeb.Common.SortableTable.TableHandlers.get_boolean_param(params, "show_deleted", false)
 
+    applied_filter = OliWeb.Common.SortableTable.TableHandlers.get_str_param(params, "filter", "")
+
     projects =
       Course.browse_projects(
         socket.assigns.author,
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        show_deleted
+        show_deleted,
+        applied_filter
       )
 
     table_model = Map.put(table_model, :rows, projects)
@@ -102,7 +106,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        projects: projects,
        table_model: table_model,
        total_count: total_count,
-       show_deleted: show_deleted
+       show_deleted: show_deleted,
+       applied_filter: applied_filter
      )}
   end
 
@@ -140,8 +145,16 @@ defmodule OliWeb.Projects.ProjectsLive do
     <div class="container">
       <div class="row">
         <div class="col-12">
+          <%= live_component Filter, change: "filter_change", apply: "filter_apply", reset: "filter_reset" %>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
           <%= live_component PagedTable, page_change: "page_change", sort: "sort",
-          total_count: @total_count, filter: "",
+          total_count: @total_count, filter: @applied_filter,
           limit: @limit, offset: @offset, table_model: @table_model %>
         </div>
       </div>
@@ -192,7 +205,8 @@ defmodule OliWeb.Projects.ProjectsLive do
            sort_by: socket.assigns.sort_by,
            sort_order: socket.assigns.sort_order,
            offset: socket.assigns.offset,
-           show_deleted: !socket.assigns.show_deleted
+           show_deleted: !socket.assigns.show_deleted,
+           filter: socket.assigns.applied_filter
          })
      )}
   end
@@ -205,7 +219,40 @@ defmodule OliWeb.Projects.ProjectsLive do
            sort_by: socket.assigns.sort_by,
            sort_order: socket.assigns.sort_order,
            offset: offset,
-           show_deleted: socket.assigns.show_deleted
+           show_deleted: socket.assigns.show_deleted,
+           filter: socket.assigns.applied_filter
+         })
+     )}
+  end
+
+  def handle_event("filter_change", %{"value" => value}, socket) do
+    {:noreply, assign(socket, filter: value)}
+  end
+
+  def handle_event("filter_reset", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+           sort_by: socket.assigns.sort_by,
+           sort_order: socket.assigns.sort_order,
+           offset: socket.assigns.offset,
+           show_deleted: socket.assigns.show_deleted,
+           filter: ""
+         })
+     )}
+  end
+
+  def handle_event("filter_apply", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+           sort_by: socket.assigns.sort_by,
+           sort_order: socket.assigns.sort_order,
+           offset: socket.assigns.offset,
+           show_deleted: socket.assigns.show_deleted,
+           filter: socket.assigns.filter
          })
      )}
   end
@@ -232,7 +279,8 @@ defmodule OliWeb.Projects.ProjectsLive do
            sort_by: sort_by,
            sort_order: sort_order,
            offset: socket.assigns.offset,
-           show_deleted: socket.assigns.show_deleted
+           show_deleted: socket.assigns.show_deleted,
+           filter: socket.assigns.applied_filter
          })
      )}
   end

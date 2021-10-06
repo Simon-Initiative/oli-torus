@@ -58,7 +58,7 @@ defmodule Oli.Authoring.Course do
         %Paging{} = paging,
         %Sorting{} = sorting,
         include_deleted,
-        text_search \\ nil
+        text_search \\ ""
       ) do
     admin_role_id = SystemRole.role_id().admin
 
@@ -73,10 +73,10 @@ defmodule Oli.Authoring.Course do
   end
 
   defp browse_projects_as_admin(
-         %Paging{limit: limit, offset: offset} = paging,
-         %Sorting{direction: direction, field: field} = sorting,
+         %Paging{limit: limit, offset: offset},
+         %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search \\ nil
+         text_search
        ) do
     filter_by_status =
       if include_deleted do
@@ -86,10 +86,10 @@ defmodule Oli.Authoring.Course do
       end
 
     filter_by_text =
-      if is_nil(text_search) do
+      if text_search == "" do
         true
       else
-        dynamic([p], like(p.title, ^text_search))
+        dynamic([p], ilike(p.title, ^"%#{text_search}%"))
       end
 
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
@@ -133,7 +133,7 @@ defmodule Oli.Authoring.Course do
          %Paging{limit: limit, offset: offset},
          %Sorting{direction: direction, field: field},
          include_deleted,
-         text_search \\ nil
+         text_search
        ) do
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
@@ -147,7 +147,7 @@ defmodule Oli.Authoring.Course do
       end
 
     filter_by_text =
-      if is_nil(text_search) do
+      if text_search == "" do
         true
       else
         dynamic([_, p, _, _], like(p.title, ^text_search))
