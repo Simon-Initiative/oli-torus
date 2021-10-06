@@ -78,11 +78,18 @@
     </tbody>
   </table>
 
-  <h5>Updates</h5>
-  <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
-    "section" => @section,
-    "redirect_after_apply" => Routes.open_and_free_path(@conn, :show, @section),
-    "current_user" => nil,
-    "current_author" => @current_author
-    }) %>
+  <p class="mb-2">
+    <h5>Remix</h5>
+    <%= link "Curriculum Remix", to: Routes.open_and_free_path(@conn, :remix, @section), class: "btn btn-sm btn-primary" %>
+  </p>
+
+  <p>
+    <h5>Updates</h5>
+    <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
+      "section" => @section,
+      "redirect_after_apply" => Routes.open_and_free_path(@conn, :show, @section),
+      "current_user" => nil,
+      "current_author" => @current_author
+      }) %>
+    </p>
 </div>

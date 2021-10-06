@@ -23,7 +23,7 @@ export const TitleBar = (props: TitleBarProps) => {
         className,
       ])}
     >
-      <div className="d-flex align-items-center flex-grow-1 mr-2">
+      <div className="d-flex align-items-baseline flex-grow-1 mr-2">
         <TextEditor
           onEdit={onTitleEdit}
           model={title}

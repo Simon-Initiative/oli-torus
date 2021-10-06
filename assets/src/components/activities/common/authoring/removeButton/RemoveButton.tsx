@@ -12,6 +12,7 @@ type Props = {
 
 export const RemoveButton: React.FC<Props> = (props) => (
   <AuthoringButton
+    ariaLabel="Remove"
     editMode={props.editMode}
     action={props.onClick}
     className="removeButton__button"

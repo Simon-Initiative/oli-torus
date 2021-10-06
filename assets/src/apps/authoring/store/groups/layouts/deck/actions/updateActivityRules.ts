@@ -8,7 +8,6 @@ import {
   upsertActivities,
 } from '../../../../../../delivery/store/features/activities/slice';
 import { GroupsSlice } from '../../../../../../delivery/store/features/groups/slice';
-import { acquireEditingLock, releaseEditingLock } from '../../../../app/actions/locking';
 import { selectProjectSlug } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 
@@ -68,12 +67,6 @@ export const updateActivityRules = createAsyncThunk(
       }
     });
     if (activitiesToUpdate.length) {
-      /* console.log(
-        '🚀🚀🚀 > file: updateActivityRules.ts > line 64 > activitiesToUpdate',
-        activitiesToUpdate,
-      ); */
-      await dispatch(acquireEditingLock());
-      /* console.log('UPDATE: ', { activitiesToUpdate }); */
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);
@@ -89,7 +82,6 @@ export const updateActivityRules = createAsyncThunk(
         return changeData;
       });
       await bulkEdit(projectSlug, pageResourceId, updates);
-      await dispatch(releaseEditingLock());
     }
     return;
   },

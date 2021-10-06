@@ -1,5 +1,5 @@
-import { Editor } from 'slate';
 import { schema } from 'data/content/model';
+import { Editor } from 'slate';
 
 export const withInlines = (editor: Editor) => {
   editor.isInline = (element) => {

@@ -13,6 +13,7 @@ const lessonSchema: JSONSchema7 = {
         title: {
           type: 'string',
           title: 'Title',
+          readOnly: true,
         },
         Size: {
           type: 'object',

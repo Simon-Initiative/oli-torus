@@ -14,6 +14,16 @@ export interface JanusAbsolutePositioned extends CustomProperties {
   height?: number;
 }
 
+export interface AnyPartModel extends JanusCustomCss, JanusAbsolutePositioned {
+  [key: string]: any;
+}
+
+export interface AnyPartComponent {
+  id: string;
+  type: string;
+  custom: AnyPartModel;
+}
+
 export interface CapiVariable {
   id: string;
   key: string;
@@ -32,6 +42,7 @@ export interface PartComponentProps<T extends CustomProperties> {
   onReady: (payload: any) => Promise<any>;
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
+  onResize: (payload: any) => Promise<any>;
 }
 
 export interface AuthorPartComponentProps<T extends CustomProperties>
@@ -70,3 +81,14 @@ export interface ColorPalette {
   lineStyle?: number;
   lineThickness?: number;
 }
+
+export const defaultCapabilities = {
+  move: true,
+  copy: true,
+  resize: true,
+  rotate: false,
+  select: true,
+  delete: true,
+  duplicate: true,
+  configure: false,
+};

@@ -1,4 +1,8 @@
-import { getHints } from 'components/activities/common/hints/authoring/hintUtils';
+import { ResponseActions } from 'components/activities/common/responses/responseActions';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { Actions } from 'components/activities/ordering/actions';
+import { defaultOrderingModel } from 'components/activities/ordering/utils';
+import { Hints } from 'data/activities/model/hints';
 import {
   getChoiceIds,
   getCorrectChoiceIds,
@@ -8,10 +12,7 @@ import {
   getResponses,
   getTargetedChoiceIds,
   getTargetedResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
-import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { Actions } from 'components/activities/ordering/actions';
-import { defaultOrderingModel } from 'components/activities/ordering/utils';
+} from 'data/activities/model/responses';
 import { dispatch } from 'utils/test_utils';
 
 const testDefaultModel = defaultOrderingModel;
@@ -49,11 +50,11 @@ describe('ordering question', () => {
   });
 
   it('has one correct response', () => {
-    expect(getCorrectResponse(model)).toBeTruthy();
+    expect(getCorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('has one incorrect response', () => {
-    expect(getIncorrectResponse(model)).toBeTruthy();
+    expect(getIncorrectResponse(model, DEFAULT_PART_ID)).toBeTruthy();
   });
 
   it('can add a targeted feedback', () => {
@@ -74,6 +75,6 @@ describe('ordering question', () => {
   });
 
   it('has at least 3 hints', () => {
-    expect(getHints(model).length).toBeGreaterThanOrEqual(3);
+    expect(Hints.byPart(model, DEFAULT_PART_ID).length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -1,8 +1,11 @@
-import { makeTransformation, Operation, Transformation } from '../types';
 import React from 'react';
+import { makeTransformation, Transform, Transformation } from '../types';
+
+// Activities with one part have a hard-coded ID. This makes some lookup logic simpler.
+export const DEFAULT_PART_ID = '1';
 
 export const isShuffled = (transformations: Transformation[]): boolean =>
-  !!transformations.find((xform) => xform.operation === Operation.shuffle);
+  !!transformations.find((xform) => xform.operation === Transform.shuffle);
 
 export const toggleAnswerChoiceShuffling = () => {
   return (model: { authoring: { transformations: Transformation[] } }): void => {
@@ -10,9 +13,9 @@ export const toggleAnswerChoiceShuffling = () => {
 
     isShuffled(transformations)
       ? (model.authoring.transformations = transformations.filter(
-          (xform) => xform.operation !== Operation.shuffle,
+          (xform) => xform.operation !== Transform.shuffle,
         ))
-      : model.authoring.transformations.push(makeTransformation('choices', Operation.shuffle));
+      : model.authoring.transformations.push(makeTransformation('choices', Transform.shuffle));
   };
 };
 
@@ -55,4 +58,8 @@ export function remove<T>(item: T, list: T[]) {
 
 export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
   return subtractedFrom.filter((x) => !toSubtract.includes(x));
+}
+
+export function setUnion<T>(list1: T[], list2: T[]) {
+  return [...list2.reduce((acc, curr) => acc.add(curr), new Set(list1))];
 }

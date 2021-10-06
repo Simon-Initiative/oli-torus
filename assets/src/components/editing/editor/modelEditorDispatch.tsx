@@ -13,11 +13,14 @@ import { ThEditor } from 'components/editing/models/table/ThEditor';
 import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
 import { WebpageEditor } from '../models/webpage/Editor';
+import { InputRefEditor } from 'components/editing/models/inputref/Editor';
+import { ReactEditor } from 'slate-react';
+import { Editor } from 'slate';
 
 export function editorFor(
   element: ContentModel.ModelElement,
   props: any,
-  editor: any,
+  editor: ReactEditor & Editor,
   commandContext: CommandContext,
 ): JSX.Element {
   const { attributes, children } = props;
@@ -78,6 +81,8 @@ export function editorFor(
     case 'math':
     case 'math_line':
       return <span {...attributes}>Not implemented</span>;
+    case 'input_ref':
+      return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
     default:
       return <span>{children}</span>;
   }

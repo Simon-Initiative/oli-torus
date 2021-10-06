@@ -1,8 +1,8 @@
-import { ActivityModelSchema, PostUndoable, Undoable, MediaItemRequest } from './types';
 import { ProjectSlug } from 'data/types';
+import produce from 'immer';
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
-import produce from 'immer';
+import { ActivityModelSchema, MediaItemRequest, PostUndoable, Undoable } from './types';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -42,7 +42,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       authoringContext = getProp('authoringcontext');
     }
 
-    const onEdit = (model: any) => {
+    const onEdit = (model: T) => {
       this.dispatchEvent(new CustomEvent('modelUpdated', { bubbles: true, detail: { model } }));
     };
     const onPostUndoable = (undoable: Undoable) => {
@@ -103,7 +103,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this.connected = true;
   }
 
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
+  attributeChangedCallback(_name: any, _oldValue: any, _newValue: any) {
     if (this.connected) {
       this.render(this.mountPoint, this.props());
     }
@@ -117,7 +117,7 @@ export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
-  dispatch: (action: (model: T, post: PostUndoable) => any) => void;
+  dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
 }
 const AuthoringElementContext = React.createContext<AuthoringElementState<any> | undefined>(
@@ -139,8 +139,11 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   onRequestMedia,
   onEdit,
 }) => {
-  const dispatch: AuthoringElementState<any>['dispatch'] = (action) =>
-    onEdit(produce(model, (draftState) => action(draftState, onPostUndoable)));
+  const dispatch: AuthoringElementState<any>['dispatch'] = (action) => {
+    const newModel = produce(model, (draftState) => action(draftState, onPostUndoable));
+    onEdit(newModel);
+    return newModel;
+  };
   return (
     <AuthoringElementContext.Provider
       value={{ projectSlug, editMode, dispatch, model, onRequestMedia }}

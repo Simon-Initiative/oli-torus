@@ -1,0 +1,55 @@
+<%= case @modal do %>
+  <% nil -> %>
+
+  <% %{component: component, assigns: assigns} -> %>
+    <%= live_component component, assigns %>
+<% end %>
+<div id="curriculum-container" class="container curriculum-editor">
+  <h3><%= @section.title %></h3>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="mb-3 d-flex flex-row flex-nowrap">
+        Customize your curriculum by adding, removing and rearranging course materials.
+        <div class="flex-grow-1"></div>
+        <div class="flex-shrink-0">
+          <button id="cancel" class="btn btn-outline-primary ml-1" phx-click="cancel">Cancel</button>
+          <button id="save" disabled={!@has_unsaved_changes} class="btn btn-primary ml-1" phx-click="save" phx-disabled-with="Saving...">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="curriculum-navigation">
+    <%= render_breadcrumb assigns %>
+  </div>
+
+  <div class="row" phx-window-keydown="keydown">
+    <div class="col-12">
+      <div class="curriculum-entries">
+        <%= if Enum.count(@active.children) == 0 do %>
+          <div style="margin-top: 15px">
+            <p>There's nothing here.</p>
+          </div>
+        <% end %>
+        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.section_resource.slug != @dragging end) do %>
+          <DropTarget.droptarget id={index} index={index} />
+          <Entry.entry
+              index={index}
+              selected={@selected == node.slug}
+              node={node} />
+        <% end %>
+        <DropTarget.droptarget id={"last"} index={length(@active.children)} />
+      </div>
+      <div class="mt-5">
+        <span class="text-secondary mr-2">Add</span>
+        <button disabled={true} phx-click="add" phx-value-type="material" class="btn btn-xs btn-primary p-2 mr-1" type="button">
+          Materials
+        </button>
+        <button disabled={true} phx-click="add" phx-value-type="container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+          <%= new_container_name(@active) %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

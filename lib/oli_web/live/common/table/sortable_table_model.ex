@@ -110,14 +110,18 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   end
 
   def sort(%__MODULE__{rows: rows, sort_by_spec: sort_by_spec, sort_order: sort_order} = struct) do
-    sort_fn =
+    sorted =
       case sort_by_spec.sort_fn do
-        nil -> ColumnSpec.default_sort_fn(sort_order, sort_by_spec)
-        func -> func.(sort_order, sort_by_spec)
+        nil ->
+          Enum.sort(rows, ColumnSpec.default_sort_fn(sort_order, sort_by_spec))
+
+        func ->
+          {mapper, sorter} = func.(sort_order, sort_by_spec)
+          Enum.sort_by(rows, mapper, sorter)
       end
 
     struct
-    |> Map.put(:rows, Enum.sort(rows, sort_fn))
+    |> Map.put(:rows, sorted)
   end
 
   def to_params(%__MODULE__{} = struct) do

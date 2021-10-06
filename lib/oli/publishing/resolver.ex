@@ -5,7 +5,7 @@ defmodule Oli.Publishing.Resolver do
   """
 
   alias Oli.Resources.Revision
-  alias Oli.Publishing.HierarchyNode
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   @doc """
   Resolves a revision from a list of resource ids and a given context slug.

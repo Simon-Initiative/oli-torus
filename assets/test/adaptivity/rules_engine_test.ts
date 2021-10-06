@@ -307,6 +307,8 @@ describe('Operators', () => {
     it('should check containsany Of', () => {
       expect(containsAnyOfOperator('[March,June,September,December]', 'December')).toEqual(true);
       expect(containsAnyOfOperator('[March,June,September,December]', 'winter')).toEqual(false);
+      expect(containsAnyOfOperator('[March,June,September,December]', '[December]')).toEqual(true);
+      expect(notContainsAnyOfOperator('[March,June,September,December]', '[winter]')).toEqual(true);
     });
   });
 

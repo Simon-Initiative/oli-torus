@@ -13,14 +13,7 @@ import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/P
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
 import { PopupModel } from './schema';
-interface ContextProps {
-  currentActivity: string;
-  mode: string;
-}
-interface InitResultProps {
-  snapshot: Record<string, unknown>;
-  context: ContextProps;
-}
+import { InitResultProps } from './types';
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
@@ -61,10 +54,6 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
     if (isOpen !== undefined) {
       setShowPopup(isOpen);
-    }
-    const openByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
-    if (openByDefault !== undefined) {
-      setShowPopup(openByDefault);
     }
     const isVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (isVisible !== undefined) {

@@ -1,30 +1,42 @@
-import React, { useMemo, useCallback, useEffect, useState } from 'react';
-import { Slate, Editable, withReact, ReactEditor } from 'slate-react';
-import { createEditor, Editor as SlateEditor, Range } from 'slate';
 import { Mark, ModelElement, Selection } from 'data/content/model';
-import { editorFor, markFor } from './modelEditorDispatch';
-import { ToolbarItem, CommandContext } from '../commands/interfaces';
-import { installNormalizer } from './normalizers/normalizer';
-import { InsertionToolbar } from '../toolbars/insertion/Toolbar';
-import { formatMenuCommands } from '../toolbars/formatting/items';
-import { shouldShowFormattingToolbar } from '../toolbars/formatting/utils';
-import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
-import { onKeyDown as listOnKeyDown } from './handlers/lists';
-import { onKeyDown as voidOnKeyDown } from './handlers/void';
-import { onKeyDown as titleOnKeyDown } from './handlers/title';
-import { hotkeyHandler } from './handlers/hotkey';
-import { HoveringToolbar } from '../toolbars/HoveringToolbar';
-import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
-import { withVoids } from './overrides/voids';
-import { withInlines } from './overrides/inlines';
-import { withTables } from './overrides/tables';
-import { withMarkdown } from './overrides/markdown';
-import { onPaste } from './handlers/paste';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { createEditor, Editor as SlateEditor, Operation, Range } from 'slate';
 import { withHistory } from 'slate-history';
+import {
+  Editable,
+  ReactEditor,
+  RenderElementProps,
+  RenderLeafProps,
+  Slate,
+  withReact,
+} from 'slate-react';
+import { CommandContext, ToolbarItem } from '../commands/interfaces';
+import { formatMenuCommands } from '../toolbars/formatting/items';
+import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
+import { shouldShowFormattingToolbar } from '../toolbars/formatting/utils';
+import { HoveringToolbar } from '../toolbars/HoveringToolbar';
+import { InsertionToolbar } from '../toolbars/insertion/Toolbar';
+import { hotkeyHandler } from './handlers/hotkey';
+import { onKeyDown as listOnKeyDown } from './handlers/lists';
+import { onPaste } from './handlers/paste';
+import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
+import { onKeyDown as titleOnKeyDown } from './handlers/title';
+import { onKeyDown as voidOnKeyDown } from './handlers/void';
+import { editorFor, markFor } from './modelEditorDispatch';
+import { installNormalizer, NormalizerContext } from './normalizers/normalizer';
+import { withInlines } from './overrides/inlines';
+import { withMarkdown } from './overrides/markdown';
+import { withTables } from './overrides/tables';
+import { withVoids } from './overrides/voids';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor (including selection state)
-  onEdit: (value: ModelElement[], selection: Selection) => void;
+  onEdit: (
+    value: ModelElement[],
+    selection: Selection,
+    editor: SlateEditor & ReactEditor,
+    operations: Operation[],
+  ) => void;
   // The content to display
   value: ModelElement[];
   // The current selection
@@ -34,6 +46,7 @@ export type EditorProps = {
   // Whether or not editing is allowed
   editMode: boolean;
   commandContext: CommandContext;
+  normalizerContext?: NormalizerContext;
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
@@ -56,8 +69,8 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.placeholder === nextProps.placeholder
   );
 }
-// eslint-disable-next-line
-export const Editor = React.memo((props: EditorProps) => {
+
+export const Editor: React.FC<EditorProps> = React.memo((props) => {
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
 
   const commandContext = props.commandContext;
@@ -74,7 +87,7 @@ export const Editor = React.memo((props: EditorProps) => {
   // Install the custom normalizer, only once
   useEffect(() => {
     if (!installed) {
-      installNormalizer(editor);
+      installNormalizer(editor, props.normalizerContext);
       setInstalled(true);
     }
   }, [installed]);
@@ -86,11 +99,14 @@ export const Editor = React.memo((props: EditorProps) => {
     editor.selection = props.selection;
   }
 
-  const renderElement = useCallback((props) => {
-    const model = props.element as ModelElement;
+  const renderElement = useCallback(
+    (props: RenderElementProps) => {
+      const model = props.element as ModelElement;
 
-    return editorFor(model, props, editor, commandContext);
-  }, []);
+      return editorFor(model, props, editor, commandContext);
+    },
+    [commandContext],
+  );
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
     voidOnKeyDown(editor, e);
@@ -100,7 +116,7 @@ export const Editor = React.memo((props: EditorProps) => {
     hotkeyHandler(editor, e.nativeEvent, commandContext);
   }, []);
 
-  const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
+  const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(
       (m, k) => (k !== 'text' ? markFor(k as Mark, m) : m),
       children,
@@ -114,7 +130,7 @@ export const Editor = React.memo((props: EditorProps) => {
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      props.onEdit(value, selection);
+      props.onEdit(value, selection, editor, operations);
     }
   };
 
@@ -140,6 +156,7 @@ export const Editor = React.memo((props: EditorProps) => {
           next();
         }}
       >
+        {props.children}
         <InsertionToolbar
           isPerformingAsyncAction={isPerformingAsyncAction}
           toolbarItems={props.toolbarItems}
@@ -159,10 +176,13 @@ export const Editor = React.memo((props: EditorProps) => {
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
-          placeholder={props.placeholder || 'Enter some content here...'}
+          placeholder={
+            props.placeholder === undefined ? 'Enter some content here...' : props.placeholder
+          }
           onKeyDown={onKeyDown}
         />
       </Slate>
     </React.Fragment>
   );
 }, areEqual);
+Editor.displayName = 'Editor';
