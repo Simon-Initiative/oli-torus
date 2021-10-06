@@ -48,6 +48,13 @@ defmodule OliWeb.OpenAndFreeController do
     render_workspace_page(conn, "new.html", changeset: changeset, source: source)
   end
 
+  defp to_atom_keys(map) do
+    Map.keys(map)
+    |> Enum.reduce(%{}, fn k, m ->
+      Map.put(m, String.to_existing_atom(k), Map.get(map, k))
+    end)
+  end
+
   def create(conn, %{"section" => %{"product_slug" => _} = section_params}) do
     with %{
            "product_slug" => product_slug,
@@ -60,14 +67,17 @@ defmodule OliWeb.OpenAndFreeController do
       {utc_start_date, utc_end_date} =
         parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
 
-      section_params = %{
-        type: :enrollable,
-        open_and_free: true,
-        context_id: UUID.uuid4(),
-        start_date: utc_start_date,
-        end_date: utc_end_date,
-        timezone: timezone
-      }
+      section_params =
+        to_atom_keys(section_params)
+        |> Map.merge(%{
+          blueprint_id: blueprint.id,
+          type: :enrollable,
+          open_and_free: true,
+          context_id: UUID.uuid4(),
+          start_date: utc_start_date,
+          end_date: utc_end_date,
+          timezone: timezone
+        })
 
       case Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params) do
         {:ok, section} ->

@@ -41,6 +41,15 @@ defmodule OliWeb.ProjectController do
     render(conn, "resource_editor.html", title: "Resource Editor", active: :resource_editor)
   end
 
+  def download_analytics(conn, _project_params) do
+    project = conn.assigns.project
+
+    conn
+    |> send_download({:binary, Insights.export(project)},
+      filename: "analytics_#{project.slug}.zip"
+    )
+  end
+
   def publish(conn, _) do
     project = conn.assigns.project
 
@@ -87,10 +96,11 @@ defmodule OliWeb.ProjectController do
     public_keyset_url = "#{base_url}/.well-known/jwks.json"
     redirect_uris = "#{base_url}/lti/launch"
 
-    has_changes = case version_change do
-      {:no_changes, _} -> false
-      _ -> true
-    end
+    has_changes =
+      case version_change do
+        {:no_changes, _} -> false
+        _ -> true
+      end
 
     render(conn, "publish.html",
       # page
@@ -166,7 +176,8 @@ defmodule OliWeb.ProjectController do
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
           changeset: changeset,
-          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
+          latest_published_publication:
+            Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn
@@ -208,15 +219,6 @@ defmodule OliWeb.ProjectController do
     )
   end
 
-  def download_analytics(conn, _project_params) do
-    project = conn.assigns.project
-
-    conn
-    |> send_download({:binary, Insights.export(project)},
-      filename: "analytics_#{project.slug}.zip"
-    )
-  end
-
   def clone_project(conn, _project_params) do
     case Clone.clone_project(conn.assigns.project.slug, conn.assigns.current_author) do
       {:ok, project} ->
@@ -246,7 +248,8 @@ defmodule OliWeb.ProjectController do
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
           changeset: changeset,
-          latest_published_publication: Publishing.get_latest_published_publication_by_slug(project.slug)
+          latest_published_publication:
+            Publishing.get_latest_published_publication_by_slug(project.slug)
         }
 
         conn

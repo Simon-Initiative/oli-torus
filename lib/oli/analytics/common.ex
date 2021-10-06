@@ -7,6 +7,10 @@ defmodule Oli.Analytics.Common do
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.PartAttempt
 
+  alias Oli.Resources.Revision
+  alias Oli.Repo
+  alias Oli.Delivery.Attempts.Core.PartAttempt
+
   def snapshots_for_project(project_slug) do
     Repo.all(
       from(project in Project,
@@ -17,11 +21,15 @@ defmodule Oli.Analytics.Common do
         on: snapshot.section_id == section.id,
         join: activity in Revision,
         on: snapshot.revision_id == activity.id,
-        join: objective in Revision,
+        left_join: objective in Revision,
         on: snapshot.objective_revision_id == objective.id,
         join: pattempt in PartAttempt,
         on: snapshot.part_attempt_id == pattempt.id,
         select: [
+          snapshot.part_attempt_id,
+          snapshot.activity_id,
+          snapshot.resource_id,
+          objective.resource_id,
           activity.title,
           activity.activity_type_id,
           objective.title,
@@ -35,6 +43,7 @@ defmodule Oli.Analytics.Common do
           pattempt.out_of,
           pattempt.response,
           pattempt.feedback,
+          activity.content,
           section.title,
           section.slug,
           snapshot.inserted_at

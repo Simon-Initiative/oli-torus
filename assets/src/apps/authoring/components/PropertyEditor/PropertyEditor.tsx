@@ -6,6 +6,7 @@ import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { diff } from 'deep-object-diff';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
@@ -30,6 +31,14 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
 }) => {
   const [formData, setFormData] = useState<any>(value);
 
+  const findDiffType = (changedProp: any): string => {
+    const diffType: Record<string, unknown>[] = Object.values(changedProp);
+    if (typeof diffType[0] === 'object') {
+      return findDiffType(diffType[0]);
+    }
+    return typeof diffType[0];
+  };
+
   useEffect(() => {
     setFormData(value);
   }, [value]);
@@ -41,8 +50,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
       onChange={(e) => {
         console.log('ONCHANGE P EDITOR', e);
         const updatedData = e.formData;
+        const changedProp = diff(formData, updatedData);
+        const changedPropType = findDiffType(changedProp);
+
         setFormData(updatedData);
-        if (triggerOnChange) {
+        if (triggerOnChange || changedPropType === 'boolean') {
           // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
           if (updatedData.id === formData.id) {
             onChangeHandler(updatedData);

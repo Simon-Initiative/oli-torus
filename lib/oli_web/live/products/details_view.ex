@@ -16,6 +16,7 @@ defmodule OliWeb.Products.DetailsView do
   data product, :any, default: nil
   data show_confirm, :boolean, default: false
   prop author, :any
+  prop is_admin, :boolean
 
   def mount(%{"product_id" => product_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -31,6 +32,7 @@ defmodule OliWeb.Products.DetailsView do
        updates: Sections.check_for_available_publication_updates(product),
        author: author,
        product: product,
+       is_admin: Oli.Accounts.is_admin?(author),
        changeset: Section.changeset(product, %{}),
        title: "Edit Product"
      )}
@@ -67,7 +69,7 @@ defmodule OliWeb.Products.DetailsView do
           <h4>Actions</h4>
         </div>
         <div class="col-md-8">
-          <Actions product={@product}/>
+          <Actions product={@product} is_admin={@is_admin}/>
         </div>
       </div>
       {#if @show_confirm}
