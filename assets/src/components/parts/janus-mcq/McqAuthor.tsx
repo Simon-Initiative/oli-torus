@@ -15,7 +15,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     mcqItems,
     customCssClass,
     layoutType,
-    height,
     overrideHeight = false,
   } = model;
   const styles: CSSProperties = {
@@ -55,6 +54,12 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
             min-height: 20px;
             line-height: normal !important;
             vertical-align: middle;
+          }
+          .mcq-input>div>label {
+            margin: 0 !important;
+          }
+          .mcq-input>br {
+            display: none !important;
           }
         `}
       </style>
