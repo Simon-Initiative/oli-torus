@@ -641,11 +641,14 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Rebuilds a section curriculum by upserting any new or existing section resources
-  and removing any deleted section resources based on the given hierarchy
+  and removing any deleted section resources based on the given hierarchy.
+
+  project_publications is a map of the project id to the pinned publication for the section.
   """
   def rebuild_section_curriculum(
         %Section{id: section_id},
-        %HierarchyNode{} = hierarchy
+        %HierarchyNode{} = hierarchy,
+        project_publications
       ) do
     Repo.transaction(fn ->
       previous_section_resource_ids =
@@ -671,12 +674,16 @@ defmodule Oli.Delivery.Sections do
       # upsert all section resources
       section_resources
       |> Enum.map(fn section_resource ->
-        %{SectionResource.to_map(section_resource) | updated_at: {:placeholder, :timestamp}}
+        %{
+          SectionResource.to_map(section_resource)
+          | inserted_at: {:placeholder, :timestamp},
+            updated_at: {:placeholder, :timestamp}
+        }
       end)
       |> then(
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
-          on_conflict: :replace_all,
+          on_conflict: {:replace_all_except, [:inserted_at]},
           conflict_target: :id
         )
       )
@@ -690,6 +697,25 @@ defmodule Oli.Delivery.Sections do
         where: sr.id in ^section_resource_ids_to_delete
       )
       |> Repo.delete_all()
+
+      # upsert section project publications ensure section project publication mappings are up to date
+      project_publications
+      |> Enum.map(fn {project_id, pub} ->
+        %{
+          section_id: section_id,
+          project_id: project_id,
+          publication_id: pub.id,
+          inserted_at: {:placeholder, :timestamp},
+          updated_at: {:placeholder, :timestamp}
+        }
+      end)
+      |> then(
+        &Repo.insert_all(SectionsProjectsPublications, &1,
+          placeholders: placeholders,
+          on_conflict: {:replace_all_except, [:inserted_at]},
+          conflict_target: [:section_id, :project_id]
+        )
+      )
 
       section_resources
     end)
@@ -758,7 +784,8 @@ defmodule Oli.Delivery.Sections do
             )
 
           # rebuild the section curriculum based on the updated hierarchy
-          rebuild_section_curriculum(section, updated_hierarchy)
+          project_publications = get_pinned_project_publications(section_id)
+          rebuild_section_curriculum(section, updated_hierarchy, project_publications)
         end)
     end
   end
@@ -771,6 +798,24 @@ defmodule Oli.Delivery.Sections do
       preload: [:resource, :revision, :publication]
     )
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
+
+  @doc """
+  Returns the map of project_id to publication of all the section's pinned project publications
+  """
+  def get_pinned_project_publications(section_id) do
+    from(spp in SectionsProjectsPublications,
+      as: :spp,
+      where: spp.section_id == ^section_id,
+      join: publication in Publication,
+      on: publication.id == spp.publication_id,
+      preload: [publication: :project],
+      select: spp
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn spp, acc ->
+      Map.put(acc, spp.project_id, spp.publication)
+    end)
   end
 
   defp maybe_process_added_or_changed_node(

@@ -123,7 +123,19 @@ config :oli, OliWeb.Endpoint,
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
-config :logger, truncate: :infinity
+
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

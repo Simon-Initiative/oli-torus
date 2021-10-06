@@ -19,7 +19,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   hierarchy:        Hierarchy to select from
   active:           Currently active node. Also represents the current selection in container
                     selection mode.
-  selection:        List of current selections in the form of a tuples [{publication_id, node_slug}, ...].
+  selection:        List of current selections in the form of a tuples [{publication_id, resource_id}, ...].
                     (Only used in multi select mode)
 
   ## Optional Parameters:
@@ -99,13 +99,13 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   def render_child(
         %{select_mode: :multi, selection: selection, selected_publication: pub} = assigns,
-        %{slug: slug, revision: revision} = child
+        %{slug: slug, resource_id: resource_id, revision: revision} = child
       ) do
     ~L"""
-    <div id="hierarchy_item_<%= child.slug %>" phx-click="HierarchyPicker.select" phx-value-publication_id="<%= pub.id %>" phx-value-slug="<%= slug %>">
+    <div id="hierarchy_item_<%= slug %>" phx-click="HierarchyPicker.select" phx-value-publication_id="<%= pub.id %>" phx-value-resource_id="<%= resource_id %>">
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <input type="checkbox" <%= maybe_checked(selection, pub.id, child.slug) %>></input>
+          <input type="checkbox" <%= maybe_checked(selection, pub.id, resource_id) %>></input>
           <%= OliWeb.Curriculum.EntryLive.icon(%{child: revision}) %>
         </span>
         <%= resource_link assigns, child %>
@@ -127,8 +127,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     """
   end
 
-  defp maybe_checked(selection, pub_id, slug) do
-    case Enum.find(selection, fn {p, s} -> {p, s} == {pub_id, slug} end) do
+  defp maybe_checked(selection, pub_id, resource_id) do
+    case Enum.find(selection, fn {p, s} -> {p, s} == {pub_id, resource_id} end) do
       nil -> ""
       _ -> "checked"
     end

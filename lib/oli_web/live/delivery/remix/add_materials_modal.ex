@@ -3,7 +3,6 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
   use Phoenix.HTML
 
   alias OliWeb.Common.Hierarchy.HierarchyPicker
-  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def render(
         %{

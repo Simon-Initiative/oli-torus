@@ -45,29 +45,31 @@ defmodule Oli.Delivery.Hierarchy do
     Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
   end
 
-  def create_hierarchy(revision, published_resources_resource_id) do
+  def create_hierarchy(revision, published_resources_by_resource_id) do
     numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
 
-    create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker)
+    create_hierarchy(revision, published_resources_by_resource_id, level, numbering_tracker)
   end
 
-  defp create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker) do
+  defp create_hierarchy(revision, published_resources_by_resource_id, level, numbering_tracker) do
     {index, numbering_tracker} = Numbering.next_index(numbering_tracker, level, revision)
 
     children =
       Enum.map(revision.children, fn child_id ->
-        %PublishedResource{revision: child_revision} = published_resources_resource_id[child_id]
+        %PublishedResource{revision: child_revision} =
+          published_resources_by_resource_id[child_id]
 
         create_hierarchy(
           child_revision,
-          published_resources_resource_id,
+          published_resources_by_resource_id,
           level + 1,
           numbering_tracker
         )
       end)
 
-    %PublishedResource{publication: pub} = published_resources_resource_id[revision.resource_id]
+    %PublishedResource{publication: pub} =
+      published_resources_by_resource_id[revision.resource_id]
 
     %HierarchyNode{
       slug: revision.slug,
@@ -164,6 +166,29 @@ defmodule Oli.Delivery.Hierarchy do
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
     find_and_update_node(hierarchy, updated_container)
+  end
+
+  def add_materials_to_hierarchy(
+        hierarchy,
+        active,
+        selection,
+        published_resources_by_resource_id_by_pub
+      ) do
+    nodes =
+      selection
+      |> Enum.map(fn {publication_id, resource_id} ->
+        revision =
+          published_resources_by_resource_id_by_pub
+          |> Map.get(publication_id)
+          |> Map.get(resource_id)
+          |> Map.get(:revision)
+
+        create_hierarchy(revision, published_resources_by_resource_id_by_pub[publication_id])
+      end)
+
+    find_and_update_node(hierarchy, %HierarchyNode{active | children: active.children ++ nodes})
+    |> Numbering.renumber_hierarchy()
+    |> then(fn {updated_hierarchy, _numberings} -> updated_hierarchy end)
   end
 
   @doc """
