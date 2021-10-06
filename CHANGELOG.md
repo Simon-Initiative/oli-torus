@@ -11,6 +11,15 @@
 - Allow for section creation from course products
 - Add analytics / insights data export button
 
+### Release Notes
+The following environment configs are now available:
+```
+PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
+                        Current available options are 'stripe' or 'none'
+STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
+STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
+```
+
 ## 0.13.5 (2021-10-04)
 ### Bug Fixes
 - Fix an issue where generating resource links for tag types throws a server error

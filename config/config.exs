@@ -52,7 +52,7 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
-  payment_provider: OliWeb.PaymentProviders.StripeController
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
