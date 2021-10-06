@@ -1,16 +1,25 @@
-import { HasPreviewText, HasStem, RichText } from 'components/activities/types';
+import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
+import { HasPreviewText, RichText } from 'components/activities/types';
 import { toSimpleText } from 'data/content/text';
+import { Operations } from 'utils/pathOperations';
 
 export const StemActions = {
-  editStem(content: RichText) {
-    return (model: HasStem) => {
-      model.stem.content = content;
+  editStem(content: RichText, stemPath = STEM_PATH) {
+    return (model: any) => {
+      Operations.apply(model, Operations.replace(stemPath + '.content', content));
     };
   },
-  editStemAndPreviewText(content: RichText) {
-    return (model: HasStem & HasPreviewText) => {
-      StemActions.editStem(content)(model);
-      model.authoring.previewText = toSimpleText({ children: content.model });
+  editStemAndPreviewText(
+    content: RichText,
+    stemPath = STEM_PATH,
+    previewTextPath = PREVIEW_TEXT_PATH,
+  ) {
+    return (model: any & HasPreviewText) => {
+      StemActions.editStem(content, stemPath)(model);
+      Operations.apply(
+        model,
+        Operations.replace(previewTextPath, toSimpleText({ children: content.model })),
+      );
     };
   },
 };

@@ -3,10 +3,13 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { ResourceContext, ResourceContent } from 'data/content/resource';
 import { Objective } from 'data/content/objective';
 import { ResourceId } from 'data/types';
-import { AddResourceContent } from 'components/content/AddResourceContent';
+import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import * as Immutable from 'immutable';
 import { DropTarget } from './dragndrop/DropTarget';
 import { ActivityEditContext } from 'data/content/activity';
+import { AddContent } from 'components/content/add_resource_content/AddContent';
+import { AddActivity } from 'components/content/add_resource_content/AddActivity';
+import { AddOther } from 'components/content/add_resource_content/AddOther';
 
 export type AddResourceOrDropTargetProps = {
   isReorderMode: boolean;
@@ -27,5 +30,13 @@ export const AddResourceOrDropTarget = (props: AddResourceOrDropTargetProps) => 
     return <DropTarget {...props} isLast={props.id === 'last'} />;
   }
 
-  return <AddResourceContent {...props} isLast={props.id === 'last'} />;
+  return (
+    <AddResourceContent {...props} isLast={props.id === 'last'}>
+      <AddContent {...props} />
+      <hr />
+      <AddActivity {...props} />
+      <hr />
+      <AddOther {...props} />
+    </AddResourceContent>
+  );
 };

@@ -2,6 +2,8 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   use OliWeb, :live_component
   import Phoenix.HTML.Link
 
+  alias OliWeb.Common.Breadcrumb
+
   def render(assigns) do
     render_breadcrumb(assigns)
   end
@@ -23,6 +25,6 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
     """
   end
 
-  defp get_title(breadcrumb, true = _show_short), do: breadcrumb.short_title
-  defp get_title(breadcrumb, false = _show_short), do: breadcrumb.full_title
+  defp get_title(%Breadcrumb{short_title: short_title}, true = _show_short), do: short_title
+  defp get_title(%Breadcrumb{full_title: full_title}, false = _show_short), do: full_title
 end

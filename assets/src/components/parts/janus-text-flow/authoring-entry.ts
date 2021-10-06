@@ -5,6 +5,7 @@ import {
 } from '../partsApi';
 import {
   createSchema,
+  getCapabilities,
   schema,
   transformModelToSchema,
   transformSchemaToModel,
@@ -36,5 +37,6 @@ register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
+    getCapabilities,
   },
 });

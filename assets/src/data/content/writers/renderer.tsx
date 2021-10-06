@@ -10,10 +10,5 @@ interface Props {
   style?: React.CSSProperties;
 }
 export const HtmlContentModelRenderer: React.FC<Props> = ({ text, context, style }: Props) => (
-  <div
-    style={style}
-    dangerouslySetInnerHTML={{
-      __html: new ContentWriter().render(context, text.model, new HtmlParser()),
-    }}
-  />
+  <div style={style}>{new ContentWriter().render(context, text.model, new HtmlParser())}</div>
 );

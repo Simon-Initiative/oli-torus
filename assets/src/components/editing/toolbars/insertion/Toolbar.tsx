@@ -1,11 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useFocused, useSlate } from 'slate-react';
-import { ToolbarItem, CommandContext } from '../../commands/interfaces';
-import { Popover } from 'react-tiny-popover';
-import { hideToolbar, showToolbar, ToolbarButton, Spacer, DropdownToolbarButton } from '../common';
-import { shouldShowInsertionToolbar, positionInsertion } from './utils';
-import { classNames } from 'utils/classNames';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import React, { useEffect, useRef, useState } from 'react';
+import { Popover } from 'react-tiny-popover';
+import { useFocused, useSlate } from 'slate-react';
+import { classNames } from 'utils/classNames';
+import { CommandContext, ToolbarItem } from '../../commands/interfaces';
+import { DropdownToolbarButton, hideToolbar, showToolbar, Spacer, ToolbarButton } from '../common';
+import { positionInsertion, shouldShowInsertionToolbar } from './utils';
 
 type InsertionToolbarProps = {
   isPerformingAsyncAction: boolean;
@@ -20,8 +20,7 @@ function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: Insertio
     prevProps.isPerformingAsyncAction === nextProps.isPerformingAsyncAction
   );
 }
-// eslint-disable-next-line
-export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
+export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((props) => {
   const { toolbarItems } = props;
   const ref = useRef();
   const editor = useSlate();
@@ -110,3 +109,4 @@ export const InsertionToolbar = React.memo((props: InsertionToolbarProps) => {
     </div>
   );
 }, insertionAreEqual);
+InsertionToolbar.displayName = 'InsertionToolbar';

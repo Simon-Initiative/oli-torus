@@ -1,18 +1,18 @@
-import {
-  Operation,
-  ScoringStrategy,
-  Choice,
-  makeHint,
-  makeChoice,
-  makeStem,
-  makeResponse,
-  makeTransformation,
-} from '../types';
-import { Maybe } from 'tsmonad';
-import { getChoice } from 'components/activities/common/choices/authoring/choiceUtils';
-import { matchRule } from 'components/activities/common/responses/authoring/rules';
-import { getCorrectResponse } from 'components/activities/common/responses/authoring/responseUtils';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
+import {
+  Choice,
+  HasParts,
+  makeChoice,
+  makeHint,
+  makePart,
+  makeStem,
+  makeTransformation,
+  Transform,
+} from 'components/activities/types';
+import { Choices } from 'data/activities/model/choices';
+import { getCorrectResponse, Responses } from 'data/activities/model/responses';
+import { Maybe } from 'tsmonad';
 
 export const defaultMCModel: () => MCSchema = () => {
   const choiceA: Choice = makeChoice('Choice A');
@@ -24,27 +24,23 @@ export const defaultMCModel: () => MCSchema = () => {
     authoring: {
       version: 2,
       parts: [
-        {
-          id: '1', // an MCQ only has one part, so it is safe to hardcode the id
-          scoringStrategy: ScoringStrategy.average,
-          responses: [
-            makeResponse(matchRule(choiceA.id), 1, ''),
-            makeResponse(matchRule('.*'), 0, ''),
-          ],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
+        makePart(
+          Responses.forMultipleChoice(choiceA.id),
+          [makeHint(''), makeHint(''), makeHint('')],
+          DEFAULT_PART_ID,
+        ),
       ],
       targeted: [],
-      transformations: [makeTransformation('choices', Operation.shuffle)],
+      transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: '',
     },
   };
 };
 
-export const getCorrectChoice = (model: MCSchema) => {
-  const responseIdMatch = Maybe.maybe(getCorrectResponse(model).rule.match(/{(.*)}/)).valueOrThrow(
-    new Error('Could not find choice id in correct response'),
-  );
+export const getCorrectChoice = (model: HasParts, partId = DEFAULT_PART_ID) => {
+  const responseIdMatch = Maybe.maybe(
+    getCorrectResponse(model, partId).rule.match(/{(.*)}/),
+  ).valueOrThrow(new Error('Could not find choice id in correct response'));
 
-  return getChoice(model, responseIdMatch[1]);
+  return Choices.getOne(model, responseIdMatch[1]);
 };

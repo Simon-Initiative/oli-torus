@@ -5,14 +5,7 @@ import { VideoModel } from './schema';
 const VideoAuthor: React.FC<AuthorPartComponentProps<VideoModel>> = (props) => {
   const { model } = props;
 
-  const { x, y, z, width } = model;
-  const styles: CSSProperties = {
-    width,
-    zIndex: z,
-    backgroundColor: 'magenta',
-    overflow: 'hidden',
-    fontWeight: 'bold',
-  };
+  const { x, y, z, width, src } = model;
 
   useEffect(() => {
     // all activities *must* emit onReady
@@ -20,8 +13,23 @@ const VideoAuthor: React.FC<AuthorPartComponentProps<VideoModel>> = (props) => {
   }, []);
 
   return (
-    <div style={styles}>
-      <p>Video</p>
+    <div data-janus-type={tagName} style={{ width: '100%', height: '100%' }}>
+      <style>
+        {`
+          .react-youtube-container {
+            width: 100%;
+            height: 100%
+          }
+        `}
+      </style>
+      <video
+        width="100%"
+        height="100%"
+        /* className={cssClass} */
+        controls={true}
+      >
+        <source src={src} />
+      </video>
     </div>
   );
 };

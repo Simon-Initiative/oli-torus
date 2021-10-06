@@ -15,13 +15,13 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
     });
 
     if (quoteMatch) {
-      const [node, path] = quoteMatch;
+      const [, path] = quoteMatch;
       const pMatch = SlateEditor.above(editor);
 
       if (!pMatch) {
         return;
       }
-      const [p, pPath] = pMatch;
+      const [p] = pMatch;
 
       if (p.type === 'p' && p.children[0].text === '') {
         // remove the blockquote item and add a paragraph

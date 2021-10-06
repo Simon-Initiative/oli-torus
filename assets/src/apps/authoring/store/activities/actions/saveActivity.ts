@@ -6,7 +6,6 @@ import {
   IActivity,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { acquireEditingLock, releaseEditingLock } from '../../app/actions/locking';
 import { selectProjectSlug } from '../../app/slice';
 import { selectResourceId } from '../../page/slice';
 
@@ -18,7 +17,6 @@ export const saveActivity = createAsyncThunk(
     const projectSlug = selectProjectSlug(rootState);
     const resourceId = selectResourceId(rootState);
 
-    await dispatch(acquireEditingLock());
     const changeData: ActivityUpdate = {
       title: activity.title as string,
       objectives: activity.objectives as ObjectiveMap,
@@ -34,7 +32,6 @@ export const saveActivity = createAsyncThunk(
       false,
     );
     console.log('EDIT SAVE RESULTS', { editResults });
-    await dispatch(releaseEditingLock());
     await dispatch(upsertActivity({ activity }));
     return;
   },

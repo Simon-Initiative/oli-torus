@@ -51,7 +51,12 @@ config :oli,
         System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
-  ]
+  ],
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+
+config :oli, :stripe_provider,
+  public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
+  private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
@@ -68,6 +73,11 @@ config :oli, Oban,
   repo: Oli.Repo,
   plugins: [Oban.Plugins.Pruner],
   queues: [default: 10, snapshots: 20, selections: 2]
+
+config :ex_money,
+  auto_start_exchange_rate_service: false,
+  default_cldr_backend: Oli.Cldr,
+  json_library: Jason
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,

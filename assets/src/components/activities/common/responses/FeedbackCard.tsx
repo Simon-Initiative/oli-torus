@@ -8,13 +8,14 @@ export const FeedbackCard: React.FC<{
   feedback: Feedback;
   title: React.ReactNode;
   update: (id: ID, content: RichText) => void;
-}> = ({ title, feedback, update }) => {
+  placeholder?: string;
+}> = ({ title, feedback, update, placeholder }) => {
   return (
     <Card.Card>
       <Card.Title>{title}</Card.Title>
       <Card.Content>
         <RichTextEditorConnected
-          placeholder="Enter feedback"
+          placeholder={placeholder === undefined ? 'Enter feedback' : placeholder}
           text={feedback.content}
           onEdit={(content) => update(feedback.id, content)}
         />

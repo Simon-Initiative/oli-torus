@@ -2,16 +2,18 @@
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { diff } from 'deep-object-diff';
 
 interface PropertyEditorProps {
   schema: JSONSchema7;
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  triggerOnChange?: boolean;
 }
 
 const widgets: any = {
@@ -25,14 +27,43 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   uiSchema,
   value,
   onChangeHandler,
+  triggerOnChange = false,
 }) => {
-  /* console.log({ value, uiSchema }); */
+  const [formData, setFormData] = useState<any>(value);
+
+  const findDiffType = (changedProp: any): string => {
+    const diffType: Record<string, unknown>[] = Object.values(changedProp);
+    if (typeof diffType[0] === 'object') {
+      return findDiffType(diffType[0]);
+    }
+    return typeof diffType[0];
+  };
+
+  useEffect(() => {
+    setFormData(value);
+  }, [value]);
+
   return (
     <Form
       schema={schema}
-      formData={value}
+      formData={formData}
       onChange={(e) => {
-        onChangeHandler(e.formData);
+        console.log('ONCHANGE P EDITOR', e.formData);
+        const updatedData = e.formData;
+        const changedProp = diff(formData, updatedData);
+        const changedPropType = findDiffType(changedProp);
+
+        setFormData(updatedData);
+        if (triggerOnChange || changedPropType === 'boolean') {
+          // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
+          if (updatedData.id === formData.id) {
+            onChangeHandler(updatedData);
+          }
+        }
+      }}
+      onBlur={(...args) => {
+        // console.log('ONBLUR', { args, formData });
+        onChangeHandler(formData);
       }}
       uiSchema={uiSchema}
       widgets={widgets}

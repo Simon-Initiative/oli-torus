@@ -71,6 +71,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     clientEvaluations: ClientEvaluation[],
   ) => Promise<EvaluationResponse>;
   onReady?: (attemptGuid: string) => Promise<Success>;
+  onResize?: (attemptGuid: string) => Promise<Success>;
 }
 
 // An abstract delivery web component, designed to delegate to
@@ -109,7 +110,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     clientEvaluations: ClientEvaluation[],
   ) => Promise<EvaluationResponse>;
   onReady: (attemptGuid: string) => Promise<Success>;
-
+  onResize: (attemptGuid: string) => Promise<Success>;
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
@@ -138,6 +139,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       this.dispatch('submitEvaluations', attemptGuid, undefined, clientEvaluations);
 
     this.onReady = (attemptGuid: string) => this.dispatch('activityReady', attemptGuid, undefined);
+    this.onResize = (attemptGuid: string) => this.dispatch('resizePart', attemptGuid, undefined);
   }
 
   static get observedAttributes() {
@@ -199,6 +201,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onResetActivity: this.onResetActivity,
       onSubmitEvaluations: this.onSubmitEvaluations,
       onReady: this.onReady,
+      onResize: this.onResize,
       userId,
       notify: this._notify,
     };
@@ -231,7 +234,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.connected = true;
   }
 
-  attributeChangedCallback(name: any, oldValue: any, newValue: any) {
+  attributeChangedCallback(_name: any, _oldValue: any, _newValue: any) {
     if (this.connected) {
       this.render(this.mountPoint, this.props());
     }

@@ -1,48 +1,66 @@
-import {
-  getResponse,
-  getResponseId,
-  getResponses,
-} from 'components/activities/common/responses/authoring/responseUtils';
 import { remove } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
   HasParts,
+  makeUndoable,
   PostUndoable,
+  Response,
   ResponseId,
   RichText,
-  makeUndoable,
 } from 'components/activities/types';
+import {
+  getResponseBy,
+  getResponseId,
+  getResponsesByPartId,
+  RESPONSES_PATH,
+} from 'data/activities/model/responses';
+import { getParts } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
+import { Operations } from 'utils/pathOperations';
 
 export const ResponseActions = {
-  editResponseFeedback(id: ResponseId, content: RichText) {
+  addResponse(response: Response, partId: string, path = RESPONSES_PATH) {
     return (model: HasParts) => {
-      getResponse(model, id).feedback.content = content;
+      // Insert a new reponse just before the last response (which is the catch-all response)
+      const responses = getResponsesByPartId(model, partId);
+      getResponsesByPartId(model, partId).splice(responses.length - 1, 0, response);
     };
   },
-  removeResponse(id: ResponseId) {
+
+  editResponseFeedback(responseId: ResponseId, content: RichText) {
     return (model: HasParts) => {
-      remove(getResponse(model, id), getResponses(model));
+      getResponseBy(model, (r) => r.id === responseId).feedback.content = content;
     };
   },
+
+  removeResponse(responseId: ResponseId, path = RESPONSES_PATH) {
+    return (model: HasParts) => {
+      getParts(model).forEach((part) => {
+        if (part.responses.find(({ id }) => id === responseId)) {
+          part.responses = part.responses.filter(({ id }) => id !== responseId);
+        }
+      });
+    };
+  },
+
   editRule(id: ResponseId, rule: string) {
     return (draftState: HasParts) => {
-      getResponse(draftState, id).rule = rule;
+      getResponseBy(draftState, (r) => r.id === id).rule = rule;
     };
   },
-  removeTargetedFeedback(responseId: ResponseId) {
+
+  removeTargetedFeedback(responseId: ResponseId, path = RESPONSES_PATH) {
     return (
       model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } },
       post: PostUndoable,
     ) => {
       post(
         makeUndoable('Removed feedback', [
-          { type: 'ReplaceOperation', path: '$.authoring', item: clone(model.authoring) },
+          Operations.replace('$.authoring', clone(model.authoring)),
         ]),
       );
 
-      const response = getResponse(model, responseId);
-      remove(response, getResponses(model));
+      ResponseActions.removeResponse(responseId, path)(model);
       remove(
         model.authoring.targeted.find((assoc) => getResponseId(assoc) === responseId),
         model.authoring.targeted,
