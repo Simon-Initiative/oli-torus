@@ -26,7 +26,8 @@ defmodule OliWeb.Projects.TableModel do
           [
             %ColumnSpec{
               name: :status,
-              label: "Status"
+              label: "Status",
+              render_fn: &__MODULE__.custom_render/3
             }
           ]
         else
@@ -47,6 +48,19 @@ defmodule OliWeb.Projects.TableModel do
         ~F"""
           <a href={Routes.project_path(OliWeb.Endpoint, :overview, project.slug)}>{project.title}</a>
         """
+
+      :status ->
+        case project.status do
+          :active ->
+            ~F"""
+            <span class="text-success">Active</span>
+            """
+
+          :deleted ->
+            ~F"""
+            <span class="text-danger">Deleted</span>
+            """
+        end
     end
   end
 
