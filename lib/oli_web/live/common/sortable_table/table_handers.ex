@@ -22,6 +22,22 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
     end
   end
 
+  def get_boolean_param(params, name, default_value) do
+    case params[name] do
+      nil ->
+        default_value
+
+      "false" ->
+        false
+
+      "true" ->
+        true
+
+      _ ->
+        default_value
+    end
+  end
+
   def get_atom_param(params, name, valid, default_value) do
     case params[name] do
       value ->

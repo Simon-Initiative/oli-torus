@@ -47,7 +47,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         false
       )
 
-    {:ok, table_model} = TableModel.new(projects)
+    {:ok, table_model} = TableModel.new(projects, is_admin)
 
     total_count = determine_total(projects)
 
@@ -79,12 +79,15 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     offset = OliWeb.Common.SortableTable.TableHandlers.get_int_param(params, "offset", 0)
 
+    show_deleted =
+      OliWeb.Common.SortableTable.TableHandlers.get_boolean_param(params, "show_deleted", false)
+
     projects =
       Course.browse_projects(
         socket.assigns.author,
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        false
+        show_deleted
       )
 
     table_model = Map.put(table_model, :rows, projects)
@@ -98,7 +101,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        sort_order: table_model.sort_order,
        projects: projects,
        table_model: table_model,
-       total_count: total_count
+       total_count: total_count,
+       show_deleted: show_deleted
      )}
   end
 
@@ -180,6 +184,19 @@ defmodule OliWeb.Projects.ProjectsLive do
     """
   end
 
+  def handle_event("toggle_show_deleted", _, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+           sort_by: socket.assigns.sort_by,
+           sort_order: socket.assigns.sort_order,
+           offset: socket.assigns.offset,
+           show_deleted: !socket.assigns.show_deleted
+         })
+     )}
+  end
+
   def handle_event("page_change", %{"offset" => offset}, socket) do
     {:noreply,
      push_patch(socket,
@@ -187,7 +204,8 @@ defmodule OliWeb.Projects.ProjectsLive do
          Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
            sort_by: socket.assigns.sort_by,
            sort_order: socket.assigns.sort_order,
-           offset: offset
+           offset: offset,
+           show_deleted: socket.assigns.show_deleted
          })
      )}
   end
@@ -213,7 +231,8 @@ defmodule OliWeb.Projects.ProjectsLive do
          Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
            sort_by: sort_by,
            sort_order: sort_order,
-           offset: socket.assigns.offset
+           offset: socket.assigns.offset,
+           show_deleted: socket.assigns.show_deleted
          })
      )}
   end

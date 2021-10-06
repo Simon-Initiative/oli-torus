@@ -4,10 +4,9 @@ defmodule OliWeb.Projects.TableModel do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(sections) do
-    SortableTableModel.new(
-      rows: sections,
-      column_specs: [
+  def new(sections, include_status?) do
+    column_specs =
+      [
         %ColumnSpec{
           name: :title,
           label: "Title",
@@ -22,7 +21,21 @@ defmodule OliWeb.Projects.TableModel do
           name: :name,
           label: "Created By"
         }
-      ],
+      ] ++
+        if include_status? do
+          [
+            %ColumnSpec{
+              name: :status,
+              label: "Status"
+            }
+          ]
+        else
+          []
+        end
+
+    SortableTableModel.new(
+      rows: sections,
+      column_specs: column_specs,
       event_suffix: "",
       id_field: [:id]
     )
