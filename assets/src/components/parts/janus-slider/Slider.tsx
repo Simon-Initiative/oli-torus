@@ -185,17 +185,12 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   } = model;
 
   const styles: CSSProperties = {
-    /* position: 'absolute',
-    width: `${width}px`,
-    top: `${y}px`,
-    left: `${x}px`,
-    height: `${height}px`,
-    zIndex: z, */
+    width: '100%',
     flexDirection: model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
-    height: `${height}px`,
+    height: `3px`,
     zIndex: z,
     direction: invertScale ? 'rtl' : 'ltr',
   };
@@ -297,7 +292,6 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               type={'range'}
               value={sliderValue}
               step={snapInterval}
-              className={` slider `}
               id={internalId}
               onChange={handleSliderChange}
               list={showTicks ? `datalist${internalId}` : ''}
