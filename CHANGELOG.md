@@ -20,6 +20,11 @@ STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
 
+## 0.13.6 (2021-10-04)
+### Bug Fixes
+
+- Add ability to download raw analytic data
+
 ## 0.13.5 (2021-10-04)
 ### Bug Fixes
 - Fix an issue where generating resource links for tag types throws a server error
