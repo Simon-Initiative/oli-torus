@@ -189,6 +189,7 @@ defmodule Oli.Authoring.Course do
     Repo.all(query)
   end
 
+  @spec search_published_projects(binary) :: any
   @doc """
   Returns the list of published projects where the title, description and slug are similar to the query string
   ## Examples

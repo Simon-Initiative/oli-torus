@@ -93,6 +93,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     {:noreply,
      assign(socket,
+       offset: offset,
        sort_by: table_model.sort_by_spec.name,
        sort_order: table_model.sort_order,
        projects: projects,
@@ -179,6 +180,18 @@ defmodule OliWeb.Projects.ProjectsLive do
     """
   end
 
+  def handle_event("page_change", %{"offset" => offset}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
+           sort_by: socket.assigns.sort_by,
+           sort_order: socket.assigns.sort_order,
+           offset: offset
+         })
+     )}
+  end
+
   # handle change of selection
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
     sort_order =
@@ -199,7 +212,8 @@ defmodule OliWeb.Projects.ProjectsLive do
        to:
          Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
            sort_by: sort_by,
-           sort_order: sort_order
+           sort_order: sort_order,
+           offset: socket.assigns.offset
          })
      )}
   end
