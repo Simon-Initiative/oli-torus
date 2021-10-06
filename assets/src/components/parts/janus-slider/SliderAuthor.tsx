@@ -20,6 +20,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     showDataTip,
     showValueLabels,
     showLabel,
+    showTicks,
     invertScale,
   } = model;
 
@@ -29,7 +30,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
   };
   const inputStyles: CSSProperties = {
     width: '100%',
-    height: `${height}px`,
+    height: `3px`,
     zIndex: z,
     direction: invertScale ? 'rtl' : 'ltr',
   };
@@ -37,6 +38,7 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     width: '100%',
     display: `flex`,
     flexDirection: 'row',
+    alignItems: 'center',
   };
 
   const [inputInnerWidth, setInputInnerWidth] = useState<number>(0);
@@ -70,7 +72,16 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
       setSpanInnerWidth(divTargetRef?.current?.offsetWidth);
     }
   });
-
+  const getTickOptions = () => {
+    if (snapInterval) {
+      const options = [];
+      const numberOfTicks = (maximum - minimum) / snapInterval;
+      for (let i = 0; i <= numberOfTicks; i++) {
+        options.push(<option value={i * snapInterval}></option>);
+      }
+      return options;
+    }
+  };
   const internalId = `${id}__slider`;
 
   return (
@@ -109,9 +120,14 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
               type={'range'}
               value={sliderValue}
               step={snapInterval}
-              className={` slider `}
               id={internalId}
+              list={showTicks ? `datalist${internalId}` : ''}
             />
+            {showTicks && (
+              <datalist style={{ display: 'none' }} id={`datalist${internalId}`}>
+                {getTickOptions()}
+              </datalist>
+            )}
           </div>
         </div>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
