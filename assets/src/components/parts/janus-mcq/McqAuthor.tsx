@@ -59,6 +59,9 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
           .mcq-input>div>label {
             margin: 0 !important;
           }
+          .mcq-input>br {
+            display: none !important;
+          }
         `}
       </style>
       {options?.map((item, index) => (
