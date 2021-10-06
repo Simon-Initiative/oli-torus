@@ -4,13 +4,10 @@ defmodule OliWeb.Objectives.Objectives do
   """
 
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.Modal
 
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias OliWeb.Objectives.ObjectiveEntry
-  alias OliWeb.Objectives.CreateNew
-  alias OliWeb.Objectives.Attachments
-  alias OliWeb.Objectives.BreakdownModal
-  alias OliWeb.Common.ManualModal
+  alias OliWeb.Objectives.{ObjectiveEntry, CreateNew, DeleteModal, BreakdownModal}
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
@@ -44,17 +41,18 @@ defmodule OliWeb.Objectives.Objectives do
        project: project,
        subscriptions: subscriptions,
        attachment_summary: @default_attachment_summary,
-       modal_shown: :none,
+       modal: nil,
        author: author,
        force_render: 0,
        can_delete?: true,
-       edit: :none,
-       breakdown: :none
+       edit: :none
      )}
   end
 
   def render(assigns) do
     ~L"""
+    <%= render_modal(assigns) %>
+
     <div class="objectives container">
       <div class="mb-2 row">
         <div class="col-12">
@@ -80,25 +78,13 @@ defmodule OliWeb.Objectives.Objectives do
         <div class="mt-3">
           <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
             <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, breakdown: @breakdown, can_delete?: @can_delete? %>
+              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, can_delete?: @can_delete? %>
           <% end %>
         </div>
 
       <% end %>
 
     </div>
-
-    <%= case @modal_shown do %>
-      <% :delete -> %>
-        <%= live_component ManualModal, title: "Delete Objective", modal_id: "deleteModal", ok_action: "delete", ok_label: "Delete", ok_style: "btn-danger confirm" do %>
-          <%= live_component Attachments, attachment_summary: @attachment_summary, project: @project %>
-        <% end %>
-      <% :breakdown -> %>
-        <%= live_component BreakdownModal, changeset: @changeset, slug: @breakdown %>
-      <% :none -> %>
-
-    <% end %>
-
     """
   end
 
@@ -185,11 +171,8 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, edit: :none, breakdown: :none, modal_shown: :none)}
+    {:noreply, assign(socket, edit: :none)}
   end
-
-  # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
 
   # process form submission to save page settings
   def handle_event("edit", %{"revision" => objective_params}, socket) do
@@ -217,20 +200,26 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, :edit, :none)}
   end
 
-  def handle_event("prepare_delete", %{"slug" => slug}, socket) do
-    if socket.assigns.can_delete? do
-      %{resource_id: resource_id} =
-        AuthoringResolver.from_revision_slug(socket.assigns.project.slug, slug)
+  def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
+    %{can_delete?: can_delete?, project: project, force_render: force_render} = socket.assigns
 
-      attachment_summary =
-        ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project)
+    if can_delete? do
+      %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
+
+      attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
 
       {:noreply,
        assign(socket,
-         modal_shown: :delete,
-         attachment_summary: attachment_summary,
-         prepare_delete_slug: slug,
-         force_render: socket.assigns.force_render + 1
+         modal: %{
+           component: DeleteModal,
+           assigns: %{
+             id: "delete_objective",
+             slug: slug,
+             project: project,
+             attachment_summary: attachment_summary,
+             force_render: force_render + 1
+           }
+         }
        )}
     else
       {:noreply, socket}
@@ -238,24 +227,26 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # handle processing deletion of item
-  def handle_event("delete", _, socket) do
+  def handle_event("delete", %{"slug" => slug}, socket) do
+    %{project: project, author: author} = socket.assigns
+
     %{resource_id: resource_id} =
       AuthoringResolver.from_revision_slug(
-        socket.assigns.project.slug,
-        socket.assigns.prepare_delete_slug
+        project.slug,
+        slug
       )
 
-    ObjectiveEditor.detach_objective(resource_id, socket.assigns.project, socket.assigns.author)
+    ObjectiveEditor.detach_objective(resource_id, project, author)
 
-    parent_objective = determine_parent_objective(socket, socket.assigns.prepare_delete_slug)
+    parent_objective = determine_parent_objective(socket, slug)
 
     socket =
-      case ObjectiveEditor.preview_objective_detatchment(resource_id, socket.assigns.project) do
+      case ObjectiveEditor.preview_objective_detatchment(resource_id, project) do
         %{attachments: {[], []}} ->
           case ObjectiveEditor.delete(
-                 socket.assigns.prepare_delete_slug,
-                 socket.assigns.author,
-                 socket.assigns.project,
+                 slug,
+                 author,
+                 project,
                  parent_objective
                ) do
             {:ok, _} ->
@@ -270,15 +261,26 @@ defmodule OliWeb.Objectives.Objectives do
           socket
       end
 
-    {:noreply, assign(socket, modal_shown: :none)}
+    {:noreply, hide_modal(socket)}
   end
 
-  def handle_event("breakdown", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, breakdown: slug, modal_shown: :breakdown)}
+  def handle_event("show_breakdown_modal", %{"slug" => slug}, socket) do
+    %{changeset: changeset} = socket.assigns
+
+    modal = %{
+      component: BreakdownModal,
+      assigns: %{
+        id: "breakdown_objective",
+        slug: slug,
+        changeset: changeset
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
   end
 
   # handle clicking of the add objective
-  def handle_event("perform_breakdown", %{"revision" => objective_params}, socket) do
+  def handle_event("breakdown", %{"revision" => objective_params}, socket) do
     with_atom_keys =
       Map.keys(objective_params)
       |> Enum.reduce(%{}, fn k, m ->
@@ -302,7 +304,7 @@ defmodule OliWeb.Objectives.Objectives do
           |> put_flash(:error, "Could not break down objective")
       end
 
-    {:noreply, assign(socket, breakdown: :none, modal_shown: :none)}
+    {:noreply, hide_modal(socket)}
   end
 
   # handle clicking of the add objective

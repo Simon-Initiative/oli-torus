@@ -1,18 +1,19 @@
 defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import OliWeb.ViewHelpers,
     only: [
       is_section_instructor_or_admin?: 2
     ]
 
+  import OliWeb.Delivery.Updates.Utils
+
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing
-  alias OliWeb.Common.ManualModal
-  alias Oli.Publishing.Publication
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Updates.ApplyUpdateModal
 
   def mount(
         _params,
@@ -72,7 +73,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
       |> assign(:section, section)
       |> assign(:updates, updates)
       |> assign(:modal, nil)
-      |> assign(:selection, nil)
       |> assign(:redirect_after_apply, redirect_after_apply)
 
     {:ok, socket}
@@ -84,6 +84,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
     } = assigns
 
     ~L"""
+      <%= render_modal(assigns) %>
+
       <p class="my-4">
         <%= case Enum.count(updates) do %>
             <% 0 -> %>
@@ -98,116 +100,41 @@ defmodule OliWeb.Delivery.ManageUpdates do
               <%= render_updates(assigns) %>
         <% end %>
       </p>
-
-    <%= case @modal do %>
-      <% :apply_update -> %>
-        <%= live_component ManualModal, title: "Update #{version_number(@selection.current_publication)} to #{version_number(@selection.newest_publication)}", modal_id: "applyUpdate", ok_action: "apply_update", ok_label: "Apply Update" do %>
-          <p>
-            Do you want to apply this update?
-          </p>
-
-          <%= case Enum.find(updates, fn {id, _} -> id == @selection.project_id end) do %>
-            <% {_, publication} -> %>
-            <div class="list-group-item flex-column align-items-start my-2">
-              <%= render_update_details(assigns, publication) %>
-            </div>
-
-            <% _ -> %>
-          <% end %>
-
-          <p>
-          The following materials from this project will be updated to match the latest publication:
-          </p>
-
-          <p>
-            <%= for {status, %{revision: revision}}  <- Map.values(@selection.changes) do %>
-              <div>
-                <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
-                <%= revision.title %>
-              </div>
-            <% end %>
-          </p>
-
-          <div class="alert alert-warning my-2" role="alert">
-            <b>This action cannot be undone.</b>
-          </div>
-        <% end %>
-
-      <% _ -> %>
-
-    <% end %>
     """
-  end
-
-  defp render_updates(%{updates: updates} = assigns) do
-    ~L"""
-      <div class="available-updates list-group my-3">
-        <%= Enum.map(updates, fn {project_id, publication} -> %>
-          <div class="list-group-item flex-column align-items-start">
-            <%= render_update_details(assigns, publication) %>
-            <div class="d-flex flex-row">
-              <div class="flex-grow-1"></div>
-              <button type="button" class="btn btn-sm btn-primary"
-                phx-click="show_apply_update_modal"
-                phx-value-project-id="<%= project_id %>"
-                phx-value-publication-id="<%= publication.id %>">View Update</button>
-            </div>
-          </div>
-        <% end) %>
-      </div>
-    """
-  end
-
-  defp render_update_details(
-         assigns,
-         %{
-           published: published,
-           description: description,
-           edition: edition,
-           major: major,
-           minor: minor,
-           project: project
-         } = _publication
-       ) do
-    ~L"""
-    <div class="d-flex w-100 justify-content-between">
-      <h5 class="mb-1"><%= project.title %> <small><%= "v#{edition}.#{major}.#{minor}" %></small></h5>
-      <small>Published <%= Timex.format!(published, "{relative}", :relative) %></small>
-    </div>
-    <p class="mb-1"><%= description %></p>
-    """
-  end
-
-  defp version_number(%Publication{edition: edition, major: major, minor: minor}) do
-    "#{edition}.#{major}.#{minor}"
   end
 
   # handle any cancel events a modal might generate from being closed
   def handle_event("cancel_modal", _params, socket),
-    do: {:noreply, assign(socket, modal: nil, selection: nil)}
+    do:
+      {:noreply,
+       socket
+       |> hide_modal()}
 
   def handle_event(
         "show_apply_update_modal",
         %{"project-id" => project_id, "publication-id" => publication_id},
         socket
       ) do
-    %{section: section} = socket.assigns
+    %{section: section, updates: updates} = socket.assigns
     current_publication = Sections.get_current_publication(section.id, project_id)
     newest_publication = Publishing.get_publication!(publication_id)
 
-    {version_change, changes} =
+    {_version_change, changes} =
       Publishing.diff_publications(current_publication, newest_publication)
 
     {:noreply,
      assign(socket,
-       modal: :apply_update,
-       selection: %{
-         current_publication: current_publication,
-         newest_publication: newest_publication,
-         project_id: String.to_integer(project_id),
-         publication_id: String.to_integer(publication_id),
-         version_change: version_change,
-         changes: changes
+       modal: %{
+         component: ApplyUpdateModal,
+         assigns: %{
+           id: "apply_update_modal",
+           current_publication: current_publication,
+           newest_publication: newest_publication,
+           project_id: String.to_integer(project_id),
+           publication_id: String.to_integer(publication_id),
+           changes: changes,
+           updates: updates
+         }
        }
      )}
   end
@@ -215,7 +142,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      selection: %{publication_id: publication_id},
+      modal: %{assigns: %{publication_id: publication_id}},
       redirect_after_apply: redirect_after_apply
     } = socket.assigns
 

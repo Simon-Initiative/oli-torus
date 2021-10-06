@@ -4,7 +4,9 @@ import {
   selectPartComponentTypes,
   selectPaths,
   setCopiedPart,
+  setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
+import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
@@ -15,6 +17,7 @@ import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-boot
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const AddComponentToolbar: React.FC = () => {
   const dispatch = useDispatch();
@@ -111,7 +114,9 @@ const AddComponentToolbar: React.FC = () => {
       custom: copiedPart.custom,
     };
     addPartToCurrentScreen(newPartData);
-    dispatch(setCopiedPart({ copiedPart: null }));
+    dispatch(setCurrentSelection({ selection: newPartData.id }));
+
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
   return (
     <Fragment>
