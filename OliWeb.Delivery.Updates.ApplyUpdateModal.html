@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.6">
 
-    <title>OliWeb.Common.ManualModal — OLI Torus v0.13.6</title>
+    <title>OliWeb.Delivery.Updates.ApplyUpdateModal — OLI Torus v0.13.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-57f5365933.js"></script>
+    <script src="dist/sidebar_items-a42267e62a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,28 +86,15 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Common.ManualModal <small class="app-vsn">(OLI Torus v0.13.6)</small>
+OliWeb.Delivery.Updates.ApplyUpdateModal <small class="app-vsn">(OLI Torus v0.13.6)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/manual_modal.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/updates/apply_update_modal.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
 
       </h1>
 
-
-        <section id="moduledoc">
-<p>A reusable LivewComponent for a Bootstrap modal, one that is manually controlled via JavaScript, and that
-must be added and removed from a parent LiveView programmatically when it needs to be shown.</p><p>This component should be used in place of <a href="OliWeb.Common.Modal.html"><code class="inline">OliWeb.Common.Modal</code></a> when there is a need to programmatically
-vary the content that the modal displays from invocation to invocation.  The only way to do this
-is to completely remove the component from the DOM and remount it with the new content.  Doing this, however,
-forces the launching of the modal to be done via JavaScript (notice the phx-hook that is present on
-the root div of this modal)</p><p>Minimal example usage specifying only the required properties:</p><pre><code class="makeup elixir"><span class="o">&lt;</span><span class="p">%</span><span class="o">=</span><span class="w"> </span><span class="n">live_component</span><span class="w"> </span><span class="nc">ManualModal</span><span class="p">,</span><span class="w"> </span><span class="ss">title</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Confirm your request&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">modal_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;my_unique_modal_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">ok_action</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;confirm&quot;</span><span class="w"> </span><span class="k" data-group-id="5610451657-1">do</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span><span class="w">
-  </span><span class="o">&lt;</span><span class="n">p</span><span class="w"> </span><span class="n">class</span><span class="o">=</span><span class="s">&quot;mb-4&quot;</span><span class="o">&gt;</span><span class="nc">Are</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">you</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="k" data-group-id="5610451657-2">do</span><span class="w"> </span><span class="n">this?</span><span class="o">&lt;</span><span class="o">/</span><span class="n">p</span><span class="o">&gt;</span><span class="w">
-</span><span class="o">&lt;</span><span class="p">%</span><span class="w"> </span><span class="k" data-group-id="5610451657-2">end</span><span class="w"> </span><span class="p">%</span><span class="o">&gt;</span></code></pre><p>Required properties:</p><p><code class="inline">title</code>: The string title that the modal will display
-<code class="inline">modal_id</code>: The DOM id that will be attached to this modal. This is the id that another part of the UI needs</p><pre><code class="makeup elixir"><span class="w">        </span><span class="n">to</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">trigger</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">modal</span></code></pre><p>'ok_action': The phx-click action to invoke upon clicking the 'Ok' button</p><p>Optional properties:</p><p><code class="inline">ok_label</code>: The label to use for the 'Ok' button, defaults to 'Ok'
-<code class="inline">ok_style</code>: The Bootstrap button style to use for the 'Ok' button, defaults to <code class="inline">btn-primary</code></p>
-        </section>
 
 
         <section id="summary" class="details-list">
@@ -123,15 +110,6 @@ the root div of this modal)</p><p>Minimal example usage specifying only the requ
     <h2>
       <a href="#functions">Functions</a>
     </h2>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#mount/1">mount(socket)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
-
-</div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#render/1">render(assigns)</a>
@@ -156,28 +134,6 @@ the root div of this modal)</p><p>Minimal example usage specifying only the requ
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="mount/1">
-
-  <div class="detail-header">
-    <a href="#mount/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">mount(socket)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/manual_modal.ex#L36" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
-  </section>
-</section>
 <section class="detail" id="render/1">
 
   <div class="detail-header">
@@ -187,7 +143,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/manual_modal.ex#L45" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/updates/apply_update_modal.ex#L7" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

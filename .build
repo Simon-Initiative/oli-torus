@@ -275,6 +275,12 @@ Oli.Versioning.RevisionTree.Tree.html
 Oli.html
 OliWeb.Accounts.AccountsLive.html
 OliWeb.Accounts.AccountsModel.html
+OliWeb.Accounts.Modals.ConfirmEmailModal.html
+OliWeb.Accounts.Modals.DeleteAccountModal.html
+OliWeb.Accounts.Modals.GrantAdminModal.html
+OliWeb.Accounts.Modals.LockAccountModal.html
+OliWeb.Accounts.Modals.RevokeAdminModal.html
+OliWeb.Accounts.Modals.UnlockAccountModal.html
 OliWeb.ActivityBankController.html
 OliWeb.ActivityBankView.html
 OliWeb.ActivityController.html
@@ -342,7 +348,6 @@ OliWeb.Common.Breadcrumb.html
 OliWeb.Common.Confirm.html
 OliWeb.Common.Links.html
 OliWeb.Common.LtiSession.html
-OliWeb.Common.ManualModal.html
 OliWeb.Common.MaterialIcon.html
 OliWeb.Common.MinimalModal.html
 OliWeb.Common.Modal.html
@@ -376,6 +381,8 @@ OliWeb.Delivery.Remix.RemoveModal.html
 OliWeb.Delivery.RemixSection.html
 OliWeb.Delivery.SelectSource.TableModel.html
 OliWeb.Delivery.SelectSource.html
+OliWeb.Delivery.Updates.ApplyUpdateModal.html
+OliWeb.Delivery.Updates.Utils.html
 OliWeb.DeliveryController.html
 OliWeb.DeliveryView.html
 OliWeb.DeploymentController.html
@@ -398,6 +405,7 @@ OliWeb.Grades.GradesLive.html
 OliWeb.Grades.LineItems.html
 OliWeb.HelpController.html
 OliWeb.HelpView.html
+OliWeb.History.RestoreRevisionModal.html
 OliWeb.IngestController.html
 OliWeb.IngestView.html
 OliWeb.Insights.TableHeader.html
@@ -418,6 +426,7 @@ OliWeb.Objectives.Actions.html
 OliWeb.Objectives.Attachments.html
 OliWeb.Objectives.BreakdownModal.html
 OliWeb.Objectives.CreateNew.html
+OliWeb.Objectives.DeleteModal.html
 OliWeb.Objectives.ObjectiveEntry.html
 OliWeb.Objectives.ObjectiveForm.html
 OliWeb.Objectives.ObjectiveRender.html
@@ -514,8 +523,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-65e1d75c25.js
-dist/sidebar_items-57f5365933.js
+dist/search_items-7d65d01aa4.js
+dist/sidebar_items-a42267e62a.js
 index.html
 license.html
 readme.html
