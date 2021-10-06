@@ -826,7 +826,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       style={externalActivityStyles}
       title={title}
       src={frameSrc}
-      scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? scrolling : ''}
+      scrolling={scrolling}
     />
   ) : null;
 };
