@@ -22,6 +22,19 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
     end
   end
 
+  def get_atom_param(params, name, valid, default_value) do
+    case params[name] do
+      value ->
+        case MapSet.new(valid) |> MapSet.member?(value) do
+          true -> String.to_existing_atom(value)
+          _ -> default_value
+        end
+
+      _ ->
+        default_value
+    end
+  end
+
   defmacro __using__(_options) do
     quote do
       import unquote(__MODULE__)

@@ -3,62 +3,102 @@ defmodule OliWeb.Projects.ProjectsLive do
   LiveView implementation of projects view.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-
-  alias Oli.Authoring.Course
-  alias Oli.Accounts.{Author}
-  alias OliWeb.Projects.Table
-  alias OliWeb.Projects.Cards
-  alias OliWeb.Projects.State
-  alias OliWeb.Router.Helpers, as: Routes
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.Breadcrumb
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
+  alias Oli.Accounts.{Author}
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
-
+  alias OliWeb.Projects.TableModel
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
+
+  @limit 25
+
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Projects"})]
+  data title, :string, default: "Projects"
+  data payments, :list, default: []
+  data tabel_model, :struct
+  data total_count, :integer, default: 0
+  data offset, :integer, default: 0
+  data limit, :integer, default: @limit
+  data sort_by, :any, default: :title
+  data sort_order, :any, default: :asc
+  data filter, :string, default: ""
+  data applied_filter, :string, default: ""
+  data show_deleted, :boolean, default: false
+  data author, :any
+  data is_admin, :boolean, default: false
+  data changeset, :any, default: Project.changeset(%Project{title: ""})
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
     is_admin = Accounts.is_admin?(author)
 
     projects =
-      Course.get_projects_for_author(author)
-      |> Enum.filter(fn p -> is_admin || p.status === :active end)
+      Course.browse_projects(
+        author,
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :asc, field: :title},
+        false
+      )
 
-    author_projects = Accounts.project_authors(Enum.map(projects, fn %{id: id} -> id end))
+    {:ok, table_model} = TableModel.new(projects)
+
+    total_count = determine_total(projects)
 
     {:ok,
      assign(
        socket,
-       Map.merge(State.initialize_state(author, projects, author_projects), %{is_admin: is_admin})
+       author: author,
+       projects: projects,
+       offset: 0,
+       table_model: table_model,
+       total_count: total_count,
+       is_admin: is_admin
      )}
   end
 
+  defp determine_total(projects) do
+    case(projects) do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
+  end
+
   def handle_params(params, _, socket) do
-    sort_by =
-      case params["sort_by"] do
-        sort_by when sort_by in ~w(title created author) -> sort_by
-        _ -> socket.assigns.sort_by
-      end
-
-    sort_order =
-      case params["sort_order"] do
-        sort_order when sort_order in ~w(asc desc) -> sort_order
-        _ -> socket.assigns.sort_order
-      end
-
-    display_mode =
-      case params["display_mode"] do
-        display_mode when display_mode in ~w(cards table) -> display_mode
-        _ -> socket.assigns.display_mode
-      end
-
-    changes =
-      Keyword.merge(State.sort_projects(socket.assigns, sort_by, sort_order),
-        display_mode: display_mode
+    table_model =
+      OliWeb.Common.Table.SortableTableModel.update_from_params(
+        socket.assigns.table_model,
+        params
       )
 
-    {:noreply, assign(socket, changes)}
+    offset = OliWeb.Common.SortableTable.TableHandlers.get_int_param(params, "offset", 0)
+
+    projects =
+      Course.browse_projects(
+        socket.assigns.author,
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        false
+      )
+
+    table_model = Map.put(table_model, :rows, projects)
+
+    total_count = determine_total(projects)
+
+    {:noreply,
+     assign(socket,
+       sort_by: table_model.sort_by_spec.name,
+       sort_order: table_model.sort_order,
+       projects: projects,
+       table_model: table_model,
+       total_count: total_count
+     )}
   end
 
   def render(assigns) do
@@ -69,18 +109,6 @@ defmodule OliWeb.Projects.ProjectsLive do
           <div class="col-12">
             <div class="d-flex justify-content-between align-items-baseline">
               <div>
-                <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                  <label phx-click="display_mode" phx-value-display_mode="cards" class="btn btn-sm btn-light <%= if @display_mode == "cards" do "active" else "" end %> %>">
-                    <input type="radio" name="options" id="option1"
-                      <%= if @display_mode == "cards" do "checked" else "" end %>
-                    > <span><i class="las la-grip-horizontal"></i> Card</span>
-                  </label>
-                  <label phx-click="display_mode" phx-value-display_mode="table" class="btn btn-sm btn-light <%= if @display_mode == "table" do "active" else "" end %>">
-                    <input type="radio" name="options" id="option2"
-                      <%= if @display_mode == "table" do "checked" else "" end %>
-                    > <span><i class="las la-th-list"></i> Table</span>
-                  </label>
-                </div>
                 <%= if @is_admin do %>
                   <div class="form-check ml-4" style="display: inline;">
                     <input type="checkbox" class="form-check-input" id="exampleCheck1" <%= if @show_deleted do "checked" else "" end %> phx-click="toggle_show_deleted">
@@ -103,18 +131,16 @@ defmodule OliWeb.Projects.ProjectsLive do
         </div>
       </div>
     </div>
-    <%= case @display_mode do %>
-      <% "cards" -> %>
-        <%= live_component Cards, projects: @projects, authors: @authors, show_deleted: @show_deleted %>
-      <% "table" -> %>
-        <div class="container">
-          <div class="row">
-            <div class="col-12">
-              <%= live_component Table, projects: @projects, authors: @authors, sort_by: @sort_by, sort_order: @sort_order, is_admin: @is_admin, show_deleted: @show_deleted %>
-            </div>
-          </div>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <%= live_component PagedTable, page_change: "page_change", sort: "sort",
+          total_count: @total_count, filter: "",
+          limit: @limit, offset: @offset, table_model: @table_model %>
         </div>
-    <% end %>
+      </div>
+    </div>
 
     <div class="modal fade" id="modal-new-project" tabindex="-1" role="dialog" aria-labelledby="new-project-modal" aria-hidden="true">
       <div class="modal-dialog modal-lg" role="document">
@@ -153,55 +179,27 @@ defmodule OliWeb.Projects.ProjectsLive do
     """
   end
 
-  def handle_event("display_mode", %{"display_mode" => display_mode}, socket) do
-    sort_by = socket.assigns.sort_by
-    sort_order = socket.assigns.sort_order
-
-    cond do
-      display_mode == socket.assigns.display_mode ->
-        {:noreply, socket}
-
-      true ->
-        {:noreply,
-         push_patch(socket,
-           to:
-             Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
-               sort_by: sort_by,
-               sort_order: sort_order,
-               display_mode: display_mode
-             })
-         )}
-    end
-  end
-
-  def handle_event("toggle_show_deleted", _, socket) do
-    {:noreply, assign(socket, State.toggle_show_deleted(socket.assigns))}
-  end
-
   # handle change of selection
   def handle_event("sort", %{"sort_by" => sort_by}, socket) do
     sort_order =
-      case socket.assigns.sort_by do
+      case Atom.to_string(socket.assigns.sort_by) do
         ^sort_by ->
-          if socket.assigns.sort_order == "asc" do
-            "desc"
+          if socket.assigns.sort_order == :asc do
+            :desc
           else
-            "asc"
+            :asc
           end
 
         _ ->
           socket.assigns.sort_order
       end
 
-    display_mode = socket.assigns.display_mode
-
     {:noreply,
      push_patch(socket,
        to:
          Routes.live_path(socket, OliWeb.Projects.ProjectsLive, %{
            sort_by: sort_by,
-           sort_order: sort_order,
-           display_mode: display_mode
+           sort_order: sort_order
          })
      )}
   end

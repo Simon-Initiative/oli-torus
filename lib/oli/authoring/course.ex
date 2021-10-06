@@ -1,10 +1,12 @@
 defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing
   alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource}
-  alias Oli.Accounts.{SystemRole}
+  alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Authoring.Authors.AuthorProject
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -49,6 +51,142 @@ defmodule Oli.Authoring.Course do
       %{system_role_id: ^admin_role_id} -> Repo.all(Project)
       _ -> Repo.preload(author, [:projects]).projects
     end
+  end
+
+  def browse_projects(
+        %Author{} = author,
+        %Paging{} = paging,
+        %Sorting{} = sorting,
+        include_deleted,
+        text_search \\ nil
+      ) do
+    admin_role_id = SystemRole.role_id().admin
+
+    case author do
+      # Admin authors have access to every project
+      %{system_role_id: ^admin_role_id} ->
+        browse_projects_as_admin(paging, sorting, include_deleted, text_search)
+
+      _ ->
+        browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
+    end
+  end
+
+  defp browse_projects_as_admin(
+         %Paging{limit: limit, offset: offset} = paging,
+         %Sorting{direction: direction, field: field} = sorting,
+         include_deleted,
+         text_search \\ nil
+       ) do
+    filter_by_status =
+      if include_deleted do
+        true
+      else
+        dynamic([p], p.status == :active)
+      end
+
+    filter_by_text =
+      if is_nil(text_search) do
+        true
+      else
+        dynamic([p], like(p.title, ^text_search))
+      end
+
+    owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
+
+    query =
+      Project
+      |> join(:left, [p], o in AuthorProject,
+        on: p.id == o.project_id and o.project_role_id == ^owner_id
+      )
+      |> join(:left, [p, a], o in Oli.Accounts.Author, on: o.id == a.author_id)
+      |> where(^filter_by_status)
+      |> where(^filter_by_text)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select([p, _, a], %{
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        inserted_at: p.inserted_at,
+        status: p.status,
+        owner_id: a.id,
+        name: a.name,
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case {field, direction} do
+        {:name, :asc} -> order_by(query, [_, _, o], asc: o.name)
+        {:title, :asc} -> order_by(query, [p, _, _], asc: p.title)
+        {:inserted_at, :asc} -> order_by(query, [p, _, _], asc: p.inserted_at)
+        {:name, :desc} -> order_by(query, [_, _, o], desc: o.name)
+        {:title, :desc} -> order_by(query, [p, _, _], desc: p.title)
+        {:inserted_at, :desc} -> order_by(query, [p, _, _], desc: p.inserted_at)
+      end
+
+    Repo.all(query)
+  end
+
+  defp browse_projects_as_author(
+         %Author{id: id},
+         %Paging{limit: limit, offset: offset},
+         %Sorting{direction: direction, field: field},
+         include_deleted,
+         text_search \\ nil
+       ) do
+    owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
+
+    filter_by_collaborator = dynamic([a, _, _, _], a.author_id == ^id)
+
+    filter_by_status =
+      if include_deleted do
+        true
+      else
+        dynamic([_, p, _, _], p.status == :active)
+      end
+
+    filter_by_text =
+      if is_nil(text_search) do
+        true
+      else
+        dynamic([_, p, _, _], like(p.title, ^text_search))
+      end
+
+    query =
+      AuthorProject
+      |> join(:left, [c], p in Project, on: c.project_id == p.id)
+      |> join(:left, [c, p], o in AuthorProject,
+        on: p.id == o.project_id and o.project_role_id == ^owner_id
+      )
+      |> join(:left, [c, p, o], a in Oli.Accounts.Author, on: o.author_id == a.id)
+      |> where(^filter_by_collaborator)
+      |> where(^filter_by_status)
+      |> where(^filter_by_text)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select([_, p, _, a], %{
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        inserted_at: p.inserted_at,
+        status: p.status,
+        owner_id: a.id,
+        name: a.name,
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case {field, direction} do
+        {:name, :asc} -> order_by(query, [_, _, _, o], asc: o.name)
+        {:title, :asc} -> order_by(query, [_, p, _, _], asc: p.title)
+        {:inserted_at, :asc} -> order_by(query, [_, p, _, _], asc: p.inserted_at)
+        {:name, :desc} -> order_by(query, [_, _, _, o], desc: o.name)
+        {:title, :desc} -> order_by(query, [_, p, _, _], desc: p.title)
+        {:inserted_at, :desc} -> order_by(query, [_, p, _, _], desc: p.inserted_at)
+      end
+
+    Repo.all(query)
   end
 
   @doc """
