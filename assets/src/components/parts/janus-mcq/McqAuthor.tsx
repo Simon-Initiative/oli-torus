@@ -15,7 +15,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     mcqItems,
     customCssClass,
     layoutType,
-    height,
     overrideHeight = false,
   } = model;
   const styles: CSSProperties = {
@@ -46,6 +45,24 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
 
   return (
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
+      <style>
+        {`
+          .mcq-input>div {
+            margin: 1px 6px 10px 0 !important;
+            display: block;
+            position: static !important;
+            min-height: 20px;
+            line-height: normal !important;
+            vertical-align: middle;
+          }
+          .mcq-input>div>label {
+            margin: 0 !important;
+          }
+          .mcq-input>br {
+            display: none !important;
+          }
+        `}
+      </style>
       {options?.map((item, index) => (
         <MCQItem
           index={index}

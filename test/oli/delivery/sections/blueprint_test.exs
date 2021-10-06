@@ -1,12 +1,13 @@
 defmodule Oli.Delivery.Sections.BlueprintTest do
   use Oli.DataCase
 
+  alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
   import Ecto.Query, warn: false
 
-  describe "section updates" do
+  describe "basic blueprint operations" do
     setup do
       Seeder.base_project_with_resource2()
     end
@@ -111,6 +112,67 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         )
 
       Repo.all(query)
+    end
+  end
+
+  describe "blueprint availability based on visibility" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "is_author_of_blueprint?/2 correctly identifies authors", %{
+      project: project,
+      institution: institution,
+      author: author,
+      author2: author2
+    } do
+      another = Seeder.another_project(author2, institution, "second one")
+
+      {:ok, _} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: another.project.id
+        })
+
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+
+      # Create a blueprint using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          type: :blueprint,
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
+      {:ok, _} = Blueprint.duplicate(section)
+
+      # At this point, the author should only have access to two products (the
+      # ones build from the project this author created)
+      available = Blueprint.available_products(author, institution)
+      assert length(available) == 2
+
+      # We then change the other project to be global visibility, but project
+      # does not yet have a publication, so the product created from it is not
+      # visible.
+      Course.update_project(another.project, %{visibility: :global})
+      available = Blueprint.available_products(author, institution)
+      assert length(available) == 2
+
+      # After publishing the project, the product is now visible
+      {:ok, _} = Publishing.publish_project(another.project, "some changes")
+      available = Blueprint.available_products(author, institution)
+      assert length(available) == 3
     end
   end
 end

@@ -6,6 +6,7 @@ defmodule OliWeb.Common.SortableTable.Table do
   prop model, :struct, required: true
   prop sort, :event, required: true
 
+  @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
     id_field
     |> Enum.reduce("", fn field, acc ->

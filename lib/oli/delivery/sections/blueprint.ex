@@ -1,6 +1,10 @@
 defmodule Oli.Delivery.Sections.Blueprint do
   alias Oli.Repo
+  alias Oli.Accounts.Author
+  alias Oli.Institutions.Institution
   alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course.ProjectVisibility
+  alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   import Ecto.Query, warn: false
@@ -51,6 +55,66 @@ defmodule Oli.Delivery.Sections.Blueprint do
       0 -> false
       _ -> true
     end
+  end
+
+  @doc """
+  For a given author that belongs to a specific institution, return all active
+  prodcuts that this author has visibility to.
+  """
+  def available_products(%Author{} = author, %Institution{} = institution) do
+    query =
+      from section in Section,
+        join: proj in Project,
+        on: proj.id == section.base_project_id,
+        join: pub in Publication,
+        on: pub.project_id == proj.id,
+        left_join: a in assoc(proj, :authors),
+        left_join: v in ProjectVisibility,
+        on: proj.id == v.project_id,
+        where:
+          section.type == :blueprint and
+            section.status == :active and
+            not is_nil(pub.published) and proj.status == :active and
+            (a.id == ^author.id or proj.visibility == :global or
+               (proj.visibility == :selected and
+                  (v.author_id == ^author.id or v.institution_id == ^institution.id))),
+        distinct: true,
+        select: section
+
+    Repo.all(query)
+  end
+
+  def available_products() do
+    query =
+      from section in Section,
+        join: proj in Project,
+        on: proj.id == section.base_project_id,
+        join: pub in Publication,
+        on: pub.project_id == proj.id,
+        left_join: a in assoc(proj, :authors),
+        left_join: v in ProjectVisibility,
+        on: proj.id == v.project_id,
+        where:
+          section.type == :blueprint and
+            section.status == :active and
+            not is_nil(pub.published) and proj.status == :active and proj.visibility == :global,
+        distinct: true,
+        select: section
+
+    Repo.all(query)
+  end
+
+  @doc """
+  From a list of visible products and visible publciations of projects, filter out
+  the project publications that have at least one paid product.
+  """
+  def filter_for_free_projects(all_products, publications) do
+    has_paid_product =
+      Enum.filter(all_products, fn p -> p.status == :active and p.requires_payment end)
+      |> Enum.map(fn p -> p.base_project_id end)
+      |> MapSet.new()
+
+    Enum.filter(publications, fn pub -> !MapSet.member?(has_paid_product, pub.project_id) end)
   end
 
   @doc """
@@ -106,9 +170,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   This method supports duplication of enrollable sections to create a blueprint.
   """
-  def duplicate(%Section{} = section) do
+  def duplicate(%Section{} = section, attrs \\ %{}) do
     Repo.transaction(fn _ ->
-      with {:ok, blueprint} <- dupe_section(section),
+      with {:ok, blueprint} <- dupe_section(section, attrs),
            {:ok, _} <- dupe_section_project_publications(section, blueprint),
            {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint),
            {:ok, blueprint} <-
@@ -122,28 +186,34 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  defp dupe_section(%Section{} = section) do
+  defp dupe_section(%Section{} = section, attrs) do
     now = DateTime.utc_now()
+
+    params =
+      Map.merge(
+        %{
+          type: :blueprint,
+          status: :active,
+          base_project_id: section.base_project_id,
+          open_and_free: false,
+          context_id: UUID.uuid4(),
+          start_date: now,
+          end_date: now,
+          title: section.title <> " Copy",
+          invite_token: nil,
+          passcode: nil,
+          blueprint_id: nil,
+          lti_1p3_deployment_id: nil,
+          institution_id: nil,
+          brand_id: nil,
+          delivery_policy_id: nil
+        },
+        attrs
+      )
 
     Map.merge(
       Map.from_struct(section),
-      %{
-        type: :blueprint,
-        status: :active,
-        base_project_id: section.base_project_id,
-        open_and_free: false,
-        context_id: UUID.uuid4(),
-        start_date: now,
-        end_date: now,
-        title: section.title <> " Copy",
-        invite_token: nil,
-        passcode: nil,
-        blueprint_id: nil,
-        lti_1p3_deployment_id: nil,
-        institution_id: nil,
-        brand_id: nil,
-        delivery_policy_id: nil
-      }
+      params
     )
     |> Map.delete(:id)
     |> Map.delete(:slug)

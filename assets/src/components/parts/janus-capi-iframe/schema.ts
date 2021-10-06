@@ -4,6 +4,7 @@ import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
   configData: any;
+  allowScrolling: boolean;
 }
 
 export const schema: JSONSchema7Object = {
@@ -14,6 +15,10 @@ export const schema: JSONSchema7Object = {
   src: {
     title: 'Source',
     type: 'string',
+  },
+  allowScrolling: {
+    title: 'Allow Scrolling',
+    type: 'boolean',
   },
 };
 
@@ -53,6 +58,7 @@ export const uiSchema = {};
 export const createSchema = (): Partial<CapiIframeModel> => ({
   customCssClass: '',
   src: '',
+  allowScrolling: false,
   configData: [],
   width: 400,
   height: 400,

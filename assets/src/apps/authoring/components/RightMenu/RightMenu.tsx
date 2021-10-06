@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import {
   selectRightPanelActiveTab,
+  setCopiedPart,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
 import {
@@ -118,7 +119,18 @@ const RightMenu: React.FC<any> = () => {
     // TODO: any other saving or whatever
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
-
+  const handleCopyComponent = useCallback(() => {
+    if (currentActivity && currentPartSelection) {
+      const partDef = currentActivity.content?.partsLayout.find(
+        (part: any) => part.id === currentPartSelection,
+      );
+      if (!partDef) {
+        console.warn(`Part with id ${currentPartSelection} not found on this screen`);
+        return;
+      }
+      dispatch(setCopiedPart({ copiedPart: partDef }));
+    }
+  }, [currentActivity, currentPartSelection]);
   const bankPropertyChangeHandler = useCallback(
     (properties: object) => {
       if (currentSequence) {
@@ -482,7 +494,7 @@ const RightMenu: React.FC<any> = () => {
                   <i className="fas fa-cog mr-2" />
                 </Button>
                 <Button>
-                  <i className="fas fa-copy mr-2" />
+                  <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
                 </Button>
                 <CompJsonEditor
                   onChange={handleEditComponentJson}

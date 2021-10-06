@@ -9,7 +9,7 @@ defmodule OliWeb.Objectives.Actions do
         <%= if !@has_children and @depth < 2 do %>
           <button
             class="ml-1 btn btn-sm btn-light"
-            phx-click="breakdown"
+            phx-click="show_breakdown_modal"
             phx-value-slug="<%= @slug %>">
             <i class="las la-sitemap"></i> Break down
           </button>
@@ -24,8 +24,10 @@ defmodule OliWeb.Objectives.Actions do
 
         <button
           id="delete_<%= @slug %>"
-          <%= if @can_delete? do "" else "disabled" end %>
-          phx-click="prepare_delete"
+          disabled
+          <% # disable the ability to delete until #1616 is resolved %>
+          <% # if @can_delete? do "" else "disabled" end %>
+          phx-click="show_delete_modal"
           phx-value-slug="<%= @slug %>"
           data-backdrop="static"
           data-keyboard="false"

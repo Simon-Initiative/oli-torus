@@ -23,6 +23,36 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
+  alias Oli.Accounts.User
+  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
+
+  @doc """
+  Determines if a user is an instructor in a given section.
+  """
+  def is_instructor?(%User{id: id} = user, section_slug) do
+    is_enrolled?(id, section_slug) &&
+      ContextRoles.has_role?(
+        user,
+        section_slug,
+        ContextRoles.get_role(:context_instructor)
+      )
+  end
+
+  @doc """
+  Determines if a user is an administrator in a given section.
+  """
+  def is_admin?(%User{} = user, section_slug) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:system_administrator),
+        PlatformRoles.get_role(:institution_administrator)
+      ],
+      :any
+    ) ||
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
 
   @doc """
   Enrolls a user in a course section
@@ -561,6 +591,40 @@ defmodule Oli.Delivery.Sections do
     |> Repo.delete_all()
 
     create_section_resources(section, publication)
+  end
+
+  def retrieve_visible_sources(user, institution) do
+    all =
+      case user.author do
+        nil ->
+          {Oli.Delivery.Sections.Blueprint.available_products(),
+           Publishing.available_publications()}
+
+        author ->
+          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
+           Publishing.available_publications(author, institution)}
+      end
+      |> then(fn {products, publications} ->
+        filtered =
+          Enum.filter(publications, fn p -> p.published end)
+          |> then(fn publications ->
+            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
+              products,
+              publications
+            )
+          end)
+
+        filtered ++ products
+      end)
+
+    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
+  end
+
+  defp get_title(pub_or_prod) do
+    case Map.get(pub_or_prod, :title) do
+      nil -> pub_or_prod.project.title
+      title -> title
+    end
   end
 
   @doc """

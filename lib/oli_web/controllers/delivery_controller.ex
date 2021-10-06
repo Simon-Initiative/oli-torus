@@ -88,11 +88,9 @@ defmodule OliWeb.DeliveryController do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    available_publications = Publishing.available_publications(user.author, institution)
-
     render(conn, "select_project.html",
       author: user.author,
-      available_publications: available_publications,
+      sources: Sections.retrieve_visible_sources(user, institution),
       remix: Map.get(params, "remix", "false")
     )
   end
@@ -283,7 +281,7 @@ defmodule OliWeb.DeliveryController do
     |> render("new.html")
   end
 
-  def create_section(conn, %{"publication_id" => publication_id} = params) do
+  def create_section(conn, %{"source_id" => source_id} = params) do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
 
@@ -297,32 +295,27 @@ defmodule OliWeb.DeliveryController do
         {institution, _registration, deployment} =
           Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-        publication = Publishing.get_publication!(publication_id)
-
         # create section, section resources and enroll instructor
         {:ok, section} =
-          Repo.transaction(fn ->
-            {:ok, section} =
-              Sections.create_section(%{
-                type: :enrollable,
-                timezone: institution.timezone,
-                title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
-                context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-                institution_id: institution.id,
-                base_project_id: publication.project_id,
-                lti_1p3_deployment_id: deployment.id
-              })
+          case source_id do
+            "publication:" <> publication_id ->
+              create_from_publication(
+                String.to_integer(publication_id),
+                user,
+                institution,
+                lti_params,
+                deployment
+              )
 
-            {:ok, %Section{id: section_id}} =
-              Sections.create_section_resources(section, publication)
-
-            # Enroll this user with their proper roles (instructor)
-            lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-            context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-            Sections.enroll(user.id, section_id, context_roles)
-
-            section
-          end)
+            "product:" <> product_id ->
+              create_from_product(
+                String.to_integer(product_id),
+                user,
+                institution,
+                lti_params,
+                deployment
+              )
+          end
 
         if is_remix?(params) do
           conn
@@ -338,6 +331,65 @@ defmodule OliWeb.DeliveryController do
         |> put_flash(:error, "Unable to create new section. This section already exists.")
         |> redirect_to_page_delivery(section)
     end
+  end
+
+  defp create_from_product(product_id, user, institution, lti_params, deployment) do
+    blueprint = Oli.Delivery.Sections.get_section!(product_id)
+
+    Repo.transaction(fn ->
+      # calculate a cost, if an error, fallback to the amount in the blueprint
+      # TODO: we may need to move this to AFTER a remix if the cost calculation factors
+      # in the percentage project usage
+      amount =
+        case Oli.Delivery.Paywall.calculate_product_cost(blueprint, institution) do
+          {:ok, amount} -> amount
+          _ -> blueprint.amount
+        end
+
+      {:ok, section} =
+        Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
+          type: :enrollable,
+          timezone: institution.timezone,
+          title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+          context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
+          institution_id: institution.id,
+          lti_1p3_deployment_id: deployment.id,
+          amount: amount
+        })
+
+      # Enroll this user with their proper roles (instructor)
+      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+      Sections.enroll(user.id, section.id, context_roles)
+
+      section
+    end)
+  end
+
+  defp create_from_publication(publication_id, user, institution, lti_params, deployment) do
+    publication = Publishing.get_publication!(publication_id)
+
+    Repo.transaction(fn ->
+      {:ok, section} =
+        Sections.create_section(%{
+          type: :enrollable,
+          timezone: institution.timezone,
+          title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
+          context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
+          institution_id: institution.id,
+          base_project_id: publication.project_id,
+          lti_1p3_deployment_id: deployment.id
+        })
+
+      {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
+
+      # Enroll this user with their proper roles (instructor)
+      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+      Sections.enroll(user.id, section_id, context_roles)
+
+      section
+    end)
   end
 
   def signout(conn, _params) do

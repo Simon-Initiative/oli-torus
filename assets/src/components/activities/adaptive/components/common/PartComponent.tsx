@@ -223,6 +223,10 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
+    // The z-index for pop-up needs to be applied at the conponent level.
+    if (wcTagName === 'janus-popup') {
+      componentStyle.zIndex = 'auto';
+    }
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }

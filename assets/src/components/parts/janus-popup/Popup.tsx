@@ -13,14 +13,7 @@ import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/P
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
 import { PopupModel } from './schema';
-interface ContextProps {
-  currentActivity: string;
-  mode: string;
-}
-interface InitResultProps {
-  snapshot: Record<string, unknown>;
-  context: ContextProps;
-}
+import { InitResultProps } from './types';
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
@@ -58,13 +51,13 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     setInitSnapshot(initResult);
     const currentStateSnapshot = initResult.snapshot;
-    const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
-    if (isOpen !== undefined) {
-      setShowPopup(isOpen);
+    const isOpenByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
+    if (isOpenByDefault !== undefined) {
+      setShowPopup(isOpenByDefault);
     }
-    const openByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
-    if (openByDefault !== undefined) {
-      setShowPopup(openByDefault);
+    const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
+    if (isOpen !== undefined && !isOpenByDefault) {
+      setShowPopup(isOpen);
     }
     const isVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (isVisible !== undefined) {
@@ -239,8 +232,8 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     top: y,
     left: x,
     width,
-    height,
-    zIndex: z, */
+    height,*/
+    zIndex: z,
   };
 
   // Toggle popup open/close
