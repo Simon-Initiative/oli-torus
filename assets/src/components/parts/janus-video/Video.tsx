@@ -20,7 +20,6 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [videoAutoPlay, setVideoAutoPlay] = useState(false);
   const [videoEnableReplay, setVideoEnableReplay] = useState(true);
   const [cssClass, setCssClass] = useState('');
-  const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -426,7 +425,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     />
   );
 
-  const updatedFFSrc = src?.substr(0, src?.lastIndexOf('.')) + '.webm';
+  const srcAsWebm = src?.substr(0, src?.lastIndexOf('.')) + '.webm';
 
   const videoTag = (
     <video
@@ -441,7 +440,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onPause={handleVideoPause}
     >
       <source src={src} />
-      {isFirefox && <source src={updatedFFSrc} />}
+      <source src={srcAsWebm} />
       {subtitles &&
         subtitles.length > 0 &&
         subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
