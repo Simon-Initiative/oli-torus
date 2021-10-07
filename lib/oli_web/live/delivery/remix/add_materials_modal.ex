@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
           hierarchy: hierarchy,
           active: active,
           selection: selection,
+          preselected: preselected,
           publications: publications,
           selected_publication: selected_publication
         } = assigns
@@ -30,6 +31,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
               hierarchy: hierarchy,
               active: active,
               selection: selection,
+              preselected: preselected,
               publications: publications,
               selected_publication: selected_publication,
               select_mode: :multi %>

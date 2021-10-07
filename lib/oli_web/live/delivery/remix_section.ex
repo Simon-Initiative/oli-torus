@@ -316,13 +316,26 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("show_add_materials_modal", _, socket) do
-    %{available_publications: available_publications} = socket.assigns
+    %{
+      hierarchy: hierarchy,
+      available_publications: available_publications,
+      pinned_project_publications: pinned_project_publications
+    } = socket.assigns
+
+    # identify preselected materials that already exist in this section
+    preselected =
+      Hierarchy.flatten_hierarchy(hierarchy)
+      |> Enum.map(fn %{project_id: project_id, resource_id: resource_id} = _node ->
+        pub = pinned_project_publications[project_id]
+        {pub.id, resource_id}
+      end)
 
     assigns = %{
       id: "add_materials_modal",
       hierarchy: nil,
       active: nil,
       selection: [],
+      preselected: preselected,
       publications: available_publications,
       selected_publication: nil
     }

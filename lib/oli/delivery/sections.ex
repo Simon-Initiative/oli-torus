@@ -1058,7 +1058,7 @@ defmodule Oli.Delivery.Sections do
         nil ->
           # section resource record doesnt exist, create one on the fly.
           # this is necessary because we need the record id for the parent's children
-          Oli.Repo.insert!(%SectionResource{
+          SectionResource.changeset(%SectionResource{}, %{
             numbering_index: numbering.index,
             numbering_level: numbering.level,
             slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
@@ -1067,6 +1067,13 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             children: Enum.reverse(children_sr_ids)
           })
+          |> Oli.Repo.insert!(
+            # if there is a conflict on the unique section_id resource_id constraint,
+            # we assume it is because a resource has been moved or removed/readded in
+            # a remix operation, so we simply replace the existing section_resource record
+            on_conflict: :replace_all,
+            conflict_target: [:section_id, :resource_id]
+          )
 
         %SectionResource{} ->
           %SectionResource{section_resource | children: Enum.reverse(children_sr_ids)}

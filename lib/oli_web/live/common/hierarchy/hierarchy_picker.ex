@@ -21,6 +21,8 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
                     selection mode.
   selection:        List of current selections in the form of a tuples [{publication_id, resource_id}, ...].
                     (Only used in multi select mode)
+  preselected:      List of preselected items which are already selected and cannot be changed. Like selection,
+                    the list is expected to be in the form of a tuples [{publication_id, resource_id}, ...]
 
   ## Optional Parameters:
 
@@ -98,14 +100,26 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
   end
 
   def render_child(
-        %{select_mode: :multi, selection: selection, selected_publication: pub} = assigns,
+        %{
+          select_mode: :multi,
+          selection: selection,
+          preselected: preselected,
+          selected_publication: pub
+        } = assigns,
         %{uuid: uuid, resource_id: resource_id, revision: revision} = child
       ) do
+    click_handler =
+      if {pub.id, resource_id} in preselected do
+        ""
+      else
+        "phx-click=HierarchyPicker.select phx-value-publication_id=#{pub.id} phx-value-resource_id=#{resource_id}"
+      end
+
     ~L"""
-    <div id="hierarchy_item_<%= uuid %>" phx-click="HierarchyPicker.select" phx-value-publication_id="<%= pub.id %>" phx-value-resource_id="<%= resource_id %>">
+    <div id="hierarchy_item_<%= uuid %>" <%= click_handler %>>
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <input type="checkbox" <%= maybe_checked(selection, pub.id, resource_id) %>></input>
+          <input type="checkbox" <%= maybe_checked(selection, pub.id, resource_id) %> <%= maybe_preselected(preselected, pub.id, resource_id) %>></input>
           <%= OliWeb.Curriculum.EntryLive.icon(%{child: revision}) %>
         </span>
         <%= resource_link assigns, child %>
@@ -125,13 +139,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       </div>
     </div>
     """
-  end
-
-  defp maybe_checked(selection, pub_id, resource_id) do
-    case Enum.find(selection, fn {p, s} -> {p, s} == {pub_id, resource_id} end) do
-      nil -> ""
-      _ -> "checked"
-    end
   end
 
   def render_breadcrumb(%{hierarchy: nil, active: nil} = assigns) do
@@ -182,6 +189,22 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
       </button>
     </li>
     """
+  end
+
+  defp maybe_checked(selection, pub_id, resource_id) do
+    if {pub_id, resource_id} in selection do
+      "checked"
+    else
+      ""
+    end
+  end
+
+  defp maybe_preselected(preselected, pub_id, resource_id) do
+    if {pub_id, resource_id} in preselected do
+      "checked disabled"
+    else
+      ""
+    end
   end
 
   defp maybe_disabled(breadcrumbs) do
