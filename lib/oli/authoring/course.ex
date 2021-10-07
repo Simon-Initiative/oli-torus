@@ -112,6 +112,7 @@ defmodule Oli.Authoring.Course do
         status: p.status,
         owner_id: a.id,
         name: a.name,
+        email: a.email,
         total_count: fragment("count(*) OVER()")
       })
 
@@ -173,6 +174,7 @@ defmodule Oli.Authoring.Course do
         status: p.status,
         owner_id: a.id,
         name: a.name,
+        email: a.email,
         total_count: fragment("count(*) OVER()")
       })
 

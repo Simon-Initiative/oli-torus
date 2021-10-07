@@ -19,7 +19,8 @@ defmodule OliWeb.Projects.TableModel do
         },
         %ColumnSpec{
           name: :name,
-          label: "Created By"
+          label: "Created By",
+          render_fn: &__MODULE__.custom_render/3
         }
       ] ++
         if include_status? do
@@ -61,6 +62,11 @@ defmodule OliWeb.Projects.TableModel do
             <span class="text-danger">Deleted</span>
             """
         end
+
+      :name ->
+        ~F"""
+        <span>{project.name}</span> <small class="text-muted">{project.email}</small>
+        """
     end
   end
 
