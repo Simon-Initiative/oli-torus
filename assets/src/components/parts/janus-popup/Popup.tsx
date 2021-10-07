@@ -228,7 +228,6 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }, [props.notify]);
 
   const popupStyles: CSSProperties = {
-    // reverting changes
     /* position: 'absolute',
     top: y,
     left: x,
