@@ -463,55 +463,57 @@ defmodule Oli.Delivery.Sections do
           project_id: project_id
         } = publication
       ) do
-    published_resources_by_resource_id = published_resources_map(publication.id)
+    Repo.transaction(fn ->
+      published_resources_by_resource_id = published_resources_map(publication.id)
 
-    numbering_tracker = Numbering.init_numbering_tracker()
-    level = 0
-    processed_ids = []
+      numbering_tracker = Numbering.init_numbering_tracker()
+      level = 0
+      processed_ids = []
 
-    %PublishedResource{revision: root_revision} =
-      published_resources_by_resource_id[root_resource_id]
+      %PublishedResource{revision: root_revision} =
+        published_resources_by_resource_id[root_resource_id]
 
-    {root_section_resource_id, _numbering_tracker, processed_ids} =
-      create_section_resource(
-        section,
-        publication,
-        published_resources_by_resource_id,
-        processed_ids,
-        root_revision,
-        level,
-        numbering_tracker
-      )
+      {root_section_resource_id, _numbering_tracker, processed_ids} =
+        create_section_resource(
+          section,
+          publication,
+          published_resources_by_resource_id,
+          processed_ids,
+          root_revision,
+          level,
+          numbering_tracker
+        )
 
-    processed_ids = [root_resource_id | processed_ids]
+      processed_ids = [root_resource_id | processed_ids]
 
-    # create any remaining section resources which are not in the hierarchy
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+      # create any remaining section resources which are not in the hierarchy
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    published_resources_by_resource_id
-    |> Enum.filter(fn {id, _rev} -> id not in processed_ids end)
-    |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
-      [
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
-        resource_id: revision.resource_id,
-        project_id: pub.project_id,
-        section_id: section.id,
-        inserted_at: now,
-        updated_at: now
-      ]
+      published_resources_by_resource_id
+      |> Enum.filter(fn {id, _rev} -> id not in processed_ids end)
+      |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
+        [
+          slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+          resource_id: revision.resource_id,
+          project_id: pub.project_id,
+          section_id: section.id,
+          inserted_at: now,
+          updated_at: now
+        ]
+      end)
+      |> then(&Repo.insert_all(SectionResource, &1))
+
+      update_section(section, %{root_section_resource_id: root_section_resource_id})
+      |> case do
+        {:ok, section} ->
+          add_source_project(section, project_id, publication_id)
+
+          Repo.preload(section, [:root_section_resource, :section_project_publications])
+
+        e ->
+          e
+      end
     end)
-    |> then(&Repo.insert_all(SectionResource, &1))
-
-    update_section(section, %{root_section_resource_id: root_section_resource_id})
-    |> case do
-      {:ok, section} ->
-        add_source_project(section, project_id, publication_id)
-
-        {:ok, Repo.preload(section, [:root_section_resource, :section_project_publications])}
-
-      e ->
-        e
-    end
   end
 
   # This function constructs a section resource record by recursively calling itself on all the
