@@ -81,8 +81,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
 
     case Map.get(hierarchy_map, target) do
       nil ->
-        IO.inspect("target #{target} not found in map")
-
         []
 
       path ->

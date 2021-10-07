@@ -121,7 +121,6 @@ defmodule Oli.Delivery.ActivityProvider do
 
     map =
       resolver.from_resource_id(section_slug, activity_ids)
-      |> IO.inspect(label: "Revision")
       |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev) end)
 
     Enum.map(activities, fn a ->
