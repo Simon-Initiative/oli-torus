@@ -73,7 +73,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     ~L"""
     <div class="mb-2">
-      <%= link to: Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug) do %>
+      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section.slug) do %>
         <i class="las la-arrow-left"></i> Back
       <% end %>
     </div>

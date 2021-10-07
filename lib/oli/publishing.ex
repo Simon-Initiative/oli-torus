@@ -136,6 +136,38 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
+  @doc """
+  Returns the list of publications available to an author. If no author is specified,
+  then it will only return publicly available publications.
+
+  ## Examples
+      iex> available_publications()
+      [%Publication{}, ...]
+
+      iex> available_publications(author, institution)
+      [%Publication{}, ...]
+  """
+  def all_publications() do
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
+        group_by: t.project_id
+
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: not is_nil(pub.published) and proj.status == :active,
+        preload: [:project],
+        distinct: true,
+        select: pub
+
+    Repo.all(query)
+  end
+
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
       from t in Publication,
@@ -351,10 +383,12 @@ defmodule Oli.Publishing do
       [%PublishedResource{}, ...]
 
   """
-  def get_published_resources_by_publication(publication_id) do
+  def get_published_resources_by_publication(publication_id, opts \\ []) do
+    preload = Keyword.get(opts, :preload, [:resource, :revision])
+
     from(p in PublishedResource,
       where: p.publication_id == ^publication_id,
-      preload: [:resource, :revision]
+      preload: ^preload
     )
     |> Repo.all()
   end
@@ -563,14 +597,14 @@ defmodule Oli.Publishing do
 
   @doc """
   Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-  and a map that contains any changes where the key is the resource id which points to a tuple with the
-  first element being the change status (:changed|:added|:deleted) and the second is a
+  with a version number and a map that contains any changes where the key is the resource id which points to
+  a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
   map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
 
   ## Examples
 
       iex> diff_publications(publication1, publication2)
-      {:major, %{
+      {{:major, {0, 1, 0}}, %{
         23 => {:changed, %{resource: res1, revision: rev1}}
         24 => {:added, %{resource: res2, revision: rev2}}
         24 => {:added, %{resource: res3, revision: rev3}}
@@ -578,7 +612,7 @@ defmodule Oli.Publishing do
       }}
 
       iex> diff_publications(publication2, publication3)
-      {:minor, %{
+      {{:minor, {0, 0, 1}}, %{
         23 => {:changed, %{resource: res1, revision: rev1}}
         24 => {:changed, %{resource: res2, revision: rev2}}
       }}
@@ -660,7 +694,6 @@ defmodule Oli.Publishing do
 
   def get_published_revisions(publication) do
     get_published_resources_by_publication(publication.id)
-    |> Enum.map(&Repo.preload(&1, :revision))
     |> Enum.map(&Map.get(&1, :revision))
   end
 

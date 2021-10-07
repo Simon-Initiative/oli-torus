@@ -18,7 +18,7 @@ export type ObjectivesProps = {
 export const Objectives = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
 
-  // Typeahed throws a bunch of warnings if it doesn't contain
+  // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
 

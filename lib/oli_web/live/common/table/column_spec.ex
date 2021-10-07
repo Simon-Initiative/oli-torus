@@ -28,6 +28,7 @@ defmodule OliWeb.Common.Table.ColumnSpec do
             # friendly label to display for this column
             label: nil,
             # a function that takes two arguments, a sort direction and column spec and returns
+            # a two element tuple, where the entries are used as args 2 and 3 of into Enum.sort_by/3
             sort_fn: nil,
             # a function that can then be used as a sort comparator
             render_fn: nil

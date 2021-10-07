@@ -1,14 +1,24 @@
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { clone, parseBoolean } from 'utils/common';
 import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
+import { CapiVariable } from '../../../adaptivity/capi';
+import CapiVariablePicker from './CapiVariablePicker';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
+  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { x, y, z, width, height, src, configData } = model;
+  const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const messageListener = useRef<any>(null);
-  const { model } = props;
-  const { x, y, z, width, height, src } = model;
+  const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const [configClicked, setconfigClicked] = useState(false);
+  const [ready, setReady] = useState<boolean>(false);
+  const [internalState, setInternalState] = useState<any>([]);
+  const [isCAPI, setIsCAPI] = useState<boolean>(false);
+
   const styles: CSSProperties = {
     width,
     height,
@@ -42,57 +52,69 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     authToken: string;
     version?: string;
     config: any;
-    /*
-      config:
-          context: "VIEWER"
-          lessonAttempt: 0
-          lessonId: 109535
-          questionId: "q:1540493294565:499"
-          servicesBaseUrl: "https://api.smartsparrow.com"
-          userData:
-              givenName: "Ben"
-              id: "4261745"
-              surname: "Sparks"
-  */
   }
-  const getCleanSimLife = () => ({
-    // these 2 are mysterious
-    key: '',
-    simId: '',
-    // ...
-    handshakeMade: false,
-    handshake: {
-      // should be of type CapiHandshake
-      requestToken: '',
-      authToken: props.id,
-      config: {},
-    },
-    init: false, // initial setup complete; this might be init state?
-    ready: false,
-    currentState: [],
-    ownerActivityId: 0,
-  });
-
-  const [simLife, setSimLife] = useState(getCleanSimLife());
   interface CapiMessage {
     handshake: CapiHandshake;
     options?: any; // ?? dunno
     type: JanusCAPIRequestTypes;
     values: any; // usually array, but sometimes more?
   }
-  const frameRef = useCallback((frame) => {
-    /* console.log('%c DEBUG FRAME REF CALLBACK', 'background: darkred; color: #fff;', { frame }); */
+
+  const getCleanSimLife = () => ({
+    key: '',
+    simId: '',
+    handshakeMade: false,
+    handshake: {
+      requestToken: '',
+      authToken: props.id,
+      config: {},
+    },
+    init: false,
+    ready: false,
+    currentState: [],
+    ownerActivityId: 0,
+  });
+
+  const [simLife, setSimLife] = useState(getCleanSimLife());
+  const frameRef = (frame: HTMLIFrameElement) => {
     if (frame) {
       setSimFrame(frame);
     }
+  };
+
+  useEffect(() => {
+    const configMode = parseBoolean(configuremode);
+    setInConfigureMode(configMode);
+    if (configMode) setconfigClicked(true);
+  }, [configuremode]);
+
+  const initialize = useCallback(async (pModel) => {
+    const initResult = await props.onInit({
+      id: props.id,
+      responses: [],
+    });
+    setReady(true);
   }, []);
+
+  useEffect(() => {
+    initialize(model);
+  }, []);
+
+  useEffect(() => {
+    setIsCAPI(false);
+  }, [props.model.src]);
+
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
-  }, []);
+  }, [ready]);
+
+  //Methods for CAPI listener starts from her. Eventually this will move to a common place where authroing and delivery both can share the same JS file
+
   const sendToIframe = (data: any) => {
     simFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
   };
+
   const sendFormedResponse = (
     handshake: CapiHandshake,
     options: any,
@@ -109,6 +131,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   };
 
   const handleHandshakeRequest = (msgData: CapiMessage) => {
+    setIsCAPI(true);
     const {
       handshake: { requestToken: msgRequestToken },
     } = msgData;
@@ -121,6 +144,50 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
   };
+
+  const handleValueChange = (msgData: any) => {
+    // TODO: is it possible to set "other" values?
+    // like session.whatever from here? if so, the following won't work
+    const stateVarsFromSim = Object.keys(msgData.values).map((key) => {
+      const variableObj: CapiVariable = {
+        key: key,
+        type: msgData.values[key] ? msgData.values[key].type : null,
+        value: msgData.values[key] ? msgData.values[key].value : null,
+        allowedValues: msgData.values[key] ? msgData.values[key].allowedValues : null,
+        bindTo: msgData.values[key] ? msgData.values[key].bindTo : null,
+        readonly: msgData.values[key] ? msgData.values[key].readonly : false,
+        writeonly: msgData.values[key] ? msgData.values[key].writeonly : false,
+      };
+      return variableObj;
+    });
+    setInternalState(stateVarsFromSim);
+  };
+
+  const handleOnReady = (data: any) => {
+    simLife.ready = true;
+    const updateSimLife = { ...simLife };
+    updateSimLife.ready = true;
+    setSimLife(updateSimLife);
+    simLife.currentState.forEach((variable: any) => {
+      const collect: Record<string, unknown> = {};
+      const baseKey = variable.key;
+      const value = variable.value;
+      const type = variable.type;
+
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
+        type,
+      });
+      collect[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, collect);
+    });
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+
+    return;
+  };
+
   useEffect(() => {
     if (!simFrame) {
       return;
@@ -129,6 +196,17 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     // whenever src changes, need to reset life
     const newLife = getCleanSimLife();
     setSimLife(newLife);
+
+    const configDataState: any = configData
+      ? [
+          ...configData?.map((cdVar: { key: any }) => {
+            return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
+          }),
+        ]
+      : [];
+    setInternalState(configDataState);
+
+    simLife.currentState = configDataState;
 
     // Catch post messages from our iFrame
     const messageListenerRef = window.addEventListener('message', (evnt) => {
@@ -149,11 +227,11 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
           break;
 
         case JanusCAPIRequestTypes.ON_READY:
-          console.log('ON_READY Called');
+          handleOnReady(data);
 
           break;
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          console.log('VALUE_CHANGE Called');
+          handleValueChange(data);
           break;
         default:
           break;
@@ -163,43 +241,135 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
 
     // Introducing listeners requires returning a function that also un-listens
     return () => {
-      /* console.log('%c MESSAGE LISTENER UNLOADED', 'background: darkred; color: #fff;', {
-        activityId: id,
-      }); */
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
   }, [simFrame]);
 
-  return (
-    <div style={styles}>
-      {configClicked && (
-        <iframe
-          ref={frameRef}
-          style={{ height: '100%', width: '100%' }}
-          data-janus-type={tagName}
-          src={props.model.src}
-          scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
-        />
-      )}
-      {!configClicked && (
-        <div className="container h-100">
-          <div className="row h-100 justify-content-center align-items-center">
-            <div>
-              <label style={lableStyles}>{props.id}</label>
-              {src && !configClicked && (
-                <div style={configDivStyles} className="form-group">
-                  <a href="#!" onClick={() => setconfigClicked(true)} style={configAnchorStyles}>
-                    configure
-                  </a>
-                </div>
-              )}
+  //Methods for CAPI listener End her
+
+  const handleValueChangeFromModal = (changedVar: any) => {
+    const finalConfigData = internalState.map((variable: CapiVariable) => {
+      if (variable.key === changedVar.target) {
+        variable.value = changedVar.value;
+      }
+      return variable;
+    });
+    setInternalState(finalConfigData);
+    const changedVariable: CapiVariable[] = finalConfigData.filter(
+      (variable: CapiVariable) => variable.key === changedVar.target,
+    );
+    if (changedVar) {
+      const collect: Record<string, any> = {};
+      const baseKey = changedVar.target;
+      const value = changedVar.value;
+      const type = changedVar.type;
+      const capiallowedValues =
+        changedVariable?.length && changedVariable[0]?.allowedValues
+          ? changedVariable[0].allowedValues
+          : undefined;
+      const readonly = changedVariable?.length ? changedVariable[0].readonly : undefined;
+      const writeonly = changedVariable?.length ? changedVariable[0].writeonly : undefined;
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
+        type,
+        readonly: readonly,
+        writeonly: writeonly,
+        allowedValues: capiallowedValues,
+      });
+      collect[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, collect);
+    }
+  };
+  const handleEditorSave = (changeOperations: any) => {
+    if (!inConfigureMode) {
+      return;
+    }
+    setconfigClicked(false);
+    setInConfigureMode(false);
+    const modelClone = clone(model);
+
+    modelClone.configData = internalState;
+    onSaveConfigure({
+      id,
+      snapshot: modelClone,
+    });
+  };
+
+  const handleEditorCancel = () => {
+    if (!inConfigureMode) {
+      return;
+    }
+    setInConfigureMode(false);
+    onCancelConfigure({ id });
+    setconfigClicked(false);
+  };
+
+  //inConfigureMode = true means user has clicked on the Edit button that opens modal for updating the CAPI variables.
+  //configClicked = true means user has clicked on the link to load the capi in auhtoring mode.
+
+  const configClikedRender = (
+    <React.Fragment>
+      <div style={styles}>
+        {configClicked ? (
+          <iframe
+            ref={frameRef}
+            style={{ height: '100%', width: '100%' }}
+            data-janus-type={tagName}
+            src={props.model.src}
+            scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
+          />
+        ) : (
+          <div className="container h-100">
+            <div className="row h-100 justify-content-center align-items-center">
+              <div>
+                <label style={lableStyles}>{props.id}</label>
+                {src && !configClicked && (
+                  <div style={configDivStyles} className="form-group">
+                    {isCAPI && (
+                      <a
+                        href="#!"
+                        onClick={() => setconfigClicked(true)}
+                        style={configAnchorStyles}
+                      >
+                        configure
+                      </a>
+                    )}
+                    <iframe
+                      ref={frameRef}
+                      style={{ display: 'none', height: '100%', width: '100%' }}
+                      data-janus-type={tagName}
+                      src={props.model.src}
+                      scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </React.Fragment>
   );
+
+  const renderIt =
+    inConfigureMode &&
+    ReactDOM.createPortal(
+      <CapiVariablePicker
+        label="Stage"
+        state={internalState.filter((item: CapiVariable) => !item.readonly)}
+        onChange={handleValueChangeFromModal}
+        onSave={handleEditorSave}
+        onCancel={handleEditorCancel}
+      />,
+      document.getElementById(props.portal) as Element,
+    );
+  return ready ? (
+    <React.Fragment>
+      {renderIt} {configClikedRender}
+    </React.Fragment>
+  ) : null;
 };
 
 export const tagName = 'janus-capi-iframe';

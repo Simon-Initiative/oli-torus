@@ -95,21 +95,17 @@ defmodule OliWeb.LayoutView do
   def account_link(%{:assigns => assigns} = conn) do
     current_author = assigns.current_author
 
-    safe_initial = fn s ->
-      case s do
+    initials =
+      case current_author.name do
         nil ->
           ""
 
-        _ ->
-          case String.length(s) do
-            0 -> ""
-            _ -> String.at(s, 0) |> String.upcase()
-          end
+        name ->
+          name
+          |> String.split(~r{\s+})
+          |> Enum.map(&String.at(&1, 0))
+          |> Enum.take(2)
       end
-    end
-
-    initials =
-      safe_initial.(current_author.given_name) <> safe_initial.(current_author.family_name)
 
     icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")
 

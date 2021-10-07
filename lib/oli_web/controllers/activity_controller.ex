@@ -26,7 +26,7 @@ defmodule OliWeb.ActivityController do
         render(conn, "edit.html",
           active: :curriculum,
           breadcrumbs:
-            Breadcrumb.trail_to(project_slug, revision_slug) ++
+            Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver) ++
               [Breadcrumb.new(%{full_title: context.title})],
           project_slug: project_slug,
           is_admin?: is_admin?,

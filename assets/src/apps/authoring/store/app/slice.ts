@@ -1,6 +1,13 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import {
+  savePartState,
+  savePartStateToTree,
+} from 'apps/delivery/store/features/attempt/actions/savePart';
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
+import { saveActivity } from '../activities/actions/saveActivity';
+import { savePage } from '../page/actions/savePage';
 import { RootState } from '../rootReducer';
+import { acquireEditingLock } from './actions/locking';
 
 interface PartComponentRegistration {
   slug: string;
@@ -36,10 +43,13 @@ export interface AppState {
   topPanel: boolean;
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
+  hasEditingLock: boolean;
+  showEditingLockErrMsg: boolean;
   rightPanelActiveTab: RightPanelTabs;
   currentRule: any;
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
+  copiedPart: any | null;
 }
 
 const initialState: AppState = {
@@ -52,10 +62,13 @@ const initialState: AppState = {
   topPanel: true,
   bottomPanel: true,
   visible: false,
+  hasEditingLock: false,
+  showEditingLockErrMsg: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
   currentRule: undefined,
   partComponentTypes: [],
   activityTypes: [],
+  copiedPart: null,
 };
 
 export interface AppConfig {
@@ -65,6 +78,7 @@ export interface AppConfig {
   revisionSlug?: string;
   partComponentTypes?: any[];
   activityTypes?: any[];
+  copiedPart?: any;
 }
 
 const slice: Slice<AppState> = createSlice({
@@ -79,6 +93,7 @@ const slice: Slice<AppState> = createSlice({
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
+      state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
     },
     setPanelState(
       state,
@@ -100,12 +115,45 @@ const slice: Slice<AppState> = createSlice({
     setVisible(state, action: PayloadAction<{ visible: boolean }>) {
       state.visible = action.payload.visible;
     },
+    setHasEditingLock(state, action: PayloadAction<{ hasEditingLock: boolean }>) {
+      state.hasEditingLock = action.payload.hasEditingLock;
+    },
+    setShowEditingLockErrMsg(state, action: PayloadAction<{ showEditingLockErrMsg: boolean }>) {
+      state.showEditingLockErrMsg = action.payload.showEditingLockErrMsg;
+    },
     setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
     setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
       state.currentRule = action.payload.currentRule;
     },
+    setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
+      state.copiedPart = action.payload.copiedPart;
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(acquireEditingLock.fulfilled, (state) => {
+      state.hasEditingLock = true;
+    });
+    builder.addCase(acquireEditingLock.rejected, (state) => {
+      state.hasEditingLock = false;
+    });
+    builder.addCase(savePage.rejected, (state) => {
+      state.showEditingLockErrMsg = true;
+      state.hasEditingLock = false;
+    });
+    builder.addCase(saveActivity.rejected, (state) => {
+      state.showEditingLockErrMsg = true;
+      state.hasEditingLock = false;
+    });
+    builder.addCase(savePartState.rejected, (state) => {
+      state.showEditingLockErrMsg = true;
+      state.hasEditingLock = false;
+    });
+    builder.addCase(savePartStateToTree.rejected, (state) => {
+      state.showEditingLockErrMsg = true;
+      state.hasEditingLock = false;
+    });
   },
 });
 
@@ -115,8 +163,11 @@ export const {
   setInitialConfig,
   setPanelState,
   setVisible,
+  setHasEditingLock,
+  setShowEditingLockErrMsg,
   setRightPanelActiveTab,
   setCurrentRule,
+  setCopiedPart,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -144,9 +195,18 @@ export const selectCurrentRule = createSelector(
   selectState,
   (state: AppState) => state.currentRule,
 );
+export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
 
+export const selectHasEditingLock = createSelector(
+  selectState,
+  (state: AppState) => state.hasEditingLock,
+);
+export const selectshowEditingLockErrMsg = createSelector(
+  selectState,
+  (state: AppState) => state.showEditingLockErrMsg,
+);
 export const selectPartComponentTypes = createSelector(
   selectState,
   (state: AppState) => state.partComponentTypes,

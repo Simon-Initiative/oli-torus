@@ -5,4 +5,5 @@ export const customEvents = {
   onReady: 'ready',
   onSave: 'save',
   onSubmit: 'submit',
+  onResize: 'resize',
 };

@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   """
 
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
 
@@ -20,6 +21,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     DeleteModal
   }
 
+  alias Oli.Publishing.ChangeTracker
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
@@ -54,12 +56,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
       # Implicitly routing to root container or explicitly routing to sub-container
       true ->
-        container =
-          if is_nil(container_slug) do
-            root_container
-          else
-            AuthoringResolver.from_revision_slug(project_slug, container_slug)
-          end
+        {:ok, container} = load_and_scrub_container(container_slug, project_slug, root_container)
 
         children = ContainerEditor.list_all_container_children(container, project)
 
@@ -82,7 +79,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
          assign(socket,
            children: children,
            active: :curriculum,
-           breadcrumbs: Breadcrumb.trail_to(project_slug, container.slug),
+           breadcrumbs:
+             Breadcrumb.trail_to(project_slug, container.slug, Oli.Publishing.AuthoringResolver),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,
            container: container,
@@ -96,6 +94,39 @@ defmodule OliWeb.Curriculum.ContainerLive do
            numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
            dragging: nil
          )}
+    end
+  end
+
+  # Load either a specific container, or if the slug is nil the root. After loaded,
+  # scrub the container's children to ensure that there a no duplicate ids that may
+  # have crept in.
+  defp load_and_scrub_container(container_slug, project_slug, root_container) do
+    container =
+      if is_nil(container_slug) do
+        root_container
+      else
+        AuthoringResolver.from_revision_slug(project_slug, container_slug)
+      end
+
+    {deduped, _} =
+      Enum.reduce(container.children, {[], MapSet.new()}, fn id, {all, map} ->
+        case MapSet.member?(map, id) do
+          true -> {all, map}
+          false -> {[id | all], MapSet.put(map, id)}
+        end
+      end)
+
+    # Now see if the deduping actually led to any change in the number of children,
+    # remembering though that the deduped children ids are in reverse order.
+    if length(deduped) != length(container.children) do
+      Repo.transaction(fn ->
+        ChangeTracker.track_revision(project_slug, container, %{
+          # restore correct order
+          children: Enum.reverse(deduped)
+        })
+      end)
+    else
+      {:ok, container}
     end
   end
 
@@ -172,7 +203,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
   end
 
-  def handle_event("HierarchyPicker.select", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
     %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
 
     container =
@@ -185,7 +216,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
       end
 
     children = ContainerEditor.list_all_container_children(container, project)
-    breadcrumbs = Breadcrumb.trail_to(project.slug, container.slug)
+
+    breadcrumbs =
+      Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver)
 
     modal_assigns =
       modal_assigns
@@ -240,7 +273,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
       old_container: container,
       container: container,
       project: project,
-      breadcrumbs: Breadcrumb.trail_to(project.slug, container.slug),
+      breadcrumbs:
+        Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver),
       children: ContainerEditor.list_all_container_children(container, project),
       numberings: Numbering.number_full_tree(AuthoringResolver, project.slug),
       selection: nil
@@ -269,12 +303,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, modal: nil)}
-  end
-
   # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", params, socket), do: handle_event("cancel", params, socket)
+  def handle_event("cancel_modal", _params, socket), do: hide_modal(socket)
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do

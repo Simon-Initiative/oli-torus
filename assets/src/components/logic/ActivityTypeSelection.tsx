@@ -19,7 +19,7 @@ export type ActivityTypeSelectionProps = {
 export const ActivityTypeSelection = (props: ActivityTypeSelectionProps) => {
   const { activities, editMode, selected, onEdit } = props;
 
-  // Typeahed throws a bunch of warnings if it doesn't contain
+  // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
 

@@ -3,6 +3,10 @@ defmodule OliWeb.Common.Links do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Numbering
 
+  @doc """
+  Returns a path uri for a given revision. If the revision type is not
+  routable or of a known type, returns nil
+  """
   def resource_path(revision, parent_pages, project_slug) do
     case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       "objective" ->
@@ -41,6 +45,16 @@ defmodule OliWeb.Common.Links do
           project_slug,
           revision.slug
         )
+
+      "tag" ->
+        Routes.activity_bank_path(
+          OliWeb.Endpoint,
+          :index,
+          project_slug
+        )
+
+      _ ->
+        nil
     end
   end
 
@@ -73,10 +87,16 @@ defmodule OliWeb.Common.Links do
           link(title, to: path, class: class)
 
         _ ->
-          link(revision.title,
-            to: path,
-            class: class
-          )
+          case path do
+            nil ->
+              revision.title
+
+            _ ->
+              link(revision.title,
+                to: path,
+                class: class
+              )
+          end
       end
     end
   end

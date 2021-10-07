@@ -1,5 +1,12 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import { selectPartComponentTypes, selectPaths } from 'apps/authoring/store/app/slice';
+import {
+  selectCopiedPart,
+  selectPartComponentTypes,
+  selectPaths,
+  setCopiedPart,
+  setRightPanelActiveTab,
+} from 'apps/authoring/store/app/slice';
+import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
@@ -10,6 +17,7 @@ import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-boot
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const AddComponentToolbar: React.FC = () => {
   const dispatch = useDispatch();
@@ -22,13 +30,32 @@ const AddComponentToolbar: React.FC = () => {
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
-
+  const copiedPart = useSelector(selectCopiedPart);
   console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
+  const addPartToCurrentScreen = (newPartData: any) => {
+    if (currentActivityTree) {
+      const [currentActivity] = currentActivityTree.slice(-1);
+      const clonedActivity = clone(currentActivity);
+      const sequenceEntry = findInSequenceByResourceId(currentSequence, currentActivity.resourceId);
+      const partIdentifier = {
+        id: newPartData.id,
+        type: newPartData.type,
+        owner: sequenceEntry?.custom?.sequenceId || '',
+        inherited: false,
+        // objectives: [],
+      };
+      clonedActivity.authoring.parts.push(partIdentifier);
+      clonedActivity.content.partsLayout.push(newPartData);
+
+      console.log('adding new part', { newPartData, clonedActivity, currentSequence });
+      dispatch(saveActivity({ activity: clonedActivity }));
+    }
+  };
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
       setShowPartsMenu(false);
-      if (!availablePartComponents || !currentActivityTree) {
+      if (!availablePartComponents) {
         return;
       }
       const partComponent = availablePartComponents.find((p) => p.slug === partComponentType);
@@ -41,14 +68,8 @@ const AddComponentToolbar: React.FC = () => {
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
         // only ever add to the current activity, not a layer
-        const [currentActivity] = currentActivityTree.slice(-1);
-        const clonedActivity = clone(currentActivity);
-        const sequenceEntry = findInSequenceByResourceId(
-          currentSequence,
-          currentActivity.resourceId,
-        );
 
-        const part = new PartClass();
+        const part = new PartClass() as any;
         const newPartData = {
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
@@ -64,20 +85,7 @@ const AddComponentToolbar: React.FC = () => {
         if (part.createSchema) {
           newPartData.custom = { ...newPartData.custom, ...part.createSchema(creationContext) };
         }
-        const partIdentifier = {
-          id: newPartData.id,
-          type: newPartData.type,
-          owner: sequenceEntry?.custom?.sequenceId || '',
-          inherited: false,
-          // objectives: [],
-        };
-
-        clonedActivity.authoring.parts.push(partIdentifier);
-        clonedActivity.content.partsLayout.push(newPartData);
-
-        console.log('creating new part', { newPartData, clonedActivity, currentSequence });
-
-        dispatch(saveActivity({ activity: clonedActivity }));
+        addPartToCurrentScreen(newPartData);
       }
     },
     [availablePartComponents, currentActivityTree, currentSequence],
@@ -99,7 +107,17 @@ const AddComponentToolbar: React.FC = () => {
     setShowPartsMenu(!showPartsMenu);
     setPartsMenuTarget(event.target);
   };
+  const handlePartPasteClick = (event: any) => {
+    const newPartData = {
+      id: `${copiedPart.type}-${guid()}`,
+      type: copiedPart.type,
+      custom: copiedPart.custom,
+    };
+    addPartToCurrentScreen(newPartData);
+    dispatch(setCurrentSelection({ selection: newPartData.id }));
 
+    dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+  };
   return (
     <Fragment>
       <div className="btn-group align-items-center" role="group">
@@ -132,6 +150,23 @@ const AddComponentToolbar: React.FC = () => {
           ))}
       </div>
       <div className="btn-group pl-3 ml-3 border-left align-items-center" role="group">
+        {copiedPart ? (
+          <OverlayTrigger
+            placement="bottom"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                Paste Component
+              </Tooltip>
+            }
+          >
+            <span>
+              <button className="px-2 btn btn-link" onClick={handlePartPasteClick}>
+                <img src={`${imgsPath}/icons/icon-paste.svg`} width="30px"></img>
+              </button>
+            </span>
+          </OverlayTrigger>
+        ) : null}
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 150 }}
