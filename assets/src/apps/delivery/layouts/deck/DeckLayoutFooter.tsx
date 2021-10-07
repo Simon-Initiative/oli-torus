@@ -51,6 +51,10 @@ export const handleValueExpression = (
     ) {
       const variableList = value.match(/\{(.*?)\}/g);
       variableList?.forEach((item) => {
+        if (item.indexOf('|') > 0) {
+          // if the variable is already targetted to another screen, we don't need to do this.
+          return;
+        }
         //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
         //it should be like {q.145225454.1|stage.input.value}
         const modifiedValue = item.replace('{', '').replace('}', '');
