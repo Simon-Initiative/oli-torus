@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.RemixSection do
   use OliWeb, :live_view
+  use OliWeb.Common.Modal
 
   import OliWeb.ViewHelpers,
     only: [
@@ -333,7 +334,7 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("AddMaterialsModal.cancel", _, socket) do
-    {:noreply, assign(socket, modal: nil)}
+    {:noreply, socket}
   end
 
   def handle_event("AddMaterialsModal.add", _, socket) do
@@ -375,13 +376,14 @@ defmodule OliWeb.Delivery.RemixSection do
     updated = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
     {:noreply,
-     assign(socket,
-       modal: nil,
+     socket
+     |> assign(
        hierarchy: hierarchy,
        active: updated,
        pinned_project_publications: pinned_project_publications,
        has_unsaved_changes: true
-     )}
+     )
+     |> hide_modal()}
   end
 
   def handle_event("HierarchyPicker.select_publication", %{"id" => publication_id}, socket) do
@@ -469,7 +471,10 @@ defmodule OliWeb.Delivery.RemixSection do
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
-    {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
+    {:noreply,
+     socket
+     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> hide_modal()}
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
@@ -500,15 +505,14 @@ defmodule OliWeb.Delivery.RemixSection do
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
-    {:noreply, assign(socket, hierarchy: hierarchy, active: active, has_unsaved_changes: true)}
+    {:noreply,
+     socket
+     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> hide_modal()}
   end
 
   def handle_event("RemoveModal.cancel", _, socket) do
     {:noreply, socket}
-  end
-
-  def handle_event("cancel_modal", _, socket) do
-    {:noreply, assign(socket, modal: nil)}
   end
 
   defp xor(list, item) do

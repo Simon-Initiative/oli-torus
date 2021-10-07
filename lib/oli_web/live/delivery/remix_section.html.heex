@@ -1,9 +1,5 @@
-<%= case @modal do %>
-  <% nil -> %>
+<%= render_modal(assigns) %>
 
-  <% %{component: component, assigns: assigns} -> %>
-    <%= live_component component, assigns %>
-<% end %>
 <div id="curriculum-container" class="container curriculum-editor">
   <h3><%= @section.title %></h3>
 

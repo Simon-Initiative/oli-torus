@@ -225,8 +225,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     %{container: container, project: project} = socket.assigns
 
     hierarchy = AuthoringResolver.full_hierarchy(project.slug)
-    node = Hierarchy.find_in_hierarchy(hierarchy, slug)
-    active = Hierarchy.find_in_hierarchy(hierarchy, container.slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == slug end)
+    active = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == container.slug end)
 
     assigns = %{
       id: "move_#{slug}",
@@ -259,13 +259,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", _params, socket), do: hide_modal(socket)
-
-  def handle_event("HierarchyPicker.update_active", %{"slug" => slug}, socket) do
+  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
     %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
 
-    active = Hierarchy.find_in_hierarchy(hierarchy, slug)
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     modal = %{
       modal
@@ -280,21 +277,22 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def handle_event(
         "MoveModal.move_item",
-        %{"item_slug" => item_slug, "from_slug" => from_slug, "to_slug" => to_slug},
+        %{"uuid" => uuid, "from_uuid" => from_uuid, "to_uuid" => to_uuid},
         socket
       ) do
     %{
       author: author,
-      project: project
+      project: project,
+      modal: %{assigns: %{hierarchy: hierarchy}}
     } = socket.assigns
 
-    revision = AuthoringResolver.from_revision_slug(project.slug, item_slug)
-    from_container = AuthoringResolver.from_revision_slug(project.slug, from_slug)
-    to_container = AuthoringResolver.from_revision_slug(project.slug, to_slug)
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
-    {:noreply, assign(socket, modal: nil)}
+    {:noreply, hide_modal(socket)}
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
