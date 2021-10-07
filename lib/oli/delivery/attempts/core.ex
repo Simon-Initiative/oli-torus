@@ -152,8 +152,7 @@ defmodule Oli.Delivery.Attempts.Core do
         # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
-            not is_nil(part_attempt.date_evaluated) and
-            project_resource.project_id == ^project_id,
+            not is_nil(part_attempt.date_evaluated),
         select: %{part_attempt: part_attempt, user: user}
       )
     )
