@@ -337,9 +337,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   useEffect(() => {
     const someParts = (
       activeFilter.includes(FilterItems.SCREEN) ? currentActivityTree : specificActivityTree || []
-    )
-      .slice(-1)
-      .reduce((acc: any, activity: any) => acc.concat(activity.content.partsLayout || []), []);
+    ).reduce((acc: any, activity: any) => acc.concat(activity.content.partsLayout || []), []);
     setAllParts(someParts);
   }, [currentActivityTree, specificActivityTree, activeFilter]);
 
