@@ -49,11 +49,18 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   end
 
   # Assembles nested xml elements from a pre-calculated path in the hierarchy to the page
-  defp assemble_from_hierarchy_path(%{
-         target: target,
-         problem_name: problem_name,
-         hierarchy_map: hierarchy_map
-       }) do
+  defp assemble_from_hierarchy_path(
+         %{
+           target: target,
+           problem_name: problem_name,
+           hierarchy_map: hierarchy_map
+         } = context
+       ) do
+    IO.inspect(target, label: "Target resource id")
+    project = Oli.Authoring.Course.get_project!(context.publication.project_id)
+    IO.inspect(Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, target))
+    IO.inspect(problem_name, label: "problem name")
+
     page_to_element = fn revision ->
       element(:level, %{type: "Page"}, [
         element(:name, revision.title),
@@ -74,6 +81,8 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
 
     case Map.get(hierarchy_map, target) do
       nil ->
+        IO.inspect("target #{target} not found in map")
+
         []
 
       path ->

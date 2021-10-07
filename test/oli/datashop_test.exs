@@ -736,6 +736,20 @@ defmodule Oli.DatashopTest do
           :sa_user2_part_attempt1
         )
 
+      part_attempt_guids =
+        [
+          map.mc_user1_part_attempt1,
+          map.mc_user1_part_attempt2,
+          map.mc_user1_part_attempt3,
+          map.mc_user2_part_attempt1,
+          map.sa_user1_part_attempt1,
+          map.sa_user1_part_attempt2,
+          map.sa_user2_part_attempt1
+        ]
+        |> Enum.map(& &1.attempt_guid)
+
+      Oli.Delivery.Snapshots.Worker.perform_now(part_attempt_guids, map.section.slug)
+
       Map.put(map, :datashop_file, Datashop.export(map.project.id))
     end
 
@@ -813,6 +827,143 @@ defmodule Oli.DatashopTest do
       latest_datashop_file = Datashop.export(project.id)
 
       assert !String.match?(latest_datashop_file, regex)
+    end
+
+    test "should have analytics across all project publications", %{project: project} = map do
+      count_before =
+        Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+
+      # Making a new publication should not "reset" data
+      {:ok, pub2} = Publishing.publish_project(project, "some changes")
+      count_after = Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+
+      assert count_before == count_after
+
+      # Adding new snapshots after a project has been re-published should append to the data
+      map =
+        map
+        |> Map.put(:publication, pub2)
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 1},
+          :user1,
+          :page1,
+          :revision1,
+          :p1_user1_attempt_x
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, transformed_model: %{}},
+          :mc1,
+          :p1_user1_attempt1,
+          :mc_user1_attempt_x
+        )
+        |> Seeder.create_part_attempt(
+          %{
+            date_evaluated: DateTime.utc_now(),
+            attempt_number: 1,
+            score: 0,
+            out_of: 1,
+            response: %{},
+            feedback: %{}
+          },
+          %Part{id: "1", responses: [], hints: []},
+          :mc_user1_attempt1,
+          :mc_user1_part_attempt_x
+        )
+
+      Oli.Delivery.Snapshots.Worker.perform_now(
+        [map.mc_user1_part_attempt_x.attempt_guid],
+        map.section.slug
+      )
+
+      count_with_new_snapshot =
+        Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+
+      assert count_with_new_snapshot == count_after + 1
+    end
+
+    # test "student snapshots from other projects should not be counted",
+    #      %{
+    #        project: project,
+    #        author: author,
+    #        institution: institution
+    #      } = map do
+    #   # If a student submits activities from different projects, only the submissions
+    #   # from the requested project should be found. This test is to address a bug that
+    #   # used to be in the datashop download analytics query.
+
+    #   {:ok, cloned} = Oli.Authoring.Clone.clone_project(project.slug, author)
+    #   {:ok, pub2} = Publishing.publish_project(cloned, "initial publication")
+
+    #   %{section: section_before_resources} =
+    #     Seeder.create_section(%{project: cloned, institution: institution})
+
+    #   map =
+    #     map
+    #     |> Map.put(:section, section_before_resources)
+    #     |> Map.put(:publication, pub2)
+    #     |> Seeder.rebuild_section_resources()
+
+    #   # The original project should have part attempts
+    #   count_initial =
+    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+
+    #   assert count_initial > 0
+
+    #   # The cloned project should not have part attempts
+    #   count_cloned = Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(cloned.id))
+    #   assert count_cloned == 0
+
+    #   # Create new part attempts / snapshots for the clone
+    #   map =
+    #     map
+    #     |> Map.put(:section, map.section)
+    #     |> Map.put(:publication, pub2)
+    #     |> Seeder.create_resource_attempt(
+    #       %{attempt_number: 1},
+    #       :user1,
+    #       :page1,
+    #       :revision1,
+    #       :p1_user1_attempt_x
+    #     )
+    #     |> Seeder.create_activity_attempt(
+    #       %{attempt_number: 1, transformed_model: %{}},
+    #       :mc1,
+    #       :p1_user1_attempt1,
+    #       :mc_user1_attempt_x
+    #     )
+    #     |> Seeder.create_part_attempt(
+    #       %{
+    #         date_evaluated: DateTime.utc_now(),
+    #         attempt_number: 1,
+    #         score: 0,
+    #         out_of: 1,
+    #         response: %{},
+    #         feedback: %{}
+    #       },
+    #       %Part{id: "1", responses: [], hints: []},
+    #       :mc_user1_attempt1,
+    #       :mc_user1_part_attempt_x
+    #     )
+
+    #   Oli.Delivery.Snapshots.Worker.perform_now(
+    #     [map.mc_user1_part_attempt_x.attempt_guid],
+    #     map.section.slug
+    #   )
+
+    #   # After creating new part attempt / snapshot for cloned project, the clone should see
+    #   # those new records but the original should not
+    #   count_initial_after =
+    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+
+    #   assert count_initial == count_initial_after
+
+    #   count_cloned_after =
+    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(cloned.id))
+
+    #   assert count_cloned_after == count_cloned + 1
+    # end
+
+    test "should only look at sections from the selected project, even if other sections use that project's resources" do
     end
   end
 end

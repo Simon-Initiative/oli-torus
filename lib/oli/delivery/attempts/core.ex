@@ -4,10 +4,14 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, Enrollment}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Snapshots.Snapshot
+  alias Oli.Accounts.User
+  alias Oli.Authoring.Course.ProjectResource
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
@@ -127,38 +131,32 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
-  def get_part_attempts_and_users_for_publication(publication_id) do
-    student_role_id = Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
-
+  def get_part_attempts_and_users(project_id) do
     Repo.all(
-      from(section in Section,
-        join: enrollment in Enrollment,
-        on: enrollment.section_id == section.id,
-        join: user in Oli.Accounts.User,
-        on: enrollment.user_id == user.id,
-        join: raccess in ResourceAccess,
-        on: user.id == raccess.user_id,
-        join: rattempt in ResourceAttempt,
-        on: raccess.id == rattempt.resource_access_id,
-        join: aattempt in ActivityAttempt,
-        on: rattempt.id == aattempt.resource_attempt_id,
-        join: pattempt in PartAttempt,
-        on: aattempt.id == pattempt.activity_attempt_id,
+      from(
+        project in Project,
         join: spp in SectionsProjectsPublications,
+        on: spp.project_id == project.id,
+        join: section in Section,
         on: spp.section_id == section.id,
+        join: project_resource in ProjectResource,
+        on: project_resource.project_id == ^project_id,
+        join: snapshot in Snapshot,
+        on:
+          snapshot.section_id == section.id and
+            snapshot.resource_id == project_resource.resource_id,
+        join: part_attempt in PartAttempt,
+        on: snapshot.part_attempt_id == part_attempt.id,
+        join: user in User,
+        on: snapshot.user_id == user.id,
         # Only look at evaluated part attempts -> date evaluated not nil
         where:
-          spp.publication_id == ^publication_id and
-            not is_nil(pattempt.date_evaluated),
-        # only fetch records for users enrolled as students
-        left_join: er in "enrollments_context_roles",
-        on: enrollment.id == er.enrollment_id,
-        left_join: context_role in Lti_1p3.DataProviders.EctoProvider.ContextRole,
-        on: er.context_role_id == context_role.id and context_role.id == ^student_role_id,
-        select: %{part_attempt: pattempt, user: user}
+          project.id == ^project_id and
+            not is_nil(part_attempt.date_evaluated) and
+            project_resource.project_id == ^project_id,
+        select: %{part_attempt: part_attempt, user: user}
       )
     )
-    # TODO: This should be done in the query, but can't get the syntax right
     |> Enum.map(
       &%{
         user: &1.user,
