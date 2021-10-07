@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.13.6">
+    <meta name="project" content="OLI Torus v0.13.7">
 
-    <title>OliWeb.Common.Modal — OLI Torus v0.13.6</title>
+    <title>OliWeb.Common.Modal — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-a42267e62a.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.13.6
+        v0.13.7
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Common.Modal <small class="app-vsn">(OLI Torus v0.13.6)</small>
+OliWeb.Common.Modal <small class="app-vsn">(OLI Torus v0.13.7)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/modal.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -97,23 +97,23 @@ OliWeb.Common.Modal <small class="app-vsn">(OLI Torus v0.13.6)</small>
 
 
         <section id="moduledoc">
-<p>A Phoenix LiveView Bootstrap compliant modal implementation.</p><p>Usage:</p><ol><li><p>In your LiveView, use this module:</p><pre><code class="makeup elixir"><span class="kn">use</span><span class="w"> </span><span class="nc">OliWeb.Common.Modal</span></code></pre></li><li><p>Initialize modal assign and add render_modal to the render output:</p><pre><code class="makeup elixir"><span class="n">mount</span><span class="p" data-group-id="1922076620-1">(</span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="1922076620-1">)</span><span class="w"> </span><span class="k" data-group-id="1922076620-2">do</span><span class="w">
-</span><span class="p" data-group-id="1922076620-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="1922076620-4">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">modal</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="1922076620-4">)</span><span class="p" data-group-id="1922076620-3">}</span><span class="w">
-</span><span class="k" data-group-id="1922076620-2">end</span></code></pre></li></ol><p>def render(assigns) do
+<p>A Phoenix LiveView Bootstrap compliant modal implementation.</p><p>Usage:</p><ol><li><p>In your LiveView, use this module:</p><pre><code class="makeup elixir"><span class="kn">use</span><span class="w"> </span><span class="nc">OliWeb.Common.Modal</span></code></pre></li><li><p>Initialize modal assign and add render_modal to the render output:</p><pre><code class="makeup elixir"><span class="n">mount</span><span class="p" data-group-id="8088236879-1">(</span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="8088236879-1">)</span><span class="w"> </span><span class="k" data-group-id="8088236879-2">do</span><span class="w">
+</span><span class="p" data-group-id="8088236879-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="8088236879-4">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">modal</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="8088236879-4">)</span><span class="p" data-group-id="8088236879-3">}</span><span class="w">
+</span><span class="k" data-group-id="8088236879-2">end</span></code></pre></li></ol><p>def render(assigns) do
   ...
   &lt;%= render_modal(assigns) %&gt;
   ...
 end</p><pre><code class="makeup elixir"><span class="w">
 </span><span class="mi">3</span><span class="o">.</span><span class="w"> </span><span class="nc">Create</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">modal</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="n">setting</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="sc">&#39;modal&#39;</span><span class="w"> </span><span class="n">assign</span><span class="w">
-</span><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="6358712107-1">(</span><span class="s">&quot;show_modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="6358712107-1">)</span><span class="w"> </span><span class="k" data-group-id="6358712107-2">do</span><span class="w">
-  </span><span class="p" data-group-id="6358712107-3">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="6358712107-4">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">modal</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6358712107-5">%{</span><span class="ss">component</span><span class="p">:</span><span class="w"> </span><span class="nc">MyModal</span><span class="p">,</span><span class="w"> </span><span class="ss">assigns</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6358712107-6">%{</span><span class="n">...</span><span class="p" data-group-id="6358712107-6">}</span><span class="p" data-group-id="6358712107-5">}</span><span class="p" data-group-id="6358712107-4">)</span><span class="p" data-group-id="6358712107-3">}</span><span class="w">
-</span><span class="k" data-group-id="6358712107-2">end</span><span class="w">
+</span><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="9061511077-1">(</span><span class="s">&quot;show_modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="9061511077-1">)</span><span class="w"> </span><span class="k" data-group-id="9061511077-2">do</span><span class="w">
+  </span><span class="p" data-group-id="9061511077-3">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="n">assign</span><span class="p" data-group-id="9061511077-4">(</span><span class="n">socket</span><span class="p">,</span><span class="w"> </span><span class="ss">modal</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9061511077-5">%{</span><span class="ss">component</span><span class="p">:</span><span class="w"> </span><span class="nc">MyModal</span><span class="p">,</span><span class="w"> </span><span class="ss">assigns</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9061511077-6">%{</span><span class="n">...</span><span class="p" data-group-id="9061511077-6">}</span><span class="p" data-group-id="9061511077-5">}</span><span class="p" data-group-id="9061511077-4">)</span><span class="p" data-group-id="9061511077-3">}</span><span class="w">
+</span><span class="k" data-group-id="9061511077-2">end</span><span class="w">
 
-</span><span class="mi">4</span><span class="o">.</span><span class="w"> </span><span class="nc">Dismiss</span><span class="w"> </span><span class="n">modal</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">bootstrap</span><span class="w"> </span><span class="n">javascript</span><span class="w"> </span><span class="p" data-group-id="6358712107-7">(</span><span class="n">data</span><span class="o">-</span><span class="n">dismiss</span><span class="o">=</span><span class="s">&quot;modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">escape</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">etc</span><span class="n">...</span><span class="p" data-group-id="6358712107-7">)</span><span class="w">
-    </span><span class="ow">or</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">hide_modal</span><span class="p" data-group-id="6358712107-8">(</span><span class="n">socket</span><span class="p" data-group-id="6358712107-8">)</span><span class="w"> </span><span class="n">function</span><span class="w">
-</span><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="6358712107-9">(</span><span class="s">&quot;close_modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="6358712107-9">)</span><span class="w"> </span><span class="k" data-group-id="6358712107-10">do</span><span class="w">
-  </span><span class="p" data-group-id="6358712107-11">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">hide_modal</span><span class="p" data-group-id="6358712107-12">(</span><span class="p" data-group-id="6358712107-12">)</span><span class="p" data-group-id="6358712107-11">}</span><span class="w">
-</span><span class="k" data-group-id="6358712107-10">end</span></code></pre>
+</span><span class="mi">4</span><span class="o">.</span><span class="w"> </span><span class="nc">Dismiss</span><span class="w"> </span><span class="n">modal</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">bootstrap</span><span class="w"> </span><span class="n">javascript</span><span class="w"> </span><span class="p" data-group-id="9061511077-7">(</span><span class="n">data</span><span class="o">-</span><span class="n">dismiss</span><span class="o">=</span><span class="s">&quot;modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">escape</span><span class="w"> </span><span class="n">key</span><span class="p">,</span><span class="w"> </span><span class="n">etc</span><span class="n">...</span><span class="p" data-group-id="9061511077-7">)</span><span class="w">
+    </span><span class="ow">or</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">hide_modal</span><span class="p" data-group-id="9061511077-8">(</span><span class="n">socket</span><span class="p" data-group-id="9061511077-8">)</span><span class="w"> </span><span class="n">function</span><span class="w">
+</span><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="9061511077-9">(</span><span class="s">&quot;close_modal&quot;</span><span class="p">,</span><span class="w"> </span><span class="bp">_</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="9061511077-9">)</span><span class="w"> </span><span class="k" data-group-id="9061511077-10">do</span><span class="w">
+  </span><span class="p" data-group-id="9061511077-11">{</span><span class="ss">:noreply</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">hide_modal</span><span class="p" data-group-id="9061511077-12">(</span><span class="p" data-group-id="9061511077-12">)</span><span class="p" data-group-id="9061511077-11">}</span><span class="w">
+</span><span class="k" data-group-id="9061511077-10">end</span></code></pre>
         </section>
 
 
