@@ -2,6 +2,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import { AnyPartComponent, AuthorPartComponentProps } from 'components/parts/types/parts';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -146,6 +147,10 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     setInConfigureMode(false);
   };
 
+  const handleScreenAuthorChange = (changedScreen: any) => {
+    console.log('POPUP AUTHOR SCREEN AUTHOR CHANGE', changedScreen);
+  };
+
   const portalEl = document.getElementById(props.portal) as Element;
 
   const Designer = () => {
@@ -153,12 +158,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     return (
       portalEl &&
       ReactDOM.createPortal(
-        <PopupWindowDesigner
-          config={windowConfig}
-          parts={windowParts}
-          onSave={handleDesignerSave}
-          onCancel={handleDesignerCancel}
-        />,
+        <ScreenAuthor screen={popup} onChange={handleScreenAuthorChange} />,
         portalEl,
       )
     );
