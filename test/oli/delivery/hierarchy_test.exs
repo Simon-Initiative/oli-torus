@@ -2,6 +2,7 @@ defmodule Oli.Delivery.HierarchyTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Hierarchy
+  alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
 
   describe "hierarchy node" do
@@ -12,6 +13,7 @@ defmodule Oli.Delivery.HierarchyTest do
 
       page_one_node = hierarchy.children |> Enum.at(0)
       page_two_node = hierarchy.children |> Enum.at(1)
+      unit_node = hierarchy.children |> Enum.at(2)
       nested_page_one_node = hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.at(0)
       nested_page_two_node = hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.at(1)
 
@@ -19,6 +21,7 @@ defmodule Oli.Delivery.HierarchyTest do
       |> Map.put(:hierarchy, hierarchy)
       |> Map.put(:page_one_node, page_one_node)
       |> Map.put(:page_two_node, page_two_node)
+      |> Map.put(:unit_node, unit_node)
       |> Map.put(:nested_page_one_node, nested_page_one_node)
       |> Map.put(:nested_page_two_node, nested_page_two_node)
     end
@@ -87,6 +90,49 @@ defmodule Oli.Delivery.HierarchyTest do
 
       assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) != nil
       assert node in hierarchy.children
+    end
+
+    test "add_materials_to_hierarchy/4", %{
+      hierarchy: hierarchy,
+      unit_node: unit_node
+    } do
+      %{pub2: p2_pub, page1: p2_page1} = Seeder.base_project_with_resource4()
+      %{pub2: p3_pub, page1: p3_page1} = Seeder.base_project_with_resource4()
+
+      selection = [{p2_pub.id, p2_page1.id}, {p3_pub.id, p3_page1.id}]
+
+      publication_ids =
+        selection
+        |> Enum.reduce(%{}, fn {pub_id, _resource_id}, acc ->
+          Map.put(acc, pub_id, true)
+        end)
+        |> Map.keys()
+
+      published_resources_by_resource_id_by_pub =
+        Publishing.get_published_resources_for_publications(publication_ids)
+
+      hierarchy =
+        Hierarchy.add_materials_to_hierarchy(
+          hierarchy,
+          unit_node,
+          selection,
+          published_resources_by_resource_id_by_pub
+        )
+
+      assert hierarchy.children |> Enum.count() == 3
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.count() == 4
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(2)
+             |> Map.get(:resource_id) == p2_page1.id
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(3)
+             |> Map.get(:resource_id) == p3_page1.id
     end
   end
 end
