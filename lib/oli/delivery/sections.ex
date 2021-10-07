@@ -707,9 +707,11 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Rebuilds a section curriculum by upserting any new or existing section resources
-  and removing any deleted section resources based on the given hierarchy.
+  and removing any deleted section resources based on the given hierarchy. Also updates
+  the project publication mappings based on the given project_publications map.
 
   project_publications is a map of the project id to the pinned publication for the section.
+  %{1 => %Publication{project_id: 1, ...}, ...}
   """
   def rebuild_section_curriculum(
         %Section{id: section_id},
@@ -782,6 +784,16 @@ defmodule Oli.Delivery.Sections do
           conflict_target: [:section_id, :project_id]
         )
       )
+
+      # cleanup any unused project publication mappings
+      section_project_ids =
+        section_resources
+        |> Enum.map(fn %{project_id: project_id} -> project_id end)
+
+      from(spp in SectionsProjectsPublications,
+        where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
+      )
+      |> Repo.delete_all()
 
       section_resources
     end)
