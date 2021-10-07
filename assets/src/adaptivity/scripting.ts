@@ -15,17 +15,32 @@ export const looksLikeJson = (str: string) => {
   return str === emptyJsonObj || (startsLikeJson && endsLikeJson);
 };
 
-export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value: any }): string => {
+export const getExpressionStringForValue = (
+  v: { type: CapiVariableTypes; value: any },
+  env: Environment = defaultGlobalEnv,
+): string => {
   let val: any = v.value;
   let isValueVar = false;
 
   if (typeof val === 'string') {
+    let canEval = false;
+    try {
+      const test = evalScript(val, env);
+      canEval = test?.result !== undefined && !test.result.message;
+      console.log('can actually eval:', { val, canEval, test, t: typeof test.result });
+    } catch (e) {
+      // failed for any reason
+    }
+
+    const looksLikeAFunction = val.includes('(') && val.includes(')');
+
     // we're assuming this is {stage.foo.whatever} as opposed to JSON {"foo": 1}
     // note this will break if number keys are used {1:2} !!
 
     const looksLikeJSON = looksLikeJson(val);
     const hasCurlies = val.includes('{') && val.includes('}');
-    isValueVar = hasCurlies && !looksLikeJSON;
+    isValueVar =
+      (canEval && !looksLikeJSON && looksLikeAFunction) || (hasCurlies && !looksLikeJSON);
   }
 
   if (isValueVar) {
@@ -40,7 +55,7 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     try {
-      const evalResult = evalScript(`let foo = ${val};`);
+      const evalResult = evalScript(`let foo = ${val};`, env);
       // when evalScript is executed successfully, evalResult.result is null.
       // evalScript does not trigger catch block even though there is error and add the error in stack property.
       if (evalResult?.result !== null) {
@@ -140,14 +155,17 @@ export const evalAssignScript = (
   env?: Environment,
 ): { env: Environment; result: any } => {
   const globalEnv = env || new Environment();
-  const assignStatements = getAssignStatements(state);
+  const assignStatements = getAssignStatements(state, globalEnv);
   const results = assignStatements.map((assignStatement) => {
     return evalScript(assignStatement, globalEnv).result;
   });
   return { env: globalEnv, result: results };
 };
 
-export const getAssignStatements = (state: Record<string, any>): string[] => {
+export const getAssignStatements = (
+  state: Record<string, any>,
+  env: Environment = defaultGlobalEnv,
+): string[] => {
   const vars = Object.keys(state).map((key) => {
     const val = state[key];
     let writeVal = { key, value: val, type: 0 };
@@ -166,13 +184,16 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
     return writeVal;
   });
   const letStatements = vars.map(
-    (v) => `let {${v.key.trim()}} = ${getExpressionStringForValue(v)};`,
+    (v) => `let {${v.key.trim()}} = ${getExpressionStringForValue(v, env)};`,
   );
   return letStatements;
 };
 
-export const getAssignScript = (state: Record<string, any>): string => {
-  const letStatements = getAssignStatements(state);
+export const getAssignScript = (
+  state: Record<string, any>,
+  env: Environment = defaultGlobalEnv,
+): string => {
+  const letStatements = getAssignStatements(state, env);
   return letStatements.join('');
 };
 
@@ -222,17 +243,23 @@ export const applyState = (
   switch (operation.operator) {
     case 'adding':
     case '+':
-      script += `= {${targetKey}} + ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script += `= {${targetKey}} + ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     case 'subtracting':
     case '-':
-      script += `= {${targetKey}} - ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script += `= {${targetKey}} - ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     case 'bind to':
       // NOTE: once a value is bound, you can *never* set it other than through binding????
@@ -251,10 +278,13 @@ export const applyState = (
       break;
     case 'setting to':
     case '=':
-      script = `let {${targetKey}} = ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script = `let {${targetKey}} = ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     default:
       errorMsg = `Unknown applyState operator ${JSON.stringify(operation.operator)}!`;

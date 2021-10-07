@@ -425,6 +425,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     />
   );
 
+  const srcAsWebm = src?.substr(0, src?.lastIndexOf('.')) + '.webm';
+
   const videoTag = (
     <video
       width="100%"
@@ -438,6 +440,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       onPause={handleVideoPause}
     >
       <source src={src} />
+      <source src={srcAsWebm} />
       {subtitles &&
         subtitles.length > 0 &&
         subtitles.map((subtitle: { src: string; language: string; default: boolean }) => {
