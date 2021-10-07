@@ -239,11 +239,12 @@ defmodule OliWeb.Insights do
       ]) do
     [
       [
+        slice.title,
         case Map.get(h, :activity) do
           nil -> slice.title
-          %{title: nil} -> "unknown title"
+          %{title: nil} -> slice.title
           %{title: title} -> title
-          _ -> "unknown title"
+          _ -> slice.title
         end,
         if is_nil(number_of_attempts) do
           "No attempts"
