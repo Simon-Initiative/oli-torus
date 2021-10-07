@@ -232,8 +232,8 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     top: y,
     left: x,
     width,
-    height,*/
-    zIndex: z,
+    height,
+    zIndex: z,*/
   };
 
   // Toggle popup open/close
