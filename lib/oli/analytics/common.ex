@@ -5,11 +5,7 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Revision
   alias Oli.Repo
-  alias Oli.Delivery.Attempts.Core.PartAttempt
-
-  alias Oli.Resources.Revision
-  alias Oli.Repo
-  alias Oli.Delivery.Attempts.Core.PartAttempt
+  alias Oli.Delivery.Attempts.Core.{PartAttempt, ActivityAttempt}
 
   def snapshots_for_project(project_slug) do
     Repo.all(
@@ -25,6 +21,8 @@ defmodule Oli.Analytics.Common do
         on: snapshot.objective_revision_id == objective.id,
         join: pattempt in PartAttempt,
         on: snapshot.part_attempt_id == pattempt.id,
+        join: aattempt in ActivityAttempt,
+        on: pattempt.activity_attempt_id == aattempt.id,
         select: [
           snapshot.part_attempt_id,
           snapshot.activity_id,
@@ -46,7 +44,10 @@ defmodule Oli.Analytics.Common do
           activity.content,
           section.title,
           section.slug,
-          snapshot.inserted_at
+          snapshot.inserted_at,
+          snapshot.user_id,
+          pattempt.activity_attempt_id,
+          aattempt.resource_attempt_id
         ]
       )
     )
