@@ -4,9 +4,9 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
 import { AnyPartComponent, AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { useCallback, CSSProperties, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { parseBoolean } from 'utils/common';
+import { clone, parseBoolean } from 'utils/common';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
 import PopupWindowDesigner from './PopupWindowDesigner';
@@ -24,6 +24,18 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
   const [showWindow, setShowWindow] = useState(false);
+
+  const [windowModel, setWindowModel] = useState<any>(model.popup);
+  useEffect(() => {
+    setWindowModel(model.popup);
+  }, [model.popup]);
+
+  const handleNotificationSave = useCallback(async () => {
+    const modelClone = clone(model);
+    modelClone.popup = windowModel;
+    await onSaveConfigure({ id, snapshot: modelClone });
+    setInConfigureMode(false);
+  }, [windowModel, model]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -60,7 +72,8 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('PA:NotificationType.CONFIGURE', { partId });
+                console.log('PA:NotificationType.CONFIGURE_SAVE', { partId });
+                handleNotificationSave();
               }
             }
             break;
@@ -96,26 +109,27 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     defaultURL,
     iconURL,
     useToggleBehavior,
-    popup,
     description,
   } = model;
 
   // need to offset the window position by the position of the parent element
   // since it's a child of the parent element and not the activity (screen) directly
   const offsetWindowConfig = {
-    ...popup.custom,
-    x: popup.custom.x - (x || 0),
-    y: popup.custom.y - (y || 0),
-    z: Math.max(z || 0, popup.custom.z || 0),
+    ...model.popup.custom,
+    x: model.popup.custom.x - (x || 0),
+    y: model.popup.custom.y - (y || 0),
+    z: Math.max(z || 0, model.popup.custom.z || 0),
   };
 
   const [windowConfig, setWindowConfig] = useState<any>(offsetWindowConfig);
-  const [windowParts, setWindowParts] = useState<any[]>(popup.partsLayout || []);
+  const [windowParts, setWindowParts] = useState<any[]>(model.popup.partsLayout || []);
 
+  // only update when the model updates, not the windowModel, because that is just temporary
+  // for the editing until saved
   useEffect(() => {
     setWindowConfig(offsetWindowConfig);
-    setWindowParts(popup.partsLayout || []);
-  }, [props.model.popup]);
+    setWindowParts(model.popup.partsLayout || []);
+  }, [model.popup]);
 
   const handleWindowClose = () => {
     setShowWindow(false);
@@ -138,17 +152,9 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
-  const handleDesignerSave = (parts: AnyPartComponent[]) => {
-    console.log('POPUP AUTHOR DESIGNER SAVE', parts);
-  };
-
-  const handleDesignerCancel = () => {
-    onConfigure({ id: `${props.id}`, configure: false });
-    setInConfigureMode(false);
-  };
-
   const handleScreenAuthorChange = (changedScreen: any) => {
     console.log('POPUP AUTHOR SCREEN AUTHOR CHANGE', changedScreen);
+    setWindowModel(changedScreen);
   };
 
   const portalEl = document.getElementById(props.portal) as Element;
@@ -158,7 +164,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     return (
       portalEl &&
       ReactDOM.createPortal(
-        <ScreenAuthor screen={popup} onChange={handleScreenAuthorChange} />,
+        <ScreenAuthor screen={windowModel} onChange={handleScreenAuthorChange} />,
         portalEl,
       )
     );

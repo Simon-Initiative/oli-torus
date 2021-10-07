@@ -345,6 +345,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           case NotificationType.CONFIGURE_CANCEL:
             handlePartCancelConfigure(payload);
             break;
+          case NotificationType.CONFIGURE_SAVE:
+            // maybe layout editor should *only* do this for both cancel and save
+            // because the part should also catch this event and call the onCancelConfigurePart
+            if (!configurePartId || payload.id === configurePartId) {
+              setConfigurePartId('');
+            }
+            break;
         }
       };
       const unsub = subscribeToNotification(pusher, notificationType, handler);

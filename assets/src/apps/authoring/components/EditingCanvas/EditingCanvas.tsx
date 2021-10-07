@@ -107,6 +107,10 @@ const EditingCanvas: React.FC = () => {
     setShowConfigModal(false);
   };
 
+  const handlePartSaveConfigure = async (partId: string) => {
+    console.log('[handlePartSaveConfigure]', { partId });
+  };
+
   // console.log('EC: RENDER', { layers });
 
   useEffect(() => {
@@ -130,6 +134,7 @@ const EditingCanvas: React.FC = () => {
               onCopyPart={handlePartCopy}
               onConfigurePart={handlePartConfigure}
               onCancelConfigurePart={handlePartCancelConfigure}
+              onSaveConfigurePart={handlePartSaveConfigure}
               onPartChangePosition={handlePositionChanged}
               notificationStream={notificationStream}
             />

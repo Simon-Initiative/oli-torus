@@ -13,6 +13,7 @@ interface AuthoringActivityRendererProps {
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
   onCancelConfigurePart?: (partId: string) => Promise<any>;
+  onSaveConfigurePart?: (partId: string) => Promise<any>;
   onPartChangePosition?: (activityId: string, partId: string, dragData: any) => Promise<any>;
   notificationStream?: { stamp: number; type: NotificationType; payload: any } | null;
 }
@@ -27,6 +28,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   onCopyPart,
   onConfigurePart,
   onCancelConfigurePart,
+  onSaveConfigurePart,
   onPartChangePosition,
   notificationStream,
 }) => {
@@ -94,9 +96,14 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'configurePart' && onConfigurePart) {
           result = await onConfigurePart(payload.payload.part, payload.payload.context);
         }
+        if (payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
+          result = await onSaveConfigurePart(payload.payload.partId);
+        }
         if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
           result = await onCancelConfigurePart(payload.payload.partId);
         }
+
+        // DEPRECATED
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(
             payload.payload.activityId,
@@ -104,6 +111,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
             payload.payload.dragData,
           );
         }
+
         if (continuation) {
           continuation(result);
         }
