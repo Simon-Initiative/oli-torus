@@ -5,7 +5,6 @@ import { RichText, ScoringStrategy } from '../types';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {
-    baseUrl: '/superactivity/embedded',
     modelXml: '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">\n' +
       '<embed_activity id="dndembed" width="670" height="700">\n' +

@@ -152,7 +152,6 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         "id" => "1920924184"
       },
       "title" => "Embedded activity",
-      "baseUrl" => "/superactivity/embedded",
       "modelXml" => ~s(<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">
 <embed_activity id="dndembed" width="670" height="700">

@@ -14,15 +14,14 @@ defmodule OliWeb.LegacySuperactivityController do
 #    IO.inspect(conn, limit: :infinity)
 
     user = conn.assigns.current_user
-    host_url = "https://#{conn.host}"
 
     activity_attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
                        |> Repo.preload([revision: [:scoring_strategy]])
 
     context = %{
-      src_url: "#{host_url}/superactivity/#{activity_attempt.revision.activity_type.slug}/index.html",
+      src_url: "https://#{conn.host}/superactivity/#{activity_attempt.revision.activity_type.slug}/index.html",
       activity_type: activity_attempt.revision.activity_type.slug,
-      server_url: "#{host_url}/jcourse/superactivity/server",
+      server_url: "https://#{conn.host}/jcourse/superactivity/server",
       user_guid: user.id,
       mode: "delivery"
     }
@@ -124,6 +123,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "startAttempt" do
+    IO.inspect(context, limit: :infinity)
     xml = AttemptHistory.setup(
             %{
               context: context
