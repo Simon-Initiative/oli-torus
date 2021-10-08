@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Fix a style issue with the workspace footer
+- Prevent objectives used in selections from being deleted
 - Fix an issue where modals misbehaved sporadically
 
 ### Enhancements
