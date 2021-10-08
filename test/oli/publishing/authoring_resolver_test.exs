@@ -53,7 +53,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert r.id == latest1.id
 
       # verifies we return nil on a made up id
-      assert AuthoringResolver.from_resource_id(project.slug, 1337) == nil
+      non_existent_resource_id = latest_record_index("resources") + 1
+      assert AuthoringResolver.from_resource_id(project.slug, non_existent_resource_id) == nil
     end
 
     test "from_revision_slug/2 returns correct revision", %{

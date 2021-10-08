@@ -1,12 +1,17 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
 - Fix a style issue with the workspace footer
+- Prevent objectives used in selections from being deleted
 - Fix an issue where modals misbehaved sporadically
+- Move "Many Students Wonder" from activity styling to content styling
 - Fix an issue where nonstructural section resources were missing after update
 
 ### Enhancements
+
 - Add multi input activity
 - Add multi input model validation
 - Add advanced section creation remix
@@ -15,13 +20,21 @@
 - Add ability to remix materials from multiple projects
 
 ### Release Notes
+
 The following environment configs are now available:
+
 ```
 PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
                         Current available options are 'stripe' or 'none'
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
+
+## 0.13.7 (2021-10-06)
+
+### Bug Fixes
+
+- Fix datashop export dataset name, missing skills
 
 ## 0.13.6 (2021-10-04)
 

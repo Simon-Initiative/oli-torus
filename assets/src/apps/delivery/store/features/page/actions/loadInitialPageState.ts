@@ -56,7 +56,7 @@ export const loadInitialPageState = createAsyncThunk(
       }
 
       // update scripting env with session state
-      const assignScript = getAssignScript(sessionState);
+      const assignScript = getAssignScript(sessionState, defaultGlobalEnv);
       const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
       if (!params.previewMode) {

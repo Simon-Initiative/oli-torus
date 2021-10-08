@@ -894,4 +894,23 @@ defmodule Oli.Publishing do
         }
     )
   end
+
+  def find_objective_in_selections(objective_id, publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+
+    sql = """
+    select rev.slug, rev.title
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+      and jsonb_path_exists(rev.content, '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == #{objective_id})')
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
 end

@@ -209,7 +209,7 @@ describe('Scripting Interface', () => {
   describe('getAssignScript', () => {
     it('should return a script that assigns a value to a variable', () => {
       const environment = new Environment();
-      const script = getAssignScript({ x: 42 });
+      const script = getAssignScript({ x: 42 }, environment);
       const result = evalScript(script, environment);
       const value = getValue('x', environment);
       expect(script).toBe('let {x} = 42;');
@@ -224,24 +224,46 @@ describe('Scripting Interface', () => {
       const varValueFormat2 =
         'body[data-new-gr-c-s-check-loaded] #scene_Student{border-radius:3px;border:solid 1px #484848!important;background-color:#161616;padding:10px;box-sizing:border-box}.columns-container{padding:0}.columns-container .items-column .item:last-child{margin-bottom:0}.container{overflow:hidden}.items-column{height:100%}.items-column .items-container{height:100%}.columns-container .items-column .item{border:solid .5px #ffc627;background-color:#000;padding:10px;box-sizing:border-box;height:40px;margin-bottom:5px;height:75px}.item.link-hover{padding:10px}.columns-container .items-column .item .item-label{color:#fff;height:auto;position:relative;top:50%;transform:translateY(calc(-50% + 4px));line-height:initial}.columns-container .left-column .item{border-radius:4px 100px 100px 4px;margin-left:0}.columns-container .left-column .item .item-label:after{content:"";width:20px;height:20px;box-sizing:border-box;position:absolute;background-color:transparent;border:solid 1px #ffc627;border-radius:100px;margin:0;padding:0;top:50%;transform:translateY(-50%);right:5px}.columns-container .right-column .item{border-radius:100px 4px 4px 100px;margin-right:0}.columns-container .right-column .item .item-label:after{content:"";width:20px;height:20px;box-sizing:border-box;position:absolute;background-color:transparent;border:solid 1px #ffc627;border-radius:100px;margin:0;padding:0;top:50%;transform:translateY(-50%);left:5px}.columns-container .items-column .item.link-hover{border:solid 1px #ffc627;background-color:rgba(0,0,0,.2);padding:0;box-sizing:border-box;box-shadow:none}.columns-container .items-column .item[linked]{border:solid 2px #ffc627;background-color:#291b30;box-shadow:none}.columns-container .items-column .item.preview-source-hover,.columns-container .items-column .item.preview-target-hover{border:solid 3px #fc0;background-color:#291b30;box-shadow:none}.columns-container .items-column .item .remove-links:before{content:"X";margin-left:auto;margin-right:auto;position:relative}.line-renderer line{stroke:#ffc627;stroke-width:2px}.line-renderer line.pointer{stroke:#fc0;stroke-width:2px}';
 
-      const script = getAssignScript({
-        x: {
-          key: 'Custom CSS',
-          path: 'stage.x',
-          value: varValueFormat1,
+      const script = getAssignScript(
+        {
+          x: {
+            key: 'Custom CSS',
+            path: 'stage.x',
+            value: varValueFormat1,
+          },
+          y: {
+            key: 'Custom CSS',
+            path: 'stage.y',
+            value: varValueFormat2,
+          },
         },
-        y: {
-          key: 'Custom CSS',
-          path: 'stage.y',
-          value: varValueFormat2,
-        },
-      });
+        environment,
+      );
       const result = evalScript(script, environment);
       const valuex = getValue('stage.x', environment);
       const valuey = getValue('stage.y', environment);
       expect(result.result).toBe(null);
       expect(valuex).toBe(varValueFormat1);
       expect(valuey).toBe(varValueFormat2);
+    });
+
+    it('it should return math expression as it is', () => {
+      const environment = new Environment();
+
+      const script = getAssignScript(
+        {
+          x: {
+            key: 'Math Expression',
+            path: 'stage.x',
+            value: '2\\times\\frac{3}{2}=\\editable{}',
+          },
+        },
+        environment,
+      );
+      const result = evalScript(script, environment);
+      const valuex = getValue('stage.x', environment);
+      expect(result.result).toBe(null);
+      expect(valuex).toBe('2\\times\\frac{3}{2}=\\editable{}');
     });
 
     it('should assign variable expression value and calculate the expression', () => {
@@ -252,13 +274,16 @@ describe('Scripting Interface', () => {
       );
       const varValue =
         '{stage.vft.Score}*70 + {stage.vft.Map complete}*100 - {session.tutorialScore}';
-      const script = getAssignScript({
-        x: {
-          key: 'score',
-          path: 'stage.x',
-          value: varValue,
+      const script = getAssignScript(
+        {
+          x: {
+            key: 'score',
+            path: 'stage.x',
+            value: varValue,
+          },
         },
-      });
+        environment,
+      );
       const result = evalScript(script, environment);
       const value = getValue('stage.x', environment);
       expect(result.result).toBe(null);
@@ -268,7 +293,7 @@ describe('Scripting Interface', () => {
 
     it('should return an assignment script from a capi-like variable', () => {
       const environment = new Environment();
-      const script = getAssignScript({ x: { key: 'x', path: 'stage.x', value: 42 } });
+      const script = getAssignScript({ x: { key: 'x', path: 'stage.x', value: 42 } }, environment);
       const result = evalScript(script, environment);
       const value = getValue('stage.x', environment);
       expect(script).toBe('let {stage.x} = 42;');
@@ -278,14 +303,17 @@ describe('Scripting Interface', () => {
 
     it('should assign JSON values as strings', () => {
       const environment = new Environment();
-      const script = getAssignScript({
-        x: {
-          type: CapiVariableTypes.STRING,
-          key: 'x',
-          path: 'stage.x',
-          value: '{"a":"something"}',
+      const script = getAssignScript(
+        {
+          x: {
+            type: CapiVariableTypes.STRING,
+            key: 'x',
+            path: 'stage.x',
+            value: '{"a":"something"}',
+          },
         },
-      });
+        environment,
+      );
       const result = evalScript(script, environment);
       const value = getValue('stage.x', environment);
       expect(script).toBe(`let {stage.x} = "{\\"a\\":\\"something\\"}";`);
@@ -295,9 +323,12 @@ describe('Scripting Interface', () => {
 
     it('should assign empty JSON values as strings', () => {
       const environment = new Environment();
-      const script = getAssignScript({
-        x: { type: CapiVariableTypes.STRING, key: 'x', path: 'stage.x', value: '{}' },
-      });
+      const script = getAssignScript(
+        {
+          x: { type: CapiVariableTypes.STRING, key: 'x', path: 'stage.x', value: '{}' },
+        },
+        environment,
+      );
       const result = evalScript(script, environment);
       const value = getValue('stage.x', environment);
       expect(script).toBe(`let {stage.x} = "{}";`);
@@ -365,6 +396,16 @@ describe('Scripting Interface', () => {
         key: 'x',
         value: '[1,2,3,4,5]',
       };
+      const variable7 = {
+        type: CapiVariableTypes.NUMBER,
+        key: 'x',
+        value: 'Math.max(1, 7)',
+      };
+      const variable8 = {
+        type: CapiVariableTypes.STRING,
+        key: 'x',
+        value: 'he began (as he always did) to fidget',
+      };
       let script = getExpressionStringForValue(variable);
       expect(script).toBe('{stage.foo} + {stage.bar}');
       script = getExpressionStringForValue(variable1);
@@ -385,6 +426,10 @@ describe('Scripting Interface', () => {
       );
       script = getExpressionStringForValue(variable6);
       expect(script).toBe('[1,2,3,4,5]');
+      script = getExpressionStringForValue(variable7);
+      expect(script).toBe('Math.max(1, 7)');
+      script = getExpressionStringForValue(variable8);
+      expect(script).toBe('"he began (as he always did) to fidget"');
     });
 
     it('should assign numbers based on type', () => {

@@ -77,6 +77,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     if (sCssClass !== undefined) {
       setCustomCssClass(sCssClass as string);
     }
+
+    const sCustomCssClass = currentStateSnapshot[`stage.${props.id}.customCssClass`];
+    if (sCustomCssClass !== undefined) {
+      setCustomCssClass(sCustomCssClass as string);
+    }
   };
 
   const onResize = async (payload: any) => {
@@ -159,8 +164,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         const el = ref.current;
         if (el) {
           if (el.notify) {
-            if (notificationType === NotificationType.CONTEXT_CHANGED) {
-              handleStylingChanges(e.snapshot);
+            if (
+              notificationType === NotificationType.CONTEXT_CHANGED ||
+              notificationType === NotificationType.STATE_CHANGED
+            ) {
+              handleStylingChanges(e.snapshot || e.mutateChanges);
             }
             el.notify(notificationType.toString(), e);
           }
@@ -223,9 +231,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
-    // The z-index for pop-up needs to be applied at the conponent level.
     if (wcTagName === 'janus-popup') {
-      componentStyle.zIndex = 'auto';
+      const config = props.model.popup?.custom ? props.model.popup.custom : null;
+      const zIndexModal = config?.z ? config?.z : 1000;
+      const zIndexIcon = props?.model?.z || 0;
+      componentStyle.zIndex = Math.max(zIndexIcon, zIndexModal);
     }
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
