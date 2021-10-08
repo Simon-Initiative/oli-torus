@@ -385,7 +385,7 @@ defmodule Oli.Publishing do
 
   def get_published_resources_by_publication(publication_ids, opts)
       when is_list(publication_ids) do
-    preload = Keyword.get(opts, :preload, [:resource, :revision])
+    preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
 
     from(pr in PublishedResource,
       where: pr.publication_id in ^publication_ids,
