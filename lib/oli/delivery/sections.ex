@@ -191,19 +191,6 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
-  def list_enrollable_with_details() do
-    Repo.all(
-      from(
-        s in Section,
-        left_join: enrollment in assoc(s, :enrollments),
-        where: s.type == :enrollable and s.status == :active,
-        preload: [:institution],
-        group_by: s.id,
-        select_merge: %{enrollments_count: count(enrollment.id)}
-      )
-    )
-  end
-
   @doc """
   Returns the list of open and free sections.
   ## Examples

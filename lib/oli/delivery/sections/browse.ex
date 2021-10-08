@@ -4,6 +4,10 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
 
+  @doc """
+  Paged, sorted, filterable queries for course sections. Joins the institution
+  and counts the number of enrollments.
+  """
   def browse_sections(
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
