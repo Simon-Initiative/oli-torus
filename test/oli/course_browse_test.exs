@@ -57,7 +57,7 @@ defmodule Oli.CourseBrowseTest do
       %{admin: admin, author: author}
     end
 
-    test "browse as admin", %{
+    test "browse", %{
       author: author,
       admin: admin
     } do

@@ -117,13 +117,9 @@ defmodule Oli.Authoring.Course do
       })
 
     query =
-      case {field, direction} do
-        {:name, :asc} -> order_by(query, [_, _, o], asc: o.name)
-        {:title, :asc} -> order_by(query, [p, _, _], asc: p.title)
-        {:inserted_at, :asc} -> order_by(query, [p, _, _], asc: p.inserted_at)
-        {:name, :desc} -> order_by(query, [_, _, o], desc: o.name)
-        {:title, :desc} -> order_by(query, [p, _, _], desc: p.title)
-        {:inserted_at, :desc} -> order_by(query, [p, _, _], desc: p.inserted_at)
+      case field do
+        :name -> order_by(query, [_, _, o], {^direction, o.name})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)
@@ -179,13 +175,9 @@ defmodule Oli.Authoring.Course do
       })
 
     query =
-      case {field, direction} do
-        {:name, :asc} -> order_by(query, [_, _, _, o], asc: o.name)
-        {:title, :asc} -> order_by(query, [_, p, _, _], asc: p.title)
-        {:inserted_at, :asc} -> order_by(query, [_, p, _, _], asc: p.inserted_at)
-        {:name, :desc} -> order_by(query, [_, _, _, o], desc: o.name)
-        {:title, :desc} -> order_by(query, [_, p, _, _], desc: p.title)
-        {:inserted_at, :desc} -> order_by(query, [_, p, _, _], desc: p.inserted_at)
+      case field do
+        :name -> order_by(query, [_, _, o], {^direction, o.name})
+        _ -> order_by(query, [_, p, _], {^direction, field(p, ^field)})
       end
 
     Repo.all(query)

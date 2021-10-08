@@ -3,7 +3,6 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias Oli.Authoring.Course
   alias Oli.Accounts
   alias Oli.Seeder
 

@@ -1,18 +1,25 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
 - Fix a style issue with the workspace footer
 
 ### Enhancements
+
 - Add multi input activity
 - Add multi input model validation
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Add ability for an admin to browse all course sections
+- Add server driven paged, sortable table for project list
 
 ### Release Notes
+
 The following environment configs are now available:
+
 ```
 PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
                         Current available options are 'stripe' or 'none'
@@ -21,15 +28,19 @@ STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
 
 ## 0.13.5 (2021-10-04)
+
 ### Bug Fixes
+
 - Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.4 (2021-10-03)
+
 ### Bug Fixes
 
 - Fix an issue where a page can be duplicated within a container
 
 ## 0.13.3 (2021-09-30)
+
 ### Bug Fixes
 
 - Fix an issue where generating resource links for tag types throws a server error
@@ -59,6 +70,7 @@ STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 - Fix an issue where generating resource links for tag types throws a server error
 
 ## 0.13.2 (2021-09-17)
+
 ### Bug Fixes
 
 - Fix activity choice icon selection in authoring
