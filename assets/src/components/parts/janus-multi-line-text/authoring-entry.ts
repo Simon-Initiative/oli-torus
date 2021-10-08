@@ -6,7 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import MultiLineTextInputAuthor from './MultiLineTextInputAuthor';
-import { createSchema, schema, uiSchema } from './schema';
+import { adaptivitySchema, createSchema, schema, uiSchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -23,5 +23,6 @@ register(MultiLineTextInputAuthor, manifest.authoring.element, observedAttribute
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
+    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });

@@ -77,6 +77,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     if (sCssClass !== undefined) {
       setCustomCssClass(sCssClass as string);
     }
+
+    const sCustomCssClass = currentStateSnapshot[`stage.${props.id}.customCssClass`];
+    if (sCustomCssClass !== undefined) {
+      setCustomCssClass(sCustomCssClass as string);
+    }
   };
 
   const onResize = async (payload: any) => {
@@ -159,8 +164,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         const el = ref.current;
         if (el) {
           if (el.notify) {
-            if (notificationType === NotificationType.CONTEXT_CHANGED) {
-              handleStylingChanges(e.snapshot);
+            if (
+              notificationType === NotificationType.CONTEXT_CHANGED ||
+              notificationType === NotificationType.STATE_CHANGED
+            ) {
+              handleStylingChanges(e.snapshot || e.mutateChanges);
             }
             el.notify(notificationType.toString(), e);
           }

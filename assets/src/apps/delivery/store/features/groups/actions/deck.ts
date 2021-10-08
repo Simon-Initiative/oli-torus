@@ -156,7 +156,7 @@ export const initializeActivity = createAsyncThunk(
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
-    const applyStateHasErrors = results.some((r) => r !== null);
+    const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {
       console.warn('[INIT STATE] applyState has errors', results);
     }
@@ -487,7 +487,7 @@ export const loadActivities = createAsyncThunk(
           }, {});
           return { ...acc, ...inputs };
         }, {});
-        const assignScript = getAssignScript(updateValues);
+        const assignScript = getAssignScript(updateValues, defaultGlobalEnv);
         const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
         if (scriptResult !== null) {
           console.warn('Error in state restore script', { state, scriptResult });

@@ -1,11 +1,14 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
 - Fix a style issue with the workspace footer
 - Fix an issue where modals misbehaved sporadically
 
 ### Enhancements
+
 - Add multi input activity
 - Add multi input model validation
 - Add advanced section creation remix
@@ -13,13 +16,21 @@
 - Add analytics / insights data export button
 
 ### Release Notes
+
 The following environment configs are now available:
+
 ```
 PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
                         Current available options are 'stripe' or 'none'
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
+
+## 0.13.7 (2021-10-06)
+
+### Bug Fixes
+
+- Fix datashop export dataset name, missing skills
 
 ## 0.13.6 (2021-10-04)
 
