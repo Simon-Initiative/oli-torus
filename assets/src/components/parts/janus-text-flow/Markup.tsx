@@ -244,6 +244,8 @@ const Markup: React.FC<any> = ({
       if (!renderStyles.display) {
         renderStyles.display = 'block';
       }
+      // because of the global injected override .content *
+      // sets line-height: 1.4 for everything
       if (!renderStyles.lineHeight) {
         renderStyles.lineHeight = '0px';
       }
