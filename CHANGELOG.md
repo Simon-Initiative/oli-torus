@@ -4,6 +4,7 @@
 ### Bug Fixes
 - Fix a style issue with the workspace footer
 - Fix an issue where modals misbehaved sporadically
+- Fix an issue where nonstructural section resources were missing after update
 
 ### Enhancements
 - Add multi input activity
@@ -11,6 +12,7 @@
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Add ability to remix materials from multiple projects
 
 ### Release Notes
 The following environment configs are now available:
