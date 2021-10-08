@@ -233,8 +233,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   if (!(props as AuthorProps).editMode) {
     if (wcTagName === 'janus-popup') {
       const config = props.model.popup?.custom ? props.model.popup.custom : null;
-      const zIndex = config?.z ? config?.z : 1000;
-      componentStyle.zIndex = zIndex;
+      const zIndexModal = config?.z ? config?.z : 1000;
+      const zIndexIcon = props?.model?.z || 0;
+      componentStyle.zIndex = Math.max(zIndexIcon, zIndexModal);
     }
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
