@@ -142,6 +142,7 @@ const EditingCanvas: React.FC = () => {
       </section>
       <ConfigurationModal
         fullscreen={configModalFullscreen}
+        headerText={`Configure: ${configPartId}`}
         bodyId={configEditorId}
         isOpen={showConfigModal}
         onClose={() => {

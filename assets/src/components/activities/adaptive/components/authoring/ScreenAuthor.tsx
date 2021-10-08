@@ -55,7 +55,7 @@ const screenSchema: JSONSchema7 = {
 };
 
 const screenUiSchema = {
-  'ui:title': 'Feedback Window',
+  'ui:title': 'Screen',
   Position: {
     'ui:ObjectFieldTemplate': CustomFieldTemplate,
     'ui:title': 'Position',
@@ -300,6 +300,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
       <ConfigurationModal
         bodyId={configEditorId}
         isOpen={showConfigModal}
+        headerText={`Configure: ${selectedPartId}`}
         onClose={() => {
           setShowConfigModal(false);
         }}

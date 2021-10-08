@@ -7,11 +7,13 @@ interface ConfigModalProps {
   isOpen: boolean;
   bodyId?: string;
   fullscreen?: boolean;
+  headerText?: string;
 }
 
 const ConfigurationModal: React.FC<ConfigModalProps> = ({
   isOpen,
   bodyId = 'configuration-modal-body',
+  headerText = 'Configuration',
   fullscreen = false,
   onClose,
   onSave,
@@ -33,8 +35,14 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   };
 
   return (
-    <Modal dialogClassName={fullscreen ? 'modal-90w' : ''} show={show} onHide={handleCancelClick}>
-      <Modal.Header>Configuration</Modal.Header>
+    <Modal
+      dialogClassName={`config-modal ${fullscreen ? 'modal-90w' : ''}`}
+      show={show}
+      onHide={handleCancelClick}
+    >
+      <Modal.Header>
+        <span className="title">{headerText}</span>
+      </Modal.Header>
       <Modal.Body id={bodyId}></Modal.Body>
       <Modal.Footer>
         <button type="button" onClick={handleSaveClick} className="btn btn-primary">
