@@ -247,6 +247,25 @@ describe('Scripting Interface', () => {
       expect(valuey).toBe(varValueFormat2);
     });
 
+    it('it should return math expression as it is', () => {
+      const environment = new Environment();
+
+      const script = getAssignScript(
+        {
+          x: {
+            key: 'Math Expression',
+            path: 'stage.x',
+            value: '2\\times\\frac{3}{2}=\\editable{}',
+          },
+        },
+        environment,
+      );
+      const result = evalScript(script, environment);
+      const valuex = getValue('stage.x', environment);
+      expect(result.result).toBe(null);
+      expect(valuex).toBe('2\\times\\frac{3}{2}=\\editable{}');
+    });
+
     it('should assign variable expression value and calculate the expression', () => {
       const environment = new Environment();
       evalScript(
