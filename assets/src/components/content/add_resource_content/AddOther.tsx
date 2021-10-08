@@ -9,7 +9,6 @@ interface Props {
 export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
   return (
     <>
-      <div className="header">Insert Other</div>
       <div className="list-group">
         <a
           href="#"

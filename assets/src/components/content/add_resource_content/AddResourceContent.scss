@@ -111,14 +111,22 @@
   border-radius: 6px;
 
   .add-resource-popover-content {
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     background-color: $body-bg;
-    padding: 6px;
     border-radius: 2px;
 
     .list-group {
-      padding-left: 10px;
+      padding-left: 6px;
+      padding-right: 6px;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .list-group:not(:last-of-type) {
+      border-bottom: 1px solid lightgray;
+      @extend .mb-1;
     }
 
     .header {
@@ -130,6 +138,11 @@
     hr {
       width: 80%;
       color: lightgray;
+    }
+
+    .type-icon {
+      font-size: 26px;
+      color: black;
     }
 
     .type-label {

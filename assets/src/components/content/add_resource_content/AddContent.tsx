@@ -9,18 +9,15 @@ interface Props {
 export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
   return (
     <>
-      <div className="header">Insert Content</div>
       <div className="list-group">
         <a
           href="#"
           key={'static_html_content'}
-          className="list-group-item list-group-item-action flex-column align-items-start"
+          className="list-group-item list-group-item-action d-flex flex-row align-items-center"
           onClick={(_e) => addContent(onAddItem, index)}
         >
-          <div className="type-label">HTML</div>
-          <div className="type-description">
-            Mixed HTML elements including text, tables, images, video
-          </div>
+          <div className="type-label">Content</div>
+          <div className="type-description">Text, tables, images, video</div>
         </a>
       </div>
     </>
