@@ -244,6 +244,9 @@ const Markup: React.FC<any> = ({
       if (!renderStyles.display) {
         renderStyles.display = 'block';
       }
+      if (!renderStyles.lineHeight) {
+        renderStyles.lineHeight = '0px';
+      }
       //let's not do this for all P tags forces fontSize to be specified
       /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
