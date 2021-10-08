@@ -1,3 +1,4 @@
+import { isFirefox } from 'utils/browser';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -123,7 +124,14 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible, hasEditingLock]);
 
   useEffect(() => {
-    window.addEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
+    window.addEventListener('beforeunload', async () =>
+      isFirefox
+        ? setTimeout(async () => {
+            await dispatch(releaseEditingLock());
+          })
+        : await dispatch(releaseEditingLock()),
+    );
+
     setTimeout(() => {
       if (hasEditingLock) {
         setIsAppVisible(true);
