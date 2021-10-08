@@ -26,7 +26,7 @@ defmodule OliWeb.Objectives.SelectionsModal do
             </ul>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Done</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Done</button>
           </div>
 
         </div>

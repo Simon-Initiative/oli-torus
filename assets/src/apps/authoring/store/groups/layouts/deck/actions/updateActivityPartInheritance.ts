@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
+import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import {
   selectActivityById,
@@ -10,7 +10,6 @@ import {
   DeckLayoutGroup,
   GroupsSlice,
 } from '../../../../../../delivery/store/features/groups/slice';
-import { acquireEditingLock, releaseEditingLock } from '../../../../app/actions/locking';
 import { selectProjectSlug } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 
@@ -62,8 +61,6 @@ export const updateActivityPartInheritance = createAsyncThunk(
       }
     });
     if (activitiesToUpdate.length) {
-      await dispatch(acquireEditingLock());
-      /* console.log('UPDATE: ', { activitiesToUpdate }); */
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
       // TODO: write to server
       const projectSlug = selectProjectSlug(rootState);
@@ -79,7 +76,6 @@ export const updateActivityPartInheritance = createAsyncThunk(
         return changeData;
       });
       await bulkEdit(projectSlug, pageResourceId, updates);
-      await dispatch(releaseEditingLock());
       return;
     }
   },

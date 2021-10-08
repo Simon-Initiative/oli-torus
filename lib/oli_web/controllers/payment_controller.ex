@@ -1,5 +1,6 @@
 defmodule OliWeb.PaymentController do
   use OliWeb, :controller
+  require Logger
 
   @doc """
   Render the page to show a student that they do not have access because
@@ -12,8 +13,37 @@ defmodule OliWeb.PaymentController do
     if user.guest do
       render(conn, "require_account.html", section_slug: section_slug)
     else
-      render(conn, "guard.html", section_slug: section_slug)
+      render(conn, "guard.html",
+        section_slug: section_slug,
+        direct_payments_enabled: direct_payments_enabled?()
+      )
     end
+  end
+
+  # Returns the module for the configured payment provider
+  defp get_provider_module() do
+    validate = fn a ->
+      case a do
+        :stripe ->
+          OliWeb.PaymentProviders.StripeController
+
+        :none ->
+          OliWeb.PaymentProviders.NoProviderController
+
+        e ->
+          Logger.warning("Payment provider is not valid. ", e)
+          OliWeb.PaymentProviders.NoProviderController
+      end
+    end
+
+    case Application.fetch_env!(:oli, :payment_provider) do
+      a when is_atom(a) -> validate.(a)
+      s when is_binary(s) -> String.to_existing_atom(s) |> validate.()
+    end
+  end
+
+  defp direct_payments_enabled?() do
+    get_provider_module() != OliWeb.PaymentProviders.NoProviderController
   end
 
   @doc """
@@ -34,7 +64,7 @@ defmodule OliWeb.PaymentController do
       else
         case determine_cost(section) do
           {:ok, amount} ->
-            Application.fetch_env!(:oli, :payment_provider)
+            get_provider_module()
             |> apply(:show, [conn, section, user, amount])
 
           _ ->

@@ -6,6 +6,7 @@
 
 - Fix a style issue with the workspace footer
 - Prevent objectives used in selections from being deleted
+- Fix an issue where modals misbehaved sporadically
 
 ### Enhancements
 
@@ -15,23 +16,22 @@
 - Allow for section creation from course products
 - Add analytics / insights data export button
 
-## 0.13.5 (2021-10-04)
+### Release Notes
+
+The following environment configs are now available:
+
+```
+PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
+                        Current available options are 'stripe' or 'none'
+STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
+STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
+```
+
+## 0.13.7 (2021-10-06)
 
 ### Bug Fixes
 
-- Fix an issue where generating resource links for tag types throws a server error
-
-## 0.13.4 (2021-10-03)
-
-### Bug Fixes
-
-- Fix an issue where a page can be duplicated within a container
-
-## 0.13.3 (2021-09-30)
-
-### Bug Fixes
-
-- Fix an issue where generating resource links for tag types throws a server error
+- Fix datashop export dataset name, missing skills
 
 ## 0.13.6 (2021-10-04)
 
