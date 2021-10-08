@@ -381,14 +381,21 @@ defmodule Oli.Publishing do
       [%PublishedResource{}, ...]
 
   """
-  def get_published_resources_by_publication(publication_id, opts \\ []) do
+  def get_published_resources_by_publication(publication_ids, opts \\ [])
+
+  def get_published_resources_by_publication(publication_ids, opts)
+      when is_list(publication_ids) do
     preload = Keyword.get(opts, :preload, [:resource, :revision])
 
-    from(p in PublishedResource,
-      where: p.publication_id == ^publication_id,
+    from(pr in PublishedResource,
+      where: pr.publication_id in ^publication_ids,
       preload: ^preload
     )
     |> Repo.all()
+  end
+
+  def get_published_resources_by_publication(publication_id, opts) do
+    get_published_resources_by_publication([publication_id], opts)
   end
 
   @doc """
@@ -402,13 +409,7 @@ defmodule Oli.Publishing do
 
   """
   def get_published_resources_for_publications(publication_ids, opts \\ []) do
-    preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
-
-    from(pr in PublishedResource,
-      where: pr.publication_id in ^publication_ids,
-      preload: ^preload
-    )
-    |> Repo.all()
+    get_published_resources_by_publication(publication_ids, opts)
     |> Enum.reduce(%{}, fn pr, acc ->
       prs_by_resource_id =
         case acc[pr.publication_id] do

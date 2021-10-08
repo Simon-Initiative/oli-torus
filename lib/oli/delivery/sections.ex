@@ -487,21 +487,9 @@ defmodule Oli.Delivery.Sections do
       processed_ids = [root_resource_id | processed_ids]
 
       # create any remaining section resources which are not in the hierarchy
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-      published_resources_by_resource_id
-      |> Enum.filter(fn {id, _rev} -> id not in processed_ids end)
-      |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
-        [
-          slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
-          resource_id: revision.resource_id,
-          project_id: pub.project_id,
-          section_id: section.id,
-          inserted_at: now,
-          updated_at: now
-        ]
-      end)
-      |> then(&Repo.insert_all(SectionResource, &1))
+      create_nonstructural_section_resources(section.id, [publication_id],
+        skip_resource_ids: processed_ids
+      )
 
       update_section(section, %{root_section_resource_id: root_section_resource_id})
       |> case do
@@ -736,7 +724,7 @@ defmodule Oli.Delivery.Sections do
       # generate a new set of section resources based on the hierarchy
       {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
 
-      section_resources_by_id =
+      processed_section_resources_by_id =
         section_resources
         |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
 
@@ -763,7 +751,7 @@ defmodule Oli.Delivery.Sections do
       # cleanup any deleted section resources
       section_resource_ids_to_delete =
         previous_section_resource_ids
-        |> Enum.filter(fn sr_id -> !Map.has_key?(section_resources_by_id, sr_id) end)
+        |> Enum.filter(fn sr_id -> !Map.has_key?(processed_section_resources_by_id, sr_id) end)
 
       from(sr in SectionResource,
         where: sr.id in ^section_resource_ids_to_delete
@@ -798,6 +786,22 @@ defmodule Oli.Delivery.Sections do
         where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
       )
       |> Repo.delete_all()
+
+      # finally, create non-hierarchical section resources for all projects
+      publication_ids =
+        from(spp in SectionsProjectsPublications,
+          where: spp.section_id == ^section_id,
+          select: spp.publication_id
+        )
+        |> Repo.all()
+
+      processed_ids =
+        processed_section_resources_by_id
+        |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
+
+      create_nonstructural_section_resources(section_id, publication_ids,
+        skip_resource_ids: processed_ids
+      )
 
       section_resources
     end)
@@ -874,11 +878,15 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a map of resource_id to published resource
   """
-  def published_resources_map(publication_id) do
-    Publishing.get_published_resources_by_publication(publication_id,
+  def published_resources_map(publication_ids) when is_list(publication_ids) do
+    Publishing.get_published_resources_by_publication(publication_ids,
       preload: [:resource, :revision, :publication]
     )
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
+
+  def published_resources_map(publication_id) do
+    published_resources_map([publication_id])
   end
 
   @doc """
@@ -1098,5 +1106,38 @@ defmodule Oli.Delivery.Sections do
       end
 
     {[section_resource | section_resources], section_resource}
+  end
+
+  # creates all non-structural section resources for the given publication ids skipping
+  # any that belong to the resource ids in skip_resource_ids
+  defp create_nonstructural_section_resources(section_id, publication_ids,
+         skip_resource_ids: skip_resource_ids
+       ) do
+    published_resources_by_resource_id = published_resources_map(publication_ids)
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    published_resources_by_resource_id
+    |> Enum.filter(fn {resource_id, %{revision: rev}} ->
+      resource_id not in skip_resource_ids && !is_structural?(rev)
+    end)
+    |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
+      [
+        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        resource_id: revision.resource_id,
+        project_id: pub.project_id,
+        section_id: section_id,
+        inserted_at: now,
+        updated_at: now
+      ]
+    end)
+    |> then(&Repo.insert_all(SectionResource, &1))
+  end
+
+  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+    container = ResourceType.get_id_by_type("container")
+    page = ResourceType.get_id_by_type("page")
+
+    resource_type_id == container or resource_type_id == page
   end
 end
