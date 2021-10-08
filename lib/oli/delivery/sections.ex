@@ -726,6 +726,10 @@ defmodule Oli.Delivery.Sections do
         )
         |> Repo.all()
 
+      # ensure there are no duplicate resources so as to not violate the
+      # section_resource [section_id, resource_id] database constraint
+      hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+
       # ensure hierarchy numberings are all up to date
       {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
 
@@ -734,7 +738,7 @@ defmodule Oli.Delivery.Sections do
 
       section_resources_by_id =
         section_resources
-        |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.id, sr) end)
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
 
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
@@ -752,7 +756,7 @@ defmodule Oli.Delivery.Sections do
         &Repo.insert_all(SectionResource, &1,
           placeholders: placeholders,
           on_conflict: {:replace_all_except, [:inserted_at]},
-          conflict_target: :id
+          conflict_target: [:section_id, :resource_id]
         )
       )
 

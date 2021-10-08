@@ -545,9 +545,10 @@ defmodule OliWeb.Delivery.RemixSection do
     Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
   end
 
-  defp new_container_name(%HierarchyNode{numbering: numbering} = _active) do
-    Numbering.container_type(numbering.level + 1)
-  end
+  ## used by add container button, disabled for now
+  # defp new_container_name(%HierarchyNode{numbering: numbering} = _active) do
+  #   Numbering.container_type(numbering.level + 1)
+  # end
 
   defp render_breadcrumb(assigns) do
     %{hierarchy: hierarchy, active: active} = assigns

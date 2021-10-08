@@ -86,6 +86,38 @@ defmodule Oli.Delivery.Hierarchy do
     }
   end
 
+  @doc """
+  Crawls the hierarchy and removes any nodes with duplicate resource_ids.
+  The first node encountered with a resource_id will be left in place,
+  any subsequent duplicates will be removed from the hierarchy
+  """
+  def purge_duplicate_resources(%HierarchyNode{} = hierarchy) do
+    purge_duplicate_resources(hierarchy, %{})
+    |> then(fn {hierarchy, _} -> hierarchy end)
+  end
+
+  def purge_duplicate_resources(
+        %HierarchyNode{resource_id: resource_id, children: children} = node,
+        processed_nodes
+      ) do
+    processed_nodes = Map.put_new(processed_nodes, resource_id, node)
+
+    {children, processed_nodes} =
+      Enum.reduce(children, {[], processed_nodes}, fn child, {children, processed_nodes} ->
+        # filter out any child which has already been processed or recursively process the child node
+        if Map.has_key?(processed_nodes, child.resource_id) do
+          # skip child, as it is a duplicate resource
+          {children, processed_nodes}
+        else
+          {child, processed_nodes} = purge_duplicate_resources(child, processed_nodes)
+          {[child | children], processed_nodes}
+        end
+      end)
+      |> then(fn {children, processed_nodes} -> {Enum.reverse(children), processed_nodes} end)
+
+    {%HierarchyNode{node | children: children}, processed_nodes}
+  end
+
   def find_in_hierarchy(
         %HierarchyNode{uuid: uuid, children: children} = node,
         uuid_to_find

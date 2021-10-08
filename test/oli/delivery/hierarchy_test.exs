@@ -2,6 +2,7 @@ defmodule Oli.Delivery.HierarchyTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
 
@@ -96,6 +97,7 @@ defmodule Oli.Delivery.HierarchyTest do
       hierarchy: hierarchy,
       unit_node: unit_node
     } do
+      # create multiple other projects to add materials from
       %{pub2: p2_pub, page1: p2_page1} = Seeder.base_project_with_resource4()
       %{pub2: p3_pub, page1: p3_page1} = Seeder.base_project_with_resource4()
 
@@ -133,6 +135,51 @@ defmodule Oli.Delivery.HierarchyTest do
              |> Map.get(:children)
              |> Enum.at(3)
              |> Map.get(:resource_id) == p3_page1.id
+    end
+
+    test "purge_duplicate_resources/1", %{
+      hierarchy: hierarchy,
+      unit_node: unit_node,
+      page_one_node: page_one_node,
+      page1: page1,
+      nested_page1: nested_page1
+    } do
+      unit_node_with_duplicate_page_one = %HierarchyNode{
+        unit_node
+        | children: [page_one_node | unit_node.children]
+      }
+
+      hierarchy = Hierarchy.find_and_update_node(hierarchy, unit_node_with_duplicate_page_one)
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.count() == 3
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:resource_id) == page1.id
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(1)
+             |> Map.get(:resource_id) == nested_page1.id
+
+      hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.count() == 2
+
+      assert hierarchy.children
+             |> Enum.at(2)
+             |> Map.get(:children)
+             |> Enum.at(0)
+             |> Map.get(:resource_id) == nested_page1.id
     end
   end
 end
