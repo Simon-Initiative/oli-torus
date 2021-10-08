@@ -15,6 +15,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Learn more]: ", next.(), " "]
   end
 
+  def manystudentswonder(%Context{} = _context, next, _) do
+    ["[Many students wonder]: ", next.(), " "]
+  end
+
   def p(%Context{} = _context, next, _) do
     [next.(), " "]
   end
@@ -150,16 +154,12 @@ defmodule Oli.Rendering.Content.Plaintext do
 
       {:invalid, error_id, _error_msg} ->
         [
-          "<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{
-            error_id
-          }</div>\n"
+          "<div class=\"content invalid\">Content element is invalid. Please contact support with issue ##{error_id}</div>\n"
         ]
 
       {_, error_id, _error_msg} ->
         [
-          "<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{
-            error_id
-          }</div>\n"
+          "<div class=\"content invalid\">An error occurred while rendering content . Please contact support with issue ##{error_id}</div>\n"
         ]
     end
   end

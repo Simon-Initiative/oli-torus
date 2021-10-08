@@ -68,7 +68,8 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       assert DeliveryResolver.from_resource_id("2", latest4.resource_id) == nil
 
       # verifies we return nil on a made up id
-      assert DeliveryResolver.from_resource_id("1", 1337) == nil
+      non_existent_resource_id = latest_record_index("resources") + 1
+      assert DeliveryResolver.from_resource_id("1", non_existent_resource_id) == nil
     end
 
     test "from_revision_slug/2 returns correct revision", %{
