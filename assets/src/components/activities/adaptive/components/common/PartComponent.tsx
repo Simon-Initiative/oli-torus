@@ -231,6 +231,12 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
+    if (wcTagName === 'janus-popup') {
+      const config = props.model.popup?.custom ? props.model.popup.custom : null;
+      const zIndexModal = config?.z ? config?.z : 1000;
+      const zIndexIcon = props?.model?.z || 0;
+      componentStyle.zIndex = Math.max(zIndexIcon, zIndexModal);
+    }
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }
