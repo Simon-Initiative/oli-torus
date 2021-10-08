@@ -431,6 +431,7 @@ OliWeb.Objectives.ObjectiveEntry.html
 OliWeb.Objectives.ObjectiveForm.html
 OliWeb.Objectives.ObjectiveRender.html
 OliWeb.Objectives.Objectives.html
+OliWeb.Objectives.SelectionsModal.html
 OliWeb.OpenAndFree.SectionForm.html
 OliWeb.OpenAndFreeController.html
 OliWeb.OpenAndFreeView.html
@@ -523,8 +524,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-7d65d01aa4.js
-dist/sidebar_items-a42267e62a.js
+dist/search_items-8e6a50ffa2.js
+dist/sidebar_items-3c1c6b64a3.js
 index.html
 license.html
 readme.html
