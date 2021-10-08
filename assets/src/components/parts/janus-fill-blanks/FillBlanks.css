@@ -1,26 +1,29 @@
 @import url(https://fonts.googleapis.com/css?family=Roboto:300,400);
-janus-fill-blanks {
-  /*** Dropdown ***/
-}
-janus-fill-blanks .dropdown-blot {
+
+/*** Dropdown ***/
+.dropdown-blot {
   display: inline-block;
   vertical-align: top;
   margin: 0 1px;
 }
-janus-fill-blanks .dropdown-container {
+
+.dropdown-container {
   display: inline-block;
   position: relative;
   vertical-align: top;
 }
-janus-fill-blanks .dropdown-option-wrapper {
+
+.dropdown-option-wrapper {
   width: auto;
   padding: 5px;
   background: 0 0;
 }
-janus-fill-blanks .dropdown-option {
+
+.dropdown-option {
   width: auto;
 }
-janus-fill-blanks .dropdown-option-select {
+
+.dropdown-option-select {
   pointer-events: auto;
   width: 16px;
   height: 16px;
@@ -34,12 +37,14 @@ janus-fill-blanks .dropdown-option-select {
   cursor: pointer;
   transition: background-color 0.3s ease-in-out;
 }
-janus-fill-blanks .dropdown-option-select:focus,
-janus-fill-blanks .dropdown-option-select:hover {
+
+.dropdown-option-select:focus,
+.dropdown-option-select:hover {
   background-color: rgba(52, 210, 175, 0.3);
   outline: 0;
 }
-janus-fill-blanks .dropdown-option__correct .dropdown-option-select {
+
+.dropdown-option__correct .dropdown-option-select {
   background-color: #34d2af;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="6" viewBox="0 0 8 6">  <g fill="none" fill-rule="evenodd" transform="translate(-3 -4)">  <rect width="14" height="14" fill="#D8D8D8" opacity="0"/>  <polygon fill="#FFF" points="5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818"/>  </g>  </svg>');
   background-size: 50%;
@@ -47,10 +52,12 @@ janus-fill-blanks .dropdown-option__correct .dropdown-option-select {
   background-repeat: no-repeat;
   border: none;
 }
-janus-fill-blanks .dropdown {
+
+.dropdown {
   display: none !important;
 }
-janus-fill-blanks .dropdown-option-input {
+
+.dropdown-option-input {
   display: inline-block;
   word-wrap: normal;
   margin-right: 3px;
@@ -63,20 +70,25 @@ janus-fill-blanks .dropdown-option-input {
   min-height: 30px;
   padding: 0 5px 0 3px;
 }
-janus-fill-blanks .dropdown-option-input:focus {
+
+.dropdown-option-input:focus {
   outline: 0;
   border-bottom: 1px solid #333;
 }
-janus-fill-blanks .override-top {
+
+.override-top {
   top: auto !important;
 }
-janus-fill-blanks .override-top .select2-dropdown {
+
+.override-top .select2-dropdown {
   box-shadow: 0 -1px 12px -5px #000;
 }
-janus-fill-blanks .override-left {
+
+.override-left {
   left: auto !important;
 }
-janus-fill-blanks .select2-container {
+
+.select2-container {
   width: auto !important;
   height: auto;
   min-height: 26px;
@@ -85,7 +97,8 @@ janus-fill-blanks .select2-container {
   vertical-align: top;
   display: initial !important;
 }
-janus-fill-blanks .select2-dropdown {
+
+.select2-dropdown {
   min-width: 130px;
   width: auto !important;
   position: relative;
@@ -95,71 +108,58 @@ janus-fill-blanks .select2-dropdown {
   border: none;
   overflow: hidden;
 }
-janus-fill-blanks .selection:focus {
+
+.selection:focus {
   outline: 0;
 }
-janus-fill-blanks .select2-container--default .select2-selection--single .select2-selection__arrow {
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
   pointer-events: none;
   top: 0;
   bottom: 0;
   margin: auto;
 }
-janus-fill-blanks
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow
-  b {
+
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
   border-color: #253445 transparent transparent transparent;
 }
-janus-fill-blanks
-  h3
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
+
+h3 .select2-container--default .select2-selection--single .select2-selection__arrow {
   top: -8px;
 }
-janus-fill-blanks
-  p
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
+
+p .select2-container--default .select2-selection--single .select2-selection__arrow {
   top: -3px;
 }
-janus-fill-blanks
-  code
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
+
+code .select2-container--default .select2-selection--single .select2-selection__arrow {
   top: -5px;
 }
-janus-fill-blanks
-  blockquote
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__arrow {
+
+blockquote .select2-container--default .select2-selection--single .select2-selection__arrow {
   top: -5px;
 }
-janus-fill-blanks
-  .select2-container--default.select2-container--open
+
+.select2-container--default.select2-container--open
   .select2-selection--single
   .select2-selection__arrow
   b {
   border-color: transparent transparent #253445 transparent;
 }
-janus-fill-blanks .select2-container--default .select2-selection--single {
+
+.select2-container--default .select2-selection--single {
   position: relative;
   border: none;
   width: auto;
   outline: 0;
   height: 35px !important;
 }
-janus-fill-blanks
-  .select2-container--default
-  .select2-selection--single
-  .select2-selection__rendered {
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
   padding-right: 25px;
 }
-janus-fill-blanks .select2-selection__rendered {
+
+.select2-selection__rendered {
   min-height: 26px;
   min-width: 120px;
   width: auto;
@@ -173,70 +173,73 @@ janus-fill-blanks .select2-selection__rendered {
   font-size: 1em;
   margin-top: -1px;
 }
-janus-fill-blanks .select2-selection__rendered:focus,
-janus-fill-blanks .select2-selection__rendered:hover {
+
+.select2-selection__rendered:focus,
+.select2-selection__rendered:hover {
   background-color: #d9d9de;
 }
-janus-fill-blanks .select2-selection__rendered:focus .dropdown-menu {
+
+.select2-selection__rendered:focus .dropdown-menu {
   display: block;
-  /* .select2-container--focus .select2-selection__rendered {
-   border-bottom: 1px solid #2196f3;
-   } */
 }
-janus-fill-blanks .select2-container--disabled .select2-selection__rendered {
+
+/* .select2-container--focus .select2-selection__rendered {
+  border-bottom: 1px solid #2196f3;
+} */
+
+.select2-container--disabled .select2-selection__rendered {
   background-color: rgba(0, 0, 0, 0.07);
   cursor: not-allowed;
   color: rgba(0, 0, 0, 0.8);
   border-bottom: none;
 }
-janus-fill-blanks .select2-container .select2-selection--single .select2-selection__rendered {
+
+.select2-container .select2-selection--single .select2-selection__rendered {
   white-space: normal;
 }
-janus-fill-blanks #scene_Configuration .select2-selection__rendered {
+
+#scene_Configuration .select2-selection__rendered {
   white-space: nowrap;
 }
-janus-fill-blanks
-  .select2-container--default.select2-container--disabled
-  .select2-selection--single {
+
+.select2-container--default.select2-container--disabled .select2-selection--single {
   background-color: transparent;
 }
-janus-fill-blanks .select2-results {
+
+.select2-results {
   width: auto;
 }
-janus-fill-blanks .config .select2-results {
+
+.config .select2-results {
   padding-bottom: 40px;
 }
-janus-fill-blanks .select2-container--default .select2-results > .select2-results__options {
+
+.select2-container--default .select2-results > .select2-results__options {
   width: auto;
   max-width: 100%;
   padding: 0;
   max-height: 160px;
 }
-janus-fill-blanks
-  .select2-container--default
-  .select2-results
-  > .select2-results__options::-webkit-scrollbar {
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar {
   width: 14px;
   height: 14px;
   background: 0 0;
 }
-janus-fill-blanks
-  .select2-container--default
-  .select2-results
-  > .select2-results__options::-webkit-scrollbar-thumb {
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background: #c1c1c1;
   border: 3px solid transparent;
   background-clip: padding-box;
 }
-janus-fill-blanks
-  .select2-container--default
-  .select2-results
-  > .select2-results__options::-webkit-scrollbar-track {
+
+.select2-container--default .select2-results > .select2-results__options::-webkit-scrollbar-track {
   background: 0 0;
   border-radius: 10px;
 }
-janus-fill-blanks .select2-results__option {
+
+.select2-results__option {
   font-size: 1rem;
   line-height: 1;
   max-width: 100%;
@@ -244,54 +247,47 @@ janus-fill-blanks .select2-results__option {
   padding: 5px 10px;
   word-wrap: break-word;
 }
-janus-fill-blanks .select2-results__option::before {
+
+.select2-results__option::before {
   display: none;
 }
-janus-fill-blanks .select2-container--default .select2-results__option--highlighted[data-selected],
-janus-fill-blanks .select2-container--default .select2-results__option--highlighted[aria-selected],
-janus-fill-blanks .select2-container--default .select2-results__option--highlighted {
+
+.select2-container--default .select2-results__option--highlighted[data-selected],
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted {
   background-color: #eee;
   color: rgba(0, 0, 0, 0.87);
 }
-janus-fill-blanks
-  .select2-container--default
+
+.select2-container--default
   .select2-dropdown:not(.config)
   .select2-results__option[aria-selected='true'],
-janus-fill-blanks
-  .select2-container--default
+.select2-container--default
   .select2-dropdown:not(.config)
   .select2-results__option[data-selected='true'] {
   background-color: rgba(0, 0, 0, 0.12);
   color: rgba(0, 0, 0, 0.87);
 }
-janus-fill-blanks .select2-container--default .config .select2-results__option {
+
+.select2-container--default .config .select2-results__option {
   pointer-events: none;
 }
-janus-fill-blanks .select2-container--default .config .select2-results__option:last-child {
+
+.select2-container--default .config .select2-results__option:last-child {
   position: absolute;
   bottom: 0;
   width: 100%;
 }
-janus-fill-blanks
-  .select2-container--default
-  .config
-  .select2-results__option--highlighted[aria-selected],
-janus-fill-blanks
-  .select2-container--default
-  .config
-  .select2-results__option[aria-selected='true'],
-janus-fill-blanks
-  .select2-container--default
-  .config
-  .select2-results__option--highlighted[data-selected],
-janus-fill-blanks
-  .select2-container--default
-  .config
-  .select2-results__option[data-selected='true'] {
+
+.select2-container--default .config .select2-results__option--highlighted[aria-selected],
+.select2-container--default .config .select2-results__option[aria-selected='true'],
+.select2-container--default .config .select2-results__option--highlighted[data-selected],
+.select2-container--default .config .select2-results__option[data-selected='true'] {
   background-color: transparent;
 }
-janus-fill-blanks .select2-selection__rendered .incorrect-icon,
-janus-fill-blanks .select2-selection__rendered::before {
+
+.select2-selection__rendered .incorrect-icon,
+.select2-selection__rendered::before {
   content: '';
   display: none;
   pointer-events: auto;
@@ -310,14 +306,12 @@ janus-fill-blanks .select2-selection__rendered::before {
   margin-right: 5px;
   vertical-align: middle;
 }
-janus-fill-blanks .dropdown.correct + .select2-container .select2-selection__rendered::before {
+
+.dropdown.correct + .select2-container .select2-selection__rendered::before {
   display: inline-block;
 }
-janus-fill-blanks
-  .dropdown.incorrect
-  + .select2-container
-  .select2-selection__rendered
-  .incorrect-icon {
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered .incorrect-icon {
   display: inline-block;
   background-color: #f96155;
   background-image: none;
@@ -328,86 +322,72 @@ janus-fill-blanks
   box-sizing: border-box;
   text-align: left;
 }
-janus-fill-blanks .dropdown.correct + .select2-container .select2-selection__rendered {
+
+.dropdown.correct + .select2-container .select2-selection__rendered {
   border-bottom: none;
   background-color: #daf6ee !important;
 }
-janus-fill-blanks .dropdown.correct + .select2-container .select2-selection__rendered:hover {
+
+.dropdown.correct + .select2-container .select2-selection__rendered:hover {
   background-color: #b9eedf !important;
 }
-janus-fill-blanks .dropdown.incorrect + .select2-container .select2-selection__rendered {
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered {
   border-bottom: none;
   background-color: #fddfdd !important;
 }
-janus-fill-blanks .dropdown.incorrect + .select2-container .select2-selection__rendered:hover {
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered:hover {
   background-color: #fbb7b2 !important;
 }
-janus-fill-blanks .dropdown.correct + .select2-container .select2-selection--single:focus {
+
+.dropdown.correct + .select2-container .select2-selection--single:focus {
   outline: -webkit-focus-ring-color auto 5px;
 }
-janus-fill-blanks .dropdown.incorrect + .select2-container .select2-selection--single:focus {
+
+.dropdown.incorrect + .select2-container .select2-selection--single:focus {
   outline: -webkit-focus-ring-color auto 5px;
 }
-janus-fill-blanks
-  p
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+p .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.85em;
   height: 30px !important;
   margin-top: 1px;
 }
-janus-fill-blanks
-  h1
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h1 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.4em;
   min-height: 69px;
   margin-top: 16px;
 }
-janus-fill-blanks
-  h2
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h2 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.5em;
   min-height: 49px;
   margin-top: 4px;
 }
-janus-fill-blanks
-  h3
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h3 .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.7em;
   min-height: 36px;
   margin-top: 3px;
 }
-janus-fill-blanks
-  h3
+
+h3
   .dropdown-blot
   .select2-container
   .select2-selection--single
   .select2-selection__rendered::before {
   margin-bottom: 2px;
 }
-janus-fill-blanks
-  code
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+code .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 2em;
   min-height: 27px;
   margin-top: 0;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   .dropdown-blot
   .select2-container
   .select2-selection--single
@@ -416,36 +396,24 @@ janus-fill-blanks
   min-height: 30px;
   margin-top: -4px;
 }
-janus-fill-blanks
-  sup
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.6;
   min-height: 22px;
   margin-top: 4px;
 }
-janus-fill-blanks
-  sub
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.6;
   min-height: 22px;
   margin-top: 10px;
 }
-janus-fill-blanks
-  s
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+s .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   text-decoration: line-through;
 }
-janus-fill-blanks
-  p
+
+p
   .dropdown-blot
   .config
   + .select2-container
@@ -455,8 +423,8 @@ janus-fill-blanks
   min-height: 31px;
   margin-top: 1px;
 }
-janus-fill-blanks
-  h1
+
+h1
   .dropdown-blot
   .config
   + .select2-container
@@ -466,8 +434,8 @@ janus-fill-blanks
   min-height: 70px;
   margin-top: 16px;
 }
-janus-fill-blanks
-  h2
+
+h2
   .dropdown-blot
   .config
   + .select2-container
@@ -477,8 +445,8 @@ janus-fill-blanks
   min-height: 50px;
   margin-top: 4px;
 }
-janus-fill-blanks
-  h3
+
+h3
   .dropdown-blot
   .config
   + .select2-container
@@ -488,8 +456,8 @@ janus-fill-blanks
   min-height: 37px;
   margin-top: -3px;
 }
-janus-fill-blanks
-  h3
+
+h3
   .dropdown-blot
   .config
   + .select2-container
@@ -497,8 +465,8 @@ janus-fill-blanks
   .select2-selection__rendered::before {
   margin-bottom: 2px;
 }
-janus-fill-blanks
-  code
+
+code
   .dropdown-blot
   .config
   + .select2-container
@@ -508,8 +476,8 @@ janus-fill-blanks
   min-height: 28px;
   margin-top: 0;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   .dropdown-blot
   .config
   + .select2-container
@@ -519,8 +487,8 @@ janus-fill-blanks
   min-height: 31px;
   margin-top: -5px;
 }
-janus-fill-blanks
-  sup
+
+sup
   .dropdown-blot
   .config
   + .select2-container
@@ -530,8 +498,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 2px;
 }
-janus-fill-blanks
-  sub
+
+sub
   .dropdown-blot
   .config
   + .select2-container
@@ -541,8 +509,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 11px;
 }
-janus-fill-blanks
-  s
+
+s
   .dropdown-blot
   .config
   + .select2-container
@@ -550,30 +518,20 @@ janus-fill-blanks
   .select2-selection__rendered {
   text-decoration: line-through;
 }
-janus-fill-blanks
-  h1
-  sup
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h1 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 49px;
   margin-top: 16px;
 }
-janus-fill-blanks
-  h1
-  sub
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h1 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 49px;
   margin-top: 38px;
 }
-janus-fill-blanks
-  h1
+
+h1
   sup
   .dropdown-blot
   .config
@@ -584,8 +542,8 @@ janus-fill-blanks
   min-height: 50px;
   margin-top: 16px;
 }
-janus-fill-blanks
-  h1
+
+h1
   sub
   .dropdown-blot
   .config
@@ -596,30 +554,20 @@ janus-fill-blanks
   min-height: 50px;
   margin-top: 38px;
 }
-janus-fill-blanks
-  h2
-  sup
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h2 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 33px;
   margin-top: 7px;
 }
-janus-fill-blanks
-  h2
-  sub
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h2 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 33px;
   margin-top: 21px;
 }
-janus-fill-blanks
-  h2
+
+h2
   sup
   .dropdown-blot
   .config
@@ -630,8 +578,8 @@ janus-fill-blanks
   min-height: 34px;
   margin-top: 7px;
 }
-janus-fill-blanks
-  h2
+
+h2
   sub
   .dropdown-blot
   .config
@@ -642,30 +590,20 @@ janus-fill-blanks
   min-height: 34px;
   margin-top: 21px;
 }
-janus-fill-blanks
-  h3
-  sup
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h3 sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 21px;
   margin-top: 8px;
 }
-janus-fill-blanks
-  h3
-  sub
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+h3 sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.2;
   min-height: 21px;
   margin-top: 18px;
 }
-janus-fill-blanks
-  h3
+
+h3
   sup
   .dropdown-blot
   .config
@@ -676,8 +614,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 8px;
 }
-janus-fill-blanks
-  h3
+
+h3
   sub
   .dropdown-blot
   .config
@@ -688,30 +626,20 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 18px;
 }
-janus-fill-blanks
-  code
-  sup
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+code sup .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.6;
   min-height: 19px;
   margin-top: 5px;
 }
-janus-fill-blanks
-  code
-  sub
-  .dropdown-blot
-  .select2-container
-  .select2-selection--single
-  .select2-selection__rendered {
+
+code sub .dropdown-blot .select2-container .select2-selection--single .select2-selection__rendered {
   line-height: 1.6;
   min-height: 19px;
   margin-top: 9px;
 }
-janus-fill-blanks
-  code
+
+code
   sup
   .dropdown-blot
   .config
@@ -722,8 +650,8 @@ janus-fill-blanks
   min-height: 20px;
   margin-top: 5px;
 }
-janus-fill-blanks
-  code
+
+code
   sub
   .dropdown-blot
   .config
@@ -734,8 +662,8 @@ janus-fill-blanks
   min-height: 20px;
   margin-top: 9px;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   sup
   .dropdown-blot
   .select2-container
@@ -745,8 +673,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 0;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   sub
   .dropdown-blot
   .select2-container
@@ -756,8 +684,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 5px;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   sup
   .dropdown-blot
   .config
@@ -768,8 +696,8 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 0;
 }
-janus-fill-blanks
-  blockquote
+
+blockquote
   sub
   .dropdown-blot
   .config
@@ -780,24 +708,28 @@ janus-fill-blanks
   min-height: 22px;
   margin-top: 5px;
 }
+
 @media only screen and (max-width: 440px) {
-  /*** End Dropdown ***/
-  /*** Text Input ***/
-  janus-fill-blanks .select2-container {
+  .select2-container {
     max-width: calc(100vw - 40px);
   }
 }
-janus-fill-blanks .text-input-blot {
+/*** End Dropdown ***/
+
+/*** Text Input ***/
+.text-input-blot {
   display: inline;
   margin: 0 1px;
 }
-janus-fill-blanks .text-input-container {
+
+.text-input-container {
   position: relative;
   display: inline-block;
   vertical-align: top;
   border-radius: 3px;
 }
-janus-fill-blanks .text-input {
+
+.text-input {
   height: auto;
   width: auto;
   border: 0;
@@ -811,36 +743,43 @@ janus-fill-blanks .text-input {
   position: relative;
   min-width: 120px;
 }
-janus-fill-blanks .text-input:focus {
+
+.text-input:focus {
   outline: 0;
   border-bottom: 1px solid #2196f3;
 }
-janus-fill-blanks .text-input:disabled {
+.text-input:disabled {
   cursor: not-allowed;
 }
-janus-fill-blanks .text-input.force-inline-block {
+
+.text-input.force-inline-block {
   display: inline-block !important;
   padding: 0 5px;
   line-height: 1.9em;
   height: 30px;
   margin-top: 1px;
 }
-janus-fill-blanks .text-input[contenteditable='false'] {
+
+.text-input[contenteditable='false'] {
   border-bottom: none;
 }
-janus-fill-blanks .text-input[contenteditable='false'][placeholder]:empty::after {
+
+.text-input[contenteditable='false'][placeholder]:empty::after {
   display: none;
 }
-janus-fill-blanks .text-input.disabled {
+
+.text-input.disabled {
   background-color: rgba(0, 0, 0, 0.07);
   cursor: not-allowed;
   color: rgba(0, 0, 0, 0.8);
 }
-janus-fill-blanks .text-input[contenteditable][placeholder]:after {
+
+.text-input[contenteditable][placeholder]:after {
   padding: 0 5px;
   display: inline-block;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder]:empty::after {
+
+.text-input.config[contenteditable][placeholder]:empty::after {
   content: attr(placeholder);
   display: inline-block;
   opacity: 0.5;
@@ -851,10 +790,12 @@ janus-fill-blanks .text-input.config[contenteditable][placeholder]:empty::after 
   color: rgba(0, 0, 0, 0.6);
   pointer-events: none;
 }
-janus-fill-blanks .text-input[contenteditable][placeholder]:focus:empty::after {
+
+.text-input[contenteditable][placeholder]:focus:empty::after {
   display: none;
 }
-janus-fill-blanks .text-input-container::before {
+
+.text-input-container::before {
   content: '';
   display: none;
   pointer-events: auto;
@@ -872,21 +813,23 @@ janus-fill-blanks .text-input-container::before {
   margin: auto 5px 1px 0;
   vertical-align: middle;
 }
-janus-fill-blanks .text-input-container:focus {
+.text-input-container:focus {
   outline: none;
 }
-janus-fill-blanks .text-input-container.correct,
-janus-fill-blanks .text-input-container.correct .text-input {
+
+.text-input-container.correct,
+.text-input-container.correct .text-input {
   background-color: #daf6ee !important;
 }
-janus-fill-blanks .text-input-container.correct::before {
+.text-input-container.correct::before {
   display: inline-block;
 }
-janus-fill-blanks .text-input-container.incorrect,
-janus-fill-blanks .text-input-container.incorrect .text-input {
+
+.text-input-container.incorrect,
+.text-input-container.incorrect .text-input {
   background-color: #fddfdd !important;
 }
-janus-fill-blanks .text-input-container.incorrect::before {
+.text-input-container.incorrect::before {
   display: inline-block;
   background-color: #f96155;
   background-image: none;
@@ -898,235 +841,284 @@ janus-fill-blanks .text-input-container.incorrect::before {
   box-sizing: border-box;
   text-align: left;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder]:empty::before {
+
+.text-input.config[contenteditable][placeholder]:empty::before {
   display: none;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder]::before {
+
+.text-input.config[contenteditable][placeholder]::before {
   display: inline-block;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder] {
+
+.text-input.config[contenteditable][placeholder] {
   border-bottom: 2px solid transparent;
   background-color: #daf6ee;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder]:focus {
+
+.text-input.config[contenteditable][placeholder]:focus {
   outline: 0;
   border-bottom: 2px solid #4ad3ad;
 }
-janus-fill-blanks .text-input.config[contenteditable][placeholder]:empty {
+
+.text-input.config[contenteditable][placeholder]:empty {
   border-bottom: 1px solid #253445;
   margin-right: 0;
 }
-janus-fill-blanks .text-input.correct {
+
+.text-input.correct {
   border-bottom: none;
   background-color: rgba(74, 211, 173, 0.2);
 }
-janus-fill-blanks .text-input.incorrect {
+
+.text-input.incorrect {
   border-bottom: none;
   background-color: rgba(249, 97, 85, 0.2);
 }
-janus-fill-blanks h1 .text-input-blot .text-input.force-inline-block {
+
+h1 .text-input-blot .text-input.force-inline-block {
   line-height: 1.45em;
   height: 69px;
   margin-top: 15px;
 }
-janus-fill-blanks h2 .text-input-blot .text-input.force-inline-block {
+
+h2 .text-input-blot .text-input.force-inline-block {
   line-height: 1.55em;
   height: 49px;
   margin-top: 3px;
 }
-janus-fill-blanks h3 .text-input-blot .text-input.force-inline-block {
+
+h3 .text-input-blot .text-input.force-inline-block {
   line-height: 1.7em;
   height: 36px;
   margin-top: 3px;
 }
-janus-fill-blanks code .text-input-blot .text-input.force-inline-block {
+
+code .text-input-blot .text-input.force-inline-block {
   line-height: 2em;
   height: 27px;
   margin-top: 0;
 }
-janus-fill-blanks blockquote .text-input-blot .text-input.force-inline-block {
+
+blockquote .text-input-blot .text-input.force-inline-block {
   line-height: 1.9em;
   height: 30px;
   margin-top: -4px;
 }
-janus-fill-blanks s .text-input-blot .text-input.force-inline-block {
+
+s .text-input-blot .text-input.force-inline-block {
   text-decoration: line-through;
 }
-janus-fill-blanks p .text-input-blot .text-input.config.force-inline-block {
+
+p .text-input-blot .text-input.config.force-inline-block {
   line-height: 1.9em;
   height: 31px;
   margin-top: 1px;
 }
-janus-fill-blanks h1 .text-input-blot .text-input.config.force-inline-block {
+
+h1 .text-input-blot .text-input.config.force-inline-block {
   line-height: 1.45em;
   height: 70px;
   margin-top: 15px;
 }
-janus-fill-blanks h2 .text-input-blot .text-input.config.force-inline-block {
+
+h2 .text-input-blot .text-input.config.force-inline-block {
   line-height: 1.55em;
   height: 50px;
   margin-top: 3px;
 }
-janus-fill-blanks h3 .text-input-blot .text-input.config.force-inline-block {
+
+h3 .text-input-blot .text-input.config.force-inline-block {
   line-height: 1.7em;
   height: 37px;
   margin-top: 3px;
 }
-janus-fill-blanks code .text-input-blot .text-input.config.force-inline-block {
+
+code .text-input-blot .text-input.config.force-inline-block {
   line-height: 2em;
   height: 28px;
   margin-top: 0;
 }
-janus-fill-blanks blockquote .text-input-blot .text-input.config.force-inline-block {
+
+blockquote .text-input-blot .text-input.config.force-inline-block {
   line-height: 1.9em;
   height: 31px;
   margin-top: -4px;
 }
-janus-fill-blanks s .text-input-blot .text-input.config.force-inline-block {
+
+s .text-input-blot .text-input.config.force-inline-block {
   text-decoration: line-through;
 }
-janus-fill-blanks sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks sup .text-input-blot .text-input.force-inline-block {
+
+sub .text-input-blot .text-input.force-inline-block,
+sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 22px;
   padding: 2px 5px 0 5px;
 }
-janus-fill-blanks sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks sup .text-input-blot .text-input.config.force-inline-block {
+
+sub .text-input-blot .text-input.config.force-inline-block,
+sup .text-input-blot .text-input.config.force-inline-block {
   line-height: initial;
   height: 22px;
   padding: 2px 5px 0 5px;
 }
-janus-fill-blanks sub .text-input-blot .text-input,
-janus-fill-blanks sup .text-input-blot .text-input {
+
+sub .text-input-blot .text-input,
+sup .text-input-blot .text-input {
   padding: 2px 5px 3px 5px;
 }
-janus-fill-blanks sub .text-input-blot .text-input.config,
-janus-fill-blanks sup .text-input-blot .text-input.config {
+
+sub .text-input-blot .text-input.config,
+sup .text-input-blot .text-input.config {
   padding: 2px 5px 2px 5px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input,
-janus-fill-blanks h1 sup .text-input-blot .text-input,
-janus-fill-blanks h2 sub .text-input-blot .text-input,
-janus-fill-blanks h2 sup .text-input-blot .text-input,
-janus-fill-blanks h3 sub .text-input-blot .text-input,
-janus-fill-blanks h3 sup .text-input-blot .text-input {
+
+h1 sub .text-input-blot .text-input,
+h1 sup .text-input-blot .text-input,
+h2 sub .text-input-blot .text-input,
+h2 sup .text-input-blot .text-input,
+h3 sub .text-input-blot .text-input,
+h3 sup .text-input-blot .text-input {
   padding: 0 5px 0 5px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input.config,
-janus-fill-blanks h1 sup .text-input-blot .text-input.config,
-janus-fill-blanks h2 sub .text-input-blot .text-input.config,
-janus-fill-blanks h2 sup .text-input-blot .text-input.config,
-janus-fill-blanks h3 sub .text-input-blot .text-input.config,
-janus-fill-blanks h3 sup .text-input-blot .text-input.config {
+
+h1 sub .text-input-blot .text-input.config,
+h1 sup .text-input-blot .text-input.config,
+h2 sub .text-input-blot .text-input.config,
+h2 sup .text-input-blot .text-input.config,
+h3 sub .text-input-blot .text-input.config,
+h3 sup .text-input-blot .text-input.config {
   padding: 0 5px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h1 sup .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h2 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h2 sup .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h3 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h3 sup .text-input-blot .text-input.force-inline-block {
+
+h1 sub .text-input-blot .text-input.force-inline-block,
+h1 sup .text-input-blot .text-input.force-inline-block,
+h2 sub .text-input-blot .text-input.force-inline-block,
+h2 sup .text-input-blot .text-input.force-inline-block,
+h3 sub .text-input-blot .text-input.force-inline-block,
+h3 sup .text-input-blot .text-input.force-inline-block {
   padding: 0 5px 0 5px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h1 sup .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h2 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h2 sup .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h3 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h3 sup .text-input-blot .text-input.config.force-inline-block {
+
+h1 sub .text-input-blot .text-input.config.force-inline-block,
+h1 sup .text-input-blot .text-input.config.force-inline-block,
+h2 sub .text-input-blot .text-input.config.force-inline-block,
+h2 sup .text-input-blot .text-input.config.force-inline-block,
+h3 sub .text-input-blot .text-input.config.force-inline-block,
+h3 sup .text-input-blot .text-input.config.force-inline-block {
   padding: 0 5px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h1 sup .text-input-blot .text-input.force-inline-block {
+
+h1 sub .text-input-blot .text-input.force-inline-block,
+h1 sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 49px;
 }
-janus-fill-blanks h1 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h1 sup .text-input-blot .text-input.config.force-inline-block {
+
+h1 sub .text-input-blot .text-input.config.force-inline-block,
+h1 sup .text-input-blot .text-input.config.force-inline-block {
   height: 50px;
 }
-janus-fill-blanks h2 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h2 sup .text-input-blot .text-input.force-inline-block {
+
+h2 sub .text-input-blot .text-input.force-inline-block,
+h2 sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 33px;
 }
-janus-fill-blanks h2 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h2 sup .text-input-blot .text-input.config.force-inline-block {
+
+h2 sub .text-input-blot .text-input.config.force-inline-block,
+h2 sup .text-input-blot .text-input.config.force-inline-block {
   height: 34px;
 }
-janus-fill-blanks h3 sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks h3 sup .text-input-blot .text-input.force-inline-block {
+
+h3 sub .text-input-blot .text-input.force-inline-block,
+h3 sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 21px;
 }
-janus-fill-blanks h3 sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks h3 sup .text-input-blot .text-input.config.force-inline-block {
+
+h3 sub .text-input-blot .text-input.config.force-inline-block,
+h3 sup .text-input-blot .text-input.config.force-inline-block {
   height: 22px;
 }
-janus-fill-blanks code sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks code sup .text-input-blot .text-input.force-inline-block {
+
+code sub .text-input-blot .text-input.force-inline-block,
+code sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 19px;
 }
-janus-fill-blanks code sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks code sup .text-input-blot .text-input.config.force-inline-block {
+
+code sub .text-input-blot .text-input.config.force-inline-block,
+code sup .text-input-blot .text-input.config.force-inline-block {
   height: 20px;
   padding: 1px 5px 3px 5px;
 }
-janus-fill-blanks code sub .text-input-blot .text-input.config,
-janus-fill-blanks code sup .text-input-blot .text-input.config {
+
+code sub .text-input-blot .text-input.config,
+code sup .text-input-blot .text-input.config {
   padding: 2px 5px 3px 5px;
 }
-janus-fill-blanks blockquote sub .text-input-blot .text-input.force-inline-block,
-janus-fill-blanks blockquote sup .text-input-blot .text-input.force-inline-block {
+
+blockquote sub .text-input-blot .text-input.force-inline-block,
+blockquote sup .text-input-blot .text-input.force-inline-block {
   line-height: initial;
   height: 22px;
 }
-janus-fill-blanks blockquote sub .text-input-blot .text-input.config.force-inline-block,
-janus-fill-blanks blockquote sup .text-input-blot .text-input.config.force-inline-block {
+
+blockquote sub .text-input-blot .text-input.config.force-inline-block,
+blockquote sup .text-input-blot .text-input.config.force-inline-block {
   height: 22px;
-  /*** End Text Input ***/
-  /*** Quill Overrides ***/
 }
-janus-fill-blanks .editor {
+/*** End Text Input ***/
+
+/*** Quill Overrides ***/
+.editor {
   counter-reset: code-line-count 0;
 }
-janus-fill-blanks .ql-snow .ql-editor code {
+
+.ql-snow .ql-editor code {
   padding-top: 0;
   padding-bottom: 0;
 }
-janus-fill-blanks .editor.ql-container.ql-snow {
+
+.editor.ql-container.ql-snow {
   height: 100%;
 }
-janus-fill-blanks .ql-snow .ql-editor {
+
+.ql-snow .ql-editor {
   font-size: 1rem;
   overflow-y: auto;
 }
-janus-fill-blanks .ql-snow .ql-editor::-webkit-scrollbar {
+
+.ql-snow .ql-editor::-webkit-scrollbar {
   width: 14px;
   height: 14px;
   background: 0 0;
 }
-janus-fill-blanks .ql-snow .ql-editor::-webkit-scrollbar-thumb {
+
+.ql-snow .ql-editor::-webkit-scrollbar-thumb {
   border-radius: 10px;
   background: #c1c1c1;
   border: 3px solid transparent;
   background-clip: padding-box;
 }
-janus-fill-blanks .ql-snow .ql-editor::-webkit-scrollbar-track {
+
+.ql-snow .ql-editor::-webkit-scrollbar-track {
   background: 0 0;
   border-radius: 10px;
 }
-janus-fill-blanks .ql-editor.ql-blank::before {
+
+.ql-editor.ql-blank::before {
   line-height: 2em;
   font-family: Roboto, sans-serif;
   color: rgba(0, 0, 0, 0.4);
 }
-janus-fill-blanks .ql-editor.ql-blank::before.ql-blank::before {
+
+.ql-editor.ql-blank::before.ql-blank::before {
   line-height: 2em;
 }
-janus-fill-blanks .ql-snow .ql-editor code {
+
+.ql-snow .ql-editor code {
   line-height: 2em;
   font-family: monospace;
   background-color: #ccc;
@@ -1134,55 +1126,63 @@ janus-fill-blanks .ql-snow .ql-editor code {
   display: block;
   border-radius: 0;
 }
-janus-fill-blanks .ql-snow .ql-editor h1 {
+
+.ql-snow .ql-editor h1 {
   font-weight: 300;
   font-size: 3rem;
   line-height: 2;
   letter-spacing: -1.5px;
 }
-janus-fill-blanks .ql-snow .ql-editor h2 {
+
+.ql-snow .ql-editor h2 {
   font-weight: 300;
   font-size: 2rem;
   line-height: 1.7;
   letter-spacing: -0.5px;
 }
-janus-fill-blanks .ql-snow .ql-editor h3 {
+
+.ql-snow .ql-editor h3 {
   font-weight: 400;
   font-size: 1.3rem;
   line-height: 2;
   letter-spacing: 0;
 }
-janus-fill-blanks .ql-snow .ql-editor p {
+
+.ql-snow .ql-editor p {
   font-weight: 400;
   font-size: 1rem;
   line-height: 2;
   letter-spacing: 0.5px;
-  /*** End Quill Overrides ***/
-  /*** Custom ***/
 }
-janus-fill-blanks .scene,
-janus-fill-blanks body,
-janus-fill-blanks html {
+/*** End Quill Overrides ***/
+
+/*** Custom ***/
+.scene,
+body,
+html {
   font-family: Roboto, sans-serif;
   font-size: 16px;
   height: 100%;
   margin: 0;
   color: #333;
 }
-janus-fill-blanks .app {
+
+.app {
   height: 100%;
 }
-janus-fill-blanks .error {
+
+.error {
   text-align: center;
   color: #ab0000;
 }
-janus-fill-blanks .accessibility-instructions {
+.accessibility-instructions {
   position: fixed;
   top: -100%;
   font-size: 1px;
 }
-janus-fill-blanks .dropdown-instructions,
-janus-fill-blanks .text-input-instructions {
+
+.dropdown-instructions,
+.text-input-instructions {
   position: absolute;
   top: 0;
   left: 0;
