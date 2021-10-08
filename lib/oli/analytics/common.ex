@@ -7,10 +7,6 @@ defmodule Oli.Analytics.Common do
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.PartAttempt
 
-  alias Oli.Resources.Revision
-  alias Oli.Repo
-  alias Oli.Delivery.Attempts.Core.PartAttempt
-
   def snapshots_for_project(project_slug) do
     Repo.all(
       from(project in Project,

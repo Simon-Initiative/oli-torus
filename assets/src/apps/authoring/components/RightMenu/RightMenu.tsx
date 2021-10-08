@@ -383,6 +383,7 @@ const RightMenu: React.FC<any> = () => {
 
   const componentPropertyChangeHandler = useCallback(
     (properties: object) => {
+      console.log('CHANGE??????????', { properties, currentPartSelection });
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,
@@ -392,6 +393,7 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
+
   const handleEditComponentJson = (newJson: any) => {
     const cloneActivity = clone(currentActivity);
     const ogPart = cloneActivity.content?.partsLayout.find(
@@ -516,6 +518,7 @@ const RightMenu: React.FC<any> = () => {
               </ButtonGroup>
             </ButtonToolbar>
             <PropertyEditor
+              key={currentComponentData.id}
               schema={componentSchema}
               uiSchema={componentUiSchema}
               value={currentComponentData}
