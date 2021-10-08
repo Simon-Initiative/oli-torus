@@ -1,4 +1,7 @@
-import { NotificationType, subscribeToNotification } from 'apps/delivery/components/NotificationContext';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import chroma from 'chroma-js';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -112,6 +115,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   const [htmlPreview, setHtmlPreview] = useState<string>('');
 
   const [model, setModel] = useState<TextFlowModel>(props.model);
+  const [textNodes, setTextNodes] = useState<any[]>(props.model.nodes);
 
   useEffect(() => {
     setModel(props.model);
@@ -250,12 +254,25 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       onCancelConfigure({ id });
     };
 
+    const handleEditorChange = (e: any) => {
+      if (!inConfigureMode) {
+        return;
+      } // not mine
+      const { payload, callback } = e.detail;
+      console.log('TF EDITOR CHANGE', { payload, callback });
+      // BS: INFINITE LOOP
+      // must be because of the Editor being new each render
+      // setTextNodes(payload.value);
+    };
+
     if (inConfigureMode) {
+      document.addEventListener(`${quillEditorTagName}-change`, handleEditorChange);
       document.addEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.addEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     }
 
     return () => {
+      document.removeEventListener(`${quillEditorTagName}-change`, handleEditorChange);
       document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
@@ -271,10 +288,10 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   );
 
   const handleNotificationSave = useCallback(async () => {
-    console.log('TF:NOTIFYSAVE', { id });
+    console.log('TF:NOTIFYSAVE', { id, model, textNodes });
     // await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
-  }, [model]);
+  }, [model, textNodes]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -321,6 +338,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
               const { id: partId } = payload;
               if (partId === id) {
                 console.log('TF:NotificationType.CONFIGURE_CANCEL', { partId });
+                setInConfigureMode(false);
               }
             }
             break;
