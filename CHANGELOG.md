@@ -6,6 +6,7 @@
 
 - Fix a style issue with the workspace footer
 - Fix an issue where modals misbehaved sporadically
+- Move "Many Students Wonder" from activity styling to content styling
 
 ### Enhancements
 
