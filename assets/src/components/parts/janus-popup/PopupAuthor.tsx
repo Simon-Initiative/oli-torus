@@ -27,12 +27,14 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const [windowModel, setWindowModel] = useState<any>(model.popup);
   useEffect(() => {
+    // console.log('PopupAuthor windowModel changed!!', { windowModel, gnu: model.popup });
     setWindowModel(model.popup);
   }, [model.popup]);
 
   const handleNotificationSave = useCallback(async () => {
     const modelClone = clone(model);
     modelClone.popup = windowModel;
+    // console.log('PA:NOTIFYSAVE', { id, modelClone, windowModel });
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
   }, [windowModel, model]);
@@ -95,7 +97,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify]);
+  }, [props.notify, handleNotificationSave]);
 
   const {
     x,

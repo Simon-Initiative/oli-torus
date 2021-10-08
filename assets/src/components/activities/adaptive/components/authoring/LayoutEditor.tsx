@@ -283,7 +283,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       if (part) {
         part.custom = snapshot;
 
-        // console.log('AUTHOR PART SAVE CONFIGURE', { id, snapshot, modelClone: clone(modelClone) });
+        // console.log('LE:SAVE CONFIGURE', { id, snapshot, partsClone: clone(partsClone) });
 
         props.onChange(partsClone);
         setParts(partsClone);
