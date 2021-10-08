@@ -13,7 +13,7 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
         <a
           href="#"
           key={'static_html_content'}
-          className="list-group-item list-group-item-action d-flex flex-row align-items-center"
+          className="list-group-item list-group-item-action d-flex flex-column align-items-start"
           onClick={(_e) => addContent(onAddItem, index)}
         >
           <div className="type-label">Content</div>
