@@ -16,6 +16,7 @@
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Fix insert content popup in page editor
 
 ### Release Notes
 
