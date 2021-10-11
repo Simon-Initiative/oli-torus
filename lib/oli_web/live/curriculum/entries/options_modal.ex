@@ -70,7 +70,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
                 <% end %>
               </div>
               <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary", onclick: "$('#options_#{revision.slug}').modal('hide')" %>
               </div>
           </form>

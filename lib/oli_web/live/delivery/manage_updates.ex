@@ -103,13 +103,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
     """
   end
 
-  # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", _params, socket),
-    do:
-      {:noreply,
-       socket
-       |> hide_modal()}
-
   def handle_event(
         "show_apply_update_modal",
         %{"project-id" => project_id, "publication-id" => publication_id},

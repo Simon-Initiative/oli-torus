@@ -134,6 +134,9 @@ defmodule Oli.Utils do
     "https://#{Keyword.get(url_config, :host, "localhost")}#{port}"
   end
 
+  @doc """
+  Generates a shortened v4 UUID encoded as base57
+  """
   def uuid() do
     {:ok, uuid} = ShortUUID.encode(UUID.uuid4())
     uuid

@@ -17,10 +17,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
     DropTarget,
     EntryLive,
     OptionsModal,
-    MoveModal,
     DeleteModal
   }
 
+  alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing.ChangeTracker
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
@@ -33,6 +33,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Breadcrumb
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Resources.Revision
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -203,51 +205,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end)
   end
 
-  def handle_event("HierarchyPicker.update_selection", %{"slug" => slug}, socket) do
-    %{modal: %{assigns: %{project: project} = modal_assigns}} = socket.assigns
-
-    container =
-      case slug do
-        "" ->
-          AuthoringResolver.root_container(project.slug)
-
-        slug ->
-          AuthoringResolver.from_revision_slug(project.slug, slug)
-      end
-
-    children = ContainerEditor.list_all_container_children(container, project)
-
-    breadcrumbs =
-      Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver)
-
-    modal_assigns =
-      modal_assigns
-      |> put_in([:container], container)
-      |> put_in([:children], children)
-      |> put_in([:breadcrumbs], breadcrumbs)
-      |> put_in([:selection], container.slug)
-
-    {:noreply, update_modal_assigns(socket, modal_assigns)}
-  end
-
-  def handle_event("move_item", %{"selection" => _selection}, socket) do
-    %{
-      modal: %{
-        assigns: %{
-          project: project,
-          revision: revision,
-          old_container: old_container,
-          container: new_container
-        }
-      },
-      author: author
-    } = socket.assigns
-
-    {:ok, _} = ContainerEditor.move_to(revision, old_container, new_container, author, project)
-
-    {:noreply, assign(socket, modal: nil)}
-  end
-
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
 
@@ -267,17 +224,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
 
+    hierarchy = AuthoringResolver.full_hierarchy(project.slug)
+    node = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == slug end)
+    active = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == container.slug end)
+
     assigns = %{
       id: "move_#{slug}",
-      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
-      old_container: container,
-      container: container,
-      project: project,
-      breadcrumbs:
-        Breadcrumb.trail_to(project.slug, container.slug, Oli.Publishing.AuthoringResolver),
-      children: ContainerEditor.list_all_container_children(container, project),
-      numberings: Numbering.number_full_tree(AuthoringResolver, project.slug),
-      selection: nil
+      node: node,
+      hierarchy: hierarchy,
+      from_container: active,
+      active: active
     }
 
     {:noreply,
@@ -303,8 +259,45 @@ defmodule OliWeb.Curriculum.ContainerLive do
      )}
   end
 
-  # handle any cancel events a modal might generate from being closed
-  def handle_event("cancel_modal", _params, socket), do: hide_modal(socket)
+  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
+    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | active: active
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "MoveModal.move_item",
+        %{"uuid" => uuid, "from_uuid" => from_uuid, "to_uuid" => to_uuid},
+        socket
+      ) do
+    %{
+      author: author,
+      project: project,
+      modal: %{assigns: %{hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket)}
+  end
+
+  def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, socket}
+  end
 
   # handle change of selection
   def handle_event("select", %{"slug" => slug}, socket) do
@@ -505,16 +498,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
     Accounts.update_author(author, %{preferences: updated_preferences})
   end
 
-  defp update_modal_assigns(socket, updated_assigns) do
-    %{modal: %{assigns: assigns} = modal} = socket.assigns
-
-    modal =
-      modal
-      |> put_in([:assigns], Enum.into(updated_assigns, assigns))
-
-    assign(socket, modal: modal)
-  end
-
   defp has_renderable_change?(page1, page2) do
     page1.title != page2.title or
       page1.graded != page2.graded or
@@ -578,29 +561,36 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   defp handle_updated_container(socket, revision) do
-    # in the case of a change to the container, we simplify by just pulling a new view of
-    # the container and its contents. This handles addition, removal, reordering from the
-    # local user as well as a collaborator
-    children = ContainerEditor.list_all_container_children(revision, socket.assigns.project)
+    %{container: %Revision{resource_id: container_resource_id}} = socket.assigns
 
-    {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
+    # only update when the container that changed is the container in view
+    if revision.resource_id == container_resource_id do
+      # in the case of a change to the container, we simplify by just pulling a new view of
+      # the container and its contents. This handles addition, removal, reordering from the
+      # local user as well as a collaborator
+      children = ContainerEditor.list_all_container_children(revision, socket.assigns.project)
 
-    numberings =
-      Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+      {:ok, rollup} = Rollup.new(children, socket.assigns.project.slug)
 
-    selected =
-      case socket.assigns.selected do
-        nil -> nil
-        s -> Enum.find(children, fn r -> r.resource_id == s.resource_id end)
-      end
+      numberings =
+        Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
 
-    assign(socket,
-      selected: selected,
-      container: revision,
-      children: children,
-      rollup: rollup,
-      numberings: numberings
-    )
+      selected =
+        case socket.assigns.selected do
+          nil -> nil
+          s -> Enum.find(children, fn r -> r.resource_id == s.resource_id end)
+        end
+
+      assign(socket,
+        selected: selected,
+        container: revision,
+        children: children,
+        rollup: rollup,
+        numberings: numberings
+      )
+    else
+      socket
+    end
   end
 
   # Here we respond to notifications for edits made

@@ -244,6 +244,11 @@ const Markup: React.FC<any> = ({
       if (!renderStyles.display) {
         renderStyles.display = 'block';
       }
+      // because of the global injected override .content *
+      // sets line-height: 1.4 for everything
+      if (!renderStyles.lineHeight) {
+        renderStyles.lineHeight = 'normal';
+      }
       //let's not do this for all P tags forces fontSize to be specified
       /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
