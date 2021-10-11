@@ -22,7 +22,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert view |> element("##{objective2.revision.slug}") |> has_element?()
     end
 
-    @tag :skip
     test "can delete objective", %{conn: conn, project: project, map: map} do
       conn = get(conn, "/authoring/project/#{project.slug}/objectives")
 
@@ -42,7 +41,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       |> render_click()
 
       view
-      |> element(".btn-danger.confirm")
+      |> element("button[phx-click=\"delete\"]")
       |> render_click()
 
       refute view |> element("##{objective1.revision.slug}") |> has_element?()
