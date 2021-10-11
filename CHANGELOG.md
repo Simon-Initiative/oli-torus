@@ -9,6 +9,9 @@
 - Fix an issue where modals misbehaved sporadically
 - Move "Many Students Wonder" from activity styling to content styling
 - Fix an issue where nonstructural section resources were missing after update
+- Add analytics download fields
+- Add datashop timestamps for seconds
+- Fix datashop bugs with missing <level> elements caused by deleted pages not showing in the container hierarchy
 
 ### Enhancements
 
@@ -21,7 +24,6 @@
 - Add server driven paged, sortable table for project list
 - Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
-
 
 ### Release Notes
 

@@ -11,6 +11,8 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   </dataset>
   """
   import XmlBuilder
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Authoring.Course
 
   def setup(
         %{
@@ -35,13 +37,16 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
          ) do
       [] ->
         # if for some reason the path to the page that contained this activity
-        # cannot be located within  the hierarchy, we do a best effort and place
-        # just the <problem> element
-        element(
-          :problem,
-          %{tutorFlag: tutor_or_test(false)},
-          [element(:name, problem_name)]
-        )
+        # cannot be located within the hierarchy, we create a top-level <level>
+        # node and place the <problem> element
+        element(:level, %{type: "Page"}, [
+          element(:name, "Unknown page title"),
+          element(
+            :problem,
+            %{tutorFlag: tutor_or_test(false)},
+            [element(:name, problem_name)]
+          )
+        ])
 
       assembled ->
         assembled
@@ -56,11 +61,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
            hierarchy_map: hierarchy_map
          } = context
        ) do
-    IO.inspect(target, label: "Target resource id")
-    project = Oli.Authoring.Course.get_project!(context.publication.project_id)
-    IO.inspect(Oli.Publishing.AuthoringResolver.from_resource_id(project.slug, target))
-    IO.inspect(problem_name, label: "problem name")
-
     page_to_element = fn revision ->
       element(:level, %{type: "Page"}, [
         element(:name, revision.title),
@@ -81,7 +81,20 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
 
     case Map.get(hierarchy_map, target) do
       nil ->
-        []
+        project = Course.get_project!(context.publication.project_id)
+        rev = AuthoringResolver.from_resource_id(project.slug, target)
+
+        # Deleted pages are removed from the container's children list, so they will not be found
+        # in the hierarchy. Create a top-level page node for them.
+        if !is_nil(rev) && rev.deleted do
+          page_to_element.(rev)
+        else
+          IO.error(
+            "Datashop - could not find path to resource_id #{target} in project #{project.slug}"
+          )
+
+          []
+        end
 
       path ->
         [
