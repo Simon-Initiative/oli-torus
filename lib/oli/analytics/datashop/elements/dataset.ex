@@ -13,6 +13,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   import XmlBuilder
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Course
+  require Logger
 
   def setup(
         %{
@@ -89,7 +90,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
         if !is_nil(rev) && rev.deleted do
           page_to_element.(rev)
         else
-          IO.error(
+          Logger.error(
             "Datashop - could not find path to resource_id #{target} in project #{project.slug}"
           )
 

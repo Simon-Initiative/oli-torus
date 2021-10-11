@@ -755,35 +755,35 @@ defmodule Oli.DatashopTest do
 
     test "tool message should be well formed for hint requests", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_REQUEST" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
+        ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_REQUEST" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
 
       assert String.match?(datashop_file, regex)
     end
 
     test "tool message should be well formed for attempts", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="ATTEMPT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
+        ~r/<tool_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="ATTEMPT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<\/tool_message>/
 
       assert String.match?(datashop_file, regex)
     end
 
     test "tutor message should be well formed for hint requests", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_MSG" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<action_evaluation current_hint_number="\d+" total_hints_available="(\d+|\w+)">HINT<\/action_evaluation>\s*<tutor_advice>.*<\/tutor_advice>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
+        ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="HINT_MSG" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>HINT<\/input>\s*<\/event_descriptor>\s*<action_evaluation current_hint_number="\d+" total_hints_available="(\d+|\w+)">HINT<\/action_evaluation>\s*<tutor_advice>.*<\/tutor_advice>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
 
       assert String.match?(datashop_file, regex)
     end
 
     test "tutor message should be well formed for attempts", %{datashop_file: datashop_file} do
       regex =
-        ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="RESULT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<action_evaluation>(CORRECT\b|\bINCORRECT)<\/action_evaluation>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
+        ~r/<tutor_message context_message_id=".*">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<problem_name>(.*)<\/problem_name>\s*<semantic_event name="RESULT" transaction_id=".*"\/>\s*<event_descriptor>\s*<selection>\1<\/selection>\s*<action>.*<\/action>\s*<input>.*<\/input>\s*<\/event_descriptor>\s*<action_evaluation>(CORRECT\b|\bINCORRECT)<\/action_evaluation>\s*(<skill>\s*<name>.*<\/name>\s*<\/skill>)+\s*<\/tutor_message>/
 
       assert String.match?(datashop_file, regex)
     end
 
     test "context message should be well formed", %{datashop_file: datashop_file} do
       regex =
-        ~r/<context_message context_message_id=".*" name="START_PROBLEM">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<dataset>\s*<name>.*<\/name>\s*(<level type=".*">\s*<name>.*<\/name>\s*)*<problem tutorFlag="(tutor|test)">\s*<name>.*<\/name>\s*<\/problem>(\s*<\/level>)+\s*<\/dataset>\s*<\/context_message>/
+        ~r/<context_message context_message_id=".*" name="START_PROBLEM">\s*<meta>\s*<user_id>.*<\/user_id>\s*<session_id>.*<\/session_id>\s*<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}<\/time>\s*<time_zone>GMT<\/time_zone>\s*<\/meta>\s*<dataset>\s*<name>.*<\/name>\s*(<level type=".*">\s*<name>.*<\/name>\s*)*<problem tutorFlag="(tutor|test)">\s*<name>.*<\/name>\s*<\/problem>(\s*<\/level>)+\s*<\/dataset>\s*<\/context_message>/
 
       assert String.match?(datashop_file, regex)
     end
@@ -879,91 +879,6 @@ defmodule Oli.DatashopTest do
         Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
       assert count_with_new_snapshot == count_after + 1
-    end
-
-    # test "student snapshots from other projects should not be counted",
-    #      %{
-    #        project: project,
-    #        author: author,
-    #        institution: institution
-    #      } = map do
-    #   # If a student submits activities from different projects, only the submissions
-    #   # from the requested project should be found. This test is to address a bug that
-    #   # used to be in the datashop download analytics query.
-
-    #   {:ok, cloned} = Oli.Authoring.Clone.clone_project(project.slug, author)
-    #   {:ok, pub2} = Publishing.publish_project(cloned, "initial publication")
-
-    #   %{section: section_before_resources} =
-    #     Seeder.create_section(%{project: cloned, institution: institution})
-
-    #   map =
-    #     map
-    #     |> Map.put(:section, section_before_resources)
-    #     |> Map.put(:publication, pub2)
-    #     |> Seeder.rebuild_section_resources()
-
-    #   # The original project should have part attempts
-    #   count_initial =
-    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
-
-    #   assert count_initial > 0
-
-    #   # The cloned project should not have part attempts
-    #   count_cloned = Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(cloned.id))
-    #   assert count_cloned == 0
-
-    #   # Create new part attempts / snapshots for the clone
-    #   map =
-    #     map
-    #     |> Map.put(:section, map.section)
-    #     |> Map.put(:publication, pub2)
-    #     |> Seeder.create_resource_attempt(
-    #       %{attempt_number: 1},
-    #       :user1,
-    #       :page1,
-    #       :revision1,
-    #       :p1_user1_attempt_x
-    #     )
-    #     |> Seeder.create_activity_attempt(
-    #       %{attempt_number: 1, transformed_model: %{}},
-    #       :mc1,
-    #       :p1_user1_attempt1,
-    #       :mc_user1_attempt_x
-    #     )
-    #     |> Seeder.create_part_attempt(
-    #       %{
-    #         date_evaluated: DateTime.utc_now(),
-    #         attempt_number: 1,
-    #         score: 0,
-    #         out_of: 1,
-    #         response: %{},
-    #         feedback: %{}
-    #       },
-    #       %Part{id: "1", responses: [], hints: []},
-    #       :mc_user1_attempt1,
-    #       :mc_user1_part_attempt_x
-    #     )
-
-    #   Oli.Delivery.Snapshots.Worker.perform_now(
-    #     [map.mc_user1_part_attempt_x.attempt_guid],
-    #     map.section.slug
-    #   )
-
-    #   # After creating new part attempt / snapshot for cloned project, the clone should see
-    #   # those new records but the original should not
-    #   count_initial_after =
-    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
-
-    #   assert count_initial == count_initial_after
-
-    #   count_cloned_after =
-    #     Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(cloned.id))
-
-    #   assert count_cloned_after == count_cloned + 1
-    # end
-
-    test "should only look at sections from the selected project, even if other sections use that project's resources" do
     end
   end
 end
