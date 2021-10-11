@@ -62,6 +62,9 @@ defmodule Oli.Accounts.User do
       join_through: "user_groups_users",
       on_replace: :delete
 
+    field :enrollments_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
