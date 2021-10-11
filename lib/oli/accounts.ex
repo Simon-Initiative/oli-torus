@@ -84,7 +84,7 @@ defmodule Oli.Accounts do
 
     query =
       case field do
-        :collaborations_count -> order_by(query, [_, e], {^direction, count(e.id)})
+        :collaborations_count -> order_by(query, [_, e], {^direction, count(e.project_id)})
         _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
       end
 

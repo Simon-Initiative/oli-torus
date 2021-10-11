@@ -1,11 +1,9 @@
 defmodule Oli.Accounts.AuthorBrowseTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Sections
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Accounts
   alias Oli.Accounts.{AuthorBrowseOptions}
-  alias Lti_1p3.Tool.ContextRoles
   import Ecto.Query, warn: false
 
   def browse(offset, field, direction, text_search) do
@@ -30,26 +28,11 @@ defmodule Oli.Accounts.AuthorBrowseTest do
   describe "basic browsing" do
     setup do
       map = Seeder.base_project_with_resource2()
-      map2 = Seeder.another_project(map.author, map.institution, "test project 2")
+      Seeder.another_project(map.author, map.institution, "test project 2")
 
-      authors =
-        Enum.map(0..9, fn value ->
-          author_fixture(%{name: List.to_string([value + 65])})
-        end)
-
-      add(map.project, Enum.at(authors, 3), Oli.Authoring.Authors.ProjectRole.role_id().owner)
-
-      add(
-        map2.project,
-        Enum.at(authors, 4),
-        Oli.Authoring.Authors.ProjectRole.role_id().owner
-      )
-
-      add(
-        map2.project,
-        Enum.at(authors, 3),
-        Oli.Authoring.Authors.ProjectRole.role_id().contributor
-      )
+      Enum.map(0..9, fn value ->
+        author_fixture(%{name: List.to_string([value + 65])})
+      end)
 
       map
     end
@@ -65,6 +48,20 @@ defmodule Oli.Accounts.AuthorBrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 13
       assert hd(results).name == "J"
+
+      # Verify that sorting by number of collaborators works (and that the
+      # aggregation itself is correct)
+      results = browse(0, :collaborations_count, :desc, nil)
+      assert length(results) == 3
+      assert hd(results).total_count == 13
+      assert hd(results).name == "First Last"
+      assert hd(results).collaborations_count == 2
+
+      # Results should be 3 total, one from this specific setup and two inherited from
+      # Seeder.base_project_with_resource2/0
+      results = browse(0, :name, :desc, "F")
+      assert length(results) == 3
+      assert hd(results).total_count == 3
     end
   end
 end
