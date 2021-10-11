@@ -1,10 +1,12 @@
 defmodule OliWeb.Products.Payments.CreateCodes do
-  use Surface.Component
+  use Surface.LiveComponent
   alias OliWeb.Router.Helpers, as: Routes
   prop product_slug, :string, required: true
   prop count, :integer, required: true
   prop click, :event, required: true
   prop change, :event, required: true
+
+  data something, :any, default: true
 
   def render(assigns) do
     ~F"""

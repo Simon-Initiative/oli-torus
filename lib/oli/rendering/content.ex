@@ -15,6 +15,7 @@ defmodule Oli.Rendering.Content do
 
   @callback example(%Context{}, next, %{}) :: [any()]
   @callback learn_more(%Context{}, next, %{}) :: [any()]
+  @callback manystudentswonder(%Context{}, next, %{}) :: [any()]
   @callback text(%Context{}, %{}) :: [any()]
   @callback p(%Context{}, next, %{}) :: [any()]
   @callback h1(%Context{}, next, %{}) :: [any()]
@@ -62,6 +63,16 @@ defmodule Oli.Rendering.Content do
       ) do
     next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
     writer.learn_more(context, next, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "content", "children" => children, "purpose" => "manystudentswonder"} =
+          element,
+        writer
+      ) do
+    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+    writer.manystudentswonder(context, next, element)
   end
 
   def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do

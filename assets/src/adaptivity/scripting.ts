@@ -27,7 +27,7 @@ export const getExpressionStringForValue = (
     try {
       const test = evalScript(val, env);
       canEval = test?.result !== undefined && !test.result.message;
-      console.log('can actually eval:', { val, canEval, test, t: typeof test.result });
+      /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
     } catch (e) {
       // failed for any reason
     }
@@ -39,8 +39,11 @@ export const getExpressionStringForValue = (
 
     const looksLikeJSON = looksLikeJson(val);
     const hasCurlies = val.includes('{') && val.includes('}');
+
+    const hasBackslash = val.includes('\\');
     isValueVar =
-      (canEval && !looksLikeJSON && looksLikeAFunction) || (hasCurlies && !looksLikeJSON);
+      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash) ||
+      (hasCurlies && !looksLikeJSON && !hasBackslash);
   }
 
   if (isValueVar) {

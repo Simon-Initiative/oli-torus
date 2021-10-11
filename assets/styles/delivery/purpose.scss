@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@import 'delivery/variables';
 
 .content-purpose {
   border-radius: 4px;
@@ -31,6 +31,23 @@
       color: $white;
     }
   }
+
+  &.manystudentswonder {
+    border: 1px solid $content-purpose-manystudentswonder-color;
+    margin-bottom: 1rem;
+
+    .content-purpose-label {
+      background-color: $content-purpose-manystudentswonder-color;
+      color: $white;
+    }
+
+    .content-purpose-label::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f5da';
+    }
+  }
 }
 
 .activity-purpose {
@@ -44,10 +61,10 @@
     background-color: $activity-purpose-checkpoint-color;
 
     &::before {
-      font-family: "Line Awesome Free";
+      font-family: 'Line Awesome Free';
       font-weight: 900;
       margin-right: 8px;
-      content: "\f46c";
+      content: '\f46c';
     }
   }
 
@@ -55,10 +72,10 @@
     background-color: $activity-purpose-didigetthis-color;
 
     &::before {
-      font-family: "Line Awesome Free";
+      font-family: 'Line Awesome Free';
       font-weight: 900;
       margin-right: 8px;
-      content: "\f256";
+      content: '\f256';
     }
   }
 
@@ -66,21 +83,10 @@
     background-color: $activity-purpose-learnbydoing-color;
 
     &::before {
-      font-family: "Line Awesome Free";
+      font-family: 'Line Awesome Free';
       font-weight: 900;
       margin-right: 8px;
-      content: "\f51c";
-    }
-  }
-
-  &.manystudentswonder {
-    background-color: $activity-purpose-manystudentswonder-color;
-
-    &::before {
-      font-family: "Line Awesome Free";
-      font-weight: 900;
-      margin-right: 8px;
-      content: "\f5da";
+      content: '\f51c';
     }
   }
 }

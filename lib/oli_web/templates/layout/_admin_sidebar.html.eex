@@ -11,7 +11,8 @@
 
     <div class="dropdown-divider"></div>
 
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView) %>">Course Products</a>
+    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView) %>">All Products</a>
+    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView) %>">All Sections</a>
     <a class="dropdown-item" href="<%= Routes.open_and_free_path(@conn, :index) %>">Open and Free</a>
     <a class="dropdown-item" href="<%= Routes.ingest_path(@conn, :index)  %>">Ingest Project</a>
     <a class="dropdown-item" href="<%= Routes.activity_manage_path(@conn, :index) %>">Activity Management</a>

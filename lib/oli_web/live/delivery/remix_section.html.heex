@@ -1,9 +1,5 @@
-<%= case @modal do %>
-  <% nil -> %>
+<%= render_modal(assigns) %>
 
-  <% %{component: component, assigns: assigns} -> %>
-    <%= live_component component, assigns %>
-<% end %>
 <div id="curriculum-container" class="container curriculum-editor">
   <h3><%= @section.title %></h3>
 
@@ -32,23 +28,25 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.section_resource.slug != @dragging end) do %>
+        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.uuid != @dragging end) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
               index={index}
-              selected={@selected == node.slug}
+              selected={@selected == node.uuid}
               node={node} />
         <% end %>
         <DropTarget.droptarget id={"last"} index={length(@active.children)} />
       </div>
       <div class="mt-5">
-        <span class="text-secondary mr-2">Add</span>
-        <button disabled={true} phx-click="add" phx-value-type="material" class="btn btn-xs btn-primary p-2 mr-1" type="button">
-          Materials
+        <%# <span class="text-secondary mr-2">Add</span> %>
+        <button phx-click="show_add_materials_modal"` class="btn btn-xs btn-primary p-2 mr-1" type="button">
+          Add Materials
         </button>
-        <button disabled={true} phx-click="add" phx-value-type="container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
-          <%= new_container_name(@active) %>
-        </button>
+        <%
+        #<button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+        #  <%= new_container_name(@active)
+        # </button>
+         %>
       </div>
     </div>
   </div>

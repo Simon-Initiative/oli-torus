@@ -1,11 +1,11 @@
-import { ModelElement, Selection } from './model';
-import { ProjectSlug, ResourceSlug, ResourceId, ActivitySlug, ActivityTypeSlug } from 'data/types';
-import { Objective } from 'data/content/objective';
-import { ActivityEditContext } from './activity';
-import { Tag } from 'data/content/tags';
-import guid from 'utils/guid';
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
+import { Objective } from 'data/content/objective';
+import { Tag } from 'data/content/tags';
+import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
+import guid from 'utils/guid';
+import { ActivityEditContext } from './activity';
+import { ModelElement, Selection } from './model';
 
 export type PageContent = {
   model: ResourceContent[];
@@ -54,13 +54,13 @@ export const ActivityPurposes: Purpose[] = [
   { value: 'checkpoint', label: 'Checkpoint' },
   { value: 'didigetthis', label: 'Did I get this?' },
   { value: 'learnbydoing', label: 'Learn by doing' },
-  { value: 'manystudentswonder', label: 'Many students wonder' },
 ];
 
 export const ContentPurposes: Purpose[] = [
   { value: 'none', label: 'Content' },
   { value: 'example', label: 'Example' },
   { value: 'learnmore', label: 'Learn more' },
+  { value: 'manystudentswonder', label: 'Many students wonder' },
 ];
 
 export const createDefaultStructuredContent = () => {
