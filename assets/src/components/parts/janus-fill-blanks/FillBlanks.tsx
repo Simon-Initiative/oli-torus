@@ -13,8 +13,10 @@ import { FIBModel } from './schema';
 const css = require('./FillBlanks.css');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const quill = require('./Quill.css');
+// const select2Styles = require('react-select2-wrapper/css/select2.css');
+// FIB specifically-scoped select2 styles. OG lives here ☝️.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const select2Styles = require('react-select2-wrapper/css/select2.css');
+const select2Styles = require('./FIBselect2.css');
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
