@@ -6,9 +6,13 @@ import { JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 import { CapiVariable } from '../../../adaptivity/capi';
 import CapiVariablePicker from './CapiVariablePicker';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 
 const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (props) => {
-  const { model, configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const { x, y, z, width, height, src, configData } = model;
   const id: string = props.id;
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
@@ -249,6 +253,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   //Methods for CAPI listener End her
 
   const handleValueChangeFromModal = (changedVar: any) => {
+    console.log('CAPI: CONFIG EDITOR CHANGE', { changedVar });
     const finalConfigData = internalState.map((variable: CapiVariable) => {
       if (variable.key === changedVar.target) {
         variable.value = changedVar.value;
@@ -305,6 +310,80 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     onCancelConfigure({ id });
     setconfigClicked(false);
   };
+
+  const handleNotificationSave = useCallback(async () => {
+    console.log('CAPI:NOTIFYSAVE', { id, model, internalState });
+    const modelClone = clone(model);
+    modelClone.configData = internalState;
+    onSaveConfigure({
+      id,
+      snapshot: modelClone,
+    });
+    setInConfigureMode(false);
+    setconfigClicked(false);
+  }, [model, internalState]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_SAVE,
+      NotificationType.CONFIGURE_CANCEL,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload); */
+        if (!payload) {
+          // if we don't have anything, we won't even have an id to know who it's for
+          // for these events we need something, it's not for *all* of them
+          return;
+        }
+        switch (notificationType) {
+          case NotificationType.CONFIGURE:
+            {
+              const { partId, configure } = payload;
+              if (partId === id) {
+                console.log('CAPI:NotificationType.CONFIGURE', { partId, configure });
+                // if it's not us, then we shouldn't be configuring
+                setInConfigureMode(configure);
+                if (configure) {
+                  onConfigure({ id, configure, context: { fullscreen: false } });
+                }
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_SAVE:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                console.log('CAPI:NotificationType.CONFIGURE_SAVE', { partId });
+                handleNotificationSave();
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_CANCEL:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                console.log('CAPI:NotificationType.CONFIGURE_CANCEL', { partId });
+                setInConfigureMode(false);
+                setconfigClicked(false);
+              }
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify, handleNotificationSave]);
 
   //inConfigureMode = true means user has clicked on the Edit button that opens modal for updating the CAPI variables.
   //configClicked = true means user has clicked on the link to load the capi in auhtoring mode.

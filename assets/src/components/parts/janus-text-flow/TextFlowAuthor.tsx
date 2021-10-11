@@ -105,6 +105,22 @@ export const renderFlow = (
   );
 };
 
+// eslint-disable-next-line react/display-name
+const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
+  const quillProps: { tree?: any; html?: any } = {};
+  if (tree) {
+    quillProps.tree = tree;
+  } else if (html) {
+    quillProps.html = html;
+  }
+  console.log('E RERENDER', { html, tree, portal });
+  const E = () => (
+    <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
+  );
+
+  return portal && ReactDOM.createPortal(<E />, portal);
+});
+
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
   const { configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
@@ -259,10 +275,8 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
         return;
       } // not mine
       const { payload, callback } = e.detail;
-      console.log('TF EDITOR CHANGE', { payload, callback });
-      // BS: INFINITE LOOP
-      // must be because of the Editor being new each render
-      // setTextNodes(payload.value);
+      // console.log('TF EDITOR CHANGE', { payload, callback });
+      setTextNodes(payload.value);
     };
 
     if (inConfigureMode) {
@@ -278,18 +292,11 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     };
   }, [ready, inConfigureMode, model]);
 
-  const Editor = () => (
-    <div style={{ padding: 20 }}>
-      {React.createElement(quillEditorTagName, {
-        /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
-        html: htmlPreview,
-      })}
-    </div>
-  );
-
   const handleNotificationSave = useCallback(async () => {
     console.log('TF:NOTIFYSAVE', { id, model, textNodes });
-    // await onSaveConfigure({ id, snapshot: modelClone });
+    const modelClone = clone(model);
+    modelClone.nodes = textNodes;
+    await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
   }, [model, textNodes]);
 
@@ -354,11 +361,23 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     };
   }, [props.notify, handleNotificationSave]);
 
-  const portalEl = document.getElementById(props.portal) as Element;
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // timeout to give modal a moment to load
+    setTimeout(() => {
+      const el = document.getElementById(props.portal);
+      console.log('portal changed', { el, p: props.portal });
+      if (el) {
+        setPortalEl(el);
+      }
+    }, 10);
+  }, [inConfigureMode, props.portal]);
+
+  console.log('TF RENDER', { id, htmlPreview });
 
   const renderIt =
-    inConfigureMode && !!portalEl ? (
-      ReactDOM.createPortal(<Editor />, portalEl)
+    inConfigureMode && portalEl ? (
+      <Editor html={htmlPreview} portal={portalEl} />
     ) : (
       <React.Fragment>
         <style>
