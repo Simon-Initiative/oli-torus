@@ -121,7 +121,7 @@ defmodule Oli.Seeder do
 
     {:ok, author} =
       Author.noauth_changeset(%Author{}, %{
-        email: "test@test.com",
+        email: "test#{System.unique_integer([:positive])}@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
@@ -131,7 +131,7 @@ defmodule Oli.Seeder do
 
     {:ok, author2} =
       Author.noauth_changeset(%Author{}, %{
-        email: "test2@test.com",
+        email: "test#{System.unique_integer([:positive])}@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
@@ -1037,8 +1037,7 @@ defmodule Oli.Seeder do
       publication
     )
 
-    {:ok, updated} =
-      Oli.Resources.create_revision_from_previous(page_revision, %{deleted: true})
+    {:ok, updated} = Oli.Resources.create_revision_from_previous(page_revision, %{deleted: true})
 
     Publishing.get_published_resource!(publication.id, page.id)
     |> Publishing.update_published_resource(%{revision_id: updated.id})

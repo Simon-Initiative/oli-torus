@@ -119,6 +119,19 @@ case System.get_env("LOG_LEVEL", nil) do
     config :logger, level: String.to_atom(log_level)
 end
 
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

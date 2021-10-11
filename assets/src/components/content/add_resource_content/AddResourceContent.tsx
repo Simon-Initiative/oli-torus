@@ -1,8 +1,8 @@
+import { ActivityEditContext } from 'data/content/activity';
+import { ResourceContent } from 'data/content/resource';
 import React, { useState } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { classNames } from 'utils/classNames';
-import { ResourceContent } from 'data/content/resource';
-import { ActivityEditContext } from 'data/content/activity';
 
 export type AddCallback = (
   content: ResourceContent,
@@ -29,45 +29,46 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   };
 
   return (
-    <React.Fragment>
-      <div
-        className={classNames([
-          'add-resource-content',
-          isPopoverOpen ? 'active' : '',
-          isLast ? 'add-resource-content-last' : '',
-          editMode ? '' : 'disabled',
-        ])}
-        onClick={togglePopover}
+    <>
+      <Popover
+        containerClassName="add-resource-popover"
+        onClickOutside={(e) => {
+          if (e !== latestClickEvent) {
+            setIsPopoverOpen(false);
+          }
+        }}
+        isOpen={isPopoverOpen}
+        align="start"
+        positions={['bottom', 'left']}
+        content={() => <div className="add-resource-popover-content">{children}</div>}
       >
-        {editMode && (
-          <React.Fragment>
-            <div className="insert-button-container">
-              <Popover
-                containerClassName="add-resource-popover"
-                onClickOutside={(e) => {
-                  if (e !== latestClickEvent) {
-                    setIsPopoverOpen(false);
-                  }
-                }}
-                isOpen={isPopoverOpen}
-                align="start"
-                content={() => <div className="add-resource-popover-content">{children}</div>}
-              >
+        <div
+          className={classNames([
+            'add-resource-content',
+            isPopoverOpen ? 'active' : '',
+            isLast ? 'add-resource-content-last' : '',
+            editMode ? '' : 'disabled',
+          ])}
+          onClick={togglePopover}
+        >
+          {editMode && (
+            <>
+              <div className="insert-button-container">
                 <div className="insert-button">
                   <i className="fa fa-plus"></i>
                 </div>
-              </Popover>
-            </div>
-            <div className="insert-adornment"></div>
-          </React.Fragment>
-        )}
-      </div>
+              </div>
+              <div className="insert-adornment"></div>
+            </>
+          )}
+        </div>
+      </Popover>
       <LastAddContentButton
         isLast={typeof isLast === 'boolean' && isLast}
         editMode={editMode}
         togglePopover={togglePopover}
       />
-    </React.Fragment>
+    </>
   );
 };
 

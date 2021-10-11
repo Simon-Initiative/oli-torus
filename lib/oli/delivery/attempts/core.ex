@@ -133,8 +133,24 @@ defmodule Oli.Delivery.Attempts.Core do
 
   def get_part_attempts_and_users(project_id) do
     Repo.all(
+<<<<<<< HEAD
       from(
         project in Project,
+=======
+      from(section in Section,
+        join: enrollment in Enrollment,
+        on: enrollment.section_id == section.id,
+        join: user in Oli.Accounts.User,
+        on: enrollment.user_id == user.id,
+        join: raccess in ResourceAccess,
+        on: user.id == raccess.user_id and section.id == raccess.section_id,
+        join: rattempt in ResourceAttempt,
+        on: raccess.id == rattempt.resource_access_id,
+        join: aattempt in ActivityAttempt,
+        on: rattempt.id == aattempt.resource_attempt_id,
+        join: pattempt in PartAttempt,
+        on: aattempt.id == pattempt.activity_attempt_id,
+>>>>>>> master
         join: spp in SectionsProjectsPublications,
         on: spp.project_id == project.id,
         join: section in Section,

@@ -5,7 +5,11 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Revision
   alias Oli.Repo
+<<<<<<< HEAD
   alias Oli.Delivery.Attempts.Core.{PartAttempt, ActivityAttempt}
+=======
+  alias Oli.Delivery.Attempts.Core.PartAttempt
+>>>>>>> master
 
   def snapshots_for_project(project_slug) do
     Repo.all(

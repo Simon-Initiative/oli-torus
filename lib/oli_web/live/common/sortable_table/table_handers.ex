@@ -1,26 +1,5 @@
 defmodule OliWeb.Common.SortableTable.TableHandlers do
-  def get_int_param(params, name, default_value) do
-    case params[name] do
-      nil ->
-        default_value
-
-      value ->
-        case Integer.parse(value) do
-          {num, _} -> num
-          _ -> default_value
-        end
-    end
-  end
-
-  def get_str_param(params, name, default_value) do
-    case params[name] do
-      nil ->
-        default_value
-
-      value ->
-        value
-    end
-  end
+  alias OliWeb.Common.Params
 
   defmacro __using__(_options) do
     quote do
@@ -111,7 +90,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
       end
 
       def handle_params(params, _, socket) do
-        offset = get_int_param(params, "offset", 0)
+        offset = Params.get_int_param(params, "offset", 0)
 
         # Ensure that the offset is 0 or one minus a factor of the limit. So for a
         # limit of 20, valid offsets or 0, 20, 40, etc.  This logic overrides any attempt
@@ -122,7 +101,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
             _ -> 0
           end
 
-        filter = get_str_param(params, "filter", "")
+        filter = Params.get_str_param(params, "filter", "")
 
         # First update the rows of the sortable table model to be all products, then apply the sort,
         # then slice the model rows according to the paging settings

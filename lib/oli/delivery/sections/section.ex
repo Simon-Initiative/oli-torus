@@ -68,6 +68,10 @@ defmodule Oli.Delivery.Sections.Section do
     # specific projects and publications to a section for resource resolution
     has_many :section_project_publications, SectionsProjectsPublications, on_replace: :delete
 
+    field :enrollments_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+    field :institution_name, :string, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 

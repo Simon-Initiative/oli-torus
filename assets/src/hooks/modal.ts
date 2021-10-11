@@ -7,14 +7,14 @@ export const ModalLaunch = {
     this.lockScroll();
 
     // wire up server-side hide event
-    (this as any).handleEvent('hide_modal', () => {
+    (this as any).handleEvent('_bsmodal.hide', () => {
       ($('#' + id) as any).modal('hide');
     });
 
     // handle hiding of a modal as a result of many different methods
     // (modal close button, escape key, etc...)
     $(`#${id}`).on('hidden.bs.modal', () => {
-      (this as any).pushEvent('unmount_modal');
+      (this as any).pushEvent('_bsmodal.unmount');
       this.unlockScroll();
     });
   },

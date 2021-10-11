@@ -51,8 +51,12 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     setInitSnapshot(initResult);
     const currentStateSnapshot = initResult.snapshot;
+    const isOpenByDefault: boolean | undefined = currentStateSnapshot[`stage.${id}.openByDefault`];
+    if (isOpenByDefault !== undefined) {
+      setShowPopup(isOpenByDefault);
+    }
     const isOpen: boolean | undefined = currentStateSnapshot[`stage.${id}.isOpen`];
-    if (isOpen !== undefined) {
+    if (isOpen !== undefined && !isOpenByDefault) {
       setShowPopup(isOpen);
     }
     const isVisible = currentStateSnapshot[`stage.${id}.visible`];
@@ -229,7 +233,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     left: x,
     width,
     height,
-    zIndex: z, */
+    zIndex: z,*/
   };
 
   // Toggle popup open/close

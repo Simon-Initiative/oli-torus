@@ -1,6 +1,6 @@
 defmodule OliWeb.Common.Modal do
   @moduledoc """
-  A Phoenix LiveView Bootstrap compliant modal implementation.
+  A Phoenix LiveView compliant Bootstrap modal implementation.
 
   Usage:
 
@@ -9,7 +9,7 @@ defmodule OliWeb.Common.Modal do
   use OliWeb.Common.Modal
   ```
 
-  2. Initialize modal assign and add render_modal to the render output:
+  2. Initialize `modal` assign and add `render_modal(assigns)` to the rendered output:
   ```
   mount(_, _, socket) do
     {:ok, assign(socket, modal: nil)}
@@ -23,15 +23,19 @@ defmodule OliWeb.Common.Modal do
   ```
 
   3. Create your modal by setting the 'modal' assign
+  ```
   def handle_event("show_modal", _, socket) do
     {:noreply, assign(socket, modal: %{component: MyModal, assigns: %{...}})}
   end
+  ```
 
   4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
-      or using the hide_modal(socket) function
+  or using the hide_modal(socket) function
+  ```
   def handle_event("close_modal", _, socket) do
     {:noreply, socket |> hide_modal()}
   end
+  ```
   """
 
   defmacro __using__([]) do
@@ -46,16 +50,12 @@ defmodule OliWeb.Common.Modal do
         end
       end
 
-      def handle_event("hide_modal", _, socket) do
-        {:noreply, hide_modal(socket)}
-      end
-
-      def handle_event("unmount_modal", _, socket) do
+      def handle_event("_bsmodal.unmount", _, socket) do
         {:noreply, assign(socket, modal: nil)}
       end
 
-      defp hide_modal(socket) do
-        push_event(socket, "hide_modal", %{})
+      def hide_modal(socket) do
+        push_event(socket, "_bsmodal.hide", %{})
       end
     end
   end

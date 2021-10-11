@@ -24,10 +24,15 @@ defmodule OliWeb.Objectives.Actions do
 
         <button
           id="delete_<%= @slug %>"
+<<<<<<< HEAD
           disabled
           <% # disable the ability to delete until #1616 is resolved %>
           <% # if @can_delete? do "" else "disabled" end %>
           phx-click="prepare_delete"
+=======
+          <%= if @can_delete? do "" else "disabled" end %>
+          phx-click="show_delete_modal"
+>>>>>>> master
           phx-value-slug="<%= @slug %>"
           data-backdrop="static"
           data-keyboard="false"

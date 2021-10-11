@@ -28,13 +28,25 @@ defmodule Oli.Authoring.Course.Project do
 
     has_many :publications, Oli.Publishing.Publication
 
+    field :owner_id, :integer, virtual: true
+    field :owner_name, :string, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(project, attrs \\ %{}) do
     project
-    |> cast(attrs, [:title, :slug, :description, :version, :family_id, :project_id, :visibility, :status])
+    |> cast(attrs, [
+      :title,
+      :slug,
+      :description,
+      :version,
+      :family_id,
+      :project_id,
+      :visibility,
+      :status
+    ])
     |> validate_required([:title, :version, :family_id])
     |> Slug.update_never("projects")
   end

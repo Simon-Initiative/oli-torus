@@ -51,6 +51,7 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
               <button
                 phx-click="apply_update"
                 phx-key="enter"
+                phx-disable-with="Updating please wait..."
                 class="btn btn-warning">
                 Apply Update
               </button>
