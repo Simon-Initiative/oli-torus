@@ -650,13 +650,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     map = Seeder.add_page(map, attrs, :page)
 
-    Seeder.attach_pages_to(
-      [map.page1, map.page2, map.page.resource],
-      map.container.resource,
-      map.container.revision,
-      map.publication
-    )
-
     map =
       map
       |> Seeder.create_section()

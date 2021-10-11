@@ -8,6 +8,7 @@
 - Prevent objectives used in selections from being deleted
 - Fix an issue where modals misbehaved sporadically
 - Move "Many Students Wonder" from activity styling to content styling
+- Fix an issue where nonstructural section resources were missing after update
 
 ### Enhancements
 
@@ -16,6 +17,7 @@
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
 
 ### Release Notes

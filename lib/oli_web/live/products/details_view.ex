@@ -94,6 +94,10 @@ defmodule OliWeb.Products.DetailsView do
   end
 
   def handle_event("cancel_modal", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("_bsmodal.unmount", _, socket) do
     {:noreply, assign(socket, show_confirm: false)}
   end
 

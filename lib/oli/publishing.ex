@@ -136,37 +136,7 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
-  @doc """
-  Returns the list of publications available to an author. If no author is specified,
-  then it will only return publicly available publications.
-
-  ## Examples
-      iex> available_publications()
-      [%Publication{}, ...]
-
-      iex> available_publications(author, institution)
-      [%Publication{}, ...]
-  """
-  def all_publications() do
-    subquery =
-      from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.published)},
-        where: not is_nil(t.published),
-        group_by: t.project_id
-
-    query =
-      from pub in Publication,
-        join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.published,
-        join: proj in Project,
-        on: pub.project_id == proj.id,
-        where: not is_nil(pub.published) and proj.status == :active,
-        preload: [:project],
-        distinct: true,
-        select: pub
-
-    Repo.all(query)
-  end
+  def available_publications(nil, %Institution{} = _institution), do: available_publications()
 
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
@@ -189,6 +159,34 @@ defmodule Oli.Publishing do
             (a.id == ^author.id or proj.visibility == :global or
                (proj.visibility == :selected and
                   (v.author_id == ^author.id or v.institution_id == ^institution.id))),
+        preload: [:project],
+        distinct: true,
+        select: pub
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Returns the list of all available publications.
+
+  ## Examples
+      iex> all_available_publications()
+      [%Publication{}, ...]
+  """
+  def all_available_publications() do
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
+        group_by: t.project_id
+
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: not is_nil(pub.published) and proj.status == :active,
         preload: [:project],
         distinct: true,
         select: pub
@@ -383,14 +381,45 @@ defmodule Oli.Publishing do
       [%PublishedResource{}, ...]
 
   """
-  def get_published_resources_by_publication(publication_id, opts \\ []) do
-    preload = Keyword.get(opts, :preload, [:resource, :revision])
+  def get_published_resources_by_publication(publication_ids, opts \\ [])
 
-    from(p in PublishedResource,
-      where: p.publication_id == ^publication_id,
+  def get_published_resources_by_publication(publication_ids, opts)
+      when is_list(publication_ids) do
+    preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
+
+    from(pr in PublishedResource,
+      where: pr.publication_id in ^publication_ids,
       preload: ^preload
     )
     |> Repo.all()
+  end
+
+  def get_published_resources_by_publication(publication_id, opts) do
+    get_published_resources_by_publication([publication_id], opts)
+  end
+
+  @doc """
+  Returns a map of publication_id to published_resources for a given list of publication_ids,
+  where published_resources are a map keyed by resource_id.
+
+  ## Examples
+
+      iex> get_published_resources_for_publications(publication_ids)
+      %{1 => %{2 => %PublishedResource{resource_id: 2}, ...}, ...}
+
+  """
+  def get_published_resources_for_publications(publication_ids, opts \\ []) do
+    get_published_resources_by_publication(publication_ids, opts)
+    |> Enum.reduce(%{}, fn pr, acc ->
+      prs_by_resource_id =
+        case acc[pr.publication_id] do
+          nil -> %{}
+          map -> map
+        end
+        |> Map.put_new(pr.resource_id, pr)
+
+      Map.put(acc, pr.publication_id, prs_by_resource_id)
+    end)
   end
 
   def get_objective_mappings_by_publication(publication_id) do
@@ -423,6 +452,13 @@ defmodule Oli.Publishing do
     Repo.one!(
       from p in PublishedResource,
         where: p.publication_id == ^publication_id and p.resource_id == ^resource_id
+    )
+  end
+
+  def get_published_resource(publication_id, resource_ids) when is_list(resource_ids) do
+    Repo.all(
+      from p in PublishedResource,
+        where: p.publication_id == ^publication_id and p.resource_id in ^resource_ids
     )
   end
 

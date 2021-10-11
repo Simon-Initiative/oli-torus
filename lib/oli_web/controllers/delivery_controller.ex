@@ -285,41 +285,51 @@ defmodule OliWeb.DeliveryController do
     lti_params = conn.assigns.lti_params
     user = conn.assigns.current_user
 
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    # guard against creating a new section if one already exists
+    case Sections.get_section_from_lti_params(lti_params) do
+      nil ->
+        issuer = lti_params["iss"]
+        client_id = lti_params["aud"]
+        deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
-    {institution, _registration, deployment} =
-      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+        {institution, _registration, deployment} =
+          Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-    # create section, section resources and enroll instructor
-    {:ok, section} =
-      case source_id do
-        "publication:" <> publication_id ->
-          create_from_publication(
-            String.to_integer(publication_id),
-            user,
-            institution,
-            lti_params,
-            deployment
-          )
+        # create section, section resources and enroll instructor
+        {:ok, section} =
+          case source_id do
+            "publication:" <> publication_id ->
+              create_from_publication(
+                String.to_integer(publication_id),
+                user,
+                institution,
+                lti_params,
+                deployment
+              )
 
-        "product:" <> product_id ->
-          create_from_product(
-            String.to_integer(product_id),
-            user,
-            institution,
-            lti_params,
-            deployment
-          )
-      end
+            "product:" <> product_id ->
+              create_from_product(
+                String.to_integer(product_id),
+                user,
+                institution,
+                lti_params,
+                deployment
+              )
+          end
 
-    if is_remix?(params) do
-      conn
-      |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
-    else
-      conn
-      |> redirect(to: Routes.delivery_path(conn, :index))
+        if is_remix?(params) do
+          conn
+          |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
+        else
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :index))
+        end
+
+      section ->
+        # a section already exists, redirect to index
+        conn
+        |> put_flash(:error, "Unable to create new section. This section already exists.")
+        |> redirect_to_page_delivery(section)
     end
   end
 
