@@ -34,15 +34,12 @@ STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
 
-<<<<<<< HEAD
 ## 0.13.8 (2021-10-07)
 
 ### Bug Fixes
 
 - Handle titles of activities correctly in analytics download
 
-=======
->>>>>>> master
 ## 0.13.7 (2021-10-06)
 
 ### Bug Fixes
