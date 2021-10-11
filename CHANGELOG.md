@@ -18,6 +18,7 @@
 - Allow for section creation from course products
 - Add analytics / insights data export button
 - Add ability to remix materials from multiple projects
+- Fix insert content popup in page editor
 
 ### Release Notes
 
