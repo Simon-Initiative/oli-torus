@@ -28,6 +28,14 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def manystudentswonder(%Context{} = _context, next, _) do
+    [
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
+  end
+
   def p(%Context{} = _context, next, _) do
     ["<p>", next.(), "</p>\n"]
   end

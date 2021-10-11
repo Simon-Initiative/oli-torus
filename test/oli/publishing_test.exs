@@ -98,6 +98,74 @@ defmodule Oli.PublishingTest do
   describe "publications" do
     setup do
       Seeder.base_project_with_resource2()
+      |> Seeder.add_objective("one", :one)
+      |> Seeder.add_objective("two", :two)
+    end
+
+    test "find_objective_in_selections/2 finds the objectives", %{
+      author: author,
+      project: project,
+      publication: publication,
+      one: one,
+      two: two
+    } do
+      content = %{
+        "model" => [
+          %{
+            count: 1,
+            id: "3591062038",
+            logic: %{
+              conditions: %{
+                fact: "objectives",
+                operator: "contains",
+                value: [
+                  one.resource.id
+                ]
+              }
+            },
+            purpose: "none",
+            type: "selection"
+          }
+        ]
+      }
+
+      # Create two new pages, both that reference objective :one in selections
+
+      {:ok, %{revision: revision}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: content,
+          title: "resource 1",
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, revision)
+
+      {:ok, %{revision: revision2}} =
+        Course.create_and_attach_resource(project, %{
+          objectives: %{},
+          children: [],
+          content: content,
+          title: "resource 2",
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+          author_id: author.id
+        })
+
+      Publishing.upsert_published_resource(publication, revision2)
+
+      results = Publishing.find_objective_in_selections(one.resource.id, publication.id)
+      assert length(results) == 2
+      assert length(Publishing.find_objective_in_selections(two.resource.id, publication.id)) == 0
+
+      assert Enum.at(results, 0).title != Enum.at(results, 1).title
+
+      assert Enum.at(results, 0).title == "resource 1" or
+               Enum.at(results, 1).title == "resource 1"
+
+      assert Enum.at(results, 0).title == "resource 2" or
+               Enum.at(results, 1).title == "resource 2"
     end
 
     test "find_objective_attachments/2 returns the objective revisions", %{
@@ -176,8 +244,7 @@ defmodule Oli.PublishingTest do
 
     test "publish_project/1 publishes the active unpublished publication and creates a new working unpublished publication for a project",
          %{publication: publication, project: project} do
-      {:ok, %Publication{} = published} =
-        Publishing.publish_project(project, "some changes")
+      {:ok, %Publication{} = published} = Publishing.publish_project(project, "some changes")
 
       # original publication should now be published
       assert published.id == publication.id

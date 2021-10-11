@@ -7,7 +7,15 @@ defmodule OliWeb.Objectives.Objectives do
   use OliWeb.Common.Modal
 
   alias Oli.Authoring.Editing.ObjectiveEditor
-  alias OliWeb.Objectives.{ObjectiveEntry, CreateNew, DeleteModal, BreakdownModal}
+
+  alias OliWeb.Objectives.{
+    ObjectiveEntry,
+    CreateNew,
+    DeleteModal,
+    SelectionsModal,
+    BreakdownModal
+  }
+
   alias Oli.Publishing.ObjectiveMappingTransfer
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
@@ -204,23 +212,41 @@ defmodule OliWeb.Objectives.Objectives do
     %{can_delete?: can_delete?, project: project, force_render: force_render} = socket.assigns
 
     if can_delete? do
+      publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
       %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
-      attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
+      case Oli.Publishing.find_objective_in_selections(resource_id, publication_id) do
+        [] ->
+          attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
 
-      {:noreply,
-       assign(socket,
-         modal: %{
-           component: DeleteModal,
-           assigns: %{
-             id: "delete_objective",
-             slug: slug,
-             project: project,
-             attachment_summary: attachment_summary,
-             force_render: force_render + 1
-           }
-         }
-       )}
+          {:noreply,
+           assign(socket,
+             modal: %{
+               component: DeleteModal,
+               assigns: %{
+                 id: "delete_objective_modal",
+                 slug: slug,
+                 project: project,
+                 attachment_summary: attachment_summary,
+                 force_render: force_render + 1
+               }
+             }
+           )}
+
+        selections ->
+          {:noreply,
+           assign(socket,
+             modal: %{
+               component: SelectionsModal,
+               assigns: %{
+                 id: "selections_modal",
+                 selections: selections,
+                 project_slug: project.slug,
+                 force_render: force_render + 1
+               }
+             }
+           )}
+      end
     else
       {:noreply, socket}
     end

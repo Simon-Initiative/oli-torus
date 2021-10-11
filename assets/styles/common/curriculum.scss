@@ -38,6 +38,10 @@
       border-color: $primary;
     }
 
+    &.active {
+      border-color: $primary;
+    }
+
     .entry-title {
       font-size: 14px;
       font-weight: 600;

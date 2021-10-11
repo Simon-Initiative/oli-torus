@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Hierarchy do
 
   See also HierarchyNode for more details
   """
+  import Oli.Utils
+
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
@@ -45,32 +47,34 @@ defmodule Oli.Delivery.Hierarchy do
     Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
   end
 
-  def create_hierarchy(revision, published_resources_resource_id) do
+  def create_hierarchy(revision, published_resources_by_resource_id) do
     numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
 
-    create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker)
+    create_hierarchy(revision, published_resources_by_resource_id, level, numbering_tracker)
   end
 
-  defp create_hierarchy(revision, published_resources_resource_id, level, numbering_tracker) do
+  defp create_hierarchy(revision, published_resources_by_resource_id, level, numbering_tracker) do
     {index, numbering_tracker} = Numbering.next_index(numbering_tracker, level, revision)
 
     children =
       Enum.map(revision.children, fn child_id ->
-        %PublishedResource{revision: child_revision} = published_resources_resource_id[child_id]
+        %PublishedResource{revision: child_revision} =
+          published_resources_by_resource_id[child_id]
 
         create_hierarchy(
           child_revision,
-          published_resources_resource_id,
+          published_resources_by_resource_id,
           level + 1,
           numbering_tracker
         )
       end)
 
-    %PublishedResource{publication: pub} = published_resources_resource_id[revision.resource_id]
+    %PublishedResource{publication: pub} =
+      published_resources_by_resource_id[revision.resource_id]
 
     %HierarchyNode{
-      slug: revision.slug,
+      uuid: uuid(),
       numbering: %Numbering{
         index: index,
         level: level
@@ -82,16 +86,48 @@ defmodule Oli.Delivery.Hierarchy do
     }
   end
 
+  @doc """
+  Crawls the hierarchy and removes any nodes with duplicate resource_ids.
+  The first node encountered with a resource_id will be left in place,
+  any subsequent duplicates will be removed from the hierarchy
+  """
+  def purge_duplicate_resources(%HierarchyNode{} = hierarchy) do
+    purge_duplicate_resources(hierarchy, %{})
+    |> then(fn {hierarchy, _} -> hierarchy end)
+  end
+
+  def purge_duplicate_resources(
+        %HierarchyNode{resource_id: resource_id, children: children} = node,
+        processed_nodes
+      ) do
+    processed_nodes = Map.put_new(processed_nodes, resource_id, node)
+
+    {children, processed_nodes} =
+      Enum.reduce(children, {[], processed_nodes}, fn child, {children, processed_nodes} ->
+        # filter out any child which has already been processed or recursively process the child node
+        if Map.has_key?(processed_nodes, child.resource_id) do
+          # skip child, as it is a duplicate resource
+          {children, processed_nodes}
+        else
+          {child, processed_nodes} = purge_duplicate_resources(child, processed_nodes)
+          {[child | children], processed_nodes}
+        end
+      end)
+      |> then(fn {children, processed_nodes} -> {Enum.reverse(children), processed_nodes} end)
+
+    {%HierarchyNode{node | children: children}, processed_nodes}
+  end
+
   def find_in_hierarchy(
-        %HierarchyNode{slug: slug, children: children} = node,
-        slug_to_find
+        %HierarchyNode{uuid: uuid, children: children} = node,
+        uuid_to_find
       )
-      when is_binary(slug_to_find) do
-    if slug == slug_to_find do
+      when is_binary(uuid_to_find) do
+    if uuid == uuid_to_find do
       node
     else
       Enum.reduce(children, nil, fn child, acc ->
-        if acc == nil, do: find_in_hierarchy(child, slug_to_find), else: acc
+        if acc == nil, do: find_in_hierarchy(child, uuid_to_find), else: acc
       end)
     end
   end
@@ -131,7 +167,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   def find_and_update_node(hierarchy, node) do
-    if hierarchy.slug == node.slug do
+    if hierarchy.uuid == node.uuid do
       node
     else
       %HierarchyNode{
@@ -142,28 +178,51 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
-  def find_and_remove_node(hierarchy, slug) do
-    if slug in Enum.map(hierarchy.children, & &1.slug) do
+  def find_and_remove_node(hierarchy, uuid) do
+    if uuid in Enum.map(hierarchy.children, & &1.uuid) do
       %HierarchyNode{
         hierarchy
-        | children: Enum.filter(hierarchy.children, fn child -> child.slug != slug end)
+        | children: Enum.filter(hierarchy.children, fn child -> child.uuid != uuid end)
       }
     else
       %HierarchyNode{
         hierarchy
         | children:
-            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, slug) end)
+            Enum.map(hierarchy.children, fn child -> find_and_remove_node(child, uuid) end)
       }
     end
   end
 
-  def move_node(hierarchy, node, destination_slug) do
-    hierarchy = find_and_remove_node(hierarchy, node.slug)
-    destination = find_in_hierarchy(hierarchy, destination_slug)
+  def move_node(hierarchy, node, destination_uuid) do
+    hierarchy = find_and_remove_node(hierarchy, node.uuid)
+    destination = find_in_hierarchy(hierarchy, destination_uuid)
 
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
     find_and_update_node(hierarchy, updated_container)
+  end
+
+  def add_materials_to_hierarchy(
+        hierarchy,
+        active,
+        selection,
+        published_resources_by_resource_id_by_pub
+      ) do
+    nodes =
+      selection
+      |> Enum.map(fn {publication_id, resource_id} ->
+        revision =
+          published_resources_by_resource_id_by_pub
+          |> Map.get(publication_id)
+          |> Map.get(resource_id)
+          |> Map.get(:revision)
+
+        create_hierarchy(revision, published_resources_by_resource_id_by_pub[publication_id])
+      end)
+
+    find_and_update_node(hierarchy, %HierarchyNode{active | children: active.children ++ nodes})
+    |> Numbering.renumber_hierarchy()
+    |> then(fn {updated_hierarchy, _numberings} -> updated_hierarchy end)
   end
 
   @doc """

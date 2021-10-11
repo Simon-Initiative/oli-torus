@@ -1,4 +1,6 @@
 defmodule Oli.TestHelpers do
+  import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Institutions
@@ -338,5 +340,10 @@ defmodule Oli.TestHelpers do
       })
 
     {:ok, _registration} = PartComponents.create_registration(params)
+  end
+
+  def latest_record_index(table) do
+    from(r in table, order_by: [desc: r.id], limit: 1, select: r.id)
+    |> Repo.one!()
   end
 end

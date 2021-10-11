@@ -49,10 +49,9 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp retrieve_all_sources() do
     products = Blueprint.list()
-    publications = Oli.Publishing.all_publications()
 
-    filtered =
-      Enum.filter(publications, fn p -> p.published end)
+    free_project_publications =
+      Oli.Publishing.all_available_publications()
       |> then(fn publications ->
         Blueprint.filter_for_free_projects(
           products,
@@ -60,7 +59,7 @@ defmodule OliWeb.Delivery.SelectSource do
         )
       end)
 
-    filtered ++ products
+    free_project_publications ++ products
   end
 
   def mount(_, _, socket) do
