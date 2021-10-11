@@ -10,7 +10,7 @@
     <title>OliWeb.Common.Breadcrumb — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-0d6ddbcf85.js"></script>
+    <script src="dist/sidebar_items-61ad4a918c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -96,6 +96,11 @@ OliWeb.Common.Breadcrumb <small class="app-vsn">(OLI Torus v0.13.7)</small>
       </h1>
 
 
+        <section id="moduledoc">
+<p>  Breadcrumb struct that powers the breadcrumb UI</p><p>  Breadcrumbs can either contain links to other pages or have a phx-click and phx-value
+  associated with them.</p>
+        </section>
+
 
         <section id="summary" class="details-list">
           <h1 class="section-heading">
@@ -110,6 +115,15 @@ OliWeb.Common.Breadcrumb <small class="app-vsn">(OLI Torus v0.13.7)</small>
     <h2>
       <a href="#functions">Functions</a>
     </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#breadcrumb_trail_to/2">breadcrumb_trail_to(hierarchy, active)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Generates a breadcrumb trail to the given node using a hierarchy</p></div>
+
+</div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#curriculum/1">curriculum(project_slug)</a>
@@ -152,6 +166,28 @@ OliWeb.Common.Breadcrumb <small class="app-vsn">(OLI Torus v0.13.7)</small>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="breadcrumb_trail_to/2">
+
+  <div class="detail-header">
+    <a href="#breadcrumb_trail_to/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">breadcrumb_trail_to(hierarchy, active)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L134" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Generates a breadcrumb trail to the given node using a hierarchy</p>
+  </section>
+</section>
 <section class="detail" id="curriculum/1">
 
   <div class="detail-header">
@@ -161,7 +197,7 @@ Functions
     </a>
     <h1 class="signature">curriculum(project_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L110" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L119" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -192,7 +228,7 @@ Functions
     </a>
     <h1 class="signature">new(params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L34" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -229,7 +265,7 @@ action_descriptions: optional list of dropdown menu actions
     </a>
     <h1 class="signature">trail_to(project_or_section_slug, revision_slug, resolver)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L56" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/breadcrumb.ex#L65" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

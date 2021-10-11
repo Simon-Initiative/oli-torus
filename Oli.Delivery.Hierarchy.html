@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Hierarchy — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-0d6ddbcf85.js"></script>
+    <script src="dist/sidebar_items-61ad4a918c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -120,14 +120,21 @@ be ephemeral and section_resources are empty (e.g. course preview)</p><p>See als
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_hierarchy/2">create_hierarchy(revision, published_resources_resource_id)</a>
+    <a href="#add_materials_to_hierarchy/4">add_materials_to_hierarchy(hierarchy, active, selection, published_resources_by_resource_id_by_pub)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#find_and_remove_node/2">find_and_remove_node(hierarchy, slug)</a>
+    <a href="#create_hierarchy/2">create_hierarchy(revision, published_resources_by_resource_id)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#find_and_remove_node/2">find_and_remove_node(hierarchy, uuid)</a>
 
   </div>
 
@@ -141,7 +148,7 @@ be ephemeral and section_resources are empty (e.g. course preview)</p><p>See als
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#find_in_hierarchy/2">find_in_hierarchy(node, slug_to_find)</a>
+    <a href="#find_in_hierarchy/2">find_in_hierarchy(node, uuid_to_find)</a>
 
   </div>
 
@@ -178,7 +185,25 @@ to drop in the HierarchyNodes using the drop_keys option.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#move_node/3">move_node(hierarchy, node, destination_slug)</a>
+    <a href="#move_node/3">move_node(hierarchy, node, destination_uuid)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#purge_duplicate_resources/1">purge_duplicate_resources(hierarchy)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Crawls the hierarchy and removes any nodes with duplicate resource_ids.
+The first node encountered with a resource_id will be left in place,
+any subsequent duplicates will be removed from the hierarchy</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#purge_duplicate_resources/2">purge_duplicate_resources(node, processed_nodes)</a>
 
   </div>
 
@@ -205,6 +230,28 @@ to drop in the HierarchyNodes using the drop_keys option.</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="add_materials_to_hierarchy/4">
+
+  <div class="detail-header">
+    <a href="#add_materials_to_hierarchy/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">add_materials_to_hierarchy(hierarchy, active, selection, published_resources_by_resource_id_by_pub)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L205" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="create_hierarchy/2">
 
   <div class="detail-header">
@@ -212,9 +259,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">create_hierarchy(revision, published_resources_resource_id)</h1>
+    <h1 class="signature">create_hierarchy(revision, published_resources_by_resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L50" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -234,9 +281,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">find_and_remove_node(hierarchy, slug)</h1>
+    <h1 class="signature">find_and_remove_node(hierarchy, uuid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L145" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L181" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -258,7 +305,7 @@ Functions
     </a>
     <h1 class="signature">find_and_update_node(hierarchy, node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L133" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L169" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -278,9 +325,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">find_in_hierarchy(node, slug_to_find)</h1>
+    <h1 class="signature">find_in_hierarchy(node, uuid_to_find)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L85" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L121" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -302,7 +349,7 @@ Functions
     </a>
     <h1 class="signature">flatten_hierarchy(node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -325,7 +372,7 @@ in the hierarchy. Containers appear before their contents</p>
     </a>
     <h1 class="signature">flatten_pages(nodes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L23" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -350,7 +397,7 @@ an ordered flat list of the nodes of only the pages in the hierarchy.</p>
     </a>
     <h1 class="signature">inspect(hierarchy, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L173" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L232" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -371,9 +418,55 @@ to drop in the HierarchyNodes using the drop_keys option.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">move_node(hierarchy, node, destination_slug)</h1>
+    <h1 class="signature">move_node(hierarchy, node, destination_uuid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L160" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L196" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="purge_duplicate_resources/1">
+
+  <div class="detail-header">
+    <a href="#purge_duplicate_resources/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">purge_duplicate_resources(hierarchy)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L94" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Crawls the hierarchy and removes any nodes with duplicate resource_ids.
+The first node encountered with a resource_id will be left in place,
+any subsequent duplicates will be removed from the hierarchy</p>
+  </section>
+</section>
+<section class="detail" id="purge_duplicate_resources/2">
+
+  <div class="detail-header">
+    <a href="#purge_duplicate_resources/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">purge_duplicate_resources(node, processed_nodes)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L99" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -395,7 +488,7 @@ to drop in the HierarchyNodes using the drop_keys option.</p>
     </a>
     <h1 class="signature">reorder_children(children, node, source_index, index)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L113" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L149" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

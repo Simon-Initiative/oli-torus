@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.7">
 
-    <title>OliWeb.Curriculum.HierarchyPicker — OLI Torus v0.13.7</title>
+    <title>OliWeb.Common.Hierarchy.HierarchyPicker — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-0d6ddbcf85.js"></script>
+    <script src="dist/sidebar_items-61ad4a918c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,9 +86,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Curriculum.HierarchyPicker <small class="app-vsn">(OLI Torus v0.13.7)</small>
+OliWeb.Common.Hierarchy.HierarchyPicker <small class="app-vsn">(OLI Torus v0.13.7)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/curriculum/hierarchy_picker.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/hierarchy/hierarchy_picker.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -99,9 +99,34 @@ OliWeb.Curriculum.HierarchyPicker <small class="app-vsn">(OLI Torus v0.13.7)</sm
         <section id="moduledoc">
 <p>Hierarchy Picker Component</p><p>A general purpose curriculum location picker. When a new location is selected,
 this component will trigger an &quot;HierarchyPicker.update_selection&quot; event to the parent liveview
-with the new selection.</p><p>Example:</p><pre><code class="makeup elixir"><span class="kd">def</span><span class="w"> </span><span class="nf">handle_event</span><span class="p" data-group-id="6586189764-1">(</span><span class="s">&quot;HierarchyPicker.update_selection&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6586189764-2">%{</span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="n">slug</span><span class="p" data-group-id="6586189764-2">}</span><span class="p">,</span><span class="w"> </span><span class="n">socket</span><span class="p" data-group-id="6586189764-1">)</span><span class="w"> </span><span class="k" data-group-id="6586189764-3">do</span><span class="w">
-  </span><span class="n">...</span><span class="w">
-</span><span class="k" data-group-id="6586189764-3">end</span></code></pre>
+with the new selection.</p><h3 id="module-multi-pub-mode" class="section-heading">
+  <a href="#module-multi-pub-mode" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Multi-Pub Mode
+</h3>
+<p>In multi-pub mode, a user can select items from multiple publications. The active hierarchy shown
+is still dictated by the hierarchy and active parameters, but this hierarchy is expected to change,
+specifically when the &quot;HierarchyPicker.select_publication&quot; event is triggered. The liveview using this
+component should handle this event and update hierarchy accordingly.</p><h2 id="module-required-parameters" class="section-heading">
+  <a href="#module-required-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Required Parameters:
+</h2>
+<p>id:               Unique identifier for the hierarchy picker
+hierarchy:        Hierarchy to select from
+active:           Currently active node. Also represents the current selection in container</p><pre><code class="makeup elixir"><span class="w">              </span><span class="n">selection</span><span class="w"> </span><span class="n">mode</span><span class="o">.</span></code></pre><p>selection:        List of current selections in the form of a tuples [{publication_id, resource_id}, ...].</p><pre><code class="makeup elixir"><span class="w">              </span><span class="p" data-group-id="8576796555-1">(</span><span class="nc">Only</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">multi</span><span class="w"> </span><span class="n">select</span><span class="w"> </span><span class="n">mode</span><span class="p" data-group-id="8576796555-1">)</span></code></pre><p>preselected:      List of preselected items which are already selected and cannot be changed. Like selection,</p><pre><code class="makeup elixir"><span class="w">              </span><span class="n">the</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">expected</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">form</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">tuples</span><span class="w"> </span><span class="p" data-group-id="4490277782-1">[</span><span class="p" data-group-id="4490277782-2">{</span><span class="n">publication_id</span><span class="p">,</span><span class="w"> </span><span class="n">resource_id</span><span class="p" data-group-id="4490277782-2">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4490277782-1">]</span></code></pre><h2 id="module-optional-parameters" class="section-heading">
+  <a href="#module-optional-parameters" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Optional Parameters:
+</h2>
+<p>select_mode:            Which selection mode to operate in. This can be set to :single, :multi or</p><pre><code class="makeup elixir"><span class="w">                    </span><span class="ss">:container</span><span class="o">.</span><span class="w"> </span><span class="nc">Defaults</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="ss">:single</span></code></pre><p>filter_items_fn:        Filter function applied to items shown. Default is no filter.
+sort_items_fn:          Sorting function applied to items shown. Default is to sort containers first.
+publications:           The list of publications that items can be selected from (used in multi-pub mode)
+selected_publication:   The currently selected publication (used in multi-pub mode)</p><h2 id="module-events" class="section-heading">
+  <a href="#module-events" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events:
+</h2>
+<p>&quot;HierarchyPicker.update_active&quot;, %{&quot;uuid&quot; =&gt; uuid}
+&quot;HierarchyPicker.select&quot;, %{&quot;uuid&quot; =&gt; uuid}
+&quot;HierarchyPicker.select_publication&quot;, %{&quot;id&quot; =&gt; id}
+&quot;HierarchyPicker.clear_publication&quot;, %{&quot;id&quot; =&gt; id}</p>
         </section>
 
 
@@ -129,7 +154,14 @@ with the new selection.</p><p>Example:</p><pre><code class="makeup elixir"><span
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render_breadcrumb/2">render_breadcrumb(assigns, breadcrumbs)</a>
+    <a href="#render_breadcrumb/1">render_breadcrumb(assigns)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_child/2">render_child(assigns, child)</a>
 
   </div>
 
@@ -158,7 +190,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/curriculum/hierarchy_picker.ex#L23" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/hierarchy/hierarchy_picker.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -171,16 +203,38 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="render_breadcrumb/2">
+<section class="detail" id="render_breadcrumb/1">
 
   <div class="detail-header">
-    <a href="#render_breadcrumb/2" class="detail-link" title="Link to this function">
+    <a href="#render_breadcrumb/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render_breadcrumb(assigns, breadcrumbs)</h1>
+    <h1 class="signature">render_breadcrumb(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/curriculum/hierarchy_picker.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/hierarchy/hierarchy_picker.ex#L144" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_child/2">
+
+  <div class="detail-header">
+    <a href="#render_child/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_child(assigns, child)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/hierarchy/hierarchy_picker.ex#L102" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

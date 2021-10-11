@@ -10,7 +10,7 @@
     <title>Oli.Resources.Numbering — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-0d6ddbcf85.js"></script>
+    <script src="dist/sidebar_items-61ad4a918c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -261,7 +261,7 @@ Functions
     </a>
     <h1 class="signature">init_numbering_tracker()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L225" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L267" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -283,7 +283,7 @@ Functions
     </a>
     <h1 class="signature">next_index(numbering_tracker, level, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L202" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L244" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -305,7 +305,7 @@ Functions
     </a>
     <h1 class="signature">number_full_tree(resolver, project_or_section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L157" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L199" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -339,7 +339,7 @@ Functions
     </a>
     <h1 class="signature">number_tree_from(revision, revisions)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L165" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L207" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -442,7 +442,7 @@ Functions
     </a>
     <h1 class="signature">path_from_root_to(hierarchy, node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L296" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L122" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -463,7 +463,7 @@ Functions
     resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    uuid: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
   %Oli.Delivery.Hierarchy.HierarchyNode{
     children: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
@@ -472,7 +472,7 @@ Functions
     resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+    uuid: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   }
 ) ::
   {:ok,
@@ -484,7 +484,7 @@ Functions
        resource_id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
        revision: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
        section_resource: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-       slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+       uuid: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
      }
    ]}
   | {:not_found, []}</pre>
@@ -606,7 +606,7 @@ Functions
     </a>
     <h1 class="signature">renumber_hierarchy(root)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L237" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/resources/numbering.ex#L279" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -621,8 +621,8 @@ updated hierarchy root and generated numberings.</p><h2 id="renumber_hierarchy/1
   <a href="#renumber_hierarchy/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">renumber_hierarchy</span><span class="p" data-group-id="6153625047-1">(</span><span class="n">hierarchy</span><span class="p" data-group-id="6153625047-1">)</span><span class="w">
-</span><span class="p" data-group-id="6153625047-2">{</span><span class="n">updated_hierarchy</span><span class="p">,</span><span class="w"> </span><span class="n">numberings</span><span class="p" data-group-id="6153625047-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">renumber_hierarchy</span><span class="p" data-group-id="6557336748-1">(</span><span class="n">hierarchy</span><span class="p" data-group-id="6557336748-1">)</span><span class="w">
+</span><span class="p" data-group-id="6557336748-2">{</span><span class="n">updated_hierarchy</span><span class="p">,</span><span class="w"> </span><span class="n">numberings</span><span class="p" data-group-id="6557336748-2">}</span></code></pre>
   </section>
 </section>
 
