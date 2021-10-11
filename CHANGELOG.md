@@ -36,6 +36,12 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
                                   with blackboard instances and allows torus to provide configuration instructions.
 ```
 
+## 0.13.8 (2021-10-07)
+
+### Bug Fixes
+
+- Handle titles of activities correctly in analytics download
+
 ## 0.13.7 (2021-10-06)
 
 ### Bug Fixes
