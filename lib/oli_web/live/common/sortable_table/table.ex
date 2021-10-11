@@ -70,7 +70,7 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   def render(assigns) do
     ~F"""
-    <table class="table table-striped table-bordered">
+    <table class="table table-striped table-bordered table-sm">
       <thead>
         <tr>
         {#for column_spec <- @model.column_specs}
