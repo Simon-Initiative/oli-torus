@@ -254,7 +254,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   useEffect(() => {
     const popupModalZ = config?.z || 1000;
     const zIndexIcon = z;
-    const finalZIndex = showPopup ? Math.max(zIndexIcon || 0, popupModalZ) : zIndexIcon;
+    const finalZIndex = Math.max(zIndexIcon + popupModalZ || 0, popupModalZ);
     const modifiedData = { zIndex: { value: finalZIndex } };
     if (finalZIndex) {
       props.onResize({ id: `${id}`, settings: modifiedData });
