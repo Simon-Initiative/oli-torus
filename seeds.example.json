@@ -9,6 +9,6 @@
       "auth_server": "https://lms.example.edu"
     }
   ],
-  "generate_authors": 50,
-  "generate_users": 1000
+  "generate_authors": 20,
+  "generate_users": 100
 }
