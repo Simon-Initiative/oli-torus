@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.13.7">
 
-    <title>OliWeb.Projects.State — OLI Torus v0.13.7</title>
+    <title>OliWeb.Sections.SectionsTableModel — OLI Torus v0.13.7</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-61ad4a918c.js"></script>
+    <script src="dist/sidebar_items-8fd726fcee.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,15 +86,24 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Projects.State <small class="app-vsn">(OLI Torus v0.13.7)</small>
+OliWeb.Sections.SectionsTableModel <small class="app-vsn">(OLI Torus v0.13.7)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/projects/state.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
 
       </h1>
 
+
+        <section id="moduledoc">
+<h2 id="module-properties" class="section-heading">
+  <a href="#module-properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul>
+        </section>
 
 
         <section id="summary" class="details-list">
@@ -112,23 +121,41 @@ OliWeb.Projects.State <small class="app-vsn">(OLI Torus v0.13.7)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#initialize_state/3">initialize_state(author, projects, author_projects)</a>
+    <a href="#custom_render/3">custom_render(_, section, column_spec)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#sort_projects/3">sort_projects(state, sort_by, sort_order)</a>
+    <a href="#custom_sort/2">custom_sort(direction, column_spec)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#toggle_show_deleted/1">toggle_show_deleted(state)</a>
+    <a href="#mount/1">mount(socket)</a>
 
   </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#new/1">new(sections)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render/1">render(assigns)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
 
 </div>
 
@@ -146,16 +173,16 @@ OliWeb.Projects.State <small class="app-vsn">(OLI Torus v0.13.7)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="initialize_state/3">
+<section class="detail" id="custom_render/3">
 
   <div class="detail-header">
-    <a href="#initialize_state/3" class="detail-link" title="Link to this function">
+    <a href="#custom_render/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">initialize_state(author, projects, author_projects)</h1>
+    <h1 class="signature">custom_render(_, section, column_spec)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/projects/state.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L83" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -168,16 +195,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="sort_projects/3">
+<section class="detail" id="custom_sort/2">
 
   <div class="detail-header">
-    <a href="#sort_projects/3" class="detail-link" title="Link to this function">
+    <a href="#custom_sort/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">sort_projects(state, sort_by, sort_order)</h1>
+    <h1 class="signature">custom_sort(direction, column_spec)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/projects/state.ex#L64" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L53" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -190,16 +217,38 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="toggle_show_deleted/1">
+<section class="detail" id="mount/1">
 
   <div class="detail-header">
-    <a href="#toggle_show_deleted/1" class="detail-link" title="Link to this function">
+    <a href="#mount/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">toggle_show_deleted(state)</h1>
+    <h1 class="signature">mount(socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/projects/state.ex#L60" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="new/1">
+
+  <div class="detail-header">
+    <a href="#new/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">new(sections)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L5" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -210,6 +259,28 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="render/1">
+
+  <div class="detail-header">
+    <a href="#render/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render(assigns)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/table_model.ex#L117" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
   </section>
 </section>
 
