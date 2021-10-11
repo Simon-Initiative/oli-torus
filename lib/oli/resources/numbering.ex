@@ -45,10 +45,10 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   defstruct level: 0,
-            index: 0,
-            revision: nil
+            index: 0
 
   def container_type(level) do
     case level do
@@ -88,7 +88,7 @@ defmodule Oli.Resources.Numbering do
   def path_from_root_to(resolver, project_or_section_slug, revision_slug) do
     with root_container <- resolver.root_container(project_or_section_slug),
          path <-
-           path_helper(
+           revision_path_helper(
              revision_slug,
              root_container.children,
              resource_id_to_revision_map(resolver, project_or_section_slug),
@@ -108,6 +108,26 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
+  @doc """
+  Returns the path from a hierarchy's root to a given node
+
+  ## Examples
+
+     iex> Numbering.path_from_root_to(hierarchy, node)
+     [%HierarchyNode{}, %HierarchyNode{}, %HierarchyNode{}]
+
+  """
+  @spec path_from_root_to(%HierarchyNode{}, %HierarchyNode{}) ::
+          {:ok, [%HierarchyNode{}]} | {:not_found, []}
+  def path_from_root_to(%HierarchyNode{} = hierarchy, %HierarchyNode{} = node) do
+    hierachy_path_helper(
+      hierarchy,
+      node,
+      {:not_found, []}
+    )
+    |> then(fn {status, path} -> {status, Enum.reverse(path)} end)
+  end
+
   @spec resource_id_to_revision_map(resolver, project_or_section_slug) :: %{
           resource_id => %Revision{}
         }
@@ -117,11 +137,11 @@ defmodule Oli.Resources.Numbering do
         do: {rev.resource_id, rev}
   end
 
-  defp path_helper(_target_slug, [] = _resource_ids, _revisions, _path) do
+  defp revision_path_helper(_target_slug, [] = _resource_ids, _revisions, _path) do
     []
   end
 
-  defp path_helper(
+  defp revision_path_helper(
          target_slug,
          [resource_id | rest],
          resource_id_to_revision_map,
@@ -129,7 +149,7 @@ defmodule Oli.Resources.Numbering do
        ) do
     with revision <- Map.get(resource_id_to_revision_map, resource_id),
          path_using_revision <-
-           path_helper(
+           revision_path_helper(
              target_slug,
              revision.children,
              resource_id_to_revision_map,
@@ -143,8 +163,30 @@ defmodule Oli.Resources.Numbering do
           path_using_revision
 
         true ->
-          path_helper(target_slug, rest, resource_id_to_revision_map, path)
+          revision_path_helper(target_slug, rest, resource_id_to_revision_map, path)
       end
+    end
+  end
+
+  defp hierachy_path_helper(
+         %HierarchyNode{} = current_node,
+         %HierarchyNode{} = node,
+         {:not_found, path}
+       ) do
+    container = ResourceType.get_id_by_type("container")
+    path = [current_node | path]
+
+    if current_node.uuid == node.uuid do
+      {:ok, path}
+    else
+      current_node.children
+      |> Enum.filter(fn %{revision: r} -> r.resource_type_id == container end)
+      |> Enum.reduce_while({:not_found, path}, fn child, path_tracker ->
+        case hierachy_path_helper(child, node, path_tracker) do
+          {:ok, _path} = result -> {:halt, result}
+          {:not_found, _} -> {:cont, {:not_found, path}}
+        end
+      end)
     end
   end
 
@@ -172,42 +214,43 @@ defmodule Oli.Resources.Numbering do
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.resource_id, e) end)
 
     # now recursively walk the tree structure, tracking level based numbering as we go
-    numberings = init_numberings()
+    numbering_tracker = init_numbering_tracker()
     level = 0
-    numberings_by_id = %{}
-    {_, numberings_by_id} = number_helper(revision, by_id, level, numberings, numberings_by_id)
+    numberings = %{}
 
-    numberings_by_id
+    {_, numberings} = number_helper(revision, by_id, level + 1, numbering_tracker, numberings)
+
+    numberings
   end
 
   # recursive helper to assemble the full hierarchy numberings
-  defp number_helper(revision, by_id, level, numberings, numberings_by_id) do
+  defp number_helper(revision, by_id, level, numbering_tracker, numberings) do
     revision.children
     |> Enum.map(fn id -> Map.get(by_id, id) end)
-    |> Enum.reduce({numberings, numberings_by_id}, fn child, {numberings, numberings_by_id} ->
-      {index, numberings} = next_index(numberings, level, child)
-      numbering = %__MODULE__{level: level, index: index, revision: child}
+    |> Enum.reduce({numbering_tracker, numberings}, fn child, {numbering_tracker, numberings} ->
+      {index, numbering_tracker} = next_index(numbering_tracker, level, child)
+      numbering = %__MODULE__{level: level, index: index}
 
       number_helper(
         child,
         by_id,
         level + 1,
-        numberings,
-        Map.put(numberings_by_id, child.id, numbering)
+        numbering_tracker,
+        Map.put(numberings, child.id, numbering)
       )
     end)
   end
 
-  def next_index(numberings, level, revision) do
+  def next_index(numbering_tracker, level, revision) do
     page = ResourceType.get_id_by_type("page")
     container = ResourceType.get_id_by_type("container")
 
     case revision.resource_type_id do
       ^page ->
-        get_and_update_in(numberings, [:pages], &increment_or_init/1)
+        get_and_update_in(numbering_tracker, [:pages], &increment_or_init/1)
 
       ^container ->
-        get_and_update_in(numberings, [:containers, level], &increment_or_init/1)
+        get_and_update_in(numbering_tracker, [:containers, level], &increment_or_init/1)
     end
   end
 
@@ -221,7 +264,63 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
-  def init_numberings() do
+  def init_numbering_tracker() do
     %{pages: 1, containers: %{}}
+  end
+
+  @doc """
+  Renumbers the section resources in a hierarchy. Takes the hierarchy root and returns the
+  updated hierarchy root and generated numberings.
+
+  ## Examples
+      iex> renumber_hierarchy(hierarchy)
+      {updated_hierarchy, numberings}
+  """
+  def renumber_hierarchy(%HierarchyNode{} = root) do
+    numbering_tracker = init_numbering_tracker()
+    level = 0
+    numberings = %{}
+
+    {hierarchy, _numbering_tracker, numberings} =
+      renumber_hierarchy(root, level, numbering_tracker, numberings)
+
+    {hierarchy, numberings}
+  end
+
+  defp renumber_hierarchy(
+         %HierarchyNode{children: children} = node,
+         level,
+         numbering_tracker,
+         numberings
+       ) do
+    {numbering_index, numbering_tracker} = next_index(numbering_tracker, level, node.revision)
+
+    numbering = %__MODULE__{level: level, index: numbering_index}
+    numberings = Map.put(numberings, node.revision.id, numbering)
+
+    {children, numbering_tracker, numberings} =
+      Enum.reduce(
+        children,
+        {[], numbering_tracker, numberings},
+        fn child, {children, numbering_tracker, numberings} ->
+          {child, numbering_tracker, numberings} =
+            renumber_hierarchy(
+              child,
+              level + 1,
+              numbering_tracker,
+              numberings
+            )
+
+          {[child | children], numbering_tracker, numberings}
+        end
+      )
+      # it's more efficient to append to list using [id | children_ids] and
+      # then reverse than to concat on every reduce call using ++
+      |> then(fn {children, numbering_tracker, numberings} ->
+        {Enum.reverse(children), numbering_tracker, numberings}
+      end)
+
+    {%HierarchyNode{node | numbering: numbering, children: children}, numbering_tracker,
+     numberings}
   end
 end

@@ -28,7 +28,7 @@ export const submitActivityState = createAsyncThunk(
     }
 
     // update script env with latest values
-    const assignScript = getAssignScript(partResponses);
+    const assignScript = getAssignScript(partResponses, defaultGlobalEnv);
     const { result: scriptResult } = evalScript(assignScript, defaultGlobalEnv);
 
     // in preview mode we don't talk to the server, so we're done

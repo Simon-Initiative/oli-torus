@@ -16,6 +16,8 @@ import { Accordion, Button, Dropdown, ListGroup, OverlayTrigger, Popover } from 
 import { useSelector } from 'react-redux';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import { SequenceDropdown } from '../PropertyEditor/custom/SequenceDropdown';
+import { selectState as selectPageState } from '../../store/page/slice';
+import { sessionVariables } from './AdaptiveItemOptions';
 
 export enum OverlayPlacements {
   TOP = 'top',
@@ -32,20 +34,22 @@ interface VariablePickerProps {
   placement?: OverlayPlacements;
   targetRef: React.RefObject<HTMLInputElement>;
   typeRef: React.RefObject<HTMLSelectElement>;
+  context: 'init' | 'mutate' | 'condition';
 }
 
 export const VariablePicker: React.FC<VariablePickerProps> = ({
   placement = OverlayPlacements.TOP,
   targetRef,
   typeRef,
+  context,
 }) => {
+  const currentLesson = useSelector(selectPageState);
   const sequence = useSelector(selectSequence);
   const hierarchy = getHierarchy(sequence);
   const vpContainerRef = useRef(document.getElementById('advanced-authoring'));
   const paths = useSelector(selectPaths);
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
-
   const allActivities = useSelector(selectAllActivities);
 
   const [specificSequenceId, setSpecificSequenceId] = useState<string>('stage');
@@ -107,6 +111,23 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     return `${paths?.images}/icons/${part.icon}`;
   };
 
+  const getLimitedTypeCheck = (typeToCheck: string | boolean | number | unknown) => {
+    const limitedTypeCheck = typeof typeToCheck;
+    let limitedType: string | boolean | number;
+    switch (limitedTypeCheck) {
+      case 'string':
+        limitedType = CapiVariableTypes.STRING;
+        break;
+      case 'boolean':
+        limitedType = CapiVariableTypes.BOOLEAN;
+        break;
+      default:
+        limitedType = CapiVariableTypes.NUMBER;
+        break;
+    }
+    return limitedType;
+  };
+
   const getPartTypeTemplate = useCallback(
     (part: Record<string, string>, index: number) => {
       const adaptivitySchema: any = partAdaptivityMap[part.type];
@@ -141,7 +162,11 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     className="pb-2 pl-1 ml-4"
                     key={index}
                     onClick={() => {
-                      setTargetRef(`${specificSequenceId}.${part.id}.${key}`);
+                      setTargetRef(
+                        `${
+                          specificSequenceId === 'stage' ? 'stage.' : `${specificSequenceId}|stage.`
+                        }${part.id}.${key}`,
+                      );
                       setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
                     }}
                   >
@@ -175,7 +200,10 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
         const instance: any = new PartClass();
         if (instance) {
           if (instance.getAdaptivitySchema) {
-            adaptivitySchema = await instance.getAdaptivitySchema();
+            adaptivitySchema = await instance.getAdaptivitySchema({
+              currentModel: part,
+              editorContext: context,
+            });
           }
         }
       }
@@ -192,17 +220,124 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     setPartAdaptivityMap(adaptivityMap);
   }, [allParts, currentActivityTree, specificActivityTree]);
 
+  const sessionVisits: Record<string, unknown>[] = [];
+  const getSessionVisits = (sequence: any) => {
+    sequence.forEach((sequenceItem: SequenceHierarchyItem<SequenceEntryChild>) => {
+      if (!sequenceItem.custom.isBank && !sequenceItem.custom.isLayer) {
+        sessionVisits.push({
+          sequenceId: sequenceItem.custom.sequenceId,
+          sequenceName: sequenceItem.custom.sequenceName,
+        });
+      }
+      if (sequenceItem.children.length > 0) {
+        getSessionVisits(sequenceItem.children);
+      }
+    });
+    return [
+      ...new Map(sessionVisits.map((uniqueBy) => [uniqueBy['sequenceId'], uniqueBy])).values(),
+    ];
+  };
+
+  const SessionTemplate: React.FC = () => (
+    <>
+      {Object.keys(sessionVariables).map((variable: string, index: number) => {
+        if (variable !== 'visits') {
+          const limitedType = getLimitedTypeCheck(sessionVariables[variable]);
+          return (
+            <div key={index} className="part-type">
+              <button
+                type="button"
+                className="text-btn font-italic"
+                onClick={() => {
+                  setTargetRef(`session.${variable}`);
+                  setTypeRef(`${limitedType}`);
+                }}
+                title={`${
+                  CapiVariableTypes[limitedType][0] +
+                  CapiVariableTypes[limitedType].slice(1).toLowerCase()
+                }`}
+              >
+                {variable}
+              </button>
+            </div>
+          );
+        }
+        if (variable === 'visits') {
+          const sessionVisits = getSessionVisits(hierarchy);
+          return (
+            <Accordion>
+              <Accordion.Toggle
+                as={ListGroup.Item}
+                eventKey={`${index}`}
+                action
+                className="part-type border-top"
+                onClick={() => setIsFilterMenuOpen(false)}
+              >
+                <div className="d-flex align-items-center justify-space-between flex-grow-1">
+                  <div className="d-flex flex-grow-1">
+                    <span className="ml-1 text-btn font-weight-bold">{variable}</span>
+                  </div>
+                  <ContextAwareToggle eventKey={`${index}`} />
+                </div>
+              </Accordion.Toggle>
+              <Accordion.Collapse eventKey={`${index}`}>
+                <ul className="list-unstyled m-0 mb-2">
+                  {sessionVisits.map((sequence: any, index: number) => (
+                    <li
+                      className="pb-2 pl-1 ml-3"
+                      key={index}
+                      onClick={() => {
+                        setTargetRef(`session.visits.${sequence.sequenceId}`);
+                        setTypeRef(`${CapiVariableTypes.NUMBER}`);
+                      }}
+                    >
+                      <button type="button" className="text-btn font-italic">
+                        <span title={`${sequence.sequenceId}`}>{sequence.sequenceName}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Accordion.Collapse>
+            </Accordion>
+          );
+        }
+      })}
+    </>
+  );
+
+  const VariableTemplate: React.FC = () =>
+    currentLesson.custom.variables.map((variable: any, index: number) => {
+      return Object.keys(variable).map((varKey) => {
+        const limitedType = getLimitedTypeCheck(variable[varKey]);
+        return (
+          <div key={index} className="part-type">
+            <button
+              type="button"
+              className="text-btn font-italic"
+              onClick={() => {
+                setTargetRef(`variables.${varKey}`);
+                setTypeRef(`${limitedType}`);
+              }}
+              title={`${
+                CapiVariableTypes[limitedType][0] +
+                CapiVariableTypes[limitedType].slice(1).toLowerCase()
+              }`}
+            >
+              {varKey}
+            </button>
+          </div>
+        );
+      });
+    });
+
   useEffect(() => {
     getAdaptivePartTypes();
   }, [allParts, currentActivityTree, specificActivityTree]);
 
   useEffect(() => {
-    // TODO: getActiveFilterTree() => specificActivityTree, currentActivityTree, sessionActivityTree, variableActivityTree
     const someParts = (
       activeFilter.includes(FilterItems.SCREEN) ? currentActivityTree : specificActivityTree || []
-    )
-      .slice(-1)
-      .reduce((acc: any, activity: any) => acc.concat(activity.content.partsLayout || []), []);
+    ).reduce((acc: any, activity: any) => acc.concat(activity.content.partsLayout || []), []);
     setAllParts(someParts);
   }, [currentActivityTree, specificActivityTree, activeFilter]);
 
@@ -249,47 +384,53 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     >
                       {FilterItems.SCREEN}
                     </Dropdown.Item>
-                    <Dropdown.Item
-                      disabled
-                      active={activeFilter === FilterItems.SESSION}
-                      onClick={() => {
-                        setActiveFilter(FilterItems.SESSION);
-                        setSpecificSequenceId('session');
-                      }}
-                    >
-                      {FilterItems.SESSION}
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                      disabled
-                      active={activeFilter === FilterItems.VARIABLES}
-                      onClick={() => {
-                        setActiveFilter(FilterItems.VARIABLES);
-                        setSpecificSequenceId('variables');
-                      }}
-                    >
-                      {FilterItems.VARIABLES}
-                    </Dropdown.Item>
-                    <Dropdown.Divider />
-                    {/* TODO: re-enable this for part2 */}
-                    {/* <Dropdown.Header>Other Screens</Dropdown.Header>
-                    <div className="screen-picker-container">
-                      <SequenceDropdown
-                        items={hierarchy}
-                        onChange={onChangeHandler}
-                        value={'next'}
-                        showNextBtn={false}
-                      />
-                    </div> */}
+                    {context !== 'init' && context !== 'mutate' && (
+                      <>
+                        <Dropdown.Item
+                          active={activeFilter === FilterItems.SESSION}
+                          onClick={() => {
+                            setActiveFilter(FilterItems.SESSION);
+                            setSpecificSequenceId('session');
+                          }}
+                        >
+                          {FilterItems.SESSION}
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          active={activeFilter === FilterItems.VARIABLES}
+                          onClick={() => {
+                            setActiveFilter(FilterItems.VARIABLES);
+                            setSpecificSequenceId('variables');
+                          }}
+                        >
+                          {FilterItems.VARIABLES}
+                        </Dropdown.Item>
+
+                        <Dropdown.Divider />
+                        <Dropdown.Header>Other Screens</Dropdown.Header>
+                        <div className="screen-picker-container">
+                          <SequenceDropdown
+                            items={hierarchy}
+                            onChange={onChangeHandler}
+                            value={'next'}
+                            showNextBtn={false}
+                          />
+                        </div>
+                      </>
+                    )}
                   </Dropdown.Menu>
                 </Dropdown>
               </div>
             </div>
             <div className="activity-tree">
-              <Accordion>
-                {allParts.map((part: Record<string, string>, index: number) => (
-                  <Fragment key={part.id}>{getPartTypeTemplate(part, index)}</Fragment>
-                ))}
-              </Accordion>
+              {activeFilter === FilterItems.SESSION && <SessionTemplate />}
+              {activeFilter === FilterItems.VARIABLES && <VariableTemplate />}
+              {activeFilter !== FilterItems.SESSION && activeFilter !== FilterItems.VARIABLES && (
+                <Accordion>
+                  {allParts.map((part: Record<string, string>, index: number) => (
+                    <Fragment key={part.id}>{getPartTypeTemplate(part, index)}</Fragment>
+                  ))}
+                </Accordion>
+              )}
             </div>
           </Popover.Content>
         </Popover>

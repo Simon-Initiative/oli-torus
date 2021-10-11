@@ -121,7 +121,7 @@ defmodule Oli.Seeder do
 
     {:ok, author} =
       Author.noauth_changeset(%Author{}, %{
-        email: "test@test.com",
+        email: "test#{System.unique_integer([:positive])}@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
@@ -131,7 +131,7 @@ defmodule Oli.Seeder do
 
     {:ok, author2} =
       Author.noauth_changeset(%Author{}, %{
-        email: "test2@test.com",
+        email: "test#{System.unique_integer([:positive])}@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
@@ -391,6 +391,30 @@ defmodule Oli.Seeder do
       |> Repo.insert()
 
     Map.put(map, :section, section)
+  end
+
+  def create_product(map, attrs, tag) do
+    params =
+      Map.merge(
+        %{
+          end_date: ~U[2010-04-17 00:00:00.000000Z],
+          type: :blueprint,
+          registration_open: true,
+          start_date: ~U[2010-04-17 00:00:00.000000Z],
+          timezone: "some timezone",
+          title: "some title",
+          context_id: "context_id",
+          base_project_id: map.project.id,
+          institution_id: map.institution.id
+        },
+        attrs
+      )
+
+    {:ok, section} =
+      Section.changeset(%Section{}, params)
+      |> Repo.insert()
+
+    Map.put(map, tag, section)
   end
 
   def create_section_resources(%{section: section, publication: publication} = map) do
@@ -1003,13 +1027,41 @@ defmodule Oli.Seeder do
     )
   end
 
+  def delete_page(page, page_revision, container, container_revision, publication) do
+    new_children = Enum.filter(container_revision.children, fn id -> id != page.id end)
+
+    set_container_children(
+      new_children,
+      container,
+      container_revision,
+      publication
+    )
+
+    {:ok, updated} = Oli.Resources.create_revision_from_previous(page_revision, %{deleted: true})
+
+    Publishing.get_published_resource!(publication.id, page.id)
+    |> Publishing.update_published_resource(%{revision_id: updated.id})
+
+    updated
+  end
+
   def replace_pages_with(resources, container, container_revision, publication) do
     children = Enum.map(resources, fn r -> r.id end)
     set_container_children(children, container, container_revision, publication)
   end
 
   defp set_container_children(children, container, container_revision, publication) do
-    {:ok, updated} = Oli.Resources.update_revision(container_revision, %{children: children})
+    {:ok, updated} =
+      Oli.Resources.create_revision_from_previous(container_revision, %{children: children})
+
+    Publishing.get_published_resource!(publication.id, container.id)
+    |> Publishing.update_published_resource(%{revision_id: updated.id})
+
+    updated
+  end
+
+  def revise_page(changes, container, container_revision, publication) do
+    {:ok, updated} = Oli.Resources.create_revision_from_previous(container_revision, changes)
 
     Publishing.get_published_resource!(publication.id, container.id)
     |> Publishing.update_published_resource(%{revision_id: updated.id})

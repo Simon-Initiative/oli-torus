@@ -105,6 +105,10 @@ const Markup: React.FC<any> = ({
     // add a non breaking space instead of nothing
 
     processedText = processedText.length < 2 ? '\u00a0' : processedText.replace(/ \s/g, '\u00a0 ');
+  } else if (processedText.length !== processedText.trim().length) {
+    // check if text has leading and trailing spaces.
+    //handling the leading blank spacecs in the span
+    processedText = processedText.replace(/\s /g, ' \u00a0');
   }
 
   // this is to support "legacy" SmartSparrow lessons
@@ -239,6 +243,11 @@ const Markup: React.FC<any> = ({
       // sets display: inline for everything... we need to fix it again
       if (!renderStyles.display) {
         renderStyles.display = 'block';
+      }
+      // because of the global injected override .content *
+      // sets line-height: 1.4 for everything
+      if (!renderStyles.lineHeight) {
+        renderStyles.lineHeight = 'normal';
       }
       //let's not do this for all P tags forces fontSize to be specified
       /* if (!renderStyles.fontSize) {

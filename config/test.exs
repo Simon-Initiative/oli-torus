@@ -57,3 +57,16 @@ config :oli, OliWeb.Endpoint,
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate

@@ -22,6 +22,13 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
 
+  let height = props.model.height;
+  // TODO: figure out how to default TF *only* to height auto without hard coding type
+  if (props.type === 'janus-text-flow' || props.type === 'janus-mcq') {
+    if (!props.model.overrideHeight) {
+      height = 'auto';
+    }
+  }
   const initialStyles: CSSProperties = {
     display: 'block',
     position: 'absolute',
@@ -29,7 +36,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     left: props.model.x,
     zIndex: props.model.z || 0,
     width: props.model.width,
-    height: props.model.overrideHeight ? props.model.height : 'auto',
+    height,
   };
 
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
@@ -70,6 +77,39 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     if (sCssClass !== undefined) {
       setCustomCssClass(sCssClass as string);
     }
+
+    const sCustomCssClass = currentStateSnapshot[`stage.${props.id}.customCssClass`];
+    if (sCustomCssClass !== undefined) {
+      setCustomCssClass(sCustomCssClass as string);
+    }
+  };
+
+  const onResize = async (payload: any) => {
+    const settings = payload.settings;
+    const styleChanges: CSSProperties = {};
+
+    if (componentStyle.width && settings?.width) {
+      const newW = settings.width.value;
+      if (settings.width.type === 'relative') {
+        styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
+      } else {
+        styleChanges.width = newW;
+      }
+    }
+
+    if (componentStyle.height && settings?.height) {
+      const newH = settings.height.value;
+      if (settings.height.type === 'relative') {
+        styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
+      } else {
+        styleChanges.height = newH;
+      }
+    }
+
+    setComponentStyle((previousStyle) => {
+      return { ...previousStyle, ...styleChanges };
+    });
+    return true;
   };
 
   const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
@@ -77,6 +117,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     ready: props.onReady,
     save: props.onSave,
     submit: props.onSubmit,
+    resize: props.onResize,
     // authoring
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -89,6 +130,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       ready: props.onReady,
       save: props.onSave,
       submit: props.onSubmit,
+      resize: props.onResize,
       // authoring
       configure: (props as AuthorProps).onConfigure || stubHandler,
       saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -99,6 +141,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     props.onReady,
     props.onSave,
     props.onSubmit,
+    props.onResize,
     (props as AuthorProps).onConfigure,
     (props as AuthorProps).onSaveConfigure,
     (props as AuthorProps).onCancelConfigure,
@@ -121,8 +164,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         const el = ref.current;
         if (el) {
           if (el.notify) {
-            if (notificationType === NotificationType.CONTEXT_CHANGED) {
-              handleStylingChanges(e.snapshot);
+            if (
+              notificationType === NotificationType.CONTEXT_CHANGED ||
+              notificationType === NotificationType.STATE_CHANGED
+            ) {
+              handleStylingChanges(e.snapshot || e.mutateChanges);
             }
             el.notify(notificationType.toString(), e);
           }
@@ -151,6 +197,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
         const result = await handler(payload);
+        if (e.type === 'resize') {
+          onResize(payload);
+        }
         if (callback) {
           callback(result);
         }
@@ -182,6 +231,12 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   // if we pass in style then it will be controlled and so nothing else can use it
   if (!(props as AuthorProps).editMode) {
+    if (wcTagName === 'janus-popup') {
+      const config = props.model.popup?.custom ? props.model.popup.custom : null;
+      const zIndexModal = config?.z ? config?.z : 1000;
+      const zIndexIcon = props?.model?.z || 0;
+      componentStyle.zIndex = Math.max(zIndexIcon, zIndexModal);
+    }
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }

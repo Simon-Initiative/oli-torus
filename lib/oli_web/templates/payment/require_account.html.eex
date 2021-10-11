@@ -1,0 +1,19 @@
+
+<div class="mt-5">
+  <h3>Payment and Account Required</h3>
+  <p class="mt-3">
+    Your course section requires you to pay before you can access the course content.
+  </p>
+
+  <p class="mt-3">
+    You are currently accessing the system as a guest. Before you can proceed, you
+    need to either sign in with an existing account or register and create an account.
+  </p>
+
+  <p class="mt-3">
+    <a href="<%= Routes.delivery_path(@conn, :signin, %{"section" => @section_slug}) %>">Sign in / Create an account</a>
+  </p>
+
+
+
+</div>

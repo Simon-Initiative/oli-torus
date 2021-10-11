@@ -9,7 +9,7 @@ import { defaultModel } from './utils';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(content: CreationContext): Promise<ShortAnswerModelSchema> {
+function createFn(_context: CreationContext): Promise<ShortAnswerModelSchema> {
   return Promise.resolve(Object.assign({}, defaultModel()));
 }
 

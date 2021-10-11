@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { CSSSelector } from 'swiper/types/shared';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -52,6 +51,10 @@ export const handleValueExpression = (
     ) {
       const variableList = value.match(/\{(.*?)\}/g);
       variableList?.forEach((item) => {
+        if (item.indexOf('|') > 0) {
+          // if the variable is already targetted to another screen, we don't need to do this.
+          return;
+        }
         //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
         //it should be like {q.145225454.1|stage.input.value}
         const modifiedValue = item.replace('{', '').replace('}', '');
@@ -502,6 +505,7 @@ const DeckLayoutFooter: React.FC = () => {
             </div>
             <style type="text/css" aria-hidden="true" />
             <div className="content" style={{ overflow: 'hidden auto !important' }}>
+              {/* TODO: snapshot method causes constant re-render (props change) */}
               <FeedbackRenderer
                 feedbacks={currentFeedbacks}
                 snapshot={getLocalizedStateSnapshot(currentActivityIds)}

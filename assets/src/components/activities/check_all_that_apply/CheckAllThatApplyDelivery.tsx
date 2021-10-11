@@ -1,6 +1,6 @@
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { Manifest } from 'components/activities/types';
-import { initialSelection, isCorrect } from 'data/content/activities/utils';
+import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import {
   ActivityDeliveryState,
   initializeState,
@@ -8,7 +8,7 @@ import {
   setSelection,
   activityDeliverySlice,
   resetAction,
-} from 'data/content/activities/DeliveryState';
+} from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -19,14 +19,15 @@ import {
   DeliveryElementProvider,
   useDeliveryElementContext,
 } from '../DeliveryElement';
-import { ResetButtonConnected } from 'components/activities/common/delivery/resetButton/ResetButtonConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submitButton/SubmitButtonConnected';
+import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
+import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
-import { GradedPointsConnected } from 'components/activities/common/delivery/gradedPoints/GradedPointsConnected';
-import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDeliveryConnected';
+import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
+import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -38,11 +39,11 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(initializeState(activityState, initialSelection(activityState)));
+    dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 
   // First render initializes state
-  if (!uiState.selection) {
+  if (!uiState.partState) {
     return null;
   }
 
@@ -52,6 +53,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
+          partId={DEFAULT_PART_ID}
           unselectedIcon={<Checkbox.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -62,11 +64,13 @@ export const CheckAllThatApplyComponent: React.FC = () => {
               <Checkbox.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(setSelection(id, onSaveActivity, 'multiple'))}
+          onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'multiple'))}
         />
-        <ResetButtonConnected onReset={() => dispatch(resetAction(onResetActivity, []))} />
+        <ResetButtonConnected
+          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
+        />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected />
+        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />
       </div>
     </div>

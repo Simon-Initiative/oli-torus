@@ -1,0 +1,61 @@
+@import "authoring/variables";
+
+.curriculum-editor {
+  .targeted-objectives {
+    .objective {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .change-view-buttons {
+    // Bootstrap override
+    .btn.active,
+    .authoring .btn-group-vertical > .btn:focus,
+    .authoring .btn-group-vertical > .btn:active,
+    .authoring .btn-group-vertical > .btn.active {
+      z-index: inherit;
+    }
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .no-objectives {
+    color: $warning;
+  }
+
+  .curriculum-entry {
+    border: 1px solid $gray-400;
+    border-radius: 4px;
+    box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
+    cursor: grab;
+    background-color: $body-bg;
+    color: $body-color;
+
+    &:active {
+      cursor: grabbing;
+      border-color: $primary;
+    }
+
+    &.active {
+      border-color: $primary;
+    }
+
+    .entry-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .badge {
+      border-radius: 0.3em;
+      background-color: #e8e8e8;
+      color: rgba(0, 0, 0, 0.6);
+      font-weight: 700;
+    }
+
+    .entry-actions {
+      cursor: initial;
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { ConditionProperties } from 'json-rules-engine';
 import { isEqual } from 'lodash';
 import React, { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import ConditionItemEditor from './ConditionItemEditor';
 
 export interface JanusConditionProperties extends ConditionProperties {
   id: string;
+  type?: CapiVariableTypes;
 }
 
 type JanusNestedCondition = JanusConditionProperties | JanusTopLevelCondition;
@@ -129,6 +131,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
     // todo: support adding any/all sub chains?
     const newCondition = {
       id: `c:${guid()}`,
+      type: CapiVariableTypes.STRING,
       fact: 'stage.',
       operator: 'equal',
       value: '',
@@ -143,6 +146,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         {
           id: `c:${guid()}`,
           fact: 'stage.',
+          type: CapiVariableTypes.STRING,
           operator: 'equal',
           value: '',
         },
@@ -175,10 +179,13 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         if (changes.fact) {
           (c as JanusConditionProperties).fact = changes.fact;
         }
+        if (changes.type) {
+          (c as JanusConditionProperties).type = changes.type;
+        }
         if (changes.operator) {
           (c as JanusConditionProperties).operator = changes.operator;
         }
-        if (changes.value) {
+        if (changes.value !== undefined) {
           (c as JanusConditionProperties).value = changes.value;
         }
       }
@@ -251,7 +258,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
           data-toggle="dropdown"
           aria-haspopup="true"
           aria-expanded="false"
-          onClick={(e) => {
+          onClick={() => {
             ($(`#cb-editor-add-context-trigger`) as any).dropdown('toggle');
           }}
         >
@@ -326,8 +333,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   data-toggle="dropdown"
                   aria-haspopup="true"
                   aria-expanded="false"
-                  onClick={(e) => {
-                    // e.stopPropagation();
+                  onClick={() => {
                     ($(`#add-condition-${id}-context-trigger-${index}`) as any).dropdown('toggle');
                   }}
                 >
@@ -395,6 +401,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
             ) : (
               <ConditionItemEditor
                 key={condition.id || `ci-${index}`}
+                parentIndex={index}
                 condition={condition as JanusConditionProperties}
                 onChange={(changes) =>
                   handleConditionItemChange(condition as JanusConditionProperties, changes)

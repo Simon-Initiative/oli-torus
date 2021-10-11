@@ -9,32 +9,37 @@ import {
 import { PartComponentProps } from '../types/parts';
 import './Carousel.css';
 import { CarouselModel } from './schema';
-import { JanusCarouselModes } from './types';
+
+interface CarouselImageModel {
+  url: string;
+  caption: string;
+  alt: string;
+}
 
 const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
+  const [images, setImages] = useState<CarouselImageModel[]>(props.model.images || []);
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [viewedSlides, setViewedSlides] = useState<any[]>([]);
   const [captionRefs, setCaptionRefs] = useState<any[]>([]);
-  const [carouselCustomCss, setCarouselCustomCss] = useState<string>('');
   const [carouselZoom, setCarouselZoom] = useState<boolean>(true);
   const [cssClass, setCssClass] = useState('');
+
   // initialize the swiper
   SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
     setCarouselZoom(dZoom);
 
-    const dCssClass = pModel.cssClasses || cssClass;
+    const dCssClass = pModel.customCssClass || cssClass;
     setCssClass(dCssClass);
 
-    const dCustomCss = pModel.customCss || carouselCustomCss;
-    setCarouselCustomCss(dCustomCss);
+    const dImages = pModel.images || images;
+    setImages(dImages);
 
     const initResult = await props.onInit({
       id,
@@ -49,11 +54,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: dZoom,
         },
-        {
-          key: 'customCss',
-          type: CapiVariableTypes.STRING,
-          value: dCustomCss,
-        },
       ],
     });
 
@@ -63,11 +63,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     const sZoom = currentStateSnapshot[`stage.${id}.zoom`];
     if (sZoom !== undefined) {
       setCarouselZoom(sZoom);
-    }
-
-    const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
-    if (sCustomCss !== undefined) {
-      setCarouselCustomCss(sCustomCss);
     }
 
     const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
@@ -101,15 +96,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
           case NotificationType.STATE_CHANGED:
             {
               const { mutateChanges: changes } = payload;
-              const sMode = changes[`stage.${id}.Mode`];
-              if (sMode !== undefined) {
-                setCarouselMode(sMode);
-              }
-
-              const sCustomCss = changes[`stage.${id}.customCss`];
-              if (sCustomCss !== undefined) {
-                setCarouselCustomCss(sCustomCss);
-              }
 
               const sZoom = changes[`stage.${id}.zoom`];
               if (sZoom !== undefined) {
@@ -133,29 +119,8 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   }, [props.notify]);
 
   useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
-    initialize(pModel);
-  }, [props]);
+    initialize(props.model);
+  }, [props.model]);
 
   useEffect(() => {
     if (!ready) {
@@ -164,39 +129,18 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const {
-    title = '',
-    x = 0,
-    y = 0,
-    z = 0,
-    width,
-    height,
-    cssClasses = '',
-    fontSize = 16,
-    showOnAnswersReport = false,
-    requireManualGrading = false,
-    src,
-    mode = JanusCarouselModes.STUDENT,
-    images = [],
-    customCss = '',
-    zoom = false,
-  } = model;
-
-  const [carouselMode, setCarouselMode] = useState<string>(mode);
+  const { z = 0, width, height, fontSize = 16 } = props.model;
 
   const MAGIC_NUMBER = 64;
   const PAGINATION_HEIGHT = 32;
+
   const styles: CSSProperties = {
-    /*  position: 'absolute',
-    top: `${y}px`,
-    left: `${x}px`,
-    width: `${width}px`,
-    height: `${height}px`, */
     fontSize: `${fontSize}px`,
-    /* zIndex: z, */
+    zIndex: z,
     overflow: 'hidden',
     display: 'flex',
   };
+
   const imgStyles: CSSProperties = {
     maxWidth: `calc(${width}px - ${MAGIC_NUMBER}px)`,
     maxHeight: imagesLoaded
@@ -215,18 +159,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     }
   }, [images]);
 
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
-
-  const saveState = ({
-    carouselCustomCss,
-    carouselZoom,
-  }: {
-    carouselCustomCss: string;
-    carouselZoom: boolean;
-  }) => {
+  const saveState = ({ carouselZoom }: { carouselZoom: boolean }) => {
     const vars: any = [];
     const viewedImagesCount = [...new Set(viewedSlides)].length;
     const currentImage = currentSlide + 1;
@@ -241,12 +174,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
       type: CapiVariableTypes.NUMBER,
       value: viewedImagesCount,
     });
-    //BS: don't really need to save this since it won't be changed by user
-    vars.push({
-      key: `customCss`,
-      type: CapiVariableTypes.STRING,
-      value: carouselCustomCss,
-    });
     vars.push({
       key: `zoom`,
       type: CapiVariableTypes.BOOLEAN,
@@ -260,7 +187,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
 
   useEffect(() => {
     saveState({
-      carouselCustomCss,
       carouselZoom,
     });
   }, [currentSlide]);
@@ -272,7 +198,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
 
   return ready ? (
     <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
-      {}
       {images.length > 0 && (
         <Swiper
           slidesPerView={1}

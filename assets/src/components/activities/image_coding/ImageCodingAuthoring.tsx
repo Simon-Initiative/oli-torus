@@ -1,27 +1,28 @@
+import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
+import { CloseButton } from 'components/misc/CloseButton';
+import { Heading } from 'components/misc/Heading';
+import * as ContentModel from 'data/content/model';
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+import guid from 'utils/guid';
 import {
   AuthoringElement,
   AuthoringElementProps,
   AuthoringElementProvider,
   useAuthoringElementContext,
 } from '../AuthoringElement';
-import { ImageCodingModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { ICActions } from './actions';
-import { Provider } from 'react-redux';
-import { Heading } from 'components/misc/Heading';
-import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
-import * as ContentModel from 'data/content/model';
-import { Feedback } from './sections/Feedback';
-import { lastPart } from './utils';
-import { CloseButton } from 'components/misc/CloseButton';
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
-import { ImageCodeEditor } from './sections/ImageCodeEditor';
-import guid from 'utils/guid';
 import { MediaItemRequest } from '../types';
-import { configureStore } from 'state/store';
+import { ICActions } from './actions';
+import { ImageCodingModelSchema } from './schema';
+import { Feedback } from './sections/Feedback';
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
+import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
@@ -35,7 +36,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     onRequestMedia,
   };
 
-  function selectImage(projectSlug: string, model: ContentModel.Image): Promise<string> {
+  function selectImage(_projectSlug: string, _model: ContentModel.Image): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -54,8 +55,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   }
 
   function selectSpreadsheet(
-    projectSlug: string,
-    model: ContentModel.Image,
+    _projectSlug: string,
+    _model: ContentModel.Image,
   ): Promise<ContentModel.Image> {
     return new Promise((resolve, reject) => {
       const request = {
@@ -192,7 +193,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         <div>
           {solutionParameters()}
 
-          <Hints hintsPath="$.authoring.parts[0].hints" />
+          <HintsAuthoring partId={DEFAULT_PART_ID} />
 
           <Feedback
             {...sharedProps}

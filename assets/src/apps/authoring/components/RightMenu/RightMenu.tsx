@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import {
   selectRightPanelActiveTab,
+  setCopiedPart,
   setRightPanelActiveTab,
 } from '../../../authoring/store/app/slice';
 import {
@@ -37,6 +39,11 @@ import bankSchema, {
   transformBankModeltoSchema,
   transformBankSchematoModel,
 } from '../PropertyEditor/schemas/bank';
+import bankPropsSchema, {
+  BankPropsUiSchema,
+  transformBankPropsModeltoSchema,
+  transformBankPropsSchematoModel,
+} from '../PropertyEditor/schemas/bankScreen';
 import lessonSchema, {
   lessonUiSchema,
   transformModelToSchema as transformLessonModel,
@@ -79,6 +86,7 @@ const RightMenu: React.FC<any> = () => {
 
   const [scrData, setScreenData] = useState();
   const [scrSchema, setScreenSchema] = useState<JSONSchema7>();
+  const [scrUiSchema, setScreenUiSchema] = useState<UiSchema>();
   const [questionBankData, setBankData] = useState<any>();
   const [questionBankSchema, setBankSchema] = useState<JSONSchema7>();
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
@@ -87,8 +95,13 @@ const RightMenu: React.FC<any> = () => {
       return;
     }
     console.log('CURRENT', { currentActivity, currentLesson });
-    setScreenData(transformScreenModeltoSchema(currentActivity));
-    setScreenSchema(screenSchema);
+    setScreenData(
+      currentSequence?.custom.isBank
+        ? transformBankPropsModeltoSchema(currentActivity)
+        : transformScreenModeltoSchema(currentActivity),
+    );
+    setScreenSchema(currentSequence?.custom.isBank ? bankPropsSchema : screenSchema);
+    setScreenUiSchema(currentSequence?.custom.isBank ? BankPropsUiSchema : screenUiSchema);
 
     setBankData(transformBankModeltoSchema(currentSequence as SequenceEntry<SequenceBank>));
     setBankSchema(bankSchema);
@@ -106,7 +119,18 @@ const RightMenu: React.FC<any> = () => {
     // TODO: any other saving or whatever
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: key }));
   };
-
+  const handleCopyComponent = useCallback(() => {
+    if (currentActivity && currentPartSelection) {
+      const partDef = currentActivity.content?.partsLayout.find(
+        (part: any) => part.id === currentPartSelection,
+      );
+      if (!partDef) {
+        console.warn(`Part with id ${currentPartSelection} not found on this screen`);
+        return;
+      }
+      dispatch(setCopiedPart({ copiedPart: partDef }));
+    }
+  }, [currentActivity, currentPartSelection]);
   const bankPropertyChangeHandler = useCallback(
     (properties: object) => {
       if (currentSequence) {
@@ -146,7 +170,9 @@ const RightMenu: React.FC<any> = () => {
   const screenPropertyChangeHandler = useCallback(
     (properties: object) => {
       if (currentActivity) {
-        const modelChanges = transformScreenSchematoModel(properties);
+        const modelChanges = currentSequence?.custom.isBank
+          ? transformBankPropsSchematoModel(properties)
+          : transformScreenSchematoModel(properties);
         console.log('Screen Property Change...', { properties, modelChanges });
         const { title, ...screenModelChanges } = modelChanges;
         const screenChanges = {
@@ -158,7 +184,9 @@ const RightMenu: React.FC<any> = () => {
         if (title) {
           cloneActivity.title = title;
         }
-        debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+        if (JSON.stringify(cloneActivity) !== JSON.stringify(currentActivity)) {
+          debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+        }
       }
     },
     [currentActivity],
@@ -197,33 +225,38 @@ const RightMenu: React.FC<any> = () => {
     [],
   );
 
-  const lessonPropertyChangeHandler = (properties: object) => {
-    const modelChanges = transformLessonSchema(properties);
+  const lessonPropertyChangeHandler = useCallback(
+    (properties: object) => {
+      const modelChanges = transformLessonSchema(properties);
 
-    // special consideration for legacy stylesheets
-    if (modelChanges.additionalStylesheets[0] === null) {
-      modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
-    }
+      // special consideration for legacy stylesheets
+      if (modelChanges.additionalStylesheets[0] === null) {
+        modelChanges.additionalStylesheets[0] = (currentLesson.additionalStylesheets || [])[0];
+      }
 
-    const lessonChanges = {
-      ...currentLesson,
-      ...modelChanges,
-      custom: { ...currentLesson.custom, ...modelChanges.custom },
-    };
-    //need to remove the allowNavigation property
-    //making sure the enableHistory is present before removing that.
-    if (
-      lessonChanges.custom.enableHistory !== undefined &&
-      lessonChanges.custom.allowNavigation !== undefined
-    ) {
-      delete lessonChanges.custom.allowNavigation;
-    }
-    console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
+      const lessonChanges = {
+        ...currentLesson,
+        ...modelChanges,
+        custom: { ...currentLesson.custom, ...modelChanges.custom },
+      };
+      //need to remove the allowNavigation property
+      //making sure the enableHistory is present before removing that.
+      if (
+        lessonChanges.custom.enableHistory !== undefined &&
+        lessonChanges.custom.allowNavigation !== undefined
+      ) {
+        delete lessonChanges.custom.allowNavigation;
+      }
+      console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
 
-    // need to put a healthy debounce in here, this fires every keystroke
-    // save the page
-    debounceSavePage(lessonChanges);
-  };
+      // need to put a healthy debounce in here, this fires every keystroke
+      // save the page
+      if (JSON.stringify(lessonChanges) !== JSON.stringify(currentLesson)) {
+        debounceSavePage(lessonChanges);
+      }
+    },
+    [currentLesson],
+  );
 
   const debouncePartPropertyChanges = useCallback(
     debounce(
@@ -264,7 +297,7 @@ const RightMenu: React.FC<any> = () => {
         }
         ogPart.custom = modelChanges.custom;
 
-        if (!isEqual(cloneActivity, origActivity)) {
+        if (JSON.stringify(cloneActivity) !== JSON.stringify(origActivity)) {
           dispatch(saveActivity({ activity: cloneActivity }));
         }
       },
@@ -350,6 +383,7 @@ const RightMenu: React.FC<any> = () => {
 
   const componentPropertyChangeHandler = useCallback(
     (properties: object) => {
+      console.log('CHANGE??????????', { properties, currentPartSelection });
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,
@@ -359,6 +393,7 @@ const RightMenu: React.FC<any> = () => {
     },
     [currentActivity, currentPartInstance, currentPartSelection],
   );
+
   const handleEditComponentJson = (newJson: any) => {
     const cloneActivity = clone(currentActivity);
     const ogPart = cloneActivity.content?.partsLayout.find(
@@ -441,8 +476,8 @@ const RightMenu: React.FC<any> = () => {
           {currentActivity && scrData ? (
             <PropertyEditor
               key={currentActivity.id}
-              schema={screenSchema as JSONSchema7}
-              uiSchema={screenUiSchema}
+              schema={scrSchema as JSONSchema7}
+              uiSchema={scrUiSchema as UiSchema}
               value={scrData}
               onChangeHandler={screenPropertyChangeHandler}
             />
@@ -461,7 +496,7 @@ const RightMenu: React.FC<any> = () => {
                   <i className="fas fa-cog mr-2" />
                 </Button>
                 <Button>
-                  <i className="fas fa-copy mr-2" />
+                  <i className="fas fa-copy mr-2" onClick={() => handleCopyComponent()} />
                 </Button>
                 <CompJsonEditor
                   onChange={handleEditComponentJson}
@@ -483,6 +518,7 @@ const RightMenu: React.FC<any> = () => {
               </ButtonGroup>
             </ButtonToolbar>
             <PropertyEditor
+              key={currentComponentData.id}
               schema={componentSchema}
               uiSchema={componentUiSchema}
               value={currentComponentData}

@@ -8,6 +8,13 @@ import { saveActivity } from '../../../authoring/store/activities/actions/saveAc
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import {
+  ActionOperatorOption,
+  actionOperatorOptions,
+  TypeOption,
+  typeOptions,
+} from './AdaptiveItemOptions';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -29,6 +36,16 @@ interface InitStateItemProps {
 const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
+
+  // update adding operator if targetType changes from number
+  useEffect(() => {
+    if (state.type !== CapiVariableTypes.NUMBER) {
+      if (state.operator === 'adding') {
+        onChange(state.id, 'operator', '=');
+      }
+    }
+  }, [state.type]);
+
   return (
     <div
       key={state.id}
@@ -40,6 +57,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
             targetRef={targetRef}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
+            context="init"
           />
         </div>
         <label className="sr-only" htmlFor={`target-${state.id}`}>
@@ -60,13 +78,13 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
       </div>
 
       <label className="sr-only" htmlFor={`operator-${state.id}`}>
-        operator
+        type
       </label>
       <select
         key={`type-${state.id}`}
         className="custom-select mr-2 form-control form-control-sm"
         id={`type-${state.id}`}
-        defaultValue={state.type}
+        value={state.type}
         onChange={(e) => onChange(state.id, 'type', e.target.value)}
         title="Type"
         tabIndex={0}
@@ -85,16 +103,23 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         key={`operator-${state.id}`}
         className="custom-select mr-2 form-control form-control-sm"
         id={`operator-${state.id}`}
-        defaultValue={state.operator}
+        value={state.operator}
         onChange={(e) => onChange(state.id, 'operator', e.target.value)}
         title="Operator"
         tabIndex={0}
       >
-        {opOptions.map((option: OperatorOption, index: number) => (
-          <option key={`option${index}-${state.id}`} value={option.value}>
-            {option.text}
-          </option>
-        ))}
+        {actionOperatorOptions
+          .filter((option: ActionOperatorOption) => {
+            if (state.type !== CapiVariableTypes.NUMBER) {
+              return option.key !== 'add';
+            }
+            return true;
+          })
+          .map((option: ActionOperatorOption, index: number) => (
+            <option key={`option${index}-${state.id}`} value={option.value}>
+              {option.text}
+            </option>
+          ))}
       </select>
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="Value">
@@ -136,33 +161,6 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   );
 };
 
-interface TypeOption {
-  key: string;
-  text: string;
-  value: number;
-}
-const typeOptions: TypeOption[] = [
-  { key: 'number', text: 'Number', value: 1 },
-  { key: 'string', text: 'String', value: 2 },
-  { key: 'array', text: 'Array', value: 3 },
-  { key: 'boolean', text: 'Boolean', value: 4 },
-  { key: 'enum', text: 'Enum', value: 5 },
-  { key: 'math', text: 'Math Expression', value: 6 },
-  { key: 'parray', text: 'Point Array', value: 7 },
-];
-
-interface OperatorOption {
-  key: string;
-  text: string;
-  value: string;
-}
-const opOptions: OperatorOption[] = [
-  { key: 'add', text: 'Adding', value: 'adding' },
-  { key: 'bind', text: 'Bind To', value: 'bind to' },
-  { key: 'set', text: 'Setting To', value: 'setting to' },
-  { key: 'equal', text: '=', value: '=' },
-];
-
 export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
   const dispatch = useDispatch();
   const currentActivity = useSelector(selectCurrentActivity);
@@ -203,10 +201,10 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
     const tempRules = clone(initState);
     const tempRule = {
       id: `is:${guid()}`,
-      target: '',
+      target: 'stage.',
       value: '',
       type: typeOptions[0].value,
-      operator: opOptions[0].value,
+      operator: actionOperatorOptions[0].value,
     };
     tempRules.push(tempRule);
     setInitState(tempRules);

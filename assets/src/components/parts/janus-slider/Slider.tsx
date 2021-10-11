@@ -180,21 +180,17 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     showDataTip,
     showValueLabels,
     showLabel,
+    showTicks,
     invertScale,
   } = model;
 
   const styles: CSSProperties = {
-    /* position: 'absolute',
-    width: `${width}px`,
-    top: `${y}px`,
-    left: `${x}px`,
-    height: `${height}px`,
-    zIndex: z, */
+    width: '100%',
     flexDirection: model.showLabel ? 'column' : 'row',
   };
   const inputStyles: CSSProperties = {
     width: '100%',
-    height: `${height}px`,
+    height: `3px`,
     zIndex: z,
     direction: invertScale ? 'rtl' : 'ltr',
   };
@@ -202,8 +198,8 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     width: '100%',
     display: `flex`,
     flexDirection: 'row',
+    alignItems: 'center',
   };
-
   const inputWidth = inputInnerWidth;
   const thumbWidth = spanInnerWidth;
   const thumbHalfWidth = thumbWidth / 2;
@@ -211,7 +207,16 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     ((Number(sliderValue) - minimum) / (maximum - minimum)) *
     (inputWidth - thumbWidth + thumbHalfWidth);
   const thumbMargin = thumbHalfWidth * -1 + thumbHalfWidth / 2;
-
+  const getTickOptions = () => {
+    if (snapInterval) {
+      const options = [];
+      const numberOfTicks = (maximum - minimum) / snapInterval;
+      for (let i = 0; i <= numberOfTicks; i++) {
+        options.push(<option value={i * snapInterval}></option>);
+      }
+      return options;
+    }
+  };
   const saveState = ({ sliderVal, userModified }: { sliderVal: number; userModified: boolean }) => {
     props.onSave({
       id: `${id}`,
@@ -253,6 +258,11 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
 
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`slider`}>
+      {showLabel && (
+        <label className="input-label" htmlFor={internalId}>
+          {label}
+        </label>
+      )}
       <div className="sliderInner">
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? maximum : minimum}</label>}
         <div className="rangeWrap">
@@ -282,19 +292,19 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               type={'range'}
               value={sliderValue}
               step={snapInterval}
-              className={` slider `}
               id={internalId}
               onChange={handleSliderChange}
+              list={showTicks ? `datalist${internalId}` : ''}
             />
+            {showTicks && (
+              <datalist style={{ display: 'none' }} id={`datalist${internalId}`}>
+                {getTickOptions()}
+              </datalist>
+            )}
           </div>
         </div>
         {showValueLabels && <label htmlFor={internalId}>{invertScale ? minimum : maximum}</label>}
       </div>
-      {showLabel && (
-        <label className="input-label" htmlFor={internalId}>
-          {label}
-        </label>
-      )}
     </div>
   ) : null;
 };

@@ -548,7 +548,9 @@ const SequenceEditor: React.FC<any> = (props) => {
                     />
                   ) : null}
                   {!itemToRename ? (
-                    <span className="title">{title}</span>
+                    <span className="title" title={item.custom.sequenceId}>
+                      {title}
+                    </span>
                   ) : itemToRename.custom.sequenceId !== item.custom.sequenceId ? (
                     <span className="title">{title}</span>
                   ) : null}

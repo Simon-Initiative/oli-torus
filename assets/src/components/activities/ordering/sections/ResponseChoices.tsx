@@ -10,7 +10,7 @@ interface Props {
 }
 export const ResponseChoices: React.FC<Props> = ({ choices, setChoices }) => {
   return (
-    <Draggable.Column items={choices} setItems={setChoices}>
+    <Draggable.Column displayOutline items={choices} setItems={setChoices}>
       {choices.map((choice, index) => (
         <Draggable.Item
           itemAriaLabel={`choice ${index + 1}`}

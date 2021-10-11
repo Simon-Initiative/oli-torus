@@ -1,61 +1,62 @@
 defmodule OliWeb.Common.Modal do
   @moduledoc """
-  A reusable LivewComponent for a Bootstrap modal.
+  A Phoenix LiveView compliant Bootstrap modal implementation.
 
-  Minimal example usage specifying only the required properties:
+  Usage:
 
+  1. In your LiveView, use this module:
   ```
-  <%= live_component Modal, title: "Confirm your request", modal_id: "my_unique_modal_id", ok_action: "confirm" do %>
-    <p class="mb-4">Are you sure you want to do this?</p>
-  <% end %>
+  use OliWeb.Common.Modal
   ```
 
-  Required properties:
-
-  `title`: The string title that the modal will display
-  `modal_id`: The DOM id that will be attached to this modal. This is the id that another part of the UI needs
-              to target to trigger the modal
-  'ok_action': The phx-click action to invoke upon clicking the 'Ok' button
-
-  Optional properties:
-
-  `ok_label`: The label to use for the 'Ok' button, defaults to 'Ok'
-  `ok_style`: The Bootstrap button style to use for the 'Ok' button, defaults to `btn-primary`
-
-  """
-
-  use Phoenix.LiveComponent
-
-  def mount(socket) do
-    # Default property values
-    {:ok,
-     assign(socket,
-       ok_label: "Ok",
-       ok_style: "btn-primary"
-     )}
+  2. Initialize `modal` assign and add `render_modal(assigns)` to the rendered output:
+  ```
+  mount(_, _, socket) do
+    {:ok, assign(socket, modal: nil)}
   end
 
   def render(assigns) do
-    ~L"""
-    <div class="modal fade" id="<%= @modal_id %>" tabindex="-1" role="dialog" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title"><%= @title %></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <%= render_block(@inner_block) %>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="button" class="btn <%= @ok_style %>" data-dismiss="modal" phx-click="<%= @ok_action %>"><%= @ok_label %></button>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
+    ...
+    <%= render_modal(assigns) %>
+    ...
+  end
+  ```
+
+  3. Create your modal by setting the 'modal' assign
+  ```
+  def handle_event("show_modal", _, socket) do
+    {:noreply, assign(socket, modal: %{component: MyModal, assigns: %{...}})}
+  end
+  ```
+
+  4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
+  or using the hide_modal(socket) function
+  ```
+  def handle_event("close_modal", _, socket) do
+    {:noreply, socket |> hide_modal()}
+  end
+  ```
+  """
+
+  defmacro __using__([]) do
+    quote do
+      def render_modal(assigns) do
+        case assigns[:modal] do
+          nil ->
+            nil
+
+          %{component: component, assigns: assigns} ->
+            live_component(component, assigns)
+        end
+      end
+
+      def handle_event("_bsmodal.unmount", _, socket) do
+        {:noreply, assign(socket, modal: nil)}
+      end
+
+      def hide_modal(socket) do
+        push_event(socket, "_bsmodal.hide", %{})
+      end
+    end
   end
 end

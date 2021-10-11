@@ -51,7 +51,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     >
       <div
         contentEditable={false}
-        onClick={(e) => Transforms.select(editor, ReactEditor.findPath(editor, model))}
+        onClick={(_e) => Transforms.select(editor, ReactEditor.findPath(editor, model))}
         className="embed-responsive embed-responsive-16by9 img-thumbnail"
         style={borderStyle}
       >

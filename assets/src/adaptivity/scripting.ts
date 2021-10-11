@@ -15,17 +15,35 @@ export const looksLikeJson = (str: string) => {
   return str === emptyJsonObj || (startsLikeJson && endsLikeJson);
 };
 
-export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value: any }): string => {
+export const getExpressionStringForValue = (
+  v: { type: CapiVariableTypes; value: any },
+  env: Environment = defaultGlobalEnv,
+): string => {
   let val: any = v.value;
   let isValueVar = false;
 
   if (typeof val === 'string') {
+    let canEval = false;
+    try {
+      const test = evalScript(val, env);
+      canEval = test?.result !== undefined && !test.result.message;
+      /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
+    } catch (e) {
+      // failed for any reason
+    }
+
+    const looksLikeAFunction = val.includes('(') && val.includes(')');
+
     // we're assuming this is {stage.foo.whatever} as opposed to JSON {"foo": 1}
     // note this will break if number keys are used {1:2} !!
 
     const looksLikeJSON = looksLikeJson(val);
     const hasCurlies = val.includes('{') && val.includes('}');
-    isValueVar = hasCurlies && !looksLikeJSON;
+
+    const hasBackslash = val.includes('\\');
+    isValueVar =
+      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash) ||
+      (hasCurlies && !looksLikeJSON && !hasBackslash);
   }
 
   if (isValueVar) {
@@ -40,7 +58,7 @@ export const getExpressionStringForValue = (v: { type: CapiVariableTypes; value:
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     try {
-      const evalResult = evalScript(`let foo = ${val};`);
+      const evalResult = evalScript(`let foo = ${val};`, env);
       // when evalScript is executed successfully, evalResult.result is null.
       // evalScript does not trigger catch block even though there is error and add the error in stack property.
       if (evalResult?.result !== null) {
@@ -123,7 +141,10 @@ export const evalScript = (
     throw new Error(`Error in script: ${script}\n${parser.errors.join('\n')}`);
   }
   const result = evaluator.eval(program, globalEnv);
-  const jsResult = result.toJS();
+  let jsResult = result.toJS();
+  if (jsResult === 'null') {
+    jsResult = null;
+  }
   //if a variable has bindTo operator applied on this then we get a error that we can ignore
   // sometimes jsResult?.message?.indexOf('is a bound reference, cannot assign') is undefined so jsResult?.message?.indexOf('is a bound reference, cannot assign') !== -1 return true which we want to avoid hence checking > 0
   if (jsResult?.message?.indexOf('is a bound reference, cannot assign') > 0) {
@@ -137,14 +158,17 @@ export const evalAssignScript = (
   env?: Environment,
 ): { env: Environment; result: any } => {
   const globalEnv = env || new Environment();
-  const assignStatements = getAssignStatements(state);
+  const assignStatements = getAssignStatements(state, globalEnv);
   const results = assignStatements.map((assignStatement) => {
     return evalScript(assignStatement, globalEnv).result;
   });
   return { env: globalEnv, result: results };
 };
 
-export const getAssignStatements = (state: Record<string, any>): string[] => {
+export const getAssignStatements = (
+  state: Record<string, any>,
+  env: Environment = defaultGlobalEnv,
+): string[] => {
   const vars = Object.keys(state).map((key) => {
     const val = state[key];
     let writeVal = { key, value: val, type: 0 };
@@ -162,12 +186,17 @@ export const getAssignStatements = (state: Record<string, any>): string[] => {
     }
     return writeVal;
   });
-  const letStatements = vars.map((v) => `let {${v.key}} = ${getExpressionStringForValue(v)};`);
+  const letStatements = vars.map(
+    (v) => `let {${v.key.trim()}} = ${getExpressionStringForValue(v, env)};`,
+  );
   return letStatements;
 };
 
-export const getAssignScript = (state: Record<string, any>): string => {
-  const letStatements = getAssignStatements(state);
+export const getAssignScript = (
+  state: Record<string, any>,
+  env: Environment = defaultGlobalEnv,
+): string => {
+  const letStatements = getAssignStatements(state, env);
   return letStatements.join('');
 };
 
@@ -210,24 +239,30 @@ export const applyState = (
   operation: ApplyStateOperation,
   env: Environment = defaultGlobalEnv,
 ): any => {
-  const targetKey = operation.target;
+  const targetKey = operation.target.trim();
   const targetType = operation.type || operation.targetType || CapiVariableTypes.UNKNOWN;
-
+  let errorMsg = '';
   let script = `let {${targetKey}} `;
   switch (operation.operator) {
     case 'adding':
     case '+':
-      script += `= {${targetKey}} + ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script += `= {${targetKey}} + ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     case 'subtracting':
     case '-':
-      script += `= {${targetKey}} - ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script += `= {${targetKey}} - ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     case 'bind to':
       // NOTE: once a value is bound, you can *never* set it other than through binding????
@@ -235,7 +270,8 @@ export const applyState = (
       // binding is a special case, it MUST be a string because it's binding to a variable
       // it should not be wrapped in curlies already
       if (typeof operation.value !== 'string') {
-        throw new Error(`bind to value must be a string, got ${typeof operation.value}`);
+        errorMsg = `bind to value must be a string, got ${typeof operation.value}`;
+        break;
       }
       if (operation.value[0] === '{' && operation.value.slice(-1) === '}') {
         script += `= ${operation.value};`;
@@ -245,16 +281,27 @@ export const applyState = (
       break;
     case 'setting to':
     case '=':
-      script = `let {${targetKey}} = ${getExpressionStringForValue({
-        value: operation.value,
-        type: targetType,
-      })};`;
+      script = `let {${targetKey}} = ${getExpressionStringForValue(
+        {
+          value: operation.value,
+          type: targetType,
+        },
+        env,
+      )};`;
       break;
     default:
-      console.warn(`Unknown applyState operator ${operation.operator}!`);
+      errorMsg = `Unknown applyState operator ${JSON.stringify(operation.operator)}!`;
+      console.warn(errorMsg, {
+        operation,
+      });
       break;
   }
-  const result = evalScript(script, env);
+  let result;
+  if (errorMsg) {
+    result = { env, result: { error: true, message: errorMsg, details: operation } };
+  } else {
+    result = evalScript(script, env);
+  }
   /* console.log('APPLY STATE RESULTS: ', { script, result }); */
   return result;
 };

@@ -3,7 +3,50 @@ defmodule Oli.Analytics.Common do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
-  # alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Resources.Revision
+  alias Oli.Repo
+  alias Oli.Delivery.Attempts.Core.PartAttempt
+
+  def snapshots_for_project(project_slug) do
+    Repo.all(
+      from(project in Project,
+        where: project.slug == ^project_slug,
+        join: section in Section,
+        on: section.base_project_id == project.id,
+        join: snapshot in Snapshot,
+        on: snapshot.section_id == section.id,
+        join: activity in Revision,
+        on: snapshot.revision_id == activity.id,
+        left_join: objective in Revision,
+        on: snapshot.objective_revision_id == objective.id,
+        join: pattempt in PartAttempt,
+        on: snapshot.part_attempt_id == pattempt.id,
+        select: [
+          snapshot.part_attempt_id,
+          snapshot.activity_id,
+          snapshot.resource_id,
+          objective.resource_id,
+          activity.title,
+          activity.activity_type_id,
+          objective.title,
+          snapshot.attempt_number,
+          snapshot.graded,
+          snapshot.correct,
+          snapshot.score,
+          snapshot.out_of,
+          snapshot.hints,
+          pattempt.score,
+          pattempt.out_of,
+          pattempt.response,
+          pattempt.feedback,
+          activity.content,
+          section.title,
+          section.slug,
+          snapshot.inserted_at
+        ]
+      )
+    )
+  end
 
   alias Oli.Resources.Revision
   alias Oli.Repo

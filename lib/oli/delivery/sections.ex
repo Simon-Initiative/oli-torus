@@ -12,10 +12,47 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
   alias Oli.Lti_1p3.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Publishing
   alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Resources.ResourceType
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.Revision
+  alias Oli.Publishing.PublishedResource
+  alias Oli.Accounts.User
+  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
+
+  @doc """
+  Determines if a user is an instructor in a given section.
+  """
+  def is_instructor?(%User{id: id} = user, section_slug) do
+    is_enrolled?(id, section_slug) &&
+      ContextRoles.has_role?(
+        user,
+        section_slug,
+        ContextRoles.get_role(:context_instructor)
+      )
+  end
+
+  @doc """
+  Determines if a user is an administrator in a given section.
+  """
+  def is_admin?(%User{} = user, section_slug) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:system_administrator),
+        PlatformRoles.get_role(:institution_administrator)
+      ],
+      :any
+    ) ||
+      ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_administrator))
+  end
 
   @doc """
   Enrolls a user in a course section
@@ -128,6 +165,30 @@ defmodule Oli.Delivery.Sections do
   """
   def list_sections do
     Repo.all(Section)
+  end
+
+  @doc """
+  List all sections of type blueprint.
+  """
+  def list_blueprint_sections do
+    list_by_type(:blueprint)
+  end
+
+  @doc """
+  List all sections of type enrollable.
+  """
+  def list_enrollable_sections do
+    list_by_type(:enrollable)
+  end
+
+  defp list_by_type(type) do
+    Repo.all(
+      from(
+        s in Section,
+        where: s.type == ^type,
+        select: s
+      )
+    )
   end
 
   @doc """
@@ -296,6 +357,48 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Creates a section resource.
+  ## Examples
+      iex> create_section_resource(%{field: value})
+      {:ok, %SectionResource{}}
+      iex> create_section_resource(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_section_resource(attrs \\ %{}) do
+    %SectionResource{}
+    |> SectionResource.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a section resource.
+  ## Examples
+      iex> update_section_resource(section, %{field: new_value})
+      {:ok, %SectionResource{}}
+      iex> update_section_resource(section, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_section_resource(%SectionResource{} = section, attrs) do
+    section
+    |> SectionResource.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Creates a section projects publication record.
+  ## Examples
+      iex> create_section_project_publication(%{field: value})
+      {:ok, %SectionsProjectsPublications{}}
+      iex> create_section_project_publication(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_section_project_publication(attrs \\ %{}) do
+    %SectionsProjectsPublications{}
+    |> SectionsProjectsPublications.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
   Creates a section.
   ## Examples
       iex> create_section(%{field: value})
@@ -360,54 +463,45 @@ defmodule Oli.Delivery.Sections do
           project_id: project_id
         } = publication
       ) do
-    revisions_by_resource_id =
-      Oli.Publishing.get_published_revisions(publication)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+    Repo.transaction(fn ->
+      published_resources_by_resource_id = published_resources_map(publication.id)
 
-    numberings = Numbering.init_numberings()
-    level = 0
-    processed_ids = []
+      numbering_tracker = Numbering.init_numbering_tracker()
+      level = 0
+      processed_ids = []
 
-    {root_section_resource_id, _numberings, processed_ids} =
-      create_section_resource(
-        section,
-        publication,
-        revisions_by_resource_id,
-        processed_ids,
-        revisions_by_resource_id[root_resource_id],
-        level,
-        numberings
+      %PublishedResource{revision: root_revision} =
+        published_resources_by_resource_id[root_resource_id]
+
+      {root_section_resource_id, _numbering_tracker, processed_ids} =
+        create_section_resource(
+          section,
+          publication,
+          published_resources_by_resource_id,
+          processed_ids,
+          root_revision,
+          level,
+          numbering_tracker
+        )
+
+      processed_ids = [root_resource_id | processed_ids]
+
+      # create any remaining section resources which are not in the hierarchy
+      create_nonstructural_section_resources(section.id, [publication_id],
+        skip_resource_ids: processed_ids
       )
 
-    processed_ids = [root_resource_id | processed_ids]
+      update_section(section, %{root_section_resource_id: root_section_resource_id})
+      |> case do
+        {:ok, section} ->
+          add_source_project(section, project_id, publication_id)
 
-    # create any remaining section resources which are not in the hierarchy
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+          Repo.preload(section, [:root_section_resource, :section_project_publications])
 
-    revisions_by_resource_id
-    |> Enum.filter(fn {id, _rev} -> id not in processed_ids end)
-    |> Enum.map(fn {_id, revision} ->
-      [
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
-        resource_id: revision.resource_id,
-        project_id: publication.project_id,
-        section_id: section.id,
-        inserted_at: now,
-        updated_at: now
-      ]
+        e ->
+          e
+      end
     end)
-    |> then(&Repo.insert_all(SectionResource, &1))
-
-    update_section(section, %{root_section_resource_id: root_section_resource_id})
-    |> case do
-      {:ok, section} ->
-        add_source_project(section, project_id, publication_id)
-
-        {:ok, Repo.preload(section, [:root_section_resource, :section_project_publications])}
-
-      e ->
-        e
-    end
   end
 
   # This function constructs a section resource record by recursively calling itself on all the
@@ -418,37 +512,40 @@ defmodule Oli.Delivery.Sections do
   defp create_section_resource(
          section,
          publication,
-         revisions_by_resource_id,
+         published_resources_by_resource_id,
          processed_ids,
          revision,
          level,
-         numberings
+         numbering_tracker
        ) do
-    {numbering_index, numberings} = Numbering.next_index(numberings, level, revision)
+    {numbering_index, numbering_tracker} =
+      Numbering.next_index(numbering_tracker, level, revision)
 
-    {children, numberings, processed_ids} =
+    {children, numbering_tracker, processed_ids} =
       Enum.reduce(
         revision.children,
-        {[], numberings, processed_ids},
-        fn resource_id, {children_ids, numberings, processed_ids} ->
-          {id, numberings, processed_ids} =
+        {[], numbering_tracker, processed_ids},
+        fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
+          %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
+
+          {id, numbering_tracker, processed_ids} =
             create_section_resource(
               section,
               publication,
-              revisions_by_resource_id,
+              published_resources_by_resource_id,
               processed_ids,
-              revisions_by_resource_id[resource_id],
+              child,
               level + 1,
-              numberings
+              numbering_tracker
             )
 
-          {[id | children_ids], numberings, [resource_id | processed_ids]}
+          {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
         end
       )
       # it's more efficient to append to list using [id | children_ids] and
       # then reverse than to concat on every reduce call using ++
-      |> then(fn {children, numberings, processed_ids} ->
-        {Enum.reverse(children), numberings, processed_ids}
+      |> then(fn {children, numbering_tracker, processed_ids} ->
+        {Enum.reverse(children), numbering_tracker, processed_ids}
       end)
 
     %SectionResource{id: section_resource_id} =
@@ -462,7 +559,7 @@ defmodule Oli.Delivery.Sections do
         section_id: section.id
       })
 
-    {section_resource_id, numberings, processed_ids}
+    {section_resource_id, numbering_tracker, processed_ids}
   end
 
   def rebuild_section_resources(
@@ -484,6 +581,40 @@ defmodule Oli.Delivery.Sections do
     |> Repo.delete_all()
 
     create_section_resources(section, publication)
+  end
+
+  def retrieve_visible_sources(user, institution) do
+    all =
+      case user.author do
+        nil ->
+          {Oli.Delivery.Sections.Blueprint.available_products(),
+           Publishing.available_publications()}
+
+        author ->
+          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
+           Publishing.available_publications(author, institution)}
+      end
+      |> then(fn {products, publications} ->
+        filtered =
+          Enum.filter(publications, fn p -> p.published end)
+          |> then(fn publications ->
+            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
+              products,
+              publications
+            )
+          end)
+
+        filtered ++ products
+      end)
+
+    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
+  end
+
+  defp get_title(pub_or_prod) do
+    case Map.get(pub_or_prod, :title) do
+      nil -> pub_or_prod.project.title
+      title -> title
+    end
   end
 
   @doc """
@@ -560,5 +691,453 @@ defmodule Oli.Delivery.Sections do
       where: spp.section_id == ^section_id and spp.project_id == ^project_id
     )
     |> Repo.update_all(set: [publication_id: publication_id])
+  end
+
+  @doc """
+  Rebuilds a section curriculum by upserting any new or existing section resources
+  and removing any deleted section resources based on the given hierarchy. Also updates
+  the project publication mappings based on the given project_publications map.
+
+  project_publications is a map of the project id to the pinned publication for the section.
+  %{1 => %Publication{project_id: 1, ...}, ...}
+  """
+  def rebuild_section_curriculum(
+        %Section{id: section_id},
+        %HierarchyNode{} = hierarchy,
+        project_publications
+      ) do
+    Repo.transaction(fn ->
+      previous_section_resource_ids =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id,
+          select: sr.id
+        )
+        |> Repo.all()
+
+      # ensure there are no duplicate resources so as to not violate the
+      # section_resource [section_id, resource_id] database constraint
+      hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+
+      # ensure hierarchy numberings are all up to date
+      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+
+      # generate a new set of section resources based on the hierarchy
+      {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
+
+      processed_section_resources_by_id =
+        section_resources
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
+
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      placeholders = %{timestamp: now}
+
+      # upsert all section resources
+      section_resources
+      |> Enum.map(fn section_resource ->
+        %{
+          SectionResource.to_map(section_resource)
+          | inserted_at: {:placeholder, :timestamp},
+            updated_at: {:placeholder, :timestamp}
+        }
+      end)
+      |> then(
+        &Repo.insert_all(SectionResource, &1,
+          placeholders: placeholders,
+          on_conflict: {:replace_all_except, [:inserted_at]},
+          conflict_target: [:section_id, :resource_id]
+        )
+      )
+
+      # cleanup any deleted section resources
+      section_resource_ids_to_delete =
+        previous_section_resource_ids
+        |> Enum.filter(fn sr_id -> !Map.has_key?(processed_section_resources_by_id, sr_id) end)
+
+      from(sr in SectionResource,
+        where: sr.id in ^section_resource_ids_to_delete
+      )
+      |> Repo.delete_all()
+
+      # upsert section project publications ensure section project publication mappings are up to date
+      project_publications
+      |> Enum.map(fn {project_id, pub} ->
+        %{
+          section_id: section_id,
+          project_id: project_id,
+          publication_id: pub.id,
+          inserted_at: {:placeholder, :timestamp},
+          updated_at: {:placeholder, :timestamp}
+        }
+      end)
+      |> then(
+        &Repo.insert_all(SectionsProjectsPublications, &1,
+          placeholders: placeholders,
+          on_conflict: {:replace_all_except, [:inserted_at]},
+          conflict_target: [:section_id, :project_id]
+        )
+      )
+
+      # cleanup any unused project publication mappings
+      section_project_ids =
+        section_resources
+        |> Enum.map(fn %{project_id: project_id} -> project_id end)
+
+      from(spp in SectionsProjectsPublications,
+        where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
+      )
+      |> Repo.delete_all()
+
+      # finally, create non-hierarchical section resources for all projects
+      publication_ids =
+        from(spp in SectionsProjectsPublications,
+          where: spp.section_id == ^section_id,
+          select: spp.publication_id
+        )
+        |> Repo.all()
+
+      processed_ids =
+        processed_section_resources_by_id
+        |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
+
+      create_nonstructural_section_resources(section_id, publication_ids,
+        skip_resource_ids: processed_ids
+      )
+
+      section_resources
+    end)
+  end
+
+  @doc """
+  Gracefully applies the specified publication update to a given section by leaving the existing
+  curriculum and section modifications in-tact while applying the structural changes that
+  occurred between the old and new publication.
+
+  This implementation makes the assumption that a resource_id is unique within a curriculum.
+  That is, a resource can only allowed to be added once in a single location within a curriculum.
+  This makes it simpler to apply changes to the existing curriculum but if necessary, this implementation
+  could be extended to not just apply the changes to the first node found that contains the changed resource,
+  but any/all nodes in the hierarchy which reference the changed resource.
+  """
+  def apply_publication_update(
+        %Section{id: section_id} = section,
+        publication_id
+      ) do
+    new_publication = Publishing.get_publication!(publication_id)
+    project_id = new_publication.project_id
+    current_publication = get_current_publication(section_id, project_id)
+
+    # generate a diff between the old and new publication
+    case Publishing.diff_publications(current_publication, new_publication) do
+      {{:minor, _version}, _diff} ->
+        # changes are minor, all we need to do is update the spp record
+        update_section_project_publication(section, project_id, publication_id)
+
+        {:ok}
+
+      {{:major, _version}, diff} ->
+        Repo.transaction(fn ->
+          # changes are major, update the spp record and use the diff to take a "best guess"
+          # strategy for applying structural updates to an existing section's curriculum.
+          # new items will in a container be appended to the container's children
+          update_section_project_publication(section, project_id, publication_id)
+
+          published_resources_by_resource_id = published_resources_map(new_publication.id)
+
+          %PublishedResource{revision: root_revision} =
+            published_resources_by_resource_id[new_publication.root_resource_id]
+
+          current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+          new_hierarchy =
+            Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
+
+          processed_resource_ids = %{}
+
+          {updated_hierarchy, _} =
+            new_hierarchy
+            |> Hierarchy.flatten_hierarchy()
+            |> Enum.reduce(
+              {current_hierarchy, processed_resource_ids},
+              fn node, {hierarchy, processed_resource_ids} ->
+                maybe_process_added_or_changed_node(
+                  {hierarchy, processed_resource_ids},
+                  node,
+                  diff,
+                  new_hierarchy
+                )
+              end
+            )
+
+          # rebuild the section curriculum based on the updated hierarchy
+          project_publications = get_pinned_project_publications(section_id)
+          rebuild_section_curriculum(section, updated_hierarchy, project_publications)
+        end)
+    end
+  end
+
+  @doc """
+  Returns a map of resource_id to published resource
+  """
+  def published_resources_map(publication_ids) when is_list(publication_ids) do
+    Publishing.get_published_resources_by_publication(publication_ids,
+      preload: [:resource, :revision, :publication]
+    )
+    |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+  end
+
+  def published_resources_map(publication_id) do
+    published_resources_map([publication_id])
+  end
+
+  @doc """
+  Returns the map of project_id to publication of all the section's pinned project publications
+  """
+  def get_pinned_project_publications(section_id) do
+    from(spp in SectionsProjectsPublications,
+      as: :spp,
+      where: spp.section_id == ^section_id,
+      join: publication in Publication,
+      on: publication.id == spp.publication_id,
+      preload: [publication: :project],
+      select: spp
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn spp, acc ->
+      Map.put(acc, spp.project_id, spp.publication)
+    end)
+  end
+
+  defp maybe_process_added_or_changed_node(
+         {hierarchy, processed_resource_ids},
+         %HierarchyNode{resource_id: resource_id} = node,
+         diff,
+         new_hierarchy
+       ) do
+    container = ResourceType.get_id_by_type("container")
+
+    if Map.has_key?(processed_resource_ids, resource_id) do
+      # already processed, skip and continue
+      {hierarchy, processed_resource_ids}
+    else
+      # get change type from diff and process accordingly
+      case diff[resource_id] do
+        {:added, _} ->
+          # find the current parent of the node, using the assumed to be unique resource_id (as mentioned above)
+          current_parent = hierarchy_parent_node(hierarchy, new_hierarchy, resource_id)
+
+          # handle the case where the parent doesnt exist in the hierarchy, for example
+          # if the container was removed in remix
+          case current_parent do
+            nil ->
+              {hierarchy, processed_resource_ids}
+
+            parent ->
+              parent = %HierarchyNode{parent | children: parent.children ++ [node]}
+
+              # update the hierarchy
+              hierarchy = Hierarchy.find_and_update_node(hierarchy, parent)
+
+              # we now consider all descendants to be processed, so that we dont
+              # process them again we add them to the filter
+              processed_resource_ids = add_descendant_resource_ids(node, processed_resource_ids)
+
+              {hierarchy, processed_resource_ids}
+          end
+
+        {:changed, %{revision: %Revision{resource_type_id: ^container}}} ->
+          # container has changed, check to see if any children were deleted
+          current_parent = hierarchy_node(hierarchy, resource_id)
+
+          # handle the case where the parent doesnt exist in the hierarchy, for example
+          # if the container was removed in remix
+          case current_parent do
+            nil ->
+              {hierarchy, processed_resource_ids}
+
+            parent ->
+              Enum.reduce(
+                parent.children,
+                {hierarchy, processed_resource_ids},
+                fn child, {hierarchy, processed_resource_ids} ->
+                  # fetch the latest parent on every call, as it may have changed
+                  parent = hierarchy_node(hierarchy, resource_id)
+
+                  maybe_process_deleted_node(
+                    {hierarchy, processed_resource_ids},
+                    child,
+                    parent,
+                    diff
+                  )
+                end
+              )
+          end
+
+        _ ->
+          # page wasn't added or deleted, so it is non-structural and is covered by spp update
+          {hierarchy, Map.put(processed_resource_ids, node.resource_id, true)}
+      end
+    end
+  end
+
+  defp maybe_process_deleted_node(
+         {hierarchy, processed_resource_ids},
+         %HierarchyNode{resource_id: resource_id} = node,
+         %HierarchyNode{} = parent,
+         diff
+       ) do
+    case diff[resource_id] do
+      {:deleted, _} ->
+        # remove child from from parent's children
+        parent = %HierarchyNode{
+          parent
+          | children:
+              Enum.filter(parent.children, fn c ->
+                c.resource_id != resource_id
+              end)
+        }
+
+        # update the hierarchy
+        hierarchy = Hierarchy.find_and_update_node(hierarchy, parent)
+
+        # we now consider all descendants to be processed, so that we dont process them again
+        processed_resource_ids = add_descendant_resource_ids(node, processed_resource_ids)
+
+        {hierarchy, processed_resource_ids}
+
+      _ ->
+        # not deleted, skip
+        {hierarchy, processed_resource_ids}
+    end
+  end
+
+  defp add_descendant_resource_ids(node, processed_resource_ids) do
+    Hierarchy.flatten_hierarchy(node)
+    |> Enum.reduce(processed_resource_ids, fn n, acc ->
+      Map.put(acc, n.resource_id, true)
+    end)
+  end
+
+  # finds the node in the hierarchy with the given resource id
+  defp hierarchy_node(hierarchy, resource_id) do
+    Hierarchy.find_in_hierarchy(
+      hierarchy,
+      fn %HierarchyNode{
+           resource_id: node_resource_id
+         } ->
+        node_resource_id == resource_id
+      end
+    )
+  end
+
+  # finds the parent node of a resource id by looking up the parent resource in the
+  # new hierarchy, then using that parent resource_id to get the node from the current hierarchy
+  defp hierarchy_parent_node(current_hierarchy, new_hierarchy, resource_id) do
+    new_hierarchy_parent = parent_node(new_hierarchy, resource_id)
+
+    case new_hierarchy_parent do
+      nil ->
+        nil
+
+      %{resource_id: new_hierarchy_parent_resource_id} ->
+        hierarchy_node(current_hierarchy, new_hierarchy_parent_resource_id)
+    end
+  end
+
+  # finds the parent node of the given resource id
+  defp parent_node(hierarchy, resource_id) do
+    container = ResourceType.get_id_by_type("container")
+
+    Hierarchy.find_in_hierarchy(hierarchy, fn %HierarchyNode{revision: revision} ->
+      # only search containers, skip pages and other resource types
+      if revision.resource_type_id == container do
+        resource_id in Enum.map(revision.children, & &1)
+      else
+        false
+      end
+    end)
+  end
+
+  # Takes a hierarchy node and a accumulator list of section resources and returns the
+  # updated collapsed list of section resources
+  defp collapse_section_hierarchy(
+         %HierarchyNode{
+           numbering: numbering,
+           children: children,
+           resource_id: resource_id,
+           project_id: project_id,
+           revision: revision,
+           section_resource: section_resource
+         },
+         section_id,
+         section_resources \\ []
+       ) do
+    {section_resources, children_sr_ids} =
+      Enum.reduce(children, {section_resources, []}, fn child, {section_resources, sr_ids} ->
+        {child_section_resources, child_section_resource} =
+          collapse_section_hierarchy(child, section_id, section_resources)
+
+        {child_section_resources, [child_section_resource.id | sr_ids]}
+      end)
+
+    section_resource =
+      case section_resource do
+        nil ->
+          # section resource record doesnt exist, create one on the fly.
+          # this is necessary because we need the record id for the parent's children
+          SectionResource.changeset(%SectionResource{}, %{
+            numbering_index: numbering.index,
+            numbering_level: numbering.level,
+            slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+            resource_id: resource_id,
+            project_id: project_id,
+            section_id: section_id,
+            children: Enum.reverse(children_sr_ids)
+          })
+          |> Oli.Repo.insert!(
+            # if there is a conflict on the unique section_id resource_id constraint,
+            # we assume it is because a resource has been moved or removed/readded in
+            # a remix operation, so we simply replace the existing section_resource record
+            on_conflict: :replace_all,
+            conflict_target: [:section_id, :resource_id]
+          )
+
+        %SectionResource{} ->
+          %SectionResource{section_resource | children: Enum.reverse(children_sr_ids)}
+      end
+
+    {[section_resource | section_resources], section_resource}
+  end
+
+  # creates all non-structural section resources for the given publication ids skipping
+  # any that belong to the resource ids in skip_resource_ids
+  defp create_nonstructural_section_resources(section_id, publication_ids,
+         skip_resource_ids: skip_resource_ids
+       ) do
+    published_resources_by_resource_id = published_resources_map(publication_ids)
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    published_resources_by_resource_id
+    |> Enum.filter(fn {resource_id, %{revision: rev}} ->
+      resource_id not in skip_resource_ids && !is_structural?(rev)
+    end)
+    |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
+      [
+        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        resource_id: revision.resource_id,
+        project_id: pub.project_id,
+        section_id: section_id,
+        inserted_at: now,
+        updated_at: now
+      ]
+    end)
+    |> then(&Repo.insert_all(SectionResource, &1))
+  end
+
+  defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
+    container = ResourceType.get_id_by_type("container")
+    page = ResourceType.get_id_by_type("page")
+
+    resource_type_id == container or resource_type_id == page
   end
 end

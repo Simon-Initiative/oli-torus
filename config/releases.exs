@@ -53,6 +53,14 @@ s3_media_bucket_name =
     For example: torus-media
     """
 
+if System.get_env("PAYMENT_PROVIDER") == "stripe" &&
+     (!System.get_env("STRIPE_PUBLIC_SECRET") || !System.get_env("STRIPE_PRIVATE_SECRET")) do
+  raise """
+  Stripe payment provider not configured correctly. Both STRIPE_PUBLIC_SECRET
+  and STRIPE_PRIVATE_SECRET values must be set.
+  """
+end
+
 media_url =
   System.get_env("MEDIA_URL") ||
     raise """
@@ -68,7 +76,12 @@ config :oli,
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
-  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false")
+  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+
+config :oli, :stripe_provider,
+  public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
+  private_secret: System.get_env("STRIPE_PRIVATE_SECRET")
 
 # Configure reCAPTCHA
 config :oli, :recaptcha,
@@ -105,6 +118,19 @@ case System.get_env("LOG_LEVEL", nil) do
   log_level ->
     config :logger, level: String.to_atom(log_level)
 end
+
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate
 
 # ## Using releases (Elixir v1.9+)
 #

@@ -1,8 +1,9 @@
-/* eslint-disable react/prop-types */
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
+import { diff } from 'deep-object-diff';
 import { JSONSchema7 } from 'json-schema';
-import React, { Fragment } from 'react';
+import { at } from 'lodash';
+import React, { Fragment, useEffect, useState } from 'react';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
@@ -12,6 +13,7 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  triggerOnChange?: boolean;
 }
 
 const widgets: any = {
@@ -25,14 +27,59 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   uiSchema,
   value,
   onChangeHandler,
+  triggerOnChange = false,
 }) => {
-  /* console.log({ value, uiSchema }); */
+  const [formData, setFormData] = useState<any>(value);
+
+  const findDiffType = (changedProp: any): string => {
+    const diffType: Record<string, unknown>[] = Object.values(changedProp);
+    if (typeof diffType[0] === 'object') {
+      return findDiffType(diffType[0]);
+    }
+    return typeof diffType[0];
+  };
+
+  useEffect(() => {
+    setFormData(value);
+  }, [value]);
+
   return (
     <Form
       schema={schema}
-      formData={value}
+      formData={formData}
       onChange={(e) => {
-        onChangeHandler(e.formData);
+        const updatedData = e.formData;
+        const changedProp = diff(formData, updatedData);
+        const changedPropType = findDiffType(changedProp);
+
+        setFormData(updatedData);
+        if (triggerOnChange || changedPropType === 'boolean') {
+          // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
+          if (updatedData.id === formData.id) {
+            /* console.log('ONCHANGE P EDITOR TRIGGERED', {
+              e,
+              updatedData,
+              changedProp,
+              changedPropType,
+              triggerOnChange,
+            }); */
+            onChangeHandler(updatedData);
+          }
+        }
+      }}
+      onBlur={(key, changed) => {
+        // key will look like root_Position_x
+        // changed will be the new value
+        // formData will be the current state of the form
+        const dotPath = key.replace(/_/g, '.').replace('root.', '');
+        const [newValue] = at(value as any, dotPath);
+        // console.log('ONBLUR', { key, changed, formData, value, dotPath, newValue });
+        // specifically using != instead of !== because `changed` is always a string
+        // and the stakes here are not that high, we are just trying to avoid saving so many times
+        if (newValue != changed) {
+          // console.log('ONBLUR TRIGGER SAVE');
+          onChangeHandler(formData);
+        }
       }}
       uiSchema={uiSchema}
       widgets={widgets}

@@ -6,6 +6,7 @@ import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
 import { clone } from 'utils/common';
+import { Operations } from 'utils/pathOperations';
 
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -54,9 +55,7 @@ export class ICActions {
       const index = draftState.resourceURLs.findIndex((url) => url === value);
       const item = draftState.resourceURLs[index];
       post(
-        makeUndoable('Removed a file', [
-          { type: 'InsertOperation', path: '$.resourceURLs', index, item: clone(item) },
-        ]),
+        makeUndoable('Removed a file', [Operations.insert('$.resourceURLs', clone(item), index)]),
       );
 
       draftState.resourceURLs = draftState.resourceURLs.filter((url) => url !== value);
@@ -81,7 +80,7 @@ export class ICActions {
     };
   }
 
-  static addHint() {
+  static addCognitiveHint() {
     return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
       const newHint: HintType = fromText('');
       // new hints are always cognitive hints. they should be inserted
@@ -103,7 +102,7 @@ export class ICActions {
       const index = draftState.authoring.parts[0].hints.findIndex((h) => h.id === id);
       post(
         makeUndoable('Removed a hint', [
-          { type: 'InsertOperation', path: '$.authoring.parts[0].hints', index, item: clone(hint) },
+          Operations.insert('$.authoring.parts[0].hints', clone(hint), index),
         ]),
       );
 

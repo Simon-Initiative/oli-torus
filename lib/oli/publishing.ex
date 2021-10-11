@@ -136,6 +136,8 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
+  def available_publications(nil, %Institution{} = _institution), do: available_publications()
+
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =
       from t in Publication,
@@ -157,6 +159,34 @@ defmodule Oli.Publishing do
             (a.id == ^author.id or proj.visibility == :global or
                (proj.visibility == :selected and
                   (v.author_id == ^author.id or v.institution_id == ^institution.id))),
+        preload: [:project],
+        distinct: true,
+        select: pub
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Returns the list of all available publications.
+
+  ## Examples
+      iex> all_available_publications()
+      [%Publication{}, ...]
+  """
+  def all_available_publications() do
+    subquery =
+      from t in Publication,
+        select: %{project_id: t.project_id, max_date: max(t.published)},
+        where: not is_nil(t.published),
+        group_by: t.project_id
+
+    query =
+      from pub in Publication,
+        join: u in subquery(subquery),
+        on: pub.project_id == u.project_id and u.max_date == pub.published,
+        join: proj in Project,
+        on: pub.project_id == proj.id,
+        where: not is_nil(pub.published) and proj.status == :active,
         preload: [:project],
         distinct: true,
         select: pub
@@ -351,12 +381,45 @@ defmodule Oli.Publishing do
       [%PublishedResource{}, ...]
 
   """
-  def get_published_resources_by_publication(publication_id) do
-    from(p in PublishedResource,
-      where: p.publication_id == ^publication_id,
-      preload: [:resource, :revision]
+  def get_published_resources_by_publication(publication_ids, opts \\ [])
+
+  def get_published_resources_by_publication(publication_ids, opts)
+      when is_list(publication_ids) do
+    preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
+
+    from(pr in PublishedResource,
+      where: pr.publication_id in ^publication_ids,
+      preload: ^preload
     )
     |> Repo.all()
+  end
+
+  def get_published_resources_by_publication(publication_id, opts) do
+    get_published_resources_by_publication([publication_id], opts)
+  end
+
+  @doc """
+  Returns a map of publication_id to published_resources for a given list of publication_ids,
+  where published_resources are a map keyed by resource_id.
+
+  ## Examples
+
+      iex> get_published_resources_for_publications(publication_ids)
+      %{1 => %{2 => %PublishedResource{resource_id: 2}, ...}, ...}
+
+  """
+  def get_published_resources_for_publications(publication_ids, opts \\ []) do
+    get_published_resources_by_publication(publication_ids, opts)
+    |> Enum.reduce(%{}, fn pr, acc ->
+      prs_by_resource_id =
+        case acc[pr.publication_id] do
+          nil -> %{}
+          map -> map
+        end
+        |> Map.put_new(pr.resource_id, pr)
+
+      Map.put(acc, pr.publication_id, prs_by_resource_id)
+    end)
   end
 
   def get_objective_mappings_by_publication(publication_id) do
@@ -389,6 +452,13 @@ defmodule Oli.Publishing do
     Repo.one!(
       from p in PublishedResource,
         where: p.publication_id == ^publication_id and p.resource_id == ^resource_id
+    )
+  end
+
+  def get_published_resource(publication_id, resource_ids) when is_list(resource_ids) do
+    Repo.all(
+      from p in PublishedResource,
+        where: p.publication_id == ^publication_id and p.resource_id in ^resource_ids
     )
   end
 
@@ -563,14 +633,14 @@ defmodule Oli.Publishing do
 
   @doc """
   Diff two publications of the same project and returns an overall change status (:major|:minor|:no_changes)
-  and a map that contains any changes where the key is the resource id which points to a tuple with the
-  first element being the change status (:changed|:added|:deleted) and the second is a
+  with a version number and a map that contains any changes where the key is the resource id which points to
+  a tuple with the first element being the change status (:changed|:added|:deleted) and the second is a
   map containing the resource and revision e.g. {:changed, %{resource: res_p2, revision: rev_p2}}
 
   ## Examples
 
       iex> diff_publications(publication1, publication2)
-      {:major, %{
+      {{:major, {0, 1, 0}}, %{
         23 => {:changed, %{resource: res1, revision: rev1}}
         24 => {:added, %{resource: res2, revision: rev2}}
         24 => {:added, %{resource: res3, revision: rev3}}
@@ -578,7 +648,7 @@ defmodule Oli.Publishing do
       }}
 
       iex> diff_publications(publication2, publication3)
-      {:minor, %{
+      {{:minor, {0, 0, 1}}, %{
         23 => {:changed, %{resource: res1, revision: rev1}}
         24 => {:changed, %{resource: res2, revision: rev2}}
       }}
@@ -660,7 +730,6 @@ defmodule Oli.Publishing do
 
   def get_published_revisions(publication) do
     get_published_resources_by_publication(publication.id)
-    |> Enum.map(&Repo.preload(&1, :revision))
     |> Enum.map(&Map.get(&1, :revision))
   end
 
@@ -824,5 +893,24 @@ defmodule Oli.Publishing do
           institution: institution
         }
     )
+  end
+
+  def find_objective_in_selections(objective_id, publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+
+    sql = """
+    select rev.slug, rev.title
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+      and jsonb_path_exists(rev.content, '$.**.conditions.** ? (@.fact == "objectives").value ? (@ == #{objective_id})')
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
   end
 end

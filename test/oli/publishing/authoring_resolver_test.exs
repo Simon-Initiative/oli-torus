@@ -53,7 +53,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       assert r.id == latest1.id
 
       # verifies we return nil on a made up id
-      assert AuthoringResolver.from_resource_id(project.slug, 1337) == nil
+      non_existent_resource_id = latest_record_index("resources") + 1
+      assert AuthoringResolver.from_resource_id(project.slug, non_existent_resource_id) == nil
     end
 
     test "from_revision_slug/2 returns correct revision", %{
@@ -114,7 +115,8 @@ defmodule Oli.Publishing.AuthoringResolverTest do
       revision2: revision2,
       project: project
     } do
-      r = AuthoringResolver.from_resource_id(project.slug, [revision2.resource_id, 1337])
+      r =
+        AuthoringResolver.from_resource_id(project.slug, [revision2.resource_id, 123_123_123_123])
 
       assert length(r) == 2
       assert Enum.at(r, 0) == latest2

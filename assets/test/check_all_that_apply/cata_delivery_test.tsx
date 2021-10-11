@@ -6,21 +6,20 @@ import { defaultDeliveryElementProps } from '../utils/activity_mocks';
 import { act } from 'react-dom/test-utils';
 import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
-import { activityDeliverySlice } from 'data/content/activities/DeliveryState';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
-import { defaultState } from 'phoenix/activity_bridge';
 import { makeHint } from 'components/activities/types';
+import { defaultActivityState } from 'data/activities/utils';
 
 describe('check all that apply delivery', () => {
   it('renders ungraded correctly', async () => {
     const model = defaultCATAModel();
     model.authoring.parts[0].hints.push(makeHint('Hint 1'));
-    const defaultActivityState = defaultState(model);
     const props = {
       model,
       activitySlug: 'activity-slug',
-      state: Object.assign(defaultActivityState, { hasMoreHints: false }),
+      state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
       graded: false,
       preview: false,
     };
@@ -47,7 +46,7 @@ describe('check all that apply delivery', () => {
       fireEvent.click(choices[0]);
     });
     expect(onSaveActivity).toHaveBeenCalledTimes(1);
-    expect(onSaveActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
+    expect(onSaveActivity).toHaveBeenCalledWith(props.state.attemptGuid, [
       {
         attemptGuid: '1',
         response: { input: model.choices.map((choice) => choice.id)[0] },
@@ -73,7 +72,7 @@ describe('check all that apply delivery', () => {
       fireEvent.click(submitButton);
     });
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
-    expect(onSubmitActivity).toHaveBeenCalledWith(defaultActivityState.attemptGuid, [
+    expect(onSubmitActivity).toHaveBeenCalledWith(props.state.attemptGuid, [
       {
         attemptGuid: '1',
         response: { input: model.choices.map((choice) => choice.id)[0] },

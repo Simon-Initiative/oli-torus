@@ -1,12 +1,11 @@
-import React from 'react';
-import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { ID } from 'data/content/model';
-import { Hint, RichText } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
-import { Card } from 'components/misc/Card';
-import { Tooltip } from 'components/misc/Tooltip';
 import { HintCard } from 'components/activities/common/hints/authoring/HintCard';
+import { Hint, RichText } from 'components/activities/types';
+import { RichTextEditorConnected } from 'components/content/RichTextEditor';
+import { Card } from 'components/misc/Card';
+import { ID } from 'data/content/model';
+import React from 'react';
 
 interface HintsAuthoringProps {
   addOne: () => void;
@@ -44,13 +43,8 @@ interface HintProps {
 }
 const DeerInHeadlightsHint: React.FC<HintProps> = ({ hint, updateOne }) => (
   <HintCard
-    title={
-      <>
-        {'"Deer in headlights" hint'}
-        <Tooltip title={'Restate the question for students who are totally confused'} />
-      </>
-    }
-    placeholder="Restate the question"
+    title={<>{'"Deer in headlights" hint'}</>}
+    placeholder="Restate the question for students who are confused by the prompt"
     hint={hint}
     updateOne={updateOne}
   />
@@ -61,19 +55,27 @@ interface CognitiveProps {
   updateOne: (id: ID, content: RichText) => void;
   removeOne: (id: ID) => void;
   addOne: () => void;
+  title?: React.ReactNode;
+  placeholder?: string;
 }
-const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne, addOne }) => (
+export const CognitiveHints: React.FC<CognitiveProps> = ({
+  hints,
+  updateOne,
+  removeOne,
+  addOne,
+  title,
+  placeholder,
+}) => (
   <Card.Card>
-    <Card.Title>
-      {'"Cognitive" hints'}
-      <Tooltip title={'Explain how to solve the problem'} />
-    </Card.Title>
+    <Card.Title>{title || '"Cognitive" hints'}</Card.Title>
     <Card.Content>
       {hints.map((hint, index) => (
         <div key={hint.id} className="d-flex">
-          <span className="mr-3 mt-2">{index + 1}.</span>
+          <div className="mr-3 mt-2" style={{ flexBasis: '18px' }}>
+            {index + 1}.
+          </div>
           <RichTextEditorConnected
-            placeholder="Explain how to solve the problem"
+            placeholder={placeholder || 'Explain how to solve the problem'}
             className="mb-2 flex-grow-1"
             text={hint.content}
             onEdit={(content) => updateOne(hint.id, content)}
@@ -88,7 +90,7 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
         style={{ marginLeft: '22px' }}
         className="btn btn-sm btn-link"
       >
-        Add cognitive hint
+        Add hint
       </AuthoringButtonConnected>
     </Card.Content>
   </Card.Card>
@@ -96,13 +98,8 @@ const CognitiveHints: React.FC<CognitiveProps> = ({ hints, updateOne, removeOne,
 
 const BottomOutHint: React.FC<HintProps> = ({ hint, updateOne }) => (
   <HintCard
-    title={
-      <>
-        {'"Bottom out" hint'}
-        <Tooltip title={'Explain the answer for students who are still lost'} />
-      </>
-    }
-    placeholder="Explain the answer"
+    title={<>{'"Bottom out" hint'}</>}
+    placeholder="Explain the answer for students who are still confused"
     hint={hint}
     updateOne={updateOne}
   />

@@ -1,8 +1,8 @@
 import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
-import { UndoOperation } from 'utils/undo';
 import guid from 'utils/guid';
+import { PathOperation } from 'utils/pathOperations';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
@@ -14,10 +14,10 @@ export type MediaItemRequest = {
 export type Undoable = {
   type: 'Undoable';
   description: string;
-  operations: UndoOperation[];
+  operations: PathOperation[];
 };
 
-export function makeUndoable(description: string, operations: UndoOperation[]): Undoable {
+export function makeUndoable(description: string, operations: PathOperation[]): Undoable {
   return {
     type: 'Undoable',
     description,
@@ -26,6 +26,7 @@ export function makeUndoable(description: string, operations: UndoOperation[]): 
 }
 
 export type ChoiceId = ID;
+export type PartId = ID;
 export type ResponseId = ID;
 
 export type RichText = {
@@ -40,15 +41,15 @@ export interface Success {
 export interface HasContent {
   content: RichText;
 }
-export function makeContent(text: string): { id: string; content: RichText } {
+export function makeContent(text: string, id?: string): { id: string; content: RichText } {
   return {
-    id: guid() + '',
+    id: id ? id : guid(),
     content: {
       model: [
         create({
           type: 'p',
           children: [{ text }],
-          id: guid() + '',
+          id: guid(),
         }),
       ],
       selection: null,
@@ -101,7 +102,7 @@ export interface PartState {
   score: number | null;
   outOf: number | null;
   response: any;
-  feedback: any;
+  feedback: Feedback | null;
   hints: [];
   partId: string | number;
   hasMoreAttempts: boolean;
@@ -123,7 +124,7 @@ export interface ActivityState {
 }
 
 export interface Choice extends Identifiable, HasContent {}
-export const makeChoice: (text: string) => Choice = makeContent;
+export const makeChoice: (text: string, id?: string) => Choice = makeContent;
 export interface HasChoices {
   choices: Choice[];
 }
@@ -132,6 +133,7 @@ export interface Stem extends Identifiable, HasContent {}
 export interface HasStem {
   stem: Stem;
 }
+export type HasStems = { stems: Stem[] };
 export const makeStem: (text: string) => Stem = makeContent;
 export interface Hint extends Identifiable, HasContent {}
 export type HasHints = HasParts;
@@ -140,7 +142,7 @@ export interface Feedback extends Identifiable, HasContent {}
 export const makeFeedback: (text: string) => Feedback = makeContent;
 export interface Transformation extends Identifiable {
   path: string;
-  operation: Operation;
+  operation: Transform;
 }
 export interface HasTransformations {
   authoring: {
@@ -148,22 +150,20 @@ export interface HasTransformations {
   };
 }
 
-export const makeTransformation = (path: string, operation: Operation): Transformation => ({
+export const makeTransformation = (path: string, operation: Transform): Transformation => ({
   id: guid(),
-  path: 'choices',
+  path,
   operation,
 });
 
 export interface Response extends Identifiable {
   // see `parser.ex` and `rule.ex`
   rule: string;
-
   // `score >= 0` indicates the feedback corresponds to a correct choice
   score: number;
-
   feedback: Feedback;
 }
-export const makeResponse = (rule: string, score: number, text: ''): Response => ({
+export const makeResponse = (rule: string, score: number, text = ''): Response => ({
   id: guid(),
   rule,
   score,
@@ -229,6 +229,20 @@ export interface Part extends Identifiable {
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
 }
+
+export const makePart = (
+  responses: Response[],
+  // By default, parts have 3 hints (deer in headlights, cognitive, bottom out)
+  // Multiinput activity parts start with just one hint
+  hints = [makeHint(''), makeHint(''), makeHint('')],
+  id?: ID,
+): Part => ({
+  id: id ? id : guid(),
+  scoringStrategy: ScoringStrategy.average,
+  responses,
+  hints,
+});
+
 export interface HasParts {
   authoring: {
     parts: Part[];
@@ -247,10 +261,10 @@ export enum EvaluationStrategy {
   'none' = 'none',
 }
 
-export enum Operation {
+export enum Transform {
   'shuffle' = 'shuffle',
 }
-// eslint-disable-next-line
+
 export interface CreationContext extends ResourceContext {}
 
 export interface PartComponentDefinition {
