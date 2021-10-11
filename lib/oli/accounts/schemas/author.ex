@@ -39,6 +39,9 @@ defmodule Oli.Accounts.Author do
     many_to_many :sections, Oli.Delivery.Sections.Section,
       join_through: Oli.Delivery.Sections.AuthorsSections
 
+    field :collaborations_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
