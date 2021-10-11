@@ -1,0 +1,14 @@
+{
+  "registrations": [
+    {
+      "issuer": "https://lms.example.edu",
+      "client_id": "12345",
+      "key_set_url": "https://lms.example.edu/api/lti/security/jwks",
+      "auth_token_url": "https://lms.example.edu/login/oauth2/token",
+      "auth_login_url": "https://lms.example.edu/api/lti/authorize_redirect",
+      "auth_server": "https://lms.example.edu"
+    }
+  ],
+  "generate_authors": 50,
+  "generate_users": 1000
+}
