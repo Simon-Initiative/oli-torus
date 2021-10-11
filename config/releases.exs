@@ -77,7 +77,8 @@ config :oli,
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
-  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
