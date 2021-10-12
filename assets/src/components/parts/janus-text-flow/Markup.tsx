@@ -146,6 +146,13 @@ const Markup: React.FC<any> = ({
   // TODO: support MathJax
   // TODO: support templating in text
   // TODO: support tables, quotes, definition lists?? form elements???
+
+  // replace all recurring spaces with &nbsp; but not the first one
+  processedText = processedText.replace(
+    /  +/g,
+    (txt: string) => ' ' + Array(txt.length).join('\u00A0'),
+  );
+
   switch (renderTag) {
     case 'a':
       return (
