@@ -373,7 +373,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     }, 10);
   }, [inConfigureMode, props.portal]);
 
-  console.log('TF RENDER', { id, htmlPreview });
+  /* console.log('TF RENDER', { id, htmlPreview }); */
 
   const renderIt =
     inConfigureMode && portalEl ? (

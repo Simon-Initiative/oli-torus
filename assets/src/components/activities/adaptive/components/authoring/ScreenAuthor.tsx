@@ -6,10 +6,16 @@ import partSchema, {
   transformModelToSchema as transformPartModelToSchema,
   transformSchemaToModel as transformPartSchemaToModel,
 } from 'apps/authoring/components/PropertyEditor/schemas/part';
+import {
+  NotificationContext,
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import { AnyPartComponent } from 'components/parts/types/parts';
+import EventEmitter from 'events';
 import { JSONSchema7 } from 'json-schema';
 import { isEqual } from 'lodash';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Col, Container, Row } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import { convertPalette } from '../common/util';
@@ -94,6 +100,39 @@ const screenUiSchema = {
 };
 
 const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
+  const pusherContext = useContext(NotificationContext);
+  const [pusher, setPusher] = useState(pusherContext || new EventEmitter().setMaxListeners(50));
+
+  useEffect(() => {
+    if (pusherContext) {
+      setPusher(pusherContext);
+    }
+  }, [pusherContext]);
+
+  useEffect(() => {
+    if (!pusher) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_CANCEL,
+      NotificationType.CONFIGURE_SAVE,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        // nothing to do
+        console.log(`ScreenAuthor catching ${notificationType.toString()}`, { payload });
+      };
+      const unsub = subscribeToNotification(pusher, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [pusher]);
+
   const [currentScreenData, setCurrentScreenData] = useState(screen);
 
   useEffect(() => {
@@ -296,16 +335,18 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
   };
 
   return (
-    <>
+    <NotificationContext.Provider value={pusher}>
       <ConfigurationModal
         bodyId={configEditorId}
         isOpen={showConfigModal}
         headerText={`Configure: ${selectedPartId}`}
         onClose={() => {
           setShowConfigModal(false);
+          pusher.emit(NotificationType.CONFIGURE_CANCEL, { id: selectedPartId });
         }}
         onSave={() => {
           setShowConfigModal(false);
+          pusher.emit(NotificationType.CONFIGURE_SAVE, { id: selectedPartId });
         }}
       />
       <Container>
@@ -351,7 +392,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
           </Col>
         </Row>
       </Container>
-    </>
+    </NotificationContext.Provider>
   );
 };
 

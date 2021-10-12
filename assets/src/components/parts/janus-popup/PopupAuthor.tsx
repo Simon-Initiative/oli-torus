@@ -13,6 +13,15 @@ import PopupWindowDesigner from './PopupWindowDesigner';
 import { PopupModel } from './schema';
 import { ContextProps } from './types';
 
+// eslint-disable-next-line react/display-name
+const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {
+  // console.log('PopupAuthor: Designer', props.portal);
+  return (
+    portal &&
+    ReactDOM.createPortal(<ScreenAuthor screen={screenModel} onChange={onChange} />, portal)
+  );
+});
+
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
 
@@ -159,22 +168,23 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     setWindowModel(changedScreen);
   };
 
-  const portalEl = document.getElementById(props.portal) as Element;
-
-  const Designer = () => {
-    // console.log('PopupAuthor: Designer', props.portal);
-    return (
-      portalEl &&
-      ReactDOM.createPortal(
-        <ScreenAuthor screen={windowModel} onChange={handleScreenAuthorChange} />,
-        portalEl,
-      )
-    );
-  };
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // timeout to give modal a moment to load
+    setTimeout(() => {
+      const el = document.getElementById(props.portal);
+      console.log('portal changed', { el, p: props.portal });
+      if (el) {
+        setPortalEl(el);
+      }
+    }, 10);
+  }, [inConfigureMode, props.portal]);
 
   return (
     <React.Fragment>
-      {inConfigureMode && <Designer />}
+      {inConfigureMode && portalEl && (
+        <Designer screenModel={windowModel} onChange={handleScreenAuthorChange} portal={portalEl} />
+      )}
       <input
         role="button"
         draggable="false"
