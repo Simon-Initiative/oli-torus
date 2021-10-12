@@ -240,10 +240,11 @@ defmodule OliWeb.Insights do
     [
       [
         slice.title,
-        if !Map.has_key?(h, :activity) do
-          slice.title
-        else
-          h.activity.title
+        case Map.get(h, :activity) do
+          nil -> slice.title
+          %{title: nil} -> slice.title
+          %{title: title} -> title
+          _ -> slice.title
         end,
         if is_nil(number_of_attempts) do
           "No attempts"

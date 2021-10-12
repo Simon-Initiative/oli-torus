@@ -17,6 +17,8 @@
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Add ability for an admin to browse all course sections
+- Add server driven paged, sortable table for project list
 - Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
 
@@ -30,6 +32,12 @@ PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
 ```
+
+## 0.13.8 (2021-10-07)
+
+### Bug Fixes
+
+- Handle titles of activities correctly in analytics download
 
 ## 0.13.7 (2021-10-06)
 
