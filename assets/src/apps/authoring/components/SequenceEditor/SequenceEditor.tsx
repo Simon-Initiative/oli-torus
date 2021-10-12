@@ -81,6 +81,7 @@ const SequenceEditor: React.FC<any> = (props) => {
         layerRef,
         sequenceId: `${newActivity.activitySlug}_${guid()}`,
         sequenceName: newTitle,
+        themeId: 'torus-theme-1',
       },
     };
 
