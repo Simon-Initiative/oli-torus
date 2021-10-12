@@ -222,7 +222,6 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     model: JSON.stringify(props.model),
     state: JSON.stringify(props.state),
     customCssClass,
-    class: customCssClass,
   };
 
   let wcTagName = props.type;
