@@ -251,6 +251,15 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       ],
     });
   };
+  useEffect(() => {
+    const popupModalZ = config?.z || 1000;
+    const zIndexIcon = z || 0;
+    const finalZIndex = Math.max(zIndexIcon + popupModalZ, popupModalZ);
+    const modifiedData = { zIndex: { value: finalZIndex } };
+    if (finalZIndex) {
+      props.onResize({ id: `${id}`, settings: modifiedData });
+    }
+  }, [showPopup, model]);
   const handlePartInit = () => {
     return initSnapshot;
   };
