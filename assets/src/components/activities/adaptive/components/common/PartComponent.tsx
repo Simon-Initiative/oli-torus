@@ -24,7 +24,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
 
   let height = props.model.height;
   // TODO: figure out how to default TF *only* to height auto without hard coding type
-  if (props.type === 'janus-text-flow' || props.type === 'janus-mcq') {
+  if (props.type === 'janus-mcq') {
     if (!props.model.overrideHeight) {
       height = 'auto';
     }
@@ -36,9 +36,10 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     left: props.model.x,
     zIndex: props.model.z || 0,
     width: props.model.width,
-    height,
   };
-
+  if (props.type !== 'janus-text-flow') {
+    initialStyles.height = height;
+  }
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
 
   const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
