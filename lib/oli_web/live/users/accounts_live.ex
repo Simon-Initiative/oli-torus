@@ -424,6 +424,57 @@ defmodule OliWeb.Accounts.AccountsLive do
      |> hide_modal()}
   end
 
+  def handle_event(
+        "unlock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    AuthorContext.unlock(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "delete_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    {:ok, _author} = Accounts.delete_author(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "lock_account",
+        %{"id" => id},
+        %{assigns: %{model: %{active_tab: :authors}}} = socket
+      ) do
+    author = Accounts.get_author!(id)
+    AuthorContext.lock(author)
+
+    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
+    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
+
+    {:noreply,
+     socket
+     |> assign(model: model)
+     |> hide_modal()}
+  end
+
   def handle_event("show_grant_admin_modal", %{"id" => id}, socket) do
     %{model: %{active_tab: active_tab}} = socket.assigns
 
@@ -469,150 +520,6 @@ defmodule OliWeb.Accounts.AccountsLive do
     {:noreply,
      socket
      |> change_system_role(author, author_role_id)
-     |> hide_modal()}
-  end
-
-  def handle_event("show_lock_account_modal", %{"id" => id}, socket) do
-    %{model: %{active_tab: active_tab}} = socket.assigns
-
-    modal = %{
-      component: LockAccountModal,
-      assigns: %{
-        id: "lock_account",
-        user: get_selected_user(id, active_tab)
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  def handle_event(
-        "lock_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :users}}} = socket
-      ) do
-    user = Accounts.get_user!(id)
-    UserContext.lock(user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
-     |> hide_modal()}
-  end
-
-  def handle_event(
-        "lock_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
-      ) do
-    author = Accounts.get_author!(id)
-    AuthorContext.lock(author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
-     |> hide_modal()}
-  end
-
-  def handle_event("show_unlock_account_modal", %{"id" => id}, socket) do
-    %{model: %{active_tab: active_tab}} = socket.assigns
-
-    modal = %{
-      component: UnlockAccountModal,
-      assigns: %{
-        id: "unlock_account",
-        user: get_selected_user(id, active_tab)
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  def handle_event(
-        "unlock_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :users}}} = socket
-      ) do
-    user = Accounts.get_user!(id)
-    UserContext.unlock(user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
-     |> hide_modal()}
-  end
-
-  def handle_event(
-        "unlock_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
-      ) do
-    author = Accounts.get_author!(id)
-    AuthorContext.unlock(author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
-     |> hide_modal()}
-  end
-
-  def handle_event("show_delete_account_modal", %{"id" => id}, socket) do
-    %{model: %{active_tab: active_tab}} = socket.assigns
-
-    modal = %{
-      component: DeleteAccountModal,
-      assigns: %{
-        id: "delete_account",
-        user: get_selected_user(id, active_tab)
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  def handle_event(
-        "delete_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :users}}} = socket
-      ) do
-    user = Accounts.get_user!(id)
-    {:ok, _user} = Accounts.delete_user(user)
-
-    {:ok, users_model} = load_users_model()
-    model = Map.merge(socket.assigns.model, %{users_model: users_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
-     |> hide_modal()}
-  end
-
-  def handle_event(
-        "delete_account",
-        %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
-      ) do
-    author = Accounts.get_author!(id)
-    {:ok, _author} = Accounts.delete_author(author)
-
-    {:ok, authors_model} = load_authors_model(socket.assigns.model.author)
-    model = Map.merge(socket.assigns.model, %{authors_model: authors_model})
-
-    {:noreply,
-     socket
-     |> assign(model: model)
      |> hide_modal()}
   end
 
