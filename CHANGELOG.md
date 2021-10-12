@@ -21,16 +21,19 @@
 - Add server driven paged, sortable table for project list
 - Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
+- Add blackboard LTI 1.3 configuration instructions
 
 ### Release Notes
 
 The following environment configs are now available:
 
 ```
-PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
-                        Current available options are 'stripe' or 'none'
+PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider. Current available options are 'stripe' or 'none'
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
+
+BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application Client ID. Enables LTI 1.3 integration
+                                  with blackboard instances and allows torus to provide configuration instructions.
 ```
 
 ## 0.13.8 (2021-10-07)
