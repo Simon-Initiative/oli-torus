@@ -266,6 +266,8 @@ Oli.Snapshots.SnapshotSeeder.html
 Oli.Timing.html
 Oli.UserIdentities.AuthorIdentity.html
 Oli.UserIdentities.UserIdentity.html
+Oli.Utils.DataGenerators.NameGenerator.html
+Oli.Utils.DataGenerators.Sampler.html
 Oli.Utils.Database.html
 Oli.Utils.FlameGraph.html
 Oli.Utils.LoadTesting.html
@@ -533,8 +535,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-b36eff5e7c.js
-dist/sidebar_items-8fd726fcee.js
+dist/search_items-87b8b15b5a.js
+dist/sidebar_items-50f6d81b1e.js
 index.html
 license.html
 readme.html
