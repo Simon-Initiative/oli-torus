@@ -23,7 +23,7 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   # Datashop only accepts certain date formats. We're not really using the date/timing curves,
   # so not a lot of thought was put into this part
   defp format_date(date) do
-    {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}")
+    {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}:{0s}")
     time
   end
 end

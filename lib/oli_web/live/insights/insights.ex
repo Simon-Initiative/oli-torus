@@ -185,7 +185,10 @@ defmodule OliWeb.Insights do
       "Activity Content",
       "Section Title",
       "Section Slug",
-      "Date Created"
+      "Date Created",
+      "Student ID",
+      "Activity Attempt ID",
+      "Resource Attempt ID"
     ]
 
     [

@@ -9,6 +9,9 @@
 - Fix an issue where modals misbehaved sporadically
 - Move "Many Students Wonder" from activity styling to content styling
 - Fix an issue where nonstructural section resources were missing after update
+- Add analytics download fields
+- Add datashop timestamps for seconds
+- Fix datashop bugs with missing <level> elements caused by deleted pages not showing in the container hierarchy
 
 ### Enhancements
 
