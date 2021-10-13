@@ -205,7 +205,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 system_role_id: Accounts.SystemRole.role_id().author
               }
 
-              {:ok, author} =
+              {:ok, _} =
                 Author.noauth_changeset(%Author{}, params)
                 |> Repo.insert()
             end)
@@ -232,7 +232,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 locale: "en-US"
               }
 
-              {:ok, user} =
+              {:ok, _} =
                 User.noauth_changeset(%User{}, params)
                 |> Repo.insert()
             end)
