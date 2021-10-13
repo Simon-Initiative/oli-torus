@@ -16,7 +16,8 @@ config :oli,
   problematic_query_detection:
     from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
-  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")
+  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
 # Configure your database
 config :oli, Oli.Repo,
