@@ -724,14 +724,11 @@ defmodule Oli.Delivery.Sections do
       # generate a new set of section resources based on the hierarchy
       {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
 
-      processed_section_resources_by_id =
-        section_resources
-        |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
-
+      # upsert all hierarchical section resources. some of these records will have
+      # just been created, but that's okay we will just update them again
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       placeholders = %{timestamp: now}
 
-      # upsert all section resources
       section_resources
       |> Enum.map(fn section_resource ->
         %{
@@ -748,7 +745,11 @@ defmodule Oli.Delivery.Sections do
         )
       )
 
-      # cleanup any deleted section resources
+      # cleanup any deleted or non-hierarchical section resources
+      processed_section_resources_by_id =
+        section_resources
+        |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
+
       section_resource_ids_to_delete =
         previous_section_resource_ids
         |> Enum.filter(fn sr_id -> !Map.has_key?(processed_section_resources_by_id, sr_id) end)
@@ -780,27 +781,30 @@ defmodule Oli.Delivery.Sections do
       # cleanup any unused project publication mappings
       section_project_ids =
         section_resources
-        |> Enum.map(fn %{project_id: project_id} -> project_id end)
+        |> Enum.reduce(%{}, fn sr, acc ->
+          Map.put_new(acc, sr.project_id, true)
+        end)
+        |> Enum.map(fn {project_id, _} -> project_id end)
 
       from(spp in SectionsProjectsPublications,
         where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
       )
       |> Repo.delete_all()
 
-      # finally, create non-hierarchical section resources for all projects
+      # finally, create all non-hierarchical section resources for all projects used in the section
       publication_ids =
-        from(spp in SectionsProjectsPublications,
-          where: spp.section_id == ^section_id,
-          select: spp.publication_id
-        )
-        |> Repo.all()
+        section_project_ids
+        |> Enum.map(fn project_id ->
+          project_publications[project_id]
+          |> then(fn %{id: publication_id} -> publication_id end)
+        end)
 
-      processed_ids =
+      processed_resource_ids =
         processed_section_resources_by_id
         |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
       create_nonstructural_section_resources(section_id, publication_ids,
-        skip_resource_ids: processed_ids
+        skip_resource_ids: processed_resource_ids
       )
 
       section_resources
@@ -825,12 +829,17 @@ defmodule Oli.Delivery.Sections do
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
     current_publication = get_current_publication(section_id, project_id)
+    current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
     # generate a diff between the old and new publication
     case Publishing.diff_publications(current_publication, new_publication) do
       {{:minor, _version}, _diff} ->
-        # changes are minor, all we need to do is update the spp record
+        # changes are minor, all we need to do is update the spp record and
+        # rebuild the section curriculum based on the current hierarchy
         update_section_project_publication(section, project_id, publication_id)
+
+        project_publications = get_pinned_project_publications(section_id)
+        rebuild_section_curriculum(section, current_hierarchy, project_publications)
 
         {:ok}
 
@@ -845,8 +854,6 @@ defmodule Oli.Delivery.Sections do
 
           %PublishedResource{revision: root_revision} =
             published_resources_by_resource_id[new_publication.root_resource_id]
-
-          current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
           new_hierarchy =
             Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
