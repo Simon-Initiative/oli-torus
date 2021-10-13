@@ -100,7 +100,7 @@ const Markup: React.FC<any> = ({
   }
 
   // eslint-disable-next-line
-  if (!children.length && !processedText.trim()) {
+  if (!children.length) {
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
 
@@ -146,6 +146,7 @@ const Markup: React.FC<any> = ({
   // TODO: support MathJax
   // TODO: support templating in text
   // TODO: support tables, quotes, definition lists?? form elements???
+
   switch (renderTag) {
     case 'a':
       return (
