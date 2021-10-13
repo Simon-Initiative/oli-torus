@@ -26,7 +26,11 @@ defmodule Oli.Accounts do
           ilike(s.name, ^"%#{options.text_search}%") or
             ilike(s.email, ^"%#{options.text_search}%") or
             ilike(s.given_name, ^"%#{options.text_search}%") or
-            ilike(s.family_name, ^"%#{options.text_search}%")
+            ilike(s.family_name, ^"%#{options.text_search}%") or
+            ilike(s.name, ^"#{options.text_search}") or
+            ilike(s.email, ^"#{options.text_search}") or
+            ilike(s.given_name, ^"#{options.text_search}") or
+            ilike(s.family_name, ^"#{options.text_search}")
         )
       end
 
@@ -64,7 +68,10 @@ defmodule Oli.Accounts do
       else
         dynamic(
           [s, _],
-          ilike(s.name, ^"%#{options.text_search}%") or
+          ilike(s.name, ^"#{options.text_search}") or
+            ilike(s.given_name, ^"#{options.text_search}") or
+            ilike(s.family_name, ^"#{options.text_search}") or
+            ilike(s.name, ^"%#{options.text_search}%") or
             ilike(s.given_name, ^"%#{options.text_search}%") or
             ilike(s.family_name, ^"%#{options.text_search}%")
         )
