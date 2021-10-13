@@ -153,14 +153,6 @@ defmodule OliWeb.OpenAndFreeController do
     render_workspace_page(conn, "show.html", section: section, updates: updates)
   end
 
-  def remix(conn, %{"id" => id}) do
-    section =
-      Sections.get_section_preloaded!(id)
-      |> convert_utc_to_section_tz()
-
-    render_workspace_page(conn, "remix.html", section: section)
-  end
-
   def edit(conn, %{"id" => id}) do
     section =
       Sections.get_section_preloaded!(id)

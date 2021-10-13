@@ -33,10 +33,10 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing.PublishedResource
 
   def mount(
-        _params,
         %{
           "section_slug" => section_slug
-        } = session,
+        },
+        session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)

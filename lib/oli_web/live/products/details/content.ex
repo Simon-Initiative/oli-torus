@@ -29,7 +29,7 @@ defmodule OliWeb.Products.Details.Content do
       <p>
         <Link
           label={"Customize content"}
-          to={Routes.authoring_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
+          to={Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
         />
       </p>
     </div>
