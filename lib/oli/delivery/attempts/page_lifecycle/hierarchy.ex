@@ -1,5 +1,8 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Repo
 
   alias Oli.Delivery.Attempts.Core.{
@@ -98,7 +101,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
       {:ok, {Map.put(activity_attempt, :revision, revision), part_attempts}}
     else
-      e -> IO.inspect(e)
+      e -> Logger.error("failed to create full activity attempt: #{inspect(e)}")
     end
   end
 

@@ -89,7 +89,10 @@ defmodule OliWeb.ProjectController do
       end
 
     base_url = Oli.Utils.get_base_url()
-    developer_key_url = "#{base_url}/lti/developer_key.json"
+    canvas_developer_key_url = "#{base_url}/lti/developer_key.json"
+
+    blackboard_application_client_id =
+      Application.get_env(:oli, :blackboard_application_client_id)
 
     tool_url = "#{base_url}/lti/launch"
     initiate_login_url = "#{base_url}/lti/login"
@@ -114,7 +117,8 @@ defmodule OliWeb.ProjectController do
       version_change: version_change,
       has_changes: has_changes,
       parent_pages: parent_pages,
-      developer_key_url: developer_key_url,
+      canvas_developer_key_url: canvas_developer_key_url,
+      blackboard_application_client_id: blackboard_application_client_id,
       tool_url: tool_url,
       initiate_login_url: initiate_login_url,
       public_keyset_url: public_keyset_url,

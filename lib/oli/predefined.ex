@@ -354,7 +354,7 @@ defmodule Oli.Predefined do
   end
 
   def lti_config_defaults do
-    [
+    configs = [
       %{
         product_family_code: "canvas",
         name: "Canvas",
@@ -372,5 +372,24 @@ defmodule Oli.Predefined do
         auth_server_path: ""
       }
     ]
+
+    case Application.get_env(:oli, :blackboard_application_client_id) do
+      nil ->
+        configs
+
+      blackboard_application_client_id ->
+        [
+          %{
+            product_family_code: "blackboard",
+            name: "Blackboard",
+            key_set_url:
+              "https://developer.blackboard.com/api/v1/management/applications/#{blackboard_application_client_id}/jwks.json",
+            auth_token_url: "https://developer.blackboard.com/api/v1/gateway/oauth2/jwttoken",
+            auth_login_url: "https://developer.blackboard.com/api/v1/gateway/oidcauth",
+            auth_server_url: "https://blackboard.com/api/lti/security/jwks"
+          }
+          | configs
+        ]
+    end
   end
 end

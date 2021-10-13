@@ -503,6 +503,141 @@ defmodule Oli.SectionsTest do
 
       assert section_resources |> Enum.count() == 7
     end
+
+    test "apply_publication_update/2 handles minor non-hierarchical updates",
+         %{
+           project: project,
+           page1: page1,
+           revision1: revision1,
+           page2: page2,
+           institution: institution
+         } = map do
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+
+      # create a course section using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
+      # verify the curriculum precondition
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.children |> Enum.count() == 2
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # make some changes to project and publish
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      map = Map.put(map, :publication, working_pub)
+
+      # minor resource content changes, including adding activity and objective
+      activity_content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [
+                %{
+                  "rule" => "input like {a}",
+                  "score" => 10,
+                  "id" => "r1",
+                  "feedback" => %{"id" => "1", "content" => "yes"}
+                },
+                %{
+                  "rule" => "input like {b}",
+                  "score" => 1,
+                  "id" => "r2",
+                  "feedback" => %{"id" => "2", "content" => "almost"}
+                },
+                %{
+                  "rule" => "input like {c}",
+                  "score" => 0,
+                  "id" => "r3",
+                  "feedback" => %{"id" => "3", "content" => "no"}
+                }
+              ],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      map =
+        Seeder.add_activity(
+          map,
+          %{title: "activity one", max_attempts: 2, content: activity_content},
+          :activity
+        )
+
+      map = Seeder.add_objective(map, "objective one", :o1)
+
+      page1_changes = %{
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "content",
+              "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+            },
+            %{
+              "type" => "activity-reference",
+              "activity_id" => Map.get(map, :activity).revision.resource_id
+            }
+          ]
+        },
+        "objectives" => %{"attached" => [Map.get(map, :o1).resource.id]}
+      }
+
+      Seeder.revise_page(page1_changes, page1, revision1, working_pub)
+
+      # publish changes
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+
+      # verify the publication is a minor update
+      assert latest_publication.edition == 0
+      assert latest_publication.major == 1
+      assert latest_publication.minor == 1
+
+      # apply the new publication update to the section
+      Sections.apply_publication_update(section, latest_publication.id)
+
+      # reload latest hierarchy
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      # verify non-structural changes are applied as expected
+      assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
+               page1_changes["content"]
+
+      assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.objectives) ==
+               page1_changes["objectives"]
+
+      # verify the activity section resource exists
+      section_id = section.id
+
+      section_resources =
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id
+        )
+        |> Repo.all()
+
+      assert section_resources |> Enum.count() == 5
+
+      assert section_resources
+             |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :activity).resource.id end)
+
+      assert section_resources
+             |> Enum.find(fn sr -> sr.resource_id == Map.get(map, :o1).resource.id end)
+    end
   end
 
   describe "sections remix" do

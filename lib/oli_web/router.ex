@@ -632,10 +632,14 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/accounts", Accounts.AccountsLive)
+    live("/authors", Users.AuthorsView)
+    live("/authors/:user_id", Users.AuthorsDetailView)
+    live("/users", Users.UsersView)
+    live("/users/:user_id", Users.UsersDetailView)
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+    live("/sections", Sections.SectionsView)
     live("/open_and_free/create", Delivery.SelectSource)
     live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
 

@@ -13,7 +13,7 @@ const customEvents: any = { ...apiCustomEvents };
 
 register(FIBAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
-  shadow: false,
+  shadow: true,
   attrs: {
     model: {
       json: true,
@@ -23,6 +23,6 @@ register(FIBAuthor, manifest.authoring.element, observedAttributes, {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
     createSchema,
-    getAdaptivitySchema: async () => adaptivitySchema,
+    getAdaptivitySchema: adaptivitySchema,
   },
 });

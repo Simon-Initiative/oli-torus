@@ -33,8 +33,6 @@ defmodule OliWeb.OpenAndFreeController do
     source =
       case id do
         "product:" <> id ->
-          IO.inspect(id)
-
           Sections.get_section!(String.to_integer(id))
 
         "publication:" <> id ->
