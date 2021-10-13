@@ -1,5 +1,8 @@
 defmodule Oli.Qa.Reviewers.Pedagogy do
   import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Publishing
   alias Oli.Authoring.Course
   alias Oli.Resources
@@ -18,8 +21,8 @@ defmodule Oli.Qa.Reviewers.Pedagogy do
         |> no_attached_activities(pages)
         |> Reviews.mark_review_done()
 
-      {:error, error} ->
-        IO.inspect(error)
+      {:error, e} ->
+        Logger.error("failed to create review: #{inspect(e)}")
     end
 
     project_slug

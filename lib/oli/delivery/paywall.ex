@@ -1,5 +1,8 @@
 defmodule Oli.Delivery.Paywall do
   import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Repo
   alias Oli.Accounts.User
   alias Oli.Delivery.Paywall.Payment
@@ -138,7 +141,8 @@ defmodule Oli.Delivery.Paywall do
         {:ok, List.flatten(rows) |> Enum.map(fn c -> trunc(c) end)}
 
       {:error, e} ->
-        IO.inspect(e)
+        Logger.error("could not generate random codes: #{inspect(e)}")
+
         {:error, "could not generate random codes"}
     end
   end
