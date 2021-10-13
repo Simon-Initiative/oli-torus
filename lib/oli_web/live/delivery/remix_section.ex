@@ -102,9 +102,11 @@ defmodule OliWeb.Delivery.RemixSection do
         section,
         %{"current_author_id" => current_author_id} = _session
       ) do
+    current_author = Accounts.get_author!(current_author_id)
     redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
 
-    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) do
+    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) or
+         Accounts.is_admin?(current_author) do
       init_state(socket,
         section: section,
         redirect_after_save: redirect_after_save,
