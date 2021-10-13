@@ -11,7 +11,34 @@ defmodule OliWeb.RemixSectionLiveTest do
   describe "remix section live test" do
     setup [:setup_session]
 
-    test "remix section mount", %{
+    test "remix section mount as open and free", %{
+      conn: conn,
+      admin: admin,
+      map: %{
+        oaf_section_1: oaf_section_1,
+        unit1_container: unit1_container,
+        revision1: revision1,
+        revision2: revision2
+      }
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      conn =
+        get(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("##{revision1.resource_id}") |> has_element?()
+      assert view |> element("##{revision2.resource_id}") |> has_element?()
+    end
+
+    test "remix section mount as instructor", %{
       conn: conn,
       map: %{
         section_1: section_1,
@@ -26,6 +53,38 @@ defmodule OliWeb.RemixSectionLiveTest do
       {:ok, view, _html} = live(conn)
 
       assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("##{revision1.resource_id}") |> has_element?()
+      assert view |> element("##{revision2.resource_id}") |> has_element?()
+    end
+
+    test "remix section mount as product manager", %{
+      conn: conn
+    } do
+      # create a product
+      %{
+        prod1: prod1,
+        author: product_author,
+        publication: publication,
+        revision1: revision1,
+        revision2: revision2
+      } =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+
+      {:ok, _prod} = Sections.create_section_resources(prod1, publication)
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(
+          product_author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
+
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod1.slug))
+
+      {:ok, view, _html} = live(conn)
+
       assert view |> element("##{revision1.resource_id}") |> has_element?()
       assert view |> element("##{revision2.resource_id}") |> has_element?()
     end
@@ -88,6 +147,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   defp setup_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
     instructor = user_fixture()
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
 
     {:ok, _enrollment} =
       Sections.enroll(instructor.id, map.section_1.id, [
@@ -101,6 +161,7 @@ defmodule OliWeb.RemixSectionLiveTest do
     {:ok,
      conn: conn,
      map: map,
+     admin: admin,
      author: map.author,
      institution: map.institution,
      project: map.project,

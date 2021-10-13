@@ -33,40 +33,28 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing.PublishedResource
 
   def mount(
-        _params,
-        %{
-          "section_slug" => section_slug,
-          "current_user_id" => current_user_id
-        } = session,
-        socket
-      ) do
-    section = Sections.get_section_by_slug(section_slug)
-
-    if section.open_and_free do
-      mount_as_open_and_free(socket, section, session)
-    else
-      mount_as_instructor(socket, section, current_user_id)
-    end
-  end
-
-  def mount(
         %{
           "section_slug" => section_slug
         },
-        %{
-          "current_author_id" => current_author_id
-        },
+        session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
 
-    mount_as_product_creator(socket, section, current_author_id)
+    cond do
+      section.open_and_free ->
+        mount_as_open_and_free(socket, section, session)
+
+      section.type == :blueprint ->
+        mount_as_product_creator(socket, section, session)
+
+      true ->
+        mount_as_instructor(socket, section, session)
+    end
   end
 
-  def mount_as_instructor(socket, section, current_user_id) do
-    current_user =
-      Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
-      |> Repo.preload([:platform_roles, :author])
+  def mount_as_instructor(socket, section, %{"current_user_id" => current_user_id} = _session) do
+    current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
 
     redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
 
@@ -89,14 +77,13 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def mount_as_open_and_free(socket, section, session) do
-    current_author = Map.get(session, "current_author")
-
-    redirect_after_save =
-      Map.get(
-        session,
-        "redirect_after_save"
-      )
+  def mount_as_open_and_free(
+        socket,
+        section,
+        %{"current_author_id" => current_author_id} = _session
+      ) do
+    current_author = Accounts.get_author!(current_author_id)
+    redirect_after_save = Routes.open_and_free_path(OliWeb.Endpoint, :show, section)
 
     # only permit authoring admin level access
     if Accounts.is_admin?(current_author) do
@@ -110,7 +97,11 @@ defmodule OliWeb.Delivery.RemixSection do
     end
   end
 
-  def mount_as_product_creator(socket, section, current_author_id) do
+  def mount_as_product_creator(
+        socket,
+        section,
+        %{"current_author_id" => current_author_id} = _session
+      ) do
     redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
 
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) do
