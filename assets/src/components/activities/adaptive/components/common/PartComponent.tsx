@@ -4,7 +4,7 @@ import {
   CustomProperties,
   PartComponentProps,
 } from 'components/parts/types/parts';
-import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import {
   NotificationContext,
   NotificationType,
@@ -84,37 +84,40 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     }
   };
 
-  const onResize = async (payload: any) => {
-    const settings = payload.settings;
-    const styleChanges: CSSProperties = {};
+  const onResize = useCallback(
+    async (payload: any) => {
+      const settings = payload.settings;
+      const styleChanges: CSSProperties = {};
 
-    if (componentStyle.width && settings?.width) {
-      const newW = settings.width.value;
-      if (settings.width.type === 'relative') {
-        styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
-      } else {
-        styleChanges.width = newW;
+      if (componentStyle.width && settings?.width) {
+        const newW = settings.width.value;
+        if (settings.width.type === 'relative') {
+          styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
+        } else {
+          styleChanges.width = newW;
+        }
       }
-    }
 
-    if (componentStyle.height && settings?.height) {
-      const newH = settings.height.value;
-      if (settings.height.type === 'relative') {
-        styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
-      } else {
-        styleChanges.height = newH;
+      if (componentStyle.height && settings?.height) {
+        const newH = settings.height.value;
+        if (settings.height.type === 'relative') {
+          styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
+        } else {
+          styleChanges.height = newH;
+        }
       }
-    }
 
-    if (settings?.zIndex) {
-      const newZ = settings.zIndex.value;
-      styleChanges.zIndex = newZ;
-    }
-    setComponentStyle((previousStyle) => {
-      return { ...previousStyle, ...styleChanges };
-    });
-    return true;
-  };
+      if (settings?.zIndex) {
+        const newZ = settings.zIndex.value;
+        styleChanges.zIndex = newZ;
+      }
+      setComponentStyle((previousStyle) => {
+        return { ...previousStyle, ...styleChanges };
+      });
+      return true;
+    },
+    [componentStyle],
+  );
 
   const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
@@ -189,6 +192,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   }, [pusherContext]);
 
   const [listening, setIsListening] = useState(false);
+
   useEffect(() => {
     const wcEventHandler = async (e: any) => {
       const { payload, callback } = e.detail;
@@ -218,7 +222,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
         document.removeEventListener(eventName, wcEventHandler);
       });
     };
-  }, [wcEvents]);
+  }, [wcEvents, onResize]);
 
   const webComponentProps: any = {
     ref,
