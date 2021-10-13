@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.AuthorsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}

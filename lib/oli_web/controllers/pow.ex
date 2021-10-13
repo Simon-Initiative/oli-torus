@@ -15,7 +15,7 @@ defmodule OliWeb.PowController do
     })
     |> password_reset_respond_create()
     |> put_flash(:info, "Password reset link sent to user #{user.email}.")
-    |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersView))
+    |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersDetailView, user.id))
   end
 
   def send_author_password_reset_link(conn, %{"id" => id}) do
@@ -28,7 +28,7 @@ defmodule OliWeb.PowController do
     })
     |> password_reset_respond_create()
     |> put_flash(:info, "Password reset link sent to user #{author.email}.")
-    |> redirect(to: Routes.live_path(conn, OliWeb.Accounts.AccountsLive, %{active_tab: :authors}))
+    |> redirect(to: Routes.live_path(conn, OliWeb.Users.AuthorsDetailView, author.id))
   end
 
   defp password_reset_respond_create({:ok, %{token: token, user: user}, conn}) do
@@ -53,7 +53,7 @@ defmodule OliWeb.PowController do
     |> use_pow_config(:user)
     |> resend_user_confirmation_email(user)
     |> put_flash(:info, "Confirmation link sent to user #{user.email}.")
-    |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersView))
+    |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersDetailView, user.id))
   end
 
   def resend_author_confirmation_link(conn, %{"id" => id}) do
@@ -63,7 +63,7 @@ defmodule OliWeb.PowController do
     |> use_pow_config(:author)
     |> resend_user_confirmation_email(author)
     |> put_flash(:info, "Confirmation link sent to admin #{author.email}.")
-    |> redirect(to: Routes.live_path(conn, OliWeb.Accounts.AccountsLive, %{active_tab: :authors}))
+    |> redirect(to: Routes.live_path(conn, OliWeb.Users.AuthorsDetailView, author.id))
   end
 
   defp resend_user_confirmation_email(conn, user) do
