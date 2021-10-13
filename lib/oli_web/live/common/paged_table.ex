@@ -17,7 +17,10 @@ defmodule OliWeb.Common.PagedTable do
       {#if @filter != ""}
       <strong>Results filtered on &quot;{@filter}&quot;</strong>
       {/if}
-      {#if @total_count > 0}
+      {#if @total_count > 0 and @total_count < @limit}
+        <div>Showing all results ({@total_count} total)</div>
+        <Table model={@table_model} sort={@sort}/>
+      {#elseif @total_count > 0}
         <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
         <Table model={@table_model} sort={@sort}/>
         <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>

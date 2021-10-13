@@ -33,6 +33,7 @@
 - Fix insert content popup in page editor
 - Add blackboard LTI 1.3 configuration instructions
 
+
 ### Release Notes
 
 The following environment configs are now available:
