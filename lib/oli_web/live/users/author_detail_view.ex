@@ -13,7 +13,10 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
     UnlockAccountModal,
-    DeleteAccountModal
+    DeleteAccountModal,
+    GrantAdminModal,
+    RevokeAdminModal,
+    ConfirmEmailModal
   }
 
   prop author, :any
@@ -113,21 +116,21 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def handle_event(
         "unlock_account",
         %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
+        socket
       ) do
     author = Accounts.get_author!(id)
     AuthorContext.unlock(author)
 
     {:noreply,
      socket
-     |> assign(user: author)
+     |> assign(user: Accounts.get_author!(id))
      |> hide_modal()}
   end
 
   def handle_event(
         "delete_account",
         %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
+        socket
       ) do
     author = Accounts.get_author!(id)
     {:ok, _author} = Accounts.delete_author(author)
@@ -165,14 +168,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
   def handle_event(
         "lock_account",
         %{"id" => id},
-        %{assigns: %{model: %{active_tab: :authors}}} = socket
+        socket
       ) do
     author = Accounts.get_author!(id)
     AuthorContext.lock(author)
 
     {:noreply,
      socket
-     |> assign(user: author)
+     |> assign(user: Accounts.get_author!(id))
      |> hide_modal()}
   end
 
@@ -235,19 +238,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   defp change_system_role(socket, author, role_id) do
     case Accounts.update_author(author, %{system_role_id: role_id}) do
       {:ok, author} ->
-        index =
-          Enum.find_index(socket.assigns.model.authors_model.rows, fn a ->
-            a.email == author.email
-          end)
-
-        rows = List.replace_at(socket.assigns.model.authors_model.rows, index, author)
-
-        authors_model =
-          Map.put(socket.assigns.model.authors_model, :rows, rows)
-          |> Map.put(:selected, author)
-
-        model = Map.put(socket.assigns.model, :authors_model, authors_model)
-        assign(socket, model: model)
+        assign(socket, user: author)
 
       {:error, _} ->
         put_flash(socket, :error, "Could not edit author")

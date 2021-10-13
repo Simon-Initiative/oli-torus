@@ -35,7 +35,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
           render_fn: &__MODULE__.render_role_column/3
         }
       ],
-      event_suffix: "_authors",
+      event_suffix: "",
       id_field: [:id]
     )
   end

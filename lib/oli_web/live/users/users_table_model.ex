@@ -30,7 +30,7 @@ defmodule OliWeb.Users.UsersTableModel do
           render_fn: &__MODULE__.render_author_column/3
         }
       ],
-      event_suffix: "_users",
+      event_suffix: "",
       id_field: [:id]
     )
   end

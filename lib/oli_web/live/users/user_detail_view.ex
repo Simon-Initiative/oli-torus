@@ -14,7 +14,8 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
     UnlockAccountModal,
-    DeleteAccountModal
+    DeleteAccountModal,
+    ConfirmEmailModal
   }
 
   prop author, :any
@@ -65,7 +66,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
         </Group>
         <Group label="Actions" description="Actions that can be take for this user">
-          {#if @user.indepedent_learner}
+          {#if @user.independent_learner}
             <Actions user={@user} csrf_token={@csrf_token}/>
           {#else}
             <div></div>
@@ -76,10 +77,22 @@ defmodule OliWeb.Users.UsersDetailView do
     """
   end
 
+  def handle_event("show_confirm_email_modal", _, socket) do
+    modal = %{
+      component: ConfirmEmailModal,
+      assigns: %{
+        id: "confirm_email",
+        user: socket.assigns.user
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
   def handle_event(
         "confirm_email",
         _,
-        %{assigns: %{model: %{active_tab: :users}}} = socket
+        socket
       ) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
@@ -116,7 +129,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     {:noreply,
      socket
-     |> assign(user: user)
+     |> assign(user: Accounts.get_user!(id))
      |> hide_modal()}
   end
 
@@ -135,14 +148,14 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event(
         "unlock_account",
         %{"id" => id},
-        %{assigns: %{model: %{active_tab: :users}}} = socket
+        socket
       ) do
     user = Accounts.get_user!(id)
     UserContext.unlock(user)
 
     {:noreply,
      socket
-     |> assign(user: user)
+     |> assign(user: Accounts.get_user!(id))
      |> hide_modal()}
   end
 
