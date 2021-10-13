@@ -37,7 +37,10 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     zIndex: props.model.z || 0,
     width: props.model.width,
   };
-  if (props.type !== 'janus-text-flow') {
+  if (
+    props.type !== 'janus-text-flow' ||
+    (props.type === 'janus-text-flow' && props.model.overrideHeight)
+  ) {
     initialStyles.height = height;
   }
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
