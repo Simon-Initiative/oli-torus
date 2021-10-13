@@ -226,7 +226,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           pr.publication_id in subquery(section_publication_ids(section_slug)) and
             rev.deleted == false and
             fragment("? && ?", rev.children, ^resource_ids),
-        order_by: rev.inserted_at,
+        order_by: [rev.inserted_at, rev.id],
         select: rev
       )
       |> Repo.all()
