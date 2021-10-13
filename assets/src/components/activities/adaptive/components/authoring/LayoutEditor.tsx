@@ -183,7 +183,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartConfigure = useCallback(
     async (partId, configure, context) => {
-      console.log('AUTHOR PART CONFIGURE', {
+      console.log('LE: AUTHOR PART CONFIGURE', {
         configurePartId,
         partId,
         configure,
@@ -406,6 +406,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           .active-selection-toolbar {
             position: absolute;
             z-index: 999;
+            min-width: 160px;
           }
           .part-config-container {
             position: absolute;

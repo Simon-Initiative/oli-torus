@@ -128,7 +128,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     ...model.popup.custom,
     x: model.popup.custom.x - (x || 0),
     y: model.popup.custom.y - (y || 0),
-    z: Math.max(z || 0, model.popup.custom.z || 0),
+    z: Math.max((z || 0) + 1000, (model.popup.custom.z || 0) + 1000),
   };
 
   const [windowConfig, setWindowConfig] = useState<any>(offsetWindowConfig);
@@ -179,8 +179,21 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     }, 10);
   }, [inConfigureMode, props.portal]);
 
+  useEffect(() => {
+    const popupModalZ = windowModel.z || 1000;
+    const zIndexIcon = z || 0;
+    const finalZIndex = showWindow ? Math.max(zIndexIcon + popupModalZ, popupModalZ) : zIndexIcon;
+    const modifiedData = { zIndex: { value: finalZIndex } };
+    console.log('PA: RESIZE', { id, modifiedData });
+    setAuthorStyleOverride(`#${id.replace(/:/g, '\\:')} { z-index: ${finalZIndex};}`);
+    props.onResize({ id: `${id}`, settings: modifiedData });
+  }, [showWindow, model]);
+
+  const [authorStyleOverride, setAuthorStyleOverride] = useState<string>('');
+
   return (
     <React.Fragment>
+      <style>{authorStyleOverride}</style>
       {inConfigureMode && portalEl && (
         <Designer screenModel={windowModel} onChange={handleScreenAuthorChange} portal={portalEl} />
       )}
