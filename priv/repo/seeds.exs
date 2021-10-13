@@ -14,6 +14,10 @@ alias Oli.Seeder
 alias Oli.Utils
 alias Oli.Authoring.Collaborators
 alias Oli.Features
+alias Oli.Accounts
+alias Oli.Accounts.{User, Author}
+alias Oli.Repo
+alias Oli.Utils.DataGenerators.NameGenerator
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
@@ -161,24 +165,81 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Oli.Publishing.publish_project(seeds.project, "Initial publish")
 
-    # create any registrations defined in registrations.json
-    case Utils.read_json_file("./registrations.json") do
+    # create any seeds defined in seeds.json
+    case Utils.read_json_file("./seeds.json") do
       {:ok, json} ->
-        {:ok, %{id: jwk_id}} = Lti_1p3.get_active_jwk()
+        case json["registrations"] do
+          nil ->
+            nil
 
-        json
-        |> Enum.each(fn attrs ->
-          attrs =
-            attrs
-            |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
+          registrations ->
+            {:ok, %{id: jwk_id}} = Lti_1p3.get_active_jwk()
 
-          %Oli.Lti_1p3.Tool.Registration{}
-          |> Oli.Lti_1p3.Tool.Registration.changeset(attrs)
-          |> Oli.Repo.insert()
-        end)
+            registrations
+            |> Enum.each(fn attrs ->
+              attrs =
+                attrs
+                |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
+
+              %Oli.Lti_1p3.Tool.Registration{}
+              |> Oli.Lti_1p3.Tool.Registration.changeset(attrs)
+              |> Oli.Repo.insert()
+            end)
+        end
+
+        case json["generate_authors"] do
+          nil ->
+            nil
+
+          num_authors ->
+            # create a bunch of authors
+            IO.puts("Generating #{num_authors} authors...")
+
+            0..num_authors
+            |> Enum.each(fn index ->
+              name = NameGenerator.name()
+
+              params = %{
+                email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@example.edu",
+                name: name,
+                system_role_id: Accounts.SystemRole.role_id().author
+              }
+
+              {:ok, author} =
+                Author.noauth_changeset(%Author{}, params)
+                |> Repo.insert()
+            end)
+        end
+
+        case json["generate_users"] do
+          nil ->
+            nil
+
+          num_users ->
+            # create a bunch of users
+            IO.puts("Generating #{num_users} users...")
+
+            0..num_users
+            |> Enum.each(fn index ->
+              name = NameGenerator.name()
+
+              params = %{
+                sub: UUID.uuid4(),
+                name: name,
+                picture:
+                  "https://platform.example.edu/#{Oli.Utils.Slug.slugify(name)}_#{index}.jpg",
+                email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@platform.example.edu",
+                locale: "en-US"
+              }
+
+              {:ok, user} =
+                User.noauth_changeset(%User{}, params)
+                |> Repo.insert()
+            end)
+        end
 
       _ ->
-        # no registrations.json file, do nothing
+        # no seeds.json file, do nothing
         nil
     end
   end
