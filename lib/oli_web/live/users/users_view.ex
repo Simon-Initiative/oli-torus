@@ -140,7 +140,7 @@ defmodule OliWeb.Users.UsersView do
      )}
   end
 
-  def handle_event("show_deleted", _, socket),
+  def handle_event("include_guests", _, socket),
     do: patch_with(socket, %{include_guests: !socket.assigns.options.include_guests})
 
   def handle_event(event, params, socket) do
