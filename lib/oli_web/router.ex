@@ -636,7 +636,6 @@ defmodule OliWeb.Router do
     live("/authors/:user_id", Users.AuthorsDetailView)
     live("/users", Users.UsersView)
     live("/users/:user_id", Users.UsersDetailView)
-    live("/accounts", Accounts.AccountsLive)
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)

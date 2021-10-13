@@ -2,7 +2,7 @@ defmodule OliWeb.Users.AuthorsView do
   use Surface.LiveView
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Accounts
   alias Oli.Accounts.{AuthorBrowseOptions, Author}
   alias OliWeb.Common.Table.SortableTableModel

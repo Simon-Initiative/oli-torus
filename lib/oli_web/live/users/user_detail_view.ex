@@ -18,8 +18,8 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "All Users"})]
-  data title, :string, default: "All Users"
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "User Details"})]
+  data title, :string, default: "User Details"
   data user, :struct, default: nil
   data modal, :any, default: nil
   data csrf_token, :any
