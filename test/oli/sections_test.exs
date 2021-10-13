@@ -384,8 +384,8 @@ defmodule Oli.SectionsTest do
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       assert hierarchy.children |> Enum.count() == 2
-      assert hierarchy.children |> Enum.at(0) |> Map.get(:slug) == "page_one"
-      assert hierarchy.children |> Enum.at(1) |> Map.get(:slug) == "page_two"
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
 
       # make some changes to project and publish
       working_pub = Publishing.project_working_publication(project.slug)
@@ -472,10 +472,10 @@ defmodule Oli.SectionsTest do
       # verify the updated curriculum structure matches the expected result
 
       assert hierarchy.children |> Enum.count() == 4
-      assert hierarchy.children |> Enum.at(0) |> Map.get(:slug) == "page_one"
-      assert hierarchy.children |> Enum.at(1) |> Map.get(:slug) == "p1_new_page_one"
-      assert hierarchy.children |> Enum.at(2) |> Map.get(:slug) == "p1_new_page_two"
-      assert hierarchy.children |> Enum.at(3) |> Map.get(:slug) == "unit_1"
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == p1_new_page1.id
+      assert hierarchy.children |> Enum.at(2) |> Map.get(:resource_id) == p1_new_page2.id
+      assert hierarchy.children |> Enum.at(3) |> Map.get(:resource_id) == unit1_resource.id
 
       assert hierarchy.children |> Enum.at(3) |> Map.get(:children) |> Enum.count() == 2
 
@@ -483,15 +483,13 @@ defmodule Oli.SectionsTest do
              |> Enum.at(3)
              |> Map.get(:children)
              |> Enum.at(0)
-             |> Map.get(:slug) ==
-               "nested_page_one"
+             |> Map.get(:resource_id) == nested_page1.id
 
       assert hierarchy.children
              |> Enum.at(3)
              |> Map.get(:children)
              |> Enum.at(1)
-             |> Map.get(:slug) ==
-               "nested_page_two"
+             |> Map.get(:resource_id) == nested_page2.id
 
       # verify the final number of section resource records matches what is
       # expected to guard against section resource record leaks

@@ -16,7 +16,7 @@ defmodule OliWeb.WorkspaceControllerTest do
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert length(Repo.preload(author, [:projects]).projects) == 3
-      assert !(html_response(conn, 200) =~ "No projects")
+      assert !(html_response(conn, 200) =~ "None exist")
     end
 
     test "author has no projects -> displays no projects", %{conn: conn} do
@@ -25,7 +25,7 @@ defmodule OliWeb.WorkspaceControllerTest do
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert Enum.empty?(Repo.preload(author, [:projects]).projects)
-      assert html_response(conn, 200) =~ "No projects"
+      assert html_response(conn, 200) =~ "None exist"
     end
 
     test "Has a `create project` button", %{conn: conn} do

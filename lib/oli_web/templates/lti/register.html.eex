@@ -97,6 +97,20 @@
             </select>
 
             <script>
+              const base_url = issuer
+                .replace(/^http\:\/\//, "https://")
+                .replace(/\/$/, "");
+
+              function full_url(config, key) {
+                if (config[`${key}_url`]) {
+                  return config[`${key}_url`];
+                } else if (config[`${key}_path`]) {
+                  return base_url + config[`${key}_path`];
+                } else {
+                  return '';
+                }
+              };
+
               $('#lms-family').change(function({ target: target }) {
                 selection = $(target).val();
                 let config = lti_config_defaults.find(c => c.product_family_code === selection);
@@ -104,19 +118,15 @@
                 if (config) {
                   // show #suggestion-msg and set config values
                   $('#lms-details').show();
-                  $('.submit').prop( "disabled", false );
-
-                  const base_url = issuer
-                    .replace(/^http\:\/\//, "https://")
-                    .replace(/\/$/, "");
+                  $('.submit').prop('disabled', false);
 
                   if (base_url) {
                     $('#suggested-values-msg').show();
 
-                    $('.key_set_url').val(base_url + config.key_set_path);
-                    $('.auth_token_url').val(base_url + config.auth_token_path);
-                    $('.auth_login_url').val(base_url + config.auth_login_path);
-                    $('.auth_server').val(base_url);
+                    $('.key_set_url').val(full_url(config, 'key_set'));
+                    $('.auth_token_url').val(full_url(config, 'auth_token'));
+                    $('.auth_login_url').val(full_url(config, 'auth_login'));
+                    $('.auth_server').val(full_url(config, 'auth_server'));
                   }
                 } else {
                   // hide #suggestion-msg and reset config values

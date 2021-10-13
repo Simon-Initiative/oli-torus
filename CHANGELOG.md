@@ -4,8 +4,20 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.14.0 (2021-10-12)
+
+### Bug Fixes
+
 - Fix a style issue with the workspace footer
+- Prevent objectives used in selections from being deleted
 - Fix an issue where modals misbehaved sporadically
+- Move "Many Students Wonder" from activity styling to content styling
+- Fix an issue where nonstructural section resources were missing after update
+- Add analytics download fields
+- Add datashop timestamps for seconds
+- Fix datashop bugs with missing <level> elements caused by deleted pages not showing in the container hierarchy
 
 ### Enhancements
 
@@ -14,17 +26,30 @@
 - Add advanced section creation remix
 - Allow for section creation from course products
 - Add analytics / insights data export button
+- Add ability for an admin to browse all course sections
+- Add server driven paged, sortable table for project list
+- Add ability to remix materials from multiple projects
+- Fix insert content popup in page editor
+- Add blackboard LTI 1.3 configuration instructions
 
 ### Release Notes
 
 The following environment configs are now available:
 
 ```
-PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider
-                        Current available options are 'stripe' or 'none'
+PAYMENT_PROVIDER        (Optional) Sets the paywall payment provider. Current available options are 'stripe' or 'none'
 STRIPE_PUBLIC_SECRET    (Required if PAYMENT_PROVIDER=stripe)
 STRIPE_PRIVATE_SECRET   (Required if PAYMENT_PROVIDER=stripe)
+
+BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application Client ID. Enables LTI 1.3 integration
+                                  with blackboard instances and allows torus to provide configuration instructions.
 ```
+
+## 0.13.8 (2021-10-07)
+
+### Bug Fixes
+
+- Handle titles of activities correctly in analytics download
 
 ## 0.13.7 (2021-10-06)
 

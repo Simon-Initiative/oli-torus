@@ -81,7 +81,7 @@ const Adaptive = (
 
   const handlePartSelect = useCallback(
     async (partId: string) => {
-      if (!props.editMode || selectedPartId === partId) {
+      if (!props.editMode) {
         return;
       }
       setSelectedPartId(partId);

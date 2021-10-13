@@ -22,7 +22,7 @@ defmodule OliWeb.Curriculum.DeleteModal do
               Are you sure you want to delete "<%= revision.title %>"?
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="cancel">Cancel</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
               <button
                 phx-target="<%= @myself %>"
                 phx-click="delete"
@@ -44,10 +44,18 @@ defmodule OliWeb.Curriculum.DeleteModal do
 
     case ContainerEditor.remove_child(container, project, author, slug) do
       {:ok, _} ->
-        {:noreply, push_patch(socket, to: Routes.container_path(socket, :index, project.slug, container.slug))}
+        {:noreply,
+         push_patch(socket,
+           to: Routes.container_path(socket, :index, project.slug, container.slug)
+         )}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not delete #{resource_type_label(revision)} \"#{revision.title}\"")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+         )}
     end
   end
 end

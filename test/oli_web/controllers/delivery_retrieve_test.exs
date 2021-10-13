@@ -105,13 +105,6 @@ defmodule OliWeb.DeliveryRetrieveTest do
       |> insert_page(:new_page1)
       |> insert_page(:new_page2)
 
-    Seeder.attach_pages_to(
-      [map.page1, map.page2, map.new_page1.resource, map.new_page2.resource],
-      map.container.resource,
-      map.container.revision,
-      map.publication
-    )
-
     map =
       map
       |> Seeder.create_section()
