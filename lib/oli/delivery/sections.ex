@@ -825,12 +825,17 @@ defmodule Oli.Delivery.Sections do
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
     current_publication = get_current_publication(section_id, project_id)
+    current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    project_publications = get_pinned_project_publications(section_id)
 
     # generate a diff between the old and new publication
     case Publishing.diff_publications(current_publication, new_publication) do
       {{:minor, _version}, _diff} ->
-        # changes are minor, all we need to do is update the spp record
+        # changes are minor, all we need to do is update the spp record and
+        # rebuild the section curriculum based on the current hierarchy
         update_section_project_publication(section, project_id, publication_id)
+
+        rebuild_section_curriculum(section, current_hierarchy, project_publications)
 
         {:ok}
 
@@ -845,8 +850,6 @@ defmodule Oli.Delivery.Sections do
 
           %PublishedResource{revision: root_revision} =
             published_resources_by_resource_id[new_publication.root_resource_id]
-
-          current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
           new_hierarchy =
             Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
@@ -869,7 +872,6 @@ defmodule Oli.Delivery.Sections do
             )
 
           # rebuild the section curriculum based on the updated hierarchy
-          project_publications = get_pinned_project_publications(section_id)
           rebuild_section_curriculum(section, updated_hierarchy, project_publications)
         end)
     end
