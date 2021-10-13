@@ -632,6 +632,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    live("/authors", Users.AuthorsView)
+    live("/authors/:user_id", Users.AuthorsDetailView)
     live("/users", Users.UsersView)
     live("/users/:user_id", Users.UsersDetailView)
     live("/accounts", Accounts.AccountsLive)

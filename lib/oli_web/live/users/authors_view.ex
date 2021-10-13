@@ -1,28 +1,27 @@
-defmodule OliWeb.Users.UsersView do
+defmodule OliWeb.Users.AuthorsView do
   use Surface.LiveView
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
   alias Oli.Accounts
-  alias Oli.Accounts.{UserBrowseOptions, Author}
+  alias Oli.Accounts.{AuthorBrowseOptions, Author}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Users.UsersTableModel
+  alias OliWeb.Users.AuthorsTableModel
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
   @limit 25
-  @default_options %UserBrowseOptions{
-    include_guests: false,
+  @default_options %AuthorBrowseOptions{
     text_search: ""
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "All Users"})]
-  data title, :string, default: "All Users"
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "All Authors"})]
+  data title, :string, default: "All Authors"
 
-  data users, :list, default: []
+  data authors, :list, default: []
 
   data tabel_model, :struct
   data total_count, :integer, default: 0
@@ -33,21 +32,21 @@ defmodule OliWeb.Users.UsersView do
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
-    users =
-      Accounts.browse_users(
+    authors =
+      Accounts.browse_authors(
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :asc, field: :name},
         @default_options
       )
 
-    total_count = determine_total(users)
+    total_count = determine_total(authors)
 
-    {:ok, table_model} = UsersTableModel.new(users)
+    {:ok, table_model} = AuthorsTableModel.new(authors)
 
     {:ok,
      assign(socket,
        author: author,
-       users: users,
+       authors: authors,
        total_count: total_count,
        table_model: table_model,
        options: @default_options
@@ -70,25 +69,24 @@ defmodule OliWeb.Users.UsersView do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %UserBrowseOptions{
-      text_search: get_str_param(params, "text_search", ""),
-      include_guests: get_boolean_param(params, "include_guests", false)
+    options = %AuthorBrowseOptions{
+      text_search: get_str_param(params, "text_search", "")
     }
 
-    users =
-      Accounts.browse_users(
+    authors =
+      Accounts.browse_authors(
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
 
-    table_model = Map.put(table_model, :rows, users)
-    total_count = determine_total(users)
+    table_model = Map.put(table_model, :rows, authors)
+    total_count = determine_total(authors)
 
     {:noreply,
      assign(socket,
        offset: offset,
-       users: users,
+       authors: authors,
        table_model: table_model,
        total_count: total_count,
        options: options
@@ -98,10 +96,6 @@ defmodule OliWeb.Users.UsersView do
   def render(assigns) do
     ~F"""
     <div>
-
-      <Check class="mr-4" checked={@options.include_guests} click="include_guests">Show guest users</Check>
-
-      <div class="mb-3"/>
 
       <TextSearch id="text-search"/>
 
@@ -131,17 +125,13 @@ defmodule OliWeb.Users.UsersView do
                sort_by: socket.assigns.table_model.sort_by_spec.name,
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
-               text_search: socket.assigns.options.text_search,
-               include_guests: socket.assigns.options.include_guests
+               text_search: socket.assigns.options.text_search
              },
              changes
            )
          )
      )}
   end
-
-  def handle_event("show_deleted", _, socket),
-    do: patch_with(socket, %{include_guests: !socket.assigns.options.include_guests})
 
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}

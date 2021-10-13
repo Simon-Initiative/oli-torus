@@ -65,11 +65,33 @@ defmodule OliWeb.Users.UsersDetailView do
 
         </Group>
         <Group label="Actions" description="Actions that can be take for this user">
-          <Actions user={@user} csrf_token={@csrf_token}/>
+          {#if @user.indepedent_learner}
+            <Actions user={@user} csrf_token={@csrf_token}/>
+          {#else}
+            <div></div>
+          {/if}
         </Group>
       </Groups>
     </div>
     """
+  end
+
+  def handle_event(
+        "confirm_email",
+        _,
+        %{assigns: %{model: %{active_tab: :users}}} = socket
+      ) do
+    email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+    user =
+      socket.assigns.user
+      |> Oli.Accounts.User.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
+      |> Repo.update!()
+
+    {:noreply,
+     socket
+     |> assign(user: user)
+     |> hide_modal()}
   end
 
   def handle_event("show_lock_account_modal", _, socket) do
