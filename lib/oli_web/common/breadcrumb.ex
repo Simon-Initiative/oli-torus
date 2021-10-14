@@ -63,7 +63,10 @@ defmodule OliWeb.Common.Breadcrumb do
 
   """
   def trail_to(project_or_section_slug, revision_slug, resolver) do
-    [curriculum(project_or_section_slug) | trail_to_helper(project_or_section_slug, revision_slug, resolver)]
+    [
+      curriculum(project_or_section_slug)
+      | trail_to_helper(project_or_section_slug, revision_slug, resolver)
+    ]
   end
 
   defp trail_to_helper(project_or_section_slug, revision_slug, resolver) do
@@ -74,7 +77,9 @@ defmodule OliWeb.Common.Breadcrumb do
              project_or_section_slug,
              revision_slug
            ) do
-      Enum.map(path, fn revision -> make_breadcrumb(project_or_section_slug, revision, numberings) end)
+      Enum.map(path, fn revision ->
+        make_breadcrumb(project_or_section_slug, revision, numberings)
+      end)
     end
   end
 
@@ -170,5 +175,14 @@ defmodule OliWeb.Common.Breadcrumb do
           slug: uuid
         })
     end
+  end
+
+  def project_breadcrumb(project) do
+    [
+      Breadcrumb.new(%{
+        full_title: project.title,
+        link: Routes.project_path(OliWeb.Endpoint, :overview, project)
+      })
+    ]
   end
 end

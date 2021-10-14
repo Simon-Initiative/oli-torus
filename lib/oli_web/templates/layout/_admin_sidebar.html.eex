@@ -1,31 +1,4 @@
-
-<div class="btn-group dropright hoverdriven">
-  <button type="button" class="sidebar-item btn my-1 " data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-    <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
-    <div class="label mt-1">Admin</div>
-  </button>
-  <div class="dropdown-menu">
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView) %>">Users</a>
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView) %>">Authors</a>
-    <a class="dropdown-item" href="<%= Routes.institution_path(@conn, :index) %>">Institutions <%= badge(Oli.Institutions.count_pending_registrations() |> positive_or_nil) %></a>
-    <a class="dropdown-item" href="<%= Routes.invite_path(@conn, :index) %>">Invite</a>
-
-    <div class="dropdown-divider"></div>
-
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView) %>">All Products</a>
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView) %>">All Sections</a>
-    <a class="dropdown-item" href="<%= Routes.open_and_free_path(@conn, :index) %>">Open and Free</a>
-    <a class="dropdown-item" href="<%= Routes.ingest_path(@conn, :index)  %>">Ingest Project</a>
-    <a class="dropdown-item" href="<%= Routes.activity_manage_path(@conn, :index) %>">Activity Management</a>
-    <a class="dropdown-item" href="<%= Routes.brand_path(@conn, :index) %>">Branding</a>
-
-    <div class="dropdown-divider"></div>
-
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive) %>">Feature Flags</a>
-    <a class="dropdown-item" href="<%= Routes.live_dashboard_path(OliWeb.Endpoint, :home) %>" target="_blank">
-      <div>Dashboard</div>
-      <div class="flex-grow-1"></div>
-      <i class="las la-external-link-alt align-self-center ml-1"></i>
-    </a>
-  </div>
-</div>
+<a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView) %>">
+  <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
+  <div class="label mt-1">Admin</div>
+</a>

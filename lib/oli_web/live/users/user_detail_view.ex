@@ -2,7 +2,7 @@ defmodule OliWeb.Users.UsersDetailView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   import OliWeb.Common.Properties.Utils
   alias Oli.Accounts
@@ -19,11 +19,17 @@ defmodule OliWeb.Users.UsersDetailView do
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "User Details"})]
+  data breadcrumbs, :any
   data title, :string, default: "User Details"
   data user, :struct, default: nil
   data modal, :any, default: nil
   data csrf_token, :any
+
+  defp set_breadcrumbs(user) do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> OliWeb.Users.UsersView.breadcrumb()
+    |> breadcrumb(user)
+  end
 
   def mount(
         %{"user_id" => user_id},
@@ -39,6 +45,7 @@ defmodule OliWeb.Users.UsersDetailView do
       user ->
         {:ok,
          assign(socket,
+           breadcrumbs: set_breadcrumbs(user),
            author: author,
            user: user,
            csrf_token: csrf_token
@@ -185,5 +192,17 @@ defmodule OliWeb.Users.UsersDetailView do
      socket
      |> assign(user: user)
      |> hide_modal()}
+  end
+
+  def breadcrumb(previous, %User{id: id} = user) do
+    name = OliWeb.Users.UsersTableModel.normalize(user.name, user.given_name, user.family_name)
+
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: name,
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
+        })
+      ]
   end
 end

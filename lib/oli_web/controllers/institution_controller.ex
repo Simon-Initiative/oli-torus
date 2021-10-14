@@ -7,14 +7,34 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions.Institution
   alias Oli.Predefined
   alias Oli.Slack
-
+  alias OliWeb.Common.{Breadcrumb}
   require Logger
+
+  def root_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Institutions",
+          link: Routes.institution_path(OliWeb.Endpoint, :index)
+        })
+      ]
+  end
+
+  def named(previous, name) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: name
+        })
+      ]
+  end
 
   def index(conn, _params) do
     institutions = Institutions.list_institutions()
     pending_registrations = Institutions.list_pending_registrations()
 
     render_institution_page(conn, "index.html",
+      breadcrumbs: root_breadcrumbs(),
       institutions: institutions,
       pending_registrations: pending_registrations,
       country_codes: Predefined.country_codes(),
@@ -30,7 +50,8 @@ defmodule OliWeb.InstitutionController do
     render_institution_page(conn, "new.html",
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones()
+      timezones: Predefined.timezones(),
+      breadcrumbs: root_breadcrumbs() |> named("New")
     )
   end
 
@@ -51,6 +72,7 @@ defmodule OliWeb.InstitutionController do
         render_institution_page(conn, "new.html",
           changeset: changeset,
           country_codes: Predefined.country_codes(),
+          breadcrumbs: root_breadcrumbs() |> named("New"),
           timezones: Predefined.timezones()
         )
     end
@@ -59,7 +81,10 @@ defmodule OliWeb.InstitutionController do
   def show(conn, %{"id" => id}) do
     institution = Institutions.get_institution!(id)
 
-    render_institution_page(conn, "show.html", institution: institution)
+    render_institution_page(conn, "show.html",
+      institution: institution,
+      breadcrumbs: root_breadcrumbs() |> named("Show")
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -67,6 +92,7 @@ defmodule OliWeb.InstitutionController do
     changeset = Institutions.change_institution(institution)
 
     render_institution_page(conn, "edit.html",
+      breadcrumbs: root_breadcrumbs() |> named("Edit"),
       institution: institution,
       changeset: changeset,
       country_codes: Predefined.country_codes(),
@@ -85,6 +111,7 @@ defmodule OliWeb.InstitutionController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_institution_page(conn, "edit.html",
+          breadcrumbs: root_breadcrumbs() |> named("Edit"),
           institution: institution,
           changeset: changeset,
           country_codes: Predefined.country_codes(),

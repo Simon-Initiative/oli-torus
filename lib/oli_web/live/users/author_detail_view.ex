@@ -20,11 +20,30 @@ defmodule OliWeb.Users.AuthorsDetailView do
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Author Details"})]
+  data breadcrumbs, :any
   data title, :string, default: "Author Details"
   data user, :struct, default: nil
   data modal, :any, default: nil
   data csrf_token, :any
+
+  defp set_breadcrumbs(author) do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> OliWeb.Users.AuthorsView.breadcrumb()
+    |> breadcrumb(author)
+  end
+
+  def breadcrumb(previous, %Author{id: id} = author) do
+    name =
+      OliWeb.Users.UsersTableModel.normalize(author.name, author.given_name, author.family_name)
+
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: name,
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
+        })
+      ]
+  end
 
   def mount(
         %{"user_id" => details_id},
@@ -40,6 +59,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       user ->
         {:ok,
          assign(socket,
+           breadcrumbs: set_breadcrumbs(user),
            author: author,
            user: user,
            csrf_token: csrf_token
