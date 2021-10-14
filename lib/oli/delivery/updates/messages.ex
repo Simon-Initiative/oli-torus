@@ -6,6 +6,6 @@ defmodule Oli.Delivery.Updates.Messages do
   end
 
   ## Private helpers
-  defp section(section_id), do: "section:" <> Integer.to_string(section_id)
+  defp section(section_id), do: "section_" <> Integer.to_string(section_id)
   defp join(messages), do: Enum.join(messages, ":")
 end
