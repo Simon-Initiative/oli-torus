@@ -1,14 +1,18 @@
 defmodule Oli.Interop.CustomActivities.ActivityAttempt do
   import XmlBuilder
 
+  alias Oli.Interop.CustomActivities.{Score}
+
   def setup(%{
         activity_attempt: activity_attempt
       }) do
 
     attributes = fetchAttributes(activity_attempt)
+    children = fetchChildren(activity_attempt)
     element(
       :activity_attempt,
-      attributes
+      attributes,
+      children
     )
   end
 
@@ -38,6 +42,20 @@ defmodule Oli.Interop.CustomActivities.ActivityAttempt do
             date_completed: DateTime.to_unix(activity_attempt.date_evaluated)
           }
         )
+    end
+  end
+
+  defp fetchChildren(activity_attempt) do
+
+    case activity_attempt.score do
+      nil ->
+        []
+      _ ->
+        [Score.setup(
+          %{
+            activity_attempt: activity_attempt
+          }
+                     )]
     end
   end
 end

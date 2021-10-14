@@ -5,7 +5,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    ActivityAttemptSaveFile
   }
 
   alias Oli.Activities.State.ActivityState
@@ -197,6 +198,56 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   """
   def perform_test_transformation(model) do
     Transformers.apply_transforms(model)
+  end
+
+  @doc """
+  Query activity_save_file by file_guid
+  """
+  def get_activity_save_file_by_guid(file_guid) do
+    Repo.get_by(
+      ActivityAttemptSaveFile,
+      %{
+        file_guid: file_guid
+      }
+    )
+  end
+
+  @doc """
+  Query activity_save_file by attempt_guid and attempt_number
+  """
+  def get_activity_attempt_save_file(attempt_guid, attempt_number) do
+    query =
+      from a in ActivityAttemptSaveFile,
+           where: a.attempt_guid == ^attempt_guid and a.attempt_number == ^attempt_number,
+           select: a
+    Repo.one(query)
+  end
+
+  @doc """
+  Returns activity_attempt_save_file if a record matches attempt_guid and attempt_number, or creates and returns a new user
+
+  ## Examples
+
+      iex> save_activity_attempt_state_file(%{field: value})
+      {:ok, %ActivityAttemptSaveFile{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def save_activity_attempt_state_file(%{attempt_guid: attempt_guid, attempt_number: attempt_number} = changes) do
+    changes = Map.merge(changes, %{file_guid: UUID.uuid4()})
+
+    case Repo.get_by(
+           ActivityAttemptSaveFile,
+           %{
+             attempt_guid: attempt_guid,
+             attempt_number: attempt_number
+           }
+         ) do
+      nil -> %ActivityAttemptSaveFile{}
+      save_file -> save_file
+    end
+    |> ActivityAttemptSaveFile.changeset(changes)
+    |> Repo.insert_or_update()
   end
 
   defp count_activity_attempts(resource_attempt_id, resource_id) do

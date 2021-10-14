@@ -31,7 +31,6 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-#      IO.inspect
       Activities.list_activity_registrations()
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
