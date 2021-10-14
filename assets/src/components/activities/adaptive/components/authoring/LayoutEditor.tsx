@@ -98,18 +98,18 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
           }
           const partWithCapabilities = { ...part, capabilities };
           setSelectedPart(partWithCapabilities);
-          console.log('PART SELECTION CHANGED', {
+          /* console.log('PART SELECTION CHANGED', {
             selectedPartId,
             selectedPart: partWithCapabilities,
-          });
+          }); */
         }
       }
     } else {
       setSelectedPart(null);
-      console.log('PART SELECTION CHANGED', {
+      /* console.log('PART SELECTION CHANGED', {
         selectedPartId,
         selectedPart: null,
-      });
+      }); */
     }
     // any time selection changes we need to stop editing
     setConfigurePartId('');
@@ -183,13 +183,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartConfigure = useCallback(
     async (partId, configure, context) => {
-      console.log('LE: AUTHOR PART CONFIGURE', {
+      /* console.log('LE: AUTHOR PART CONFIGURE', {
         configurePartId,
         partId,
         configure,
         portalId,
         context,
-      });
+      }); */
       if (partId !== selectedPartId) {
         console.error('trying to enable configure for a not selected partId!');
         return;
@@ -233,7 +233,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [handlePartDelete]);
 
   const handleCopyComponent = useCallback(async () => {
-    console.log('AUTHOR PART COPY', { selectedPart });
+    /* console.log('AUTHOR PART COPY', { selectedPart }); */
     if (props.onCopyPart) {
       props.onCopyPart(selectedPart);
     }
@@ -241,7 +241,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [selectedPart, parts]);
 
   const handlePartMoveForward = useCallback(async () => {
-    console.log('AUTHOR PART MOVE FWD', { selectedPart });
+    /* console.log('AUTHOR PART MOVE FWD', { selectedPart }); */
     const partsClone = clone(parts);
     const part = partsClone.find((p: any) => p.id === selectedPart.id);
     part.custom.z = part.custom.z + 1;
@@ -251,7 +251,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [selectedPart, parts]);
 
   const handlePartMoveBack = useCallback(async () => {
-    console.log('AUTHOR PART MOVE BACK', { selectedPart });
+    /* console.log('AUTHOR PART MOVE BACK', { selectedPart }); */
     const partsClone = clone(parts);
     const part = partsClone.find((p: any) => p.id === selectedPart.id);
     part.custom.z = part.custom.z - 1;
@@ -262,7 +262,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   const handlePartCancelConfigure = useCallback(
     async ({ id }: { id: string }) => {
-      console.log('AUTHOR PART CANCEL CONFIGURE', { id, configurePartId });
+      /* console.log('AUTHOR PART CANCEL CONFIGURE', { id, configurePartId }); */
       if (!configurePartId || id === configurePartId) {
         if (props.onCancelConfigurePart) {
           props.onCancelConfigurePart(configurePartId);
@@ -340,7 +340,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       const handler = (payload: any) => {
         // the layout renderer needs to handle some notifications to update the toolbar
         // and configuration portal if it's being used
-        console.log(`LayoutEditor catching ${notificationType.toString()}`, { payload });
+        /* console.log(`LayoutEditor catching ${notificationType.toString()}`, { payload }); */
         switch (notificationType) {
           case NotificationType.CONFIGURE_CANCEL:
             handlePartCancelConfigure(payload);

@@ -14,7 +14,7 @@ import { ContextProps } from './types';
 
 // eslint-disable-next-line react/display-name
 const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {
-  console.log('PopupAuthor: Designer', { screenModel, portal });
+  /* console.log('PopupAuthor: Designer', { screenModel, portal }); */
   return (
     portal &&
     ReactDOM.createPortal(<ScreenAuthor screen={screenModel} onChange={onChange} />, portal)
@@ -69,7 +69,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             {
               const { partId, configure } = payload;
               if (partId === id) {
-                console.log('PA:NotificationType.CONFIGURE', { partId, configure });
+                /* console.log('PA:NotificationType.CONFIGURE', { partId, configure }); */
                 // if it's not us, then we shouldn't be configuring
                 setInConfigureMode(configure);
                 if (configure) {
@@ -82,7 +82,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('PA:NotificationType.CONFIGURE_SAVE', { partId });
+                /* console.log('PA:NotificationType.CONFIGURE_SAVE', { partId }); */
                 handleNotificationSave();
               }
             }
@@ -91,7 +91,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('PA:NotificationType.CONFIGURE_CANCEL', { partId });
+                /* console.log('PA:NotificationType.CONFIGURE_CANCEL', { partId }); */
               }
             }
             break;
@@ -163,7 +163,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   }, []);
 
   const handleScreenAuthorChange = (changedScreen: any) => {
-    console.log('POPUP AUTHOR SCREEN AUTHOR CHANGE', changedScreen);
+    /* console.log('POPUP AUTHOR SCREEN AUTHOR CHANGE', changedScreen); */
     setWindowModel(changedScreen);
   };
 
@@ -172,7 +172,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     // timeout to give modal a moment to load
     setTimeout(() => {
       const el = document.getElementById(props.portal);
-      console.log('portal changed', { el, p: props.portal });
+      // console.log('portal changed', { el, p: props.portal });
       if (el) {
         setPortalEl(el);
       }
@@ -184,7 +184,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     const zIndexIcon = z || 0;
     const finalZIndex = showWindow ? Math.max(zIndexIcon + popupModalZ, popupModalZ) : zIndexIcon;
     const modifiedData = { zIndex: { value: finalZIndex } };
-    console.log('PA: RESIZE', { id, modifiedData });
+    // console.log('PA: RESIZE', { id, modifiedData });
     setAuthorStyleOverride(`#${id.replace(/:/g, '\\:')} { z-index: ${finalZIndex};}`);
     props.onResize({ id: `${id}`, settings: modifiedData });
   }, [showWindow, model]);

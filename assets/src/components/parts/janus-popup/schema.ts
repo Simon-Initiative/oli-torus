@@ -291,7 +291,7 @@ export const transformModelToSchema = (model: Partial<PopupModel>) => {
     },
   };
 
-  console.log('POPUP [transformModelToSchema]', { model, result });
+  /* console.log('POPUP [transformModelToSchema]', { model, result }); */
 
   return result;
 };
@@ -327,7 +327,7 @@ export const transformSchemaToModel = (schema: Partial<PopupModel>) => {
     };
   }
 
-  console.log('POPUP [transformSchemaToModel]', { schema, result });
+  /* console.log('POPUP [transformSchemaToModel]', { schema, result }); */
 
   return result;
 };

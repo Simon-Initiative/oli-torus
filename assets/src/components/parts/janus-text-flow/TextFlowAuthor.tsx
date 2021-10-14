@@ -113,7 +113,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
   } else if (html) {
     quillProps.html = html;
   }
-  console.log('E RERENDER', { html, tree, portal });
+  /* console.log('E RERENDER', { html, tree, portal }); */
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -286,7 +286,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, [ready, inConfigureMode, model]);
 
   const handleNotificationSave = useCallback(async () => {
-    console.log('TF:NOTIFYSAVE', { id, model, textNodes });
+    /* console.log('TF:NOTIFYSAVE', { id, model, textNodes }); */
     const modelClone = clone(model);
     modelClone.nodes = textNodes;
     await onSaveConfigure({ id, snapshot: modelClone });
@@ -315,7 +315,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
             {
               const { partId, configure } = payload;
               if (partId === id) {
-                console.log('TF:NotificationType.CONFIGURE', { partId, configure });
+                /* console.log('TF:NotificationType.CONFIGURE', { partId, configure }); */
                 // if it's not us, then we shouldn't be configuring
                 setInConfigureMode(configure);
                 if (configure) {
@@ -328,7 +328,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('TF:NotificationType.CONFIGURE_SAVE', { partId });
+                /* console.log('TF:NotificationType.CONFIGURE_SAVE', { partId }); */
                 handleNotificationSave();
               }
             }
@@ -337,7 +337,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('TF:NotificationType.CONFIGURE_CANCEL', { partId });
+                /* console.log('TF:NotificationType.CONFIGURE_CANCEL', { partId }); */
                 setInConfigureMode(false);
               }
             }
@@ -359,7 +359,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
     // timeout to give modal a moment to load
     setTimeout(() => {
       const el = document.getElementById(props.portal);
-      console.log('portal changed', { el, p: props.portal });
+      // console.log('portal changed', { el, p: props.portal });
       if (el) {
         setPortalEl(el);
       }

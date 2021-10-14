@@ -253,7 +253,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   //Methods for CAPI listener End her
 
   const handleValueChangeFromModal = (changedVar: any) => {
-    console.log('CAPI: CONFIG EDITOR CHANGE', { changedVar });
+    /* console.log('CAPI: CONFIG EDITOR CHANGE', { changedVar }); */
     const finalConfigData = internalState.map((variable: CapiVariable) => {
       if (variable.key === changedVar.target) {
         variable.value = changedVar.value;
@@ -312,7 +312,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   };
 
   const handleNotificationSave = useCallback(async () => {
-    console.log('CAPI:NOTIFYSAVE', { id, model, internalState });
+    /* console.log('CAPI:NOTIFYSAVE', { id, model, internalState }); */
     const modelClone = clone(model);
     modelClone.configData = internalState;
     onSaveConfigure({
@@ -345,7 +345,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             {
               const { partId, configure } = payload;
               if (partId === id) {
-                console.log('CAPI:NotificationType.CONFIGURE', { partId, configure });
+                /* console.log('CAPI:NotificationType.CONFIGURE', { partId, configure }); */
                 // if it's not us, then we shouldn't be configuring
                 setInConfigureMode(configure);
                 if (configure) {
@@ -358,7 +358,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('CAPI:NotificationType.CONFIGURE_SAVE', { partId });
+                /* console.log('CAPI:NotificationType.CONFIGURE_SAVE', { partId }); */
                 handleNotificationSave();
               }
             }
@@ -367,7 +367,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
             {
               const { id: partId } = payload;
               if (partId === id) {
-                console.log('CAPI:NotificationType.CONFIGURE_CANCEL', { partId });
+                /* console.log('CAPI:NotificationType.CONFIGURE_CANCEL', { partId }); */
                 setInConfigureMode(false);
                 setconfigClicked(false);
               }

@@ -121,7 +121,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
         // nothing to do
-        console.log(`ScreenAuthor catching ${notificationType.toString()}`, { payload });
+        /* console.log(`ScreenAuthor catching ${notificationType.toString()}`, { payload }); */
       };
       const unsub = subscribeToNotification(pusher, notificationType, handler);
       return unsub;
@@ -313,7 +313,7 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
   const handleAddPart = useCallback(
     (part: AnyPartComponent) => {
       const parts = [...partsList, part];
-      console.log('SA:AddPart', { part, partsList, parts });
+      /* console.log('SA:AddPart', { part, partsList, parts }); */
       setPartsList(parts);
       setSelectedPartId(part.id);
     },
@@ -325,12 +325,12 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
   const [configEditorId] = useState(`config-editor-${screen.id || `screen${Date.now()}`}`);
 
   const handlePartConfigure = async (part: any) => {
-    console.log('[handlePartConfigure]', { part });
+    /* console.log('[handlePartConfigure]', { part }); */
     setShowConfigModal(true);
   };
 
   const handlePartCancelConfigure = async (partId: string) => {
-    console.log('[handlePartCancelConfigure]', { partId });
+    /* console.log('[handlePartCancelConfigure]', { partId }); */
     setShowConfigModal(false);
   };
 

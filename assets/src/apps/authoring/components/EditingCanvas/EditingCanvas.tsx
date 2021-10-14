@@ -39,7 +39,7 @@ const EditingCanvas: React.FC = () => {
 
   const handleSelectionChanged = (selected: string[]) => {
     const [first] = selected;
-    console.log('[handleSelectionChanged]', { selected });
+    /* console.log('[handleSelectionChanged]', { selected }); */
     const newSelection = first || '';
     dispatch(setCurrentSelection({ selection: newSelection }));
     const selectedTab = newSelection ? RightPanelTabs.COMPONENT : RightPanelTabs.SCREEN;
@@ -58,7 +58,7 @@ const EditingCanvas: React.FC = () => {
     // so we have to be able to simply dispatch the change to something that will
     // be able to access the latest activity state
 
-    console.log('[handlePositionChanged]', { activityId, partId, dragData });
+    /* console.log('[handlePositionChanged]', { activityId, partId, dragData }); */
 
     const newPosition = { x: dragData.x, y: dragData.y };
 
@@ -68,7 +68,7 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePartSelect = async (id: string) => {
-    console.log('[handlePartSelect]', { id });
+    /* console.log('[handlePartSelect]', { id }); */
     dispatch(setCurrentSelection({ selection: id }));
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
@@ -85,7 +85,7 @@ const EditingCanvas: React.FC = () => {
     if (e.target.className !== 'aa-stage') {
       return;
     }
-    console.log('[handleStageClick]', e);
+    /* console.log('[handleStageClick]', e); */
     dispatch(setCurrentSelection({ selection: '' }));
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
@@ -93,7 +93,7 @@ const EditingCanvas: React.FC = () => {
 
   // TODO: rename first param to partId
   const handlePartConfigure = async (part: any, context: any) => {
-    console.log('[handlePartConfigure]', { part, context });
+    /* console.log('[handlePartConfigure]', { part, context }); */
     const { fullscreen = false } = context;
     setConfigModalFullscreen(fullscreen);
     setConfigPartId(part);
@@ -101,14 +101,14 @@ const EditingCanvas: React.FC = () => {
   };
 
   const handlePartCancelConfigure = async (partId: string) => {
-    console.log('[handlePartCancelConfigure]', { partId });
+    /* console.log('[handlePartCancelConfigure]', { partId }); */
     setConfigPartId('');
     setConfigModalFullscreen(false);
     setShowConfigModal(false);
   };
 
   const handlePartSaveConfigure = async (partId: string) => {
-    console.log('[handlePartSaveConfigure]', { partId });
+    /* console.log('[handlePartSaveConfigure]', { partId }); */
   };
 
   // console.log('EC: RENDER', { layers });

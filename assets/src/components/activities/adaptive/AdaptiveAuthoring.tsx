@@ -63,7 +63,7 @@ const Adaptive = (
   // this effect sets the selection from the outside based on authoring context
   useEffect(() => {
     if (props.authoringContext) {
-      console.log('[AdaptiveAuthoring] AuthoringContext: ', props.authoringContext);
+      /* console.log('[AdaptiveAuthoring] AuthoringContext: ', props.authoringContext); */
       setSelectedPartId(props.authoringContext.selectedPartId);
       setConfigurePortalId(props.authoringContext.configurePortalId || '');
     }
@@ -71,7 +71,7 @@ const Adaptive = (
 
   const handleLayoutChange = useCallback(
     async (parts: AnyPartComponent[]) => {
-      console.log('Layout Change!', parts);
+      /* console.log('Layout Change!', parts); */
       const modelClone = clone(props.model);
       modelClone.content.partsLayout = parts;
       props.onEdit(modelClone);
@@ -87,7 +87,7 @@ const Adaptive = (
       setSelectedPartId(partId);
       if (props.onCustomEvent) {
         const result = await props.onCustomEvent('selectPart', { id: partId });
-        console.log('got result from onSelect', result);
+        /* console.log('got result from onSelect', result); */
       }
     },
     [props.onCustomEvent, props.editMode, selectedPartId],
@@ -95,7 +95,7 @@ const Adaptive = (
 
   const handleCopyComponent = useCallback(
     async (selectedPart: any) => {
-      console.log('AUTHOR PART COPY', { selectedPart });
+      /* console.log('AUTHOR PART COPY', { selectedPart }); */
       if (props.onCustomEvent) {
         const result = await props.onCustomEvent('copyPart', { copiedPart: selectedPart });
       }
@@ -106,7 +106,7 @@ const Adaptive = (
 
   const handleConfigurePart = useCallback(
     async (part: any, context: any) => {
-      console.log('[AdaptiveAuthoring] PART CONFIGURE', { part, context });
+      /* console.log('[AdaptiveAuthoring] PART CONFIGURE', { part, context }); */
       if (props.onCustomEvent) {
         const result = await props.onCustomEvent('configurePart', {
           part,
@@ -119,7 +119,7 @@ const Adaptive = (
 
   const handleCancelConfigurePart = useCallback(
     async (partId: string) => {
-      console.log('AUTHOR PART CANCEL CONFIGURE', { partId });
+      /* console.log('AUTHOR PART CANCEL CONFIGURE', { partId }); */
       if (props.onCustomEvent) {
         const result = await props.onCustomEvent('cancelConfigurePart', {
           partId,

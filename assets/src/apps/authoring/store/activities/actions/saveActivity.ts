@@ -23,7 +23,7 @@ export const saveActivity = createAsyncThunk(
       content: { ...activity.content, authoring: activity.authoring },
       tags: activity.tags,
     };
-    console.log('going to save acivity: ', { changeData, activity });
+    /* console.log('going to save acivity: ', { changeData, activity }); */
     const editResults = await edit(
       projectSlug,
       resourceId,
@@ -31,7 +31,7 @@ export const saveActivity = createAsyncThunk(
       changeData,
       false,
     );
-    console.log('EDIT SAVE RESULTS', { editResults });
+    /* console.log('EDIT SAVE RESULTS', { editResults }); */
     await dispatch(upsertActivity({ activity }));
     return;
   },

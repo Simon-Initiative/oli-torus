@@ -64,7 +64,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   }, [feedback]);
 
   const handleScreenAuthorChange = (screen: any) => {
-    console.log('ActionFeedbackEditor Screen Author Change', { screen });
+    // console.log('ActionFeedbackEditor Screen Author Change', { screen });
     setFeedback(screen);
   };
 

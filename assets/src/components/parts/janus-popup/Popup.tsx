@@ -331,7 +331,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   };
 
   if (showPopup) {
-    console.log('SHOW POPUP: ', { model, popupModalStyles });
+    /* console.log('SHOW POPUP: ', { model, popupModalStyles }); */
   }
 
   return ready ? (
