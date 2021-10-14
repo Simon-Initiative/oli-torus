@@ -48,7 +48,7 @@ const AddComponentToolbar: React.FC = () => {
       clonedActivity.authoring.parts.push(partIdentifier);
       clonedActivity.content.partsLayout.push(newPartData);
 
-      console.log('adding new part', { newPartData, clonedActivity, currentSequence });
+      /* console.log('adding new part', { newPartData, clonedActivity, currentSequence }); */
       dispatch(saveActivity({ activity: clonedActivity }));
     }
   };
