@@ -10,6 +10,8 @@ interface ConfigModalProps {
   headerText?: string;
 }
 
+let instanceCounter = 0;
+
 const ConfigurationModal: React.FC<ConfigModalProps> = ({
   isOpen,
   bodyId = 'configuration-modal-body',
@@ -18,7 +20,25 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const [instanceId, setInstanceId] = useState(-1);
+  const [enforceFocus, setEnforceFocus] = useState(false);
   const [show, setShow] = useState(isOpen);
+
+  useEffect(() => {
+    if (show) {
+      setInstanceId(instanceCounter++);
+    } else {
+      setInstanceId(-1);
+    }
+  }, [show]);
+
+  useEffect(() => {
+    if (instanceId === instanceCounter) {
+      setEnforceFocus(true);
+    } else {
+      setEnforceFocus(false);
+    }
+  }, [instanceId]);
 
   useEffect(() => {
     setShow(isOpen);
@@ -39,6 +59,8 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
       dialogClassName={`config-modal ${fullscreen ? 'modal-90w' : ''}`}
       show={show}
       onHide={handleCancelClick}
+      enforceFocus={enforceFocus}
+      style={{ overflow: 'auto' }}
     >
       <Modal.Header>
         <span className="title">{headerText}</span>
