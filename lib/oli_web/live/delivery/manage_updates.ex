@@ -13,7 +13,9 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing
+  alias Oli.Delivery.Updates.Worker
   alias OliWeb.Delivery.Updates.ApplyUpdateModal
+  alias Oli.Delivery.Updates.Subscriber
 
   def mount(
         _params,
@@ -66,6 +68,9 @@ defmodule OliWeb.Delivery.ManageUpdates do
 
   def init_state(socket, section, redirect_after_apply) do
     updates = Sections.check_for_available_publication_updates(section)
+    updates_in_progress = Sections.check_for_updates_in_progress(section)
+
+    Subscriber.subscribe_to_update_progress(section.id)
 
     socket =
       socket
@@ -74,6 +79,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
       |> assign(:updates, updates)
       |> assign(:modal, nil)
       |> assign(:redirect_after_apply, redirect_after_apply)
+      |> assign(:updates_in_progress, updates_in_progress)
 
     {:ok, socket}
   end
@@ -108,7 +114,9 @@ defmodule OliWeb.Delivery.ManageUpdates do
         %{"project-id" => project_id, "publication-id" => publication_id},
         socket
       ) do
-    %{section: section, updates: updates} = socket.assigns
+    %{section: section, updates: updates, updates_in_progress: updates_in_progress} =
+      socket.assigns
+
     current_publication = Sections.get_current_publication(section.id, project_id)
     newest_publication = Publishing.get_publication!(publication_id)
 
@@ -136,17 +144,49 @@ defmodule OliWeb.Delivery.ManageUpdates do
     %{
       section: section,
       modal: %{assigns: %{publication_id: publication_id}},
-      redirect_after_apply: redirect_after_apply
+      updates_in_progress: updates_in_progress
     } = socket.assigns
 
-    Sections.apply_publication_update(
-      section,
-      publication_id
-    )
+    %{"section_slug" => section.slug, "publication_id" => publication_id}
+    |> Worker.new()
+    |> Oban.insert!()
+
+    updates_in_progress = Map.put(updates_in_progress, publication_id, true)
 
     {:noreply,
-     push_redirect(socket,
-       to: redirect_after_apply
-     )}
+     socket
+     |> assign(updates_in_progress: updates_in_progress)
+     |> hide_modal()}
+  end
+
+  def handle_info({:update_progress, section_id, publication_id, :complete}, socket) do
+    %{section: section} = socket.assigns
+
+    if section_id == section.id do
+      %{
+        modal: modal,
+        redirect_after_apply: redirect_after_apply,
+        updates_in_progress: updates_in_progress
+      } = socket.assigns
+
+      case modal do
+        %{assigns: %{publication_id: ^publication_id}} ->
+          {:noreply,
+           push_redirect(socket,
+             to: redirect_after_apply
+           )}
+
+        _ ->
+          {:noreply,
+           assign(socket, updates_in_progress: Map.delete(updates_in_progress, publication_id))}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({:update_progress, _section_id, _publication_id, _progress}, socket) do
+    # ignore all other update progress events except for :complete handled above
+    {:noreply, socket}
   end
 end

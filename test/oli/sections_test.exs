@@ -355,6 +355,121 @@ defmodule Oli.SectionsTest do
       assert available_updates[project.id].id == latest_publication.id
     end
 
+    test "check_for_updates_in_progress/2", %{
+      author: author,
+      project: project,
+      container: %{resource: container_resource, revision: container_revision},
+      page1: page1,
+      revision1: revision1,
+      page2: page2,
+      revision2: revision2,
+      institution: institution
+    } do
+      {:ok, initial_pub} = Publishing.publish_project(project, "some changes")
+
+      # Create a course section using the initial publication
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: "1",
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(initial_pub)
+
+      # verify the curriculum precondition
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      assert hierarchy.children |> Enum.count() == 2
+      assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
+      assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
+
+      # make some changes to project and publish
+      working_pub = Publishing.project_working_publication(project.slug)
+
+      # minor resource content changes
+      page1_changes = %{
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "content",
+              "children" => [%{"type" => "p", "children" => [%{"text" => "SECOND"}]}]
+            }
+          ]
+        }
+      }
+
+      Seeder.revise_page(page1_changes, page1, revision1, working_pub)
+
+      # add some pages to the root container
+      %{resource: p1_new_page1, revision: _revision} =
+        Seeder.create_page("P1 New Page one", working_pub, project, author)
+
+      %{resource: p1_new_page2, revision: _revision} =
+        Seeder.create_page("P1 New Page two", working_pub, project, author)
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [p1_new_page1, p1_new_page2],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # create a unit
+      %{resource: unit1_resource, revision: unit1_revision} =
+        Seeder.create_container("Unit 1", working_pub, project, author)
+
+      # create some nested children
+      %{resource: nested_page1, revision: _nested_revision1} =
+        Seeder.create_page("Nested Page One", working_pub, project, author)
+
+      %{resource: nested_page2, revision: _nested_revision2} =
+        Seeder.create_page(
+          "Nested Page Two",
+          working_pub,
+          project,
+          author,
+          Seeder.create_sample_content()
+        )
+
+      _unit1_revision =
+        Seeder.attach_pages_to(
+          [nested_page1, nested_page2],
+          unit1_resource,
+          unit1_revision,
+          working_pub
+        )
+
+      container_revision =
+        Seeder.attach_pages_to(
+          [unit1_resource],
+          container_resource,
+          container_revision,
+          working_pub
+        )
+
+      # remove page 2
+      _deleted_revision =
+        Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
+
+      # publish changes
+      {:ok, latest_publication} = Publishing.publish_project(project, "some changes")
+
+      # queue the publication update and immediately check for updates in progress
+      %{"section_slug" => section.slug, "publication_id" => latest_publication.id}
+      |> Oli.Delivery.Updates.Worker.new()
+      |> Oban.insert!()
+
+      updates_in_progress = Sections.check_for_updates_in_progress(section)
+
+      assert Enum.count(updates_in_progress) == 1
+      assert Map.has_key?(updates_in_progress, latest_publication.id)
+    end
+
     test "apply_publication_update/2", %{
       author: author,
       project: project,
