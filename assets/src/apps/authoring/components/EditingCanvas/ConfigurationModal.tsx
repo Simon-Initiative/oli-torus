@@ -41,6 +41,7 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
     //1) remove the TabIndex attribute from the modal (tricky)
     //2) apply enforceFocus=true for the top most modal
     //'config-editor-e:7GXIDVNS1P0SKGkMIeJrY' is the id of the top most modal. This logic needs to come from somewhere else
+    //Also, style={{ overflow: 'auto' }} in the Modal because when we open the second modal and close it, it was impossible to scroll the first modal
     setIsTopMostModal(bodyId === 'config-editor-e:7GXIDVNS1P0SKGkMIeJrY');
   }, [bodyId]);
 
