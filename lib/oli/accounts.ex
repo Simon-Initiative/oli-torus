@@ -2,7 +2,101 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
-  alias Oli.Accounts.{User, Author, SystemRole}
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Accounts.{User, Author, SystemRole, UserBrowseOptions, AuthorBrowseOptions}
+
+  def browse_users(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %UserBrowseOptions{} = options
+      ) do
+    filter_by_guest =
+      if options.include_guests do
+        true
+      else
+        dynamic([s, _], s.guest == false)
+      end
+
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        dynamic(
+          [s, _],
+          ilike(s.name, ^"%#{options.text_search}%") or
+            ilike(s.email, ^"%#{options.text_search}%") or
+            ilike(s.given_name, ^"%#{options.text_search}%") or
+            ilike(s.family_name, ^"%#{options.text_search}%") or
+            ilike(s.name, ^"#{options.text_search}") or
+            ilike(s.email, ^"#{options.text_search}") or
+            ilike(s.given_name, ^"#{options.text_search}") or
+            ilike(s.family_name, ^"#{options.text_search}")
+        )
+      end
+
+    query =
+      User
+      |> join(:left, [u], e in "enrollments", on: u.id == e.user_id)
+      |> where(^filter_by_text)
+      |> where(^filter_by_guest)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> preload(:author)
+      |> group_by([u, _], u.id)
+      |> select_merge([u, e], %{
+        enrollments_count: count(e.id),
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
+
+  def browse_authors(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %AuthorBrowseOptions{} = options
+      ) do
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        dynamic(
+          [s, _],
+          ilike(s.name, ^"#{options.text_search}") or
+            ilike(s.given_name, ^"#{options.text_search}") or
+            ilike(s.family_name, ^"#{options.text_search}") or
+            ilike(s.name, ^"%#{options.text_search}%") or
+            ilike(s.given_name, ^"%#{options.text_search}%") or
+            ilike(s.family_name, ^"%#{options.text_search}%")
+        )
+      end
+
+    query =
+      Author
+      |> join(:left, [u], e in Oli.Authoring.Authors.AuthorProject, on: u.id == e.author_id)
+      |> where(^filter_by_text)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> group_by([u, _], u.id)
+      |> select_merge([u, e], %{
+        collaborations_count: count(e.project_id),
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :collaborations_count -> order_by(query, [_, e], {^direction, count(e.project_id)})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @doc """
   Returns the list of users.

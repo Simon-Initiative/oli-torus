@@ -33,8 +33,6 @@ defmodule OliWeb.OpenAndFreeController do
     source =
       case id do
         "product:" <> id ->
-          IO.inspect(id)
-
           Sections.get_section!(String.to_integer(id))
 
         "publication:" <> id ->
@@ -153,14 +151,6 @@ defmodule OliWeb.OpenAndFreeController do
 
     updates = Sections.check_for_available_publication_updates(section)
     render_workspace_page(conn, "show.html", section: section, updates: updates)
-  end
-
-  def remix(conn, %{"id" => id}) do
-    section =
-      Sections.get_section_preloaded!(id)
-      |> convert_utc_to_section_tz()
-
-    render_workspace_page(conn, "remix.html", section: section)
   end
 
   def edit(conn, %{"id" => id}) do

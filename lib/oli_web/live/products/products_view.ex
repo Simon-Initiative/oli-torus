@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.ProductsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias OliWeb.Products.Create
   alias OliWeb.Products.Filter

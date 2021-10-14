@@ -20,8 +20,8 @@ defmodule OliWeb.ProductControllerTest do
 
       assert %{"result" => "success", "products" => products} = json_response(conn, 200)
       assert length(products) == 2
-      assert Enum.at(products, 0)["amount"] == "$100.00"
-      assert Enum.at(products, 1)["amount"] == "$24.99"
+      assert Enum.find(products, fn p -> p["amount"] == "$100.00" end)
+      assert Enum.find(products, fn p -> p["amount"] == "$24.99" end)
     end
 
     test "request fails when api key does not have product scope", %{

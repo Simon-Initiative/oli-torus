@@ -5,7 +5,8 @@
     <div class="label mt-1">Admin</div>
   </button>
   <div class="dropdown-menu">
-    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Accounts.AccountsLive) %>">Accounts</a>
+    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView) %>">Users</a>
+    <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView) %>">Authors</a>
     <a class="dropdown-item" href="<%= Routes.institution_path(@conn, :index) %>">Institutions <%= badge(Oli.Institutions.count_pending_registrations() |> positive_or_nil) %></a>
     <a class="dropdown-item" href="<%= Routes.invite_path(@conn, :index) %>">Invite</a>
 

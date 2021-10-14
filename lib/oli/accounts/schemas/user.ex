@@ -62,6 +62,9 @@ defmodule Oli.Accounts.User do
       join_through: "user_groups_users",
       on_replace: :delete
 
+    field :enrollments_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
@@ -137,7 +140,8 @@ defmodule Oli.Accounts.User do
       :research_opt_out,
       :state,
       :locked_at,
-      :email_confirmed_at
+      :email_confirmed_at,
+      :email_confirmation_token
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()

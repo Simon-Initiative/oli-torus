@@ -201,11 +201,12 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
               params = %{
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@example.edu",
+                email_confirmation_token: Pow.UUID.generate(),
                 name: name,
                 system_role_id: Accounts.SystemRole.role_id().author
               }
 
-              {:ok, author} =
+              {:ok, _author} =
                 Author.noauth_changeset(%Author{}, params)
                 |> Repo.insert()
             end)
@@ -229,10 +230,11 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 picture:
                   "https://platform.example.edu/#{Oli.Utils.Slug.slugify(name)}_#{index}.jpg",
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@platform.example.edu",
+                email_confirmation_token: Pow.UUID.generate(),
                 locale: "en-US"
               }
 
-              {:ok, user} =
+              {:ok, _user} =
                 User.noauth_changeset(%User{}, params)
                 |> Repo.insert()
             end)

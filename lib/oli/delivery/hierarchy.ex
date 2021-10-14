@@ -234,6 +234,7 @@ defmodule Oli.Delivery.Hierarchy do
     drop_keys = Keyword.get(opts, :drop_keys, [:revision, :section_resource])
 
     drop_r(hierarchy, drop_keys)
+    # credo:disable-for-next-line Credo.Check.Warning.IoInspect
     |> IO.inspect(label: label)
 
     hierarchy

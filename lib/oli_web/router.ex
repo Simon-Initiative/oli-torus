@@ -223,7 +223,7 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/updates", Delivery.ManageUpdates)
-    live("/products/:section_slug/remix", Delivery.RemixSection, as: :authoring_remix)
+    live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
@@ -632,7 +632,10 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    live("/accounts", Accounts.AccountsLive)
+    live("/authors", Users.AuthorsView)
+    live("/authors/:user_id", Users.AuthorsDetailView)
+    live("/users", Users.UsersView)
+    live("/users/:user_id", Users.UsersDetailView)
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
@@ -661,7 +664,7 @@ defmodule OliWeb.Router do
 
     # Open and free sections
     resources("/open_and_free", OpenAndFreeController)
-    get("/open_and_free/:id/remix", OpenAndFreeController, :remix)
+    live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
     # Branding
     resources("/brands", BrandController)

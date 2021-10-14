@@ -6,7 +6,7 @@
 
 ### Enhancements
 
-## 0.14.0 (2021-10-12)
+## 0.14.0 (2021-10-13)
 
 ### Bug Fixes
 
@@ -18,6 +18,7 @@
 - Add analytics download fields
 - Add datashop timestamps for seconds
 - Fix datashop bugs with missing <level> elements caused by deleted pages not showing in the container hierarchy
+- Fix an issue where minor updates were not properly updating section resource records
 
 ### Enhancements
 
@@ -31,6 +32,7 @@
 - Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
 - Add blackboard LTI 1.3 configuration instructions
+
 
 ### Release Notes
 
