@@ -26,7 +26,7 @@ export const isEqual = (factValue: any, value: any): boolean => {
 
     // ** DT - Sorting both arrays. depending upon user selection in UI the array sometimes comes
     // ** like factValue=[2,5] and value = [5,2] which is right selection but it evaluates to false*/
-    factValue.sort();
+    updatedFactValue.sort();
     return JSON.stringify(updatedFactValue) === JSON.stringify(compareValue);
   }
 
