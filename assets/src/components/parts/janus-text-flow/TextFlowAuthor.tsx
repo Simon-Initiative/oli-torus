@@ -138,13 +138,6 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, [props.model]);
 
   useEffect(() => {
-    // console.log('TF REF CHANGE', htmlPreviewRef.current);
-    if (htmlPreviewRef.current) {
-      setHtmlPreview(htmlPreviewRef.current?.innerHTML || '');
-    }
-  }, [htmlPreviewRef.current]);
-
-  useEffect(() => {
     setInConfigureMode(parseBoolean(configuremode));
   }, [configuremode]);
 
@@ -374,6 +367,13 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   }, [inConfigureMode, props.portal]);
 
   /* console.log('TF RENDER', { id, htmlPreview }); */
+
+  if (htmlPreviewRef.current) {
+    const latestPreview = htmlPreviewRef.current?.innerHTML || '';
+    if (latestPreview !== htmlPreview) {
+      setHtmlPreview(latestPreview);
+    }
+  }
 
   const renderIt =
     inConfigureMode && portalEl ? (
