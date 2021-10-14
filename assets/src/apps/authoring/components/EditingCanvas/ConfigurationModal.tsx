@@ -19,7 +19,7 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   onSave,
 }) => {
   const [show, setShow] = useState(isOpen);
-
+  const [isTopMostModal, setIsTopMostModal] = useState(false);
   useEffect(() => {
     setShow(isOpen);
   }, [isOpen]);
@@ -34,11 +34,23 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
     onSave();
   };
 
+  useEffect(() => {
+    //Need to add logic to identify if the modal is the top most modal.
+    //This is dummy condition to test. will inform @Ben about the same.
+    //There are 2 ways to fix the issue.
+    //1) remove the TabIndex attribute from the modal (tricky)
+    //2) apply enforceFocus=true for the top most modal
+    //'config-editor-e:7GXIDVNS1P0SKGkMIeJrY' is the id of the top most modal. This logic needs to come from somewhere else
+    setIsTopMostModal(bodyId === 'config-editor-e:7GXIDVNS1P0SKGkMIeJrY');
+  }, [bodyId]);
+
   return (
     <Modal
       dialogClassName={`config-modal ${fullscreen ? 'modal-90w' : ''}`}
       show={show}
       onHide={handleCancelClick}
+      enforceFocus={isTopMostModal}
+      style={{ overflow: 'auto' }}
     >
       <Modal.Header>
         <span className="title">{headerText}</span>
