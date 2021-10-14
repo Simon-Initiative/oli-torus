@@ -31,6 +31,9 @@ export const initializeFromContext = createAsyncThunk(
       customCss: params.context.content.customCss,
       custom: params.context.content.custom,
     };
+    if (!params.context.content.model.length && !pageState.custom.themeId) {
+      pageState.custom.themeId = 'torus-theme-1';
+    }
     dispatch(loadPage(pageState));
 
     const children: any[] = Object.keys(params.context.activities).map((id) => ({
