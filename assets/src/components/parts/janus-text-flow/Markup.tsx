@@ -104,7 +104,10 @@ const Markup: React.FC<any> = ({
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
 
-    processedText = processedText.length < 2 ? '\u00a0' : processedText.replace(/ \s/g, '\u00a0 ');
+    processedText =
+      processedText.length < 2 && !processedText.trim()
+        ? '\u00a0'
+        : processedText.replace(/ \s/g, '\u00a0 ');
   } else if (processedText.length !== processedText.trim().length) {
     // check if text has leading and trailing spaces.
     //handling the leading blank spacecs in the span
