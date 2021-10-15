@@ -1,8 +1,8 @@
 import Delta from 'quill-delta';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import register from '../customElementWrapper';
-import { convertQuillToJanus } from './quill-utils';
+import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
 interface QuillEditorProps {
   tree: any[];
@@ -71,8 +71,15 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   onCancel,
 }) => {
   const [contents, setContents] = React.useState<any>(tree);
+  const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
 
-  // console.log('[QuillEditor]', { tree, html });
+  console.log('[QuillEditor]', { tree, html });
+
+  useEffect(() => {
+    const convertedTree = convertJanusToQuill(tree);
+    console.log('[QuillEditor] convertedTree', convertedTree);
+    setDelta(convertedTree);
+  }, [tree]);
 
   const handleSave = React.useCallback(() => {
     if (!contents) {
@@ -131,7 +138,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
               handlers: customHandlers,
             },
           }}
-          defaultValue={html}
+          defaultValue={delta}
           onChange={handleQuillChange}
         />
         {showSaveCancelButtons && (

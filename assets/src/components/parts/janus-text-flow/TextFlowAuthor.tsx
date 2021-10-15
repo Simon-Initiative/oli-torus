@@ -109,8 +109,9 @@ export const renderFlow = (
 const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
   const quillProps: { tree?: any; html?: any } = {};
   if (tree) {
-    quillProps.tree = tree;
-  } else if (html) {
+    quillProps.tree = JSON.stringify(tree);
+  }
+  if (html) {
     quillProps.html = html;
   }
   /* console.log('E RERENDER', { html, tree, portal }); */
@@ -377,7 +378,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const renderIt =
     inConfigureMode && portalEl ? (
-      <Editor html={htmlPreview} portal={portalEl} />
+      <Editor html={htmlPreview} tree={tree} portal={portalEl} />
     ) : (
       <React.Fragment>
         <style>
