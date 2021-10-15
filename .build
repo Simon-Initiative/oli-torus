@@ -170,6 +170,10 @@ Oli.Delivery.Snapshots.Utils.html
 Oli.Delivery.Snapshots.Worker.html
 Oli.Delivery.Snapshots.html
 Oli.Delivery.Student.Summary.html
+Oli.Delivery.Updates.Broadcaster.html
+Oli.Delivery.Updates.Messages.html
+Oli.Delivery.Updates.Subscriber.html
+Oli.Delivery.Updates.Worker.html
 Oli.Delivery.Utils.html
 Oli.Delivery.html
 Oli.Email.html
@@ -548,8 +552,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-6ef9aaeea0.js
-dist/sidebar_items-e9afe04a0d.js
+dist/search_items-51ec49e0f5.js
+dist/sidebar_items-db16331616.js
 index.html
 license.html
 readme.html
