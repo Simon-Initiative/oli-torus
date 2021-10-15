@@ -13,14 +13,32 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing
+  alias Oli.Delivery.Updates.Worker
   alias OliWeb.Delivery.Updates.ApplyUpdateModal
+  alias Oli.Delivery.Updates.Subscriber
 
   def mount(
         _params,
         %{
           "section" => section,
-          "redirect_after_apply" => redirect_after_apply,
-          "current_user" => current_user,
+          "current_user" => current_user
+        },
+        socket
+      ) do
+    # only permit instructor or admin level access
+    current_user = current_user |> Repo.preload([:platform_roles, :author])
+
+    if is_section_instructor_or_admin?(section.slug, current_user) do
+      init_state(socket, section)
+    else
+      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
+  end
+
+  def mount(
+        _params,
+        %{
+          "section" => section,
           "current_author" => current_author
         },
         socket
@@ -28,44 +46,28 @@ defmodule OliWeb.Delivery.ManageUpdates do
     if section.open_and_free do
       # only permit authoring admin level access
       if Accounts.is_admin?(current_author) do
-        init_state(socket, section, redirect_after_apply)
+        init_state(socket, section)
       else
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
       end
     else
-      # only permit instructor or admin level access
-      current_user = current_user |> Repo.preload([:platform_roles, :author])
-
-      if is_section_instructor_or_admin?(section.slug, current_user) do
-        init_state(socket, section, redirect_after_apply)
+      if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author.id) or
+           Accounts.is_admin?(current_author) do
+        init_state(
+          socket,
+          Sections.get_section_by(slug: section.slug)
+        )
       else
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
       end
     end
   end
 
-  def mount(
-        %{
-          "section_slug" => product_slug
-        },
-        %{
-          "current_author_id" => current_author_id
-        },
-        socket
-      ) do
-    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(product_slug, current_author_id) do
-      init_state(
-        socket,
-        Sections.get_section_by(slug: product_slug),
-        Routes.live_path(socket, OliWeb.Products.DetailsView, product_slug)
-      )
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
-  end
-
-  def init_state(socket, section, redirect_after_apply) do
+  def init_state(socket, section) do
     updates = Sections.check_for_available_publication_updates(section)
+    updates_in_progress = Sections.check_for_updates_in_progress(section)
+
+    Subscriber.subscribe_to_update_progress(section.id)
 
     socket =
       socket
@@ -73,7 +75,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
       |> assign(:section, section)
       |> assign(:updates, updates)
       |> assign(:modal, nil)
-      |> assign(:redirect_after_apply, redirect_after_apply)
+      |> assign(:updates_in_progress, updates_in_progress)
 
     {:ok, socket}
   end
@@ -109,6 +111,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
         socket
       ) do
     %{section: section, updates: updates} = socket.assigns
+
     current_publication = Sections.get_current_publication(section.id, project_id)
     newest_publication = Publishing.get_publication!(publication_id)
 
@@ -136,17 +139,53 @@ defmodule OliWeb.Delivery.ManageUpdates do
     %{
       section: section,
       modal: %{assigns: %{publication_id: publication_id}},
-      redirect_after_apply: redirect_after_apply
+      updates_in_progress: updates_in_progress
     } = socket.assigns
 
-    Sections.apply_publication_update(
-      section,
-      publication_id
-    )
+    %{"section_slug" => section.slug, "publication_id" => publication_id}
+    |> Worker.new()
+    |> Oban.insert!()
+
+    updates_in_progress = Map.put_new(updates_in_progress, publication_id, true)
 
     {:noreply,
-     push_redirect(socket,
-       to: redirect_after_apply
-     )}
+     socket
+     |> assign(updates_in_progress: updates_in_progress)
+     |> hide_modal()}
+  end
+
+  def handle_info({:update_progress, section_id, publication_id, :complete}, socket) do
+    %{section: section} = socket.assigns
+
+    if section_id == section.id do
+      %{
+        updates: updates,
+        updates_in_progress: updates_in_progress
+      } = socket.assigns
+
+      %{project_id: project_id} = Publishing.get_publication!(publication_id)
+
+      {:noreply,
+       assign(socket,
+         updates: Map.delete(updates, project_id),
+         updates_in_progress: Map.delete(updates_in_progress, publication_id)
+       )}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({:update_progress, section_id, publication_id, _progress}, socket) do
+    %{section: section} = socket.assigns
+
+    if section_id == section.id do
+      %{updates_in_progress: updates_in_progress} = socket.assigns
+
+      updates_in_progress = Map.put_new(updates_in_progress, publication_id, true)
+
+      {:noreply, assign(socket, updates_in_progress: updates_in_progress)}
+    else
+      {:noreply, socket}
+    end
   end
 end
