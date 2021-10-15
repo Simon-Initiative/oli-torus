@@ -120,6 +120,12 @@
   #stage-stage .content {
     transform: translate(-50%, -75%) scale(1.5);
   }
+  /* Firefox position hacks */
+  @-moz-document url-prefix() {
+    .select2-container.select2-container--default.select2-container--open {
+      margin-top: calc(-35px * 2);
+    }
+  }
 }
 
 .fullpage,
