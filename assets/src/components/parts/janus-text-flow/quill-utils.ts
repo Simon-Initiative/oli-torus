@@ -180,6 +180,12 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
   if (node.href) {
     attrs.link = node.href;
   }
+  if (node.tag === 'sub') {
+    attrs.script = 'sub';
+  }
+  if (node.tag === 'sup') {
+    attrs.script = 'super';
+  }
 
   if (node.children && node.children.length && node.children[0].tag === 'text') {
     const textNode = node.children[0];
