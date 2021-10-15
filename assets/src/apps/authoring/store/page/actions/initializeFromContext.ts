@@ -29,7 +29,7 @@ export const initializeFromContext = createAsyncThunk(
       resourceId: params.context.resourceId,
       additionalStylesheets: params.context.content.additionalStylesheets,
       customCss: params.context.content.customCss,
-      custom: params.context.content.custom,
+      custom: params.context.content.custom || {},
     };
     if (!params.context.content.model.length && !pageState.custom.themeId) {
       pageState.custom.themeId = 'torus-theme-1';
