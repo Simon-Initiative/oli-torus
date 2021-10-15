@@ -2,7 +2,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
-
+  alias OliWeb.Users.UsersTableModel
   use Surface.LiveComponent
 
   def render(assigns) do
@@ -56,9 +56,13 @@ defmodule OliWeb.Users.AuthorsTableModel do
     end
   end
 
-  def render_name_column(assigns, %{name: name, id: id}, _) do
+  def render_name_column(
+        assigns,
+        %{name: name, family_name: family_name, given_name: given_name, id: id},
+        _
+      ) do
     ~F"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{name}</a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{UsersTableModel.normalize(name, given_name, family_name)}</a>
     """
   end
 end
