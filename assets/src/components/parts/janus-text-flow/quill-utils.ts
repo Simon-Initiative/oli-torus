@@ -163,8 +163,13 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
     }
     attrs.size = size;
   }
-  if (node.style?.textDecoration === 'underline') {
-    attrs.underline = true;
+  if (node.style?.textDecoration) {
+    if ((node.style.textDecoration as string).includes('underline')) {
+      attrs.underline = true;
+    }
+    if ((node.style.textDecoration as string).includes('line-through')) {
+      attrs.strike = true;
+    }
   }
   if (node.style?.fontStyle === 'italic') {
     attrs.italic = true;
