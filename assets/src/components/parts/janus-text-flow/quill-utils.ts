@@ -89,6 +89,9 @@ export const convertQuillToJanus = (delta: Delta) => {
           if (op.attributes.italic) {
             style.fontStyle = 'italic';
           }
+          if (op.attributes.size) {
+            style.fontSize = op.attributes.size;
+          }
           if (op.attributes.underline) {
             style.textDecoration = appendToStringProperty('underline', style.textDecoration);
           }
@@ -143,33 +146,53 @@ export const convertQuillToJanus = (delta: Delta) => {
     }
   });
 
-  // console.log('J -> Q', { doc, nodes });
+  console.log('Q -> J', { doc, nodes });
 
   return nodes;
 };
 
-/* const processJanusChildren = (node: JanusMarkupNode, line: Delta) => {
-  node.children.forEach((child) => {
-    if (child.tag === 'span') {
-      const text = child.children.find((c) => c.tag === 'text');
-      const attrs: any = {};
-      if (child.style.fontWeight === 'bold') {
-        attrs.bold = true;
-      }
-      if (child.style.textDecoration === 'underline') {
-        attrs.underline = true;
-      }
-      if (child.style.fontStyle === 'italic') {
-        attrs.italic = true;
-      }
-      if (child.style.color) {
-        attrs.color = child.style.color;
-      }
-      if (text) {
-        line.insert(text.text as string, attrs);
-      }
+const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: any = {}) => {
+  const attrs: any = {};
+  if (node.style.fontWeight === 'bold') {
+    attrs.bold = true;
+  }
+  if (node.style.fontSize) {
+    let size = node.style.fontSize;
+    if (typeof size === 'number' || !size.endsWith('px')) {
+      size = `${size}px`;
     }
-  });
+    attrs.size = size;
+  }
+  if (node.style.textDecoration === 'underline') {
+    attrs.underline = true;
+  }
+  if (node.style.fontStyle === 'italic') {
+    attrs.italic = true;
+  }
+  if (node.style.color) {
+    attrs.color = node.style.color;
+  }
+  if (node.href) {
+    attrs.link = node.href;
+  }
+
+  if (node.children && node.children.length && node.children[0].tag === 'text') {
+    const textNode = node.children[0];
+    doc.insert(textNode.text as string, { ...parentAttrs, ...attrs });
+  } else {
+    node.children.forEach((child, index) => {
+      const line = new Delta();
+      if (blockTags.includes(child.tag)) {
+        if (index > 0) {
+          line.insert('\n');
+        }
+      }
+      const childLine = processJanusChildren(child, line, attrs);
+      doc = childLine.compose(doc);
+    });
+  }
+
+  return doc;
 };
 
 const blockTags = ['p', 'blockquote', 'ol', 'ul'];
@@ -183,11 +206,11 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
         line.insert('\n');
       }
     }
-    processJanusChildren(node, line);
-    doc = line.compose(doc);
+    const childLine = processJanusChildren(node, line);
+    doc = childLine.compose(doc);
   });
 
   console.log('J -> Q', { nodes, doc });
 
   return doc;
-}; */
+};
