@@ -9,6 +9,40 @@ defmodule OliWeb.BrandController do
   alias ExAws.S3
   alias Oli.HTTP
   alias Oli.Institutions
+  alias OliWeb.Common.{Breadcrumb}
+
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
+
+  def new_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "New Brand"
+        })
+      ]
+  end
+
+  def edit_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Edit Brand"
+        })
+      ]
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Manage Brands",
+          link: Routes.brand_path(OliWeb.Endpoint, :index)
+        })
+      ]
+  end
 
   defp available_institutions() do
     Institutions.list_institutions()
@@ -17,7 +51,7 @@ defmodule OliWeb.BrandController do
 
   def index(conn, _params) do
     brands = Branding.list_brands_with_stats()
-    render_workspace_page(conn, "index.html", brands: brands)
+    render_workspace_page(conn, "index.html", brands: brands, breadcrumbs: set_breadcrumbs())
   end
 
   def new(conn, _params) do
@@ -25,6 +59,7 @@ defmodule OliWeb.BrandController do
 
     render_workspace_page(conn, "new.html",
       changeset: changeset,
+      breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
       available_institutions: available_institutions()
     )
   end
@@ -42,6 +77,7 @@ defmodule OliWeb.BrandController do
       {:error, %Ecto.Changeset{} = changeset} ->
         render_workspace_page(conn, "new.html",
           changeset: changeset,
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
           available_institutions: available_institutions()
         )
     end
@@ -58,6 +94,7 @@ defmodule OliWeb.BrandController do
 
     render_workspace_page(conn, "edit.html",
       brand: brand,
+      breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       changeset: changeset,
       available_institutions: available_institutions()
     )
@@ -78,6 +115,7 @@ defmodule OliWeb.BrandController do
         render_workspace_page(conn, "edit.html",
           brand: brand,
           changeset: changeset,
+          breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           available_institutions: available_institutions()
         )
     end

@@ -1,6 +1,6 @@
 defmodule OliWeb.ActivityManageController do
   use OliWeb, :controller
-
+  alias OliWeb.Common.{Breadcrumb}
   alias Oli.Activities
 
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
@@ -9,7 +9,8 @@ defmodule OliWeb.ActivityManageController do
       Enum.sort_by(Activities.list_activity_registrations(), & &1.title, :asc)
 
     params = %{
-      registered_activities: registered_activities
+      registered_activities: registered_activities,
+      breadcrumbs: root_breadcrumbs()
     }
 
     render(
@@ -47,5 +48,15 @@ defmodule OliWeb.ActivityManageController do
         )
         |> redirect(to: Routes.activity_manage_path(conn, :index))
     end
+  end
+
+  def root_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Manage Activities",
+          link: Routes.activity_manage_path(OliWeb.Endpoint, :index)
+        })
+      ]
   end
 end
