@@ -153,23 +153,23 @@ export const convertQuillToJanus = (delta: Delta) => {
 
 const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: any = {}) => {
   const attrs: any = {};
-  if (node.style.fontWeight === 'bold') {
+  if (node.style?.fontWeight === 'bold') {
     attrs.bold = true;
   }
-  if (node.style.fontSize) {
+  if (node.style?.fontSize) {
     let size = node.style.fontSize;
     if (typeof size === 'number' || !size.endsWith('px')) {
       size = `${size}px`;
     }
     attrs.size = size;
   }
-  if (node.style.textDecoration === 'underline') {
+  if (node.style?.textDecoration === 'underline') {
     attrs.underline = true;
   }
-  if (node.style.fontStyle === 'italic') {
+  if (node.style?.fontStyle === 'italic') {
     attrs.italic = true;
   }
-  if (node.style.color) {
+  if (node.style?.color) {
     attrs.color = node.style.color;
   }
   if (node.href) {
@@ -183,31 +183,58 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
     node.children.forEach((child, index) => {
       const line = new Delta();
       if (blockTags.includes(child.tag)) {
-        if (index > 0) {
-          line.insert('\n');
+        if ((child.tag === 'p' && index > 0) || child.tag !== 'p') {
+          const lineAttrs: any = {};
+          if (child.tag.startsWith('h')) {
+            lineAttrs.header = parseInt(child.tag.substring(1), 10);
+          }
+          if (child.tag === 'ol') {
+            parentAttrs.list = 'ordered';
+          }
+          if (child.tag === 'ul') {
+            parentAttrs.list = 'bullet';
+          }
+          if (child.tag === 'li') {
+            lineAttrs.list = parentAttrs.list;
+          }
+          line.insert('\n', lineAttrs);
         }
       }
-      const childLine = processJanusChildren(child, line, attrs);
-      doc = childLine.compose(doc);
+      const childLine = processJanusChildren(child, new Delta(), attrs);
+      doc = line.compose(childLine).compose(doc);
     });
   }
 
   return doc;
 };
 
-const blockTags = ['p', 'blockquote', 'ol', 'ul'];
+const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
 export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
   let doc = new Delta();
+  const parentAttrs: any = {};
   nodes.forEach((node, index) => {
     const line = new Delta();
     if (blockTags.includes(node.tag)) {
-      if (index > 0) {
-        line.insert('\n');
+      if ((node.tag === 'p' && index > 0) || node.tag !== 'p') {
+        const attrs: any = {};
+        if (node.tag.startsWith('h')) {
+          attrs.header = parseInt(node.tag.substring(1), 10);
+        }
+        if (node.tag === 'ol') {
+          parentAttrs.list = 'ordered';
+        }
+        if (node.tag === 'ul') {
+          parentAttrs.list = 'bullet';
+        }
+        if (node.tag === 'li') {
+          attrs.list = parentAttrs.list;
+        }
+        line.insert('\n', attrs);
       }
     }
-    const childLine = processJanusChildren(node, line);
-    doc = childLine.compose(doc);
+    const childLine = processJanusChildren(node, new Delta(), parentAttrs);
+    doc = line.compose(childLine).compose(doc);
   });
 
   console.log('J -> Q', { nodes, doc });
