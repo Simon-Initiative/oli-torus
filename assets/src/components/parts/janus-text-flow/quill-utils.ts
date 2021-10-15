@@ -188,6 +188,9 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           if (child.tag.startsWith('h')) {
             lineAttrs.header = parseInt(child.tag.substring(1), 10);
           }
+          if (child.tag === 'blockquote') {
+            lineAttrs.blockquote = true;
+          }
           if (child.tag === 'ol') {
             parentAttrs.list = 'ordered';
           }
@@ -220,6 +223,9 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
         const attrs: any = {};
         if (node.tag.startsWith('h')) {
           attrs.header = parseInt(node.tag.substring(1), 10);
+        }
+        if (node.tag === 'blockquote') {
+          attrs.blockquote = true;
         }
         if (node.tag === 'ol') {
           parentAttrs.list = 'ordered';

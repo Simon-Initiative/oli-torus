@@ -291,6 +291,13 @@ const Markup: React.FC<any> = ({
           {children}
         </code>
       );
+    case 'blockquote':
+      return (
+        <blockquote ref={el} key={key} className={customCssClass} style={renderStyles}>
+          {processedText}
+          {children}
+        </blockquote>
+      );
     case 'ol':
       return (
         <ol ref={el} key={key} className={customCssClass} style={renderStyles}>
