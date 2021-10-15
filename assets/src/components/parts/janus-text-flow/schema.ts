@@ -125,7 +125,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
 
   const result = { palette: paletteStyles };
 
-  console.log('TF [transformModelToSchema]', { model, result });
+  /* console.log('TF [transformModelToSchema]', { model, result }); */
 
   return result;
 };
@@ -150,7 +150,7 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
     };
   }
 
-  console.log('TF [transformSchemaToModel]', { schema, result });
+  /* console.log('TF [transformSchemaToModel]', { schema, result }); */
 
   return result;
 };

@@ -1,3 +1,7 @@
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
 import chroma from 'chroma-js';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -101,8 +105,24 @@ export const renderFlow = (
   );
 };
 
+// eslint-disable-next-line react/display-name
+const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
+  const quillProps: { tree?: any; html?: any } = {};
+  if (tree) {
+    quillProps.tree = tree;
+  } else if (html) {
+    quillProps.html = html;
+  }
+  /* console.log('E RERENDER', { html, tree, portal }); */
+  const E = () => (
+    <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
+  );
+
+  return portal && ReactDOM.createPortal(<E />, portal);
+});
+
 const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props) => {
-  const { configuremode, onCancelConfigure, onSaveConfigure } = props;
+  const { configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
@@ -111,17 +131,11 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
   const [htmlPreview, setHtmlPreview] = useState<string>('');
 
   const [model, setModel] = useState<TextFlowModel>(props.model);
+  const [textNodes, setTextNodes] = useState<any[]>(props.model.nodes);
 
   useEffect(() => {
     setModel(props.model);
   }, [props.model]);
-
-  useEffect(() => {
-    // console.log('TF REF CHANGE', htmlPreviewRef.current);
-    if (htmlPreviewRef.current) {
-      setHtmlPreview(htmlPreviewRef.current?.innerHTML || '');
-    }
-  }, [htmlPreviewRef.current]);
 
   useEffect(() => {
     setInConfigureMode(parseBoolean(configuremode));
@@ -249,36 +263,129 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       onCancelConfigure({ id });
     };
 
+    const handleEditorChange = (e: any) => {
+      if (!inConfigureMode) {
+        return;
+      } // not mine
+      const { payload, callback } = e.detail;
+      // console.log('TF EDITOR CHANGE', { payload, callback });
+      setTextNodes(payload.value);
+    };
+
     if (inConfigureMode) {
+      document.addEventListener(`${quillEditorTagName}-change`, handleEditorChange);
       document.addEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.addEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     }
 
     return () => {
+      document.removeEventListener(`${quillEditorTagName}-change`, handleEditorChange);
       document.removeEventListener(`${quillEditorTagName}-save`, handleEditorSave);
       document.removeEventListener(`${quillEditorTagName}-cancel`, handleEditorCancel);
     };
   }, [ready, inConfigureMode, model]);
 
-  const Editor = () => (
-    <div style={{ padding: 20 }}>
-      {React.createElement(quillEditorTagName, {
-        /* tree: JSON.stringify(tree), */ // easier to let the editor do it via HTML
-        html: htmlPreview,
-      })}
-    </div>
-  );
+  const handleNotificationSave = useCallback(async () => {
+    /* console.log('TF:NOTIFYSAVE', { id, model, textNodes }); */
+    const modelClone = clone(model);
+    modelClone.nodes = textNodes;
+    await onSaveConfigure({ id, snapshot: modelClone });
+    setInConfigureMode(false);
+  }, [model, textNodes]);
 
-  const renderIt = inConfigureMode ? (
-    ReactDOM.createPortal(<Editor />, document.getElementById(props.portal) as Element)
-  ) : (
-    <React.Fragment>
-      <style>
-        {/*
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_SAVE,
+      NotificationType.CONFIGURE_CANCEL,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload); */
+        if (!payload) {
+          // if we don't have anything, we won't even have an id to know who it's for
+          // for these events we need something, it's not for *all* of them
+          return;
+        }
+        switch (notificationType) {
+          case NotificationType.CONFIGURE:
+            {
+              const { partId, configure } = payload;
+              if (partId === id) {
+                /* console.log('TF:NotificationType.CONFIGURE', { partId, configure }); */
+                // if it's not us, then we shouldn't be configuring
+                setInConfigureMode(configure);
+                if (configure) {
+                  onConfigure({ id, configure, context: { fullscreen: false } });
+                }
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_SAVE:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                /* console.log('TF:NotificationType.CONFIGURE_SAVE', { partId }); */
+                handleNotificationSave();
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_CANCEL:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                /* console.log('TF:NotificationType.CONFIGURE_CANCEL', { partId }); */
+                setInConfigureMode(false);
+              }
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify, handleNotificationSave]);
+
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // timeout to give modal a moment to load
+    setTimeout(() => {
+      const el = document.getElementById(props.portal);
+      // console.log('portal changed', { el, p: props.portal });
+      if (el) {
+        setPortalEl(el);
+      }
+    }, 10);
+  }, [inConfigureMode, props.portal]);
+
+  /* console.log('TF RENDER', { id, htmlPreview }); */
+
+  if (htmlPreviewRef.current) {
+    const latestPreview = htmlPreviewRef.current?.innerHTML || '';
+    if (latestPreview !== htmlPreview) {
+      setHtmlPreview(latestPreview);
+    }
+  }
+
+  const renderIt =
+    inConfigureMode && portalEl ? (
+      <Editor html={htmlPreview} portal={portalEl} />
+    ) : (
+      <React.Fragment>
+        <style>
+          {/*
         note these custom styles are for dealing with KIP / legacy content * that are applied
         we may need to do something else for the new theme and/or the themeless?
       */}
-        {`
+          {`
         .text-flow-authoring-preview {
           font-size: 13px;
         }
@@ -286,14 +393,14 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
           margin: 0;
         }
       `}
-      </style>
-      <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
-        {tree?.map((subtree: MarkupTree) =>
-          renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
-        )}
-      </div>
-    </React.Fragment>
-  );
+        </style>
+        <div ref={htmlPreviewRef} className="text-flow-authoring-preview" style={styles}>
+          {tree?.map((subtree: MarkupTree) =>
+            renderFlow(`textflow-${guid()}`, subtree, styleOverrides, {}, fontSize),
+          )}
+        </div>
+      </React.Fragment>
+    );
 
   return ready ? renderIt : null;
 };

@@ -1,12 +1,25 @@
-import { AnyPartComponent, AuthorPartComponentProps } from 'components/parts/types/parts';
-import React, { CSSProperties, useEffect, useState } from 'react';
+import {
+  NotificationType,
+  subscribeToNotification,
+} from 'apps/delivery/components/NotificationContext';
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { parseBoolean } from 'utils/common';
+import { clone, parseBoolean } from 'utils/common';
 import { getIconSrc } from './GetIcon';
 import PopupWindow from './PopupWindow';
-import PopupWindowDesigner from './PopupWindowDesigner';
 import { PopupModel } from './schema';
 import { ContextProps } from './types';
+
+// eslint-disable-next-line react/display-name
+const Designer: React.FC<any> = React.memo(({ screenModel, onChange, portal }) => {
+  /* console.log('PopupAuthor: Designer', { screenModel, portal }); */
+  return (
+    portal &&
+    ReactDOM.createPortal(<ScreenAuthor screen={screenModel} onChange={onChange} />, portal)
+  );
+});
 
 const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
@@ -20,6 +33,80 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   const [context, setContext] = useState<ContextProps>({ currentActivity: '', mode: '' });
   const [showWindow, setShowWindow] = useState(false);
 
+  const [windowModel, setWindowModel] = useState<any>(model.popup);
+  useEffect(() => {
+    // console.log('PopupAuthor windowModel changed!!', { windowModel, gnu: model.popup });
+    setWindowModel(model.popup);
+  }, [model.popup]);
+
+  const handleNotificationSave = useCallback(async () => {
+    const modelClone = clone(model);
+    modelClone.popup = windowModel;
+    // console.log('PA:NOTIFYSAVE', { id, modelClone, windowModel });
+    await onSaveConfigure({ id, snapshot: modelClone });
+    setInConfigureMode(false);
+  }, [windowModel, model]);
+
+  useEffect(() => {
+    if (!props.notify) {
+      return;
+    }
+    const notificationsHandled = [
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_SAVE,
+      NotificationType.CONFIGURE_CANCEL,
+    ];
+    const notifications = notificationsHandled.map((notificationType: NotificationType) => {
+      const handler = (payload: any) => {
+        /* console.log(`${notificationType.toString()} notification event [PopupAuthor]`, payload); */
+        if (!payload) {
+          // if we don't have anything, we won't even have an id to know who it's for
+          // for these events we need something, it's not for *all* of them
+          return;
+        }
+        switch (notificationType) {
+          case NotificationType.CONFIGURE:
+            {
+              const { partId, configure } = payload;
+              if (partId === id) {
+                /* console.log('PA:NotificationType.CONFIGURE', { partId, configure }); */
+                // if it's not us, then we shouldn't be configuring
+                setInConfigureMode(configure);
+                if (configure) {
+                  onConfigure({ id, configure, context: { fullscreen: true } });
+                }
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_SAVE:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                /* console.log('PA:NotificationType.CONFIGURE_SAVE', { partId }); */
+                handleNotificationSave();
+              }
+            }
+            break;
+          case NotificationType.CONFIGURE_CANCEL:
+            {
+              const { id: partId } = payload;
+              if (partId === id) {
+                /* console.log('PA:NotificationType.CONFIGURE_CANCEL', { partId }); */
+              }
+            }
+            break;
+        }
+      };
+      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      return unsub;
+    });
+    return () => {
+      notifications.forEach((unsub) => {
+        unsub();
+      });
+    };
+  }, [props.notify, handleNotificationSave]);
+
   const {
     x,
     y,
@@ -32,26 +119,27 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     defaultURL,
     iconURL,
     useToggleBehavior,
-    popup,
     description,
   } = model;
 
   // need to offset the window position by the position of the parent element
   // since it's a child of the parent element and not the activity (screen) directly
   const offsetWindowConfig = {
-    ...popup.custom,
-    x: popup.custom.x - (x || 0),
-    y: popup.custom.y - (y || 0),
-    z: Math.max(z || 0, popup.custom.z || 0),
+    ...model.popup.custom,
+    x: model.popup.custom.x - (x || 0),
+    y: model.popup.custom.y - (y || 0),
+    z: Math.max((z || 0) + 1000, (model.popup.custom.z || 0) + 1000),
   };
 
   const [windowConfig, setWindowConfig] = useState<any>(offsetWindowConfig);
-  const [windowParts, setWindowParts] = useState<any[]>(popup.partsLayout || []);
+  const [windowParts, setWindowParts] = useState<any[]>(model.popup.partsLayout || []);
 
+  // only update when the model updates, not the windowModel, because that is just temporary
+  // for the editing until saved
   useEffect(() => {
     setWindowConfig(offsetWindowConfig);
-    setWindowParts(popup.partsLayout || []);
-  }, [props.model.popup]);
+    setWindowParts(model.popup.partsLayout || []);
+  }, [model.popup]);
 
   const handleWindowClose = () => {
     setShowWindow(false);
@@ -74,31 +162,41 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
-  const handleDesignerSave = (parts: AnyPartComponent[]) => {
-    console.log('POPUP AUTHOR DESIGNER SAVE', parts);
+  const handleScreenAuthorChange = (changedScreen: any) => {
+    /* console.log('POPUP AUTHOR SCREEN AUTHOR CHANGE', changedScreen); */
+    setWindowModel(changedScreen);
   };
 
-  const handleDesignerCancel = () => {
-    onConfigure({ id: `${props.id}`, configure: false });
-    setInConfigureMode(false);
-  };
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    // timeout to give modal a moment to load
+    setTimeout(() => {
+      const el = document.getElementById(props.portal);
+      // console.log('portal changed', { el, p: props.portal });
+      if (el) {
+        setPortalEl(el);
+      }
+    }, 10);
+  }, [inConfigureMode, props.portal]);
 
-  const Designer = () => {
-    // console.log('PopupAuthor: Designer', props.portal);
-    return ReactDOM.createPortal(
-      <PopupWindowDesigner
-        config={windowConfig}
-        parts={windowParts}
-        onSave={handleDesignerSave}
-        onCancel={handleDesignerCancel}
-      />,
-      document.getElementById(props.portal) as Element,
-    );
-  };
+  useEffect(() => {
+    const popupModalZ = windowModel.z || 1000;
+    const zIndexIcon = z || 0;
+    const finalZIndex = showWindow ? Math.max(zIndexIcon + popupModalZ, popupModalZ) : zIndexIcon;
+    const modifiedData = { zIndex: { value: finalZIndex } };
+    // console.log('PA: RESIZE', { id, modifiedData });
+    setAuthorStyleOverride(`#${id.replace(/:/g, '\\:')} { z-index: ${finalZIndex};}`);
+    props.onResize({ id: `${id}`, settings: modifiedData });
+  }, [showWindow, model]);
+
+  const [authorStyleOverride, setAuthorStyleOverride] = useState<string>('');
 
   return (
     <React.Fragment>
-      {inConfigureMode && <Designer />}
+      <style>{authorStyleOverride}</style>
+      {inConfigureMode && portalEl && (
+        <Designer screenModel={windowModel} onChange={handleScreenAuthorChange} portal={portalEl} />
+      )}
       <input
         role="button"
         draggable="false"

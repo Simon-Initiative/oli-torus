@@ -10,6 +10,7 @@ interface QuillEditorProps {
   onChange: (changes: any) => void;
   onSave: (contents: any) => void;
   onCancel: () => void;
+  showSaveCancelButtons?: boolean;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -61,7 +62,14 @@ const customHandlers = {
   },
 };
 
-const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave, onCancel }) => {
+const QuillEditor: React.FC<QuillEditorProps> = ({
+  tree,
+  html,
+  showSaveCancelButtons = false,
+  onChange,
+  onSave,
+  onCancel,
+}) => {
   const [contents, setContents] = React.useState<any>(tree);
 
   // console.log('[QuillEditor]', { tree, html });
@@ -126,8 +134,12 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
           defaultValue={html}
           onChange={handleQuillChange}
         />
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onCancel}>Cancel</button>
+        {showSaveCancelButtons && (
+          <>
+            <button onClick={handleSave}>Save</button>
+            <button onClick={onCancel}>Cancel</button>
+          </>
+        )}
       </div>
     </React.Fragment>
   );

@@ -77,7 +77,7 @@ export const transformModelToSchema = (model: any) => {
     custom: { ...model.custom },
   };
 
-  console.log('PART [transformModelToSchema]', { model, result });
+  /* console.log('PART [transformModelToSchema]', { model, result }); */
 
   return result;
 };
@@ -108,7 +108,7 @@ export const transformSchemaToModel = (schema: any) => {
     };
   }
 
-  console.log('PART [transformSchemaToModel]', { schema, result });
+  /* console.log('PART [transformSchemaToModel]', { schema, result }); */
 
   return result;
 };
