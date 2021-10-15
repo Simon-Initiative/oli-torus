@@ -195,6 +195,7 @@ defmodule OliWeb.Router do
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
+    get("/not_found", StaticPageController, :not_found)
   end
 
   scope "/", OliWeb do

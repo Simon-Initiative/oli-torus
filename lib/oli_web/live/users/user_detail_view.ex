@@ -40,7 +40,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     case Accounts.get_user_by(id: user_id) do
       nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       user ->
         {:ok,
@@ -186,12 +186,15 @@ defmodule OliWeb.Users.UsersDetailView do
         socket
       ) do
     user = Accounts.get_user!(id)
-    {:ok, _user} = Accounts.delete_user(user)
 
-    {:noreply,
-     socket
-     |> assign(user: user)
-     |> hide_modal()}
+    case Accounts.delete_user(user) do
+      {:ok, _} ->
+        {:noreply,
+         redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
+
+      {:error, e} ->
+        {:noreply, put_flash(socket, :error, e)}
+    end
   end
 
   def breadcrumb(previous, %User{id: id} = user) do

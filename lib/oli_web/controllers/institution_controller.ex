@@ -83,7 +83,7 @@ defmodule OliWeb.InstitutionController do
 
     render_institution_page(conn, "show.html",
       institution: institution,
-      breadcrumbs: root_breadcrumbs() |> named("Show")
+      breadcrumbs: root_breadcrumbs() |> named("Details")
     )
   end
 

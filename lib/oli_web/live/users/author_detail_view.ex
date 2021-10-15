@@ -54,7 +54,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
     case Repo.get(Author, details_id) do
       nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       user ->
         {:ok,
@@ -153,12 +153,15 @@ defmodule OliWeb.Users.AuthorsDetailView do
         socket
       ) do
     author = Accounts.get_author!(id)
-    {:ok, _author} = Accounts.delete_author(author)
 
-    {:noreply,
-     socket
-     |> assign(user: author)
-     |> hide_modal()}
+    case Accounts.delete_author(author) do
+      {:ok, _} ->
+        {:noreply,
+         redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
+
+      {:error, e} ->
+        {:noreply, put_flash(socket, :error, e)}
+    end
   end
 
   def handle_event("show_lock_account_modal", _, socket) do
