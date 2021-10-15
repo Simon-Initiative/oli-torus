@@ -16,4 +16,9 @@ defmodule OliWeb.Common.Table.Common do
   def render_relative_date(_, item, %ColumnSpec{name: name}) do
     Timex.format!(Map.get(item, name), "{relative}", :relative)
   end
+
+  def render_short_date(_, item, %ColumnSpec{name: name}) do
+    Map.get(item, name)
+    |> Timex.format!("%Y-%m-%d", :strftime)
+  end
 end

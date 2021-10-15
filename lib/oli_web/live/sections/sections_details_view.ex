@@ -2,30 +2,29 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   use Surface.LiveView
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Accounts.Author
-  alias Oli.Delivery.Sections.{Browse, BrowseOptions}
+  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Sections.SectionsTableModel
+  alias OliWeb.Delivery.Sections.EnrollmentsTableModel
+  alias Oli.Delivery.Sections
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
   @limit 25
-  @default_options %BrowseOptions{
-    show_deleted: false,
-    institution_id: nil,
-    blueprint_id: nil,
-    active_only: false,
-    text_search: ""
+  @default_options %EnrollmentBrowseOptions{
+    is_student: true,
+    is_instructor: false,
+    text_search: nil
   }
 
   prop author, :any
   data breadcrumbs, :any
-  data title, :string, default: "All Course Sections"
-
-  data sections, :list, default: []
+  data title, :string, default: "Section Details"
+  data esction, :any, default: nil
 
   data tabel_model, :struct
   data total_count, :integer, default: 0
@@ -43,34 +42,41 @@ defmodule OliWeb.Sections.SectionsDetailsView do
       [
         Breadcrumb.new(%{
           full_title: "All Course Sections",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
         })
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(%{"section_slug" => section_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
-    sections =
-      Browse.browse_sections(
-        %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :asc, field: :title},
-        @default_options
-      )
+    case Sections.get_section_by(slug: section_slug) do
+      nil ->
+        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
-    total_count = determine_total(sections)
+      section ->
+        enrollments =
+          Sections.browse_enrollments(
+            section,
+            %Paging{offset: 0, limit: @limit},
+            %Sorting{direction: :asc, field: :name},
+            @default_options
+          )
 
-    {:ok, table_model} = SectionsTableModel.new(sections)
+        total_count = determine_total(enrollments)
 
-    {:ok,
-     assign(socket,
-       breadcrumbs: set_breadcrumbs(),
-       author: author,
-       sections: sections,
-       total_count: total_count,
-       table_model: table_model,
-       options: @default_options
-     )}
+        {:ok, table_model} = EnrollmentsTableModel.new(enrollments)
+
+        {:ok,
+         assign(socket,
+           breadcrumbs: set_breadcrumbs(),
+           author: author,
+           section: section,
+           total_count: total_count,
+           table_model: table_model,
+           options: @default_options
+         )}
+    end
   end
 
   defp determine_total(projects) do
@@ -89,29 +95,26 @@ defmodule OliWeb.Sections.SectionsDetailsView do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %BrowseOptions{
+    options = %EnrollmentBrowseOptions{
       text_search: get_str_param(params, "text_search", ""),
-      show_deleted: get_boolean_param(params, "show_deleted", false),
-      active_only: get_boolean_param(params, "active_only", false),
-      # This view is currently for all institutions and all root products
-      institution_id: nil,
-      blueprint_id: nil
+      is_student: true,
+      is_instructor: false
     }
 
-    sections =
-      Browse.browse_sections(
+    enrollments =
+      Sections.browse_enrollments(
+        socket.assigns.section,
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
 
-    table_model = Map.put(table_model, :rows, sections)
-    total_count = determine_total(sections)
+    table_model = Map.put(table_model, :rows, enrollments)
+    total_count = determine_total(enrollments)
 
     {:noreply,
      assign(socket,
        offset: offset,
-       sections: sections,
        table_model: table_model,
        total_count: total_count,
        options: options
@@ -120,26 +123,26 @@ defmodule OliWeb.Sections.SectionsDetailsView do
 
   def render(assigns) do
     ~F"""
-    <div>
+    <Groups>
+      <Group label="Settings" description="Manage the course section settings">
+        <ReadOnly label="Title" value={@section.title}/>
+      </Group>
+      <Group label="Enrollments" description="Access and manage the enrolled students">
 
-      <Check class="mr-4" checked={@options.show_deleted} click="show_deleted">Show deleted sections</Check>
-      <Check checked={@options.active_only} click="active_only">Show only active sections</Check>
+        <TextSearch id="text-search"/>
 
-      <div class="mb-3"/>
+        <div class="mb-3"/>
 
-      <TextSearch id="text-search"/>
+        <PagedTable
+          filter={@options.text_search}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}/>
 
-      <div class="mb-3"/>
+      </Group>
 
-      <PagedTable
-        filter={@options.text_search}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}/>
-
-    </div>
-
+    </Groups>
     """
   end
 
@@ -155,21 +158,13 @@ defmodule OliWeb.Sections.SectionsDetailsView do
                sort_by: socket.assigns.table_model.sort_by_spec.name,
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
-               text_search: socket.assigns.options.text_search,
-               show_deleted: socket.assigns.options.show_deleted,
-               active_only: socket.assigns.options.active_only
+               text_search: socket.assigns.options.text_search
              },
              changes
            )
          )
      )}
   end
-
-  def handle_event("show_deleted", _, socket),
-    do: patch_with(socket, %{show_deleted: !socket.assigns.options.show_deleted})
-
-  def handle_event("active_only", _, socket),
-    do: patch_with(socket, %{active_only: !socket.assigns.options.active_only})
 
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
