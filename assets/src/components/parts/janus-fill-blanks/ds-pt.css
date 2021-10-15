@@ -1,0 +1,1789 @@
+/*-----------------------------------------
+
+    The Center for Education Through Exploration
+    Arizona State University
+
+-----------------------------------------*/
+
+/*-----------------------------------------
+    Import Other Stylesheets
+-----------------------------------------*/
+@import url('https://s3-us-west-2.amazonaws.com/etx-nec/css/etx-resource/styles/torus/style_etx.css');
+
+/*-----------------------------------------
+    Variables
+-----------------------------------------*/
+:root {
+  --speechPadding: 10px;
+  --scaleSize: 1;
+  --primary-color: var(--blue100);
+
+  --container-width: 1000px;
+  --container-height: 500px;
+  --sim-width: 1000px;
+  --sim-height: 500px;
+  --fade-start: 20px;
+
+  --dotLeftOffset: 60px;
+  --lineLeftOffset: 175px;
+
+  /*-- color --*/
+  --action: red;
+
+  /*-- filenames --*/
+  --lesson-background: url('https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/images/plate-tectonics/park-background.jpg');
+  --orby-body: url(https://etx-nec.s3.us-west-2.amazonaws.com/plate-tectonics/ld-graphics/orby-body.png);
+  --orby-face-happy: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/images/plate-tectonics/orby-face-happy.svg);
+  --orby-face-cute: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/images/plate-tectonics/orby-face-cute.svg);
+  --orby-face-think: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx/images/plate-tectonics/orby-face-think.svg);
+}
+
+/*-----------------------------------------
+    Fonts
+-----------------------------------------*/
+/* Lato */
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+/* https://fonts.google.com/specimen/Lato */
+@font-face {
+  font-family: Lato;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Lato/Lato-Regular.ttf),
+    url(../fonts/Lato/Lato-Regular.ttf);
+}
+@font-face {
+  font-family: LatoBold;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Lato/Lato-Bold.ttf),
+    url(../fonts/Lato/Lato-Bold.ttf);
+}
+@font-face {
+  font-family: LatoItalic;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Lato/Lato-Italic.ttf),
+    url(../fonts/Lato/Lato-Italic.ttf);
+}
+@font-face {
+  font-family: LatoBoldItalic;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Lato/Lato-BoldItalic.ttf.ttf),
+    url(../fonts/Lato/Lato-BoldItalic.ttf);
+}
+
+/*-----------------------------------------
+    Content  Wrapper
+-----------------------------------------*/
+.mainView {
+  background-size: 100% 100%;
+  overflow: hidden;
+}
+
+.mainView,
+.mainView:before {
+  background-image: var(--lesson-background);
+  background-repeat: no-repeat;
+}
+
+.mainView:before {
+  content: '';
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: calc(100% - 60px);
+  filter: blur(2px) brightness(110%);
+  opacity: 1;
+  background-size: 100% calc(100% + 60px);
+  top: 60px;
+  background-position: center -60px;
+  -webkit-mask-image: -webkit-linear-gradient(
+    top,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 35%,
+    rgba(0, 0, 0, 0) 45%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0) 65%,
+    rgba(0, 0, 0, 1) 100%
+  );
+}
+
+.sim-cross .mainView:after {
+  z-index: -1;
+}
+
+.stageContainer .content {
+  background-color: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  position: absolute !important;
+}
+@media only screen and (min-width: 1900px) {
+  #stage-stage .content {
+    transform: translate(-50%, -75%) scale(1.5);
+  }
+}
+
+.fullpage,
+.oldie-header,
+#result-iframe-wrap,
+#result {
+  background-color: transparent !important;
+}
+
+/*-----------------------------------------
+    Check Container
+-----------------------------------------*/
+.checkContainer {
+  border: none !important;
+  border-radius: 0;
+  background: rgb(0, 0, 0) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.2976540958180147) 100%
+  ) !important;
+}
+
+.checkContainer .historyStepContainer:after {
+  content: '';
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.checkContainer .icon-chevron-right,
+.checkContainer .icon-chevron-left {
+  border-color: rgba(255, 255, 255, 1);
+}
+
+.navigationContainer .navigationToggle {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.navigationContainer .navigationToggle:before {
+  background: url(https://style.smartsparrow.com/default-viewer-themes/1.9.1/assets/icon-history-light.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/*Feedback*/
+.feedbackContainer #stage-feedback {
+  left: -50%;
+}
+.feedbackContainer .content {
+  width: 425px !important;
+}
+.feedbackContainer .toggleFeedbackBtn .icon:before {
+  background: url(https://style.smartsparrow.com/default-viewer-themes/1.9.1/assets/icon-feedback-light.svg);
+}
+#stage-feedback janus-text-flow div:after {
+  content: none;
+}
+.feedbackContainer p span {
+  font-weight: initial !important;
+}
+.feedbackContainer b {
+  font-weight: bold;
+  font-size: inherit;
+}
+
+/* History */
+.navigationContainer .theme-no-history-restart__icon {
+  background: url(https://style.smartsparrow.com/default-viewer-themes/1.9.1/assets/icon-restart-light.svg);
+}
+
+.theme-no-history-restart__label {
+  color: rgba(255, 255, 255, 0.8);
+}
+/*check button*/
+.checkContainer .buttonContainer .checkBtn {
+  transition: all 0.25s !important;
+}
+.checkContainer .buttonContainer .checkBtn,
+.checkContainer .buttonContainer .checkBtn:hover,
+.checkContainer .buttonContainer .checkBtn:active,
+.checkContainer .buttonContainer .checkBtn:focus,
+.checkContainer .closeFeedbackBtn,
+.checkContainer .closeFeedbackBtn:hover,
+.checkContainer .closeFeedbackBtn:active,
+.checkContainer .closeFeedbackBtn:focus,
+.checkContainer .showSolnBtn,
+.checkContainer .showSolnBtn:hover,
+.checkContainer .showSolnBtn:active,
+.checkContainer .showSolnBtn:focus {
+  /*background-color: #D77009 !important;*/
+  box-shadow: 0 2px 0 var(--blue20dark);
+  border: solid 0px var(--blue80) !important;
+}
+.checkContainer .buttonContainer .checkBtn:hover,
+.checkContainer .buttonContainer .checkBtn:focus {
+  transition: none !important;
+  border: solid 3px var(--blue80) !important;
+}
+
+/*-----------------------------------------
+    Disable Check Button when Feedback is Onscreen
+-----------------------------------------*/
+div#stage-feedback:before {
+  content: '';
+  background: rgba(51, 51, 51, 0.5);
+  height: 0;
+  /*this hides the Next button blocker - comment out this line to bring it back.*/
+}
+
+button.toggleFeedbackBtn div:after {
+  content: 'Open/Close Feedback';
+  color: #ffffff;
+}
+
+/*-----------------------------------------
+    Feedback
+-----------------------------------------*/
+.feedback-item div[data-janus-type*='janus-text-flow'] {
+  background: initial !important;
+  box-shadow: initial;
+}
+
+.feedbackContainer .content span,
+.feedbackContainer .content em,
+.feedbackContainer .content strong {
+  font-size: 20px !important;
+}
+.feedbackContainer .content span,
+.feedbackContainer .content em,
+.feedbackContainer .content strong {
+  font-size: inherit !important;
+}
+
+#stage-feedback janus-text-flow {
+  width: 100% !important;
+  top: 0 !important;
+  left: 0px !important;
+  position: relative !important;
+}
+
+#stage-feedback janus-text-flow div {
+  padding: 0 !important;
+}
+
+/*-----------------------------------------
+    General
+-----------------------------------------*/
+html,
+body {
+  font-family: sans-serif;
+}
+
+/*--Image Preload - Planets--*/
+.background:after {
+  content: '';
+  height: 1px;
+  width: 1px;
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-mercury.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-venus.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-earth.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-earth-night.png');
+
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-earth-no-atmosphere.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-earth-no-atmosphere-no-water.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_planet-mars.png');
+  background-image: url('https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a01_moon-moon.png');
+
+  background-image: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a02_planet-jupiter.png);
+  background-image: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a02_planet-saturn.png);
+  background-image: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a02_planet-neptune.png);
+  background-image: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx/sites/plate-tectonics/planet-animation/images/a02_planet-uranus.png);
+
+  background-image: var(--lesson-background);
+  background-image: var(--orby-face-happy);
+  background-image: var(--orby-face-cute);
+  background-image: var(--orby-face-think);
+}
+/*-----------------------------------------
+    Text Styles
+-----------------------------------------*/
+/*-- Default - Orby Speech --*/
+janus-text-flow div {
+  padding: 20px !important;
+
+  color: var(--grayDark100) !important;
+  line-height: 130% !important;
+  letter-spacing: -0.25px;
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-size: 20px !important;
+
+  background-color: var(--grayLight20) !important;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+  border: 0 !important;
+}
+
+/*-- Default - Orby Speech on Cross-Section Screens --*/
+.sim-cross div[data-janus-type*='janus-text-flow'] {
+  /*padding: 10px !important; not needed anymore?*/
+}
+
+/*-- Orby Speech Tail - first text's tail is positioned to bottom right --*/
+janus-text-flow div:after,
+.tail-bottom-right div:after,
+.tail-top-right div:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 2px;
+  z-index: 0;
+  width: 20px;
+  height: 20px;
+  background-color: inherit;
+  transform: skewX(40deg) translateX(50%);
+  box-shadow: 1px 1px 1px rgb(0 0 0 / 42%);
+}
+
+/*-- Orby Speech Tail - All after first text's tail is positioned to top right --*/
+janus-text-flow:not(:first-of-type) div:after,
+.tail-bottom-right div:after,
+.tail-top-right div:after {
+  top: 1px;
+  right: 2px;
+  z-index: 0;
+  transform: skewX(-40deg) translateX(50%);
+  border: 0;
+  box-shadow: 1px -1px 1px rgb(0 0 0 / 20%);
+}
+
+/*-- set positions for speech tail --*/
+.tail-top-right div:after {
+  bottom: initial !important;
+  top: 0px !important;
+  right: 1.25px !important;
+  z-index: -1 !important;
+  transform: skewX(-40deg) translateX(50%) !important;
+  border: 0;
+  box-shadow: 1px -1px 1px rgb(0 0 0 / 42%) !important;
+}
+
+.tail-bottom-right div:after {
+  top: initial !important;
+  bottom: 0px !important;
+  right: 2px !important;
+  /* z-index: -1 !important; */
+  transform: skewX(40deg) translateX(50%) !important;
+  border: 0 !important;
+  box-shadow: 1px 1px 1px rgb(0 0 0 / 20%) !important;
+}
+
+/*-- Hide tail --*/
+.tail-none div:after {
+  display: none;
+}
+
+/*-- Hide tails on cross section screens --*/
+.sim-cross div:after,
+.sim-cross .tail-bottom-right div:after,
+.sim-cross .tail-top-right div:after,
+.sim-cross .tail-bottom-right div:after {
+  display: none;
+}
+
+/*-- <p> standard text style --*/
+janus-text-flow div p:not(:last-of-type),
+janus-text-flow div p:not(:only-of-type) {
+  margin-bottom: 10px;
+}
+
+janus-text-flow div p:last-of-type {
+  margin-bottom: 0;
+}
+
+janus-text-flow div p,
+janus-text-flow div p span,
+janus-text-flow div p a {
+  font-size: 1.25rem !important;
+  font-family: Lato, 'Lato', sans-serif !important;
+
+  line-height: 1.65rem;
+  width: 100% !important;
+}
+
+/*-- <strong> --*/
+janus-text-flow div p strong {
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-weight: bold;
+  font-size: inherit !important;
+}
+
+/*-- <em> --*/
+janus-text-flow div p em {
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-style: italic;
+}
+
+/*-- <a> --*/
+janus-text-flow div p a {
+  color: var(--primary-color);
+  font-weight: bold;
+  text-decoration: underline;
+  font-size: inherit !important;
+}
+
+/*-- <sup> (vocab) --*/
+janus-text-flow div p sup {
+  position: static;
+  vertical-align: baseline;
+  color: var(--purple80) !important;
+  text-decoration: underline;
+  font-size: inherit !important;
+}
+
+/*-- <p> half-width of dialogue box--*/
+
+janus-text-flow.text-width-half div p {
+  width: 50% !important;
+}
+
+/*-- <h#> --*/
+.content H1 SPAN STRONG[style*='font-family:Arial;'],
+.content H2 SPAN STRONG[style*='font-family:Arial;'],
+.content H1 SPAN STRONG[style*='font-family: Arial;'],
+.content H2 SPAN STRONG[style*='font-family: Arial;'] {
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-weight: bold;
+}
+
+.content H3 SPAN[style*='font-family:Arial;'],
+.content H3 SPAN[style*='font-family: Arial;'] {
+  font-family: Lato, 'Lato', sans-serif !important;
+}
+
+/*-- Hint Box --*/
+janus-text-flow.hint-box div {
+  background-color: white !important;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 50%);
+  display: flex;
+  justify-content: space-between;
+  height: auto !important;
+  padding: 16px 20px !important;
+}
+
+janus-text-flow.hint-box div p {
+  width: auto !important;
+  color: var(--primary-color);
+  font-weight: bold;
+  text-decoration: underline;
+  margin-bottom: 0 !important;
+}
+
+janus-text-flow.hint-box div:before,
+janus-text-flow.hint-box div:after {
+  content: initial;
+  height: 0;
+  width: 0;
+}
+
+/*-- No Style --*/
+janus-text-flow.no-style div,
+janus-text-flow.no-style div p {
+  padding: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none;
+  font-size: 1.15rem !important;
+}
+
+janus-text-flow.no-style div:after {
+  content: none !important;
+}
+
+/*-- free floating labels --*/
+janus-text-flow.label div,
+janus-text-flow.label div p {
+  padding: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none;
+  font-size: 18.66px !important;
+  font-weight: bold;
+}
+
+janus-text-flow.label div:after {
+  content: none !important;
+}
+
+/*-- Crust Descriptions --*/
+
+janus-text-flow.dialog-plate-continental div {
+  background-color: #8e4c31 !important;
+  color: white !important;
+  border: solid 2px white !important;
+  box-shadow: inset 0 0 20px rgb(0 0 0 / 40%);
+
+  text-shadow: 0 0 10px black;
+}
+
+janus-text-flow.dialog-plate-continental div:before {
+  content: '';
+  width: 2px;
+  display: block;
+  border: 0;
+  background-color: white;
+  box-shadow: none;
+
+  /*position: absolute;
+    top: 1px;
+    right: -28px;
+    transform: skew(0deg, 0deg) rotate(52deg);
+    height: 65px;*/
+  position: fixed;
+  top: calc(50% - 65px);
+  left: calc(50% - var(--lineLeftOffset));
+  transform: rotate(55deg) translate(-50%, -50%);
+  height: calc(50% - 110px);
+}
+
+janus-text-flow.dialog-plate-continental div:after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  display: block;
+  background: #8e4c31;
+  border-radius: 100px;
+  border: solid 2px white;
+  box-shadow: 0px 3px 2px rgb(0 0 0 / 60%);
+
+  /*position: absolute;
+    right: -70px;
+    top: -2px;
+    transform: skew(0deg);*/
+  position: fixed;
+  left: calc(50% - var(--dotLeftOffset));
+  top: calc(50% - 75px);
+  transform: translate(-50%, -50%);
+}
+
+janus-text-flow.dialog-plate-oceanic div {
+  background-color: #2c334d !important;
+  color: white !important;
+  border: solid 2px white !important;
+  box-shadow: inset 0 0 20px rgb(0 0 0 / 40%);
+  text-shadow: 0 0 10px black;
+}
+
+janus-text-flow.dialog-plate-oceanic div:before {
+  content: '';
+  width: 2px;
+  display: block;
+  border: 0;
+  background-color: white;
+  box-shadow: none;
+
+  /*transform: skew(0deg, 0deg) rotate(61deg);
+    position: absolute;
+    top: -183px;
+    right: -139px;
+    height: 311px;*/
+  position: fixed;
+  top: calc(50% + 5px);
+  left: calc(50% - var(--lineLeftOffset));
+  transform: rotate(45deg) translate(-50%, -50%);
+  height: calc(50% + 80px);
+}
+
+janus-text-flow.dialog-plate-oceanic div:after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  display: block;
+  box-shadow: 0px 3px 2px rgb(0 0 0 / 60%);
+  background: #2c334d;
+  border-radius: 100px;
+  border: solid 2px white;
+
+  /*position: absolute;
+    right: -292px;
+    top: -117px;
+    transform: skew(0deg);*/
+  position: fixed;
+  left: calc(50% + var(--dotLeftOffset));
+  top: calc(50% - 67px);
+  transform: translate(-50%, -50%);
+}
+
+/*-----------------------------------------
+    Answer Background - Applied to the following
+-----------------------------------------*/
+janus-mcq:not(.no-bg),
+janus-input-text:not(.no-bg) div,
+#stage-stage iframe[src*='spr-widget-grouping']:not(.no-bg) {
+  box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+  border-radius: 3px;
+  background-color: white;
+  padding: 10px !important;
+  min-height: 54px;
+}
+
+#stage-stage janus-input-text.no-bg div label {
+  display: none;
+}
+
+.no-bg,
+.no-bg div {
+  box-shadow: none;
+  border-radius: 0;
+  background-color: initial;
+  padding: 0 !important;
+}
+
+/*-----------------------------------------
+    Answer Background - When recapping answers
+-----------------------------------------*/
+janus-mcq div:not(.no-bg).recap,
+#stage-stage div[data-janus-type*='janus-input-text']:not(.no-bg).recap,
+#stage-stage iframe[src*='spr-widget-grouping']:not(.no-bg).recap {
+  box-shadow: none;
+  border-radius: 1px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 8px !important;
+}
+
+.image-mcq.recap input[type='checkbox']:checked + label p::before,
+.image-mcq.recap input[type='radio']:checked + label p::before,
+.image-mcq.recap input[type='checkbox']:checked + label p::after,
+.image-mcq.recap input[type='radio']:checked + label p::after {
+  content: none;
+}
+
+#stage-stage .image-mcq.recap p,
+.image-mcq.recap input[type='checkbox']:checked + label p,
+.image-mcq.recap input[type='radio']:checked + label p {
+  display: none !important;
+  font-size: 0;
+}
+
+janus-mcq div.image-mcq.recap input[type='checkbox']:not(:checked),
+.image-mcq.recap input[type='checkbox']:not(:checked) + label,
+janus-mcq div.image-mcq.recap input[type='radio']:not(:checked),
+.image-mcq.recap input[type='radio']:not(:checked) + label {
+  opacity: 0.2;
+}
+
+/*-----------------------------------------
+    Answer Mechanism Background (blank)
+-----------------------------------------*/
+.answer-background {
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  background-color: white;
+}
+
+/*-----------------------------------------
+    Navigation Button
+-----------------------------------------*/
+#stage-stage janus-navigation-button button {
+  background-color: var(--primary-color);
+  width: 100%;
+  min-height: 40px !important;
+  padding: 5px 20px !important;
+  cursor: pointer !important;
+  line-height: 1.2rem !important;
+  height: auto !important;
+}
+
+janus-navigation-button.direction,
+janus-navigation-button.plate-type,
+janus-navigation-button.surface,
+janus-navigation-button.crust,
+janus-navigation-button.mantle,
+janus-navigation-button.me {
+  left: 50% !important;
+  transform: translateX(-50%);
+}
+janus-navigation-button.surface {
+  z-index: 1 !important;
+}
+janus-navigation-button.crust {
+  z-index: 2 !important;
+}
+janus-navigation-button.mantle {
+  z-index: 3 !important;
+}
+janus-navigation-button.me {
+  z-index: 4 !important;
+}
+janus-navigation-button.plate-type {
+  z-index: 5 !important;
+}
+janus-navigation-button.direction {
+  z-index: 6 !important;
+}
+
+#stage-stage janus-navigation-button.direction button,
+#stage-stage janus-navigation-button.plate-type button,
+#stage-stage janus-navigation-button.surface button,
+#stage-stage janus-navigation-button.crust button,
+#stage-stage janus-navigation-button.mantle button,
+#stage-stage janus-navigation-button.me button {
+  border: solid 3px white;
+  background-color: transparent !important;
+  color: transparent !important;
+  box-shadow: inset 0 0 15px rgb(0 0 0 / 40%);
+  width: 100% !important;
+  height: 100% !important;
+}
+
+janus-navigation-button.direction button:hover,
+janus-navigation-button.direction button:focus,
+janus-navigation-button.plate-type button:hover,
+janus-navigation-button.plate-type button:focus,
+janus-navigation-button.surface button:hover,
+janus-navigation-button.surface button:focus,
+janus-navigation-button.crust button:hover,
+janus-navigation-button.crust button:focus,
+janus-navigation-button.mantle button:hover,
+janus-navigation-button.mantle button:focus,
+janus-navigation-button.me button:hover,
+janus-navigation-button.me button:focus {
+  border: solid 4px white;
+  background-color: rgba(255, 255, 0, 0.2) !important;
+  box-shadow: 0 0 10px black;
+}
+
+janus-navigation-button.surface,
+janus-navigation-button.crust,
+janus-navigation-button.mantle,
+janus-navigation-button.me {
+  width: 1560px !important;
+}
+
+janus-navigation-button.direction button,
+janus-navigation-button.plate-type button {
+  border-radius: 100px;
+  /*height: 100% !important;*/
+}
+
+janus-navigation-button.surface button,
+janus-navigation-button.crust button,
+janus-navigation-button.mantle button,
+janus-navigation-button.me button {
+  border-radius: 100% 100% 0 0;
+}
+
+janus-navigation-button.surface button {
+  /*top: 96px !important;*/
+  height: 650px !important;
+  clip-path: polygon(19% 0%, 81% 0%, 81% 20%, 68% 13%, 50% 9%, 34% 12%, 23% 17%, 19% 20%);
+}
+
+janus-navigation-button.crust button {
+  /*top: 155px !important;*/
+  height: 650px !important;
+  clip-path: polygon(19% 0%, 81% 0%, 81% 17%, 68% 10%, 50% 6%, 34% 9%, 23% 15%, 19% 18%);
+}
+
+janus-navigation-button.mantle button {
+  /*top: 194px !important;*/
+  height: 680px !important;
+  clip-path: polygon(19% 0%, 81% 0%, 81% 37%, 68% 29%, 50% 26%, 34% 29%, 23% 34%, 19% 37%);
+}
+
+janus-navigation-button.me button {
+  /*top: 370px !important;*/
+  height: 680px !important;
+  clip-path: polygon(19% 0%, 81% 0%, 81% 16%, 19% 16%);
+}
+
+/*-----------------------------------------
+    MCQ
+-----------------------------------------*/
+
+#stage-stage janus-mcq div.mcq-input > div {
+  margin: 0 6px 8px 0 !important;
+}
+
+#stage-stage janus-mcq div.mcq-input {
+  width: 100% !important;
+}
+#stage-stage janus-mcq div.mcq-input div:last-of-type,
+#stage-stage janus-mcq div.mcq-input div:last-of-type div {
+  margin-bottom: 0 !important;
+}
+#stage-stage janus-mcq div.mcq-input div:last-of-type label div {
+  margin-bottom: -7px !important;
+}
+
+#stage-stage janus-mcq div p span,
+#stage-stage janus-mcq div div label div p span {
+  color: var(--grayDark100) !important;
+  line-height: 125% !important;
+  letter-spacing: -0.5px;
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-size: 20px !important;
+}
+
+#stage-stage janus-mcq div.mcq-input div label div p {
+  font-size: 18px;
+  font-family: lato;
+}
+
+#stage-stage janus-mcq.mcq-input.mcq-review div input:not(:checked),
+#stage-stage janus-mcq.mcq-input.mcq-review div input:not(:checked) + label {
+  opacity: 0.4;
+}
+
+#stage-stage janus-mcq div.mcq-input div:last-of-type label div {
+  overflow: visible;
+}
+
+/*-- Distribute evenly - vertical --*/
+janus-text-flow.v-dist div,
+#stage-stage janus-mcq.v-dist > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0 !important;
+}
+#stage-stage janus-mcq.v-dist > div div {
+  padding: 0;
+  margin: 0 !important;
+}
+
+/*-----------------------------------------
+    MCQ - Horizontal
+-----------------------------------------*/
+
+janus-mcq.mcq-h div div:last-of-type {
+  margin-bottom: initial !important;
+}
+
+janus-mcq.mcq-h.mcq-input div > div {
+  margin: 10px 0 0 0 !important;
+}
+
+/*-----------------------------------------
+    MCQ - Horizontal, No Text
+-----------------------------------------*/
+janus-mcq.mcq-h.no-text div {
+  background-color: initial;
+  box-shadow: none !important;
+  justify-content: space-around;
+  display: flex;
+
+  margin-left: 57px;
+}
+#stage-stage janus-mcq.mcq-h.no-text div div {
+  width: 20px;
+  margin: 0 !important;
+}
+
+/*-----------------------------------------
+    IMAGE MCQ
+-----------------------------------------*/
+#stage-stage janus-mcq.image-mcq.default-image-size .mcq-input > div {
+  width: auto !important;
+  margin-right: 10px;
+}
+#stage-stage janus-mcq div.mcq-input:not(.col1) div:last-of-type label div,
+#stage-stage janus-mcq div.mcq-input:not(.col2) div:last-of-type label div,
+#stage-stage janus-mcq div.mcq-input:not(.col3) div:last-of-type label div,
+#stage-stage janus-mcq div.mcq-input:not(.col4) div:last-of-type label div,
+#stage-stage janus-mcq div.mcq-input:not(.col5) div:last-of-type label div,
+#stage-stage janus-mcq div.mcq-input:not(.col6) div:last-of-type label div {
+  margin-bottom: initial !important;
+}
+#stage-stage janus-mcq.image-mcq label p:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 200;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: initial;
+  border: solid 1px white;
+  box-shadow: 0 0 0 2px transparent;
+}
+
+#stage-stage janus-mcq.image-mcq input[type='checkbox'] + label p {
+  font-size: 0;
+}
+
+#stage-stage janus-mcq.image-mcq input[type='checkbox']:checked + label p::after,
+#stage-stage janus-mcq.image-mcq input[type='radio']:checked + label p::after {
+  content: '\2713';
+  font-size: 1rem;
+  color: white;
+  font-weight: bold;
+  padding: 0 6px;
+  text-align: left;
+  box-shadow: 0 0 0 2px var(--blue100);
+  background-color: transparent;
+}
+
+#stage-stage janus-mcq.image-mcq input[type='checkbox']:checked + label p::before,
+#stage-stage janus-mcq.image-mcq input[type='radio']:checked + label p::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: var(--blue100);
+  border: solid 1px white;
+  border-radius: 100px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+}
+
+#stage-stage janus-mcq.image-mcq .mcq-input label {
+  display: inline-block;
+  padding-left: initial !important;
+}
+
+#stage-stage janus-mcq.image-mcq .mcq-input > div label div {
+  position: static !important;
+  width: 100% !important;
+  overflow: initial !important;
+}
+
+#stage-stage janus-mcq.image-mcq div.mcq-input > div {
+  width: calc(33.33% - 4px) !important;
+  margin-bottom: 10px !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-1 div.mcq-input > div {
+  width: 100% !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-2 div.mcq-input > div {
+  width: calc(50% - 3px) !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-3 div.mcq-input > div {
+  width: calc(33.33% - 4px) !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-4 div.mcq-input > div {
+  width: calc(25% - 4.5px) !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-5 div.mcq-input > div {
+  width: calc(20% - 5px) !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-6 div.mcq-input > div {
+  width: calc(16.67% - 5.5px) !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-1 div.mcq-input > div:nth-of-type(1n),
+#stage-stage janus-mcq.image-mcq.col-2 div.mcq-input > div:nth-of-type(2n),
+#stage-stage janus-mcq.image-mcq.col-3 div.mcq-input > div:nth-of-type(3n),
+#stage-stage janus-mcq.image-mcq.col-4 div.mcq-input > div:nth-of-type(4n),
+#stage-stage janus-mcq.image-mcq.col-5 div.mcq-input > div:nth-of-type(5n),
+#stage-stage janus-mcq.image-mcq.col-6 div.mcq-input > div:nth-of-type(6n) {
+  margin-right: 0 !important;
+}
+
+#stage-stage janus-mcq.image-mcq.col-2 div.mcq-input > div:nth-child(n + 5):nth-child(-n + 6),
+#stage-stage janus-mcq.image-mcq.col-3 div.mcq-input > div:nth-child(n + 4):nth-child(-n + 6) {
+  margin-bottom: 0 !important;
+}
+
+#stage-stage janus-mcq.image-mcq.default-image-size div.mcq-input div img {
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+}
+/* NOT NEEDED?
+#stage-stage janus-mcq.image-mcq label:before,
+#stage-stage janus-mcq.image-mcq label:after,
+#stage-stage janus-mcq.image-mcq input,
+#stage-stage janus-mcq.image-mcq label p,
+#stage-stage janus-mcq div.image-mcq p span {
+    display: none !important;
+}*/
+
+/*-----------------------------------------
+    Inputs - Short, Long, Number
+-----------------------------------------*/
+#stage-stage .short-text-input,
+#stage-stage janus-multi-line-text div,
+#stage-stage janus-input-text div,
+#stage-stage .number-input,
+#stage-stage .long-text-input {
+  height: 100%;
+}
+
+#stage-stage janus-input-text div input:focus,
+#stage-stage .long-text-input textarea:focus,
+#stage-stage .number-input input:focus {
+  outline: solid 1px #006586;
+}
+
+#stage-stage janus-input-text div input::placeholder,
+#stage-stage .long-text-input textarea::placeholder,
+#stage-stage .number-input input::placeholder {
+  font-style: italic;
+}
+
+#stage-stage janus-input-text div input:focus,
+#stage-stage .long-text-input textarea:focus,
+#stage-stage .number-input input:focus {
+  outline: solid 1px #006586;
+}
+
+#stage-stage janus-input-text.no-label div label {
+  display: none;
+}
+
+/*-----------------------------------------
+    Pop-up button
+-----------------------------------------*/
+
+/*--  no visible button --*/
+#stage-stage janus-popup.hide-button input {
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  width: 100% !important;
+  min-height: 50px;
+  height: 100% !important;
+  background-image: none;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+janus-popup input.info-icon.no-restyle {
+  width: 100%;
+}
+#popupIslandVolcano,
+#popupTrench,
+#popupMOR,
+#popupRiftValley,
+#popupMountains,
+#popupVolcanoes {
+  box-shadow: 1px 1px 2px #333;
+}
+
+/*-----------------------------------------
+    Popup - Window
+-----------------------------------------*/
+.info-icon-popup:not(.no-restyle) {
+  background: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  margin: 0;
+  border-radius: 0 !important;
+}
+
+janus-popup .info-icon-popup .popup-background {
+  background-color: #ebebeb;
+  border-radius: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-shadow: inset 0 0 0 20px !important;
+  padding: 40px !important;
+}
+
+#stage-stage janus-popup .info-icon-popup .popup-background .close {
+  width: 40px !important;
+  height: 40px !important;
+  box-shadow: 0 0 3px rgb(0, 0, 0, 40%);
+  border-radius: 0;
+  background-color: white !important;
+  margin-top: 1px;
+  position: absolute !important;
+}
+
+.info-icon-popup .popup-background .close:before {
+  content: '\f00d';
+  font-family: FontAwesome4;
+  color: var(--blue100);
+}
+
+.info-icon-popup .popup-background .close span {
+  display: none;
+}
+
+/*tail*/
+.info-icon-popup .popup-background:after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: 4px;
+  z-index: 0;
+  width: 20px;
+  height: 20px;
+  background-color: inherit;
+  transform: skewX(40deg) translate(50%, -100%);
+  border: 0;
+}
+
+.info-icon-popup.no-tail .popup-background:after {
+  display: none;
+}
+#stage-stage janus-popup .popup-background text-flow div:after {
+  display: none;
+}
+
+/*lightbox effect
+.info-icon-popup:not(.no-restyle):after {
+    content: "LOL";
+    background: #0000008f;
+    display: block;
+    position: fixed;
+    top: -100vh;
+    right: -100vw;
+    left: -100vw;
+    bottom: -100vh;
+    z-index: -1;
+}
+*/
+
+/*content*/
+janus-popup .info-icon-popup janus-text-flow {
+  width: 100% !important;
+}
+
+janus-popup .info-icon-popup janus-text-flow div {
+  padding: 0 !important;
+  background-color: initial !important;
+  box-shadow: none !important;
+  /*margin: 40px 0 0 40px;
+    width: calc(100% - 80px) !important;*/
+  position: relative;
+}
+#stage-stage janus-popup div div * {
+  position: relative !important;
+  width: 100% !important;
+}
+#stage-stage janus-popup .legend-image img {
+  width: calc(100% + 40px) !important;
+  left: -20px;
+}
+janus-popup .popup-background janus-text-flow div:after {
+  content: 'lol';
+  display: none;
+}
+
+/*#stage-stage janus-popup.legend-image img {
+     top: -20px;
+    left: -20px;
+    width: calc(100% + 40px) !IMPORTANT;
+} */
+
+janus-popup.no-bg .info-icon-popup .popup-background {
+  background: transparent;
+  box-shadow: initial !important;
+  padding: 0 !important;
+}
+
+/*-----------------------------------------
+    Grouping
+-----------------------------------------*/
+
+.groups-wrapper {
+  padding: 0;
+}
+
+.student-mode .group-area {
+  background-color: #cce5ee !important;
+  border-color: #66b2cb !important;
+}
+
+.group-title-wrapper:first-of-type .group-title-text {
+  display: none;
+}
+
+.group-area-wrapper {
+  float: left;
+  height: 100%;
+  padding: 5px 0 0 5px;
+}
+
+.group-area-wrapper:first-of-type {
+  height: calc(100% + 32px);
+  margin-top: -32px;
+  padding: 0 5px 0 0;
+}
+
+.group-area-wrapper:first-of-type .group-area {
+  border: 0;
+  background-color: #d6d6d6 !important;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 10px;
+}
+
+.student-mode .item {
+  float: left;
+  width: calc(50% - 3px);
+  height: calc(33% - 4px);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+.student-mode .item:nth-child(even) {
+  margin-left: 5px;
+}
+.item:last-child,
+.item:nth-last-child(2) {
+  margin-bottom: 0 !important;
+}
+
+/*.item:last-child:nth-child(3),
+.item:last-child:nth-child(5){
+    margin-left: 5px;
+    margin-top: 5px;
+}*/
+.student-mode .item img {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.item-text {
+  padding: 5px;
+  background-color: var(--blue100);
+}
+
+.item-type-text {
+  background-color: var(--blue100);
+}
+
+.student-mode .item.item-dragging-placeholder {
+  height: 68px;
+  height: calc(33% - 4px) !important;
+}
+
+/*-----------------------------------------
+    Carousel
+-----------------------------------------*/
+#stage-stage janus-image-carousel div .swiper-container {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+#stage-stage janus-image-carousel div.janus-image-carousel {
+  height: 100%;
+}
+#stage-stage janus-image-carousel div .swiper-button-prev,
+#stage-stage janus-image-carousel div .swiper-button-next {
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 100%;
+  height: 2rem;
+  width: 2rem;
+}
+.swiper-button-next:after,
+.swiper-container-rtl .swiper-button-prev:after {
+  content: '';
+}
+#stage-stage janus-image-carousel div .swiper-button-prev:before,
+#stage-stage janus-image-carousel div .swiper-button-next:before {
+  content: '\203A'; /*>*/
+  color: white;
+  font-size: 250% !important;
+  font-weight: bold;
+  text-shadow: 0px 2px 2px black;
+  top: 50%;
+  left: 50%;
+  position: absolute;
+  transform: translate(-35%, -56%);
+}
+.swiper-button-prev:after,
+.swiper-container-rtl .swiper-button-next:after {
+  content: '';
+}
+#stage-stage janus-image-carousel div .swiper-button-prev:before {
+  content: '\2039'; /*<*/
+  transform: translate(-60%, -56%);
+}
+
+#stage-stage janus-image-carousel div figure img {
+  max-width: 244px !important;
+  max-height: 218px !important;
+}
+
+#stage-stage janus-image-carousel div .swiper-pagination {
+  display: none !important;
+}
+
+#stage-stage janus-image-carousel div figcaption {
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white !important;
+  font-size: 1rem;
+  padding: 4px !important;
+  /*height: 20px !important;*/
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  box-sizing: border-box;
+}
+
+/*removes slide transition animation.*/
+#stage-stage janus-image-carousel.slide-0s div .swiper-wrapper {
+  transition-duration: 1ms !important;
+}
+
+/*hide caption if empty*/
+#stage-stage janus-image-carousel div figcaption:empty {
+  display: none;
+}
+
+/*-----------------------------------------
+    FITB
+    See: https://sites.google.com/asu.edu/etx-style-guide/infiniscope/plate-tectonics#h.hvbqekl1por4
+-----------------------------------------*/
+
+/*-----------------------------------------
+    DITB
+-----------------------------------------*/
+iframe[id*='spr-widget-drop-in-the-blanks'] {
+  /*width:588px !important;*/
+}
+
+body[class] {
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+body[class] #scene_Student {
+  padding: 10px !important;
+  color: var(--grayDark100) !important;
+  line-height: 130% !important;
+  letter-spacing: -0.25px;
+  font-family: Lato, 'Lato', sans-serif !important;
+  font-size: 20px !important;
+  background-color: var(--grayLight20) !important;
+  box-shadow: 0 0 3px rgb(0 0 0 / 80%);
+  border: 0 !important;
+  box-sizing: border-box;
+  width: calc(100% - 20px);
+}
+
+body[class] #scene_Student:after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 24px;
+  z-index: 0;
+  transform: skewX(-40deg) translateX(50%);
+  border: 0;
+  box-shadow: 1px -1px 1px rgb(0 0 0 / 40%);
+  width: 20px;
+  height: 20px;
+  background-color: transparent;
+  border-top: solid 10px #ebebeb;
+  border-right: solid 10px #ebebeb;
+  border-bottom: solid 10px transparent;
+  border-left: solid 10px transparent;
+  box-sizing: border-box;
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app {
+  padding: 10px;
+  background-color: white;
+  border-radius: 3px;
+  height: 100%;
+  box-shadow: 0 0 3px rgb(0 0 0 / 20%);
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app .header.ui-droppable {
+  background-color: var(--blue20);
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app .editor.ql-container {
+  height: auto;
+}
+
+body[data-gr-ext-installed][class] #scene_Student span.drag-item.ui-draggable.ui-draggable-handle {
+  color: white;
+  background-color: var(--blue100);
+  font-size: 19px;
+  padding: 5px;
+  height: 30px;
+  box-sizing: border-box;
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app .ql-snow .ql-editor {
+  padding: 5px !important;
+  box-sizing: border-box;
+  height: auto;
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app .editor.ql-container span.droparea-blot {
+  display: inline-block;
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app .ql-snow .ql-editor p {
+  letter-spacing: -0.25px;
+}
+
+body[data-gr-ext-installed][class] #scene_Student .app span.droparea-student.ui-droppable.empty {
+  background-color: white;
+  border: solid 1px var(--blue100);
+  border-radius: 0;
+}
+
+/*-----------------------------------------
+    Orby Face
+-----------------------------------------*/
+/*.orby-cute,
+.orby-happy{
+    width: 412px !important;
+    height:200px !important;
+    overflow: hidden;
+    right: 0 !important;
+    left: initial !important;
+    top: 200px !important;
+    transform: translate(0, -50%);
+    background-position: center center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+janus-navigation-button button.orby-cute,
+janus-navigation-button button.orby-happy{
+    border:0;
+    box-shadow:0;
+
+    background-color:transparent;
+    pointer-events: none;
+}
+
+.orby-cute{
+    background-image: url(../images/plate-tectonics/orby-face-cute.svg);
+}
+.orby-happy{
+    background-image: url(../images/plate-tectonics/orby-face-happy.svg);
+}*/
+
+/*-- ORBY??--*/
+
+#stage-stage janus-input-text.orbyBody div {
+  background-image: url(https://etx-nec.s3.us-west-2.amazonaws.com/plate-tectonics/ld-graphics/orby-body.png) !important;
+  background-size: contain;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding-bottom: 100% !important;
+}
+#stage-stage janus-input-text.orbyBody div label,
+#stage-stage janus-input-text.orbyBody div input {
+  display: none;
+}
+janus-input-text#orbyFace {
+  width: 417px !important;
+  left: initial !important;
+  right: 0;
+  bottom: initial !important;
+  top: 50% !important;
+}
+
+#stage-stage janus-input-text.orby-happy div,
+#stage-stage janus-input-text.orby-cute div,
+#stage-stage janus-input-text.orby-think div {
+  width: 412px !important;
+  height: 200px !important;
+  overflow: hidden;
+  right: 0 !important;
+  left: initial !important;
+  top: 200px !important;
+  transform: translate(0, -50%);
+  background-position: center center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  background-color: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+#stage-stage janus-input-text.orby-happy div label,
+#stage-stage janus-input-text.orby-cute div label,
+#stage-stage janus-input-text.orby-think div label {
+  display: none;
+}
+
+#stage-stage janus-input-text.orby-happy div input,
+#stage-stage janus-input-text.orby-cute div input,
+#stage-stage janus-input-text.orby-think div input {
+  height: 200px !important;
+  border: 0 !important;
+  transform: translate(0, -50%);
+  border: 0 !important;
+  background-position: center center !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  pointer-events: none;
+  background-color: transparent !important;
+  position: relative;
+  top: 50%;
+}
+
+/*https://jira.unicon.net/jira/browse/PMP-1951 - should apply face graphic to web component (container), not the text component within*/
+#stage-stage janus-input-text.orby-happy,
+#stage-stage janus-input-text.orby-happy div input {
+  background-image: var(--orby-face-happy) !important;
+}
+
+#stage-stage janus-input-text.orby-cute,
+#stage-stage janus-input-text.orby-cute div input {
+  background-image: var(--orby-face-cute) !important;
+}
+#stage-stage janus-input-text.orby-think,
+#stage-stage janus-input-text.orby-think div input {
+  background-image: var(--orby-face-think) !important;
+}
+
+/*-- Orby's falling intro style --*/
+img.animated.bounceInDown.delay-6 {
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5));
+}
+
+/*-----------------------------------------
+    Sim collapsed
+-----------------------------------------*/
+iframe.sim-collapsed {
+  height: 90px !important;
+  top: 410px !important;
+}
+
+/*-----------------------------------------
+    Sim Focuser Effect
+-----------------------------------------*/
+
+/*https://codepen.io/WorkSnakes/pen/RwKWWvM*/
+janus-text-flow.focus-view div {
+  outline: solid 1px red;
+  width: 100vw !important;
+  height: 100vh !important;
+  position: fixed !important;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 1;
+  top: calc((50vh - var(--container-height) * 0.5) * -1) !important;
+  right: calc((50vw - var(--container-width) * 0.5) * -1) !important;
+  bottom: calc((50vh - var(--container-height) * 0.5) * -1) !important;
+  left: calc((50vw - var(--container-width) * 0.5) * -1) !important;
+  background-color: transparent !important;
+}
+
+janus-text-flow.focus-view div p {
+  margin: 0;
+  padding: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 20px;
+  height: 20px;
+  position: absolute;
+}
+
+janus-text-flow.focus-view div p:nth-of-type(1) {
+  top: 0;
+  left: 0;
+  width: calc(
+    50% + calc(var(--container-width) * 0.5) - var(--sim-width) + var(--fade-start)
+  ) !important;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) calc(100% - var(--fade-start)),
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+janus-text-flow.focus-view div p:nth-of-type(2) {
+  top: 0;
+  right: 0;
+  width: 100% !important;
+  height: calc(
+    50% - calc(var(--container-height) * 0.5) - calc(var(--sim-height) * 0) + var(--fade-start)
+  );
+
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) calc(100% - var(--fade-start)),
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+janus-text-flow.focus-view div p:nth-of-type(3) {
+  bottom: 0;
+  right: 0;
+  width: calc(
+    50% - calc(var(--container-width) * 0.5) + calc(var(--sim-width) * 0) + var(--fade-start)
+  ) !important;
+  height: 100%;
+
+  background: linear-gradient(
+    270deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) calc(100% - var(--fade-start)),
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+janus-text-flow.focus-view div p:nth-of-type(4) {
+  bottom: 0;
+  left: 0;
+
+  width: 100% !important;
+  height: calc(
+    50% + calc(var(--container-height) * 0.5) - calc(var(--sim-height) * 1) + var(--fade-start)
+  );
+
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) calc(100% - var(--fade-start)),
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+/*-----------------------------------------
+    Data Acquired
+-----------------------------------------*/
+.data-acquired {
+  animation: shake 0.5s;
+  animation-iteration-count: 10;
+  animation-delay: 2s;
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+
+  30% {
+    transform: translate(-3px, 2px) rotate(0deg);
+  }
+
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+
+  70% {
+    transform: translate(-3px, 1px) rotate(-1deg);
+  }
+
+  80% {
+    transform: translate(-1px -1px) rotate(1deg);
+  }
+
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+
+.wifi {
+  background-color: transparent !important;
+  box-shadow: initial !important;
+}
+
+.wifi:after,
+.wifi:before {
+  content: '';
+  width: 400px !important;
+  height: 400px !important;
+  display: inline-block;
+  position: absolute;
+  border-radius: 100%;
+  top: calc(0% + 0px);
+  transform: initial !important;
+  background: transparent !important;
+}
+
+.wifi:before {
+  right: 0;
+  border-left: solid 20px transparent;
+  animation: ripple-left 1s;
+  animation-iteration-count: 5;
+  animation-delay: 2s;
+}
+
+.wifi:after {
+  left: 0;
+  border-right: solid 20px transparent;
+  animation: ripple-right 1s;
+  animation-iteration-count: 5;
+  animation-delay: 2s;
+}
+
+@keyframes ripple-left {
+  0% {
+    right: 0;
+    border-left: solid 20px white;
+  }
+
+  100% {
+    right: 100px;
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes ripple-right {
+  0% {
+    left: 0;
+    border-right: solid 20px white;
+  }
+
+  100% {
+    left: 100px;
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/*-----------------------------------------
+    Misc.
+-----------------------------------------*/
+.center {
+  left: 50% !important;
+  transform: translateX(-50%);
+}
+
+/*-----------------------------------------
+    Card Tracker
+-----------------------------------------*/
+.card-tracker {
+  top: initial !important;
+  bottom: 0;
+}
+/*-----------------------------------------
+    Orby Intro Shadow
+-----------------------------------------*/
+janus-navigation-button#navOrby:after {
+  content: '';
+  width: 40px;
+  height: 10px;
+  background-color: rgba(0, 0, 0, 0.2);
+  filter: blur(1px);
+  border-radius: 100%;
+  display: block;
+  position: fixed;
+  top: 500px;
+  z-index: 0;
+}
+
+/*-----------------------------------------
+    Storybook
+-----------------------------------------*/
+janus-capi-iframe.story iframe {
+  border: solid 3px;
+  box-shadow: 10px 10px 0;
+  background-color: white;
+}
