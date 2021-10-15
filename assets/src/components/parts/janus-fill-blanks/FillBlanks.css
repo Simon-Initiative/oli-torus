@@ -1193,3 +1193,10 @@ html {
   overflow: hidden;
   white-space: nowrap;
 }
+
+/* Firefox position hacks */
+@-moz-document url-prefix() {
+  .select2-container.select2-container--default.select2-container--open {
+    margin-top: -35px;
+  }
+}
