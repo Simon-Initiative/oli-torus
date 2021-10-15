@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- New Admin landing page
+
 ## 0.14.0 (2021-10-13)
 
 ### Bug Fixes
@@ -32,7 +34,6 @@
 - Add ability to remix materials from multiple projects
 - Fix insert content popup in page editor
 - Add blackboard LTI 1.3 configuration instructions
-
 
 ### Release Notes
 

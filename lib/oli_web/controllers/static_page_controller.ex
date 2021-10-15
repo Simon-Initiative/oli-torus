@@ -11,7 +11,7 @@ defmodule OliWeb.StaticPageController do
     render(conn, "unauthorized.html")
   end
 
-  def not_found(conn, params) do
+  def not_found(conn, _params) do
     render(conn, "not_found.html")
   end
 
