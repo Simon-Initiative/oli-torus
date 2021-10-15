@@ -24,6 +24,16 @@ defmodule OliWeb.Delivery.SelectSource do
   @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/2
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
 
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Select Source",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
+
   def filter_rows(socket, filter) do
     case String.downcase(filter) do
       "" ->
@@ -73,6 +83,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
     {:ok,
      assign(socket,
+       breadcrumbs: OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(),
        total_count: total_count,
        table_model: table_model,
        sources: sources
