@@ -164,13 +164,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
                   { size: ['10px', '12px', '14px', '16px', '18px'] },
                 ],
                 [{ align: [] }],
-
-                ['clean'], // remove formatting button
-                ['adaptivity'],
-                [{ align: [] }],
-
                 ['link', 'adaptivity'],
-
                 ['clean'], // remove formatting button
               ],
               handlers: customHandlers,

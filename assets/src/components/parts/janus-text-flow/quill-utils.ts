@@ -193,7 +193,7 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
   } else {
     node.children.forEach((child, index) => {
       const line = new Delta();
-      if (blockTags.includes(child.tag)) {
+      if (blockTags.includes(child.tag) || child.style?.textAlign) {
         if ((child.tag === 'p' && index > 0) || child.tag !== 'p') {
           const lineAttrs: any = {};
           if (child.tag.startsWith('h')) {
@@ -210,6 +210,9 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           }
           if (child.tag === 'li') {
             lineAttrs.list = parentAttrs.list;
+          }
+          if (child.style?.textAlign) {
+            lineAttrs.align = child.style.textAlign;
           }
           line.insert('\n', lineAttrs);
         }
@@ -229,7 +232,7 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
   const parentAttrs: any = {};
   nodes.forEach((node, index) => {
     const line = new Delta();
-    if (blockTags.includes(node.tag)) {
+    if (blockTags.includes(node.tag) || node.style?.textAlign) {
       if ((node.tag === 'p' && index > 0) || node.tag !== 'p') {
         const attrs: any = {};
         if (node.tag.startsWith('h')) {
@@ -246,6 +249,9 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
         }
         if (node.tag === 'li') {
           attrs.list = parentAttrs.list;
+        }
+        if (node.style?.textAlign) {
+          attrs.align = node.style.textAlign;
         }
         line.insert('\n', attrs);
       }
