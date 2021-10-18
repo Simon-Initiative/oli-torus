@@ -177,6 +177,9 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
   if (node.style?.color) {
     attrs.color = node.style.color;
   }
+  if (node.style?.backgroundColor) {
+    attrs.background = node.style.backgroundColor;
+  }
   if (node.href) {
     attrs.link = node.href;
   }
