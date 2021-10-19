@@ -10,7 +10,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias Oli.Delivery.Sections
-  alias OliWeb.Sections.{Instructors, MainDetails, OpenFreeSettings, LtiSettings}
+  alias OliWeb.Sections.{Instructors, MainDetails, OpenFreeSettings, LtiSettings, PaywallSettings}
   alias Surface.Components.{Form, Field}
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -154,6 +154,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
         {#else}
           <LtiSettings section={@section}/>
         {/if}
+        <PaywallSettings is_admin={@is_admin} changeset={@changeset} disabled={false}/>
         <Group label="Instructors" description="Manage the users with instructor level access">
           <Instructors users={@instructors}/>
         </Group>
@@ -199,6 +200,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
 
   def handle_event("validate", %{"section" => params}, socket) do
     params = convert_dates(params)
+    IO.inspect(params)
 
     changeset =
       socket.assigns.section
