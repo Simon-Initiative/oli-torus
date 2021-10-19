@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.{Instructors, MainDetails, OpenFreeSettings, LtiSettings, PaywallSettings}
   alias Surface.Components.{Form, Field}
+  alias Oli.Branding
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
@@ -35,6 +36,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   data options, :any
   data changeset, :any
   data is_admin, :boolean
+  data brands, :list
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -67,13 +69,17 @@ defmodule OliWeb.Sections.SectionsDetailsView do
             @default_options
           )
 
-        IO.inspect(section)
+        available_brands =
+          Branding.list_brands()
+          |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
         total_count = determine_total(enrollments)
 
         {:ok, table_model} = EnrollmentsTableModel.new(enrollments)
 
         {:ok,
          assign(socket,
+           brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: Oli.Accounts.is_admin?(author),
            breadcrumbs: set_breadcrumbs(),
@@ -147,7 +153,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
     <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
       <Groups>
         <Group label="Settings" description="Manage the course section settings">
-          <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} />
+          <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
         {#if @section.open_and_free}
           <OpenFreeSettings is_admin={@is_admin} changeset={@changeset} disabled={false}/>
