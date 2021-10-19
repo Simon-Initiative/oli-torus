@@ -61,7 +61,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onSelected,
   val,
   disabled,
-  index,
+  idx,
   overrideHeight,
   columns = 1,
 }) => {
@@ -81,8 +81,8 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
     } else {
       mcqItemStyles.width = `calc(100% / ${columns} - 6px)`;
     }
-    if (index !== 0) {
-      mcqItemStyles.left = `calc(${(100 / totalItems) * index}% - 6px)`;
+    if (idx !== 0) {
+      mcqItemStyles.left = `calc(${(100 / totalItems) * idx}% - 6px)`;
     }
     mcqItemStyles.position = `absolute`;
 
@@ -676,7 +676,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
         <MCQItem
-          index={index}
+          idx={index}
           key={`${id}-item-${index}`}
           totalItems={options.length}
           layoutType={layoutType}
