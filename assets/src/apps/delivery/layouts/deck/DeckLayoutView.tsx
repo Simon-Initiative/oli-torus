@@ -203,6 +203,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return;
     }
 
+    const screenWidth =
+      currentActivity.content.custom.width || pageContent.custom.defaultScreenWidth;
+    const screenHeight =
+      currentActivity.content.custom.height || pageContent.custom.defaultScreenHeight;
+    const applyScreenHeight = currentActivity.content.custom.applyScreenHeight;
+    setContentStyles(() => {
+      const styles: any = {
+        width: screenWidth,
+      };
+      if (applyScreenHeight) {
+        styles.height = screenHeight;
+      }
+      return styles;
+    });
+
     // set loaded and userRole class when currentActivity is loaded
     let customClasses = currentActivity.content?.custom?.customCssClass || '';
 
@@ -234,7 +249,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       clearTimeout(timeout);
       sharedActivityPromise = null;
     };
-  }, [currentActivityTree]);
+  }, [currentActivityTree, pageContent]);
 
   useEffect(() => {
     // clear the body classes in prep for the real classes
