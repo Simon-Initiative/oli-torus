@@ -65,6 +65,8 @@ defmodule Oli.Accounts.User do
     field :enrollments_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
     field :enrollment_date, :utc_datetime, virtual: true
+    field :payment_date, :utc_datetime, virtual: true
+    field :payment_id, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end

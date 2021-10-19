@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  import OliWeb.Common.Utils
   use Surface.LiveComponent
 
   def render(assigns) do
@@ -36,7 +37,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         _
       ) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{OliWeb.Users.UsersTableModel.normalize(name, given_name, family_name)}</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
     """
   end
 end

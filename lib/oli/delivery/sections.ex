@@ -83,16 +83,19 @@ defmodule Oli.Delivery.Sections do
     query =
       Enrollment
       |> join(:left, [e], u in User, on: u.id == e.user_id)
+      |> join(:left, [e, _], p in "payments", on: p.enrollment_id == e.id)
       |> where(^filter_by_text)
       |> where(^filter_by_role)
       |> where([e, _], e.section_id == ^section_id)
       |> limit(^limit)
       |> offset(^offset)
-      |> group_by([e, u], [e.id, u.id])
+      |> group_by([e, u, p], [e.id, u.id, p.id])
       |> select([_, u], u)
-      |> select_merge([e, _], %{
+      |> select_merge([e, _, p], %{
         total_count: fragment("count(*) OVER()"),
-        enrollment_date: e.inserted_at
+        enrollment_date: e.inserted_at,
+        payment_date: p.application_date,
+        payment_id: p.id
       })
 
     query =

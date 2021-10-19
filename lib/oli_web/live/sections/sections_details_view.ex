@@ -3,14 +3,15 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly, WideGroup}
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias Oli.Delivery.Sections
-
+  alias OliWeb.Sections.{Instructors, MainDetails, OpenFreeSettings, LtiSettings}
+  alias Surface.Components.{Form, Field}
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
@@ -24,13 +25,16 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "Section Details"
-  data esction, :any, default: nil
+  data section, :any, default: nil
+  data instructors, :list, default: []
 
   data tabel_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
+  data changeset, :any
+  data is_admin, :boolean
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -63,13 +67,17 @@ defmodule OliWeb.Sections.SectionsDetailsView do
             @default_options
           )
 
+        IO.inspect(section)
         total_count = determine_total(enrollments)
 
         {:ok, table_model} = EnrollmentsTableModel.new(enrollments)
 
         {:ok,
          assign(socket,
+           changeset: Sections.change_section(section),
+           is_admin: Oli.Accounts.is_admin?(author),
            breadcrumbs: set_breadcrumbs(),
+           instructors: fetch_instructors(section),
            author: author,
            section: section,
            total_count: total_count,
@@ -84,6 +92,19 @@ defmodule OliWeb.Sections.SectionsDetailsView do
       [] -> 0
       [hd | _] -> hd.total_count
     end
+  end
+
+  defp fetch_instructors(section) do
+    Sections.browse_enrollments(
+      section,
+      %Paging{offset: 0, limit: 50},
+      %Sorting{direction: :asc, field: :name},
+      %EnrollmentBrowseOptions{
+        is_student: false,
+        is_instructor: true,
+        text_search: nil
+      }
+    )
   end
 
   def handle_params(params, _, socket) do
@@ -123,26 +144,36 @@ defmodule OliWeb.Sections.SectionsDetailsView do
 
   def render(assigns) do
     ~F"""
-    <Groups>
-      <Group label="Settings" description="Manage the course section settings">
-        <ReadOnly label="Title" value={@section.title}/>
-      </Group>
-      <Group label="Enrollments" description="Access and manage the enrolled students">
+    <Form as={:section} for={@changeset} change="validate" submit="save" opts={autocomplete: "off"}>
+      <Groups>
+        <Group label="Settings" description="Manage the course section settings">
+          <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} />
+        </Group>
+        {#if @section.open_and_free}
+          <OpenFreeSettings is_admin={@is_admin} changeset={@changeset} disabled={false}/>
+        {#else}
+          <LtiSettings section={@section}/>
+        {/if}
+        <Group label="Instructors" description="Manage the users with instructor level access">
+          <Instructors users={@instructors}/>
+        </Group>
+        <WideGroup label="Enrollments" description="Access and manage the enrolled students">
 
-        <TextSearch id="text-search"/>
+          <TextSearch id="text-search"/>
 
-        <div class="mb-3"/>
+          <div class="mb-3"/>
 
-        <PagedTable
-          filter={@options.text_search}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}/>
+          <PagedTable
+            filter={@options.text_search}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}/>
 
-      </Group>
+        </WideGroup>
 
-    </Groups>
+      </Groups>
+    </Form>
     """
   end
 
@@ -166,11 +197,79 @@ defmodule OliWeb.Sections.SectionsDetailsView do
      )}
   end
 
+  def handle_event("validate", %{"section" => params}, socket) do
+    params = convert_dates(params)
+
+    changeset =
+      socket.assigns.section
+      |> Sections.change_section(params)
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("save", %{"section" => params}, socket) do
+    params = convert_dates(params)
+
+    case Sections.update_section(socket.assigns.section, params) do
+      {:ok, section} ->
+        socket = put_flash(socket, :info, "Section changes saved")
+
+        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, changeset: changeset)}
+    end
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
+    section_timezone = Timex.Timezone.get(from_timezone)
+    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
+
+    utc_start_date =
+      case start_date do
+        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
+          start_date
+
+        start_date ->
+          start_date
+          |> Timex.parse!("%Y-%m-%d", :strftime)
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    utc_end_date =
+      case end_date do
+        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
+          end_date
+
+        end_date ->
+          end_date
+          |> Timex.parse!("%Y-%m-%d", :strftime)
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    {utc_start_date, utc_end_date}
+  end
+
+  defp convert_dates(params) do
+    {utc_start_date, utc_end_date} =
+      parse_and_convert_start_end_dates_to_utc(
+        params["start_date"],
+        params["end_date"],
+        params["timezone"]
+      )
+
+    params
+    |> Map.put("start_date", utc_start_date)
+    |> Map.put("end_date", utc_end_date)
   end
 end

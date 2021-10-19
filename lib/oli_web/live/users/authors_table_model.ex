@@ -3,6 +3,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
   alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UsersTableModel
+  import OliWeb.Common.Utils
   use Surface.LiveComponent
 
   def render(assigns) do
@@ -62,7 +63,7 @@ defmodule OliWeb.Users.AuthorsTableModel do
         _
       ) do
     ~F"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{UsersTableModel.normalize(name, given_name, family_name)}</a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{name(name, given_name, family_name)}</a>
     """
   end
 end
