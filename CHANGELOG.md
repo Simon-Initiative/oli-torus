@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 - Fix an issue with Apply Update button and move content updates to async worker
+- Fix an issue where previewing a project with no pages crashes
 
 ### Enhancements
 
