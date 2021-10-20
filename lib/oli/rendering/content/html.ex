@@ -245,6 +245,13 @@ defmodule Oli.Rendering.Content.Html do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
   end
 
+  def popup(%Context{} = context, next, e) do
+    # TODO: PLACEHOLDER FOR POPUP
+    # Handle triggers (click, hover)
+    # How - javascript?
+    [~s|<span class="popup-link">|, next.(), "</span>\n"]
+  end
+
   defp revision_slug_from_course_link(href) do
     href
     |> String.replace_prefix("/course/link/", "")

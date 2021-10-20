@@ -1,0 +1,6 @@
+@use 'delivery/variables' as delivery;
+
+.popup-link {
+  color: delivery.$orange;
+  text-decoration: underline;
+}

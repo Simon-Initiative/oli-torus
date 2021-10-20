@@ -1,6 +1,7 @@
 import { normalizeHref } from 'components/editing/models/link/utils';
 import { Element, Node, Range } from 'slate';
 import guid from 'utils/guid';
+import { RichText } from '../../components/activities/types';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -34,6 +35,20 @@ export const code = (): Code => ({
   children: [{ type: 'code_line', id: guid(), children: [{ text: '' }] }],
 });
 export const inputRef = () => create<InputRef>({ type: 'input_ref' });
+export const popup = () =>
+  create<Popup>({
+    type: 'popup',
+    content: {
+      model: [
+        create({
+          type: 'p',
+          children: [{ text: '' }],
+          id: guid(),
+        }),
+      ],
+      selection: null,
+    },
+  });
 
 // eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
@@ -70,6 +85,7 @@ export type ModelElement =
   | CodeLine
   | Blockquote
   | Hyperlink
+  | Popup
   | InputRef;
 
 export const isModelElement = (n: Node): n is ModelElement =>
@@ -217,6 +233,12 @@ export interface Hyperlink extends Element, Identifiable {
 
 export interface InputRef extends Element, Identifiable {
   type: 'input_ref';
+}
+
+export interface Popup extends Element, Identifiable {
+  type: 'popup';
+  trigger: 'hover' | 'click';
+  content: RichText;
 }
 
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
@@ -383,6 +405,12 @@ export const schema = {
   a: {
     isVoid: false,
     isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  popup: {
+    isVoid: false,
+    isBlick: false,
     isTopLevel: false,
     validChildren: {},
   },
