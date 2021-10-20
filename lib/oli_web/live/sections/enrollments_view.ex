@@ -64,7 +64,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
         total_count = determine_total(enrollments)
 
-        {:ok, table_model} = EnrollmentsTableModel.new(enrollments)
+        {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section)
 
         {:ok,
          assign(socket,

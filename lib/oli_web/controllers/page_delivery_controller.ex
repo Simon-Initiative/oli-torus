@@ -344,6 +344,7 @@ defmodule OliWeb.PageDeliveryController do
 
   def export_gradebook(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
+    IO.inspect("EXXPORt")
 
     if is_admin?(conn) or
          ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) do

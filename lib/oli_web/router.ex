@@ -108,25 +108,6 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
-  # Ensure that we have an enrolled instructor or a system admin
-  pipeline :delivery_instructor do
-    plug(Oli.Plugs.SetDefaultPow, :user)
-    plug(Oli.Plugs.SetCurrentUser)
-
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    plug(Pow.Plug.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
-
-    plug(Oli.Plugs.RemoveXFrameOptions)
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
-  end
-
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
     plug(Oli.Plugs.SetCurrentUser)
@@ -550,17 +531,6 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug/updates", PageDeliveryController, :updates)
-
-    live("/:section_slug/grades", Grades.GradesLive)
-
-    live("/:section_slug/manage", Delivery.ManageSection)
-
-    live("/:section_slug/remix", Delivery.RemixSection)
-    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
     get("/:section_slug/payment/code", PaymentController, :use_code)
@@ -600,10 +570,16 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :delivery_instructor,
+      :delivery_protected,
       :pow_email_layout
     ])
 
+    get("/:section_slug/updates", PageDeliveryController, :updates)
+    live("/:section_slug/grades", Grades.GradesLive)
+    live("/:section_slug/manage", Delivery.ManageSection)
+    live("/:section_slug/remix", Delivery.RemixSection)
+    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
+    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
     live("/:section_slug", Sections.OverviewView)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     live("/:section_slug/edit", Sections.EditView)
