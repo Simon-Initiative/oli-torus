@@ -304,7 +304,8 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
 
   useEffect(() => {
     const styles = parts.map((part) => {
-      return `#${part.id.replace(/:/g, '\\:')} {
+      const partId = part.id ? part.id.replace(/:/g, '\\:') : 'ERROR_PART_ID';
+      return `#${partId} {
         display: block;
         position: absolute;
         width: ${part.custom.width}px;
@@ -316,7 +317,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     });
     setPartStyles(styles);
     parts.forEach((part) => {
-      const partId = part.id.replace(/:/g, '\\:');
+      const partId = part.id ? part.id.replace(/:/g, '\\:') : 'ERROR_PART_ID';
       const partElement = document.getElementById(partId);
       if (partElement) {
         partElement.setAttribute(
