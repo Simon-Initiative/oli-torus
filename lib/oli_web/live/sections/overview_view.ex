@@ -97,6 +97,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>View Enrolled Students</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}>Edit Section Details</a></li>
+          <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
         </ul>
       </Group>
       {#if !@section.open_and_free}

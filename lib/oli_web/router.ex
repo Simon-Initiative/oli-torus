@@ -108,6 +108,25 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
+  # Ensure that we have an enrolled instructor or a system admin
+  pipeline :delivery_instructor do
+    plug(Oli.Plugs.SetDefaultPow, :user)
+    plug(Oli.Plugs.SetCurrentUser)
+
+    plug(PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
+
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
+    plug(Oli.Plugs.RemoveXFrameOptions)
+    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+  end
+
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
     plug(Oli.Plugs.SetCurrentUser)
@@ -559,7 +578,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug", PageDeliveryController, :index)
+    get("/:section_slug/overview", PageDeliveryController, :index)
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -574,6 +593,20 @@ defmodule OliWeb.Router do
       PageDeliveryController,
       :review_attempt
     )
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_instructor,
+      :pow_email_layout
+    ])
+
+    live("/:section_slug", Sections.OverviewView)
+    live("/:section_slug/enrollments", Sections.EnrollmentsView)
+    live("/:section_slug/edit", Sections.EditView)
   end
 
   scope "/sections", OliWeb do
@@ -642,9 +675,6 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/sections", Sections.SectionsView)
-    live("/sections/:section_slug", Sections.OverviewView)
-    live("/sections/:section_slug/enrollments", Sections.EnrollmentsView)
-    live("/sections/:section_slug/edit", Sections.EditView)
 
     live("/open_and_free/create", Delivery.SelectSource)
     live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
