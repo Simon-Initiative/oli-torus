@@ -85,11 +85,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleRuleChange = (rule: any) => {
     const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
-    console.log('RULE CHANGE: ', {
+    /* console.log('RULE CHANGE: ', {
       rule,
       existing,
       diff,
-    });
+    }); */
     if (!existing) {
       console.warn("rule not found, shouldn't happen!!!");
       return;
@@ -116,7 +116,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
 
   const handleConditionsEditorChange = (updatedConditionsBlock: any) => {
-    console.log('CONDITION ED: ', updatedConditionsBlock);
+    /* console.log('CONDITION ED: ', updatedConditionsBlock); */
     const conds = updatedConditionsBlock.all || updatedConditionsBlock.any || [];
     const updatedIsAll = !!updatedConditionsBlock.all;
     const rootChanged = updatedIsAll !== rootConditionIsAll;
@@ -205,7 +205,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleActionChange = async (action: any, changes: any) => {
     const updated = { ...action, params: { ...action.params, ...changes } };
     const actionIndex = actions.indexOf(action);
-    console.log('action changed', { action, changes, actionIndex });
+    /* console.log('action changed', { action, changes, actionIndex }); */
     if (actionIndex !== -1) {
       const cloneActions = [...actions];
       cloneActions[actionIndex] = updated;

@@ -119,7 +119,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   }, [type, rootConditions]);
 
   useEffect(() => {
-    console.log('CONDITIONS/BT CHANGE EFFECT', { blockType, conditions });
+    /* console.log('CONDITIONS/BT CHANGE EFFECT', { blockType, conditions }); */
     onChange({ [blockType]: conditions });
   }, [conditions, blockType]);
 
@@ -190,7 +190,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         }
       }
     });
-    console.log('[handleConditionItemChange]', { changes, condition, updatedConditions });
+    /* console.log('[handleConditionItemChange]', { changes, condition, updatedConditions }); */
     setConditions(updatedConditions);
   };
 
@@ -207,7 +207,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         }
       }
     });
-    console.log('[handleSubBlockChange]', { condition, changes, updatedConditions });
+    /* console.log('[handleSubBlockChange]', { condition, changes, updatedConditions }); */
     setConditions(updatedConditions);
   };
 

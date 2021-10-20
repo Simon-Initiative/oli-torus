@@ -94,7 +94,7 @@ const RightMenu: React.FC<any> = () => {
     if (!currentActivity) {
       return;
     }
-    console.log('CURRENT', { currentActivity, currentLesson });
+    /* console.log('CURRENT', { currentActivity, currentLesson }); */
     setScreenData(
       currentSequence?.custom.isBank
         ? transformBankPropsModeltoSchema(currentActivity)
@@ -135,7 +135,7 @@ const RightMenu: React.FC<any> = () => {
     (properties: object) => {
       if (currentSequence) {
         const modelChanges = transformBankSchematoModel(properties);
-        console.log('Bank Property Change...', { properties, modelChanges });
+        /* console.log('Bank Property Change...', { properties, modelChanges }); */
         const { bankShowCount, bankEndTarget } = modelChanges;
         if (currentSequence) {
           const cloneSequence = clone(currentSequence);
@@ -173,7 +173,7 @@ const RightMenu: React.FC<any> = () => {
         const modelChanges = currentSequence?.custom.isBank
           ? transformBankPropsSchematoModel(properties)
           : transformScreenSchematoModel(properties);
-        console.log('Screen Property Change...', { properties, modelChanges });
+        /* console.log('Screen Property Change...', { properties, modelChanges }); */
         const { title, ...screenModelChanges } = modelChanges;
         const screenChanges = {
           ...currentActivity?.content?.custom,
@@ -195,7 +195,7 @@ const RightMenu: React.FC<any> = () => {
   const debounceSaveScreenSettings = useCallback(
     debounce(
       (activity, currentActivity, group) => {
-        console.log('SAVING ACTIVITY:', { activity });
+        /* console.log('SAVING ACTIVITY:', { activity }); */
         dispatch(saveActivity({ activity }));
 
         if (activity.title !== currentActivity?.title) {
@@ -212,7 +212,7 @@ const RightMenu: React.FC<any> = () => {
   const debounceSavePage = useCallback(
     debounce(
       (changes) => {
-        console.log('SAVING PAGE', { changes });
+        /* console.log('SAVING PAGE', { changes }); */
         // update server
         dispatch(savePage(changes));
         // update redux
@@ -247,7 +247,7 @@ const RightMenu: React.FC<any> = () => {
       ) {
         delete lessonChanges.custom.allowNavigation;
       }
-      console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties });
+      /* console.log('LESSON PROP CHANGED', { modelChanges, lessonChanges, properties }); */
 
       // need to put a healthy debounce in here, this fires every keystroke
       // save the page
@@ -264,14 +264,13 @@ const RightMenu: React.FC<any> = () => {
         let modelChanges = properties;
         modelChanges = transformPartSchemaToModel(modelChanges);
         if (partInstance && partInstance.transformSchemaToModel) {
-          console.log('JUST BEFOER', { modelChanges, properties });
           modelChanges.custom = {
             ...modelChanges.custom,
             ...partInstance.transformSchemaToModel(modelChanges.custom),
           };
         }
 
-        console.log('COMPONENT PROP CHANGED', { properties, modelChanges });
+        /* console.log('COMPONENT PROP CHANGED', { properties, modelChanges }); */
 
         const cloneActivity = clone(origActivity);
         const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === origId);
@@ -322,12 +321,12 @@ const RightMenu: React.FC<any> = () => {
         break;
       }
     }
-    console.log('part selected', { partDef });
+    /* console.log('part selected', { partDef }); */
     if (partDef) {
       // part component should be registered by type as a custom element
       const PartClass = customElements.get(partDef.type);
       if (PartClass) {
-        const instance = new PartClass();
+        const instance = new PartClass() as any;
 
         setCurrentPartInstance(instance);
 
@@ -383,7 +382,6 @@ const RightMenu: React.FC<any> = () => {
 
   const componentPropertyChangeHandler = useCallback(
     (properties: object) => {
-      console.log('CHANGE??????????', { properties, currentPartSelection });
       debouncePartPropertyChanges(
         properties,
         currentPartInstance,

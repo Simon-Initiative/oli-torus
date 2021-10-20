@@ -7,6 +7,16 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
 
   alias OliWeb.Common.Breadcrumb
 
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Manage API Keys",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
+
   defp all_keys_sorted do
     Oli.Interop.list_api_keys()
     |> Enum.sort_by(& &1.hint, :asc)
@@ -20,7 +30,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
        hint: "",
        created_key: "",
        keys: all_keys_sorted(),
-       breadcrumbs: [Breadcrumb.new(%{full_title: "API Keys"})]
+       breadcrumbs: set_breadcrumbs()
      )}
   end
 

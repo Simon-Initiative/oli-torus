@@ -22,7 +22,7 @@ defmodule OliWeb.Sections.SectionsView do
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "All Course Sections"})]
+  data breadcrumbs, :any
   data title, :string, default: "All Course Sections"
 
   data sections, :list, default: []
@@ -32,6 +32,21 @@ defmodule OliWeb.Sections.SectionsView do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
+
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "All Course Sections",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -49,6 +64,7 @@ defmodule OliWeb.Sections.SectionsView do
 
     {:ok,
      assign(socket,
+       breadcrumbs: set_breadcrumbs(),
        author: author,
        sections: sections,
        total_count: total_count,

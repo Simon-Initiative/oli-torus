@@ -228,11 +228,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }, [props.notify]);
 
   const popupStyles: CSSProperties = {
+    width,
+    height,
     /* position: 'absolute',
     top: y,
     left: x,
-    width,
-    height,
     zIndex: z,*/
   };
 
@@ -331,7 +331,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   };
 
   if (showPopup) {
-    console.log('SHOW POPUP: ', { model, popupModalStyles });
+    /* console.log('SHOW POPUP: ', { model, popupModalStyles }); */
   }
 
   return ready ? (

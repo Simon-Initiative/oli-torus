@@ -1,0 +1,15 @@
+<div class="container my-3">
+
+  <div class="alert alert-danger" role="alert">
+    <h4 class="alert-heading">Not Found</h4>
+    <p>This resource or page cannot be found.</p>
+    <hr>
+    <p>If you believe you reached this page in error, here are a few things that you can try:</p>
+    <ul>
+      <li>Refreshing your browser</li>
+      <li>Returning to your LMS to try accessing OLI again</li>
+      <li>Contacting your instructor for help</li>
+    </ul>
+  </div>
+
+</div>

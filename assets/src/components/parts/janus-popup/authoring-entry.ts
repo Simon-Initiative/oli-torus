@@ -2,20 +2,21 @@
 const manifest = require('./manifest.json');
 import register from '../customElementWrapper';
 import {
+  authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import PopupAuthor from './PopupAuthor';
 import {
   createSchema,
+  getCapabilities,
   schema,
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
-  getCapabilities,
 } from './schema';
 
-const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
+const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
 const customEvents: any = {
   ...apiCustomEvents,
   onConfigure: 'configure',

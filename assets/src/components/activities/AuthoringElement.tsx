@@ -3,6 +3,7 @@ import produce from 'immer';
 import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
 import { ActivityModelSchema, MediaItemRequest, PostUndoable, Undoable } from './types';
+import { EventEmitter } from 'events';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -13,6 +14,7 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
   editMode: boolean;
   projectSlug: ProjectSlug;
   authoringContext?: any;
+  notify?: EventEmitter;
 }
 
 // An abstract authoring web component, designed to delegate to
@@ -26,10 +28,14 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   mountPoint: HTMLDivElement;
   connected: boolean;
 
+  protected _notify: EventEmitter;
+
   constructor() {
     super();
 
     this.mountPoint = document.createElement('div');
+
+    this._notify = new EventEmitter().setMaxListeners(50);
   }
 
   props(): AuthoringElementProps<T> {
@@ -64,6 +70,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       editMode,
       projectSlug,
       authoringContext,
+      notify: this._notify,
     };
   }
 
@@ -93,6 +100,10 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
       };
       this.dispatchEvent(new CustomEvent(name, this.details(continuation, payload)));
     });
+  }
+
+  notify(eventName: string, payload: any): void {
+    this._notify.emit(eventName, payload);
   }
 
   abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>): void;

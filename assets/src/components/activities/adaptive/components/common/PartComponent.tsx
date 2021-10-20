@@ -168,6 +168,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       NotificationType.CHECK_COMPLETE,
       NotificationType.CONTEXT_CHANGED,
       NotificationType.STATE_CHANGED,
+      NotificationType.CONFIGURE,
+      NotificationType.CONFIGURE_SAVE,
+      NotificationType.CONFIGURE_CANCEL,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (e: any) => {

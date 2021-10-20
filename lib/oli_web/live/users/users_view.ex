@@ -19,8 +19,8 @@ defmodule OliWeb.Users.UsersView do
   }
 
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "All Users"})]
-  data title, :string, default: "All Users"
+
+  data breadcrumbs, :any
 
   data users, :list, default: []
 
@@ -29,6 +29,11 @@ defmodule OliWeb.Users.UsersView do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
+
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
@@ -46,6 +51,8 @@ defmodule OliWeb.Users.UsersView do
 
     {:ok,
      assign(socket,
+       title: "All Users",
+       breadcrumbs: set_breadcrumbs(),
        author: author,
        users: users,
        total_count: total_count,
@@ -149,5 +156,15 @@ defmodule OliWeb.Users.UsersView do
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "All Users",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
   end
 end

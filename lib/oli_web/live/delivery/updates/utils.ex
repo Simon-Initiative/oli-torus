@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Updates.Utils do
 
   alias Oli.Publishing.Publication
 
-  def render_updates(%{updates: updates} = assigns) do
+  def render_updates(%{updates: updates, updates_in_progress: updates_in_progress} = assigns) do
     ~L"""
       <div class="available-updates list-group my-3">
         <%= Enum.map(updates, fn {project_id, publication} -> %>
@@ -12,10 +12,14 @@ defmodule OliWeb.Delivery.Updates.Utils do
             <%= render_update_details(assigns, publication) %>
             <div class="d-flex flex-row">
               <div class="flex-grow-1"></div>
-              <button type="button" class="btn btn-sm btn-primary"
-                phx-click="show_apply_update_modal"
-                phx-value-project-id="<%= project_id %>"
-                phx-value-publication-id="<%= publication.id %>">View Update</button>
+              <%= if Map.has_key?(updates_in_progress, publication.id) do %>
+                <button type="button" class="btn btn-sm btn-primary" disabled>Update in progress...</button>
+              <% else %>
+                <button type="button" class="btn btn-sm btn-primary"
+                  phx-click="show_apply_update_modal"
+                  phx-value-project-id="<%= project_id %>"
+                  phx-value-publication-id="<%= publication.id %>">View Update</button>
+              <% end %>
             </div>
           </div>
         <% end) %>

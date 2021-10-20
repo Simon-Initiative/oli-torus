@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersTableModel do
     !is_nil(v) and v != ""
   end
 
-  defp normalize(name, given_name, family_name) do
+  def normalize(name, given_name, family_name) do
     case {has_value(name), has_value(given_name), has_value(family_name)} do
       {_, true, true} -> "#{family_name}, #{given_name}"
       {false, false, true} -> family_name
