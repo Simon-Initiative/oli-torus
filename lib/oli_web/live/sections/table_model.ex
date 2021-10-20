@@ -86,7 +86,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
     case name do
       :title ->
         ~F"""
-        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsDetailsView, section.slug)}>{section.title}</a>
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
         """
 
       :type ->

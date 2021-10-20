@@ -642,7 +642,10 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/sections", Sections.SectionsView)
-    live("/sections/:section_slug", Sections.SectionsDetailsView)
+    live("/sections/:section_slug", Sections.OverviewView)
+    live("/sections/:section_slug/enrollments", Sections.EnrollmentsView)
+    live("/sections/:section_slug/edit", Sections.EditView)
+
     live("/open_and_free/create", Delivery.SelectSource)
     live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
 

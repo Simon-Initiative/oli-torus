@@ -15,43 +15,62 @@ defmodule OliWeb.Grades.GradesLive do
 
   def mount(
         _params,
-        %{"section_slug" => section_slug, "current_user_id" => current_user_id},
+        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
+
     current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
 
-    if ContextRoles.has_role?(
-         current_user,
-         section.slug,
-         ContextRoles.get_role(:context_instructor)
-       ) do
-      {_d, registration} = Sections.get_deployment_registration_from_section(section)
-      line_items_url = section.line_items_service_url
-      graded_pages = Grading.fetch_graded_pages(section.slug)
-
-      selected_page =
-        if length(graded_pages) > 0 do
-          hd(graded_pages).resource_id
-        else
-          nil
-        end
-
-      {:ok,
-       assign(socket,
-         graded_pages: graded_pages,
-         selected_page: selected_page,
-         line_items_url: line_items_url,
-         access_token: nil,
-         task_queue: [],
-         progress_current: 0,
-         progress_max: 0,
-         section_slug: section.slug,
-         section: section,
-         registration: registration
-       )}
+    if is_admin_author?(session) or
+         ContextRoles.has_role?(
+           current_user,
+           section.slug,
+           ContextRoles.get_role(:context_instructor)
+         ) do
+      do_mount(section, socket)
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    end
+  end
+
+  defp do_mount(section, socket) do
+    {_d, registration} = Sections.get_deployment_registration_from_section(section)
+    line_items_url = section.line_items_service_url
+    graded_pages = Grading.fetch_graded_pages(section.slug)
+
+    selected_page =
+      if length(graded_pages) > 0 do
+        hd(graded_pages).resource_id
+      else
+        nil
+      end
+
+    {:ok,
+     assign(socket,
+       graded_pages: graded_pages,
+       selected_page: selected_page,
+       line_items_url: line_items_url,
+       access_token: nil,
+       task_queue: [],
+       progress_current: 0,
+       progress_max: 0,
+       section_slug: section.slug,
+       section: section,
+       registration: registration
+     )}
+  end
+
+  defp is_admin_author?(session) do
+    case session["current_author_id"] do
+      nil ->
+        false
+
+      id ->
+        case Repo.get(Oli.Accounts.Author, id) do
+          nil -> false
+          author -> Accounts.is_admin?(author)
+        end
     end
   end
 
