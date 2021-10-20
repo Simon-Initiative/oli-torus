@@ -1,10 +1,10 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { ConditionProperties } from 'json-rules-engine';
 import { isEqual } from 'lodash';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
+import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import ConditionItemEditor from './ConditionItemEditor';
 
 export interface JanusConditionProperties extends ConditionProperties {
@@ -170,29 +170,29 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
     setConditions(updatedConditions);
   };
 
-  const handleConditionItemChange = (
-    condition: JanusConditionProperties,
-    changes: Partial<JanusConditionProperties>,
-  ) => {
-    const updatedConditions = forEachCondition(conditions, (c) => {
-      if (c.id === condition.id) {
-        if (changes.fact) {
-          (c as JanusConditionProperties).fact = changes.fact;
+  const handleConditionItemChange = useCallback(
+    (condition: JanusConditionProperties, changes: Partial<JanusConditionProperties>) => {
+      const updatedConditions = forEachCondition(conditions, (c) => {
+        if (c.id === condition.id) {
+          if (changes.fact) {
+            (c as JanusConditionProperties).fact = changes.fact;
+          }
+          if (changes.type) {
+            (c as JanusConditionProperties).type = changes.type;
+          }
+          if (changes.operator) {
+            (c as JanusConditionProperties).operator = changes.operator;
+          }
+          if (changes.value !== undefined) {
+            (c as JanusConditionProperties).value = changes.value;
+          }
         }
-        if (changes.type) {
-          (c as JanusConditionProperties).type = changes.type;
-        }
-        if (changes.operator) {
-          (c as JanusConditionProperties).operator = changes.operator;
-        }
-        if (changes.value !== undefined) {
-          (c as JanusConditionProperties).value = changes.value;
-        }
-      }
-    });
-    /* console.log('[handleConditionItemChange]', { changes, condition, updatedConditions }); */
-    setConditions(updatedConditions);
-  };
+      });
+      console.log('[handleConditionItemChange]', { changes, condition, updatedConditions });
+      setConditions(updatedConditions);
+    },
+    [conditions],
+  );
 
   const handleSubBlockChange = (condition: any, changes: any) => {
     const updatedConditions = forEachCondition(conditions, (c: any) => {

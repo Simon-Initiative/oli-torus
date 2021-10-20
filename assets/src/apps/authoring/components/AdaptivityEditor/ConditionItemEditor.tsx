@@ -1,6 +1,7 @@
-import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
-import React, { useEffect, useRef, useState } from 'react';
+import { debounce } from 'lodash';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
 import {
   ConditionOperatorOption,
   conditionOperatorOptions,
@@ -10,7 +11,7 @@ import {
   typeOptions,
 } from './AdaptiveItemOptions';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
-import { VariablePicker, OverlayPlacements } from './VariablePicker';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;
@@ -29,46 +30,91 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
 
-  const handleFactChange = (e: any) => {
-    const val = e.target.value;
-    if (val === fact) {
-      return;
-    }
-    setFact(val);
-    onChange({ fact: val });
-  };
+  const [workingCondition, setWorkingCondition] = useState<Partial<JanusConditionProperties>>({
+    fact,
+    type: targetType,
+    operator,
+    value,
+  });
 
-  const handleTargetTypeChange = (e: any) => {
-    const val = parseInt(e.target.value);
-    if (val === targetType) {
-      return;
-    }
-    setTargetType(val);
-    onChange({ type: val });
-  };
+  const debouncedOnChange = useCallback(
+    debounce((changes) => onChange(changes), 30),
+    [onChange],
+  );
 
-  const handleOperatorChange = (e: any) => {
-    const val = e.target.value;
-    if (val === operator) {
-      return;
-    }
-    setOperator(val);
-    onChange({ operator: val });
-  };
+  const notifyChanges = useCallback(() => {
+    console.log('notifyChanges', { workingCondition });
+    debouncedOnChange({
+      fact: workingCondition.fact,
+      type: workingCondition.type,
+      operator: workingCondition.operator,
+      value: workingCondition.value,
+    });
+  }, [workingCondition, debouncedOnChange]);
 
-  const handleValueChange = (e: any) => {
-    const val = e.target.value;
-    if (val === value) {
-      return;
+  useEffect(() => {
+    const hasChanged =
+      workingCondition.fact !== fact ||
+      workingCondition.type !== targetType ||
+      workingCondition.operator !== operator ||
+      workingCondition.value !== value;
+    if (hasChanged) {
+      notifyChanges();
     }
-    setValue(val);
-    onChange({ value: val });
-  };
+  }, [workingCondition, fact, targetType, operator, value, notifyChanges]);
+
+  const handleFactChange = useCallback(
+    (e: any) => {
+      const val = e.target.value;
+      if (val === fact) {
+        return;
+      }
+      setFact(val);
+      setWorkingCondition((current) => ({ ...current, fact: val }));
+    },
+    [fact],
+  );
+
+  const handleTargetTypeChange = useCallback(
+    (e: any) => {
+      const val = parseInt(e.target.value);
+      if (val === targetType) {
+        return;
+      }
+      setTargetType(val);
+      setWorkingCondition((current) => ({ ...current, type: val }));
+    },
+    [targetType],
+  );
+
+  const handleOperatorChange = useCallback(
+    (e: any) => {
+      const val = e.target.value;
+      if (val === operator) {
+        return;
+      }
+      setOperator(val);
+      setWorkingCondition((current) => ({ ...current, operator: val }));
+    },
+    [operator],
+  );
+
+  const handleValueChange = useCallback(
+    (e: any) => {
+      const val = e.target.value;
+      if (val === value) {
+        return;
+      }
+      setValue(val);
+      setWorkingCondition((current) => ({ ...current, value: val }));
+    },
+    [value],
+  );
 
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
 
-  const getFilteredConditionOperatorOptions = (): ConditionOperatorOption[] => {
+  const getFilteredConditionOperatorOptions = useCallback((): ConditionOperatorOption[] => {
     const filteredConditionOperatorOptions: ConditionOperatorOption[] = [];
     const filteredCombo: ConditionTypeOperatorCombo[] = conditionTypeOperatorCombos.filter(
       (combo) => combo.type === targetType,
@@ -81,19 +127,21 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
       });
     });
     return filteredConditionOperatorOptions;
-  };
+  }, [targetType]);
 
   useEffect(() => {
     // when the targetType is manually changed, we may need to also set the operator
     setTimeout(() => {
-      const updatedOperator = getFilteredConditionOperatorOptions()[0].value;
+      const operatorOptions = getFilteredConditionOperatorOptions();
+      const validOperator = operatorOptions.find((option) => option.value === operator);
+      const updatedOperator = validOperator?.value || operatorOptions[0].value;
       if (updatedOperator === operator) {
         return;
       }
       setOperator(updatedOperator);
-      onChange({ operator: updatedOperator });
+      setWorkingCondition((current) => ({ ...current, operator: updatedOperator }));
     }, 10);
-  }, [targetType]);
+  }, [targetType, operator]);
 
   return (
     <div key={parentIndex} className="d-flex mt-1">
