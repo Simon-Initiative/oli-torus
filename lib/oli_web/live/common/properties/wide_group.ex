@@ -15,7 +15,7 @@ defmodule OliWeb.Common.Properties.WideGroup do
         </div>
       </div>
     </div>
-    <div class="row py-5 border-bottom">
+    <div class="row border-bottom">
       <div class="col-md-12">
         <#slot />
       </div>

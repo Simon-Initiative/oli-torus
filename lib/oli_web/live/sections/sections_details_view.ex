@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly, WideGroup}
+  alias OliWeb.Common.Properties.{Groups, Group, WideGroup}
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
@@ -11,7 +11,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.{Instructors, MainDetails, OpenFreeSettings, LtiSettings, PaywallSettings}
-  alias Surface.Components.{Form, Field}
+  alias Surface.Components.{Form}
   alias Oli.Branding
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -160,7 +160,7 @@ defmodule OliWeb.Sections.SectionsDetailsView do
         {#else}
           <LtiSettings section={@section}/>
         {/if}
-        <PaywallSettings is_admin={@is_admin} changeset={@changeset} disabled={false}/>
+        <PaywallSettings is_admin={@is_admin} changeset={@changeset} disabled={!can_change_payment?(@section)}/>
         <Group label="Instructors" description="Manage the users with instructor level access">
           <Instructors users={@instructors}/>
         </Group>
@@ -206,7 +206,6 @@ defmodule OliWeb.Sections.SectionsDetailsView do
 
   def handle_event("validate", %{"section" => params}, socket) do
     params = convert_dates(params)
-    IO.inspect(params)
 
     changeset =
       socket.assigns.section
@@ -279,5 +278,9 @@ defmodule OliWeb.Sections.SectionsDetailsView do
     params
     |> Map.put("start_date", utc_start_date)
     |> Map.put("end_date", utc_end_date)
+  end
+
+  defp can_change_payment?(section) do
+    is_nil(section.blueprint_id)
   end
 end

@@ -2,7 +2,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
   use Surface.Component
 
   alias Surface.Components.{Form, Field, Select}
-  alias Surface.Components.Form.{Field, Label, DateInput, Select, Checkbox}
+  alias Surface.Components.Form.{Field, Label, DateInput, Select, Checkbox, ErrorTag}
   alias OliWeb.Common.Properties.{Group}
   import OliWeb.Common.Utils
   alias OliWeb.Router.Helpers, as: Routes
@@ -32,20 +32,21 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <Checkbox class="form-check-input" value={get_field(@changeset, :registration_open)}/>
         <Label class="form-check-label"/>
       </Field>
+      <Field name={:timezone} class="mt-2">
+        <Label/>
+        <Select class="form-control" form="section" field="timezone" options={timezones()} selected={get_field(@changeset, :timezone)}/>
+      </Field>
+
       <div class="form-row mt-4">
-        <Field name={:start_date} class="mr-3">
-          <Label/>
+        <Field name={:start_date} class="mr-3 form-label-group">
+          <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
           <DateInput class="form-control" value={format(get_field(@changeset, :start_date))} opts={disabled: @disabled}/>
         </Field>
-        <Field name={:end_date}>
-          <Label/>
+        <Field name={:end_date} class="form-label-group">
+          <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
           <DateInput class="form-control" value={format(get_field(@changeset, :end_date))} opts={disabled: @disabled}/>
         </Field>
       </div>
-      <Field name={:timezone} class="mt-2">
-        <Label/>
-        <Select class="form-control" form="section" field="timezone" options={timezones()} selected={@changeset.data.timezone}/>
-      </Field>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>
     </Group>

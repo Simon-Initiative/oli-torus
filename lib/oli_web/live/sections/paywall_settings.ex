@@ -10,7 +10,8 @@ defmodule OliWeb.Sections.PaywallSettings do
     Select,
     TextInput,
     NumberInput,
-    Checkbox
+    Checkbox,
+    ErrorTag
   }
 
   alias OliWeb.Common.Properties.{Group}
@@ -38,21 +39,21 @@ defmodule OliWeb.Sections.PaywallSettings do
         <Checkbox class="form-check-input" value={get_field(@changeset, :requires_payment)}/>
         <Label class="form-check-label"/>
       </Field>
-      <Field name={:amount} class="mt-2">
-        <Label/>
+      <Field name={:amount} class="mt-2 form-label-group">
+        <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
         <TextInput class="form-control" opts={disabled: @disabled}/>
       </Field>
       <Field name={:has_grace_period} class="form-check mt-4">
         <Checkbox class="form-check-input" value={get_field(@changeset, :has_grace_period)}/>
         <Label class="form-check-label"/>
       </Field>
-      <Field name={:grace_period_days} class="mt-3">
-        <Label/>
+      <Field name={:grace_period_days} class="form-label-group">
+        <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
         <NumberInput class="form-control" opts={disabled: @disabled}/>
       </Field>
       <Field name={:grace_period_strategy}>
         <Label/>
-        <Select class="form-control" form="section" field="timezone" options={strategies()} selected={@changeset.data.grace_period_strategy}/>
+        <Select class="form-control" form="section" field="grace_period_strategy" options={strategies()} selected={@changeset.data.grace_period_strategy}/>
       </Field>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>
