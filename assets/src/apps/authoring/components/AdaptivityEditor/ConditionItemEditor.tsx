@@ -11,6 +11,7 @@ import {
 } from './AdaptiveItemOptions';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;
@@ -28,6 +29,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   );
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   const handleFactChange = (e: any) => {
     const val = e.target.value;
@@ -183,11 +185,25 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete()}>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
       </OverlayTrigger>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Condition"
+          elementName="this rule condition"
+          deleteHandler={() => {
+            onDelete();
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };
