@@ -6,7 +6,7 @@
 - Fix an issue with Apply Update button and move content updates to async worker
 - Fix text editor issue where image resizing didn't work from right drag handle
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar
-- Fix an issue where the page editor "insert content" toolbar would show in the wrong part of the page if content became too long
+- Fix the "insert content" toolbar positioning
 - Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 
 ### Enhancements

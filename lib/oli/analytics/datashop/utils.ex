@@ -2,6 +2,7 @@ defmodule Oli.Analytics.Datashop.Utils do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
   import Oli.Utils
+  import Oli.Rendering.Utils
   require Logger
 
   # For internal use and testing only, not for production file creation.
@@ -17,7 +18,7 @@ defmodule Oli.Analytics.Datashop.Utils do
 
   def structured_content_to_cdata(content) do
     content
-    |> parse_content
+    |> parse_html_content
     |> cdata
   end
 
@@ -34,20 +35,12 @@ defmodule Oli.Analytics.Datashop.Utils do
     cdata("Attempt student input")
   end
 
-  def parse_content(content) do
-    Content.render(%Context{}, content, Content.Html)
-    |> Phoenix.HTML.raw()
-    |> Phoenix.HTML.safe_to_string()
-    # Remove trailing newlines
-    |> String.trim()
-  end
-
   def hint_text(part, hint_id) do
     try do
       part["hints"]
       |> Enum.find(&(&1["id"] == hint_id))
       |> Map.get("content")
-      |> parse_content
+      |> parse_html_content
     rescue
       _e -> "Unknown hint text"
     end

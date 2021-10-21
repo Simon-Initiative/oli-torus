@@ -1,3 +1,4 @@
+import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/commands/interfaces';
 import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
@@ -5,14 +6,28 @@ import * as ContentModel from 'data/content/model';
 import React from 'react';
 
 interface Props {
-  onDone: (model: ContentModel.Popup) => void;
+  onDone: (changes: Partial<ContentModel.Popup>) => void;
   onCancel: () => void;
   model: ContentModel.Popup;
   commandContext: CommandContext;
 }
 export const PopupContentModal = (props: Props) => {
-  const [content, setContent] = React.useState(props.model.content);
+  const [content, setContent] = React.useState<RichText>({
+    model: props.model.content,
+    selection: null,
+  });
   const [trigger, setTrigger] = React.useState(props.model.trigger);
+
+  // content: {
+  //   model: [
+  //     create({
+  //       type: 'p',
+  //       children: [{ text: '' }],
+  //       id: guid(),
+  //     }),
+  //   ],
+  //   selection: null,
+  // },
 
   const isTriggerMode = (mode: ContentModel.PopupTriggerMode) => mode === trigger;
 
@@ -29,8 +44,8 @@ export const PopupContentModal = (props: Props) => {
             />
             <p>Trigger on mouseover</p>
             <small>
-              Students on desktop computers will see this content when they hover over the popup
-              with their mouse. Students on mobile must press. Good for shorter content.
+              Good for shorter content. Students on desktop computers will see this content when
+              they hover over the popup with a mouse. Students on mobile must press.
             </small>
           </label>
         </div>
@@ -44,8 +59,8 @@ export const PopupContentModal = (props: Props) => {
             />
             <p>Trigger on click</p>
             <small>
-              All students must click the popup to see this content. Good for longer content or
-              including audio, videos.
+              Good for longer content or including audio, videos. All students must click the popup
+              to see this content.
             </small>
           </label>
         </div>
@@ -56,7 +71,7 @@ export const PopupContentModal = (props: Props) => {
   return (
     <FullScreenModal
       onCancel={(_e) => props.onCancel()}
-      onDone={(newModel) => props.onDone(Object.assign(props.model, newModel))}
+      onDone={(_e) => props.onDone({ content: content.model, trigger })}
     >
       <div className="row">
         <div className="col-12">

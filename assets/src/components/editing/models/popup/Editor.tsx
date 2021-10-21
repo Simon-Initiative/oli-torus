@@ -20,8 +20,8 @@ export const PopupEditor = (props: Props) => {
 
   const { attributes, children, editor, model } = props;
 
-  const onEdit = (popup: ContentModel.Popup) => {
-    updateModel<ContentModel.Popup>(editor, model, popup);
+  const onEdit = (changes: Partial<ContentModel.Popup>) => {
+    updateModel<ContentModel.Popup>(editor, model, changes);
     // setIsPopoverOpen(false);
   };
 
@@ -38,9 +38,9 @@ export const PopupEditor = (props: Props) => {
             <PopupContentModal
               commandContext={props.commandContext}
               model={props.model}
-              onDone={(newModel) => {
+              onDone={(changes) => {
                 dismiss();
-                onEdit(newModel);
+                onEdit(changes);
               }}
               onCancel={() => {
                 dismiss();
@@ -60,10 +60,9 @@ export const PopupEditor = (props: Props) => {
       showArrow
       target={
         <span
-          id={props.model.id}
-          href="#"
-          className="popup-link"
           {...attributes}
+          id={props.model.id}
+          className="popup-link"
           onClick={() => {
             setIsPopoverOpen(true);
           }}
@@ -75,36 +74,5 @@ export const PopupEditor = (props: Props) => {
     >
       <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
     </HoveringToolbar>
-    // <Popover
-    //   onClickOutside={() => setIsPopoverOpen(false)}
-    //   isOpen={isPopoverOpen}
-    //   padding={25}
-    //   content={() => {
-    //     return (
-    //       <PopupToolbar model={props.model} commandContext={props.commandContext} onEdit={onEdit} />
-    //       // <DisplayLink
-    //       //   setEditLink={setEditLink}
-    //       //   commandContext={props.commandContext}
-    //       //   href={model.href}
-    //       //   setPages={setPages}
-    //       //   pages={pages}
-    //       //   selectedPage={selectedPage}
-    //       //   setSelectedPage={setSelectedPage}
-    //       // />
-    //     );
-    //   }}
-    // >
-    //   <span
-    //     id={props.model.id}
-    //     href="#"
-    //     className="popup-link"
-    //     {...attributes}
-    //     onClick={() => {
-    //       setIsPopoverOpen(true);
-    //     }}
-    //   >
-    //     {children}
-    //   </span>
-    // </Popover>
   );
 };

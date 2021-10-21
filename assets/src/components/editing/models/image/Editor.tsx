@@ -1,15 +1,15 @@
-import React, { useRef } from 'react';
-import { useFocused, useSelected, ReactEditor } from 'slate-react';
-import { updateModel, getEditMode } from 'components/editing/models/utils';
-import * as ContentModel from 'data/content/model';
 import { EditorProps } from 'components/editing/models/interfaces';
-import * as Settings from '../settings/Settings';
-import { Transforms } from 'slate';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import { getEditMode, updateModel } from 'components/editing/models/utils';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
-import { initCommands } from './commands';
-import { centeredAbove, displayModelToClassName } from 'data/content/utils';
+import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import { Resizer } from 'components/misc/resizer/Resizer';
+import * as ContentModel from 'data/content/model';
+import { centeredAbove, displayModelToClassName } from 'data/content/utils';
+import React, { useRef } from 'react';
+import { Transforms } from 'slate';
+import { ReactEditor, useFocused, useSelected } from 'slate-react';
+import * as Settings from '../settings/Settings';
+import { initCommands } from './commands';
 
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps): JSX.Element => {
@@ -18,6 +18,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   const focused = useFocused();
   const selected = useSelected();
 
+  const parentRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const editMode = getEditMode(editor);
@@ -37,6 +38,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   return (
     <div
       {...attributes}
+      ref={parentRef}
       style={{ userSelect: 'none' }}
       className={'image-editor text-center ' + displayModelToClassName(model.display)}
     >
@@ -44,6 +46,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
         <HoveringToolbar
           isOpen={() => focused && selected}
           showArrow
+          parentRef={parentRef}
           target={
             <div>
               {ReactEditor.isFocused(editor) && selected && imageRef.current && (

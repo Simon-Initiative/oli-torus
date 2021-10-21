@@ -106,9 +106,12 @@
 
 .add-resource-popover {
   z-index: 500;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05), 10px 0px 15px rgba(0, 0, 0, 0.05),
-    -10px 0px 15px rgba(0, 0, 0, 0.05), 0px -5px 40px rgba(0, 0, 0, 0.05);
   border-radius: 6px;
+
+  .hovering-toolbar {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05), 10px 0px 15px rgba(0, 0, 0, 0.05),
+    -10px 0px 15px rgba(0, 0, 0, 0.05), 0px -5px 40px rgba(0, 0, 0, 0.05);
+  }
 
   .add-resource-popover-content {
     overflow-y: auto;

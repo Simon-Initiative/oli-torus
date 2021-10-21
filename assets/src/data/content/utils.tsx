@@ -63,7 +63,7 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
   return <i>Empty</i>;
 }
 
-export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 50) => {
+export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 56) => {
   return {
     top: childRect.top + window.pageYOffset - yOffset,
     left: childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,

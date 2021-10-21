@@ -1,7 +1,6 @@
 import { normalizeHref } from 'components/editing/models/link/utils';
 import { Element, Node, Range } from 'slate';
 import guid from 'utils/guid';
-import { RichText } from '../../components/activities/types';
 
 export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
   return Object.assign(
@@ -39,16 +38,25 @@ export const popup = () =>
   create<Popup>({
     type: 'popup',
     trigger: 'hover',
-    content: {
-      model: [
-        create({
-          type: 'p',
-          children: [{ text: '' }],
-          id: guid(),
-        }),
-      ],
-      selection: null,
-    },
+    // anchorText,
+    // children: [{ type: 'p', children: [{ text: '' }], id: guid() }],
+    content: [
+      {
+        type: 'p',
+        children: [{ text: '' }],
+        id: guid(),
+      },
+    ],
+    // content: {
+    //   model: [
+    //     create({
+    //       type: 'p',
+    //       children: [{ text: '' }],
+    //       id: guid(),
+    //     }),
+    //   ],
+    //   selection: null,
+    // },
   });
 
 // eslint-disable-next-line
@@ -240,7 +248,7 @@ export type PopupTriggerMode = 'hover' | 'click';
 export interface Popup extends Element, Identifiable {
   type: 'popup';
   trigger: PopupTriggerMode;
-  content: RichText;
+  content: ModelElement[];
 }
 
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';

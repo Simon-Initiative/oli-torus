@@ -1,6 +1,6 @@
 import React from 'react';
+import { ArrowContainer, ContentLocationGetter, Popover } from 'react-tiny-popover';
 import { ReactEditor, useSlate } from 'slate-react';
-import { Popover, ArrowContainer, ContentLocationGetter } from 'react-tiny-popover';
 
 type HoveringToolbarProps = {
   isOpen: (editor: ReactEditor) => boolean;
@@ -9,6 +9,7 @@ type HoveringToolbarProps = {
   onClickOutside?: (e: MouseEvent) => void;
   contentLocation?: ContentLocationGetter;
   target?: JSX.Element;
+  parentRef?: React.RefObject<HTMLElement>;
 };
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const editor = useSlate();
@@ -28,11 +29,13 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
       isOpen={props.isOpen(editor)}
       align={'center'}
       onClickOutside={props.onClickOutside}
-      content={({ position, childRect, popoverRect }) => {
+      padding={5}
+      parentElement={props.parentRef?.current || undefined}
+      content={({ childRect, popoverRect }) => {
         if (props.showArrow) {
           return (
             <ArrowContainer
-              position={position}
+              position={'top'}
               childRect={childRect}
               popoverRect={popoverRect}
               arrowSize={arrowSize}
@@ -57,7 +60,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
               const selectionRect = range.getBoundingClientRect();
 
               return {
-                top: selectionRect.top + window.pageYOffset - 50,
+                top: selectionRect.top + window.pageYOffset - 56,
                 left:
                   selectionRect.left +
                   window.pageXOffset +

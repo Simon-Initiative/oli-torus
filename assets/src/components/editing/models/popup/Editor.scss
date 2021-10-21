@@ -1,11 +1,12 @@
 @use 'delivery/variables' as delivery;
 
 .popup-link {
+  cursor: pointer;
   color: delivery.$orange;
-  text-decoration: underline;
+  font-style: italic;
 }
 
 .popup__modal-content {
-  text-align: left;
+  text-align: initial;
   min-width: 600px;
 }

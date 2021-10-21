@@ -245,11 +245,20 @@ defmodule Oli.Rendering.Content.Html do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
   end
 
-  def popup(%Context{} = context, next, e) do
+  def popup_anchor(%Context{} = _context, next, %{"trigger" => trigger}, id) do
     # TODO: PLACEHOLDER FOR POPUP
     # Handle triggers (click, hover)
     # How - javascript?
-    [~s|<span class="popup-link">|, next.(), "</span>\n"]
+
+    [
+      ~s|<span role="button" class="popup-link" data-trigger="#{escape_xml!(trigger)}" data-toggle="popover" data-placement="top" data-popover-content="##{id}">#{next.()}</button>\n|
+    ]
+  end
+
+  def popup_content(%Context{} = _context, next, _e, id) do
+    [
+      ~s|<div id=#{id} class="d-none">#{next.()}</div>\n|
+    ]
   end
 
   defp revision_slug_from_course_link(href) do

@@ -37,7 +37,7 @@ export const LinkEditor = (props: Props) => {
     setEditLink(false);
   };
 
-  const toolbarYOffset = isEditButton ? 132 : 50;
+  const toolbarYOffset = isEditButton ? 132 : 56;
   const isToolbarOpen =
     (focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)) || editLink;
 

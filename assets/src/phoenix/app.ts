@@ -7,23 +7,21 @@
 //     import {Socket} from 'phoenix'
 //     import socket from './socket'
 //
-import 'phoenix_html';
-
-import { Socket } from 'phoenix';
-import NProgress from 'nprogress';
-import { LiveSocket } from 'phoenix_live_view';
-import { Hooks } from 'hooks';
-import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
-import { showModal } from './modal';
-import { enableSubmitWhenTitleMatches } from './package_delete';
-import { onReady } from './ready';
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import { retrieveCookies } from 'components/cookies/utils';
 import { CreateAccountPopup } from 'components/messages/CreateAccountPopup';
-
+import { Hooks } from 'hooks';
+import NProgress from 'nprogress';
+import { Socket } from 'phoenix';
+import 'phoenix_html';
+import { LiveSocket } from 'phoenix_live_view';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge';
+import { showModal } from './modal';
+import { enableSubmitWhenTitleMatches } from './package_delete';
+import { onReady } from './ready';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -75,7 +73,19 @@ liveSocket.connect();
 (window as any).liveSocket = liveSocket;
 
 $(() => {
-  ($('[data-toggle="popover"]') as any).popover();
+  ($('[data-toggle="popover"]') as any).not('.popup-link').popover();
+  ($('.popup-link[data-toggle=popover]') as any).popover({
+    html: true,
+    content: function () {
+      const contentId = $(this).attr('data-popover-content');
+      if (!contentId) return;
+
+      return $(contentId)
+        .clone()
+        .children()
+        .map((i, e) => e);
+    },
+  });
   ($('[data-toggle="tooltip"]') as any).tooltip();
 });
 

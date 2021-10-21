@@ -99,6 +99,7 @@ export const DropdownToolbarButton = ({
       isOpen={isPopoverOpen}
       padding={5}
       positions={['right']}
+      reposition={false}
       content={() => (
         <div>{(command as any).obtainParameters(context, editor, onDone, onCancel)}</div>
       )}

@@ -12,6 +12,7 @@ const command: Command = {
       return Transforms.unwrapNodes(editor, { match: (node) => node.type === 'popup' });
     }
 
+    // const anchorText = Editor.string(editor, selection);
     Transforms.wrapNodes(editor, ContentModel.popup(), { split: true });
   },
   precondition: (_editor) => {
