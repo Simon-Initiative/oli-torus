@@ -12,24 +12,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias OliWeb.Sections.Mount
 
   def mount(
-        _params,
-        %{
-          "section" => section,
-          "current_user" => current_user
-        },
-        socket
-      ) do
-    # only permit instructor or admin level access
-    current_user = current_user |> Repo.preload([:platform_roles, :author])
-
-    if is_section_instructor_or_admin?(section.slug, current_user) do
-      init_state(socket, section)
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
-  end
-
-  def mount(
         params,
         session,
         socket
