@@ -595,7 +595,6 @@ defmodule OliWeb.Router do
 
     get("/:section_slug/updates", PageDeliveryController, :updates)
     live("/:section_slug/grades", Grades.GradesLive)
-    live("/:section_slug/manage", Delivery.ManageSection)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)

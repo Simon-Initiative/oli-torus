@@ -13,7 +13,7 @@ defmodule OliWeb.Sections.Mount do
     user_id = Map.get(session, "current_user_id")
     author_id = Map.get(session, "current_author_id")
 
-    case Sections.get_section_by(slug: section_slug) do
+    case Sections.get_section_by_slug(section_slug) do
       nil ->
         {:error, :not_found}
 

@@ -1,6 +1,6 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
+
   import OliWeb.Common.Utils
   use Surface.LiveComponent
 
@@ -48,12 +48,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   end
 
   def render_name_column(
-        assigns,
-        %{id: id, name: name, given_name: given_name, family_name: family_name},
+        _,
+        %{name: name, given_name: given_name, family_name: family_name},
         _
       ) do
-    ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
-    """
+    name(name, given_name, family_name)
   end
 end

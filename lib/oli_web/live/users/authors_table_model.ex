@@ -2,7 +2,6 @@ defmodule OliWeb.Users.AuthorsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Users.UsersTableModel
   import OliWeb.Common.Utils
   use Surface.LiveComponent
 

@@ -1,12 +1,11 @@
 defmodule OliWeb.Sections.PaywallSettings do
   use Surface.Component
 
-  alias Surface.Components.{Form, Field, Select}
+  alias Surface.Components.{Field, Select}
 
   alias Surface.Components.Form.{
     Field,
     Label,
-    DateInput,
     Select,
     TextInput,
     NumberInput,
@@ -15,10 +14,6 @@ defmodule OliWeb.Sections.PaywallSettings do
   }
 
   alias OliWeb.Common.Properties.{Group}
-  import OliWeb.Common.Utils
-  alias OliWeb.Router.Helpers, as: Routes
-  import Phoenix.HTML.Form
-  import OliWeb.ErrorHelpers
   import Ecto.Changeset
 
   prop changeset, :any, required: true

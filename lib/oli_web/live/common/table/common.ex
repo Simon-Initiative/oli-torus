@@ -14,11 +14,16 @@ defmodule OliWeb.Common.Table.Common do
   end
 
   def render_relative_date(_, item, %ColumnSpec{name: name}) do
-    Timex.format!(Map.get(item, name), "{relative}", :relative)
+    case Map.get(item, name) do
+      nil -> ""
+      d -> Timex.format!(d, "{relative}", :relative)
+    end
   end
 
   def render_short_date(_, item, %ColumnSpec{name: name}) do
-    Map.get(item, name)
-    |> Timex.format!("%Y-%m-%d", :strftime)
+    case Map.get(item, name) do
+      nil -> ""
+      d -> Timex.format!(d, "%Y-%m-%d", :strftime)
+    end
   end
 end

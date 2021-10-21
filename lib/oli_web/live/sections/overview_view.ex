@@ -82,7 +82,8 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Curriculum" description="Manage the content delivered to students">
         <ul class="link-list">
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
+        <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}>Enter Course</a></li>
+        <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
           <li>
             <a disabled={@updates_count == 0} href={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug)}>
               Manage Updates

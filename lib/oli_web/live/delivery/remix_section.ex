@@ -2,11 +2,6 @@ defmodule OliWeb.Delivery.RemixSection do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  import OliWeb.ViewHelpers,
-    only: [
-      is_section_instructor_or_admin?: 2
-    ]
-
   import OliWeb.Curriculum.Utils,
     only: [
       is_container?: 1
@@ -73,6 +68,9 @@ defmodule OliWeb.Delivery.RemixSection do
 
       {:user, _, section} ->
         mount_as_instructor(socket, section, session)
+
+      {:author, _, section} ->
+        mount_as_product_creator(socket, section, session)
     end
   end
 
