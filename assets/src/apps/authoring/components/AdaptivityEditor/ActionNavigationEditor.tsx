@@ -10,6 +10,7 @@ import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTemplate';
 
 interface ActionNavigationEditorProps {
@@ -23,6 +24,7 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   const sequence = useSelector(selectSequence);
   const selectedSequence = findInSequence(sequence, action?.params?.target);
   const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'next');
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const uuid = guid();
 
   const onChangeHandler = (sequenceId: string) => {
@@ -62,12 +64,26 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
           }
         >
           <span>
-            <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
+            <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
               <i className="fa fa-trash-alt" />
             </button>
           </span>
         </OverlayTrigger>
       </div>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Action"
+          elementName="this navigation action"
+          deleteHandler={() => {
+            onDelete(action);
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };
