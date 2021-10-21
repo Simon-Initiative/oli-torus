@@ -7,6 +7,7 @@
 ### Enhancements
 
 - New Admin landing page
+- New Instructor Course Section overview page
 
 ## 0.14.0 (2021-10-13)
 
