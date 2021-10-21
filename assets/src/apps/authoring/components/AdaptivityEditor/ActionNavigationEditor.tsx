@@ -15,12 +15,13 @@ import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTempl
 
 interface ActionNavigationEditorProps {
   action: NavigationAction;
+  allowDelete: boolean;
   onChange: (changes: NavigationActionParams) => void;
   onDelete: (changes: NavigationAction) => void;
 }
 
 const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
-  const { action, onChange, onDelete } = props;
+  const { action, allowDelete, onChange, onDelete } = props;
   const sequence = useSelector(selectSequence);
   const selectedSequence = findInSequence(sequence, action?.params?.target);
   const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'next');
@@ -53,22 +54,23 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
           dropDownCSSClass="adaptivityDropdown form-control"
           buttonCSSClass="form-control-sm"
         />
-
-        <OverlayTrigger
-          placement="top"
-          delay={{ show: 150, hide: 150 }}
-          overlay={
-            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              Delete Action
-            </Tooltip>
-          }
-        >
-          <span>
-            <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
-              <i className="fa fa-trash-alt" />
-            </button>
-          </span>
-        </OverlayTrigger>
+        {allowDelete && (
+          <OverlayTrigger
+            placement="top"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                Delete Action
+              </Tooltip>
+            }
+          >
+            <span>
+              <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
+                <i className="fa fa-trash-alt" />
+              </button>
+            </span>
+          </OverlayTrigger>
+        )}
       </div>
       {showConfirmDelete && (
         <ConfirmDelete
