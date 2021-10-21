@@ -1,7 +1,7 @@
 import React from 'react';
+import * as Popover from 'react-tiny-popover';
 import { useSlate } from 'slate-react';
 import { Command, CommandContext } from '../commands/interfaces';
-import * as Popover from 'react-tiny-popover';
 
 export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';
@@ -98,6 +98,7 @@ export const DropdownToolbarButton = ({
       onClickOutside={(_e) => setIsPopoverOpen(false)}
       isOpen={isPopoverOpen}
       padding={5}
+      positions={['right']}
       content={() => (
         <div>{(command as any).obtainParameters(context, editor, onDone, onCancel)}</div>
       )}
