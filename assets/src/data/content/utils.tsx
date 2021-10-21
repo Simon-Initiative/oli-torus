@@ -1,5 +1,6 @@
 import { ContentItem, ContentTypes } from 'data/content/writers/writer';
 import * as React from 'react';
+import { PopoverState } from 'react-tiny-popover';
 import { Text } from 'slate';
 import { isModelElement, MediaDisplayMode, ModelElement } from './model';
 import { StructuredContent } from './resource';
@@ -62,15 +63,9 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
   return <i>Empty</i>;
 }
 
-export const centeredAbove = ({
-  popoverRect,
-  childRect,
-}: {
-  popoverRect: ClientRect;
-  childRect: ClientRect;
-}) => {
+export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 50) => {
   return {
-    top: childRect.top + window.pageYOffset - 50,
+    top: childRect.top + window.pageYOffset - yOffset,
     left: childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,
   };
 };

@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import * as Persistence from 'data/persistence/resource';
+import { createButtonCommandDesc } from 'components/editing/commands/commands';
 import { CommandContext } from 'components/editing/commands/interfaces';
+import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
+import * as Persistence from 'data/persistence/resource';
+import React, { useEffect } from 'react';
 import {
-  toInternalLink,
-  LinkablePages,
   isInternalLink,
+  LinkablePages,
+  toInternalLink,
   translateDeliveryToAuthoring,
 } from './utils';
-import { createButtonCommandDesc } from 'components/editing/commands/commands';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 
 type Props = {
   setEditLink: React.Dispatch<React.SetStateAction<boolean>>;
@@ -90,7 +90,9 @@ export const DisplayLink = (props: Props) => {
       createButtonCommandDesc({
         icon: 'edit',
         description: 'Edit link',
-        execute: () => setEditLink(true),
+        execute: () => {
+          setEditLink(true);
+        },
       }),
     ],
   ];
