@@ -89,6 +89,9 @@ export const convertQuillToJanus = (delta: Delta) => {
           if (op.attributes.italic) {
             style.fontStyle = 'italic';
           }
+          if (op.attributes.size) {
+            style.fontSize = op.attributes.size;
+          }
           if (op.attributes.underline) {
             style.textDecoration = appendToStringProperty('underline', style.textDecoration);
           }
@@ -143,51 +146,124 @@ export const convertQuillToJanus = (delta: Delta) => {
     }
   });
 
-  // console.log('J -> Q', { doc, nodes });
+  console.log('Q -> J', { doc, nodes });
 
   return nodes;
 };
 
-/* const processJanusChildren = (node: JanusMarkupNode, line: Delta) => {
-  node.children.forEach((child) => {
-    if (child.tag === 'span') {
-      const text = child.children.find((c) => c.tag === 'text');
-      const attrs: any = {};
-      if (child.style.fontWeight === 'bold') {
-        attrs.bold = true;
-      }
-      if (child.style.textDecoration === 'underline') {
-        attrs.underline = true;
-      }
-      if (child.style.fontStyle === 'italic') {
-        attrs.italic = true;
-      }
-      if (child.style.color) {
-        attrs.color = child.style.color;
-      }
-      if (text) {
-        line.insert(text.text as string, attrs);
-      }
+const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: any = {}) => {
+  const attrs: any = {};
+  if (node.style?.fontWeight === 'bold') {
+    attrs.bold = true;
+  }
+  if (node.style?.fontSize) {
+    let size = node.style.fontSize;
+    if (typeof size === 'number' || !size.endsWith('px')) {
+      size = `${size}px`;
     }
-  });
+    attrs.size = size;
+  }
+  if (node.style?.textDecoration) {
+    if ((node.style.textDecoration as string).includes('underline')) {
+      attrs.underline = true;
+    }
+    if ((node.style.textDecoration as string).includes('line-through')) {
+      attrs.strike = true;
+    }
+  }
+  if (node.style?.fontStyle === 'italic') {
+    attrs.italic = true;
+  }
+  if (node.style?.color) {
+    attrs.color = node.style.color;
+  }
+  if (node.style?.backgroundColor) {
+    attrs.background = node.style.backgroundColor;
+  }
+  if (node.href) {
+    attrs.link = node.href;
+  }
+  if (node.tag === 'sub') {
+    attrs.script = 'sub';
+  }
+  if (node.tag === 'sup') {
+    attrs.script = 'super';
+  }
+
+  if (node.children && node.children.length && node.children[0].tag === 'text') {
+    const textNode = node.children[0];
+    doc.insert(textNode.text as string, { ...parentAttrs, ...attrs });
+  } else {
+    node.children.forEach((child, index) => {
+      const line = new Delta();
+      if (blockTags.includes(child.tag) || child.style?.textAlign) {
+        if ((child.tag === 'p' && index > 0) || child.tag !== 'p') {
+          const lineAttrs: any = {};
+          if (child.tag.startsWith('h')) {
+            lineAttrs.header = parseInt(child.tag.substring(1), 10);
+          }
+          if (child.tag === 'blockquote') {
+            lineAttrs.blockquote = true;
+          }
+          if (child.tag === 'ol') {
+            parentAttrs.list = 'ordered';
+          }
+          if (child.tag === 'ul') {
+            parentAttrs.list = 'bullet';
+          }
+          if (child.tag === 'li') {
+            lineAttrs.list = parentAttrs.list;
+          }
+          if (child.style?.textAlign) {
+            lineAttrs.align = child.style.textAlign;
+          }
+          line.insert('\n', lineAttrs);
+        }
+      }
+      const childLine = processJanusChildren(child, new Delta(), attrs);
+      doc = line.compose(childLine).compose(doc);
+    });
+  }
+
+  return doc;
 };
 
-const blockTags = ['p', 'blockquote', 'ol', 'ul'];
+const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 
 export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
   let doc = new Delta();
+  const parentAttrs: any = {};
   nodes.forEach((node, index) => {
     const line = new Delta();
-    if (blockTags.includes(node.tag)) {
-      if (index > 0) {
-        line.insert('\n');
+    if (blockTags.includes(node.tag) || node.style?.textAlign) {
+      if ((node.tag === 'p' && index > 0) || node.tag !== 'p') {
+        const attrs: any = {};
+        if (node.tag.startsWith('h')) {
+          attrs.header = parseInt(node.tag.substring(1), 10);
+        }
+        if (node.tag === 'blockquote') {
+          attrs.blockquote = true;
+        }
+        if (node.tag === 'ol') {
+          parentAttrs.list = 'ordered';
+        }
+        if (node.tag === 'ul') {
+          parentAttrs.list = 'bullet';
+        }
+        if (node.tag === 'li') {
+          attrs.list = parentAttrs.list;
+        }
+        if (node.style?.textAlign) {
+          attrs.align = node.style.textAlign;
+        }
+        line.insert('\n', attrs);
       }
     }
-    processJanusChildren(node, line);
-    doc = line.compose(doc);
+    const childLine = processJanusChildren(node, new Delta(), parentAttrs);
+    doc = line.compose(childLine).compose(doc);
   });
 
   console.log('J -> Q', { nodes, doc });
 
   return doc;
-}; */
+};

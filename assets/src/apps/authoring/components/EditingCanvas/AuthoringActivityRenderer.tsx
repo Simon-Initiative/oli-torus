@@ -1,16 +1,21 @@
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
-import { setRightPanelActiveTab } from 'apps/authoring/store/app/slice';
-import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { selectCurrentSelection } from 'apps/authoring/store/parts/slice';
+import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import { ActivityModelSchema } from 'components/activities/types';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 interface AuthoringActivityRendererProps {
   activityModel: ActivityModelSchema;
   editMode: boolean;
+  configEditorId: string;
   onSelectPart?: (partId: string) => Promise<any>;
   onCopyPart?: (part: any) => Promise<any>;
+  onConfigurePart?: (part: any, context: any) => Promise<any>;
+  onCancelConfigurePart?: (partId: string) => Promise<any>;
+  onSaveConfigurePart?: (partId: string) => Promise<any>;
   onPartChangePosition?: (activityId: string, partId: string, dragData: any) => Promise<any>;
+  notificationStream?: { stamp: number; type: NotificationType; payload: any } | null;
 }
 
 // the authoring activity renderer should be capable of handling *any* activity type, not just adaptive
@@ -18,9 +23,14 @@ interface AuthoringActivityRendererProps {
 const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   activityModel,
   editMode,
+  configEditorId,
   onSelectPart,
   onCopyPart,
+  onConfigurePart,
+  onCancelConfigurePart,
+  onSaveConfigurePart,
   onPartChangePosition,
+  notificationStream,
 }) => {
   const dispatch = useDispatch();
   const [isReady, setIsReady] = useState(false);
@@ -32,8 +42,11 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     return null;
   }
 
+  const ref = useRef<any>(null);
+
   const elementProps = {
     id: `activity-${activityModel.id}`,
+    ref,
     model: JSON.stringify(activityModel),
     editMode,
     style: {
@@ -45,8 +58,28 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     },
     authoringContext: JSON.stringify({
       selectedPartId,
+      configurePortalId: configEditorId,
     }),
   };
+
+  const sendNotify = useCallback(
+    (type: NotificationType, payload: any) => {
+      if (ref.current && ref.current.notify) {
+        ref.current.notify(type, payload);
+      }
+    },
+    [ref],
+  );
+
+  useEffect(() => {
+    // the "notificationStream" is a state based way to "push" stuff into the activity
+    // from here it uses the notification system which is an event emitter because
+    // these are web components and not in the same react context, and
+    // in order to send via props as state we would need to stringify the object
+    if (notificationStream?.stamp) {
+      sendNotify(notificationStream.type, notificationStream.payload);
+    }
+  }, [notificationStream]);
 
   useEffect(() => {
     const customEventHandler = async (e: any) => {
@@ -60,6 +93,17 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         if (payload.eventName === 'copyPart' && onCopyPart) {
           result = await onCopyPart(payload.payload.copiedPart);
         }
+        if (payload.eventName === 'configurePart' && onConfigurePart) {
+          result = await onConfigurePart(payload.payload.part, payload.payload.context);
+        }
+        if (payload.eventName === 'saveConfigurePart' && onSaveConfigurePart) {
+          result = await onSaveConfigurePart(payload.payload.partId);
+        }
+        if (payload.eventName === 'cancelConfigurePart' && onCancelConfigurePart) {
+          result = await onCancelConfigurePart(payload.payload.partId);
+        }
+
+        // DEPRECATED
         if (payload.eventName === 'dragPart' && onPartChangePosition) {
           result = await onPartChangePosition(
             payload.payload.activityId,
@@ -67,6 +111,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
             payload.payload.dragData,
           );
         }
+
         if (continuation) {
           continuation(result);
         }
@@ -79,7 +124,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       const target = e.target as HTMLElement;
       if (target?.id === elementProps.id) {
         const { model } = e.detail;
-        console.log('AAR handleActivityEdit', { model });
+        /* console.log('AAR handleActivityEdit', { model }); */
         dispatch(saveActivity({ activity: model }));
         // why were we clearing the selection on edit?...
         // dispatch(setCurrentSelection({ selection: '' }));

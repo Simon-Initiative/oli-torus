@@ -1,8 +1,8 @@
 import Delta from 'quill-delta';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import register from '../customElementWrapper';
-import { convertQuillToJanus } from './quill-utils';
+import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
 interface QuillEditorProps {
   tree: any[];
@@ -10,6 +10,7 @@ interface QuillEditorProps {
   onChange: (changes: any) => void;
   onSave: (contents: any) => void;
   onCancel: () => void;
+  showSaveCancelButtons?: boolean;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -22,6 +23,10 @@ const getFontName = (font: string) => {
 const FontAttributor = Quill.import('attributors/class/font');
 FontAttributor.whitelist = supportedFonts.map(getFontName);
 Quill.register(FontAttributor, true);
+
+const FontSizeAttributor = Quill.import('attributors/style/size');
+FontSizeAttributor.whitelist = ['10px', '12px', '14px', '16px', '18px'];
+Quill.register(FontSizeAttributor, true);
 
 const getCssForFonts = (fonts: string[]) => {
   return fonts
@@ -41,7 +46,34 @@ const getCssForFonts = (fonts: string[]) => {
     .join('\n');
 };
 
-const fontStyles = getCssForFonts(supportedFonts);
+const fontStyles = `${getCssForFonts(supportedFonts)}
+/* default normal size */
+.ql-container {
+  font-size: 14px !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
+  content: 'Smaller (10px)';
+  font-size: 10px !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
+  content: 'Small (12px)';
+  font-size: 12px !important;
+}
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
+  content: 'Normal (14px)';
+  font-size: 14px !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
+  content: 'Large (16px)';
+  font-size: 16px !important;
+}
+
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
+  content: 'Larger (18px)';
+  font-size: 18px !important;
+}
+`;
 
 const customHandlers = {
   adaptivity: function (value: string) {
@@ -61,10 +93,24 @@ const customHandlers = {
   },
 };
 
-const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave, onCancel }) => {
+const QuillEditor: React.FC<QuillEditorProps> = ({
+  tree,
+  html,
+  showSaveCancelButtons = false,
+  onChange,
+  onSave,
+  onCancel,
+}) => {
   const [contents, setContents] = React.useState<any>(tree);
+  const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
 
-  // console.log('[QuillEditor]', { tree, html });
+  console.log('[QuillEditor]', { tree, html });
+
+  useEffect(() => {
+    const convertedTree = convertJanusToQuill(tree);
+    console.log('[QuillEditor] convertedTree', convertedTree);
+    setDelta(convertedTree);
+  }, [tree]);
 
   const handleSave = React.useCallback(() => {
     if (!contents) {
@@ -113,21 +159,26 @@ const QuillEditor: React.FC<QuillEditorProps> = ({ tree, html, onChange, onSave,
                 [{ header: [1, 2, 3, 4, 5, 6, false] }],
 
                 [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-                [{ font: FontAttributor.whitelist }],
+                [
+                  { font: FontAttributor.whitelist },
+                  { size: ['10px', '12px', '14px', '16px', '18px'] },
+                ],
                 [{ align: [] }],
-
                 ['link', 'adaptivity'],
-
                 ['clean'], // remove formatting button
               ],
               handlers: customHandlers,
             },
           }}
-          defaultValue={html}
+          defaultValue={delta}
           onChange={handleQuillChange}
         />
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onCancel}>Cancel</button>
+        {showSaveCancelButtons && (
+          <>
+            <button onClick={handleSave}>Save</button>
+            <button onClick={onCancel}>Cancel</button>
+          </>
+        )}
       </div>
     </React.Fragment>
   );

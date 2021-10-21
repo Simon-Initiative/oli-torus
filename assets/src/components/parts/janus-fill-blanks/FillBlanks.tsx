@@ -92,8 +92,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     top: y,
     left: x,
     width,
-    height,
     zIndex: z, */
+    height,
     borderRadius: '5px',
     fontFamily: 'revert',
   };

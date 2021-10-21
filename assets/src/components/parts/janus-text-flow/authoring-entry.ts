@@ -1,5 +1,6 @@
 import register from '../customElementWrapper';
 import {
+  authoringObservedAttributes,
   customEvents as apiCustomEvents,
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
@@ -15,7 +16,7 @@ import TextFlowAuthor from './TextFlowAuthor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const manifest = require('./manifest.json');
 
-const observedAttributes: string[] = [...apiObservedAttributes, 'editmode', 'configuremode'];
+const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
 const customEvents: any = {
   ...apiCustomEvents,
   onConfigure: 'configure',

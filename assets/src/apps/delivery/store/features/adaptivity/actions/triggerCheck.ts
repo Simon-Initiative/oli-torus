@@ -121,7 +121,7 @@ export const triggerCheck = createAsyncThunk(
 
     const treeActivityIds = currentActivityTree.map((a) => a.id);
     const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
-    handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
+    //handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
     const extrinsicSnapshot = Object.keys(localizedSnapshot).reduce(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');

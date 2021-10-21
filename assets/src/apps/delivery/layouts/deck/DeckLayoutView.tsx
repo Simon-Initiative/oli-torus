@@ -55,7 +55,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
-  const [contentStyles, setContentStyles] = useState<any>({});
+  const [lessonStyles, setLessonStyles] = useState<any>({});
   const enableHistory = useSelector(selectEnableHistory);
   // Background
   const backgroundClasses = ['background'];
@@ -93,12 +93,19 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       setPageClasses([`skin-${pageContent.custom.viewerSkin}`]);
     }
 
-    const contentStyle: any = {
-      // doesn't appear that SS is adding height
-      // height: currentPage.custom?.defaultScreenHeight,
-      width: pageContent.custom?.defaultScreenWidth,
-    };
-    setContentStyles(contentStyle);
+    const lessonWidth = pageContent.custom.defaultScreenWidth || '100%';
+    const lessonHeight = pageContent.custom.defaultScreenHeight;
+    // TODO: add a flag to lesson data use the height?
+    const useLessonHeight = false;
+    setLessonStyles(() => {
+      const styles: any = {
+        width: lessonWidth,
+      };
+      if (useLessonHeight) {
+        styles.height = lessonHeight;
+      }
+      return styles;
+    });
 
     if (pageContent?.custom?.customScript) {
       // apply a custom *janus* script if defined
@@ -396,7 +403,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const actualCurrentActivity = currentActivityTree[currentActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
     const styles: CSSProperties = {
-      width: config?.width || 1300,
+      width: config?.width || lessonStyles.width,
     };
     if (config?.palette) {
       if (config.palette.useHtmlProps) {
@@ -469,7 +476,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         {activities}
       </div>
     );
-  }, [currentActivityTree]);
+  }, [currentActivityTree, lessonStyles]);
 
   useEffect(() => {
     if (!isEnd) {
@@ -505,7 +512,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       />
       <div className={backgroundClasses.join(' ')} style={backgroundStyles} />
       {pageContent ? (
-        <div className="stageContainer columnRestriction" style={contentStyles}>
+        <div className="stageContainer columnRestriction" style={lessonStyles}>
           <InjectedStyles css={pageContent?.customCss} />
           <div id="stage-stage">
             <div className="stage-content-wrapper">{renderActivities()}</div>

@@ -39,13 +39,13 @@ export const schema: JSONSchema7Object = {
 export const uiSchema = {};
 
 export const transformModelToSchema = (model: Partial<ImageModel>) => {
-  console.log('Image Model -> Schema transformer', model);
+  /* console.log('Image Model -> Schema transformer', model); */
   // nothing to do for now
   return model;
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  console.log('Image Schema -> Model transformer', schema);
+  /* console.log('Image Schema -> Model transformer', schema); */
   // nothing to do for now
   return schema;
 };

@@ -27,6 +27,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
+  alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
 
   def browse_enrollments(
@@ -738,6 +739,25 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns a map of publication ids as keys for which updates are in progress for the
+  given section
+
+  ## Examples
+      iex> check_for_updates_in_progress(section)
+      %{1 => true, 3 => true}
+  """
+  def check_for_updates_in_progress(%Section{slug: section_slug}) do
+    Oban.Job
+    |> where([j], j.state in ["available", "executing", "scheduled"])
+    |> where([j], j.queue == "updates")
+    |> where([j], fragment("?->>'section_slug' = ?", j.args, ^section_slug))
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn %Oban.Job{args: %{"publication_id" => publication_id}}, acc ->
+      Map.put_new(acc, publication_id, true)
+    end)
+  end
+
+  @doc """
   Adds a source project to the section pinned to the specified publication.
   """
   def add_source_project(section, project_id, publication_id) do
@@ -906,60 +926,67 @@ defmodule Oli.Delivery.Sections do
         %Section{id: section_id} = section,
         publication_id
       ) do
+    Broadcaster.broadcast_update_progress(section.id, publication_id, 0)
+
     new_publication = Publishing.get_publication!(publication_id)
     project_id = new_publication.project_id
     current_publication = get_current_publication(section_id, project_id)
     current_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
     # generate a diff between the old and new publication
-    case Publishing.diff_publications(current_publication, new_publication) do
-      {{:minor, _version}, _diff} ->
-        # changes are minor, all we need to do is update the spp record and
-        # rebuild the section curriculum based on the current hierarchy
-        update_section_project_publication(section, project_id, publication_id)
-
-        project_publications = get_pinned_project_publications(section_id)
-        rebuild_section_curriculum(section, current_hierarchy, project_publications)
-
-        {:ok}
-
-      {{:major, _version}, diff} ->
-        Repo.transaction(fn ->
-          # changes are major, update the spp record and use the diff to take a "best guess"
-          # strategy for applying structural updates to an existing section's curriculum.
-          # new items will in a container be appended to the container's children
+    result =
+      case Publishing.diff_publications(current_publication, new_publication) do
+        {{:minor, _version}, _diff} ->
+          # changes are minor, all we need to do is update the spp record and
+          # rebuild the section curriculum based on the current hierarchy
           update_section_project_publication(section, project_id, publication_id)
 
-          published_resources_by_resource_id = published_resources_map(new_publication.id)
-
-          %PublishedResource{revision: root_revision} =
-            published_resources_by_resource_id[new_publication.root_resource_id]
-
-          new_hierarchy =
-            Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
-
-          processed_resource_ids = %{}
-
-          {updated_hierarchy, _} =
-            new_hierarchy
-            |> Hierarchy.flatten_hierarchy()
-            |> Enum.reduce(
-              {current_hierarchy, processed_resource_ids},
-              fn node, {hierarchy, processed_resource_ids} ->
-                maybe_process_added_or_changed_node(
-                  {hierarchy, processed_resource_ids},
-                  node,
-                  diff,
-                  new_hierarchy
-                )
-              end
-            )
-
-          # rebuild the section curriculum based on the updated hierarchy
           project_publications = get_pinned_project_publications(section_id)
-          rebuild_section_curriculum(section, updated_hierarchy, project_publications)
-        end)
-    end
+          rebuild_section_curriculum(section, current_hierarchy, project_publications)
+
+          {:ok}
+
+        {{:major, _version}, diff} ->
+          Repo.transaction(fn ->
+            # changes are major, update the spp record and use the diff to take a "best guess"
+            # strategy for applying structural updates to an existing section's curriculum.
+            # new items will in a container be appended to the container's children
+            update_section_project_publication(section, project_id, publication_id)
+
+            published_resources_by_resource_id = published_resources_map(new_publication.id)
+
+            %PublishedResource{revision: root_revision} =
+              published_resources_by_resource_id[new_publication.root_resource_id]
+
+            new_hierarchy =
+              Hierarchy.create_hierarchy(root_revision, published_resources_by_resource_id)
+
+            processed_resource_ids = %{}
+
+            {updated_hierarchy, _} =
+              new_hierarchy
+              |> Hierarchy.flatten_hierarchy()
+              |> Enum.reduce(
+                {current_hierarchy, processed_resource_ids},
+                fn node, {hierarchy, processed_resource_ids} ->
+                  maybe_process_added_or_changed_node(
+                    {hierarchy, processed_resource_ids},
+                    node,
+                    diff,
+                    new_hierarchy
+                  )
+                end
+              )
+
+            # rebuild the section curriculum based on the updated hierarchy
+            project_publications = get_pinned_project_publications(section_id)
+            rebuild_section_curriculum(section, updated_hierarchy, project_publications)
+          end)
+      end
+
+    Broadcaster.broadcast_update_progress(section.id, publication_id, :complete)
+
+    result
   end
 
   @doc """
