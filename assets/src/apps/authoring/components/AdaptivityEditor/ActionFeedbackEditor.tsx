@@ -135,7 +135,10 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           show={showConfirmDelete}
           elementType="Action"
           elementName="this feedback action"
-          deleteHandler={() => onDelete(action)}
+          deleteHandler={() => {
+            onDelete(action);
+            setShowConfirmDelete(false);
+          }}
           cancelHandler={() => {
             setShowConfirmDelete(false);
           }}
