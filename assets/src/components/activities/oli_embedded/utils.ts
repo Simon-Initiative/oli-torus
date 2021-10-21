@@ -5,6 +5,8 @@ import { RichText, ScoringStrategy } from '../types';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {
+    base: "oli_embedded",
+    src: 'index.html',
     modelXml: '<?xml version="1.0" encoding="UTF-8"?>\n' +
       '<!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">\n' +
       '<embed_activity id="dndembed" width="670" height="700">\n' +
@@ -18,7 +20,6 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
       '\t\t<asset name="questions">webcontent/customact/parts1.xml</asset>\n' +
       '\t</assets>\n' +
       '</embed_activity>',
-    resourceUrls: [],
     stem: fromText(''),
     title: 'Embedded activity',
     authoring: {

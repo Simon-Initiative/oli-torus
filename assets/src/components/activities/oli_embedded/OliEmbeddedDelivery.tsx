@@ -69,6 +69,7 @@ const Embedded: React.FC = () => {
 
   // @ts-ignore
   window.adjustIframeHeight = (i,f) => {
+    console.log("the iframe adjust height " + (parseInt(i) + 5) + "px");
     document.querySelector(f).style.height = (parseInt(i) + 5) + "px";
   }
 

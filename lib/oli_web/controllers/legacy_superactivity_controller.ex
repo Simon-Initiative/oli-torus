@@ -22,18 +22,19 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Repo
 
-  def context(conn, %{"attempt_guid" => attempt_guid} = params) do
+  def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
     user = conn.assigns.current_user
 
     activity_attempt =
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
-    #    IO.inspect(Enum.at(activity_attempt.part_attempts, 0), limit: :infinity)
+    %{"base" => base, "src" => src} = activity_attempt.transformed_model
 
     context = %{
       src_url:
-        "https://#{conn.host}/superactivity/#{activity_attempt.revision.activity_type.slug}/index.html",
+#        "https://#{conn.host}/superactivity/#{activity_attempt.revision.activity_type.slug}/index.html",
+         "https://#{conn.host}/superactivity/#{base}/#{src}",
       activity_type: activity_attempt.revision.activity_type.slug,
       server_url: "https://#{conn.host}/jcourse/superactivity/server",
       user_guid: user.id,
@@ -71,6 +72,8 @@ defmodule OliWeb.LegacySuperactivityController do
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
+    %{"base" => base, "src" => src} = activity_attempt.transformed_model
+
     resource_attempt = Attempts.get_resource_attempt_by(id: activity_attempt.resource_attempt_id)
 
     resource_access = Attempts.get_resource_access(resource_attempt.resource_access_id)
@@ -87,14 +90,12 @@ defmodule OliWeb.LegacySuperactivityController do
 
     project = Sections.get_project_by_section_resource(section.id, activity_attempt.resource_id)
     path = "media/" <> project.slug
-    web_content_url = "https://#{Application.fetch_env!(:oli, :media_url)}/#{path}/webcontent/"
+    web_content_url = "https://#{Application.fetch_env!(:oli, :media_url)}/#{path}/"
 
     host_url = "https://#{conn.host}"
 
-    save_file =
-      ActivityLifecycle.get_activity_attempt_save_file(activity_attempt.attempt_guid, activity_attempt.attempt_number)
-
-    IO.inspect("Does the save file exist #{inspect(save_file)}")
+    save_files =
+      ActivityLifecycle.get_activity_attempt_save_files(activity_attempt.attempt_guid, activity_attempt.attempt_number)
 
     %{
       server_time_zone: get_timezone(),
@@ -103,11 +104,13 @@ defmodule OliWeb.LegacySuperactivityController do
       activity_attempt: activity_attempt,
       resource_attempt: resource_attempt,
       resource_access: resource_access,
-      save_file: save_file,
+      save_files: save_files,
       instructors: instructors,
       enrollment: enrollment,
       web_content_url: web_content_url,
-      host_url: host_url
+      host_url: host_url,
+      base: base,
+      src: src
     }
   end
 
@@ -156,7 +159,7 @@ defmodule OliWeb.LegacySuperactivityController do
                context.activity_attempt.attempt_guid,
                seed_state_from_previous
              ) do
-          {:ok, {attempt_state, model}} ->
+          {:ok, {_attempt_state, _model}} ->
             attempt_history(context)
           {:error, _} ->
             {:error, "server error"}
@@ -167,13 +170,15 @@ defmodule OliWeb.LegacySuperactivityController do
   defp process_command(
          command_name,
          context,
-         %{"scoreValue" => score_value, "scoreId" => score_type} = params
+         %{"scoreValue" => score_value, "scoreId" => score_type} = _params
        )
        when command_name === "scoreAttempt" do
+
     # Assumes all custom activities have a single part
     part_attempt = Enum.at(context.activity_attempt.part_attempts, 0)
     #:TODO: oli legacy allows for custom activities to supply arbitrary score types.
-    #Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
+    # Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
+
     #'completed','true'
     #'count','1'
     #'feedback','.false'
@@ -189,6 +194,26 @@ defmodule OliWeb.LegacySuperactivityController do
     #'score','2/2'
     #'status','Submitted'
     #'visited','true'
+
+
+#    case score_type do
+#      "completed" ,'true'
+      #'count','1'
+      #'feedback','.false'
+#      "grade" ->
+      #'percent','0'
+      #'percentScore','100'
+      #'posttest1Score','0'
+      #'posttest2Score','0'
+      #'pretestScore','0'
+      #'problem1Completed','true'
+      #'problem2Completed','true'
+      #'problem3Completed','true'
+      #'score','2/2'
+      #'status','Submitted'
+      #'visited','true'
+#    end
+
     {score, _} = Float.parse(score_value)
 
     {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "some-feedback"})
@@ -233,7 +258,7 @@ defmodule OliWeb.LegacySuperactivityController do
            "fileRecordData" => content,
            "resourceTypeID" => activity_type,
            "mimeType" => mime_type
-         } = params
+         } = _params
        )
        when command_name === "writeFileRecord" do
     {:ok, save_file} =
@@ -247,11 +272,12 @@ defmodule OliWeb.LegacySuperactivityController do
         file_name: file_name
       })
 
-    context = Map.merge(context, %{save_file: save_file})
-
     xml =
       FileRecord.setup(%{
-        context: context
+        context: context,
+        date_created: DateTime.to_unix(save_file.inserted_at),
+        file_name: save_file.file_name,
+        guid: save_file.file_guid
       })
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
@@ -261,16 +287,16 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp process_command(
          command_name,
-         context,
+         _context,
          %{
            "activityContextGuid" => attempt_guid,
            "attemptNumber" => attempt_number,
-         } = params
+           "fileName" => file_name
+         } = _params
        )
        when command_name === "loadFileRecord" do
 
-    save_file = ActivityLifecycle.get_activity_attempt_save_file(attempt_guid, attempt_number)
-
+    save_file = ActivityLifecycle.get_activity_attempt_save_file(attempt_guid, attempt_number, file_name)
 
     case save_file do
       nil -> {:error, "file not found"}
@@ -290,7 +316,7 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command(_command_name, context, _params) do
+  defp process_command(_command_name, _context, _params) do
     {:error, "command not supported"}
   end
 

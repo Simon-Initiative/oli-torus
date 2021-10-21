@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:date_evaluated, :utc_datetime)
     field(:score, :float)
     field(:out_of, :float)
+    field(:custom_scores, :map)
     field(:transformed_model, :map)
 
     belongs_to(:resource, Oli.Resources.Resource)
@@ -26,6 +27,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :attempt_number,
       :score,
       :out_of,
+      :custom_scores,
       :date_evaluated,
       :transformed_model,
       :resource_attempt_id,
