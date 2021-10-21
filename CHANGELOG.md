@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 - Fix an issue with Apply Update button and move content updates to async worker
+- Fix text editor issue where image resizing didn't work from right drag handle
+- Fix text editor issue where link editing tooltip could overlap with formatting toolbar
 
 ### Enhancements
 

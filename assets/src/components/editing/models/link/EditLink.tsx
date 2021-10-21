@@ -29,7 +29,7 @@ export const EditLink = (props: ExistingLinkEditorProps) => {
   };
 
   return (
-    <div className="settings-editor-wrapper" onFocus={(e) => e.preventDefault()}>
+    <div className="settings-editor-wrapper">
       <div className="settings-editor">
         <div className="mb-2 d-flex justify-content-between">
           <div className="d-flex flex-column">
