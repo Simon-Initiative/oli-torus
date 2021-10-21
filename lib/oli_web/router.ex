@@ -108,6 +108,24 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
+  pipeline :delivery_and_admin do
+    plug(Oli.Plugs.GiveAdminPriority)
+    plug(Oli.Plugs.SetCurrentUser)
+
+    plug(PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
+
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
+    plug(Oli.Plugs.RemoveXFrameOptions)
+    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+  end
+
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
     plug(Oli.Plugs.SetCurrentUser)
@@ -570,7 +588,7 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :delivery_protected,
+      :delivery_and_admin,
       :pow_email_layout
     ])
 
