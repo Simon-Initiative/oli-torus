@@ -2,80 +2,52 @@ defmodule OliWeb.Delivery.ManageUpdates do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  import OliWeb.ViewHelpers,
-    only: [
-      is_section_instructor_or_admin?: 2
-    ]
-
   import OliWeb.Delivery.Updates.Utils
 
-  alias Oli.Repo
-  alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias OliWeb.Delivery.Updates.ApplyUpdateModal
 
-  def mount(
-        _params,
-        %{
-          "section" => section,
-          "redirect_after_apply" => redirect_after_apply,
-          "current_user" => current_user,
-          "current_author" => current_author
-        },
-        socket
-      ) do
-    if section.open_and_free do
-      # only permit authoring admin level access
-      if Accounts.is_admin?(current_author) do
-        init_state(socket, section, redirect_after_apply)
-      else
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-      end
-    else
-      # only permit instructor or admin level access
-      current_user = current_user |> Repo.preload([:platform_roles, :author])
-
-      if is_section_instructor_or_admin?(section.slug, current_user) do
-        init_state(socket, section, redirect_after_apply)
-      else
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-      end
-    end
-  end
+  alias OliWeb.Sections.Mount
 
   def mount(
-        %{
-          "section_slug" => product_slug
-        },
-        %{
-          "current_author_id" => current_author_id
-        },
+        params,
+        session,
         socket
       ) do
-    if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(product_slug, current_author_id) do
-      init_state(
-        socket,
-        Sections.get_section_by(slug: product_slug),
-        Routes.live_path(socket, OliWeb.Products.DetailsView, product_slug)
-      )
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
+    section_slug =
+      case is_map(params) and Map.has_key?(params, "section_slug") do
+        false -> Map.get(session, "section").slug
+        true -> Map.get(params, "section_slug")
+      end
+
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {_, _, %Oli.Delivery.Sections.Section{type: :blueprint} = section} ->
+        init_state(
+          socket,
+          section,
+          Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
+        )
+
+      {_, _, section} ->
+        init_state(socket, section, Map.get(session, "redirect_after_apply"))
     end
   end
 
   def init_state(socket, section, redirect_after_apply) do
     updates = Sections.check_for_available_publication_updates(section)
 
-    socket =
-      socket
-      |> assign(:title, "Manage Updates")
-      |> assign(:section, section)
-      |> assign(:updates, updates)
-      |> assign(:modal, nil)
-      |> assign(:redirect_after_apply, redirect_after_apply)
-
-    {:ok, socket}
+    {:ok,
+     assign(socket,
+       title: "Manage Updates",
+       section: section,
+       updates: updates,
+       modal: nil,
+       redirect_after_apply: redirect_after_apply
+     )}
   end
 
   def render(assigns) do

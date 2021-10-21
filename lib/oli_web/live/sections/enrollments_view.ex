@@ -1,9 +1,8 @@
 defmodule OliWeb.Sections.EnrollmentsView do
   use Surface.LiveView
-  alias Oli.Repo
+
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -11,6 +10,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   alias Oli.Delivery.Sections
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
+  alias OliWeb.Sections.Mount
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -19,7 +19,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
     text_search: nil
   }
 
-  prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "Enrollments"
   data section, :any, default: nil
@@ -29,31 +28,28 @@ defmodule OliWeb.Sections.EnrollmentsView do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
-  data is_admin, :boolean
 
-  defp set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
+  def set_breadcrumbs(type, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    |> breadcrumb(section)
   end
 
-  def breadcrumb(previous) do
+  def breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "All Course Sections",
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+          full_title: "Enrollments",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(%{"section_slug" => section_slug}, session, socket) do
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    case Sections.get_section_by(slug: section_slug) do
-      nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
-
-      section ->
+      {type, _, section} ->
         enrollments =
           Sections.browse_enrollments(
             section,
@@ -69,9 +65,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
         {:ok,
          assign(socket,
            changeset: Sections.change_section(section),
-           is_admin: Oli.Accounts.is_admin?(author),
-           breadcrumbs: set_breadcrumbs(),
-           author: author,
+           breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,
            table_model: table_model,

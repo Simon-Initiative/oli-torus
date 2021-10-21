@@ -1,56 +1,56 @@
 defmodule OliWeb.Sections.OverviewView do
   use Surface.LiveView
-  alias Oli.Repo
+
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.{Instructors}
+  alias OliWeb.Sections.Mount
 
-  prop author, :any
+  prop user, :any
   data breadcrumbs, :any
   data title, :string, default: "Section Details"
   data section, :any, default: nil
   data instructors, :list, default: []
-  data is_admin, :boolean
   data updates_count, :integer
 
-  defp set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
+  def set_breadcrumbs(:admin, section) do
+    OliWeb.Sections.SectionsView.set_breadcrumbs()
+    |> breadcrumb(section)
   end
 
-  def breadcrumb(previous) do
+  def set_breadcrumbs(:user, section) do
+    breadcrumb([], section)
+  end
+
+  def breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "All Course Sections",
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+          full_title: "Section Overview",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(%{"section_slug" => section_slug}, session, socket) do
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    case Sections.get_section_by(slug: section_slug) do
-      nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
-
-      section ->
+      {type, user, section} ->
         updates_count =
           Sections.check_for_available_publication_updates(section)
           |> Enum.count()
 
         {:ok,
          assign(socket,
-           is_admin: Oli.Accounts.is_admin?(author),
-           breadcrumbs: set_breadcrumbs(),
+           breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
-           author: author,
+           user: user,
            section: section,
            updates_count: updates_count
          )}

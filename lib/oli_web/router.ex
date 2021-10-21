@@ -123,7 +123,8 @@ defmodule OliWeb.Router do
     plug(OliWeb.EnsureUserNotLockedPlug)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+
+    plug(Oli.Plugs.LayoutBasedOnUser)
   end
 
   pipeline :authoring_protected do

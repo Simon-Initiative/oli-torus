@@ -1,17 +1,14 @@
 defmodule OliWeb.Sections.EditView do
   use Surface.LiveView
-  alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.Properties.{Groups, Group}
-  alias Oli.Accounts.Author
   alias OliWeb.Router.Helpers, as: Routes
-
   alias Oli.Delivery.Sections
   alias OliWeb.Sections.{MainDetails, OpenFreeSettings, LtiSettings, PaywallSettings}
   alias Surface.Components.{Form}
   alias Oli.Branding
+  alias OliWeb.Sections.Mount
 
-  prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "Edit Section Details"
   data section, :any, default: nil
@@ -19,29 +16,27 @@ defmodule OliWeb.Sections.EditView do
   data is_admin, :boolean
   data brands, :list
 
-  defp set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
+  defp set_breadcrumbs(type, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    |> breadcrumb(section)
   end
 
-  def breadcrumb(previous) do
+  def breadcrumb(previous, section) do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "All Course Sections",
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+          full_title: "Edit Section",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
   end
 
-  def mount(%{"section_slug" => section_slug}, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(%{"section_slug" => section_slug}, session, socket) do
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    case Sections.get_section_by(slug: section_slug) do
-      nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
-
-      section ->
+      {type, _, section} ->
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
@@ -50,9 +45,8 @@ defmodule OliWeb.Sections.EditView do
          assign(socket,
            brands: available_brands,
            changeset: Sections.change_section(section),
-           is_admin: Oli.Accounts.is_admin?(author),
-           breadcrumbs: set_breadcrumbs(),
-           author: author,
+           is_admin: type == :admin,
+           breadcrumbs: set_breadcrumbs(type, section),
            section: section
          )}
     end

@@ -31,6 +31,22 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
+  alias OliWeb.Sections.Mount
+
+  def set_breadcrumbs(type, section) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    |> breadcrumb(section)
+  end
+
+  def breadcrumb(previous, section) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Cusomize Content",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+        })
+      ]
+  end
 
   def mount(
         %{
@@ -39,16 +55,23 @@ defmodule OliWeb.Delivery.RemixSection do
         session,
         socket
       ) do
-    section = Sections.get_section_by_slug(section_slug)
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    cond do
-      section.open_and_free ->
-        mount_as_open_and_free(socket, section, session)
+      {:admin, _, section} ->
+        cond do
+          section.open_and_free ->
+            mount_as_open_and_free(socket, section, session)
 
-      section.type == :blueprint ->
-        mount_as_product_creator(socket, section, session)
+          section.type == :blueprint ->
+            mount_as_product_creator(socket, section, session)
 
-      true ->
+          true ->
+            mount_as_instructor(socket, section, session)
+        end
+
+      {:user, _, section} ->
         mount_as_instructor(socket, section, session)
     end
   end
@@ -66,35 +89,30 @@ defmodule OliWeb.Delivery.RemixSection do
       Publishing.available_publications(current_user.author, section.institution)
 
     # only permit instructor or admin level access
-    if is_section_instructor_or_admin?(section.slug, current_user) do
-      init_state(socket,
-        section: section,
-        redirect_after_save: redirect_after_save,
-        available_publications: available_publications
-      )
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
+
+    init_state(socket,
+      breadcrumbs: set_breadcrumbs(:user, section),
+      section: section,
+      redirect_after_save: redirect_after_save,
+      available_publications: available_publications
+    )
   end
 
   def mount_as_open_and_free(
         socket,
         section,
-        %{"current_author_id" => current_author_id} = _session
+        _session
       ) do
-    current_author = Accounts.get_author!(current_author_id)
     redirect_after_save = Routes.open_and_free_path(OliWeb.Endpoint, :show, section)
 
     # only permit authoring admin level access
-    if Accounts.is_admin?(current_author) do
-      init_state(socket,
-        section: section,
-        redirect_after_save: redirect_after_save,
-        available_publications: Publishing.all_available_publications()
-      )
-    else
-      {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
-    end
+
+    init_state(socket,
+      breadcrumbs: set_breadcrumbs(:admin, section),
+      section: section,
+      redirect_after_save: redirect_after_save,
+      available_publications: Publishing.all_available_publications()
+    )
   end
 
   def mount_as_product_creator(
@@ -121,6 +139,7 @@ defmodule OliWeb.Delivery.RemixSection do
     section = Keyword.get(opts, :section)
     hierarchy = DeliveryResolver.full_hierarchy(section.slug)
     redirect_after_save = Keyword.get(opts, :redirect_after_save)
+    breadcrumbs = Keyword.get(opts, :breadcrumbs)
     available_publications = Keyword.get(opts, :available_publications)
     pinned_project_publications = Sections.get_pinned_project_publications(section.id)
 
@@ -149,6 +168,7 @@ defmodule OliWeb.Delivery.RemixSection do
        selected: nil,
        has_unsaved_changes: false,
        modal: nil,
+       breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
        available_publications: available_publications
      )}
