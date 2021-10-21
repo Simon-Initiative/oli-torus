@@ -51,7 +51,7 @@
     position: absolute;
     border: 2px solid rgb(0, 150, 253);
     background-color: rgba(0, 0, 0, 0);
-    z-index: 30;
+    z-index: $z-content-1;
     border-color: rgb(26, 115, 232);
   }
 
@@ -60,7 +60,7 @@
     width: 9px;
     height: 9px;
     font-size: 0px;
-    z-index: 40;
+    z-index: $z-content-2;
     background-color: rgb(26, 115, 232);
     position: absolute;
   }

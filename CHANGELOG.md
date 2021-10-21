@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 - Fix an issue with Apply Update button and move content updates to async worker
+- Fix an issue where the page editor "insert content" toolbar would show in the wrong part of the page if content became too long
+- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 
 ### Enhancements
 

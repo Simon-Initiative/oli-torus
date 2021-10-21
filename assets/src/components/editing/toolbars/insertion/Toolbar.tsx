@@ -61,9 +61,10 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
       <div className="insert-button-container">
         <Popover
           containerClassName="add-resource-popover"
-          onClickOutside={(e: any) => setIsPopoverOpen(false)}
+          onClickOutside={(_e) => setIsPopoverOpen(false)}
           isOpen={isPopoverOpen}
-          align="start"
+          align="center"
+          positions={['bottom']}
           content={
             <div className="hovering-toolbar">
               <div className="btn-group btn-group-vertical btn-group-sm" role="group">
