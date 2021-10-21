@@ -38,6 +38,7 @@ export const inputRef = () => create<InputRef>({ type: 'input_ref' });
 export const popup = () =>
   create<Popup>({
     type: 'popup',
+    trigger: 'hover',
     content: {
       model: [
         create({
@@ -235,9 +236,10 @@ export interface InputRef extends Element, Identifiable {
   type: 'input_ref';
 }
 
+export type PopupTriggerMode = 'hover' | 'click';
 export interface Popup extends Element, Identifiable {
   type: 'popup';
-  trigger: 'hover' | 'click';
+  trigger: PopupTriggerMode;
   content: RichText;
 }
 
@@ -289,11 +291,11 @@ export enum CodeLanguages {
   'clojure',
 }
 
-const toObj = (arr: string[]) =>
-  arr.reduce((p: unknown, c: string) => {
-    (p as any)[c] = true;
+const toObj = (arr: string[]): Record<string, boolean> =>
+  arr.reduce((p, c) => {
+    p[c] = true;
     return p;
-  }, {});
+  }, {} as Record<string, boolean>);
 
 export type SchemaConfig = {
   isVoid: boolean;
@@ -331,7 +333,18 @@ const list = {
   validChildren: toObj(['li', 'ol', 'ul']),
 };
 
-export const schema = {
+interface Schema
+  extends Record<
+    string,
+    {
+      isVoid: boolean;
+      isBlock: boolean;
+      isTopLevel: boolean;
+      validChildren: Record<string, boolean>;
+      isSimpleText?: boolean;
+    }
+  > {}
+export const schema: Schema = {
   p: {
     isVoid: false,
     isBlock: true,
@@ -410,7 +423,7 @@ export const schema = {
   },
   popup: {
     isVoid: false,
-    isBlick: false,
+    isBlock: false,
     isTopLevel: false,
     validChildren: {},
   },

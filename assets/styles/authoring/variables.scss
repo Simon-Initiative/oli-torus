@@ -27,5 +27,7 @@ $font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !de
 // Master z-index list
 // Because of the inherent global nature of z-index, all z-indexes used should be defined and
 // referenced as variables from this file.
+$below-page-content: -1;
+$above-page-content: 1;
 $reposition-target: 999 !default;
 $dropdown-menu: 999 !default;

@@ -8,6 +8,7 @@ import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import * as ContentModel from 'data/content/model';
 import { centeredAbove } from 'data/content/utils';
 import React, { useState } from 'react';
+import { Range } from 'slate';
 import { useFocused, useSelected } from 'slate-react';
 import './Editor.scss';
 
@@ -53,7 +54,9 @@ export const PopupEditor = (props: Props) => {
 
   return (
     <HoveringToolbar
-      isOpen={() => focused && selected}
+      isOpen={() =>
+        focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)
+      }
       showArrow
       target={
         <span

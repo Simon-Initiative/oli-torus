@@ -10,6 +10,7 @@
 ### Enhancements
 
 - New Admin landing page
+- New Popup page element
 
 ## 0.14.0 (2021-10-13)
 
