@@ -49,26 +49,13 @@ defmodule OliWeb.Users.UsersTableModel do
     end
   end
 
-  defp has_value(v) do
-    !is_nil(v) and v != ""
-  end
-
-  def normalize(name, given_name, family_name) do
-    case {has_value(name), has_value(given_name), has_value(family_name)} do
-      {_, true, true} -> "#{family_name}, #{given_name}"
-      {false, false, true} -> family_name
-      {true, _, _} -> name
-      _ -> "Unknown"
-    end
-  end
-
   def render_name_column(
         assigns,
         %{id: id, name: name, given_name: given_name, family_name: family_name},
         _
       ) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{normalize(name, given_name, family_name)}</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{Oli.Utils.normalize_name(name, given_name, family_name)}</a>
     """
   end
 

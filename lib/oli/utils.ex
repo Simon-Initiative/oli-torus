@@ -23,6 +23,10 @@ defmodule Oli.Utils do
     end
   end
 
+  def has_non_empty_value(v) do
+    !is_nil(v) and v != ""
+  end
+
   @doc """
   Renders the specified view template with inner content in the do: block
   """
@@ -91,6 +95,15 @@ defmodule Oli.Utils do
 
       _ ->
         changeset
+    end
+  end
+
+  def normalize_name(name, given_name, family_name) do
+    case {has_non_empty_value(name), has_non_empty_value(given_name), has_non_empty_value(family_name)} do
+      {_, true, true} -> "#{family_name}, #{given_name}"
+      {false, false, true} -> family_name
+      {true, _, _} -> name
+      _ -> "Unknown"
     end
   end
 

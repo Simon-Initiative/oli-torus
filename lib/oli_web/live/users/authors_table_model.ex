@@ -56,9 +56,14 @@ defmodule OliWeb.Users.AuthorsTableModel do
     end
   end
 
-  def render_name_column(assigns, %{name: name, id: id}, _) do
+  def render_name_column(
+        assigns,
+        %{id: id, name: name, given_name: given_name, family_name: family_name},
+        _
+      ) do
     ~F"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{name}</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{Oli.Utils.normalize_name(name, given_name, family_name)}</a>
     """
   end
+
 end

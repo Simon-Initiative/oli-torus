@@ -21,12 +21,14 @@ defmodule Oli.Accounts do
       if options.text_search == "" or is_nil(options.text_search) do
         true
       else
+        text_search = String.trim(options.text_search)
+
         dynamic(
           [s, _],
-          ilike(s.name, ^"%#{options.text_search}%") or
-            ilike(s.email, ^"%#{options.text_search}%") or
-            ilike(s.given_name, ^"%#{options.text_search}%") or
-            ilike(s.family_name, ^"%#{options.text_search}%")
+          ilike(s.name, ^"%#{text_search}%") or
+            ilike(s.email, ^"%#{text_search}%") or
+            ilike(s.given_name, ^"%#{text_search}%") or
+            ilike(s.family_name, ^"%#{text_search}%")
         )
       end
 
@@ -62,12 +64,14 @@ defmodule Oli.Accounts do
       if options.text_search == "" or is_nil(options.text_search) do
         true
       else
+        text_search = String.trim(options.text_search)
+
         dynamic(
           [s, _],
-          ilike(s.name, ^"#{options.text_search}") or
-            ilike(s.email, ^"#{options.text_search}") or
-            ilike(s.given_name, ^"#{options.text_search}") or
-            ilike(s.family_name, ^"#{options.text_search}")
+          ilike(s.name, ^"%#{text_search}%") or
+            ilike(s.email, ^"%#{text_search}%") or
+            ilike(s.given_name, ^"%#{text_search}%") or
+            ilike(s.family_name, ^"%#{text_search}%")
         )
       end
 

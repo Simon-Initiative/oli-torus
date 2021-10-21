@@ -34,7 +34,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def breadcrumb(previous, %Author{id: id} = author) do
     name =
-      OliWeb.Users.UsersTableModel.normalize(author.name, author.given_name, author.family_name)
+      Oli.Utils.normalize_name(author.name, author.given_name, author.family_name)
 
     previous ++
       [

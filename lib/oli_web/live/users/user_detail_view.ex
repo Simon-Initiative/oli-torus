@@ -198,7 +198,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def breadcrumb(previous, %User{id: id} = user) do
-    name = OliWeb.Users.UsersTableModel.normalize(user.name, user.given_name, user.family_name)
+    name = Oli.Utils.normalize_name(user.name, user.given_name, user.family_name)
 
     previous ++
       [
