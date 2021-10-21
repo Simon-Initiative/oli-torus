@@ -64,6 +64,7 @@ assets/yarn.lock
 lib/oli/analytics/test.xml
 .devcontainer
 registrations.json
+seeds.json
 docker-compose.override.yml
 supervisord.log
 supervisord.pid

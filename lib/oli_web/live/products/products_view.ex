@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.ProductsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias OliWeb.Products.Create
   alias OliWeb.Products.Filter
@@ -14,7 +14,7 @@ defmodule OliWeb.Products.ProductsView do
   prop is_admin_view, :boolean
   prop project, :any
   prop author, :any
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Products"})]
+  data breadcrumbs, :any
   data title, :string, default: "Course Products"
 
   data creation_title, :string, default: ""
@@ -59,28 +59,44 @@ defmodule OliWeb.Products.ProductsView do
     end
   end
 
+  defp admin_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Course Products",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
+
   def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
     products = Blueprint.list_for_project(project)
 
-    mount_as(author, false, products, project, socket)
+    mount_as(author, false, products, project, breadcrumb([]), socket)
   end
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
     products = Blueprint.list()
-    mount_as(author, true, products, nil, socket)
+    mount_as(author, true, products, nil, admin_breadcrumbs(), socket)
   end
 
-  defp mount_as(author, is_admin_view, products, project, socket) do
+  defp mount_as(author, is_admin_view, products, project, breadcrumbs, socket) do
     total_count = length(products)
 
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products)
 
     {:ok,
      assign(socket,
+       breadcrumbs: breadcrumbs,
        is_admin_view: is_admin_view,
        author: author,
        project: project,

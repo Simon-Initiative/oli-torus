@@ -100,11 +100,14 @@ const Markup: React.FC<any> = ({
   }
 
   // eslint-disable-next-line
-  if (!children.length && !processedText.trim()) {
+  if (!children.length) {
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
 
-    processedText = processedText.length < 2 ? '\u00a0' : processedText.replace(/ \s/g, '\u00a0 ');
+    processedText =
+      processedText.length < 2 && !processedText.trim()
+        ? '\u00a0'
+        : processedText.replace(/ \s/g, '\u00a0 ');
   } else if (processedText.length !== processedText.trim().length) {
     // check if text has leading and trailing spaces.
     //handling the leading blank spacecs in the span
@@ -146,6 +149,7 @@ const Markup: React.FC<any> = ({
   // TODO: support MathJax
   // TODO: support templating in text
   // TODO: support tables, quotes, definition lists?? form elements???
+
   switch (renderTag) {
     case 'a':
       return (
@@ -244,6 +248,11 @@ const Markup: React.FC<any> = ({
       if (!renderStyles.display) {
         renderStyles.display = 'block';
       }
+      // because of the global injected override .content *
+      // sets line-height: 1.4 for everything
+      if (!renderStyles.lineHeight) {
+        renderStyles.lineHeight = 'normal';
+      }
       //let's not do this for all P tags forces fontSize to be specified
       /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
@@ -281,6 +290,13 @@ const Markup: React.FC<any> = ({
           {processedText}
           {children}
         </code>
+      );
+    case 'blockquote':
+      return (
+        <blockquote ref={el} key={key} className={customCssClass} style={renderStyles}>
+          {processedText}
+          {children}
+        </blockquote>
       );
     case 'ol':
       return (

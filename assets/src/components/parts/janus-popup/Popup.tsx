@@ -228,11 +228,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }, [props.notify]);
 
   const popupStyles: CSSProperties = {
+    width,
+    height,
     /* position: 'absolute',
     top: y,
     left: x,
-    width,
-    height,
     zIndex: z,*/
   };
 
@@ -251,6 +251,15 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       ],
     });
   };
+  useEffect(() => {
+    const popupModalZ = config?.z || 1000;
+    const zIndexIcon = z || 0;
+    const finalZIndex = showPopup ? Math.max(zIndexIcon + popupModalZ, popupModalZ) : zIndexIcon;
+    const modifiedData = { zIndex: { value: finalZIndex } };
+    if (finalZIndex) {
+      props.onResize({ id: `${id}`, settings: modifiedData });
+    }
+  }, [showPopup, model]);
   const handlePartInit = () => {
     return initSnapshot;
   };
@@ -322,7 +331,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   };
 
   if (showPopup) {
-    console.log('SHOW POPUP: ', { model, popupModalStyles });
+    /* console.log('SHOW POPUP: ', { model, popupModalStyles }); */
   }
 
   return ready ? (

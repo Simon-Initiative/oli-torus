@@ -28,8 +28,8 @@ const screenSchema: JSONSchema7 = {
       type: 'object',
       title: 'Dimensions',
       properties: {
-        width: { type: 'number' },
-        height: { type: 'number' },
+        width: { type: 'number', title: 'Width' },
+        height: { type: 'number', title: 'Height' },
       },
     },
     palette: {

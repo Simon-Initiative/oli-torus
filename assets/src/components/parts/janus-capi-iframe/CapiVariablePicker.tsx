@@ -9,6 +9,7 @@ interface StateDisplayProps {
   onChange: (changeOp: ApplyStateOperation) => void;
   onSave: (changeOp: ApplyStateOperation[]) => void;
   onCancel: (changeOp: ApplyStateOperation[]) => void;
+  showSaveCancelButtons?: boolean;
 }
 const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   label,
@@ -16,6 +17,7 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
   onChange,
   onSave,
   onCancel,
+  showSaveCancelButtons = false,
 }) => {
   const [changeOperations, setChangeOperations] = useState<ApplyStateOperation[]>([]);
   const [expandedPanels, setExpandedPanels]: any = useState([]);
@@ -34,14 +36,16 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
 
   return state.length > 0 ? (
     <div>
-      <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
-        <button type="button" className="btn btn-secondary mr-1" onClick={handleCancelChanges}>
-          Cancel
-        </button>
-        <button type="button" className="btn btn-primary ml-1" onClick={handleApplyChanges}>
-          Save
-        </button>
-      </div>
+      {showSaveCancelButtons && (
+        <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
+          <button type="button" className="btn btn-secondary mr-1" onClick={handleCancelChanges}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-primary ml-1" onClick={handleApplyChanges}>
+            Save
+          </button>
+        </div>
+      )}
       <div
         id={`collapseRoot${label}`}
         className={`${expandedPanels[`panel-Root${label}`] ? '' : 'visually-hidden'}`}

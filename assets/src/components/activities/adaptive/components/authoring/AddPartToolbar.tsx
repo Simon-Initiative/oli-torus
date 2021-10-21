@@ -1,8 +1,6 @@
-import { selectPartComponentTypes, selectPaths } from 'apps/authoring/store/app/slice';
 import { AnyPartComponent } from 'components/parts/types/parts';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
 
 interface AddPartToolbarProps {
@@ -16,9 +14,9 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
   priorityTypes = [],
   onAdd,
 }) => {
-  const paths = useSelector(selectPaths);
+  const paths = { images: '/images' }; // TODO: provide context to authoring
   const imgsPath = paths?.images || '';
-  const availablePartComponents = useSelector(selectPartComponentTypes);
+  const availablePartComponents = (window as any)['partComponentTypes'] || []; // TODO: replace with context
 
   const [priorityPartComponents, setPriorityPartComponents] = useState<any[]>([]);
   const [otherPartComponents, setOtherPartComponents] = useState<any[]>([]);
@@ -36,7 +34,7 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
       setShowMorePartsMenu(false);
       setMorePartsMenuTarget(null);
 
-      const partType = availablePartComponents.find((p) => p.slug === partSlug);
+      const partType = availablePartComponents.find((p: any) => p.slug === partSlug);
       if (partType) {
         const PartClass = customElements.get(partType.authoring_element);
         if (PartClass) {
@@ -65,17 +63,17 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
 
   useEffect(() => {
     const filteredByPriority = availablePartComponents
-      .filter((part) => partTypes[0] === '*' || partTypes.includes(part.slug))
-      .filter((part) => priorityTypes.includes(part.slug))
-      .sort((a, b) => {
+      .filter((part: any) => partTypes[0] === '*' || partTypes.includes(part.slug))
+      .filter((part: any) => priorityTypes.includes(part.slug))
+      .sort((a: any, b: any) => {
         const aIndex = priorityTypes.indexOf(a.slug);
         const bIndex = priorityTypes.indexOf(b.slug);
         return aIndex - bIndex;
       });
     setPriorityPartComponents(filteredByPriority);
     const remainder = availablePartComponents
-      .filter((part) => partTypes[0] === '*' || partTypes.includes(part.slug))
-      .filter((part) => !priorityTypes.includes(part.slug));
+      .filter((part: any) => partTypes[0] === '*' || partTypes.includes(part.slug))
+      .filter((part: any) => !priorityTypes.includes(part.slug));
     setOtherPartComponents(remainder);
   }, [availablePartComponents, priorityTypes]);
 

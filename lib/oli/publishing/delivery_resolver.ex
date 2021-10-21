@@ -1,6 +1,7 @@
 defmodule Oli.Publishing.DeliveryResolver do
   import Oli.Timing
   import Ecto.Query, warn: false
+  import Oli.Utils
 
   alias Oli.Repo
   alias Oli.Publishing.Resolver
@@ -186,7 +187,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       |> Repo.all()
       |> Enum.reduce({%{}, nil}, fn {sr, rev, is_root?}, {nodes, root} ->
         node = %HierarchyNode{
-          slug: sr.slug,
+          uuid: uuid(),
           numbering: %Numbering{
             index: sr.numbering_index,
             level: sr.numbering_level
@@ -225,7 +226,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           pr.publication_id in subquery(section_publication_ids(section_slug)) and
             rev.deleted == false and
             fragment("? && ?", rev.children, ^resource_ids),
-        order_by: rev.inserted_at,
+        order_by: [rev.inserted_at, rev.id],
         select: rev
       )
       |> Repo.all()

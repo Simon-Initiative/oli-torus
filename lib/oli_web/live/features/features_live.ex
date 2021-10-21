@@ -8,13 +8,20 @@ defmodule OliWeb.Features.FeaturesLive do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Features
 
+  defp set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
+      [
+        Breadcrumb.new(%{full_title: "Feature Flags"})
+      ]
+  end
+
   def mount(_, _, socket) do
     {:ok,
      assign(socket,
        title: "Feature Flags",
        active: :features,
        features: Features.list_features_and_states(),
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Feature Flags"})]
+       breadcrumbs: set_breadcrumbs()
      )}
   end
 

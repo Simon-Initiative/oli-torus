@@ -191,7 +191,7 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
-    if (name === 'classname') {
+    if (name === 'classname' || name === 'customcssclass') {
       let className = newValue;
       if (this.getAttribute('customcssclass')) {
         const customCssClass = this.getAttribute('customcssclass') as string;
@@ -270,6 +270,7 @@ const register = (
   class CustomElement extends ReactCustomElement {
     static observedAttributes: string[] = [
       'classname',
+      'customcssclass',
       ...(watchedPropNames ||
         Component.observedAttributes ||
         Object.keys(Component.propTypes || {})),

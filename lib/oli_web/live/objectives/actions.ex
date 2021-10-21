@@ -24,9 +24,7 @@ defmodule OliWeb.Objectives.Actions do
 
         <button
           id="delete_<%= @slug %>"
-          disabled
-          <% # disable the ability to delete until #1616 is resolved %>
-          <% # if @can_delete? do "" else "disabled" end %>
+          <%= if @can_delete? do "" else "disabled" end %>
           phx-click="show_delete_modal"
           phx-value-slug="<%= @slug %>"
           data-backdrop="static"

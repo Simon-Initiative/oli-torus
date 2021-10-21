@@ -6,10 +6,53 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Predefined
   alias Oli.Authoring.Course
   alias Oli.Publishing
+  alias OliWeb.Common.{Breadcrumb}
 
   def index(conn, _params) do
     sections = Sections.list_open_and_free_sections()
-    render_workspace_page(conn, "index.html", sections: sections)
+    render_workspace_page(conn, "index.html", sections: sections, breadcrumbs: set_breadcrumbs())
+  end
+
+  def set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Open and Free Sections",
+          link: Routes.open_and_free_path(OliWeb.Endpoint, :index)
+        })
+      ]
+  end
+
+  def edit_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Edit"
+        })
+      ]
+  end
+
+  def new_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "New"
+        })
+      ]
+  end
+
+  def show_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Show"
+        })
+      ]
   end
 
   @doc """
@@ -33,8 +76,6 @@ defmodule OliWeb.OpenAndFreeController do
     source =
       case id do
         "product:" <> id ->
-          IO.inspect(id)
-
           Sections.get_section!(String.to_integer(id))
 
         "publication:" <> id ->
@@ -45,7 +86,12 @@ defmodule OliWeb.OpenAndFreeController do
       end
 
     changeset = Sections.change_section(%Section{open_and_free: true, registration_open: true})
-    render_workspace_page(conn, "new.html", changeset: changeset, source: source)
+
+    render_workspace_page(conn, "new.html",
+      breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+      changeset: changeset,
+      source: source
+    )
   end
 
   defp to_atom_keys(map) do
@@ -90,7 +136,11 @@ defmodule OliWeb.OpenAndFreeController do
             Sections.change_section(%Section{open_and_free: true})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-          render_workspace_page(conn, "new.html", changeset: changeset)
+          render_workspace_page(conn, "new.html",
+            changeset: changeset,
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          )
+
           # Enroll this user with their proper roles (instructor)
       end
     else
@@ -99,7 +149,10 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_section(%Section{open_and_free: true})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-        render_workspace_page(conn, "new.html", changeset: changeset)
+        render_workspace_page(conn, "new.html",
+          changeset: changeset,
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+        )
     end
   end
 
@@ -134,7 +187,10 @@ defmodule OliWeb.OpenAndFreeController do
           |> redirect(to: Routes.open_and_free_path(conn, :show, section))
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render_workspace_page(conn, "new.html", changeset: changeset)
+          render_workspace_page(conn, "new.html",
+            changeset: changeset,
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          )
       end
     else
       _ ->
@@ -142,7 +198,10 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_section(%Section{open_and_free: true})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
 
-        render_workspace_page(conn, "new.html", changeset: changeset)
+        render_workspace_page(conn, "new.html",
+          changeset: changeset,
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+        )
     end
   end
 
@@ -152,15 +211,12 @@ defmodule OliWeb.OpenAndFreeController do
       |> convert_utc_to_section_tz()
 
     updates = Sections.check_for_available_publication_updates(section)
-    render_workspace_page(conn, "show.html", section: section, updates: updates)
-  end
 
-  def remix(conn, %{"id" => id}) do
-    section =
-      Sections.get_section_preloaded!(id)
-      |> convert_utc_to_section_tz()
-
-    render_workspace_page(conn, "remix.html", section: section)
+    render_workspace_page(conn, "show.html",
+      section: section,
+      updates: updates,
+      breadcrumbs: set_breadcrumbs() |> show_breadcrumb()
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -171,6 +227,7 @@ defmodule OliWeb.OpenAndFreeController do
     changeset = Sections.change_section(section)
 
     render_workspace_page(conn, "edit.html",
+      breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: changeset,
       timezones: Predefined.timezones()
@@ -201,6 +258,7 @@ defmodule OliWeb.OpenAndFreeController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_workspace_page(conn, "edit.html",
+          breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
           timezones: Predefined.timezones()

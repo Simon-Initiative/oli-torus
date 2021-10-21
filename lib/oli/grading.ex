@@ -3,6 +3,7 @@ defmodule Oli.Grading do
   Grading is responsible for compiling attempts into usable gradebook representation
   consumable by various tools such as Excel (CSV) or an LMS API.
   """
+  require Logger
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
@@ -70,8 +71,8 @@ defmodule Oli.Grading do
           e -> e
         end
 
-      e ->
-        e |> IO.inspect()
+      {:error, e} ->
+        Logger.error(e)
     end
   end
 

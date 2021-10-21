@@ -168,7 +168,8 @@ export const transformSchemaToModel = (schema: any) => {
   try {
     variables = JSON.parse(schema.CustomLogic.variables);
   } catch (e) {
-    console.warn('could not parse variables', e);
+    // console.warn('could not parse variables', e);
+    // most likely just empty string
   }
 
   return {

@@ -24,6 +24,16 @@ defmodule OliWeb.Delivery.SelectSource do
   @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/2
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
 
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Select Source",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
+
   def filter_rows(socket, filter) do
     case String.downcase(filter) do
       "" ->
@@ -49,10 +59,9 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp retrieve_all_sources() do
     products = Blueprint.list()
-    publications = Oli.Publishing.all_publications()
 
-    filtered =
-      Enum.filter(publications, fn p -> p.published end)
+    free_project_publications =
+      Oli.Publishing.all_available_publications()
       |> then(fn publications ->
         Blueprint.filter_for_free_projects(
           products,
@@ -60,7 +69,7 @@ defmodule OliWeb.Delivery.SelectSource do
         )
       end)
 
-    filtered ++ products
+    free_project_publications ++ products
   end
 
   def mount(_, _, socket) do
@@ -74,6 +83,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
     {:ok,
      assign(socket,
+       breadcrumbs: OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(),
        total_count: total_count,
        table_model: table_model,
        sources: sources

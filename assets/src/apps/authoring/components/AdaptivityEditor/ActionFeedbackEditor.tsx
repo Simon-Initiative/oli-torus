@@ -3,6 +3,7 @@ import ScreenAuthor from 'components/activities/adaptive/components/authoring/Sc
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import guid from 'utils/guid';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;
@@ -19,6 +20,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   const uuid = guid();
 
   const [feedback, setFeedback] = useState<any>(action.params?.feedback || {});
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   useEffect(() => {
     setFeedback(action.params?.feedback || {});
@@ -64,7 +66,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
   }, [feedback]);
 
   const handleScreenAuthorChange = (screen: any) => {
-    console.log('ActionFeedbackEditor Screen Author Change', { screen });
+    // console.log('ActionFeedbackEditor Screen Author Change', { screen });
     setFeedback(screen);
   };
 
@@ -89,8 +91,10 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           className="form-control form-control-sm"
           id={`action-feedback-${uuid}`}
           placeholder="Enter feedback"
+          disabled={false}
+          onClick={handleShowFeedbackClick}
           value={fakeFeedback}
-          onChange={(e) => setFakeFeedback(e.target.value)}
+          // onChange={(e) => setFakeFeedback(e.target.value)}
           // onBlur={(e) => handleTargetChange(e)}
           title={fakeFeedback}
         />
@@ -105,7 +109,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
@@ -126,6 +130,17 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           </button>
         </Modal.Footer>
       </Modal>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Action"
+          elementName="this feedback action"
+          deleteHandler={() => onDelete(action)}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };

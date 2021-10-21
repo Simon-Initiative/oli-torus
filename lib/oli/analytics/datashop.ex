@@ -52,8 +52,9 @@ defmodule Oli.Analytics.Datashop do
   defp create_messages(project_id) do
     project = Course.get_project!(project_id)
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+    dataset_name = Utils.make_dataset_name(project.slug)
 
-    Attempts.get_part_attempts_and_users_for_publication(publication.id)
+    Attempts.get_part_attempts_and_users(project.id)
     |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
       context = %{
@@ -61,7 +62,7 @@ defmodule Oli.Analytics.Datashop do
         email: email,
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
-        dataset_name: Utils.make_dataset_name(project.slug),
+        dataset_name: dataset_name,
         part_attempt: hd(part_attempts),
         publication: publication,
         # a map of resource ids to published revision
@@ -82,8 +83,7 @@ defmodule Oli.Analytics.Datashop do
                   transaction_id: Utils.make_unique_id(activity_slug, part_id),
                   part_attempt: part_attempt,
                   skill_ids:
-                    part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] ||
-                      [],
+                    part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || [],
                   total_hints_available:
                     Utils.total_hints_available(get_part_from_attempt(part_attempt))
                 }

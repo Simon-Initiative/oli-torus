@@ -4,6 +4,33 @@ defmodule OliWeb.RegistrationController do
   alias Oli.Institutions
   alias Oli.Lti_1p3.Tool.Registration
   alias Oli.Branding
+  alias OliWeb.Common.{Breadcrumb}
+
+  def root_breadcrumbs(institution_id, action, name) do
+    OliWeb.InstitutionController.root_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Registrations",
+          link: Routes.institution_registration_path(OliWeb.Endpoint, action, institution_id)
+        }),
+        Breadcrumb.new(%{
+          full_title: name
+        })
+      ]
+  end
+
+  def edit_breadcrumbs(institution_id, id) do
+    OliWeb.InstitutionController.root_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Registrations",
+          link: Routes.institution_registration_path(OliWeb.Endpoint, :edit, institution_id, id)
+        }),
+        Breadcrumb.new(%{
+          full_title: "Edit"
+        })
+      ]
+  end
 
   def available_brands(institution_id) do
     institution = Institutions.get_institution!(institution_id)
@@ -33,6 +60,7 @@ defmodule OliWeb.RegistrationController do
 
     render(conn, "new.html",
       changeset: changeset,
+      breadcrumbs: root_breadcrumbs(institution_id, :create, "New"),
       institution_id: institution_id,
       available_brands: available_brands(institution_id),
       title: "Create Registration"
@@ -56,6 +84,7 @@ defmodule OliWeb.RegistrationController do
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html",
           changeset: changeset,
+          breadcrumbs: root_breadcrumbs(institution_id, :create, "New"),
           institution_id: institution_id,
           available_brands: available_brands(institution_id),
           title: "Create Registration"
@@ -69,6 +98,7 @@ defmodule OliWeb.RegistrationController do
 
     render(conn, "edit.html",
       registration: registration,
+      breadcrumbs: edit_breadcrumbs(institution_id, id),
       changeset: changeset,
       institution_id: institution_id,
       available_brands: available_brands(institution_id),
@@ -91,6 +121,7 @@ defmodule OliWeb.RegistrationController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
+          breadcrumbs: edit_breadcrumbs(institution_id, id),
           registration: registration,
           changeset: changeset,
           institution_id: institution_id,

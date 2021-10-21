@@ -77,7 +77,8 @@ config :oli,
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
-  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
@@ -118,6 +119,19 @@ case System.get_env("LOG_LEVEL", nil) do
   log_level ->
     config :logger, level: String.to_atom(log_level)
 end
+
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate
 
 # ## Using releases (Elixir v1.9+)
 #

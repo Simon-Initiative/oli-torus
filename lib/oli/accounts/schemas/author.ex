@@ -39,6 +39,9 @@ defmodule Oli.Accounts.Author do
     many_to_many :sections, Oli.Delivery.Sections.Section,
       join_through: Oli.Delivery.Sections.AuthorsSections
 
+    field :collaborations_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
@@ -76,7 +79,8 @@ defmodule Oli.Accounts.Author do
       :picture,
       :system_role_id,
       :locked_at,
-      :email_confirmed_at
+      :email_confirmed_at,
+      :email_confirmation_token
     ])
     |> cast_embed(:preferences)
     |> default_system_role()

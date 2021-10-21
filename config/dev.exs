@@ -16,7 +16,8 @@ config :oli,
   problematic_query_detection:
     from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
-  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL")
+  slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
 # Configure your database
 config :oli, Oli.Repo,
@@ -127,7 +128,19 @@ config :oli, OliWeb.Endpoint,
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
-config :logger, truncate: :infinity
+
+truncate =
+  System.get_env("LOGGER_TRUNCATE", "8192")
+  |> String.downcase()
+  |> case do
+    "infinity" ->
+      :infinity
+
+    val ->
+      String.to_integer(val)
+  end
+
+config :logger, truncate: truncate
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

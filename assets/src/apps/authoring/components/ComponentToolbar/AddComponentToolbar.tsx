@@ -31,7 +31,7 @@ const AddComponentToolbar: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
   const copiedPart = useSelector(selectCopiedPart);
-  console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
+  // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
@@ -48,7 +48,7 @@ const AddComponentToolbar: React.FC = () => {
       clonedActivity.authoring.parts.push(partIdentifier);
       clonedActivity.content.partsLayout.push(newPartData);
 
-      console.log('adding new part', { newPartData, clonedActivity, currentSequence });
+      /* console.log('adding new part', { newPartData, clonedActivity, currentSequence }); */
       dispatch(saveActivity({ activity: clonedActivity }));
     }
   };

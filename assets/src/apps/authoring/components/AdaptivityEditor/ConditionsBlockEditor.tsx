@@ -6,6 +6,7 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import ConditionItemEditor from './ConditionItemEditor';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 export interface JanusConditionProperties extends ConditionProperties {
   id: string;
@@ -102,6 +103,9 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   const [blockType, setBlockType] = useState<AnyOrAll>(type);
   const [conditions, setConditions] = useState<JanusNestedCondition[]>(rootConditions || []);
   const [loopIndex, setLoopIndex] = useState<number>(index);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+  const [conditionToDelete, setConditionToDelete] = useState<any>(undefined);
+  const [loopIndexToDelete, setLoopIndexToDelete] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     setLoopIndex(index + 1);
@@ -119,7 +123,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
   }, [type, rootConditions]);
 
   useEffect(() => {
-    console.log('CONDITIONS/BT CHANGE EFFECT', { blockType, conditions });
+    /* console.log('CONDITIONS/BT CHANGE EFFECT', { blockType, conditions }); */
     onChange({ [blockType]: conditions });
   }, [conditions, blockType]);
 
@@ -190,7 +194,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         }
       }
     });
-    console.log('[handleConditionItemChange]', { changes, condition, updatedConditions });
+    /* console.log('[handleConditionItemChange]', { changes, condition, updatedConditions }); */
     setConditions(updatedConditions);
   };
 
@@ -207,7 +211,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
         }
       }
     });
-    console.log('[handleSubBlockChange]', { condition, changes, updatedConditions });
+    /* console.log('[handleSubBlockChange]', { condition, changes, updatedConditions }); */
     setConditions(updatedConditions);
   };
 
@@ -290,7 +294,11 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   <span>
                     <button
                       className="btn btn-link p-0"
-                      onClick={() => handleDeleteCondition({ id: 'root' }, loopIndex)}
+                      onClick={() => {
+                        setShowConfirmDelete(true);
+                        setConditionToDelete({ id: 'root' });
+                        setLoopIndexToDelete(loopIndex);
+                      }}
                     >
                       <i className="fa fa-trash-alt" />
                     </button>
@@ -310,7 +318,10 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                   <span>
                     <button
                       className="btn btn-link p-0"
-                      onClick={() => handleDeleteCondition({ id: 'root' })}
+                      onClick={() => {
+                        setShowConfirmDelete(true);
+                        setConditionToDelete({ id: 'root' });
+                      }}
                     >
                       <i className="fa fa-trash-alt" />
                     </button>
@@ -412,6 +423,27 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
           )}
         </div>
       </div>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType={`${loopIndexToDelete ? 'Condition Group' : 'All Conditions'}`}
+          elementName={`${loopIndexToDelete ? 'this condition group' : 'all conditions'}`}
+          deleteHandler={() => {
+            handleDeleteCondition(
+              conditionToDelete,
+              loopIndexToDelete ? loopIndexToDelete : undefined,
+            );
+            setShowConfirmDelete(false);
+            setConditionToDelete(undefined);
+            setLoopIndexToDelete(undefined);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+            setConditionToDelete(undefined);
+            setLoopIndexToDelete(undefined);
+          }}
+        />
+      )}
     </div>
   );
 };

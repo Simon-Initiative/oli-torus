@@ -31,8 +31,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
   end
 
   @doc false
-  def changeset(section, attrs) do
-    section
+  def changeset(section_resource, attrs) do
+    section_resource
     |> cast(attrs, [
       :numbering_index,
       :numbering_level,
@@ -49,6 +49,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :project_id,
       :section_id
     ])
+    |> unique_constraint([:section_id, :resource_id])
   end
 
   def to_map(%SectionResource{} = section_resource) do

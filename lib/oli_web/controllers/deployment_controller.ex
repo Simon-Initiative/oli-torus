@@ -3,6 +3,24 @@ defmodule OliWeb.DeploymentController do
 
   alias Oli.Institutions
   alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias OliWeb.Common.{Breadcrumb}
+
+  def root_breadcrumbs(institution_id, name) do
+    OliWeb.InstitutionController.root_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Registrations",
+          link: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
+        }),
+        Breadcrumb.new(%{
+          full_title: "Deployments",
+          link: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
+        }),
+        Breadcrumb.new(%{
+          full_title: name
+        })
+      ]
+  end
 
   def new(conn, %{"institution_id" => institution_id, "registration_id" => registration_id}) do
     changeset = Institutions.change_deployment(%Deployment{registration_id: registration_id})
@@ -11,6 +29,7 @@ defmodule OliWeb.DeploymentController do
       changeset: changeset,
       institution_id: institution_id,
       registration_id: registration_id,
+      breadcrumbs: root_breadcrumbs(institution_id, "New"),
       title: "Create Deployment"
     )
   end
@@ -35,6 +54,7 @@ defmodule OliWeb.DeploymentController do
           changeset: changeset,
           institution_id: institution_id,
           registration_id: registration_id,
+          breadcrumbs: root_breadcrumbs(institution_id, "New"),
           title: "Create Deployment"
         )
     end
@@ -53,6 +73,7 @@ defmodule OliWeb.DeploymentController do
       changeset: changeset,
       institution_id: institution_id,
       registration_id: registration_id,
+      breadcrumbs: root_breadcrumbs(institution_id, "Edit"),
       title: "Edit Deployment"
     )
   end
@@ -76,6 +97,7 @@ defmodule OliWeb.DeploymentController do
           deployment: deployment,
           changeset: changeset,
           institution_id: institution_id,
+          breadcrumbs: root_breadcrumbs(institution_id, "Edit"),
           registration_id: registration_id,
           title: "Edit Deployment"
         )
