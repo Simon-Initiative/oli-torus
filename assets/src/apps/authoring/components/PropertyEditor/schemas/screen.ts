@@ -30,12 +30,6 @@ const screenSchema: JSONSchema7 = {
       properties: {
         width: { type: 'number', title: 'Width' },
         height: { type: 'number', title: 'Height' },
-        applyScreenHeight: {
-          type: 'boolean',
-          title: 'Apply Height',
-          default: false,
-          description: 'If checked, the height will be applied, otherwise auto.',
-        },
       },
     },
     palette: {
@@ -171,7 +165,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
     return {
       ...data,
       title: activity?.title || '',
-      Size: { width: data.width, height: data.height, applyScreenHeight: !!data.applyScreenHeight },
+      Size: { width: data.width, height: data.height },
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
@@ -184,7 +178,6 @@ export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> 
     title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
-    applyScreenHeight: schema.Size.applyScreenHeight,
     customCssClass: schema.customCssClass,
     combineFeedback: schema.combineFeedback,
     showCheckBtn: schema.checkButton.showCheckBtn,

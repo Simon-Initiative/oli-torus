@@ -262,6 +262,12 @@ const RightMenu: React.FC<any> = () => {
     debounce(
       (properties, partInstance, origActivity, origId) => {
         let modelChanges = properties;
+
+        // do not allow saving of bad ID
+        if (!modelChanges.id || !modelChanges.id.trim()) {
+          modelChanges.id = origId;
+        }
+
         modelChanges = transformPartSchemaToModel(modelChanges);
         if (partInstance && partInstance.transformSchemaToModel) {
           modelChanges.custom = {
