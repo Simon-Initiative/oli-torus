@@ -1,4 +1,4 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import {
@@ -24,7 +24,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
 
   const [fact, setFact] = useState<string>(condition.fact);
   const [targetType, setTargetType] = useState<CapiVariableTypes>(
-    condition.type || CapiVariableTypes.STRING,
+    condition.type || getCapiType(condition.value),
   );
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
@@ -86,7 +86,9 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   useEffect(() => {
     // when the targetType is manually changed, we may need to also set the operator
     setTimeout(() => {
-      const updatedOperator = getFilteredConditionOperatorOptions()[0].value;
+      const filteredOperations = getFilteredConditionOperatorOptions();
+      const operatorInList = filteredOperations.find((option) => option.value === operator);
+      const updatedOperator = operatorInList ? operatorInList.value : filteredOperations[0].value;
       if (updatedOperator === operator) {
         return;
       }
