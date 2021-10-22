@@ -5,15 +5,16 @@ import { AudioModel } from './schema';
 const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
   const { id, model } = props;
 
-  const { x, y, z, width, src } = model;
+  const { x, y, z, width, src, height } = model;
   const styles: CSSProperties = {
     cursor: 'pointer',
-    width,
+    width: '100%',
     outline: 'none',
-    height: '100%',
+    height,
     borderRadius: '25px',
     border: '1px solid #ccc!important',
     background: 'whitesmoke',
+    textAlign: 'center',
   };
 
   useEffect(() => {
@@ -22,9 +23,17 @@ const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
   }, []);
 
   return (
-    <div data-janus-type={tagName} className="audioPlayer" style={styles}>
-      <i className="fas fa-play" style={{ padding: '8px' }}></i>
-      <i className="fas fa-ellipsis-v" style={{ float: 'right', padding: '8px' }}></i>
+    <div data-janus-type={tagName} style={styles}>
+      <style>
+        {`
+          .fa-play, .fa-ellipsis-v {
+            top: calc(50% - 10px);
+            position: relative;
+          }
+        `}
+      </style>
+      <i className="fas fa-play fa-lg" style={{ float: 'left', paddingLeft: 5 }}></i>
+      <i className="fas fa-ellipsis-v fa-lg" style={{ float: 'right', paddingRight: 5 }}></i>
     </div>
   );
 };
