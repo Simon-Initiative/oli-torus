@@ -17,9 +17,11 @@ import {
 } from 'components/activities/types';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
+  CheckResults,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
   selectInitStateFacts,
@@ -277,6 +279,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CHECK_STARTED, { ts: lastCheckTriggered });
   }, [lastCheckTriggered]);
 
+  const notifyCheckComplete = async (results: CheckResults) => {
+    if (!ref.current) {
+      return;
+    }
+    const { snapshot } = await onRequestLatestState();
+    const payload = { ...clone(results), snapshot };
+    setCheckInProgress(false);
+    ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
+  };
+
   useEffect(() => {
     if (checkInProgress && lastCheckResults && lastCheckResults.timestamp === lastCheckTriggered) {
       /* console.log('AR Check Effect', { lastCheckTriggered, lastCheckResults }); */
@@ -284,8 +296,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
       }
-      ref.current.notify(NotificationType.CHECK_COMPLETE, lastCheckResults);
-      setCheckInProgress(false);
+      notifyCheckComplete(lastCheckResults);
     }
   }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
 

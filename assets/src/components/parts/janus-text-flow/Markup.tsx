@@ -1,5 +1,5 @@
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
-import { evalScript } from 'adaptivity/scripting';
+import { evalScript, getAssignScript } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
 import guid from 'utils/guid';
@@ -27,14 +27,19 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
     return text;
   }
   innerEnv = evalScript(janus_std, innerEnv).env;
+  try {
+    const stateAssignScript = getAssignScript(state, innerEnv);
+    evalScript(stateAssignScript, innerEnv);
+  } catch (e) {
+    console.warn('[Markup] error injecting state into env', { e, state, innerEnv });
+  }
   console.log('templatizeText', { text, state, vars });
   let templatizedText = text;
 
   // check for state items that were included in the string
   const vals = vars.map((v) => {
-    // TODO: evaluate expressions?
     let stateValue = state[v];
-    if (!stateValue) {
+    if (!stateValue || typeof stateValue === 'object') {
       try {
         const result = evalScript(v, innerEnv);
         console.log('trying to eval text', { v, result });
@@ -43,22 +48,14 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
           stateValue = result.result;
         }
       } catch (e) {
-        // TODO: ignore?
+        // ignore?
         console.log('error evaluating text', { v, e });
       }
     }
     if (!stateValue) {
       return;
     }
-    return Array.isArray(stateValue) ? stateValue.join(' ') : stateValue;
-    /* const stateItem = state.find((item: any) => item.id === v);
-    if (!stateItem) {
-      return;
-    }
-    // return stateItem or stateItem.value if set
-    return !!stateItem?.value && Array.isArray(stateItem.value)
-      ? stateItem?.value?.join(' ')
-      : stateItem.value; */
+    return typeof stateValue === 'object' ? JSON.stringify(stateValue) : stateValue;
   });
 
   vars.forEach((v, index) => {
