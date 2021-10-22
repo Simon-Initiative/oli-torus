@@ -254,9 +254,9 @@ const Markup: React.FC<any> = ({
         renderStyles.lineHeight = 'normal';
       }
       //let's not do this for all P tags forces fontSize to be specified
-      /* if (!renderStyles.fontSize) {
+      if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
-      } */
+      }
       return (
         <p ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
