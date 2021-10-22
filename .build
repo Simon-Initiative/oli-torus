@@ -152,6 +152,7 @@ Oli.Delivery.Page.ObjectivesRollup.html
 Oli.Delivery.Page.PageContext.html
 Oli.Delivery.Paywall.Discount.html
 Oli.Delivery.Paywall.Payment.html
+Oli.Delivery.Paywall.Providers.Cashnet.html
 Oli.Delivery.Paywall.Providers.Stripe.html
 Oli.Delivery.Paywall.html
 Oli.Delivery.Sections.AuthorsSections.html
@@ -159,6 +160,7 @@ Oli.Delivery.Sections.Blueprint.html
 Oli.Delivery.Sections.Browse.html
 Oli.Delivery.Sections.BrowseOptions.html
 Oli.Delivery.Sections.Enrollment.html
+Oli.Delivery.Sections.EnrollmentBrowseOptions.html
 Oli.Delivery.Sections.Section.html
 Oli.Delivery.Sections.SectionResource.html
 Oli.Delivery.Sections.SectionVisibility.html
@@ -214,6 +216,8 @@ Oli.PartComponents.html
 Oli.Plugs.AuthorizeProject.html
 Oli.Plugs.EnforcePaywall.html
 Oli.Plugs.EnsureAdmin.html
+Oli.Plugs.GiveAdminPriority.html
+Oli.Plugs.LayoutBasedOnUser.html
 Oli.Plugs.LoadTestingCSRFBypass.html
 Oli.Plugs.MaybeEnrollOpenAndFreeUser.html
 Oli.Plugs.NoCache.html
@@ -373,6 +377,7 @@ OliWeb.Common.Properties.Group.html
 OliWeb.Common.Properties.Groups.html
 OliWeb.Common.Properties.ReadOnly.html
 OliWeb.Common.Properties.Utils.html
+OliWeb.Common.Properties.WideGroup.html
 OliWeb.Common.SortableTable.Table.html
 OliWeb.Common.SortableTable.TableHandlers.html
 OliWeb.Common.Table.ColumnSpec.html
@@ -380,6 +385,7 @@ OliWeb.Common.Table.Common.html
 OliWeb.Common.Table.SortableTable.html
 OliWeb.Common.Table.SortableTableModel.html
 OliWeb.Common.TextSearch.html
+OliWeb.Common.Utils.html
 OliWeb.CookieConsentController.html
 OliWeb.Curriculum.Actions.html
 OliWeb.Curriculum.ActivityDelta.html
@@ -401,6 +407,7 @@ OliWeb.Delivery.Remix.DropTarget.html
 OliWeb.Delivery.Remix.Entry.html
 OliWeb.Delivery.Remix.RemoveModal.html
 OliWeb.Delivery.RemixSection.html
+OliWeb.Delivery.Sections.EnrollmentsTableModel.html
 OliWeb.Delivery.SelectSource.TableModel.html
 OliWeb.Delivery.SelectSource.html
 OliWeb.Delivery.Updates.ApplyUpdateModal.html
@@ -524,6 +531,15 @@ OliWeb.Router.Helpers.html
 OliWeb.Router.PowExtensionRouter.html
 OliWeb.Router.html
 OliWeb.SectionUserStateChannel.html
+OliWeb.Sections.EditView.html
+OliWeb.Sections.EnrollmentsView.html
+OliWeb.Sections.Instructors.html
+OliWeb.Sections.LtiSettings.html
+OliWeb.Sections.MainDetails.html
+OliWeb.Sections.Mount.html
+OliWeb.Sections.OpenFreeSettings.html
+OliWeb.Sections.OverviewView.html
+OliWeb.Sections.PaywallSettings.html
 OliWeb.Sections.SectionsTableModel.html
 OliWeb.Sections.SectionsView.html
 OliWeb.SetLiveCSRF.html
@@ -553,8 +569,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-24ed017f5f.js
-dist/sidebar_items-1543aef5e4.js
+dist/search_items-863e837fc9.js
+dist/sidebar_items-9afe4d194e.js
 index.html
 license.html
 readme.html
