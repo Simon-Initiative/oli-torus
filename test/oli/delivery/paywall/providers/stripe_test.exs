@@ -27,6 +27,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
           title: "1",
           timezone: "1",
           registration_open: true,
+          grace_period_days: 1,
           context_id: "1",
           institution_id: map.institution.id,
           base_project_id: map.project.id
@@ -43,6 +44,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
           timezone: "1",
           registration_open: true,
           has_grace_period: false,
+          grace_period_days: 1,
           context_id: "1",
           start_date: DateTime.add(DateTime.utc_now(), -5),
           end_date: DateTime.add(DateTime.utc_now(), 5),
