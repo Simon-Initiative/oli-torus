@@ -100,7 +100,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       textValue,
       checked: e.target.checked,
     };
-    onSelected(selection);
+    if (onSelected) {
+      onSelected(selection);
+    }
   };
 
   return (
