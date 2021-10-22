@@ -542,6 +542,7 @@ OliWeb.Sections.OverviewView.html
 OliWeb.Sections.PaywallSettings.html
 OliWeb.Sections.SectionsTableModel.html
 OliWeb.Sections.SectionsView.html
+OliWeb.Sections.UnlinkSection.html
 OliWeb.SetLiveCSRF.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
@@ -569,8 +570,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-863e837fc9.js
-dist/sidebar_items-9afe4d194e.js
+dist/search_items-5588d4706e.js
+dist/sidebar_items-40f96807ff.js
 index.html
 license.html
 readme.html
