@@ -44,6 +44,7 @@ defmodule OliWeb.LayoutView do
   def additional_stylesheets(assigns) do
     Map.get(assigns, :additional_stylesheets, [])
     |> Enum.filter(fn url -> String.valid?(url) end)
+    |> Enum.map(fn url -> String.trim(url, " ") end)
     |> Enum.map(&URI.encode(&1))
     |> Enum.map(fn url -> "\n<link rel=\"stylesheet\" href=\"#{url}\">" end)
     |> raw()
