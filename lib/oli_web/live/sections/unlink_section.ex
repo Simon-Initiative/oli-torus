@@ -1,6 +1,5 @@
 defmodule OliWeb.Sections.UnlinkSection do
   use Surface.Component
-  alias OliWeb.Router.Helpers, as: Routes
 
   prop section, :struct, required: true
   prop unlink, :event, required: true
