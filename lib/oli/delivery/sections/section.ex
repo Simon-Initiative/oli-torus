@@ -147,7 +147,7 @@ defmodule Oli.Delivery.Sections.Section do
   def has_grace_period?(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
-        get_field(changeset, :has_grace_period)
+        get_field(changeset, :has_grace_period) and get_field(changeset, :requires_payment)
 
       _ ->
         false
