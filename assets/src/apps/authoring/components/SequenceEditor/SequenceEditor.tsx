@@ -6,6 +6,7 @@ import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
 import { setCurrentRule, setRightPanelActiveTab } from '../../../authoring/store/app/slice';
 import {
+  selectAllActivities,
   selectCurrentActivity,
   upsertActivity,
 } from '../../../delivery/store/features/activities/slice';
@@ -36,6 +37,7 @@ const SequenceEditor: React.FC<any> = () => {
   const sequence = useSelector(selectSequence);
   const currentGroup = useSelector(selectCurrentGroup);
   const currentActivity = useSelector(selectCurrentActivity);
+  const allActivities = useSelector(selectAllActivities);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
@@ -56,6 +58,22 @@ const SequenceEditor: React.FC<any> = () => {
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   };
 
+  const addNewSequence = async (newSequenceEntry: any, siblingId: any) => {
+    await dispatch(
+      addSequenceItem({
+        sequence: sequence,
+        item: newSequenceEntry,
+        group: currentGroup,
+        siblingId: siblingId,
+        // parentId: TODO attach parentId if it exists
+      }),
+    );
+
+    dispatch(setCurrentActivityFromSequence(newSequenceEntry.custom.sequenceId));
+
+    // will write the current groups
+    await dispatch(savePage());
+  };
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
     isLayer = false,
@@ -103,21 +121,7 @@ const SequenceEditor: React.FC<any> = () => {
     };
 
     await dispatch(upsertActivity({ activity: reduxActivity }));
-
-    await dispatch(
-      addSequenceItem({
-        sequence: sequence,
-        item: newSequenceEntry,
-        group: currentGroup,
-        siblingId: currentActivity?.activitySlug,
-        // parentId: TODO attach parentId if it exists
-      }),
-    );
-
-    dispatch(setCurrentActivityFromSequence(newSequenceEntry.custom.sequenceId));
-
-    // will write the current groups
-    await dispatch(savePage());
+    addNewSequence(newSequenceEntry, currentActivity?.activitySlug);
   };
 
   enum ReorderDirection {
@@ -289,6 +293,38 @@ const SequenceEditor: React.FC<any> = () => {
     await dispatch(savePage());
   };
 
+  const handleItemCopy = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
+    console.log(item);
+    const hierarchyCopy = clone(hierarchy);
+    console.log(hierarchyCopy);
+    const newTitle = `Copy of ${item.custom.sequenceName}`;
+    const { payload: newActivity } = await dispatch<any>(
+      createNewActivity({
+        title: newTitle,
+      }),
+    );
+
+    const newSequenceEntry: any = {
+      type: 'activity-reference',
+      resourceId: newActivity.resourceId,
+      activitySlug: newActivity.activitySlug,
+      custom: {
+        ...item.custom,
+        sequenceId: `${newActivity.activitySlug}_${guid()}`,
+        sequenceName: newTitle,
+      },
+    };
+
+    const selectedActivity = allActivities.find((act) => act.id === item.resourceId);
+    const copiedActivity = clone(selectedActivity);
+    copiedActivity.id = newActivity.resourceId;
+    copiedActivity.resourceId = newActivity.resourceId;
+    copiedActivity.activitySlug = newActivity.activitySlug;
+    copiedActivity.title = newTitle;
+
+    await dispatch(upsertActivity({ activity: copiedActivity }));
+    addNewSequence(newSequenceEntry, item.activitySlug);
+  };
   const handleRenameItem = async (item: any) => {
     if (itemToRename.custom.sequenceName.trim() === '') {
       setItemToRename(undefined);
@@ -417,6 +453,18 @@ const SequenceEditor: React.FC<any> = () => {
               >
                 <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
               </button>
+              {!isLayer && !isBank && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                    handleItemCopy(item);
+                  }}
+                >
+                  <i className="fas fa-clipboard align-text-top mr-2" /> {'Copy Screen'}
+                </button>
+              )}
               <button
                 className="dropdown-item"
                 onClick={(e) => {
