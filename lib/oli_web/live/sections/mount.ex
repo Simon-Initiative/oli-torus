@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.Mount do
   alias Oli.Accounts
+  alias Oli.Accounts.{SystemRole, User, Author}
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView
   alias Oli.Delivery.Sections
@@ -62,6 +63,16 @@ defmodule OliWeb.Sections.Mount do
       {:user, current_user, section}
     else
       {:error, :not_authorized}
+    end
+  end
+
+  def is_lms_or_system_admin?(user, section) do
+    admin_role_id = SystemRole.role_id().admin
+
+    case user do
+      %Author{system_role_id: ^admin_role_id} -> true
+      %User{} = user -> OliWeb.ViewHelpers.is_admin?(section.slug, user)
+      _ -> false
     end
   end
 
