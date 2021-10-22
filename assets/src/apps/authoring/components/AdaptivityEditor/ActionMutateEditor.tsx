@@ -10,6 +10,7 @@ import {
   TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ActionMutateEditorProps {
   action: MutateStateAction;
@@ -25,6 +26,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const [operator, setOperator] = useState(action.params.operator);
   const [value, setValue] = useState(action.params.value);
   const [isDirty, setIsDirty] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const uuid = guid();
 
   const targetRef = useRef<HTMLInputElement>(null);
@@ -189,11 +191,25 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
       </OverlayTrigger>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Action"
+          elementName="this mutate action"
+          deleteHandler={() => {
+            onDelete(action);
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };

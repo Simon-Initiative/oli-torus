@@ -318,6 +318,20 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     opacity: 1,
   };
 
+  const closeButtonSpanStyles: CSSProperties = {
+    marginLeft: 12,
+    padding: 0,
+    textShadow: 'none',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    fontWeight: 'bold',
+    fontFamily: 'Arial',
+    marginTop: -6,
+    position: 'absolute',
+    right: 0,
+  };
+
   const popupBGStyles: CSSProperties = {
     top: 0,
     left: 0,
@@ -384,7 +398,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
                   style={popupCloseStyles}
                   onClick={() => handleToggleIcon(false)}
                 >
-                  <span>x</span>
+                  <span style={closeButtonSpanStyles}>x</span>
                 </button>
               </div>
             </div>

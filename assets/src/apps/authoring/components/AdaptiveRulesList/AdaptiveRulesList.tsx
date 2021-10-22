@@ -14,6 +14,7 @@ import { createCorrectRule, createIncorrectRule } from '../../store/activities/a
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 export interface AdaptiveRule {
   id?: string;
@@ -33,6 +34,8 @@ const AdaptiveRulesList: React.FC = () => {
   const currentRule = useSelector(selectCurrentRule);
   const rules = currentActivity?.authoring.rules || [];
   const [ruleToEdit, setRuleToEdit] = useState<any>(undefined);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(undefined);
   const isLayer = getIsLayer();
   const isBank = getIsBank();
   let sequenceTypeLabel = '';
@@ -106,6 +109,8 @@ const AdaptiveRulesList: React.FC = () => {
       debounceSaveChanges(activityClone);
       handleSelectRule(isActiveRule ? (prevRule !== undefined ? prevRule : nextRule) : currentRule);
     }
+    setItemToDelete(undefined);
+    setShowConfirmDelete(false);
   };
 
   const handleMoveRule = (ruleIndex: number, direction: string) => {
@@ -232,7 +237,8 @@ const AdaptiveRulesList: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-                  handleDeleteRule(item);
+                  setItemToDelete(item);
+                  setShowConfirmDelete(true);
                 }}
               >
                 <i className="fas fa-trash mr-2" /> Delete
@@ -421,6 +427,18 @@ const AdaptiveRulesList: React.FC = () => {
           )}
         </ListGroup>
       </Accordion.Collapse>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Rule"
+          elementName={itemToDelete.name}
+          deleteHandler={() => handleDeleteRule(itemToDelete)}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+            setItemToDelete(undefined);
+          }}
+        />
+      )}
     </Accordion>
   );
 };
