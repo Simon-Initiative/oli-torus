@@ -194,7 +194,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.project_working_publication(project_slug)
            |> Repo.preload(:project)
            |> trap_nil(),
-         {:ok, %{content: content} = revision} <-
+         {:ok, %{content: content, deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),

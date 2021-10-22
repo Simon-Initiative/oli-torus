@@ -483,11 +483,15 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (selectedChoice !== 0 && selectedChoice !== -1) {
       let shouldSave = false;
       let optionText = selectedChoiceText;
+      const currentSelectedText = getOptionTextById(options, selectedChoice);
       if (!optionText?.length) {
         // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
         //hence need to save the props as well.
         shouldSave = true;
         optionText = getOptionTextById(options, selectedChoice);
+      } else if (optionText !== currentSelectedText) {
+        optionText = currentSelectedText;
+        shouldSave = true;
       }
       /* console.log('handling MCQ single select'); */
       handleItemSelection(
@@ -565,6 +569,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       setNumberOfSelectedChoices(newCount);
       setSelectedChoice(checked ? newChoice : 0);
       setSelectedChoiceText(checked ? textValue : '');
+      setSelectedChoices([newChoice]);
+      setSelectedChoicesText([textValue]);
     } else {
       // sets data for checkboxes, which can have multiple values
       newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
