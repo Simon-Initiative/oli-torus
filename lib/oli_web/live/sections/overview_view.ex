@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
-  alias OliWeb.Sections.{Instructors}
+  alias OliWeb.Sections.{Instructors, UnlinkSection}
   alias OliWeb.Sections.Mount
 
   prop user, :any
@@ -48,6 +48,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         {:ok,
          assign(socket,
+           is_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
            user: user,
@@ -108,6 +109,11 @@ defmodule OliWeb.Sections.OverviewView do
           </ul>
         </Group>
       {/if}
+      {#if @is_admin and !@section.open_and_free}
+        <Group label="LMS Admin" description="Administrator LMS Connection">
+          <UnlinkSection unlink="unlink" section={@section}/>
+        </Group>
+      {/if}
     </Groups>
     """
   end
@@ -117,5 +123,13 @@ defmodule OliWeb.Sections.OverviewView do
       true -> "LMS-Lite"
       _ -> "LTI"
     end
+  end
+
+  def handle_event("unlink", _, socket) do
+    %{section: section} = socket.assigns
+
+    {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
+
+    {:noreply, push_redirect(socket, to: Routes.delivery_path(socket, :index))}
   end
 end
