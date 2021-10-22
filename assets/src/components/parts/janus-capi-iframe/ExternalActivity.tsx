@@ -630,7 +630,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   };
 
   const handleResizeParentContainer = (data: any) => {
-    const iFrameResponse: any[] = [];
+    const iFrameResponse: { key: string; type: number; value: string }[] = [];
     const modifiedData = data;
     if (frameWidth && data?.width) {
       const newW = parseFloat(data.width.value);
