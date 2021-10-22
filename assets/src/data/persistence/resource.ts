@@ -1,6 +1,6 @@
-import { ProjectSlug, ResourceSlug, ObjectiveSlug } from 'data/types';
+import { ProjectSlug, ResourceSlug } from 'data/types';
+import { AttachedObjectives, PageContent } from '../content/resource';
 import { makeRequest } from './common';
-import { PageContent, AttachedObjectives } from '../content/resource';
 
 export type ResourceUpdate = {
   title: string;
