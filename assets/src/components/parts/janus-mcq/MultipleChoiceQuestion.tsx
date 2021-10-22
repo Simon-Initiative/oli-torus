@@ -67,15 +67,6 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
-    const hasImages = nodes.some((node: any) =>
-      node.children.some((child: { tag: string }) => child.tag === 'img'),
-    );
-    const hasBlankSpans = nodes.some((node: any) =>
-      node.children.some(
-        (child: { tag: string; children: string | any[] }) =>
-          child.tag === 'span' && child.children.length === 0,
-      ),
-    );
     if (columns === 1) {
       mcqItemStyles.width = `calc(${100 / totalItems}% - 6px)`;
     } else {
@@ -140,8 +131,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   // note in SS selection is 1 based
   const [selectedChoice, setSelectedChoice] = useState<number>(0);
   const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
-  const [selectedChoices, setSelectedChoices] = useState<any[]>([]);
-  const [selectedChoicesText, setSelectedChoicesText] = useState<any[]>([]);
+  const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
+  const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
   const prevSelectedChoice = usePrevious<number>(selectedChoice);
   const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
 
@@ -239,7 +230,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (sNumberOfSelectedChoices !== undefined) {
       setNumberOfSelectedChoices(sNumberOfSelectedChoices);
     }
-    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
@@ -247,9 +237,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }, []);
 
   const {
-    x = 0,
-    y = 0,
-    z = 0,
     width,
     multipleSelection,
     mcqItems,
@@ -301,7 +288,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     return optionText;
   };
 
-  const getOptionTextById = (options: any, optionId: any): any => {
+  const getOptionTextById = (options: any[], optionId: number): string => {
     const text = options
       .map((option: any) => {
         if (option.value === optionId) {
@@ -454,13 +441,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     styles.height = height;
     styles.marginTop = '8px';
   }
-  if (layoutType === 'verticalLayout') {
-    const hasImages = mcqItems.some((item: any) =>
-      item.nodes.some((node: any) =>
-        node.children.some((child: { tag: string }) => child.tag === 'img'),
-      ),
-    );
-  }
 
   useEffect(() => {
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
@@ -522,27 +502,22 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
         //hence need to save the props.
         shouldSave = true;
-        selectedChoices.forEach((option) => {
-          selectedChoicesText.push({
-            value: option,
-            textValue: getOptionTextById(options, option),
-            checked: selectedChoices.includes(option),
-          });
-        });
+        const choicesText = selectedChoices.map((choice) => getOptionTextById(options, choice));
+        setSelectedChoicesText(choicesText);
       }
       /* console.log('handling MCQ multi select'); */
-      selectedChoicesText.forEach((option) => {
+      selectedChoices.forEach((selectedChoice) => {
         handleItemSelection(
           {
-            value: option.value,
-            textValue: option.textValue,
-            checked: selectedChoices.includes(option.value),
+            value: selectedChoice,
+            textValue: getOptionTextById(options, selectedChoice),
+            checked: true,
           },
           shouldSave,
         );
       });
     }
-  }, [selectedChoices]);
+  }, [selectedChoices, selectedChoicesText, options]);
 
   const handleItemSelection = (
     {
@@ -577,36 +552,18 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         (c) => checked || (!checked && newChoice !== c),
       );
 
-      const updatedSelections = selectedChoicesText.map((item) => {
-        const modifiedItem = { ...item };
-        modifiedItem.checked = item.value === value ? checked : item.checked;
-        return modifiedItem;
-      });
-
-      updatedChoicesText = updatedSelections
-        .filter((item) => item.checked)
-        .map((item) => item.textValue);
+      updatedChoicesText = newSelectedChoices.map((choice) => getOptionTextById(options, choice));
 
       newCount = newSelectedChoices.length;
       setNumberOfSelectedChoices(newCount);
       setSelectedChoices(newSelectedChoices);
-      setSelectedChoicesText(updatedSelections);
+      setSelectedChoicesText(updatedChoicesText);
     }
     if (shouldSave) {
       saveState({
         numberOfSelectedChoices: newCount,
-        selectedChoice:
-          multipleSelection && newSelectedChoices?.length
-            ? newSelectedChoices[newSelectedChoices.length - 1]
-            : checked
-            ? newChoice
-            : 0,
-        selectedChoiceText:
-          multipleSelection && updatedChoicesText?.length
-            ? updatedChoicesText[updatedChoicesText.length - 1]
-            : checked
-            ? textValue
-            : '',
+        selectedChoice: newSelectedChoices.slice(-1)[0] || 0,
+        selectedChoiceText: updatedChoicesText.slice(-1)[0] || '',
         selectedChoices: newSelectedChoices,
         selectedChoicesText: updatedChoicesText,
       });
