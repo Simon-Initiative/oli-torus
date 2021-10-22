@@ -290,10 +290,9 @@ const RightMenu: React.FC<any> = () => {
         if (modelChanges.id !== ogPart.id) {
           ogPart.id = modelChanges.id;
           // also need to update the authoring.parts
-          const authoringPart = cloneActivity.authoring?.parts?.find(
-            (p: any) => p.id === ogPart.id,
-          );
+          const authoringPart = cloneActivity.authoring?.parts?.find((p: any) => p.id === origId);
           // TODO: if that isn't found, then it's a problem. maybe should write it new?
+          /* console.log('CHANGING PART ID: ', { authoringPart, ogPart, origId }); */
           if (authoringPart) {
             authoringPart.id = modelChanges.id;
           }
@@ -303,6 +302,7 @@ const RightMenu: React.FC<any> = () => {
         ogPart.custom = modelChanges.custom;
 
         if (JSON.stringify(cloneActivity) !== JSON.stringify(origActivity)) {
+          /* console.log('actually saving activity:', { cloneActivity }); */
           dispatch(saveActivity({ activity: cloneActivity }));
         }
       },
