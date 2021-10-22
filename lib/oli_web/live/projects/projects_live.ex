@@ -30,6 +30,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
+  data show_all, :boolean, default: true
   data show_deleted, :boolean, default: false
   data text_search, :string, default: ""
 
@@ -41,12 +42,27 @@ defmodule OliWeb.Projects.ProjectsLive do
     author = Repo.get(Author, author_id)
     is_admin = Accounts.is_admin?(author)
 
+    show_all =
+      if is_admin do
+        Accounts.get_author_preference(author.id, :admin_show_all_projects, true)
+      else
+        true
+      end
+
+    show_deleted =
+      if is_admin do
+        Accounts.get_author_preference(author.id, :admin_show_deleted_projects, false)
+      else
+        true
+      end
+
     projects =
       Course.browse_projects(
         author,
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :asc, field: :title},
-        false
+        include_deleted: show_deleted,
+        admin_show_all: show_all
       )
 
     {:ok, table_model} = TableModel.new(projects, is_admin)
@@ -60,7 +76,9 @@ defmodule OliWeb.Projects.ProjectsLive do
        projects: projects,
        table_model: table_model,
        total_count: total_count,
-       is_admin: is_admin
+       is_admin: is_admin,
+       show_all: show_all,
+       show_deleted: show_deleted
      )}
   end
 
@@ -72,6 +90,9 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_params(params, _, socket) do
+    %{is_admin: is_admin, show_all: show_all, show_deleted: show_deleted, author: author} =
+      socket.assigns
+
     table_model =
       OliWeb.Common.Table.SortableTableModel.update_from_params(
         socket.assigns.table_model,
@@ -79,16 +100,41 @@ defmodule OliWeb.Projects.ProjectsLive do
       )
 
     offset = get_int_param(params, "offset", 0)
-    show_deleted = get_boolean_param(params, "show_deleted", false)
     text_search = get_str_param(params, "text_search", "")
+
+    # if author is an admin, get the show_all value and update if its changed
+    show_all =
+      case get_boolean_param(params, "show_all", show_all) do
+        new_value when new_value != show_all and is_admin ->
+          {:ok, _} =
+            Accounts.set_author_preference(author.id, :admin_show_all_projects, new_value)
+
+          new_value
+
+        old_value ->
+          old_value
+      end
+
+    show_deleted =
+      case get_boolean_param(params, "show_deleted", show_deleted) do
+        new_value when new_value != show_deleted and is_admin ->
+          {:ok, _} =
+            Accounts.set_author_preference(author.id, :admin_show_deleted_projects, new_value)
+
+          new_value
+
+        old_value ->
+          old_value
+      end
 
     projects =
       Course.browse_projects(
         socket.assigns.author,
         %Paging{offset: offset, limit: @limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        show_deleted,
-        text_search
+        include_deleted: show_deleted,
+        admin_show_all: show_all,
+        text_search: text_search
       )
 
     table_model = Map.put(table_model, :rows, projects)
@@ -102,6 +148,7 @@ defmodule OliWeb.Projects.ProjectsLive do
        table_model: table_model,
        total_count: total_count,
        show_deleted: show_deleted,
+       show_all: show_all,
        text_search: text_search
      )}
   end
@@ -115,8 +162,12 @@ defmodule OliWeb.Projects.ProjectsLive do
             <div class="d-flex justify-content-between align-items-baseline">
               <div>
                 <%= if @is_admin do %>
+                  <div class="form-check" style="display: inline;">
+                    <input type="checkbox" class="form-check-input" id="allCheck" <%= if @show_all do "checked" else "" end %> phx-click="toggle_show_all">
+                    <label class="form-check-label" for="allCheck">Show all projects</label>
+                  </div>
                   <div class="form-check ml-4" style="display: inline;">
-                    <input type="checkbox" class="form-check-input" id="exampleCheck1" <%= if @show_deleted do "checked" else "" end %> phx-click="toggle_show_deleted">
+                    <input type="checkbox" class="form-check-input" id="deletedCheck" <%= if @show_deleted do "checked" else "" end %> phx-click="toggle_show_deleted">
                     <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
                   </div>
                 <% end %>
@@ -211,6 +262,10 @@ defmodule OliWeb.Projects.ProjectsLive do
            )
          )
      )}
+  end
+
+  def handle_event("toggle_show_all", _, socket) do
+    patch_with(socket, %{show_all: !socket.assigns.show_all})
   end
 
   def handle_event("toggle_show_deleted", _, socket) do

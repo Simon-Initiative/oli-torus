@@ -1,9 +1,18 @@
 defmodule Oli.Accounts do
   import Ecto.Query, warn: false
+  import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Accounts.{User, Author, SystemRole, UserBrowseOptions, AuthorBrowseOptions}
+
+  alias Oli.Accounts.{
+    User,
+    Author,
+    SystemRole,
+    UserBrowseOptions,
+    AuthorBrowseOptions,
+    AuthorPreferences
+  }
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -408,6 +417,39 @@ defmodule Oli.Accounts do
   """
   def author_signed_in?(conn) do
     conn.assigns[:current_author]
+  end
+
+  @doc """
+  Returns an author preference using the key provided. If the preference isn't set or
+  the author preferences have not been created yet, the default value will be returned
+
+  See AuthorPreferences for available key options
+  """
+  def get_author_preference(author_id, key, default \\ nil) do
+    author = get_author!(author_id)
+
+    author.preferences
+    |> value_or(%AuthorPreferences{})
+    |> Map.get(key, default)
+    |> value_or(default)
+  end
+
+  @doc """
+  Set's an author preference to the provided value at a given key
+
+  See AuthorPreferences for available key options
+  """
+  def set_author_preference(author_id, key, value) do
+    author = get_author!(author_id)
+
+    updated_preferences =
+      author.preferences
+      |> value_or(%AuthorPreferences{})
+      |> Map.put(key, value)
+      |> Map.from_struct()
+      |> IO.inspect()
+
+    update_author(author, %{preferences: updated_preferences})
   end
 
   def can_access?(author, project) do

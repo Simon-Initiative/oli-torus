@@ -1,5 +1,6 @@
 defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
+
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Publishing
@@ -57,14 +58,16 @@ defmodule Oli.Authoring.Course do
         %Author{} = author,
         %Paging{} = paging,
         %Sorting{} = sorting,
-        include_deleted,
-        text_search \\ ""
+        opts \\ []
       ) do
     admin_role_id = SystemRole.role_id().admin
+    include_deleted = Keyword.get(opts, :include_deleted, false)
+    admin_show_all = Keyword.get(opts, :admin_show_all, true)
+    text_search = Keyword.get(opts, :text_search, "")
 
     case author do
       # Admin authors have access to every project
-      %{system_role_id: ^admin_role_id} ->
+      %{system_role_id: ^admin_role_id} when admin_show_all ->
         browse_projects_as_admin(paging, sorting, include_deleted, text_search)
 
       _ ->
