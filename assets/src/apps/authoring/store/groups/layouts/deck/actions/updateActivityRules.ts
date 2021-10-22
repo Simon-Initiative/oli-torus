@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { getCapiType } from 'adaptivity/capi';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import { clone } from 'utils/common';
@@ -15,6 +16,9 @@ const updateNestedConditions = (conditions: any) => {
   conditions.forEach((condition: any) => {
     if (condition.fact && !condition.id) {
       condition.id = `c:${guid()}`;
+    }
+    if (condition.fact && !condition.type) {
+      condition.type = getCapiType(condition.value);
     }
     if (condition.any || condition.all) {
       if (!condition.id) {

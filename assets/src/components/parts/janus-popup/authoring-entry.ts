@@ -8,6 +8,7 @@ import {
 } from '../partsApi';
 import PopupAuthor from './PopupAuthor';
 import {
+  adaptivitySchema,
   createSchema,
   getCapabilities,
   schema,
@@ -35,6 +36,7 @@ register(PopupAuthor, manifest.authoring.element, observedAttributes, {
   customApi: {
     getSchema: () => schema,
     getUiSchema: () => uiSchema,
+    getAdaptivitySchema: async () => adaptivitySchema,
     transformModelToSchema,
     transformSchemaToModel,
     createSchema,
