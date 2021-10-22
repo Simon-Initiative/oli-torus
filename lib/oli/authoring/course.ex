@@ -150,7 +150,7 @@ defmodule Oli.Authoring.Course do
       if text_search == "" do
         true
       else
-        dynamic([_, p, _, _], like(p.title, ^text_search))
+        dynamic([_, p, _, _], ilike(p.title, ^"%#{text_search}%"))
       end
 
     query =
