@@ -9,6 +9,7 @@ import { saveActivity } from './store/activities/actions/saveActivity';
 import { createCorrectRule, createIncorrectRule } from './store/activities/actions/rules';
 import { getIsLayer } from '../delivery/store/features/groups/actions/sequence';
 import { AdaptiveRule } from './components/AdaptiveRulesList/AdaptiveRulesList';
+import ConfirmDelete from './components/Modal/DeleteConfirmationModal';
 
 export interface BottomPanelProps {
   panelState: any;
@@ -25,6 +26,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const currentActivity = useSelector(selectCurrentActivity);
   const [correct, setCorrect] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const isLayer = getIsLayer();
 
   useEffect(() => {
@@ -135,6 +137,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       dispatch(setCurrentRule({ currentRule: prevRule !== undefined ? prevRule : nextRule }));
       debounceSaveChanges(activityClone);
     }
+    setShowConfirmDelete(false);
   };
 
   return (
@@ -204,7 +207,10 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
                     }
                   >
                     <span>
-                      <button className="btn btn-link p-0 ml-3" onClick={() => handleDeleteRule()}>
+                      <button
+                        className="btn btn-link p-0 ml-3"
+                        onClick={() => setShowConfirmDelete(true)}
+                      >
                         <i className="fa fa-trash-alt" />
                       </button>
                     </span>
@@ -271,6 +277,17 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
           {children}
         </div>
       </section>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Rule"
+          elementName={currentRule.name}
+          deleteHandler={() => handleDeleteRule()}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </>
   );
 };

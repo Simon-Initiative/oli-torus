@@ -27,9 +27,10 @@ import { addSequenceItem } from '../../store/groups/layouts/deck/actions/addSequ
 import { setCurrentActivityFromSequence } from '../../store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { savePage } from '../../store/page/actions/savePage';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
-const SequenceEditor: React.FC<any> = (props) => {
+const SequenceEditor: React.FC<any> = () => {
   const dispatch = useDispatch();
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const sequence = useSelector(selectSequence);
@@ -37,6 +38,8 @@ const SequenceEditor: React.FC<any> = (props) => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [hierarchy, setHierarchy] = useState(getHierarchy(sequence));
   const [itemToRename, setItemToRename] = useState<any>(undefined);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(undefined);
 
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
@@ -268,6 +271,8 @@ const SequenceEditor: React.FC<any> = (props) => {
     const newGroup = { ...currentGroup, children: sequenceItems };
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(savePage());
+    setShowConfirmDelete(false);
+    setItemToDelete(undefined);
   };
 
   const handleItemConvert = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
@@ -430,7 +435,8 @@ const SequenceEditor: React.FC<any> = (props) => {
                     onClick={(e) => {
                       e.stopPropagation();
                       ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                      handleItemDelete(item);
+                      setShowConfirmDelete(true);
+                      setItemToDelete(item);
                     }}
                   >
                     <i className="fas fa-trash mr-2" /> Delete
@@ -669,6 +675,24 @@ const SequenceEditor: React.FC<any> = (props) => {
           {getHierarchyList(hierarchy)}
         </ListGroup>
       </Accordion.Collapse>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType={
+            itemToDelete.custom?.isLayer
+              ? 'Layer'
+              : itemToDelete.custom?.isBank
+              ? 'Question Bank'
+              : 'Screen'
+          }
+          elementName={itemToDelete.custom?.sequenceName}
+          deleteHandler={() => handleItemDelete(itemToDelete)}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+            setItemToDelete(undefined);
+          }}
+        />
+      )}
     </Accordion>
   );
 };
