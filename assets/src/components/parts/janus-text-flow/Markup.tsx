@@ -55,7 +55,13 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
     if (!stateValue) {
       return;
     }
-    return typeof stateValue === 'object' ? JSON.stringify(stateValue) : stateValue;
+    let strValue = stateValue;
+    if (Array.isArray(stateValue)) {
+      strValue = stateValue.map((v) => `"${v}"`).join(', ');
+    } else if (typeof stateValue === 'object') {
+      strValue = JSON.stringify(stateValue);
+    }
+    return strValue;
   });
 
   vars.forEach((v, index) => {
