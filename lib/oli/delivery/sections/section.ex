@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Sections.Section do
   use Ecto.Schema
   import Ecto.Changeset
 
+  import Oli.Utils
   alias Oli.Utils.Slug
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Enrollment
@@ -117,6 +118,8 @@ defmodule Oli.Delivery.Sections.Section do
       :registration_open,
       :base_project_id
     ])
+    |> validate_required_if([:amount], &requires_payment?/1)
+    |> validate_required_if([:grace_period_days], &has_grace_period?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)
     |> Slug.update_never("sections")
@@ -124,10 +127,30 @@ defmodule Oli.Delivery.Sections.Section do
 
   def validate_positive_grace_period(changeset) do
     validate_change(changeset, :grace_period_days, fn _, days ->
-      case days >= 0 do
+      case days >= 1 do
         true -> []
-        false -> [{:grace_period_days, "must be greater than or equal to zero"}]
+        false -> [{:grace_period_days, "must be greater than or equal to one"}]
       end
     end)
+  end
+
+  def requires_payment?(changeset) do
+    case changeset do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        get_field(changeset, :requires_payment)
+
+      _ ->
+        false
+    end
+  end
+
+  def has_grace_period?(changeset) do
+    case changeset do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        get_field(changeset, :has_grace_period)
+
+      _ ->
+        false
+    end
   end
 end
