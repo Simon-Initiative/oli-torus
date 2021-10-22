@@ -7,10 +7,13 @@ const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
 
   const { x, y, z, width, src } = model;
   const styles: CSSProperties = {
-    cursor: 'move',
+    cursor: 'pointer',
     width,
     outline: 'none',
-    filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
+    height: '100%',
+    borderRadius: '25px',
+    border: '1px solid #ccc!important',
+    background: 'whitesmoke',
   };
 
   useEffect(() => {
@@ -18,7 +21,12 @@ const AudioAuthor: React.FC<AuthorPartComponentProps<AudioModel>> = (props) => {
     props.onReady({ id: `${props.id}` });
   }, []);
 
-  return <audio data-janus-type={tagName} style={styles} controls={true} />;
+  return (
+    <div data-janus-type={tagName} className="audioPlayer" style={styles}>
+      <i className="fas fa-play" style={{ padding: '8px' }}></i>
+      <i className="fas fa-ellipsis-v" style={{ float: 'right', padding: '8px' }}></i>
+    </div>
+  );
 };
 
 export const tagName = 'janus-audio';
