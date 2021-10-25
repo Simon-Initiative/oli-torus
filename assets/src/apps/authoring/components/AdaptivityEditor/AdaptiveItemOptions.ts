@@ -109,6 +109,7 @@ export const conditionTypeOperatorCombos: ConditionTypeOperatorCombo[] = [
     operators: [
       'equal',
       'notEqual',
+      'isNaN',
       'is',
       'notIs',
       'greaterThan',
