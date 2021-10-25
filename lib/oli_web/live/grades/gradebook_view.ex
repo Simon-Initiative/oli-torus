@@ -91,6 +91,7 @@ defmodule OliWeb.Grades.GradebookView do
   end
 
   defp fetch_resource_accesses(enrollments, section) do
+    # retrieve all graded resource accesses, but only for this slice of students
     student_ids = Enum.map(enrollments, fn user -> user.id end)
 
     Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
@@ -118,6 +119,8 @@ defmodule OliWeb.Grades.GradebookView do
       Sections.browse_enrollments(
         socket.assigns.section,
         %Paging{offset: offset, limit: @limit},
+        # We cannot support sorting by columns other than the user name, so ignore any
+        # attempt to do that
         %Sorting{direction: table_model.sort_order, field: :name},
         options
       )
