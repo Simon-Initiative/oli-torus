@@ -1,4 +1,6 @@
 defmodule Oli.Delivery.Hierarchy.HierarchyNode do
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+
   @moduledoc """
   HierarchyNode is a generic in-memory representation of a node within a hierarchy. This struct
   is shared across authoring and delivery and allows generalized components to work in both.
@@ -19,5 +21,22 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             resource_id: nil,
             project_id: nil,
             revision: nil,
-            section_resource: nil
+            section_resource: nil,
+            ancestors: []
+
+  def flatten(%HierarchyNode{children: children} = root) do
+    flatten(children, [root], [root])
+  end
+
+  def flatten(%HierarchyNode{children: children}, flattened_nodes, current_ancestors) do
+    Enum.reduce(children, flattened_nodes, fn node, acc ->
+      node = %{node | ancestors: current_ancestors}
+
+      case Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) do
+        "container" -> flatten(node, [node | acc], current_ancestors ++ [node])
+        _ -> [node | acc]
+      end
+    end)
+    |> Enum.reverse()
+  end
 end
