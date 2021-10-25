@@ -191,7 +191,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     <div class="container mb-4">
       <div class="row">
         <div class="col-12">
-          <%= live_component TextSearch, id: "text-search", apply: "text_search_apply", reset: "text_search_reset",  initial_text: @text_search %>
+          <%= live_component TextSearch, id: "text-search", apply: "text_search_apply", reset: "text_search_reset", change: "text_search_change", text: @text_search %>
         </div>
       </div>
     </div>

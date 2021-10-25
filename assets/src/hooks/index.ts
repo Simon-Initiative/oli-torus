@@ -3,6 +3,7 @@ import { DropTarget, DragSource } from './dragdrop';
 import { ModalLaunch } from './modal';
 import { InputAutoSelect } from './input_auto_select';
 import { ProjectsTypeahead } from './projects_typeahead';
+import { TextInputListener } from './text_input_listener';
 
 export const Hooks = {
   GraphNavigation,
@@ -11,4 +12,5 @@ export const Hooks = {
   ModalLaunch,
   InputAutoSelect,
   ProjectsTypeahead,
+  TextInputListener,
 };
