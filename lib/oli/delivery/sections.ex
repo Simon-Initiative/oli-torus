@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Sections do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
@@ -27,6 +28,85 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
+  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+
+  def browse_enrollments(
+        %Section{id: section_id},
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %EnrollmentBrowseOptions{} = options
+      ) do
+    instructor_role_id = ContextRoles.get_role(:context_instructor).id
+
+    filter_by_role =
+      case options do
+        %EnrollmentBrowseOptions{is_student: true} ->
+          dynamic(
+            [e, u],
+            fragment(
+              "(NOT EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
+              e.id,
+              ^instructor_role_id
+            )
+          )
+
+        %EnrollmentBrowseOptions{is_instructor: true} ->
+          dynamic(
+            [e, u],
+            fragment(
+              "(EXISTS (SELECT 1 FROM enrollments_context_roles r WHERE r.enrollment_id = ? AND r.context_role_id = ?))",
+              e.id,
+              ^instructor_role_id
+            )
+          )
+
+        _ ->
+          true
+      end
+
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        dynamic(
+          [_, s],
+          ilike(s.name, ^"%#{options.text_search}%") or
+            ilike(s.email, ^"%#{options.text_search}%") or
+            ilike(s.given_name, ^"%#{options.text_search}%") or
+            ilike(s.family_name, ^"%#{options.text_search}%") or
+            ilike(s.name, ^"#{options.text_search}") or
+            ilike(s.email, ^"#{options.text_search}") or
+            ilike(s.given_name, ^"#{options.text_search}") or
+            ilike(s.family_name, ^"#{options.text_search}")
+        )
+      end
+
+    query =
+      Enrollment
+      |> join(:left, [e], u in User, on: u.id == e.user_id)
+      |> join(:left, [e, _], p in "payments", on: p.enrollment_id == e.id)
+      |> where(^filter_by_text)
+      |> where(^filter_by_role)
+      |> where([e, _], e.section_id == ^section_id)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> group_by([e, u, p], [e.id, u.id, p.id])
+      |> select([_, u], u)
+      |> select_merge([e, _, p], %{
+        total_count: fragment("count(*) OVER()"),
+        enrollment_date: e.inserted_at,
+        payment_date: p.application_date,
+        payment_id: p.id
+      })
+
+    query =
+      case field do
+        :enrollment_date -> order_by(query, [e, _, _], {^direction, e.inserted_at})
+        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @doc """
   Determines if a user is an instructor in a given section.

@@ -1,4 +1,4 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import {
@@ -11,6 +11,7 @@ import {
 } from './AdaptiveItemOptions';
 import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;
@@ -24,10 +25,11 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
 
   const [fact, setFact] = useState<string>(condition.fact);
   const [targetType, setTargetType] = useState<CapiVariableTypes>(
-    condition.type || CapiVariableTypes.STRING,
+    condition.type || getCapiType(condition.value),
   );
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   const handleFactChange = (e: any) => {
     const val = e.target.value;
@@ -86,7 +88,9 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   useEffect(() => {
     // when the targetType is manually changed, we may need to also set the operator
     setTimeout(() => {
-      const updatedOperator = getFilteredConditionOperatorOptions()[0].value;
+      const filteredOperations = getFilteredConditionOperatorOptions();
+      const operatorInList = filteredOperations.find((option) => option.value === operator);
+      const updatedOperator = operatorInList ? operatorInList.value : filteredOperations[0].value;
       if (updatedOperator === operator) {
         return;
       }
@@ -183,11 +187,25 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete()}>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
       </OverlayTrigger>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Condition"
+          elementName="this rule condition"
+          deleteHandler={() => {
+            onDelete();
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };

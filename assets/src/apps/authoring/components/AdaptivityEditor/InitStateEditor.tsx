@@ -15,6 +15,7 @@ import {
   TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
 export interface InitStateEditorProps {
   content?: Record<string, unknown>;
@@ -36,6 +37,7 @@ interface InitStateItemProps {
 const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
   // update adding operator if targetType changes from number
   useEffect(() => {
@@ -152,11 +154,25 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
         }
       >
         <span>
-          <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(state.id)}>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
             <i className="fa fa-trash-alt" />
           </button>
         </span>
       </OverlayTrigger>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Initial State"
+          elementName="this initial state rule"
+          deleteHandler={() => {
+            onDelete(state.id);
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -166,6 +182,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
   const currentActivity = useSelector(selectCurrentActivity);
   const [initState, setInitState] = useState([]);
   const [isDirty, setIsDirty] = useState(false);
+
   const isLayer = getIsLayer();
   const isBank = getIsBank();
 

@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Router.Helpers, as: Routes
   use Surface.LiveComponent
 
   def new(sections) do
@@ -8,7 +9,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
       column_specs: [
         %ColumnSpec{
           name: :title,
-          label: "Title"
+          label: "Title",
+          render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
           name: :type,
@@ -80,8 +82,13 @@ defmodule OliWeb.Sections.SectionsTableModel do
      end, direction}
   end
 
-  def custom_render(_, section, %ColumnSpec{name: name}) do
+  def custom_render(assigns, section, %ColumnSpec{name: name}) do
     case name do
+      :title ->
+        ~F"""
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
+        """
+
       :type ->
         if section.open_and_free do
           "Open"

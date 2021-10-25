@@ -1,13 +1,16 @@
 defmodule OliWeb.Users.UsersDetailView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.Modal
+
+  import OliWeb.Common.Properties.Utils
+  import OliWeb.Common.Utils
+
   alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
   alias Oli.Accounts.{Author, User}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  import OliWeb.Common.Properties.Utils
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
-  use OliWeb.Common.Modal
   alias OliWeb.Pow.UserContext
   alias OliWeb.Users.Actions
 
@@ -198,12 +201,10 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def breadcrumb(previous, %User{id: id} = user) do
-    name = Oli.Utils.normalize_name(user.name, user.given_name, user.family_name)
-
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: name,
+          full_title: name(user.name, user.given_name, user.family_name),
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
         })
       ]

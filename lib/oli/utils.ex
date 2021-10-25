@@ -98,15 +98,6 @@ defmodule Oli.Utils do
     end
   end
 
-  def normalize_name(name, given_name, family_name) do
-    case {has_non_empty_value(name), has_non_empty_value(given_name), has_non_empty_value(family_name)} do
-      {_, true, true} -> "#{family_name}, #{given_name}"
-      {false, false, true} -> family_name
-      {true, _, _} -> name
-      _ -> "Unknown"
-    end
-  end
-
   def lowercase_email(changeset) do
     Ecto.Changeset.update_change(changeset, :email, &String.downcase/1)
   end

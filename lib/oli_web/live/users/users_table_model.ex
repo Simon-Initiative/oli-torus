@@ -1,7 +1,10 @@
 defmodule OliWeb.Users.UsersTableModel do
+  use Surface.LiveComponent
+
+  import OliWeb.Common.Utils
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  use Surface.LiveComponent
 
   def render(assigns) do
     ~F"""
@@ -55,7 +58,7 @@ defmodule OliWeb.Users.UsersTableModel do
         _
       ) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{Oli.Utils.normalize_name(name, given_name, family_name)}</a>
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, id)}>{name(name, given_name, family_name)}</a>
     """
   end
 

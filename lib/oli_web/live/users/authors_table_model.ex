@@ -1,9 +1,11 @@
 defmodule OliWeb.Users.AuthorsTableModel do
+  use Surface.LiveComponent
+
+  import OliWeb.Common.Utils
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
-
-  use Surface.LiveComponent
 
   def render(assigns) do
     ~F"""
@@ -58,12 +60,11 @@ defmodule OliWeb.Users.AuthorsTableModel do
 
   def render_name_column(
         assigns,
-        %{id: id, name: name, given_name: given_name, family_name: family_name},
+        %{name: name, family_name: family_name, given_name: given_name, id: id},
         _
       ) do
     ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{Oli.Utils.normalize_name(name, given_name, family_name)}</a>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, id)}>{name(name, given_name, family_name)}</a>
     """
   end
-
 end
