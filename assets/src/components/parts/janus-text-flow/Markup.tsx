@@ -1,3 +1,6 @@
+import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
+import { evalScript, getAssignScript } from 'adaptivity/scripting';
+import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
 import guid from 'utils/guid';
 
@@ -16,37 +19,57 @@ const styleFilter = (styles: any) => {
 // supporting SS templates which look like
 // "some {stage.value} thing, and {q:1234|stage.value} other thing"
 // eslint-disable-next-line
-const getVars = /[^{\}]+(?=})/g;
-const templatizeText = (text: string, state: any) => {
-  const vars = text.match(getVars);
+const getExpressions = /[^{\}]+(?=})/g;
+const templatizeText = (text: string, state: any, env?: Environment): string => {
+  let innerEnv = env;
+  const vars = text.match(getExpressions);
   if (!vars) {
     return text;
   }
+  innerEnv = evalScript(janus_std, innerEnv).env;
+  try {
+    const stateAssignScript = getAssignScript(state, innerEnv);
+    evalScript(stateAssignScript, innerEnv);
+  } catch (e) {
+    console.warn('[Markup] error injecting state into env', { e, state, innerEnv });
+  }
+  console.log('templatizeText', { text, state, vars });
   let templatizedText = text;
 
   // check for state items that were included in the string
   const vals = vars.map((v) => {
-    // TODO: evaluate expressions?
-    const stateValue = state[v];
+    let stateValue = state[v];
+    if (!stateValue || typeof stateValue === 'object') {
+      try {
+        const result = evalScript(v, innerEnv);
+        console.log('trying to eval text', { v, result });
+        innerEnv = result.env;
+        if (result?.result && !result?.result?.message) {
+          stateValue = result.result;
+        }
+      } catch (e) {
+        // ignore?
+        console.log('error evaluating text', { v, e });
+      }
+    }
     if (!stateValue) {
       return;
     }
-    return Array.isArray(stateValue) ? stateValue.join(' ') : stateValue;
-    /* const stateItem = state.find((item: any) => item.id === v);
-    if (!stateItem) {
-      return;
+    let strValue = stateValue;
+    if (Array.isArray(stateValue)) {
+      strValue = stateValue.map((v) => `"${v}"`).join(', ');
+    } else if (typeof stateValue === 'object') {
+      strValue = JSON.stringify(stateValue);
     }
-    // return stateItem or stateItem.value if set
-    return !!stateItem?.value && Array.isArray(stateItem.value)
-      ? stateItem?.value?.join(' ')
-      : stateItem.value; */
+    return strValue;
   });
 
   vars.forEach((v, index) => {
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  return templatizedText;
+  // support nested {} like {{variables.foo} * 3}
+  return templatizeText(templatizedText, state, innerEnv);
 };
 /*eslint-disable */
 const Markup: React.FC<any> = ({

@@ -148,25 +148,22 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        console.log(`[TEXTFLOW]: ${notificationType.toString()} notification handled`, payload);
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            // nothing to do...
+            const { snapshot } = payload;
+            setState(snapshot);
             break;
           case NotificationType.STATE_CHANGED:
             {
-              /* console.log('MUTATE STATE!!!!', {
-                payload,
-              }); */
               const { mutateChanges: changes } = payload;
               setState({ ...state, ...changes });
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
             break;
         }
       };

@@ -9,6 +9,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias Oli.Accounts.{Author, SystemRole}
   alias OliWeb.Pow.AuthorContext
   alias OliWeb.Users.Actions
+  import OliWeb.Common.Utils
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -33,8 +34,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def breadcrumb(previous, %Author{id: id} = author) do
-    name =
-      OliWeb.Users.UsersTableModel.normalize(author.name, author.given_name, author.family_name)
+    name = name(author)
 
     previous ++
       [

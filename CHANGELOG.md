@@ -3,11 +3,15 @@
 ## Unreleased
 
 ### Bug Fixes
+
 - Fix an issue with Apply Update button and move content updates to async worker
+- Fix an issue where previewing a project with no pages crashes
 
 ### Enhancements
 
 - New Admin landing page
+- New Instructor Course Section overview page
+- Allow LMS and System admins to unlink LMS section
 
 ## 0.14.0 (2021-10-13)
 

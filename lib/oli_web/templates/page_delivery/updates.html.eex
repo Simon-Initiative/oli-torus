@@ -1,10 +1,4 @@
 
-<div class="mb-2">
-  <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.ManageSection, @section.slug) do %>
-    <i class="las la-arrow-left"></i> Back
-  <% end %>
-</div>
-
 <h2><%= dgettext("available_updates", "Available Updates") %></h2>
 
 <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{

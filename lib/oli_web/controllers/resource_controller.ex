@@ -114,12 +114,23 @@ defmodule OliWeb.ResourceController do
   def preview(conn, %{"project_id" => project_slug}) do
     # find the first page of the course and redirect to there. NOTE: this is not the most efficient method,
     # but it should suffice for now until an improved preview landing page is added
-    [first | _] =
+    pages =
       AuthoringResolver.full_hierarchy(project_slug)
       |> Hierarchy.flatten_pages()
 
-    conn
-    |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
+    case pages do
+      [first | _] ->
+
+        conn
+        |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
+
+      [] ->
+        # there are no pages, just show a not found page
+        conn
+        |> put_flash(:info, "No pages found. Please add some pages to your project's curriculum.")
+        |> put_view(OliWeb.SharedView)
+        |> render("_blank.html")
+    end
   end
 
   def render_not_found(conn, project_slug) do
