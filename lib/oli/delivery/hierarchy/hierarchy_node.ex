@@ -25,15 +25,15 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             ancestors: []
 
   def flatten(%HierarchyNode{children: children} = root) do
-    flatten(children, [root], [root])
+    flatten_helper(root, [], [])
   end
 
-  def flatten(%HierarchyNode{children: children}, flattened_nodes, current_ancestors) do
+  defp flatten_helper(%HierarchyNode{children: children}, flattened_nodes, current_ancestors) do
     Enum.reduce(children, flattened_nodes, fn node, acc ->
       node = %{node | ancestors: current_ancestors}
 
       case Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) do
-        "container" -> flatten(node, [node | acc], current_ancestors ++ [node])
+        "container" -> flatten_helper(node, [node | acc], current_ancestors ++ [node])
         _ -> [node | acc]
       end
     end)

@@ -6,11 +6,11 @@ defmodule OliWeb.Grades.GradebookView do
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias Oli.Delivery.Sections
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
+  alias OliWeb.Grades.GradebookTableModel
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -22,7 +22,6 @@ defmodule OliWeb.Grades.GradebookView do
   data breadcrumbs, :any
   data title, :string, default: "Gradebook"
   data section, :any, default: nil
-
   data tabel_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
@@ -60,23 +59,25 @@ defmodule OliWeb.Grades.GradebookView do
 
         total_count = determine_total(enrollments)
 
+        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+
         graded_pages =
-          Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+          hierarchy
           |> Oli.Delivery.Hierarchy.HierarchyNode.flatten()
           |> Enum.filter(fn node -> node.revision.graded end)
           |> Enum.map(fn node -> node.revision end)
 
         resource_accesses = fetch_resource_accesses(enrollments, section)
 
-        {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section)
+        {:ok, table_model} = GradebookTableModel.new(enrollments, graded_pages, resource_accesses)
 
         {:ok,
          assign(socket,
-           changeset: Sections.change_section(section),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,
            table_model: table_model,
+           graded_pages: graded_pages,
            options: @default_options
          )}
     end
@@ -117,15 +118,24 @@ defmodule OliWeb.Grades.GradebookView do
       Sections.browse_enrollments(
         socket.assigns.section,
         %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        %Sorting{direction: table_model.sort_order, field: :name},
         options
       )
 
-    table_model = Map.put(table_model, :rows, enrollments)
+    resource_accesses = fetch_resource_accesses(enrollments, socket.assigns.section)
+
+    {:ok, table_model} =
+      GradebookTableModel.new(
+        enrollments,
+        socket.assigns.graded_pages,
+        resource_accesses
+      )
+
     total_count = determine_total(enrollments)
 
     {:noreply,
-     assign(socket,
+     assign(
+       socket,
        offset: offset,
        table_model: table_model,
        total_count: total_count,
@@ -136,6 +146,7 @@ defmodule OliWeb.Grades.GradebookView do
   def render(assigns) do
     ~F"""
     <div>
+
       <TextSearch id="text-search"/>
 
       <div class="mb-3"/>
@@ -157,6 +168,7 @@ defmodule OliWeb.Grades.GradebookView do
          Routes.live_path(
            socket,
            __MODULE__,
+           socket.assigns.section.slug,
            Map.merge(
              %{
                sort_by: socket.assigns.table_model.sort_by_spec.name,

@@ -25,7 +25,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     column_specs =
       [
         %ColumnSpec{
-          name: :student,
+          name: :name,
           label: "Student",
           render_fn: &__MODULE__.render_student/3
         }
@@ -50,23 +50,38 @@ defmodule OliWeb.Grades.GradebookTableModel do
     OliWeb.Common.Utils.name(row.user)
   end
 
-  def render_score(_, row, %ColumnSpec{name: resource_id}) do
+  def render_score(assigns, row, %ColumnSpec{name: resource_id}) do
     case Map.get(row, resource_id) do
-      nil -> ""
-      %ResourceAccess{score: nil, out_of: nil} -> ""
-      %ResourceAccess{score: score, out_of: out_of} -> calculate_score(score, out_of)
+      # Indicates that this student has never visited this resource
+      nil ->
+        ""
+
+      # Indicates that this student has visited, but not completed this assessment
+      %ResourceAccess{score: nil, out_of: nil} ->
+        ""
+
+      # We have a rolled-up grade from at least one attempt
+      %ResourceAccess{score: score, out_of: out_of} ->
+        show_score(assigns, score, out_of)
     end
   end
 
-  defp calculate_score(score, out_of) do
+  defp show_score(assigns, score, out_of) do
     case out_of do
       0 ->
-        "0%"
+        ~F"""
+        <span>{score}/{out_of} 0%</span>
+        """
 
       _ ->
-        ((score / out_of)
-         |> Float.round(2)
-         |> Float.to_string()) <> "%"
+        percentage =
+          ((score / out_of * 100)
+           |> Float.round(2)
+           |> Float.to_string()) <> "%"
+
+        ~F"""
+        {score}/{out_of} <small class="text-muted">{percentage}</small>
+        """
     end
   end
 

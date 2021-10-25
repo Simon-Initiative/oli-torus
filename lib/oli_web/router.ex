@@ -593,12 +593,14 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    live("/:section_slug", Sections.OverviewView)
+
+    live("/:section_slug/grades/lms", Grades.GradesLive)
+    live("/:section_slug/grades/gradebook", Grades.GradebookView)
+    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
     get("/:section_slug/updates", PageDeliveryController, :updates)
-    live("/:section_slug/grades", Grades.GradesLive)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    live("/:section_slug", Sections.OverviewView)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     live("/:section_slug/edit", Sections.EditView)
   end
