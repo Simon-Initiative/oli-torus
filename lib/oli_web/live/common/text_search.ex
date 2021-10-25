@@ -8,7 +8,7 @@ defmodule OliWeb.Common.TextSearch do
 
   def render(%{id: id} = assigns) do
     ~F"""
-      <div class="input-group" style="max-width: 500px;">
+      <div class="input-group" style="max-width: 350px;">
         <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-value-changed={@change}>
         {#if @text != ""}
           <div class="input-group-append">
