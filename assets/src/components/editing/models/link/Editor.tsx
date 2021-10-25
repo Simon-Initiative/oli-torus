@@ -21,10 +21,10 @@ export const LinkEditor = (props: Props) => {
 
   // All of the pages that we have available in the course
   // for allowing links to
-  const [pages, setPages] = useState({ type: 'Uninitialized' } as LinkablePages);
+  const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
 
   // The selected page, when in link from page mode
-  const [selectedPage, setSelectedPage] = useState(null as Persistence.Page | null);
+  const [selectedPage, setSelectedPage] = useState<Persistence.Page | null>(null);
 
   const isEditButton = editLink && selectedPage && pages.type === 'success';
 
