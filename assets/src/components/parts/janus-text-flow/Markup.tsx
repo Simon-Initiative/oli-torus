@@ -33,7 +33,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
   } catch (e) {
     console.warn('[Markup] error injecting state into env', { e, state, innerEnv });
   }
-  console.log('templatizeText', { text, state, vars });
+  /*  console.log('templatizeText', { text, state, vars }); */
   let templatizedText = text;
 
   // check for state items that were included in the string
@@ -42,7 +42,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
     if (!stateValue || typeof stateValue === 'object') {
       try {
         const result = evalScript(v, innerEnv);
-        console.log('trying to eval text', { v, result });
+        /* console.log('trying to eval text', { v, result }); */
         innerEnv = result.env;
         if (result?.result && !result?.result?.message) {
           stateValue = result.result;
@@ -56,10 +56,14 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
       return;
     }
     let strValue = stateValue;
+    /* console.log({ strValue, typeOD: typeof stateValue }); */
+
     if (Array.isArray(stateValue)) {
       strValue = stateValue.map((v) => `"${v}"`).join(', ');
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
+    } else if (typeof stateValue === 'number') {
+      strValue = parseFloat(parseFloat(strValue).toFixed(4));
     }
     return strValue;
   });
