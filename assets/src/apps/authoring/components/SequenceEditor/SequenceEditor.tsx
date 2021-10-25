@@ -293,10 +293,7 @@ const SequenceEditor: React.FC<any> = () => {
     await dispatch(savePage());
   };
 
-  const handleItemCopy = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
-    console.log(item);
-    const hierarchyCopy = clone(hierarchy);
-    console.log(hierarchyCopy);
+  const handleItemClone = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
     const newTitle = `Copy of ${item.custom.sequenceName}`;
     const { payload: newActivity } = await dispatch<any>(
       createNewActivity({
@@ -459,10 +456,10 @@ const SequenceEditor: React.FC<any> = () => {
                   onClick={(e) => {
                     e.stopPropagation();
                     ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
-                    handleItemCopy(item);
+                    handleItemClone(item);
                   }}
                 >
-                  <i className="fas fa-clipboard align-text-top mr-2" /> {'Copy Screen'}
+                  <i className="fas fa-clone align-text-top mr-2" /> {'Clone Screen'}
                 </button>
               )}
               <button
