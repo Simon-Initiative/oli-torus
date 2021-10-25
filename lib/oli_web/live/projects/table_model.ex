@@ -15,7 +15,7 @@ defmodule OliWeb.Projects.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &OliWeb.Common.Table.Common.render_relative_date/3
+          render_fn: &OliWeb.Common.Table.Common.render_short_date/3
         },
         %ColumnSpec{
           name: :name,
