@@ -279,9 +279,11 @@ const Markup: React.FC<any> = ({
       //let's not do this for all P tags forces fontSize to be specified
       //PMP-1308 - Uncommenting this for fixing spacing issues. If lineHeight is not applied then SS sets it to 0px.
       //In future, if for some reason someone has to comment it, please make sure to check PMP-1308
-      if (!renderStyles.fontSize) {
+      // FIXME: we can't do this because this will basically make all the text invisible
+      // TODO: figure out how to do it both ways
+      /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
-      }
+      } */
       return (
         <p ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
