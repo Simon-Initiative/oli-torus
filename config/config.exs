@@ -79,6 +79,10 @@ config :ex_money,
   default_cldr_backend: Oli.Cldr,
   json_library: Jason
 
+config :surface, :components, [
+  {Surface.Components.Form.ErrorTag, default_translator: {OliWeb.ErrorHelpers, :translate_error}}
+]
+
 # Configure reCAPTCHA
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",

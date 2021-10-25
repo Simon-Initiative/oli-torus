@@ -136,6 +136,7 @@ module.exports = (env, options) => ({
       utils: path.resolve(__dirname, 'src/utils'),
       styles: path.resolve(__dirname, 'styles'),
       apps: path.resolve(__dirname, 'src/apps'),
+      adaptivity: path.resolve(__dirname, 'src/adaptivity'),
     },
     fallback: { "vm": require.resolve("vm-browserify") }
   },

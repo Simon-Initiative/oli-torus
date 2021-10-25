@@ -33,7 +33,7 @@ defmodule OliWeb.Sections.SectionsView do
   data limit, :integer, default: @limit
   data options, :any
 
-  defp set_breadcrumbs() do
+  def set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
     |> breadcrumb()
   end

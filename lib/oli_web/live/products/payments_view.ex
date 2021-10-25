@@ -69,6 +69,7 @@ defmodule OliWeb.Products.PaymentsView do
 
     {:ok,
      assign(socket,
+       product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
        product_slug: product_slug,
        payments: payments,
        total_count: total_count,
@@ -80,7 +81,7 @@ defmodule OliWeb.Products.PaymentsView do
     ~F"""
     <div>
 
-      <CreateCodes id="create_codes" count={@code_count} product_slug={@product_slug} click="create_codes" change="change_count"/>
+      <CreateCodes id="create_codes" disabled={!@product.requires_payment} count={@code_count} product_slug={@product_slug} click="create_codes" change="change_count"/>
 
       <hr class="mt-5 mb-5"/>
 

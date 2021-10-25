@@ -39,11 +39,13 @@ defmodule OliWeb.PageDeliveryController do
 
   def updates(conn, %{"section_slug" => section_slug}) do
     current_user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
 
-    if is_section_instructor_or_admin?(section_slug, current_user) do
+    if Oli.Accounts.is_admin?(current_author) or
+         is_section_instructor_or_admin?(section_slug, current_user) do
       section = Sections.get_section_by(slug: section_slug)
 
-      render(conn, "updates.html", section: section)
+      render(conn, "updates.html", section: section, title: "Manage Updates")
     else
       render(conn, "not_authorized.html")
     end
@@ -345,7 +347,8 @@ defmodule OliWeb.PageDeliveryController do
   def export_gradebook(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
 
-    if ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) do
+    if is_admin?(conn) or
+         ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) do
       section = Sections.get_section_by(slug: section_slug)
 
       gradebook_csv = Grading.export_csv(section) |> Enum.join("")
@@ -359,6 +362,13 @@ defmodule OliWeb.PageDeliveryController do
       |> send_resp(200, gradebook_csv)
     else
       render(conn, "not_authorized.html")
+    end
+  end
+
+  def is_admin?(conn) do
+    case conn.assigns.current_author do
+      nil -> false
+      author -> Oli.Accounts.is_admin?(author)
     end
   end
 end

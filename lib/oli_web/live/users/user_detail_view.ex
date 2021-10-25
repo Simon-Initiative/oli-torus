@@ -10,6 +10,7 @@ defmodule OliWeb.Users.UsersDetailView do
   use OliWeb.Common.Modal
   alias OliWeb.Pow.UserContext
   alias OliWeb.Users.Actions
+  import OliWeb.Common.Utils
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -198,12 +199,10 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def breadcrumb(previous, %User{id: id} = user) do
-    name = OliWeb.Users.UsersTableModel.normalize(user.name, user.given_name, user.family_name)
-
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: name,
+          full_title: name(user),
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
         })
       ]
