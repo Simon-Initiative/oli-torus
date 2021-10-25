@@ -24,8 +24,9 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             section_resource: nil,
             ancestors: []
 
-  def flatten(%HierarchyNode{children: children} = root) do
+  def flatten(%HierarchyNode{} = root) do
     flatten_helper(root, [], [])
+    |> Enum.reverse()
   end
 
   defp flatten_helper(%HierarchyNode{children: children}, flattened_nodes, current_ancestors) do
@@ -37,6 +38,5 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
         _ -> [node | acc]
       end
     end)
-    |> Enum.reverse()
   end
 end
