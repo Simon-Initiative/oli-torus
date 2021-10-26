@@ -210,7 +210,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [Nav Button]`, payload); */
+        console.log(`${notificationType.toString()} notification handled [Nav Button]`, payload);
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
@@ -440,7 +440,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
   return ready && buttonVisible ? (
     <button data-janus-type={tagName} {...buttonProps} style={styles}>
-      {title}
+      {buttonTitle}
     </button>
   ) : null;
 };
