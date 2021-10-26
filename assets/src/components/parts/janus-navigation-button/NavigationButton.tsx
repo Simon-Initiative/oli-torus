@@ -289,7 +289,56 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+              const sTitle = changes[`stage.${id}.title`];
+              if (sTitle !== undefined) {
+                setButtonTitle(sTitle);
+              }
+
+              const sTitles = changes[`stage.${id}.buttonTitles`];
+              if (sTitles !== undefined) {
+                setButtonTitle(sTitles[0]);
+              }
+
+              let sSelected = changes[`stage.${id}.Selected`];
+              if (sSelected === undefined) {
+                sSelected = changes[`stage.${id}.selected`];
+              }
+              if (sSelected !== undefined) {
+                setButtonSelected(parseBoolean(sSelected));
+              }
+
+              const sVisible = changes[`stage.${id}.visible`];
+              if (sVisible !== undefined) {
+                setButtonVisible(sVisible);
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setButtonEnabled(sEnabled);
+              }
+
+              const sButtonTextColor = changes[`stage.${id}.textColor`];
+              if (sButtonTextColor !== undefined) {
+                setButtonTextColor(sButtonTextColor);
+              }
+
+              const sAccessibilityText = changes[`stage.${id}.accessibilityText`];
+              if (sAccessibilityText !== undefined) {
+                setAccessibilityText(sAccessibilityText);
+              }
+
+              const sBackgroundColor = changes[`stage.${id}.backgroundColor`];
+              if (sBackgroundColor !== undefined) {
+                setBackgroundColor(sBackgroundColor);
+              }
+
+              const sTransparent = changes[`stage.${id}.transparent`];
+              if (sTransparent !== undefined) {
+                setButtonTransparent(sTransparent);
+              }
+            }
             break;
         }
       };
