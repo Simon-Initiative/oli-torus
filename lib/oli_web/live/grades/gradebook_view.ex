@@ -69,7 +69,8 @@ defmodule OliWeb.Grades.GradebookView do
 
         resource_accesses = fetch_resource_accesses(enrollments, section)
 
-        {:ok, table_model} = GradebookTableModel.new(enrollments, graded_pages, resource_accesses)
+        {:ok, table_model} =
+          GradebookTableModel.new(enrollments, graded_pages, resource_accesses, section.slug)
 
         {:ok,
          assign(socket,
@@ -131,7 +132,8 @@ defmodule OliWeb.Grades.GradebookView do
       GradebookTableModel.new(
         enrollments,
         socket.assigns.graded_pages,
-        resource_accesses
+        resource_accesses,
+        socket.assigns.section.slug
       )
 
     total_count = determine_total(enrollments)

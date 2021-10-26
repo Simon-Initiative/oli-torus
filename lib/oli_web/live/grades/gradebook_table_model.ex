@@ -2,8 +2,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   use Surface.LiveComponent
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias OliWeb.Router.Helpers, as: Routes
 
-  def new(enrollments, graded_pages, resource_accesses) do
+  def new(enrollments, graded_pages, resource_accesses, section_slug) do
     by_user =
       Enum.reduce(resource_accesses, %{}, fn ra, m ->
         case Map.has_key?(m, ra.user_id) do
@@ -19,7 +20,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     rows =
       Enum.map(enrollments, fn user ->
         Map.get(by_user, user.id, %{})
-        |> Map.merge(%{user: user, id: user.id})
+        |> Map.merge(%{user: user, id: user.id, section_slug: section_slug})
       end)
 
     column_specs =
@@ -62,15 +63,17 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
       # We have a rolled-up grade from at least one attempt
       %ResourceAccess{score: score, out_of: out_of} ->
-        show_score(assigns, score, out_of)
+        show_score(assigns, row, resource_id, score, out_of)
     end
   end
 
-  defp show_score(assigns, score, out_of) do
+  defp show_score(assigns, row, resource_id, score, out_of) do
     case out_of do
       0 ->
         ~F"""
-        <span>{score}/{out_of} 0%</span>
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+          <span>{score}/{out_of} 0%</span>
+        </a>
         """
 
       _ ->
@@ -80,7 +83,9 @@ defmodule OliWeb.Grades.GradebookTableModel do
            |> Float.to_string()) <> "%"
 
         ~F"""
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
         {score}/{out_of} <small class="text-muted">{percentage}</small>
+        </a>
         """
     end
   end

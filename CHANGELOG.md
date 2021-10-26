@@ -12,6 +12,7 @@
 - New Admin landing page
 - New Instructor Course Section overview page
 - Allow LMS and System admins to unlink LMS section
+- Gradebook and graded page per student details with instructor centered grade override
 
 ## 0.14.0 (2021-10-13)
 
