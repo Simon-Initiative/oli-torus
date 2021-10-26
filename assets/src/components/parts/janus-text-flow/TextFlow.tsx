@@ -164,6 +164,10 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
+            {
+              const { snapshot } = payload;
+              setState({ ...state, ...snapshot });
+            }
             break;
         }
       };

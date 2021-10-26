@@ -174,7 +174,52 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+              const sCustomCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCustomCssClass !== undefined) {
+                setClasses(String(sCustomCssClass));
+              }
+              const sAutoPlay = changes[`stage.${id}.autoPlay`];
+              if (sAutoPlay !== undefined) {
+                setAudioAutoPlay(sAutoPlay);
+              }
+
+              const sEnableReplay = changes[`stage.${id}.enableReplay`];
+              if (sEnableReplay !== undefined) {
+                setAudioEnableReplay(sEnableReplay);
+              }
+
+              const sHasStarted = changes[`stage.${id}.hasStarted`];
+              if (sHasStarted !== undefined) {
+                setAudioIsPlayerStarted(sHasStarted);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'hasCompleted',
+                      type: CapiVariableTypes.NUMBER,
+                      value: parseBool(sHasStarted),
+                    },
+                  ],
+                });
+              }
+
+              const sHasCompleted = changes[`stage.${id}.hasCompleted`];
+              if (sHasCompleted !== undefined) {
+                setAudioIsCompleted(sHasCompleted);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'hasCompleted',
+                      type: CapiVariableTypes.NUMBER,
+                      value: parseBool(sHasCompleted),
+                    },
+                  ],
+                });
+              }
+            }
             break;
         }
       };
