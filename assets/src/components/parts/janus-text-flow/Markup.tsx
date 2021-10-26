@@ -33,7 +33,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
   } catch (e) {
     console.warn('[Markup] error injecting state into env', { e, state, innerEnv });
   }
-  console.log('templatizeText', { text, state, vars });
+  /*  console.log('templatizeText', { text, state, vars }); */
   let templatizedText = text;
 
   // check for state items that were included in the string
@@ -42,7 +42,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
     if (!stateValue || typeof stateValue === 'object') {
       try {
         const result = evalScript(v, innerEnv);
-        console.log('trying to eval text', { v, result });
+        /* console.log('trying to eval text', { v, result }); */
         innerEnv = result.env;
         if (result?.result && !result?.result?.message) {
           stateValue = result.result;
@@ -56,10 +56,14 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
       return;
     }
     let strValue = stateValue;
+    /* console.log({ strValue, typeOD: typeof stateValue }); */
+
     if (Array.isArray(stateValue)) {
       strValue = stateValue.map((v) => `"${v}"`).join(', ');
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
+    } else if (typeof stateValue === 'number') {
+      strValue = parseFloat(parseFloat(strValue).toFixed(4));
     }
     return strValue;
   });
@@ -277,6 +281,10 @@ const Markup: React.FC<any> = ({
         renderStyles.lineHeight = 'normal';
       }
       //let's not do this for all P tags forces fontSize to be specified
+      //PMP-1308 - Uncommenting this for fixing spacing issues. If lineHeight is not applied then SS sets it to 0px.
+      //In future, if for some reason someone has to comment it, please make sure to check PMP-1308
+      // FIXME: we can't do this because this will basically make all the text invisible
+      // TODO: figure out how to do it both ways
       /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
       } */

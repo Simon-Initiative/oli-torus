@@ -56,7 +56,7 @@ export const notIsAnyOfOperator = (factValue: any, value: any) =>
   !isAnyOfOperator(factValue, value);
 
 export const isNaNOperator = (factValue: any, value: any) =>
-  value === (Number.parseFloat(factValue).toString() === 'NaN');
+  parseBoolean(value) === (Number.parseFloat(factValue).toString() === 'NaN');
 
 export const equalWithToleranceOperator = (factValue: any, value: any) => {
   const modifiedFactValue = typeof factValue === 'string' ? parseFloat(factValue) : factValue;

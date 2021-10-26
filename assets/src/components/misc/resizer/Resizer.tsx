@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactElement, useEffect, useState } from 'react';
+import { BoundingRect, Position } from 'components/misc/resizer/types';
 import { useMousePosition } from 'components/misc/resizer/useMousePosition';
 import {
   boundingRectFromMousePosition,
@@ -6,7 +6,7 @@ import {
   offsetBoundingRect,
   resizeHandleStyles,
 } from 'components/misc/resizer/utils';
-import { BoundingRect, Position } from 'components/misc/resizer/types';
+import React, { ReactElement, useEffect, useState } from 'react';
 
 interface Props {
   onResize: (boundingRect: BoundingRect) => void;
