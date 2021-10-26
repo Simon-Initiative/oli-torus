@@ -49,6 +49,9 @@ export const isEqual = (factValue: any, value: any): boolean => {
   } else if (typeOfFactValue === 'number') {
     return parseFloat(value) === factValue;
   }
+  if (typeOfValue === 'string' && typeOfFactValue === 'string') {
+    return value.toLowerCase() === factValue.toLowerCase();
+  }
   return factValue === value;
 };
 
