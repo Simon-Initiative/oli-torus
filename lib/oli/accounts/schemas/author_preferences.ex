@@ -10,15 +10,17 @@ defmodule Oli.Accounts.AuthorPreferences do
   @derive Jason.Encoder
   @primary_key false
   embedded_schema do
-    field :admin_show_all_projects, :boolean
-    field :admin_show_deleted_projects, :boolean
+    field :admin_show_all_projects, :boolean, default: true
+    field :admin_show_deleted_projects, :boolean, default: false
+    field :show_relative_dates, :boolean, default: true
   end
 
   def changeset(preferences, attrs \\ %{}) do
     preferences
     |> cast(attrs, [
       :admin_show_all_projects,
-      :admin_show_deleted_projects
+      :admin_show_deleted_projects,
+      :show_relative_dates
     ])
   end
 end

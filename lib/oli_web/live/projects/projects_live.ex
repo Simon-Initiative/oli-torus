@@ -44,14 +44,14 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     show_all =
       if is_admin do
-        Accounts.get_author_preference(author.id, :admin_show_all_projects, true)
+        Accounts.get_author_preference(author, :admin_show_all_projects, true)
       else
         true
       end
 
     show_deleted =
       if is_admin do
-        Accounts.get_author_preference(author.id, :admin_show_deleted_projects, false)
+        Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
       else
         true
       end
@@ -65,7 +65,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(projects, is_admin)
+    {:ok, table_model} = TableModel.new(author, projects, is_admin)
 
     total_count = determine_total(projects)
 
@@ -103,28 +103,28 @@ defmodule OliWeb.Projects.ProjectsLive do
     text_search = get_str_param(params, "text_search", "")
 
     # if author is an admin, get the show_all value and update if its changed
-    show_all =
+    {show_all, author} =
       case get_boolean_param(params, "show_all", show_all) do
         new_value when new_value != show_all and is_admin ->
-          {:ok, _} =
-            Accounts.set_author_preference(author.id, :admin_show_all_projects, new_value)
+          {:ok, author} =
+            Accounts.set_author_preference(author, :admin_show_all_projects, new_value)
 
-          new_value
+          {new_value, author}
 
         old_value ->
-          old_value
+          {old_value, author}
       end
 
-    show_deleted =
+    {show_deleted, author} =
       case get_boolean_param(params, "show_deleted", show_deleted) do
         new_value when new_value != show_deleted and is_admin ->
-          {:ok, _} =
-            Accounts.set_author_preference(author.id, :admin_show_deleted_projects, new_value)
+          {:ok, author} =
+            Accounts.set_author_preference(author, :admin_show_deleted_projects, new_value)
 
-          new_value
+          {new_value, author}
 
         old_value ->
-          old_value
+          {old_value, author}
       end
 
     projects =
@@ -143,6 +143,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     {:noreply,
      assign(socket,
+       author: author,
        offset: offset,
        projects: projects,
        table_model: table_model,

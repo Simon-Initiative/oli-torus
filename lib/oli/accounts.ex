@@ -421,17 +421,27 @@ defmodule Oli.Accounts do
 
   @doc """
   Returns an author preference using the key provided. If the preference isn't set or
-  the author preferences have not been created yet, the default value will be returned
+  the author preferences have not been created yet, the default value will be returned.
+
+  Accepts and Author struct or author id. If an id is given, the latest author record
+  will be queried from the database. Otherwise, the preferences in the Author struct
+  is used.
 
   See AuthorPreferences for available key options
   """
-  def get_author_preference(author_id, key, default \\ nil) do
-    author = get_author!(author_id)
+  def get_author_preference(author, key, default \\ nil)
 
-    author.preferences
+  def get_author_preference(%Author{preferences: preferences}, key, default) do
+    preferences
     |> value_or(%AuthorPreferences{})
     |> Map.get(key, default)
     |> value_or(default)
+  end
+
+  def get_author_preference(author_id, key, default) when is_integer(author_id) do
+    author = get_author!(author_id)
+
+    get_author_preference(author, key, default)
   end
 
   @doc """
@@ -439,6 +449,9 @@ defmodule Oli.Accounts do
 
   See AuthorPreferences for available key options
   """
+  def set_author_preference(%Author{id: author_id}, key, value),
+    do: set_author_preference(author_id, key, value)
+
   def set_author_preference(author_id, key, value) do
     author = get_author!(author_id)
 
