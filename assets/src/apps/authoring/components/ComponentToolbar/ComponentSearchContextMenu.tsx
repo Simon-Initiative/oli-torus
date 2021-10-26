@@ -81,6 +81,8 @@ const ComponentSearchContextMenu: React.FC = () => {
           placement="bottom"
           container={document.getElementById('advanced-authoring')}
           containerPadding={20}
+          rootClose={true}
+          onHide={() => setShow(false)}
         >
           <Popover id="search-popover">
             <Popover.Title as="h3">{allParts.length} Parts On Screen</Popover.Title>
