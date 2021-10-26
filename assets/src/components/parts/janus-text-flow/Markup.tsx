@@ -135,9 +135,17 @@ const Markup: React.FC<any> = ({
       processedText.length < 2 && !processedText.trim()
         ? '\u00a0'
         : processedText.replace(/ \s/g, '\u00a0 ');
-  } else if (processedText.length !== processedText.trim().length) {
+  }
+  if (processedText.length !== processedText.trimLeft().length) {
+    const noOfleadingSpaces = processedText.length - processedText.trimLeft().length;
+    let leadingSpacePart = processedText.substring(0, noOfleadingSpaces);
+    let actualText = processedText.substring(noOfleadingSpaces);
+    leadingSpacePart = leadingSpacePart.replace(/ /g, '\u00a0');
+    actualText = actualText.replace(/\s /g, ' \u00a0');
+    processedText = leadingSpacePart + actualText;
     // check if text has leading and trailing spaces.
     //handling the leading blank spacecs in the span
+  } else {
     processedText = processedText.replace(/\s /g, ' \u00a0');
   }
 
