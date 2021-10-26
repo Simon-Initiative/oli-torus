@@ -24,6 +24,30 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             section_resource: nil,
             ancestors: []
 
+  @doc """
+  Given a hierarchy node, this function "flattens" all nodes below into a list, in the order that
+  a student would encounter the resources working linearly through a course.
+
+  As an example, consider the followign hierarchy:
+
+  --Unit 1
+  ----Module 1
+  ------Page A
+  ------Page B
+  --Unit 2
+  ----Moudule 2
+  ------Page C
+
+  The above would be flattened to:
+  Unit 1
+  Module 1
+  Page A
+  Page B
+  Unit 2
+  Module 2
+  Page C
+
+  """
   def flatten(%HierarchyNode{} = root) do
     flatten_helper(root, [], [])
     |> Enum.reverse()
