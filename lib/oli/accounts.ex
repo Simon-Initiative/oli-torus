@@ -447,7 +447,6 @@ defmodule Oli.Accounts do
       |> value_or(%AuthorPreferences{})
       |> Map.put(key, value)
       |> Map.from_struct()
-      |> IO.inspect()
 
     update_author(author, %{preferences: updated_preferences})
   end
