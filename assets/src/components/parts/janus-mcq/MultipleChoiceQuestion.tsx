@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -64,6 +64,8 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   idx,
   overrideHeight,
   columns = 1,
+  onClick,
+  index,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -95,10 +97,24 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       onSelected(selection);
     }
   };
-
   return (
     <React.Fragment>
       <div style={mcqItemStyles}>
+        <i
+          onClick={() => onClick(index, 1)}
+          className="fa fa-trash"
+          style={{ cursor: 'pointer', color: 'white' }}
+          aria-hidden="true"
+          title="Delete the option"
+        ></i>
+
+        <i
+          onClick={() => onClick(index, 2)}
+          className="fas fa-edit"
+          style={{ cursor: 'pointer', color: 'white' }}
+          aria-hidden="true"
+          title="Edit the option"
+        ></i>
         <input
           style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
