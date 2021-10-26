@@ -4,5 +4,5 @@ export const CheckboxListener = {
     this.el.addEventListener('change', (e: any) => {
       this.pushEvent(change_event, { id: e.target.id, checked: e.target.checked });
     });
-  }
+  },
 };

@@ -14,5 +14,5 @@ export const Hooks = {
   InputAutoSelect,
   ProjectsTypeahead,
   TextInputListener,
-  CheckboxListener
+  CheckboxListener,
 };
