@@ -3,7 +3,6 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Form}
   alias Surface.Components.Form.{Field, Label, NumberInput, ErrorTag}
   alias OliWeb.Progress.AttemptHistory
@@ -24,7 +23,7 @@ defmodule OliWeb.Progress.StudentResourceView do
     |> breadcrumb(section)
   end
 
-  def breadcrumb(previous, section) do
+  def breadcrumb(previous, _) do
     previous ++
       [
         Breadcrumb.new(%{
