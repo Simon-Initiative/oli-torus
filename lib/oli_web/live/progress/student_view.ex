@@ -7,6 +7,7 @@ defmodule OliWeb.Progress.StudentView do
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.Mount
+  import OliWeb.Common.Utils
   import OliWeb.Common.Params
 
   data breadcrumbs, :any
@@ -125,6 +126,7 @@ defmodule OliWeb.Progress.StudentView do
   def render(assigns) do
     ~F"""
       <div>
+        <h3>Progress Details for {name(@user)}</h3>
         <TextSearch id="text_search" text={@text_search}/>
         <div class="mt-4"/>
         <Table model={@table_model} sort="do_sort"/>
