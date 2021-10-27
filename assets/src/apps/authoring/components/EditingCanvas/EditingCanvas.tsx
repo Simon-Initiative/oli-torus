@@ -21,6 +21,7 @@ const EditingCanvas: React.FC = () => {
 
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
+  const [modalPrimaryButtonTitle, setModalPrimaryButtonTitle] = useState<string>('Save');
   const [configPartId, setConfigPartId] = useState<string>('');
 
   const [notificationStream, setNotificationStream] = useState<{
@@ -98,7 +99,8 @@ const EditingCanvas: React.FC = () => {
   // TODO: rename first param to partId
   const handlePartConfigure = async (part: any, context: any) => {
     /* console.log('[handlePartConfigure]', { part, context }); */
-    const { fullscreen = false } = context;
+    const { fullscreen = false, primaryButtonTitle } = context;
+    setModalPrimaryButtonTitle(primaryButtonTitle);
     setConfigModalFullscreen(fullscreen);
     setConfigPartId(part);
     setShowConfigModal(true);
@@ -146,6 +148,7 @@ const EditingCanvas: React.FC = () => {
       </section>
       <ConfigurationModal
         fullscreen={configModalFullscreen}
+        primaryButtonTitle={modalPrimaryButtonTitle}
         headerText={`Configure: ${configPartId}`}
         bodyId={configEditorId}
         isOpen={showConfigModal}

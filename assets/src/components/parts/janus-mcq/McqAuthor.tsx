@@ -12,7 +12,7 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 
 // eslint-disable-next-line react/display-name
-const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
+const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {
   const quillProps: { tree?: any; html?: any } = {};
   console.log({ quillProps });
 
@@ -23,11 +23,16 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
     quillProps.html = html;
   }
   console.log('MCQ E RERENDER', { html, tree, portal });
-  const E = () => (
-    <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
-  );
+  if (type === 1) {
+    const E = () => (
+      <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
+    );
 
-  return portal && ReactDOM.createPortal(<E />, portal);
+    return portal && ReactDOM.createPortal(<E />, portal);
+  } else {
+    const E = () => <div style={{ padding: 20 }}>Are you sure you want to delete the option?</div>;
+    return portal && ReactDOM.createPortal(<E />, portal);
+  }
 });
 const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const { id, model, configuremode, onConfigure, onCancelConfigure, onSaveConfigure } = props;
@@ -49,6 +54,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const [showConfigureMode, setShowConfigureMode] = useState<boolean>(false);
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
+  const [deleteOptionClicked, setDeleteOptionClicked] = useState<boolean>(false);
   const [textNodes, setTextNodes] = useState<any[]>([]);
   const [windowModel, setWindowModel] = useState<any>(model);
   const [ready, setReady] = useState<boolean>(false);
@@ -210,20 +216,35 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   }
   const [tree, setTree] = useState<MarkupTree[]>([]);
   const onClick = (index: any, option: number) => {
-    setEditOptionClicked(true);
-    if (mcqItems[index].nodes && typeof mcqItems[index].nodes === 'string') {
-      setTree(JSON.parse(mcqItems[index].nodes as unknown as string) as MarkupTree[]);
-    } else if (Array.isArray(mcqItems[index].nodes)) {
-      setTree(mcqItems[index].nodes);
+    console.log({ option });
+
+    if (option === 1) {
+      setEditOptionClicked(true);
+      setDeleteOptionClicked(false);
+      if (mcqItems[index].nodes && typeof mcqItems[index].nodes === 'string') {
+        setTree(JSON.parse(mcqItems[index].nodes as unknown as string) as MarkupTree[]);
+      } else if (Array.isArray(mcqItems[index].nodes)) {
+        setTree(mcqItems[index].nodes);
+      }
+      setCurrentIndex(index);
+      setTextNodes(mcqItems[index].nodes);
+
+      onConfigure({ id, configure: true, context: { fullscreen: false } });
+    } else {
+      setDeleteOptionClicked(true);
+      setEditOptionClicked(false);
+      onConfigure({
+        id,
+        configure: true,
+        context: { fullscreen: false, primaryButtonTitle: 'Delete' },
+      });
     }
-    setCurrentIndex(index);
-    setTextNodes(mcqItems[index].nodes);
-    onConfigure({ id, configure: true, context: { fullscreen: false } });
   };
 
   return (
     <React.Fragment>
-      {editOptionClicked && portalEl && <Editor html="" tree={tree} portal={portalEl} />}
+      {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
+      {deleteOptionClicked && portalEl && <Editor type={2} html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
           <style>

@@ -103,20 +103,43 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       <div style={mcqItemStyles}>
         {configureMode && (
           <>
-            <i
-              onClick={() => onConfigOptionClick(index, 1)}
-              className="fa fa-trash"
-              style={{ cursor: 'pointer', color: 'white' }}
-              aria-hidden="true"
-              title="Delete the option"
-            ></i>
-            <i
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
               onClick={() => onConfigOptionClick(index, 2)}
-              className="fas fa-edit"
-              style={{ cursor: 'pointer', color: 'white' }}
-              aria-hidden="true"
-              title="Edit the option"
-            ></i>{' '}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fa fa-trash"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Edit the option"
+              ></i>{' '}
+            </button>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 1)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fas fa-edit"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Edit the option"
+              ></i>{' '}
+            </button>
           </>
         )}
         <input
