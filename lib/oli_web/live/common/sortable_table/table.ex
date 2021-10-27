@@ -88,7 +88,6 @@ defmodule OliWeb.Common.SortableTable.Table do
   end
 
   defp with_data(assigns, data) do
-    IO.inspect(data)
     Map.merge(assigns, data)
   end
 end
