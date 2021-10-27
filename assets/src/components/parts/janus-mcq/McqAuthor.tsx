@@ -47,6 +47,8 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     width,
   };
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
+  const [showConfigureMode, setShowConfigureMode] = useState<boolean>(false);
+  const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
   const [textNodes, setTextNodes] = useState<any[]>([]);
   const [windowModel, setWindowModel] = useState<any>(model);
   const [ready, setReady] = useState<boolean>(false);
@@ -57,7 +59,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
 
   const handleNotificationSave = useCallback(async () => {
     const modelClone = clone(model);
-    mcqItems[currentIndex].nodes = textNodes;
+    modelClone.mcqItems[currentIndex].nodes = textNodes;
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
   }, [model, textNodes, currentIndex, mcqItems]);
@@ -112,12 +114,8 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
             {
               const { partId, configure } = payload;
               if (partId === id) {
-                /* console.log('TF:NotificationType.CONFIGURE', { partId, configure }); */
-                // if it's not us, then we shouldn't be configuring
-                setInConfigureMode(configure);
-                if (configure) {
-                  onConfigure({ id, configure, context: { fullscreen: false } });
-                }
+                setInConfigureMode(false);
+                setShowConfigureMode(!showConfigureMode);
               }
             }
             break;
@@ -125,8 +123,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                /*
-                console.log('TF:NotificationType.CONFIGURE_SAVE', { partId, payload }); */
                 handleNotificationSave();
               }
             }
@@ -135,7 +131,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
             {
               const { id: partId } = payload;
               if (partId === id) {
-                /* console.log('TF:NotificationType.CONFIGURE_CANCEL', { partId }); */
                 setInConfigureMode(false);
               }
             }
@@ -150,11 +145,10 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, handleNotificationSave]);
+  }, [props.notify, handleNotificationSave, currentIndex, showConfigureMode]);
 
   useEffect(() => {
     const handleEditorSave = (e: any) => {
-      /* console.log('TF EDITOR SAVE'); */
       if (!inConfigureMode) {
         return;
       } // not mine
@@ -163,7 +157,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       const modelClone = clone(model);
       modelClone.nodes = payload;
       // optimistic update
-      //setModel(modelClone);
       onSaveConfigure({
         id,
         snapshot: modelClone,
@@ -184,7 +177,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
         return;
       } // not mine
       const { payload, callback } = e.detail;
-      /* console.log('MCQ EDITOR CHANGE', { payload, callback }); */
       setTextNodes(payload.value);
     };
 
@@ -217,21 +209,21 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     columns = 4;
   }
   const [tree, setTree] = useState<MarkupTree[]>([]);
-  const [htmlPreview, setHtmlPreview] = useState<string>('');
   const onClick = (index: any, option: number) => {
+    setEditOptionClicked(true);
     if (mcqItems[index].nodes && typeof mcqItems[index].nodes === 'string') {
       setTree(JSON.parse(mcqItems[index].nodes as unknown as string) as MarkupTree[]);
     } else if (Array.isArray(mcqItems[index].nodes)) {
       setTree(mcqItems[index].nodes);
     }
+    setCurrentIndex(index);
     setTextNodes(mcqItems[index].nodes);
     onConfigure({ id, configure: true, context: { fullscreen: false } });
-    setInConfigureMode(true);
   };
 
   return (
     <React.Fragment>
-      {inConfigureMode && portalEl && <Editor html={htmlPreview} tree={tree} portal={portalEl} />}
+      {editOptionClicked && portalEl && <Editor html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
           <style>
@@ -252,26 +244,26 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
           }
         `}
           </style>
-          {!inConfigureMode &&
-            options?.map((item, index) => (
-              <MCQItem
-                index={index}
-                key={`${id}-item-${index}`}
-                totalItems={options.length}
-                layoutType={layoutType}
-                itemId={`${id}-item-${index}`}
-                groupId={`mcq-${id}`}
-                val={item.value}
-                {...item}
-                x={0}
-                y={0}
-                overrideHeight={overrideHeight}
-                disabled={false}
-                multipleSelection={multipleSelection}
-                columns={columns}
-                onClick={onClick}
-              />
-            ))}
+          {options?.map((item, index) => (
+            <MCQItem
+              index={index}
+              key={`${id}-item-${index}`}
+              totalItems={options.length}
+              layoutType={layoutType}
+              itemId={`${id}-item-${index}`}
+              groupId={`mcq-${id}`}
+              val={item.value}
+              {...item}
+              x={0}
+              y={0}
+              overrideHeight={overrideHeight}
+              disabled={false}
+              multipleSelection={multipleSelection}
+              columns={columns}
+              onClick={onClick}
+              configureMode={showConfigureMode}
+            />
+          ))}
         </div>
       }
     </React.Fragment>

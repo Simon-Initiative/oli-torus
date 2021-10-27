@@ -66,6 +66,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   columns = 1,
   onClick,
   index,
+  configureMode,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -100,21 +101,24 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   return (
     <React.Fragment>
       <div style={mcqItemStyles}>
-        <i
-          onClick={() => onClick(index, 1)}
-          className="fa fa-trash"
-          style={{ cursor: 'pointer', color: 'white' }}
-          aria-hidden="true"
-          title="Delete the option"
-        ></i>
-
-        <i
-          onClick={() => onClick(index, 2)}
-          className="fas fa-edit"
-          style={{ cursor: 'pointer', color: 'white' }}
-          aria-hidden="true"
-          title="Edit the option"
-        ></i>
+        {configureMode && (
+          <>
+            <i
+              onClick={() => onClick(index, 1)}
+              className="fa fa-trash"
+              style={{ cursor: 'pointer', color: 'white' }}
+              aria-hidden="true"
+              title="Delete the option"
+            ></i>
+            <i
+              onClick={() => onClick(index, 2)}
+              className="fas fa-edit"
+              style={{ cursor: 'pointer', color: 'white' }}
+              aria-hidden="true"
+              title="Edit the option"
+            ></i>{' '}
+          </>
+        )}
         <input
           style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
