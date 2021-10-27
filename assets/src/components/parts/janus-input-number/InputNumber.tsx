@@ -84,7 +84,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [InputNumber]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do

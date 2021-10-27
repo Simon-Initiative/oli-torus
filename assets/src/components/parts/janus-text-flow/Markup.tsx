@@ -1,4 +1,3 @@
-import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { evalScript, getAssignScript } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
@@ -23,10 +22,11 @@ const getExpressions = /[^{\}]+(?=})/g;
 const templatizeText = (text: string, state: any, env?: Environment): string => {
   let innerEnv = env;
   const vars = text.match(getExpressions);
+  /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
     return text;
   }
-  innerEnv = evalScript(janus_std, innerEnv).env;
+  /* innerEnv = evalScript(janus_std, innerEnv).env; */
   try {
     const stateAssignScript = getAssignScript(state, innerEnv);
     evalScript(stateAssignScript, innerEnv);
@@ -87,6 +87,7 @@ const Markup: React.FC<any> = ({
   state = {},
   customCssClass = '',
   displayRawText = false,
+  env = new Environment(),
 }) => {
   /*eslint-enable */
   const el = useRef<any>(null);
@@ -123,7 +124,7 @@ const Markup: React.FC<any> = ({
   let processedText = text;
   // allow (authoring usually) skipping the template processing
   if (!displayRawText) {
-    processedText = templatizeText(text, state);
+    processedText = templatizeText(text, state, env);
   }
 
   // eslint-disable-next-line

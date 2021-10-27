@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -15,6 +16,7 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
+import { Environment } from 'janus-script';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
@@ -191,8 +193,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const result: Success = {
       type: 'success',
     };
+    // provide each activity with a local scope based on the global scope
+    // should allow it to do some same screen interactivity/adaptivity
+    const activityScriptEnv = new Environment(defaultGlobalEnv);
+    /* evalScript(`let global.screenId = "${activity.id}"`, activityScriptEnv); */
     // BS: TODO make compatible with *any* activity
-    return { ...results, ...result };
+    return { ...results, ...result, env: activityScriptEnv };
   };
 
   const onResize = async (attemptGuid: string) => {
