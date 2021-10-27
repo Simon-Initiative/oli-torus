@@ -1,5 +1,5 @@
 defmodule OliWeb.Progress.StudentResourceView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
@@ -163,7 +163,7 @@ defmodule OliWeb.Progress.StudentResourceView do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
-  def handle_event("save", %{"section" => params}, socket) do
+  def handle_event("save", %{"resource_access" => params}, socket) do
     case Core.update_resource_access(socket.assigns.resource_access, params) do
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
