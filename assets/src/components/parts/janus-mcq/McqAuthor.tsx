@@ -162,6 +162,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     } else if (Array.isArray(mcqItems[index].nodes)) {
       setTree(mcqItems[index].nodes);
     }
+    onConfigure({ id, configure: true, context: { fullscreen: false } });
     setInConfigureMode(true);
   };
 
