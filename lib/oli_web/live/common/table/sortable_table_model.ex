@@ -40,7 +40,9 @@ defmodule OliWeb.Common.Table.SortableTableModel do
             sort_order: :asc,
             event_suffix: "",
             # the field used to identify uniquely a row item
-            id_field: nil
+            id_field: nil,
+            # extra data a view can push down to custom sorts or renderers
+            data: %{}
 
   def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field) do
     model =

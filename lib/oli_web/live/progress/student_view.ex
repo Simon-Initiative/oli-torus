@@ -1,18 +1,20 @@
 defmodule OliWeb.Progress.StudentView do
   use Surface.LiveView
   alias OliWeb.Common.{Breadcrumb}
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Surface.Components.{Form}
-  alias Surface.Components.Form.{Field, Label, NumberInput, ErrorTag}
-  alias OliWeb.Progress.AttemptHistory
+
+  alias OliWeb.Progress.StudentTabelModel
+  alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Sections.Mount
-  alias Oli.Delivery.Attempts.Core
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
   data section, :any, default: nil
   data user, :any
+
+  prop total_count, :integer, required: true
+  prop filter, :string, required: true
+  prop table_model, :struct, required: true
+  prop sort, :event, default: "paged_table_sort"
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -48,9 +50,29 @@ defmodule OliWeb.Progress.StudentView do
                 section_slug,
                 user_id
               )
+              |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+
+            hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+
+            page_nodes =
+              hierarchy
+              |> Oli.Delivery.Hierarchy.flatten()
+              |> Enum.filter(fn node ->
+                node.revision.resource_type_id ==
+                  Oli.Resources.ResourceType.get_id_by_type("page")
+              end)
+
+            total_count = length(page_nodes)
+
+            {:ok, table_model} =
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user)
 
             {:ok,
              assign(socket,
+               table_model: table_model,
+               total_count: total_count,
+               page_nodes: page_nodes,
+               resource_accesses: resource_accesses,
                breadcrumbs: set_breadcrumbs(type, section),
                section: section,
                user: user
@@ -68,7 +90,10 @@ defmodule OliWeb.Progress.StudentView do
 
   def render(assigns) do
     ~F"""
+      <div>
 
+        <Table model={@table_model} sort="do_sort"/>
+      </div>
     """
   end
 end
