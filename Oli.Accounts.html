@@ -10,7 +10,7 @@
     <title>Oli.Accounts — OLI Torus v0.14.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-40f96807ff.js"></script>
+    <script src="dist/sidebar_items-b951acdeb7.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -222,6 +222,16 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#get_author_preference/3">get_author_preference(author, key, default \\ nil)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns an author preference using the key provided. If the preference isn't set or
+the author preferences have not been created yet, the default value will be returned.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_user!/1">get_user!(id)</a>
 
   </div>
@@ -325,6 +335,15 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#set_author_preference/3">set_author_preference(author_id, key, value)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Set's an author preference to the provided value at a given key</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#update_author/2">update_author(author, attrs)</a>
 
   </div>
@@ -401,7 +420,7 @@ Functions
     </a>
     <h1 class="signature">author_signed_in?(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L411" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L418" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -423,7 +442,7 @@ Functions
     </a>
     <h1 class="signature">author_with_email_exists?(email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L401" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L408" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -445,7 +464,7 @@ Functions
     </a>
     <h1 class="signature">browse_authors(paging, sorting, options)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L60" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L67" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -467,7 +486,7 @@ Functions
     </a>
     <h1 class="signature">browse_users(paging, sorting, options)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L8" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L17" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -489,7 +508,7 @@ Functions
     </a>
     <h1 class="signature">can_access?(author, project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L415" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L467" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -511,7 +530,7 @@ Functions
     </a>
     <h1 class="signature">can_access_via_slug?(author, project_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L437" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L489" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -535,7 +554,7 @@ Functions
     </a>
     <h1 class="signature">create_author(params \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L347" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L354" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -549,8 +568,8 @@ Functions
   <a href="#create_author/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_author</span><span class="p" data-group-id="3713000385-1">(</span><span class="p" data-group-id="3713000385-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3713000385-2">}</span><span class="p" data-group-id="3713000385-1">)</span><span class="w">
-</span><span class="p" data-group-id="3713000385-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3713000385-4">%</span><span class="nc" data-group-id="3713000385-4">Author</span><span class="p" data-group-id="3713000385-4">{</span><span class="p" data-group-id="3713000385-4">}</span><span class="p" data-group-id="3713000385-3">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_author</span><span class="p" data-group-id="3911992466-1">(</span><span class="p" data-group-id="3911992466-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3911992466-2">}</span><span class="p" data-group-id="3911992466-1">)</span><span class="w">
+</span><span class="p" data-group-id="3911992466-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3911992466-4">%</span><span class="nc" data-group-id="3911992466-4">Author</span><span class="p" data-group-id="3911992466-4">{</span><span class="p" data-group-id="3911992466-4">}</span><span class="p" data-group-id="3911992466-3">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_guest_user/1">
@@ -564,7 +583,7 @@ Functions
     </a>
     <h1 class="signature">create_guest_user(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L173" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L180" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -578,10 +597,10 @@ Functions
   <a href="#create_guest_user/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_guest_user</span><span class="p" data-group-id="1976292494-1">(</span><span class="p" data-group-id="1976292494-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1976292494-2">}</span><span class="p" data-group-id="1976292494-1">)</span><span class="w">
-</span><span class="p" data-group-id="1976292494-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1976292494-4">%</span><span class="nc" data-group-id="1976292494-4">User</span><span class="p" data-group-id="1976292494-4">{</span><span class="p" data-group-id="1976292494-4">}</span><span class="p" data-group-id="1976292494-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_guest_user</span><span class="p" data-group-id="1976292494-5">(</span><span class="p" data-group-id="1976292494-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1976292494-6">}</span><span class="p" data-group-id="1976292494-5">)</span><span class="w">
-</span><span class="p" data-group-id="1976292494-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1976292494-8">%</span><span class="nc" data-group-id="1976292494-8">Ecto.Changeset</span><span class="p" data-group-id="1976292494-8">{</span><span class="p" data-group-id="1976292494-8">}</span><span class="p" data-group-id="1976292494-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_guest_user</span><span class="p" data-group-id="4176389851-1">(</span><span class="p" data-group-id="4176389851-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4176389851-2">}</span><span class="p" data-group-id="4176389851-1">)</span><span class="w">
+</span><span class="p" data-group-id="4176389851-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4176389851-4">%</span><span class="nc" data-group-id="4176389851-4">User</span><span class="p" data-group-id="4176389851-4">{</span><span class="p" data-group-id="4176389851-4">}</span><span class="p" data-group-id="4176389851-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_guest_user</span><span class="p" data-group-id="4176389851-5">(</span><span class="p" data-group-id="4176389851-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4176389851-6">}</span><span class="p" data-group-id="4176389851-5">)</span><span class="w">
+</span><span class="p" data-group-id="4176389851-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4176389851-8">%</span><span class="nc" data-group-id="4176389851-8">Ecto.Changeset</span><span class="p" data-group-id="4176389851-8">{</span><span class="p" data-group-id="4176389851-8">}</span><span class="p" data-group-id="4176389851-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_user/1">
@@ -595,7 +614,7 @@ Functions
     </a>
     <h1 class="signature">create_user(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L159" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L166" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -609,10 +628,10 @@ Functions
   <a href="#create_user/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_user</span><span class="p" data-group-id="4096329050-1">(</span><span class="p" data-group-id="4096329050-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4096329050-2">}</span><span class="p" data-group-id="4096329050-1">)</span><span class="w">
-</span><span class="p" data-group-id="4096329050-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4096329050-4">%</span><span class="nc" data-group-id="4096329050-4">User</span><span class="p" data-group-id="4096329050-4">{</span><span class="p" data-group-id="4096329050-4">}</span><span class="p" data-group-id="4096329050-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_user</span><span class="p" data-group-id="4096329050-5">(</span><span class="p" data-group-id="4096329050-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4096329050-6">}</span><span class="p" data-group-id="4096329050-5">)</span><span class="w">
-</span><span class="p" data-group-id="4096329050-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4096329050-8">%</span><span class="nc" data-group-id="4096329050-8">Ecto.Changeset</span><span class="p" data-group-id="4096329050-8">{</span><span class="p" data-group-id="4096329050-8">}</span><span class="p" data-group-id="4096329050-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_user</span><span class="p" data-group-id="5913524319-1">(</span><span class="p" data-group-id="5913524319-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5913524319-2">}</span><span class="p" data-group-id="5913524319-1">)</span><span class="w">
+</span><span class="p" data-group-id="5913524319-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5913524319-4">%</span><span class="nc" data-group-id="5913524319-4">User</span><span class="p" data-group-id="5913524319-4">{</span><span class="p" data-group-id="5913524319-4">}</span><span class="p" data-group-id="5913524319-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_user</span><span class="p" data-group-id="5913524319-5">(</span><span class="p" data-group-id="5913524319-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5913524319-6">}</span><span class="p" data-group-id="5913524319-5">)</span><span class="w">
+</span><span class="p" data-group-id="5913524319-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5913524319-8">%</span><span class="nc" data-group-id="5913524319-8">Ecto.Changeset</span><span class="p" data-group-id="5913524319-8">{</span><span class="p" data-group-id="5913524319-8">}</span><span class="p" data-group-id="5913524319-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_author/1">
@@ -624,7 +643,7 @@ Functions
     </a>
     <h1 class="signature">delete_author(author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L380" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L387" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -638,10 +657,10 @@ Functions
   <a href="#delete_author/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_author</span><span class="p" data-group-id="8095504754-1">(</span><span class="n">author</span><span class="p" data-group-id="8095504754-1">)</span><span class="w">
-</span><span class="p" data-group-id="8095504754-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8095504754-3">%</span><span class="nc" data-group-id="8095504754-3">Author</span><span class="p" data-group-id="8095504754-3">{</span><span class="p" data-group-id="8095504754-3">}</span><span class="p" data-group-id="8095504754-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_author</span><span class="p" data-group-id="8095504754-4">(</span><span class="n">author</span><span class="p" data-group-id="8095504754-4">)</span><span class="w">
-</span><span class="p" data-group-id="8095504754-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8095504754-6">%</span><span class="nc" data-group-id="8095504754-6">Ecto.Changeset</span><span class="p" data-group-id="8095504754-6">{</span><span class="p" data-group-id="8095504754-6">}</span><span class="p" data-group-id="8095504754-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_author</span><span class="p" data-group-id="6782472597-1">(</span><span class="n">author</span><span class="p" data-group-id="6782472597-1">)</span><span class="w">
+</span><span class="p" data-group-id="6782472597-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6782472597-3">%</span><span class="nc" data-group-id="6782472597-3">Author</span><span class="p" data-group-id="6782472597-3">{</span><span class="p" data-group-id="6782472597-3">}</span><span class="p" data-group-id="6782472597-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_author</span><span class="p" data-group-id="6782472597-4">(</span><span class="n">author</span><span class="p" data-group-id="6782472597-4">)</span><span class="w">
+</span><span class="p" data-group-id="6782472597-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6782472597-6">%</span><span class="nc" data-group-id="6782472597-6">Ecto.Changeset</span><span class="p" data-group-id="6782472597-6">{</span><span class="p" data-group-id="6782472597-6">}</span><span class="p" data-group-id="6782472597-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_user/1">
@@ -653,7 +672,7 @@ Functions
     </a>
     <h1 class="signature">delete_user(user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L206" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L213" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -667,10 +686,10 @@ Functions
   <a href="#delete_user/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_user</span><span class="p" data-group-id="0145881940-1">(</span><span class="n">user</span><span class="p" data-group-id="0145881940-1">)</span><span class="w">
-</span><span class="p" data-group-id="0145881940-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0145881940-3">%</span><span class="nc" data-group-id="0145881940-3">User</span><span class="p" data-group-id="0145881940-3">{</span><span class="p" data-group-id="0145881940-3">}</span><span class="p" data-group-id="0145881940-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_user</span><span class="p" data-group-id="0145881940-4">(</span><span class="n">user</span><span class="p" data-group-id="0145881940-4">)</span><span class="w">
-</span><span class="p" data-group-id="0145881940-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0145881940-6">%</span><span class="nc" data-group-id="0145881940-6">Ecto.Changeset</span><span class="p" data-group-id="0145881940-6">{</span><span class="p" data-group-id="0145881940-6">}</span><span class="p" data-group-id="0145881940-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_user</span><span class="p" data-group-id="0760345341-1">(</span><span class="n">user</span><span class="p" data-group-id="0760345341-1">)</span><span class="w">
+</span><span class="p" data-group-id="0760345341-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0760345341-3">%</span><span class="nc" data-group-id="0760345341-3">User</span><span class="p" data-group-id="0760345341-3">{</span><span class="p" data-group-id="0760345341-3">}</span><span class="p" data-group-id="0760345341-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_user</span><span class="p" data-group-id="0760345341-4">(</span><span class="n">user</span><span class="p" data-group-id="0760345341-4">)</span><span class="w">
+</span><span class="p" data-group-id="0760345341-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0760345341-6">%</span><span class="nc" data-group-id="0760345341-6">Ecto.Changeset</span><span class="p" data-group-id="0760345341-6">{</span><span class="p" data-group-id="0760345341-6">}</span><span class="p" data-group-id="0760345341-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_author!/1">
@@ -682,7 +701,7 @@ Functions
     </a>
     <h1 class="signature">get_author!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L363" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L370" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -697,9 +716,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_author!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_author!</span><span class="p" data-group-id="2205893098-1">(</span><span class="mi">123</span><span class="p" data-group-id="2205893098-1">)</span><span class="w">
-</span><span class="p" data-group-id="2205893098-2">%</span><span class="nc" data-group-id="2205893098-2">Author</span><span class="p" data-group-id="2205893098-2">{</span><span class="p" data-group-id="2205893098-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_author!</span><span class="p" data-group-id="2205893098-3">(</span><span class="mi">456</span><span class="p" data-group-id="2205893098-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_author!</span><span class="p" data-group-id="7338816833-1">(</span><span class="mi">123</span><span class="p" data-group-id="7338816833-1">)</span><span class="w">
+</span><span class="p" data-group-id="7338816833-2">%</span><span class="nc" data-group-id="7338816833-2">Author</span><span class="p" data-group-id="7338816833-2">{</span><span class="p" data-group-id="7338816833-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_author!</span><span class="p" data-group-id="7338816833-3">(</span><span class="mi">456</span><span class="p" data-group-id="7338816833-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -712,7 +731,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_author_by_email(email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L368" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L375" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -725,6 +744,33 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 <p>Gets a single author with the given email</p>
   </section>
 </section>
+<section class="detail" id="get_author_preference/3">
+
+    <span id="get_author_preference/2"></span>
+
+  <div class="detail-header">
+    <a href="#get_author_preference/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_author_preference(author, key, default \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L432" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns an author preference using the key provided. If the preference isn't set or
+the author preferences have not been created yet, the default value will be returned.</p><p>Accepts and Author struct or author id. If an id is given, the latest author record
+will be queried from the database. Otherwise, the preferences in the Author struct
+is used.</p><p>See AuthorPreferences for available key options</p>
+  </section>
+</section>
 <section class="detail" id="get_user!/1">
 
   <div class="detail-header">
@@ -734,7 +780,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_user!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L137" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L144" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -749,9 +795,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_user!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_user!</span><span class="p" data-group-id="0165957607-1">(</span><span class="mi">123</span><span class="p" data-group-id="0165957607-1">)</span><span class="w">
-</span><span class="p" data-group-id="0165957607-2">%</span><span class="nc" data-group-id="0165957607-2">User</span><span class="p" data-group-id="0165957607-2">{</span><span class="p" data-group-id="0165957607-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_user!</span><span class="p" data-group-id="0165957607-3">(</span><span class="mi">456</span><span class="p" data-group-id="0165957607-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_user!</span><span class="p" data-group-id="0486383044-1">(</span><span class="mi">123</span><span class="p" data-group-id="0486383044-1">)</span><span class="w">
+</span><span class="p" data-group-id="0486383044-2">%</span><span class="nc" data-group-id="0486383044-2">User</span><span class="p" data-group-id="0486383044-2">{</span><span class="p" data-group-id="0486383044-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_user!</span><span class="p" data-group-id="0486383044-3">(</span><span class="mi">456</span><span class="p" data-group-id="0486383044-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -764,7 +810,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_user!(id, list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L139" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L146" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -786,7 +832,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_user_by(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L149" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L156" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -800,9 +846,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_user_by/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_user_by</span><span class="p" data-group-id="6394346725-1">(</span><span class="ss">sub</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="6394346725-1">)</span><span class="w">
-</span><span class="p" data-group-id="6394346725-2">%</span><span class="nc" data-group-id="6394346725-2">User</span><span class="p" data-group-id="6394346725-2">{</span><span class="p" data-group-id="6394346725-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_user_by</span><span class="p" data-group-id="6394346725-3">(</span><span class="ss">sub</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="6394346725-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_user_by</span><span class="p" data-group-id="1811370991-1">(</span><span class="ss">sub</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;123&quot;</span><span class="p" data-group-id="1811370991-1">)</span><span class="w">
+</span><span class="p" data-group-id="1811370991-2">%</span><span class="nc" data-group-id="1811370991-2">User</span><span class="p" data-group-id="1811370991-2">{</span><span class="p" data-group-id="1811370991-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_user_by</span><span class="p" data-group-id="1811370991-3">(</span><span class="ss">sub</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;111&quot;</span><span class="p" data-group-id="1811370991-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -815,7 +861,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">insert_or_update_author(changes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L318" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L325" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -829,8 +875,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#insert_or_update_author/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_author</span><span class="p" data-group-id="2670654956-1">(</span><span class="p" data-group-id="2670654956-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2670654956-2">}</span><span class="p" data-group-id="2670654956-1">)</span><span class="w">
-</span><span class="p" data-group-id="2670654956-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2670654956-4">%</span><span class="nc" data-group-id="2670654956-4">Author</span><span class="p" data-group-id="2670654956-4">{</span><span class="p" data-group-id="2670654956-4">}</span><span class="p" data-group-id="2670654956-3">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_author</span><span class="p" data-group-id="1232599531-1">(</span><span class="p" data-group-id="1232599531-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1232599531-2">}</span><span class="p" data-group-id="1232599531-1">)</span><span class="w">
+</span><span class="p" data-group-id="1232599531-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1232599531-4">%</span><span class="nc" data-group-id="1232599531-4">Author</span><span class="p" data-group-id="1232599531-4">{</span><span class="p" data-group-id="1232599531-4">}</span><span class="p" data-group-id="1232599531-3">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="insert_or_update_user/1">
@@ -842,7 +888,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">insert_or_update_user(changes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L220" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L227" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -856,9 +902,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#insert_or_update_user/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_user</span><span class="p" data-group-id="4489052423-1">(</span><span class="p" data-group-id="4489052423-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4489052423-2">}</span><span class="p" data-group-id="4489052423-1">)</span><span class="w">
-</span><span class="p" data-group-id="4489052423-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4489052423-4">%</span><span class="nc" data-group-id="4489052423-4">User</span><span class="p" data-group-id="4489052423-4">{</span><span class="p" data-group-id="4489052423-4">}</span><span class="p" data-group-id="4489052423-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
-</span><span class="p" data-group-id="4489052423-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="4489052423-5">}</span><span class="w">         </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">insert_or_update_user</span><span class="p" data-group-id="9712444198-1">(</span><span class="p" data-group-id="9712444198-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9712444198-2">}</span><span class="p" data-group-id="9712444198-1">)</span><span class="w">
+</span><span class="p" data-group-id="9712444198-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9712444198-4">%</span><span class="nc" data-group-id="9712444198-4">User</span><span class="p" data-group-id="9712444198-4">{</span><span class="p" data-group-id="9712444198-4">}</span><span class="p" data-group-id="9712444198-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="9712444198-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="9712444198-5">}</span><span class="w">         </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
   </section>
 </section>
 <section class="detail" id="is_admin?/1">
@@ -870,7 +916,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">is_admin?(author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L307" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L314" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -892,7 +938,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">link_user_author_account(user, author)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L257" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L264" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -906,10 +952,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#link_user_author_account/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">link_user_author_account</span><span class="p" data-group-id="2826933236-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">author_id</span><span class="p" data-group-id="2826933236-1">)</span><span class="w">
-</span><span class="p" data-group-id="2826933236-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2826933236-3">%</span><span class="nc" data-group-id="2826933236-3">User</span><span class="p" data-group-id="2826933236-3">{</span><span class="p" data-group-id="2826933236-3">}</span><span class="p" data-group-id="2826933236-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="2826933236-4">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2826933236-5">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2826933236-5">}</span><span class="p" data-group-id="2826933236-4">)</span><span class="w">
-</span><span class="p" data-group-id="2826933236-6">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2826933236-7">%</span><span class="nc" data-group-id="2826933236-7">Ecto.Changeset</span><span class="p" data-group-id="2826933236-7">{</span><span class="p" data-group-id="2826933236-7">}</span><span class="p" data-group-id="2826933236-6">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">link_user_author_account</span><span class="p" data-group-id="1792554594-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">author_id</span><span class="p" data-group-id="1792554594-1">)</span><span class="w">
+</span><span class="p" data-group-id="1792554594-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1792554594-3">%</span><span class="nc" data-group-id="1792554594-3">User</span><span class="p" data-group-id="1792554594-3">{</span><span class="p" data-group-id="1792554594-3">}</span><span class="p" data-group-id="1792554594-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="1792554594-4">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1792554594-5">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1792554594-5">}</span><span class="p" data-group-id="1792554594-4">)</span><span class="w">
+</span><span class="p" data-group-id="1792554594-6">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1792554594-7">%</span><span class="nc" data-group-id="1792554594-7">Ecto.Changeset</span><span class="p" data-group-id="1792554594-7">{</span><span class="p" data-group-id="1792554594-7">}</span><span class="p" data-group-id="1792554594-6">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_authors/0">
@@ -921,7 +967,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_authors()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L123" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L130" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -935,8 +981,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_authors/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_authors</span><span class="p" data-group-id="2938265843-1">(</span><span class="p" data-group-id="2938265843-1">)</span><span class="w">
-</span><span class="p" data-group-id="2938265843-2">[</span><span class="p" data-group-id="2938265843-3">%</span><span class="nc" data-group-id="2938265843-3">Author</span><span class="p" data-group-id="2938265843-3">{</span><span class="p" data-group-id="2938265843-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2938265843-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_authors</span><span class="p" data-group-id="3549040937-1">(</span><span class="p" data-group-id="3549040937-1">)</span><span class="w">
+</span><span class="p" data-group-id="3549040937-2">[</span><span class="p" data-group-id="3549040937-3">%</span><span class="nc" data-group-id="3549040937-3">Author</span><span class="p" data-group-id="3549040937-3">{</span><span class="p" data-group-id="3549040937-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3549040937-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_users/0">
@@ -948,7 +994,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_users()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L107" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L114" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -962,8 +1008,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_users/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_users</span><span class="p" data-group-id="5516398514-1">(</span><span class="p" data-group-id="5516398514-1">)</span><span class="w">
-</span><span class="p" data-group-id="5516398514-2">[</span><span class="p" data-group-id="5516398514-3">%</span><span class="nc" data-group-id="5516398514-3">User</span><span class="p" data-group-id="5516398514-3">{</span><span class="p" data-group-id="5516398514-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5516398514-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_users</span><span class="p" data-group-id="0228812870-1">(</span><span class="p" data-group-id="0228812870-1">)</span><span class="w">
+</span><span class="p" data-group-id="0228812870-2">[</span><span class="p" data-group-id="0228812870-3">%</span><span class="nc" data-group-id="0228812870-3">User</span><span class="p" data-group-id="0228812870-3">{</span><span class="p" data-group-id="0228812870-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0228812870-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="project_author_count/1">
@@ -975,7 +1021,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">project_author_count(project)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L461" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L513" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -997,7 +1043,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">project_authors(project_ids)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L474" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L526" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1019,7 +1065,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">search_authors_matching(query)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L387" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L394" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1032,6 +1078,28 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
 <p>Searches for a list of authors with an email matching a wildcard pattern</p>
   </section>
 </section>
+<section class="detail" id="set_author_preference/3">
+
+  <div class="detail-header">
+    <a href="#set_author_preference/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">set_author_preference(author_id, key, value)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L452" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Set's an author preference to the provided value at a given key</p><p>See AuthorPreferences for available key options</p>
+  </section>
+</section>
 <section class="detail" id="update_author/2">
 
   <div class="detail-header">
@@ -1041,7 +1109,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_author(author, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L335" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L342" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1055,10 +1123,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_author/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_author</span><span class="p" data-group-id="8858906994-1">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8858906994-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="8858906994-2">}</span><span class="p" data-group-id="8858906994-1">)</span><span class="w">
-</span><span class="p" data-group-id="8858906994-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8858906994-4">%</span><span class="nc" data-group-id="8858906994-4">Author</span><span class="p" data-group-id="8858906994-4">{</span><span class="p" data-group-id="8858906994-4">}</span><span class="p" data-group-id="8858906994-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_author</span><span class="p" data-group-id="8858906994-5">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8858906994-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8858906994-6">}</span><span class="p" data-group-id="8858906994-5">)</span><span class="w">
-</span><span class="p" data-group-id="8858906994-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8858906994-8">%</span><span class="nc" data-group-id="8858906994-8">Ecto.Changeset</span><span class="p" data-group-id="8858906994-8">{</span><span class="p" data-group-id="8858906994-8">}</span><span class="p" data-group-id="8858906994-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_author</span><span class="p" data-group-id="6512087502-1">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6512087502-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6512087502-2">}</span><span class="p" data-group-id="6512087502-1">)</span><span class="w">
+</span><span class="p" data-group-id="6512087502-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6512087502-4">%</span><span class="nc" data-group-id="6512087502-4">Author</span><span class="p" data-group-id="6512087502-4">{</span><span class="p" data-group-id="6512087502-4">}</span><span class="p" data-group-id="6512087502-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_author</span><span class="p" data-group-id="6512087502-5">(</span><span class="n">author</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6512087502-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6512087502-6">}</span><span class="p" data-group-id="6512087502-5">)</span><span class="w">
+</span><span class="p" data-group-id="6512087502-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6512087502-8">%</span><span class="nc" data-group-id="6512087502-8">Ecto.Changeset</span><span class="p" data-group-id="6512087502-8">{</span><span class="p" data-group-id="6512087502-8">}</span><span class="p" data-group-id="6512087502-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_user/2">
@@ -1070,7 +1138,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_user(user, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L192" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L199" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1084,10 +1152,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_user/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="7354639315-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7354639315-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7354639315-2">}</span><span class="p" data-group-id="7354639315-1">)</span><span class="w">
-</span><span class="p" data-group-id="7354639315-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7354639315-4">%</span><span class="nc" data-group-id="7354639315-4">User</span><span class="p" data-group-id="7354639315-4">{</span><span class="p" data-group-id="7354639315-4">}</span><span class="p" data-group-id="7354639315-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="7354639315-5">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7354639315-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7354639315-6">}</span><span class="p" data-group-id="7354639315-5">)</span><span class="w">
-</span><span class="p" data-group-id="7354639315-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7354639315-8">%</span><span class="nc" data-group-id="7354639315-8">Ecto.Changeset</span><span class="p" data-group-id="7354639315-8">{</span><span class="p" data-group-id="7354639315-8">}</span><span class="p" data-group-id="7354639315-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="2360016634-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2360016634-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2360016634-2">}</span><span class="p" data-group-id="2360016634-1">)</span><span class="w">
+</span><span class="p" data-group-id="2360016634-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2360016634-4">%</span><span class="nc" data-group-id="2360016634-4">User</span><span class="p" data-group-id="2360016634-4">{</span><span class="p" data-group-id="2360016634-4">}</span><span class="p" data-group-id="2360016634-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user</span><span class="p" data-group-id="2360016634-5">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2360016634-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2360016634-6">}</span><span class="p" data-group-id="2360016634-5">)</span><span class="w">
+</span><span class="p" data-group-id="2360016634-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2360016634-8">%</span><span class="nc" data-group-id="2360016634-8">Ecto.Changeset</span><span class="p" data-group-id="2360016634-8">{</span><span class="p" data-group-id="2360016634-8">}</span><span class="p" data-group-id="2360016634-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_user_platform_roles/2">
@@ -1099,7 +1167,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_user_platform_roles(user, roles)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L238" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L245" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1113,11 +1181,11 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_user_platform_roles/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_user_platform_roles</span><span class="p" data-group-id="3924326080-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">roles</span><span class="p" data-group-id="3924326080-1">)</span><span class="w">
-</span><span class="p" data-group-id="3924326080-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="3924326080-2">}</span><span class="w">       </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Updated with success</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_user_platform_roles</span><span class="p" data-group-id="1556521219-1">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">roles</span><span class="p" data-group-id="1556521219-1">)</span><span class="w">
+</span><span class="p" data-group-id="1556521219-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="n">user</span><span class="p" data-group-id="1556521219-2">}</span><span class="w">       </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Updated with success</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user_platform_roles</span><span class="p" data-group-id="3924326080-3">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">roles</span><span class="p" data-group-id="3924326080-3">)</span><span class="w">
-</span><span class="p" data-group-id="3924326080-4">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="3924326080-4">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_user_platform_roles</span><span class="p" data-group-id="1556521219-3">(</span><span class="n">user</span><span class="p">,</span><span class="w"> </span><span class="n">roles</span><span class="p" data-group-id="1556521219-3">)</span><span class="w">
+</span><span class="p" data-group-id="1556521219-4">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="1556521219-4">}</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
   </section>
 </section>
 <section class="detail" id="user_is_guest?/1">
@@ -1129,7 +1197,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">user_is_guest?(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L281" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L288" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1151,7 +1219,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">user_is_independent_learner?(current_user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L294" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L301" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1173,7 +1241,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">user_signed_in?(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L274" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/accounts.ex#L281" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.14.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-40f96807ff.js"></script>
+    <script src="dist/sidebar_items-b951acdeb7.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -3177,11 +3177,11 @@ platforms and course sections.</p></div>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li></ul><h2 id="events-5" class="section-heading">
+.</li><li><strong>text</strong> <em>:string, default: &quot;&quot;</em></li></ul><h2 id="events-5" class="section-heading">
   <a href="#events-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
-<ul><li><strong>apply, default: &quot;text_search_apply&quot;</strong></li><li><strong>reset, default: &quot;text_search_reset&quot;</strong></li></ul></div>
+<ul><li><strong>apply, default: &quot;text_search_apply&quot;</strong></li><li><strong>reset, default: &quot;text_search_reset&quot;</strong></li><li><strong>change, default: &quot;text_search_change&quot;</strong></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -4721,6 +4721,22 @@ when the client connects, or reconnects to the stateful view.
     <a href="OliWeb.ViewHelpers.html">OliWeb.ViewHelpers</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Workspace.AccountDetailsLive.html">OliWeb.Workspace.AccountDetailsLive</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-44" class="section-heading">
+  <a href="#properties-44" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
 
 </div>
 <div class="summary-row">

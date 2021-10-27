@@ -559,6 +559,7 @@ OliWeb.Users.UsersDetailView.html
 OliWeb.Users.UsersTableModel.html
 OliWeb.Users.UsersView.html
 OliWeb.ViewHelpers.html
+OliWeb.Workspace.AccountDetailsLive.html
 OliWeb.WorkspaceController.html
 OliWeb.WorkspaceView.html
 OliWeb.html
@@ -570,8 +571,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-5588d4706e.js
-dist/sidebar_items-40f96807ff.js
+dist/search_items-e7f1c64fcc.js
+dist/sidebar_items-b951acdeb7.js
 index.html
 license.html
 readme.html
