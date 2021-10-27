@@ -1,5 +1,5 @@
 defmodule OliWeb.Progress.StudentView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.TextSearch
   alias OliWeb.Router.Helpers, as: Routes
