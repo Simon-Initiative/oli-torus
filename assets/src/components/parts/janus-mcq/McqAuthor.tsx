@@ -65,10 +65,14 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
 
   const handleNotificationSave = useCallback(async () => {
     const modelClone = clone(model);
-    modelClone.mcqItems[currentIndex].nodes = textNodes;
+    if (deleteOptionClicked) {
+      modelClone.mcqItems.splice(currentIndex, 1);
+    } else {
+      modelClone.mcqItems[currentIndex].nodes = textNodes;
+    }
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
-  }, [model, textNodes, currentIndex, mcqItems]);
+  }, [model, textNodes, currentIndex, mcqItems, deleteOptionClicked, editOptionClicked]);
 
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const initialize = useCallback(async (pModel) => {
@@ -154,20 +158,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   }, [props.notify, handleNotificationSave, currentIndex, showConfigureMode]);
 
   useEffect(() => {
-    const handleEditorSave = (e: any) => {
-      if (!inConfigureMode) {
-        return;
-      } // not mine
-      const { payload, callback } = e.detail;
-      /* console.log('TF EDITOR SAVE', { payload, callback, props }); */
-      const modelClone = clone(model);
-      modelClone.nodes = payload;
-      // optimistic update
-      onSaveConfigure({
-        id,
-        snapshot: modelClone,
-      });
-    };
+    const handleEditorSave = (e: any) => {};
 
     const handleEditorCancel = () => {
       if (!inConfigureMode) {
