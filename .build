@@ -430,6 +430,8 @@ OliWeb.Gettext.html
 OliWeb.GlobalUserStateChannel.html
 OliWeb.Grades.Export.html
 OliWeb.Grades.GradeSync.html
+OliWeb.Grades.GradebookTableModel.html
+OliWeb.Grades.GradebookView.html
 OliWeb.Grades.GradesLive.html
 OliWeb.Grades.LineItems.html
 OliWeb.HelpController.html
@@ -504,6 +506,9 @@ OliWeb.Products.Payments.TableModel.html
 OliWeb.Products.PaymentsView.html
 OliWeb.Products.ProductsTableModel.html
 OliWeb.Products.ProductsView.html
+OliWeb.Progress.AttemptHistory.html
+OliWeb.Progress.PageAttemptSummary.html
+OliWeb.Progress.StudentResourceView.html
 OliWeb.ProjectActivityController.html
 OliWeb.ProjectController.html
 OliWeb.ProjectPlugs.html
@@ -571,8 +576,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-e7f1c64fcc.js
-dist/sidebar_items-b951acdeb7.js
+dist/search_items-0e926412a9.js
+dist/sidebar_items-b70e01654c.js
 index.html
 license.html
 readme.html

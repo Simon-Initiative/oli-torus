@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Hierarchy — OLI Torus v0.14.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b951acdeb7.js"></script>
+    <script src="dist/sidebar_items-b70e01654c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -151,6 +151,16 @@ be ephemeral and section_resources are empty (e.g. course preview)</p><p>See als
     <a href="#find_in_hierarchy/2">find_in_hierarchy(node, uuid_to_find)</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#flatten/1">flatten(root)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Given a hierarchy node, this function &quot;flattens&quot; all nodes below into a list, in the order that
+a student would encounter the resources working linearly through a course.</p></div>
 
 </div>
 <div class="summary-row">
@@ -340,6 +350,42 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="flatten/1">
+
+  <div class="detail-header">
+    <a href="#flatten/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">flatten(root)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L252" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Given a hierarchy node, this function &quot;flattens&quot; all nodes below into a list, in the order that
+a student would encounter the resources working linearly through a course.</p><p>As an example, consider the followign hierarchy:</p><p>--Unit 1
+----Module 1
+------Page A
+------Page B
+--Unit 2
+----Moudule 2
+------Page C</p><p>The above would be flattened to:
+Unit 1
+Module 1
+Page A
+Page B
+Unit 2
+Module 2
+Page C</p>
+  </section>
+</section>
 <section class="detail" id="flatten_hierarchy/1">
 
   <div class="detail-header">
@@ -397,7 +443,7 @@ an ordered flat list of the nodes of only the pages in the hierarchy.</p>
     </a>
     <h1 class="signature">inspect(hierarchy, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L232" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L272" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
