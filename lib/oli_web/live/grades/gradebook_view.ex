@@ -63,7 +63,7 @@ defmodule OliWeb.Grades.GradebookView do
 
         graded_pages =
           hierarchy
-          |> Oli.Delivery.Hierarchy.HierarchyNode.flatten()
+          |> Oli.Delivery.Hierarchy.flatten()
           |> Enum.filter(fn node -> node.revision.graded end)
           |> Enum.map(fn node -> node.revision end)
 

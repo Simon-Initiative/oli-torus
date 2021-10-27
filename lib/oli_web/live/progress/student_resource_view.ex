@@ -156,6 +156,10 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   def handle_event("validate", %{"resource_access" => params}, socket) do
+    params =
+      ensure_no_nil(params, "score")
+      |> ensure_no_nil("out_of")
+
     changeset =
       socket.assigns.resource_access
       |> ResourceAccess.changeset(params)
@@ -164,6 +168,10 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   def handle_event("save", %{"resource_access" => params}, socket) do
+    params =
+      ensure_no_nil(params, "score")
+      |> ensure_no_nil("out_of")
+
     case Core.update_resource_access(socket.assigns.resource_access, params) do
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
@@ -177,6 +185,14 @@ defmodule OliWeb.Progress.StudentResourceView do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
+    end
+  end
+
+  defp ensure_no_nil(params, key) do
+    case Map.get(params, key) do
+      nil -> Map.delete(params, key)
+      "" -> Map.delete(params, key)
+      _ -> params
     end
   end
 end
