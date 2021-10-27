@@ -1,0 +1,26 @@
+/*-----------------------------------------
+
+    Education Through eXploration
+    Arizona State University
+
+    Check Container
+    https://jira.unicon.net/jira/browse/PMP-1960
+
+-----------------------------------------*/
+
+.stageContainer {
+  left: 50%;
+  transform: translateX(-50%);
+  position: absolute;
+  top: 80px;
+  min-height: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.content {
+  position: relative;
+  min-height: 500px;
+  margin-bottom: 80px;
+}

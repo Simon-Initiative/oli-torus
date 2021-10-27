@@ -1,0 +1,62 @@
+/*-----------------------------------------
+
+    Education Through eXploration
+    Arizona State University
+
+    Font Families
+
+-----------------------------------------*/
+
+/* ☺ ♥ FontAwesome */
+/* https://fontawesome.com/v4.7/get-started/ */
+/* https://fontawesome.com/v5.15/how-to-use/on-the-web/setup/hosting-font-awesome-yourself */
+@font-face {
+  font-family: FontAwesome4;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/FontAwesome/FontAwesome.otf),
+    url(https://dev-etx.ws.asu.edu/fonts/Font%20Awesome/FontAwesome.otf);
+}
+@font-face {
+  font-family: FontAwesome5;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/FontAwesome/Font+Awesome+5+Free-Regular-400.otf);
+}
+
+/* Montserrat */
+/* https://fonts.google.com/specimen/Montserrat */
+@font-face {
+  font-family: Montserrat;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Montserrat/Montserrat-Regular.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Montserrat/Montserrat-Regular.ttf);
+}
+@font-face {
+  font-family: MontserratBold;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/Montserrat/Montserrat-Bold.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Montserrat/Montserrat-Bold.ttf);
+  font-weight: bold;
+}
+
+/* Open Sans */
+/* https://fonts.google.com/specimen/Open+Sans */
+@font-face {
+  font-family: OpenSans;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/OpenSans/OpenSans-Regular.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Open%20Sans/OpenSans-Regular.ttf);
+}
+@font-face {
+  font-family: OpenSansBold;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/OpenSans/OpenSans-Bold.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Open%20Sans/OpenSans-Bold.ttf);
+  font-weight: bold;
+}
+@font-face {
+  font-family: OpenSansItalic;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/OpenSans/OpenSans-Italic.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Open%20Sans/OpenSans-Italic.ttf);
+  font-style: italic;
+}
+@font-face {
+  font-family: OpenSansBoldItalic;
+  src: url(https://etx-nec.s3-us-west-2.amazonaws.com/css/etx-resource/fonts/OpenSans/OpenSans-BoldItalic.ttf),
+    url(https://dev-etx.ws.asu.edu/fonts/Open%20Sans/OpenSans-Italic.ttf);
+  font-style: italic;
+  font-weight: bold;
+}

@@ -1,0 +1,137 @@
+/*-----------------------------------------
+
+    Education Through eXploration
+    Arizona State University
+
+    Header Container
+    https://jira.unicon.net/jira/browse/PMP-1961
+
+-----------------------------------------*/
+
+.headerContainer {
+  position: fixed;
+}
+.headerContainer {
+  height: 61px;
+  background: #ffffff;
+  border-bottom: 1px solid #d9d9de;
+  display: flex;
+  padding: 0 20px;
+  z-index: 1030;
+  left: 0;
+  right: 0;
+  top: 0;
+  box-shadow: none;
+}
+
+.headerContainer header {
+  display: flex;
+  flex: 1;
+}
+
+.headerContainer .defaultView {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+
+.headerContainer .lessonTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.8);
+  margin: 0;
+  font-family: 'OpenSansBold', sans-serif;
+  font-size: 1rem;
+  max-width: 700px;
+}
+.headerContainer .questionTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.7);
+  margin: 0;
+  margin-left: 10px;
+  font-size: 1rem;
+  font-weight: normal;
+  padding-left: 10px;
+  border-left: 1px solid #d9d9de;
+  /* display: none; */
+}
+
+.headerContainer .theme-header {
+  margin-left: auto;
+  display: flex;
+}
+
+.theme-header-score {
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  margin-right: 14px;
+}
+
+.theme-header-score__icon {
+  background-repeat: no-repeat;
+  background: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx-resource/images/icon-star-dark.svg);
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+}
+.theme-header-score {
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  margin-right: 14px;
+}
+.theme-header-score {
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  margin-right: 14px;
+}
+.theme-header-profile {
+  color: rgba(0, 0, 0, 0.7);
+  position: relative;
+}
+
+.theme-header-profile__toggle {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 6px;
+  border: 0;
+  background-color: #ffffff;
+  transition: background-color 0.3s ease;
+  border-radius: 4px;
+  outline: none;
+  font-size: 14px;
+}
+
+.theme-header-profile__toggle > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theme-header-profile__icon {
+  background-repeat: no-repeat;
+  background: url(https://etx-nec.s3.us-west-2.amazonaws.com/css/etx-resource/images/icon-account-dark.svg);
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+}
+
+.theme-header-profile__label {
+  color: rgba(0, 0, 0, 0.7);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.theme-header-score,
+.theme-header-profile__toggle {
+  font-size: 1rem;
+}
