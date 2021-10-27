@@ -1,6 +1,11 @@
 defmodule OliWeb.Progress.ResourceTitle do
   use Surface.Component
 
+  @moduledoc """
+  Display the title of a resource, with a breadcrumb-like header above it indicating the
+  path within the curriculum to this resource.
+  """
+
   prop node, :any, required: true
   prop url, :string, required: true
 

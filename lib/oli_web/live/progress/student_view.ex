@@ -13,10 +13,10 @@ defmodule OliWeb.Progress.StudentView do
   data title, :string, default: "Student Progress"
   data section, :any, default: nil
   data user, :any
-
   data text_search, :string
-  prop table_model, :struct, required: true
-  prop sort, :event, default: "paged_table_sort"
+  data table_model, :struct
+  data resource_accesses, :map
+  data page_nodes, :list
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -64,8 +64,6 @@ defmodule OliWeb.Progress.StudentView do
                   Oli.Resources.ResourceType.get_id_by_type("page")
               end)
 
-            total_count = length(page_nodes)
-
             {:ok, table_model} =
               StudentTabelModel.new(page_nodes, resource_accesses, section, user)
 
@@ -73,7 +71,6 @@ defmodule OliWeb.Progress.StudentView do
              assign(socket,
                text_search: "",
                table_model: table_model,
-               total_count: total_count,
                page_nodes: page_nodes,
                resource_accesses: resource_accesses,
                breadcrumbs: set_breadcrumbs(type, section),

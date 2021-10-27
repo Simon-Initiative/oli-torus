@@ -4,6 +4,20 @@ defmodule OliWeb.Progress.StudentTabelModel do
   alias OliWeb.Progress.ResourceTitle
   use Surface.LiveComponent
 
+  @moduledoc """
+  This table model displays various pieces of "progress" information for all course resources in a
+  course section, for a specific student.
+
+  To construct this rows of this model, this implementation takes a flattened list of hierarchy nodes
+  and maps those to the specific row structure that is needed, pulling in information from a %ResourceAccess{}
+  struct.  A resource access record only exists though if that student has visited the resource at least
+  once.
+  """
+
+  @doc """
+  Takes a list of %HierarchyNode{}, a map of resource_ids to %ResourceAccess{} structs, and the
+  section and user to construct the table model.
+  """
   def new(page_nodes, resource_accesses, section, user) do
     rows =
       Enum.with_index(page_nodes, fn node, index ->
