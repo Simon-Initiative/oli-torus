@@ -64,7 +64,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   idx,
   overrideHeight,
   columns = 1,
-  onClick,
+  onConfigOptionClick,
   index,
   configureMode,
 }) => {
@@ -104,14 +104,14 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
         {configureMode && (
           <>
             <i
-              onClick={() => onClick(index, 1)}
+              onClick={() => onConfigOptionClick(index, 1)}
               className="fa fa-trash"
               style={{ cursor: 'pointer', color: 'white' }}
               aria-hidden="true"
               title="Delete the option"
             ></i>
             <i
-              onClick={() => onClick(index, 2)}
+              onClick={() => onConfigOptionClick(index, 2)}
               className="fas fa-edit"
               style={{ cursor: 'pointer', color: 'white' }}
               aria-hidden="true"

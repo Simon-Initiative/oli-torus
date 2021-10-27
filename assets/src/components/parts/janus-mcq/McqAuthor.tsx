@@ -260,7 +260,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
               disabled={false}
               multipleSelection={multipleSelection}
               columns={columns}
-              onClick={onClick}
+              onConfigOptionClick={onClick}
               configureMode={showConfigureMode}
             />
           ))}
