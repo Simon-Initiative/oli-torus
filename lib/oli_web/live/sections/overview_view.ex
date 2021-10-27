@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.OverviewView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb}

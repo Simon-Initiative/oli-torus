@@ -1,5 +1,5 @@
 defmodule OliWeb.Grades.GradebookView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
@@ -63,7 +63,7 @@ defmodule OliWeb.Grades.GradebookView do
 
         graded_pages =
           hierarchy
-          |> Oli.Delivery.Hierarchy.HierarchyNode.flatten()
+          |> Oli.Delivery.Hierarchy.flatten()
           |> Enum.filter(fn node -> node.revision.graded end)
           |> Enum.map(fn node -> node.revision end)
 
