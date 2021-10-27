@@ -118,9 +118,10 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
                 className="fa fa-trash"
                 style={{ cursor: 'pointer', color: 'white' }}
                 aria-hidden="true"
-                title="Edit the option"
+                title="Delete the option"
               ></i>{' '}
             </button>
+
             <button
               className="aa-add-button btn btn-primary btn-sm"
               type="button"
