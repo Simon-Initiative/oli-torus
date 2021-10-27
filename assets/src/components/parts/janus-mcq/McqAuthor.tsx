@@ -227,9 +227,9 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       setDeleteOptionClicked(false);
       const modelClone = clone(model);
       if (deleteOptionClicked) {
-        modelClone.mcqItems.splice(currentIndex, 1);
+        modelClone.mcqItems.splice(index, 1);
       } else {
-        modelClone.mcqItems.push({
+        modelClone.mcqItems.splice(index + 1, 0, {
           nodes: [
             {
               tag: 'p',
