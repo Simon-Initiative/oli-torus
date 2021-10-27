@@ -70,3 +70,5 @@ truncate =
   end
 
 config :logger, truncate: truncate
+
+config :appsignal, :config, active: false
