@@ -188,6 +188,8 @@ const AddComponentToolbar: React.FC = () => {
           placement="bottom"
           container={document.getElementById('advanced-authoring')}
           containerPadding={20}
+          rootClose={true}
+          onHide={() => setShowPartsMenu(false)}
         >
           <Popover id="moreComponents-popover">
             <Popover.Title as="h3">More Components</Popover.Title>

@@ -127,9 +127,13 @@ defmodule Oli.Delivery.Sections.Section do
 
   def validate_positive_grace_period(changeset) do
     validate_change(changeset, :grace_period_days, fn _, days ->
-      case days >= 1 do
-        true -> []
-        false -> [{:grace_period_days, "must be greater than or equal to one"}]
+      if get_field(changeset, :has_grace_period) and get_field(changeset, :requires_payment) do
+        case days >= 1 do
+          true -> []
+          false -> [{:grace_period_days, "must be greater than or equal to one"}]
+        end
+      else
+        []
       end
     end)
   end

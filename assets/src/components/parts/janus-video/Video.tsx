@@ -209,7 +209,28 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+              const sAutoPlay = changes[`stage.${id}.autoPlay`];
+              if (sAutoPlay !== undefined) {
+                setVideoAutoPlay(sAutoPlay);
+              }
+
+              const sEnableReplay = changes[`stage.${id}.enableReplay`];
+              if (sEnableReplay !== undefined) {
+                setVideoEnableReplay(sEnableReplay);
+              }
+
+              const sHasStarted = changes[`stage.${id}.hasStarted`];
+              if (sHasStarted !== undefined) {
+                setVideoIsPlayerStarted(sHasStarted);
+              }
+
+              const sHasCompleted = changes[`stage.${id}.hasCompleted`];
+              if (sHasCompleted !== undefined) {
+                setVideoIsCompleted(sHasCompleted);
+              }
+            }
             break;
         }
       };

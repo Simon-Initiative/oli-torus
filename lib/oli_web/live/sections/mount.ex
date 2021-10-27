@@ -43,7 +43,7 @@ defmodule OliWeb.Sections.Mount do
 
     case Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, author_id) do
       true -> {:author, author, section}
-      _ -> {:error, :not_authorized}
+      _ -> {:error, :unauthorized}
     end
   end
 
@@ -52,7 +52,7 @@ defmodule OliWeb.Sections.Mount do
 
     case Accounts.is_admin?(author) do
       true -> {:admin, author, section}
-      _ -> {:error, :not_authorized}
+      _ -> {:error, :unauthorized}
     end
   end
 
@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.Mount do
     if is_section_instructor_or_admin?(section.slug, current_user) do
       {:user, current_user, section}
     else
-      {:error, :not_authorized}
+      {:error, :unauthorized}
     end
   end
 

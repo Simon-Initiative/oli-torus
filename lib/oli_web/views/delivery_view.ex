@@ -27,10 +27,10 @@ defmodule OliWeb.DeliveryView do
     end
   end
 
-  defp is_open_and_free_user?(conn) do
+  defp is_independent_learner?(conn) do
     case conn.assigns[:current_user] do
-      %User{guest: guest} ->
-        guest
+      %User{independent_learner: independent_learner} ->
+        independent_learner
 
       _ ->
         false
@@ -42,7 +42,7 @@ defmodule OliWeb.DeliveryView do
       is_preview_mode?(conn) ->
         "#"
 
-      is_open_and_free_section?(conn) or is_open_and_free_user?(conn) ->
+      is_open_and_free_section?(conn) or is_independent_learner?(conn) ->
         Routes.delivery_path(conn, :open_and_free_index)
 
       true ->

@@ -25,7 +25,6 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   The `id_field` is the field name from the row items that uniquely identifies a row item.  This will be used
   when emitting events related to a particular row item.
   """
-
   alias OliWeb.Common.Table.ColumnSpec
 
   # the items to display
@@ -63,7 +62,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: sort_by_spec
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order
       ) do
     model =
       %__MODULE__{
@@ -71,7 +71,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: sort_by_spec
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order
       }
       |> sort
 

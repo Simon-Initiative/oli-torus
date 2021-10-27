@@ -111,7 +111,7 @@ defmodule OliWeb.LayoutView do
     icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")
 
     link([icon],
-      to: Routes.workspace_path(conn, :account),
+      to: Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive),
       class: "#{active_class(active_or_nil(assigns), :account)} account-link"
     )
   end
