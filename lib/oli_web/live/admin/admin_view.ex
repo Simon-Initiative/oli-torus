@@ -23,6 +23,9 @@ defmodule OliWeb.Admin.AdminView do
   def render(assigns) do
     ~F"""
     <Groups>
+      <div class="alert alert-warning mt-5" role="alert">
+        <strong>Note:</strong> All administrative actions taken in the system are logged for auditing purposes.
+      </div>
       <Group label="Account Management" description="Access and manage all users and authors">
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)}>Manage Students and Instructor Accounts</a></li>
@@ -53,9 +56,6 @@ defmodule OliWeb.Admin.AdminView do
           </li>
         </ul>
       </Group>
-      <div class="alert alert-warning mt-5" role="alert">
-        <strong>Note:</strong> All administrative actions taken in the system are logged for auditing purposes.
-      </div>
     </Groups>
     """
   end

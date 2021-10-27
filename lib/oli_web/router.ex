@@ -19,6 +19,7 @@ defmodule OliWeb.Router do
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "default.html"})
     plug(:put_layout, {OliWeb.LayoutView, "app.html"})
+    plug(Oli.Plugs.SetCurrentUser)
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -92,7 +93,6 @@ defmodule OliWeb.Router do
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug(Oli.Plugs.SetDefaultPow, :user)
-    plug(Oli.Plugs.SetCurrentUser)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -110,7 +110,6 @@ defmodule OliWeb.Router do
 
   pipeline :delivery_and_admin do
     plug(Oli.Plugs.GiveAdminPriority)
-    plug(Oli.Plugs.SetCurrentUser)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -129,7 +128,6 @@ defmodule OliWeb.Router do
 
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
-    plug(Oli.Plugs.SetCurrentUser)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -247,10 +245,9 @@ defmodule OliWeb.Router do
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
-    get("/account", WorkspaceController, :account)
+    live("/account", Workspace.AccountDetailsLive)
+
     put("/account", WorkspaceController, :update_author)
-    post("/account/theme", WorkspaceController, :update_theme)
-    post("/account/live_preview_display", WorkspaceController, :update_live_preview_display)
 
     # keep a session active by periodically calling this endpoint
     get("/keep-alive", StaticPageController, :keep_alive)

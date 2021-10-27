@@ -127,7 +127,7 @@ defmodule OliWeb.Sections.SectionsView do
 
       <div class="mb-3"/>
 
-      <TextSearch id="text-search"/>
+      <TextSearch id="text-search" text={@options.text_search} />
 
       <div class="mb-3"/>
 

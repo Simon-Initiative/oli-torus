@@ -8,6 +8,7 @@
 - Fix text editor issue where image resizing didn't work from right drag handle
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar
 - Fix an issue where previewing a project with no pages crashes
+- Fix some issues related to searching and viewing sortable tables
 
 ### Enhancements
 
