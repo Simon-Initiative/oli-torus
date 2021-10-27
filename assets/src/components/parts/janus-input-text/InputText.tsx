@@ -115,9 +115,6 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              /* console.log('MUTATE STATE!!!!', {
-                payload,
-              }); */
               const { mutateChanges: changes } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
@@ -135,7 +132,22 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts } = payload;
+              const sEnabled = initStateFacts[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
+              const sText = initStateFacts[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText.toString());
+                saveTextLength(sText.toString());
+              }
+              const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
             break;
         }
       };

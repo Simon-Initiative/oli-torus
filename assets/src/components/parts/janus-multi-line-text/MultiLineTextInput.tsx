@@ -180,7 +180,24 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { snapshot } = payload;
+              const sText = snapshot[`stage.${id}.text`];
+              if (sText !== undefined) {
+                setText(sText.toString());
+                saveTextLength(sText.toString());
+              }
+
+              const sEnabled = snapshot[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(sEnabled);
+              }
+
+              const sCssClass = snapshot[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
             break;
         }
       };

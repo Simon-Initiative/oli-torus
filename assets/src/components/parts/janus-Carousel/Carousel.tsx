@@ -104,7 +104,14 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+
+              const sZoom = changes[`stage.${id}.zoom`];
+              if (sZoom !== undefined) {
+                setCarouselZoom(sZoom);
+              }
+            }
             break;
         }
       };

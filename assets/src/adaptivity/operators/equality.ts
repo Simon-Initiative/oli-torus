@@ -49,6 +49,9 @@ export const isEqual = (factValue: any, value: any): boolean => {
   } else if (typeOfFactValue === 'number') {
     return parseFloat(value) === factValue;
   }
+  if (typeOfValue === 'string' && typeOfFactValue === 'string') {
+    return value.toLowerCase() === factValue.toLowerCase();
+  }
   return factValue === value;
 };
 
@@ -60,15 +63,30 @@ export const isNaNOperator = (factValue: any, value: any) =>
 
 export const equalWithToleranceOperator = (factValue: any, value: any) => {
   const modifiedFactValue = typeof factValue === 'string' ? parseFloat(factValue) : factValue;
-  if (!Array.isArray(value) || Number.isNaN(modifiedFactValue)) {
+  /* console.log('EQT1', { factValue, value, modifiedFactValue }); */
+  let arrValue: any[];
+  try {
+    arrValue = parseArray(value);
+  } catch (e) {
     return false;
   }
-  const [baseValue, tolerance] = value;
+  if (Number.isNaN(modifiedFactValue)) {
+    return false;
+  }
+  const [baseValue, tolerance] = arrValue;
   const valuesWithTolerance = getValueWithTolerance(baseValue, baseValue, tolerance);
   const isInRange =
     modifiedFactValue >= valuesWithTolerance.minToleranceValue &&
     modifiedFactValue <= valuesWithTolerance.maxToleranceValue;
-
+  /* console.log('EQT2', {
+    factValue,
+    arrValue,
+    modifiedFactValue,
+    isInRange,
+    valuesWithTolerance,
+    baseValue,
+    tolerance,
+  }); */
   return isInRange;
 };
 

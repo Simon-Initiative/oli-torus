@@ -116,6 +116,8 @@ export const conditionTypeOperatorCombos: ConditionTypeOperatorCombo[] = [
       'lessThan',
       'greaterThanInclusive',
       'lessThanInclusive',
+      'equalWithTolerance',
+      'notEqualWithTolerance',
       'inRange',
       'notInRange',
     ],
