@@ -4,14 +4,12 @@ defmodule OliWeb.CommunityLive.New do
   alias Oli.Groups
   alias Oli.Groups.Community
   alias OliWeb.Common.{Breadcrumb, FormContainerComponent}
-  alias OliWeb.CommunityLive.Index
+  alias OliWeb.CommunityLive.{FormComponent, Index}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, ErrorTag, Field, Label, TextArea, TextInput}
 
-  data title, :string, default: "New Community"
-  data community, :changeset, default: Community.changeset(%Community{})
-  data breadcrumbs, :any
+  data(title, :string, default: "New Community")
+  data(community, :changeset, default: Groups.change_community(%Community{}))
+  data(breadcrumbs, :list)
 
   def breadcrumb() do
     Index.breadcrumb() ++
@@ -33,27 +31,7 @@ defmodule OliWeb.CommunityLive.New do
   def render(assigns) do
     ~F"""
       <FormContainerComponent title={@title}>
-        <Form for={@community} submit="save">
-          <Field name={:name} class="form-group">
-            <TextInput class="form-control" opts={placeholder: "Name"}/>
-            <ErrorTag class="text-danger"/>
-          </Field>
-
-          <Field name={:description} class="form-group">
-            <TextArea class="form-control" rows="4" opts={placeholder: "Description"}/>
-          </Field>
-
-          <Field name={:key_contact} class="form-group">
-            <TextInput class="form-control" opts={placeholder: "Key Contact"}/>
-          </Field>
-
-          <Field name={:global_access} class="form-check">
-            <Checkbox class="form-check-input"/>
-            <Label class="form-check-label" text="Access to Global Project or Products"/>
-          </Field>
-
-          <button class="btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>
-        </Form>
+        <FormComponent changeset={@community} save="save" display_labels={false}/>
       </FormContainerComponent>
     """
   end
@@ -62,7 +40,7 @@ defmodule OliWeb.CommunityLive.New do
     case Groups.create_community(params) do
       {:ok, _community} ->
         socket = put_flash(socket, :info, "Community succesfully created.")
-        {:noreply, assign(socket, community: Community.changeset(%Community{}))}
+        {:noreply, assign(socket, community: Groups.change_community(%Community{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =

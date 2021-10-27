@@ -1,8 +1,6 @@
 defmodule OliWeb.Products.ProductsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Surface.Components.Link
   alias OliWeb.Router.Helpers, as: Routes
-  use Surface.LiveComponent
 
   def new(products) do
     SortableTableModel.new(
@@ -47,25 +45,12 @@ defmodule OliWeb.Products.ProductsTableModel do
   end
 
   def render_title_column(assigns, %{title: title, slug: slug}, _) do
-    ~F"""
-    <Link
-      label={title}
-      to={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, slug)}
-    />
-    """
+    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, slug)
+    SortableTableModel.render_link_column(assigns, title, route_path)
   end
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
-    ~F"""
-      <Link
-      label={base_project.title}
-      to={Routes.project_path(OliWeb.Endpoint, :overview, base_project.slug)}/>
-    """
-  end
-
-  def render(assigns) do
-    ~F"""
-    <div>nothing</div>
-    """
+    route_path = Routes.project_path(OliWeb.Endpoint, :overview, base_project.slug)
+    SortableTableModel.render_link_column(assigns, base_project.title, route_path)
   end
 end

@@ -705,6 +705,7 @@ defmodule OliWeb.Router do
     scope "/communities" do
       live("/", CommunityLive.Index)
       live("/new", CommunityLive.New)
+      live("/:community_id", CommunityLive.Show)
     end
 
     get("/ingest", IngestController, :index)

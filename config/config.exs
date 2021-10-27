@@ -125,6 +125,13 @@ config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
+config :surface, :components, [
+  {
+    Surface.Components.Form.ErrorTag,
+    default_class: "help-block", default_translator: {OliWeb.ErrorHelpers, :translate_error}
+  }
+]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

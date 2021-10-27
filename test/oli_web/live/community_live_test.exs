@@ -10,6 +10,17 @@ defmodule OliWeb.CommunityLiveTest do
 
   @live_view_index_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Index)
   @live_view_new_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.New)
+  @form_fields [:name, :description, :key_contact, :global_access]
+
+  defp live_view_show_route(community_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Show, community_id)
+  end
+
+  defp create_community(_conn) do
+    community = insert(:community)
+
+    [community: community]
+  end
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the index view", %{conn: conn} do
@@ -21,6 +32,16 @@ defmodule OliWeb.CommunityLiveTest do
       {:error,
        {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fcommunities%2Fnew"}}} =
         live(conn, @live_view_new_route)
+    end
+
+    test "redirects to new session when accessing the show view", %{conn: conn} do
+      community_id = insert(:community).id
+
+      redirect_path =
+        "/authoring/session/new?request_path=%2Fadmin%2Fcommunities%2F#{community_id}"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_show_route(community_id))
     end
   end
 
@@ -35,6 +56,14 @@ defmodule OliWeb.CommunityLiveTest do
 
     test "returns forbidden when accessing the create view", %{conn: conn} do
       conn = get(conn, @live_view_new_route)
+
+      assert response(conn, 403)
+    end
+
+    test "returns forbidden when accessing the show view", %{conn: conn} do
+      community = insert(:community)
+
+      conn = get(conn, live_view_show_route(community.id))
 
       assert response(conn, 403)
     end
@@ -173,6 +202,80 @@ defmodule OliWeb.CommunityLiveTest do
       [%Community{name: name} | _tail] = Groups.list_communities()
 
       assert ^name = params.name
+    end
+  end
+
+  describe "show" do
+    setup [:admin_conn, :create_community]
+
+    test "loads correctly with community data", %{conn: conn, community: community} do
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert has_element?(view, "#community-overview")
+
+      community
+      |> Map.take(@form_fields)
+      |> Map.update(:global_access, "checked", fn value -> if value, do: "checked", else: "" end)
+      |> Enum.each(fn {field, value} ->
+        assert view
+               |> element("#community_#{field}")
+               |> render() =~
+                 value
+      end)
+    end
+
+    test "displays error message when data is invalid", %{
+      conn: conn,
+      community: %Community{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{community: %{name: ""}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community couldn&#39;t be updated. Please check the errors below."
+
+      assert has_element?(view, "span", "can't be blank")
+
+      refute Groups.get_community(id).name == ""
+    end
+
+    test "updates a community correctly when data is valid", %{
+      conn: conn,
+      community: %Community{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      new_attributes = params_for(:community)
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{community: new_attributes})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community successfully updated."
+
+      %Community{name: new_name} = Groups.get_community(id)
+
+      assert new_attributes.name == new_name
+    end
+
+    test "redirects to index view and displays error message when community does not exist", %{
+      conn: conn
+    } do
+      conn = get(conn, live_view_show_route(1000))
+
+      assert conn.private.plug_session["phoenix_flash"]["info"] ==
+               "That community does not exist."
+
+      assert conn.resp_body =~ ~r/You are being.*redirected/
+      assert conn.resp_body =~ "href=\"#{@live_view_index_route}\""
     end
   end
 end
