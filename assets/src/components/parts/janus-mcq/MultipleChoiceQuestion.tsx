@@ -131,6 +131,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
                 padding: 1,
                 marginLeft: 4,
                 cursor: 'pointer',
+                marginRight: 2,
               }}
             >
               <i
