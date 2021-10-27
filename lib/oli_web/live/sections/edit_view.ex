@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EditView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes

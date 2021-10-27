@@ -20,8 +20,8 @@ defmodule Oli.CourseBrowseTest do
       author,
       %Paging{offset: offset, limit: limit},
       %Sorting{field: field, direction: direction},
-      deleted,
-      filter
+      include_deleted: deleted,
+      text_search: filter
     )
   end
 

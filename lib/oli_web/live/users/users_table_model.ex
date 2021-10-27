@@ -1,8 +1,10 @@
 defmodule OliWeb.Users.UsersTableModel do
+  use Surface.LiveComponent
+
+  import OliWeb.Common.Utils
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  use Surface.LiveComponent
-  import OliWeb.Common.Utils
 
   def render(assigns) do
     ~F"""

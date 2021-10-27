@@ -1,9 +1,18 @@
 defmodule Oli.Accounts do
   import Ecto.Query, warn: false
+  import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Accounts.{User, Author, SystemRole, UserBrowseOptions, AuthorBrowseOptions}
+
+  alias Oli.Accounts.{
+    User,
+    Author,
+    SystemRole,
+    UserBrowseOptions,
+    AuthorBrowseOptions,
+    AuthorPreferences
+  }
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -21,16 +30,14 @@ defmodule Oli.Accounts do
       if options.text_search == "" or is_nil(options.text_search) do
         true
       else
+        text_search = String.trim(options.text_search)
+
         dynamic(
           [s, _],
-          ilike(s.name, ^"%#{options.text_search}%") or
-            ilike(s.email, ^"%#{options.text_search}%") or
-            ilike(s.given_name, ^"%#{options.text_search}%") or
-            ilike(s.family_name, ^"%#{options.text_search}%") or
-            ilike(s.name, ^"#{options.text_search}") or
-            ilike(s.email, ^"#{options.text_search}") or
-            ilike(s.given_name, ^"#{options.text_search}") or
-            ilike(s.family_name, ^"#{options.text_search}")
+          ilike(s.name, ^"%#{text_search}%") or
+            ilike(s.email, ^"%#{text_search}%") or
+            ilike(s.given_name, ^"%#{text_search}%") or
+            ilike(s.family_name, ^"%#{text_search}%")
         )
       end
 
@@ -66,14 +73,14 @@ defmodule Oli.Accounts do
       if options.text_search == "" or is_nil(options.text_search) do
         true
       else
+        text_search = String.trim(options.text_search)
+
         dynamic(
           [s, _],
-          ilike(s.name, ^"#{options.text_search}") or
-            ilike(s.given_name, ^"#{options.text_search}") or
-            ilike(s.family_name, ^"#{options.text_search}") or
-            ilike(s.name, ^"%#{options.text_search}%") or
-            ilike(s.given_name, ^"%#{options.text_search}%") or
-            ilike(s.family_name, ^"%#{options.text_search}%")
+          ilike(s.name, ^"%#{text_search}%") or
+            ilike(s.email, ^"%#{text_search}%") or
+            ilike(s.given_name, ^"%#{text_search}%") or
+            ilike(s.family_name, ^"%#{text_search}%")
         )
       end
 
@@ -410,6 +417,51 @@ defmodule Oli.Accounts do
   """
   def author_signed_in?(conn) do
     conn.assigns[:current_author]
+  end
+
+  @doc """
+  Returns an author preference using the key provided. If the preference isn't set or
+  the author preferences have not been created yet, the default value will be returned.
+
+  Accepts and Author struct or author id. If an id is given, the latest author record
+  will be queried from the database. Otherwise, the preferences in the Author struct
+  is used.
+
+  See AuthorPreferences for available key options
+  """
+  def get_author_preference(author, key, default \\ nil)
+
+  def get_author_preference(%Author{preferences: preferences}, key, default) do
+    preferences
+    |> value_or(%AuthorPreferences{})
+    |> Map.get(key, default)
+    |> value_or(default)
+  end
+
+  def get_author_preference(author_id, key, default) when is_integer(author_id) do
+    author = get_author!(author_id)
+
+    get_author_preference(author, key, default)
+  end
+
+  @doc """
+  Set's an author preference to the provided value at a given key
+
+  See AuthorPreferences for available key options
+  """
+  def set_author_preference(%Author{id: author_id}, key, value),
+    do: set_author_preference(author_id, key, value)
+
+  def set_author_preference(author_id, key, value) do
+    author = get_author!(author_id)
+
+    updated_preferences =
+      author.preferences
+      |> value_or(%AuthorPreferences{})
+      |> Map.put(key, value)
+      |> Map.from_struct()
+
+    update_author(author, %{preferences: updated_preferences})
   end
 
   def can_access?(author, project) do
