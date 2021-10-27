@@ -131,7 +131,6 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
                 padding: 1,
                 marginLeft: 4,
                 cursor: 'pointer',
-                marginRight: 2,
               }}
             >
               <i
@@ -139,6 +138,26 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
                 style={{ cursor: 'pointer', color: 'white' }}
                 aria-hidden="true"
                 title="Edit the option"
+              ></i>{' '}
+            </button>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 3)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+                marginRight: 2,
+              }}
+            >
+              <i
+                className="fas fa-plus"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Add new option"
               ></i>{' '}
             </button>
           </>
@@ -680,7 +699,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   if (customCssClass === 'four-columns') {
     columns = 4;
   }
-
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (

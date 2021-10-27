@@ -72,6 +72,9 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     }
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
+
+    setEditOptionClicked(false);
+    setDeleteOptionClicked(false);
   }, [model, textNodes, currentIndex, mcqItems, deleteOptionClicked, editOptionClicked]);
 
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
@@ -207,8 +210,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   }
   const [tree, setTree] = useState<MarkupTree[]>([]);
   const onClick = (index: any, option: number) => {
-    console.log({ option });
-
+    setCurrentIndex(index);
     if (option === 1) {
       setEditOptionClicked(true);
       setDeleteOptionClicked(false);
@@ -217,10 +219,40 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       } else if (Array.isArray(mcqItems[index].nodes)) {
         setTree(mcqItems[index].nodes);
       }
-      setCurrentIndex(index);
       setTextNodes(mcqItems[index].nodes);
 
       onConfigure({ id, configure: true, context: { fullscreen: false } });
+    } else if (option === 3) {
+      setEditOptionClicked(false);
+      setDeleteOptionClicked(false);
+      const modelClone = clone(model);
+      if (deleteOptionClicked) {
+        modelClone.mcqItems.splice(currentIndex, 1);
+      } else {
+        modelClone.mcqItems.push({
+          nodes: [
+            {
+              tag: 'p',
+              style: {},
+              children: [
+                {
+                  children: [{ children: [], tag: 'text', text: `Option ${mcqItems.length + 1}` }],
+                  style: {
+                    backgroundColor: 'transparent',
+                    color: '#ebebeb',
+                    fontSize: '16px',
+                  },
+                  tag: 'span',
+                },
+              ],
+            },
+          ],
+          scoreValue: 0,
+          index: mcqItems.length,
+          value: mcqItems.length,
+        });
+      }
+      onSaveConfigure({ id, snapshot: modelClone });
     } else {
       setDeleteOptionClicked(true);
       setEditOptionClicked(false);
@@ -231,7 +263,6 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       });
     }
   };
-
   return (
     <React.Fragment>
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
