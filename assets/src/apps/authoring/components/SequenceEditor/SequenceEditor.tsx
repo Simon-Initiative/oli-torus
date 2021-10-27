@@ -1,3 +1,4 @@
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import React, { useEffect, useState } from 'react';
 import { Accordion, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
@@ -318,7 +319,7 @@ const SequenceEditor: React.FC<any> = () => {
     copiedActivity.resourceId = newActivity.resourceId;
     copiedActivity.activitySlug = newActivity.activitySlug;
     copiedActivity.title = newTitle;
-
+    dispatch(saveActivity({ activity: copiedActivity }));
     await dispatch(upsertActivity({ activity: copiedActivity }));
     addNewSequence(newSequenceEntry, item.activitySlug);
   };
