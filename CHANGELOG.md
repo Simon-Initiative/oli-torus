@@ -18,8 +18,6 @@
 - Gradebook and graded page per student details with instructor centered grade override
 - Student specific progress display
 
-> > > > > > > master
-
 ## 0.14.0 (2021-10-13)
 
 ### Bug Fixes
