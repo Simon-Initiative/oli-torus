@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
-import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
