@@ -58,6 +58,11 @@ const defaultHandler = async () => {
 // because of events and function references, we need to store state outside of the function
 const sharedAttemptStateMap = new Map();
 
+const AllAttemptStateList: {
+  activityId: string | undefined;
+  attemptGuid: string;
+  attempt: unknown;
+}[] = [];
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -232,7 +237,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       let isForMe = false;
 
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
-      if (attemptGuid === currentAttempt.attemptGuid) {
+      const currentActivityAllAttempt = AllAttemptStateList.filter(
+        (activityAttempt) =>
+          activityAttempt.activityId === activity.id && activityAttempt.attemptGuid === attemptGuid,
+      );
+
+      if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
         /* console.log('EVENT FOR ME', { e, activity, attempt }); */
         isForMe = true;
       }
@@ -301,6 +311,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
+        AllAttemptStateList.push({
+          activityId: activity?.id,
+          attemptGuid: lastCheckResults.attempt.attemptGuid,
+          attempt: lastCheckResults.attempt,
+        });
       }
       notifyCheckComplete(lastCheckResults);
     }
