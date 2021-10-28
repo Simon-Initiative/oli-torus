@@ -64,9 +64,10 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
 }
 
 export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 56) => {
+  // console.log(childRect.left, childRect.width, window.scrollX);
   return {
-    top: childRect.top + window.pageYOffset - yOffset,
-    left: childRect.left + window.pageXOffset + childRect.width / 2 - popoverRect.width / 2,
+    top: childRect.top + window.scrollY - yOffset,
+    left: childRect.left + window.window.scrollX + childRect.width / 2 - popoverRect.width / 2,
   };
 };
 

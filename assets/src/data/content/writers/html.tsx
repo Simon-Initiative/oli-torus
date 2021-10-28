@@ -23,6 +23,7 @@ import {
   ModelElement,
   OrderedList,
   Paragraph,
+  Popup,
   Table,
   TableData,
   TableHeader,
@@ -246,6 +247,27 @@ export class HtmlParser implements WriterImpl {
         assertNever(inputData.input);
     }
   }
+
+  popup(context: WriterContext, next: Next, popup: Popup) {
+    return (
+      <>
+        <span
+          role="button"
+          className="popup-link"
+          data-trigger={`${this.escapeXml(popup.trigger)}`}
+          data-toggle="popover"
+          data-placement="top"
+          data-popover-content={`#${popup.id}`}
+        >
+          {next()}
+        </span>
+        <span id={popup.id} className="popup-wrapper d-none">
+          <span className="popup-content">{popup['content']}</span>
+        </span>
+      </>
+    );
+  }
+
   text(context: WriterContext, textEntity: Text) {
     return this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
   }

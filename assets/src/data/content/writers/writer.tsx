@@ -33,6 +33,7 @@ export interface WriterImpl {
   blockquote: ElementWriter;
   a: ElementWriter;
   inputRef: ElementWriter;
+  popup: ElementWriter;
   unsupported: (ctx: WriterContext, element: ModelElement) => React.ReactElement;
 }
 
@@ -129,6 +130,8 @@ export class ContentWriter {
         return impl.a(context, next, content);
       case 'input_ref':
         return impl.inputRef(context, next, content);
+      case 'popup':
+        return impl.popup(context, next, content);
       default:
         return impl.unsupported(context, content);
     }

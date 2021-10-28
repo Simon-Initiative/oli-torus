@@ -18,17 +18,6 @@ export const PopupContentModal = (props: Props) => {
   });
   const [trigger, setTrigger] = React.useState(props.model.trigger);
 
-  // content: {
-  //   model: [
-  //     create({
-  //       type: 'p',
-  //       children: [{ text: '' }],
-  //       id: guid(),
-  //     }),
-  //   ],
-  //   selection: null,
-  // },
-
   const isTriggerMode = (mode: ContentModel.PopupTriggerMode) => mode === trigger;
 
   const triggerSettings = (

@@ -20,6 +20,8 @@ export const PopupEditor = (props: Props) => {
 
   const { attributes, children, editor, model } = props;
 
+  console.log('model', model);
+
   const onEdit = (changes: Partial<ContentModel.Popup>) => {
     updateModel<ContentModel.Popup>(editor, model, changes);
     // setIsPopoverOpen(false);

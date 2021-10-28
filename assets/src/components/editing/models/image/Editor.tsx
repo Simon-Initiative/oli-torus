@@ -46,7 +46,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
         <HoveringToolbar
           isOpen={() => focused && selected}
           showArrow
-          parentRef={parentRef}
+          // parentRef={parentRef}
           target={
             <div>
               {ReactEditor.isFocused(editor) && selected && imageRef.current && (
