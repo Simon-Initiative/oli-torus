@@ -13,22 +13,19 @@ import {
 import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {
-  const quillProps: { tree?: any; html?: any } = {};
+  const quillProps: { tree?: any; html?: any; showImageControl?: boolean } = {};
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
   }
   if (html) {
     quillProps.html = html;
   }
-  console.log('MCQ E RERENDER', { html, tree, portal });
+  quillProps.showImageControl = true;
   if (type === 1) {
     const E = () => (
       <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
     );
 
-    return portal && ReactDOM.createPortal(<E />, portal);
-  } else {
-    const E = () => <div style={{ padding: 20 }}>Are you sure you want to delete the option?</div>;
     return portal && ReactDOM.createPortal(<E />, portal);
   }
 });

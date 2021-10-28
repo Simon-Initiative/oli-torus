@@ -11,6 +11,7 @@ interface QuillEditorProps {
   onSave: (contents: any) => void;
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
+  showImageControl?: boolean;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -100,15 +101,16 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   onChange,
   onSave,
   onCancel,
+  showImageControl = false,
 }) => {
   const [contents, setContents] = React.useState<any>(tree);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
 
-  console.log('[QuillEditor]', { tree, html });
+  /*  console.log('[QuillEditor]', { tree, html }); */
 
   useEffect(() => {
     const convertedTree = convertJanusToQuill(tree);
-    console.log('[QuillEditor] convertedTree', convertedTree);
+    /* console.log('[QuillEditor] convertedTree', convertedTree); */
     setDelta(convertedTree);
   }, [tree]);
 
@@ -166,6 +168,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
                 [{ align: [] }],
                 ['link', 'adaptivity'],
                 ['clean'], // remove formatting button
+                showImageControl ? ['image'] : [],
               ],
               handlers: customHandlers,
             },
@@ -188,7 +191,7 @@ export const tagName = 'tf-quill-editor';
 
 export const registerEditor = () => {
   if (!customElements.get(tagName)) {
-    register(QuillEditor, tagName, ['tree', 'html'], {
+    register(QuillEditor, tagName, ['tree', 'html', 'showimagecontrol'], {
       shadow: false, // shadow dom breaks the quill toolbar
       customEvents: {
         onChange: `${tagName}-change`,
