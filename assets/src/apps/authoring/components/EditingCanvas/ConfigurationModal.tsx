@@ -8,7 +8,6 @@ interface ConfigModalProps {
   bodyId?: string;
   fullscreen?: boolean;
   headerText?: string;
-  primaryButtonTitle?: string;
 }
 
 let instanceCounter = 0;
@@ -18,7 +17,6 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
   bodyId = 'configuration-modal-body',
   headerText = 'Configuration',
   fullscreen = false,
-  primaryButtonTitle = 'Save',
   onClose,
   onSave,
 }) => {
@@ -69,12 +67,8 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
       </Modal.Header>
       <Modal.Body id={bodyId}></Modal.Body>
       <Modal.Footer>
-        <button
-          type="button"
-          onClick={handleSaveClick}
-          className={primaryButtonTitle === 'Delete' ? 'btn btn-danger' : 'btn btn-primary'}
-        >
-          {primaryButtonTitle}
+        <button type="button" onClick={handleSaveClick} className={'btn btn-danger'}>
+          save
         </button>
         <button
           type="button"

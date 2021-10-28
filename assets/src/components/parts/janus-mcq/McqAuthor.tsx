@@ -10,12 +10,10 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-
+import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {
   const quillProps: { tree?: any; html?: any } = {};
-  console.log({ quillProps });
-
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
   }
@@ -51,6 +49,8 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
   const styles: CSSProperties = {
     width,
   };
+
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [inConfigureMode, setInConfigureMode] = useState<boolean>(parseBoolean(configuremode));
   const [showConfigureMode, setShowConfigureMode] = useState<boolean>(false);
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
@@ -254,19 +254,18 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
       }
       onSaveConfigure({ id, snapshot: modelClone });
     } else {
+      setShowConfirmDelete(true);
       setDeleteOptionClicked(true);
       setEditOptionClicked(false);
-      onConfigure({
-        id,
-        configure: true,
-        context: { fullscreen: false, primaryButtonTitle: 'Delete' },
-      });
     }
+  };
+  const handleDeleteRule = () => {
+    setShowConfirmDelete(false);
+    handleNotificationSave();
   };
   return (
     <React.Fragment>
       {editOptionClicked && portalEl && <Editor type={1} html="" tree={tree} portal={portalEl} />}
-      {deleteOptionClicked && portalEl && <Editor type={2} html="" tree={tree} portal={portalEl} />}
       {
         <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
           <style>
@@ -307,6 +306,17 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
               configureMode={showConfigureMode}
             />
           ))}
+          {showConfirmDelete && (
+            <ConfirmDelete
+              show={showConfirmDelete}
+              elementType="MCQ Option"
+              elementName="the Option"
+              deleteHandler={() => handleDeleteRule()}
+              cancelHandler={() => {
+                setShowConfirmDelete(false);
+              }}
+            />
+          )}
         </div>
       }
     </React.Fragment>
