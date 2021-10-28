@@ -50,7 +50,7 @@ export const isEqual = (factValue: any, value: any): boolean => {
     return parseFloat(value) === factValue;
   }
   if (typeOfValue === 'string' && typeOfFactValue === 'string') {
-    return value.toLowerCase() === factValue.toLowerCase();
+    return value.trim().toLowerCase() === factValue.trim().toLowerCase();
   }
   return factValue === value;
 };
