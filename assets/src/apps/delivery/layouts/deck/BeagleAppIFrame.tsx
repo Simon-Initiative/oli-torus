@@ -36,7 +36,7 @@ export const BeagleAppIFrame = {
           configData: [],
           customCssClass: '',
           height: 800,
-          src: 'https://www.unicon.net',
+          src: 'https://www.github.com/Simon-Initiative/oli-torus',
           width: 420,
           x: -390,
           y: 0,
