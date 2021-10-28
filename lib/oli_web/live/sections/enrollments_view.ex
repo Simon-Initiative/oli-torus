@@ -140,6 +140,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
          Routes.live_path(
            socket,
            __MODULE__,
+           socket.assigns.section.slug,
            Map.merge(
              %{
                sort_by: socket.assigns.table_model.sort_by_spec.name,
