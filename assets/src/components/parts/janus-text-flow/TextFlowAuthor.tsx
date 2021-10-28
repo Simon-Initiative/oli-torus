@@ -106,7 +106,7 @@ export const renderFlow = (
 };
 
 // eslint-disable-next-line react/display-name
-const Editors: React.FC<any> = React.memo(({ html, tree, portal }) => {
+const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
   const quillProps: { tree?: any; html?: any } = {};
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
@@ -114,7 +114,7 @@ const Editors: React.FC<any> = React.memo(({ html, tree, portal }) => {
   if (html) {
     quillProps.html = html;
   }
-  console.log('TFE RERENDER', { html, tree, portal });
+  /* console.log('TFE RERENDER', { html, tree, portal }); */
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
@@ -378,7 +378,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
 
   const renderIt =
     inConfigureMode && portalEl ? (
-      <Editors html="" tree={tree} portal={portalEl} />
+      <Editor html={htmlPreview} tree={tree} portal={portalEl} />
     ) : (
       <React.Fragment>
         <style>
