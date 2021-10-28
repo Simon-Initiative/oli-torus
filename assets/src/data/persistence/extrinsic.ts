@@ -17,6 +17,7 @@ export function readGlobal(keys: string[] | null = null) {
   const params = {
     method: 'GET',
     url: '/state' + toKeyParams(keys),
+    hasTextResult: true,
   };
 
   return makeRequest<ExtrinsicRead>(params);
@@ -72,12 +73,12 @@ export function upsertSection(slug: SectionSlug, keyValues: KeyValues) {
 // Take a list of string key names and turn it into the form expected by
 // Phoenix: foo[]=bar&foo[]=baz&foo[]=qux.
 function toKeyParams(keys: string[] | null = null) {
-  keys === null
+  return keys === null
     ? ''
     : '?' +
-      keys
-        .reduce((p, k) => {
-          return p + '&keys[]=' + k;
-        }, '')
-        .substr(1);
+        keys
+          .reduce((p, k) => {
+            return p + '&keys[]=' + k;
+          }, '')
+          .substr(1);
 }

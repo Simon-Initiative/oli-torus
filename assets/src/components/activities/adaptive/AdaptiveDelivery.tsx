@@ -200,6 +200,35 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     return true;
   };
 
+  const handleSetData = async (payload: any) => {
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${payload.id} not found!`);
+      return;
+    }
+    console.log('CurrentAttempt', currentAttemptState, partAttempt);
+    await props.onSetData(currentAttemptState.attemptGuid, partAttempt?.attemptGuid, payload);
+  };
+
+  const handleGetData = async (payload: any) => {
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${payload.id} not found!`);
+      return;
+    }
+    return await props.onGetData(
+      currentAttemptState.attemptGuid,
+      partAttempt?.attemptGuid,
+      payload,
+    );
+  };
+
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSave', { id, responses }); */
     if (!responses || !responses.length) {
@@ -257,6 +286,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         onPartSave={handlePartSave}
         onPartSubmit={handlePartSubmit}
         onPartResize={handlePartResize}
+        onPartSetData={handleSetData}
+        onPartGetData={handleGetData}
       />
     </NotificationContext.Provider>
   ) : null;

@@ -47,6 +47,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   userId: number;
   notify?: EventEmitter;
 
+  onGetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+  onSetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (
     attemptGuid: string,
@@ -82,6 +84,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   mountPoint: HTMLDivElement;
   connected: boolean;
   review: string;
+  onGetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+  onSetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
 
   protected _notify: EventEmitter;
 
@@ -121,6 +125,14 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
     this.onRequestHint = (attemptGuid: string, partAttemptGuid: string) =>
       this.dispatch('requestHint', attemptGuid, partAttemptGuid);
+
+    this.onGetData = (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+      return this.dispatch('getData', attemptGuid, partAttemptGuid, payload);
+    };
+
+    this.onSetData = (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+      return this.dispatch('setData', attemptGuid, partAttemptGuid, payload);
+    };
 
     this.onSaveActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
       this.dispatch('saveActivity', attemptGuid, undefined, partResponses);
@@ -192,6 +204,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       preview,
       review,
       sectionSlug,
+      onSetData: this.onSetData,
+      onGetData: this.onGetData,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
       onSubmitPart: this.onSubmitPart,

@@ -8,4 +8,6 @@ export const customEvents = {
   onSave: 'save',
   onSubmit: 'submit',
   onResize: 'resize',
+  onGetData: 'getData',
+  onSetData: 'setData',
 };

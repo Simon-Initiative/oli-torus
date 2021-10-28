@@ -51,6 +51,9 @@ export const loadInitialPageState = createAsyncThunk(
       sessionState['session.attemptNumber'] = 0;
       sessionState['session.timeOnQuestion'] = 0;
 
+      // Sets up Current Active Everapp to None
+      sessionState['app.active'] = 'none';
+
       if (params.resourceAttemptState) {
         Object.assign(sessionState, params.resourceAttemptState);
       }

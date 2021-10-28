@@ -32,7 +32,9 @@ import {
   selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
-import { selectPreviewMode } from '../store/features/page/slice';
+import { debounce } from 'lodash';
+import * as Extrinsic from 'data/persistence/extrinsic';
+import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -80,8 +82,55 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onRequestLatestState = async () => ({ snapshot: {} }),
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
-  const currentUserId = 1; // TODO from state
+  const currentUserId = useSelector(selectUserId);
 
+  const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    console.log('Saving', attemptGuid, partAttemptGuid, payload);
+    const objId = `${payload.key}`;
+    debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
+    console.log('Saving Done');
+  };
+
+  const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    console.log('Reading', attemptGuid, partAttemptGuid, payload);
+    // Read only the key from the simid
+    const objId = `${payload.key}`;
+    const a = debouncedReadData({ isPreviewMode, payload, objId });
+    console.log('debounced Read', a);
+    return a;
+  };
+
+  const debouncedReadData = debounce(
+    async ({ isPreviewMode, payload, objId }) => {
+      if (isPreviewMode) {
+        // Fetch from LocalStorage
+        return localStorage.getItem(objId);
+      } else {
+        // Fetch from API
+        // Read the upper key, make a copy and only update the necessary value associated with child key
+        const data = (await Extrinsic.readGlobal([`${payload.simId}`])) as any;
+        return JSON.parse(data)[payload.simId]?.[objId];
+      }
+    },
+    500,
+    { maxWait: 10000, leading: true, trailing: false },
+  );
+
+  const debouncedSaveData = debounce(
+    async ({ isPreviewMode, payload, objId, value }) => {
+      console.log('InitStateFacts Saving', payload, objId, value);
+      if (isPreviewMode) {
+        // Store to Local Storage
+        localStorage.setItem(objId, value);
+      } else {
+        // Store to Backend
+        await Extrinsic.upsertGlobal({ [payload.simId]: { [objId]: value } });
+        console.log('InitStateFacts saving done for', payload, objId, value);
+      }
+    },
+    200,
+    { maxWait: 10000, leading: true, trailing: false },
+  );
   const activityState: ActivityState = {
     attemptGuid: 'foo',
     attemptNumber: 1,
@@ -222,6 +271,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     submitEvaluations: onSubmitEvaluations,
     activityReady: onReady,
     resizePart: onResize,
+    getData: readUserData,
+    setData: saveUserData,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -327,12 +378,48 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateFacts = useSelector(selectInitStateFacts);
+
+  const updateGlobalState = async (snapshot: any, stateFacts: any) => {
+    const payloadData = {} as any;
+    stateFacts.map((fact: string) => {
+      // EverApp Information
+      if (fact.startsWith('app.')) {
+        const data = fact.split('.');
+        const objId = data.splice(2).join('.');
+        const value = snapshot[fact];
+        payloadData[data[1]] = { ...payloadData[data[1]], [objId]: value };
+      }
+    });
+
+    const arrayPLData = Object.keys(payloadData);
+    const retrivedData = (await Extrinsic.readGlobal(arrayPLData)) as any;
+    const parsedRetriedData = JSON.parse(retrivedData);
+
+    Object.keys(parsedRetriedData).map((retrivedDataKey) => {
+      payloadData[retrivedDataKey] = {
+        ...parsedRetriedData[retrivedDataKey],
+        ...payloadData[retrivedDataKey],
+      };
+    });
+
+    if (isPreviewMode) {
+      // Store to Local Storage
+      Object.keys(payloadData).map((data) => localStorage.setItem(data, payloadData[data]));
+    } else {
+      // Store to Backend
+      await Extrinsic.upsertGlobal(payloadData);
+    }
+  };
+
   const notifyContextChanged = async () => {
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
+
+    updateGlobalState(snapshot, initStateFacts);
+
     const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
       acc[key] = snapshot[key];
       return acc;
@@ -385,6 +472,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSubmitPart,
     onReady,
     onResize,
+    onSetData: saveUserData,
+    onGetData: readUserData,
   };
 
   // don't render until we're already listening!
