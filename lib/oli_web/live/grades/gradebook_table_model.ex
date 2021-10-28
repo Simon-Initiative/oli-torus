@@ -78,13 +78,33 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
       _ ->
         percentage =
-          ((score / out_of * 100)
-           |> Float.round(2)
-           |> Float.to_string()) <> "%"
+          case is_nil(score) or is_nil(out_of) do
+            true ->
+              ""
+
+            false ->
+              ((score / out_of * 100)
+               |> Float.round(2)
+               |> Float.to_string()) <> "%"
+          end
+
+        safe_score =
+          if is_nil(score) do
+            "?"
+          else
+            score
+          end
+
+        safe_out_of =
+          if is_nil(out_of) do
+            "?"
+          else
+            out_of
+          end
 
         ~F"""
         <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
-        {score}/{out_of} <small class="text-muted">{percentage}</small>
+        {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
         </a>
         """
     end

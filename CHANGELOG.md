@@ -1,11 +1,19 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
 ### Enhancements
 
+## 0.14.2 (2021-10-28)
+
+### Bug Fixes
+
+- Make score display in gradebook more robust
 
 ## 0.14.1 (2021-10-28)
+
 ### Bug Fixes
 
 - Fix an issue with Apply Update button and move content updates to async worker
