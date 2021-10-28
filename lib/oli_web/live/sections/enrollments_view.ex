@@ -150,7 +150,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

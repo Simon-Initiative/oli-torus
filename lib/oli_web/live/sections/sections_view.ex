@@ -161,7 +161,8 @@ defmodule OliWeb.Sections.SectionsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

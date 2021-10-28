@@ -183,7 +183,8 @@ defmodule OliWeb.Grades.GradebookView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 
