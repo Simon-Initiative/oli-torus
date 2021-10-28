@@ -13,14 +13,14 @@ import {
 import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
 // eslint-disable-next-line react/display-name
 const Editor: React.FC<any> = React.memo(({ html, tree, portal, type }) => {
-  const quillProps: { tree?: any; html?: any; showImageControl?: boolean } = {};
+  const quillProps: { tree?: any; html?: any; showimagecontrol?: boolean } = {};
   if (tree) {
     quillProps.tree = JSON.stringify(tree);
   }
   if (html) {
     quillProps.html = html;
   }
-  quillProps.showImageControl = true;
+  quillProps.showimagecontrol = true;
   if (type === 1) {
     const E = () => (
       <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>

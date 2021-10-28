@@ -11,7 +11,7 @@ interface QuillEditorProps {
   onSave: (contents: any) => void;
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
-  showImageControl?: boolean;
+  showimagecontrol?: boolean;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -101,7 +101,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   onChange,
   onSave,
   onCancel,
-  showImageControl = false,
+  showimagecontrol = false,
 }) => {
   const [contents, setContents] = React.useState<any>(tree);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
@@ -168,7 +168,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
                 [{ align: [] }],
                 ['link', 'adaptivity'],
                 ['clean'], // remove formatting button
-                showImageControl ? ['image'] : [],
+                showimagecontrol ? ['image'] : [],
               ],
               handlers: customHandlers,
             },
