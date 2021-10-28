@@ -4,7 +4,7 @@ const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const globImporter = require('node-sass-glob-importer');
-const TerserPlugin = require("terser-webpack-plugin");
+const TerserPlugin = require('terser-webpack-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -28,7 +28,7 @@ const populateEntries = () => {
     const rootPath = manifestPath.substr(0, manifestPath.indexOf('manifest.json'));
     return {
       [manifest.id + '_authoring']: [rootPath + manifest.authoring.entry],
-      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry]
+      [manifest.id + '_delivery']: [rootPath + manifest.delivery.entry],
     };
   });
 
@@ -59,6 +59,12 @@ const populateEntries = () => {
       .sync('./styles/themes/delivery/*/dark.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
+      .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
+      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
+    ...glob
+      .sync('./styles/themes/delivery/adaptive_themes/*/dark.scss')
+      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
+    ...glob
       .sync('./styles/themes/preview/*/light.scss')
       .map((p) => ({ prefix: 'preview_', themePath: p })),
     ...glob
@@ -87,9 +93,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-    2 * foundActivities.length +
-    2 * foundParts.length +
-    foundThemes.length
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      foundThemes.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -102,17 +108,17 @@ const populateEntries = () => {
 module.exports = (env, options) => ({
   externals: {
     react: {
-      root: "React",
-      commonjs2: "react",
-      commonjs: "react",
-      amd: "react"
+      root: 'React',
+      commonjs2: 'react',
+      commonjs: 'react',
+      amd: 'react',
     },
     'react-dom': {
-      root: "ReactDOM",
-      commonjs2: "react-dom",
-      commonjs: "react-dom",
-      amd: "react-dom"
-    }
+      root: 'ReactDOM',
+      commonjs2: 'react-dom',
+      commonjs: 'react-dom',
+      amd: 'react-dom',
+    },
   },
   devtool: 'source-map',
   optimization: {
@@ -122,7 +128,7 @@ module.exports = (env, options) => ({
   entry: populateEntries(),
   output: {
     path: path.resolve(__dirname, '../priv/static/js'),
-    libraryTarget: 'umd'
+    libraryTarget: 'umd',
   },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
@@ -138,7 +144,7 @@ module.exports = (env, options) => ({
       apps: path.resolve(__dirname, 'src/apps'),
       adaptivity: path.resolve(__dirname, 'src/adaptivity'),
     },
-    fallback: { "vm": require.resolve("vm-browserify") }
+    fallback: { vm: require.resolve('vm-browserify') },
   },
   module: {
     rules: [
@@ -181,7 +187,7 @@ module.exports = (env, options) => ({
               sassOptions: {
                 includePaths: [path.join(__dirname, 'src'), path.join(__dirname, 'styles')],
                 importer: globImporter(),
-                quietDeps: true
+                quietDeps: true,
               },
               sourceMap: true,
             },
@@ -196,6 +202,6 @@ module.exports = (env, options) => ({
   },
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
-    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] })
+    new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
   ],
 });
