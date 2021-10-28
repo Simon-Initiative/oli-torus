@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.14.1">
+    <meta name="project" content="OLI Torus v0.14.2">
 
-    <title>Oli.Delivery.Paywall — OLI Torus v0.14.1</title>
+    <title>Oli.Delivery.Paywall — OLI Torus v0.14.2</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-188a642ace.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.14.1
+        v0.14.2
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Paywall <small class="app-vsn">(OLI Torus v0.14.1)</small>
+Oli.Delivery.Paywall <small class="app-vsn">(OLI Torus v0.14.2)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/paywall.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -278,10 +278,10 @@ this instituttion has.</p><p>Returns {:ok, %Money{}} or {:error, reason}</p>
   <a href="#create_discount/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="8931086172-1">(</span><span class="p" data-group-id="8931086172-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8931086172-2">}</span><span class="p" data-group-id="8931086172-1">)</span><span class="w">
-</span><span class="p" data-group-id="8931086172-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8931086172-4">%</span><span class="nc" data-group-id="8931086172-4">Discount</span><span class="p" data-group-id="8931086172-4">{</span><span class="p" data-group-id="8931086172-4">}</span><span class="p" data-group-id="8931086172-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="8931086172-5">(</span><span class="p" data-group-id="8931086172-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8931086172-6">}</span><span class="p" data-group-id="8931086172-5">)</span><span class="w">
-</span><span class="p" data-group-id="8931086172-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8931086172-8">%</span><span class="nc" data-group-id="8931086172-8">Ecto.Changeset</span><span class="p" data-group-id="8931086172-8">{</span><span class="p" data-group-id="8931086172-8">}</span><span class="p" data-group-id="8931086172-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="9642114689-1">(</span><span class="p" data-group-id="9642114689-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9642114689-2">}</span><span class="p" data-group-id="9642114689-1">)</span><span class="w">
+</span><span class="p" data-group-id="9642114689-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9642114689-4">%</span><span class="nc" data-group-id="9642114689-4">Discount</span><span class="p" data-group-id="9642114689-4">{</span><span class="p" data-group-id="9642114689-4">}</span><span class="p" data-group-id="9642114689-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_discount</span><span class="p" data-group-id="9642114689-5">(</span><span class="p" data-group-id="9642114689-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9642114689-6">}</span><span class="p" data-group-id="9642114689-5">)</span><span class="w">
+</span><span class="p" data-group-id="9642114689-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9642114689-8">%</span><span class="nc" data-group-id="9642114689-8">Ecto.Changeset</span><span class="p" data-group-id="9642114689-8">{</span><span class="p" data-group-id="9642114689-8">}</span><span class="p" data-group-id="9642114689-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_payment/1">
@@ -309,10 +309,10 @@ this instituttion has.</p><p>Returns {:ok, %Money{}} or {:error, reason}</p>
   <a href="#create_payment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="9801896226-1">(</span><span class="p" data-group-id="9801896226-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9801896226-2">}</span><span class="p" data-group-id="9801896226-1">)</span><span class="w">
-</span><span class="p" data-group-id="9801896226-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9801896226-4">%</span><span class="nc" data-group-id="9801896226-4">Payment</span><span class="p" data-group-id="9801896226-4">{</span><span class="p" data-group-id="9801896226-4">}</span><span class="p" data-group-id="9801896226-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="9801896226-5">(</span><span class="p" data-group-id="9801896226-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9801896226-6">}</span><span class="p" data-group-id="9801896226-5">)</span><span class="w">
-</span><span class="p" data-group-id="9801896226-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9801896226-8">%</span><span class="nc" data-group-id="9801896226-8">Ecto.Changeset</span><span class="p" data-group-id="9801896226-8">{</span><span class="p" data-group-id="9801896226-8">}</span><span class="p" data-group-id="9801896226-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="1136433171-1">(</span><span class="p" data-group-id="1136433171-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1136433171-2">}</span><span class="p" data-group-id="1136433171-1">)</span><span class="w">
+</span><span class="p" data-group-id="1136433171-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1136433171-4">%</span><span class="nc" data-group-id="1136433171-4">Payment</span><span class="p" data-group-id="1136433171-4">{</span><span class="p" data-group-id="1136433171-4">}</span><span class="p" data-group-id="1136433171-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_payment</span><span class="p" data-group-id="1136433171-5">(</span><span class="p" data-group-id="1136433171-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1136433171-6">}</span><span class="p" data-group-id="1136433171-5">)</span><span class="w">
+</span><span class="p" data-group-id="1136433171-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1136433171-8">%</span><span class="nc" data-group-id="1136433171-8">Ecto.Changeset</span><span class="p" data-group-id="1136433171-8">{</span><span class="p" data-group-id="1136433171-8">}</span><span class="p" data-group-id="1136433171-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_payment_codes/2">
