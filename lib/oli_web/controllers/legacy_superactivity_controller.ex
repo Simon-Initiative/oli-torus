@@ -11,6 +11,7 @@ defmodule OliWeb.LegacySuperactivityController do
     FileDirectory
   }
 
+  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Grading
@@ -60,10 +61,10 @@ defmodule OliWeb.LegacySuperactivityController do
         |> put_resp_content_type("text/xml")
         |> send_resp(200, xml)
 
-      {:error, error} ->
+      {:error, error, code} ->
         conn
         |> put_resp_content_type("text/text")
-        |> send_resp(500, error)
+        |> send_resp(code, error)
     end
   end
 
@@ -95,7 +96,8 @@ defmodule OliWeb.LegacySuperactivityController do
     host_url = "https://#{conn.host}"
 
     save_files =
-      ActivityLifecycle.get_activity_attempt_save_files(activity_attempt.attempt_guid, activity_attempt.attempt_number)
+      ActivityLifecycle.get_activity_attempt_save_files(activity_attempt.attempt_guid,
+        Integer.to_string(user.id), activity_attempt.attempt_number)
 
     %{
       server_time_zone: get_timezone(),
@@ -149,6 +151,14 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, params) when command_name === "startAttempt" do
+    #commandName: startAttempt
+    #resourceTypeID: x-cmu-phil-syntaxlab
+    #activityMode: delivery
+    #authenticationToken: s=c272df717f00000136fc40e39ca2e317&u=rgachuhi&h=8217d014dba6099bf9445eba90b6536e
+    #userGuid: rgachuhi
+    #activityContextGuid: 58b3ceea7f0000011018b00c8bc72b87
+    #activityGuid: 58b3cee97f0000011e90a274d3df8b5f
+
     case context.activity_attempt.date_evaluated do
       nil ->
         attempt_history(context)
@@ -162,7 +172,7 @@ defmodule OliWeb.LegacySuperactivityController do
           {:ok, {_attempt_state, _model}} ->
             attempt_history(context)
           {:error, _} ->
-            {:error, "server error"}
+            {:error, "server error", 500}
         end
     end
   end
@@ -239,7 +249,7 @@ defmodule OliWeb.LegacySuperactivityController do
         attempt_history(context)
 
       {:error, _} ->
-        {:error, "server error"}
+        {:error, "server error", 500}
     end
   end
 
@@ -247,30 +257,57 @@ defmodule OliWeb.LegacySuperactivityController do
     attempt_history(context)
   end
 
+  defp process_command(command_name, context, _params) when command_name === "loadUserSyllabus" do
+#    summary = Summary.get_summary(context.section.slug, context.user)
+    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
+
+    page_nodes =
+      hierarchy
+      |> Oli.Delivery.Hierarchy.flatten()
+#      |> Enum.filter(fn node ->
+#        node.revision.resource_type_id ==
+#          Oli.Resources.ResourceType.get_id_by_type("page")
+#      end)
+
+    IO.inspect(page_nodes, limit: :infinity)
+    {:error, "command not supported", 400}
+  end
+
   defp process_command(
          command_name,
          context,
          %{
            "activityContextGuid" => attempt_guid,
-           "attemptNumber" => attempt_number,
            "byteEncoding" => byte_encoding,
            "fileName" => file_name,
            "fileRecordData" => content,
            "resourceTypeID" => activity_type,
-           "mimeType" => mime_type
-         } = _params
+           "mimeType" => mime_type,
+           "userGuid" => user_id
+         } = params
        )
        when command_name === "writeFileRecord" do
+
+    file_info = %{
+      attempt_guid: attempt_guid,
+      user_id: user_id,
+      content: content,
+      mime_type: mime_type,
+      byte_encoding: byte_encoding,
+      activity_type: activity_type,
+      file_name: file_name
+    }
+
+    attempt_number = Map.get(params, "attemptNumber")
+
+    file_info = if attempt_number != nil do
+      Map.merge(file_info, %{attempt_number: attempt_number})
+    else
+      file_info
+    end
+
     {:ok, save_file} =
-      ActivityLifecycle.save_activity_attempt_state_file(%{
-        attempt_guid: attempt_guid,
-        attempt_number: attempt_number,
-        content: content,
-        mime_type: mime_type,
-        byte_encoding: byte_encoding,
-        activity_type: activity_type,
-        file_name: file_name
-      })
+      ActivityLifecycle.save_activity_attempt_state_file(file_info)
 
     xml =
       FileRecord.setup(%{
@@ -289,17 +326,19 @@ defmodule OliWeb.LegacySuperactivityController do
          command_name,
          _context,
          %{
-           "activityContextGuid" => attempt_guid,
-           "attemptNumber" => attempt_number,
-           "fileName" => file_name
-         } = _params
+           "activityContextGuid" => attempt_guid
+         } = params
        )
        when command_name === "loadFileRecord" do
 
-    save_file = ActivityLifecycle.get_activity_attempt_save_file(attempt_guid, attempt_number, file_name)
+    file_name = Map.get(params, "fileName")
+    attempt_number = Map.get(params, "attemptNumber")
+    user_id = Map.get(params, "userGuid")
+
+    save_file = ActivityLifecycle.get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name)
 
     case save_file do
-      nil -> {:error, "file not found"}
+      nil -> {:error, "file not found", 404}
       _ -> {:ok, URI.decode(save_file.content)}
     end
   end
@@ -317,7 +356,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(_command_name, _context, _params) do
-    {:error, "command not supported"}
+    {:error, "command not supported", 400}
   end
 
   defp attempt_history(context) do

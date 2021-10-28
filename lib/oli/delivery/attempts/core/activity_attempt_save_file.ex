@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile do
 
   schema "activity_attempt_save_files" do
     field(:attempt_guid, :string)
+    field(:user_id, :string)
     field(:attempt_number, :integer)
     field(:file_name, :string)
     field(:file_guid, :string)
@@ -20,6 +21,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile do
     score
     |> cast(attrs, [
       :attempt_guid,
+      :user_id,
       :attempt_number,
       :file_name,
       :file_guid,
@@ -30,7 +32,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttemptSaveFile do
     ])
     |> validate_required([
       :attempt_guid,
-      :attempt_number,
+      :user_id,
       :file_name,
       :file_guid,
       :content,
