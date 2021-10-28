@@ -215,7 +215,7 @@ const boundingRectHelper = (
         height: offsetHeight,
       };
     case dragHandle === 'e':
-      dw = x - (clientLeft + clientWidth);
+      dw = clientLeft + clientWidth - x;
       dh = 0;
 
       return {

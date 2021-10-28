@@ -37,7 +37,7 @@ export function parseDate(value: string): Date {
   );
 }
 
-const dateOptions = {
+const dateOptions: Intl.DateTimeFormatOptions = {
   month: 'long',
   day: 'numeric',
   year: 'numeric',

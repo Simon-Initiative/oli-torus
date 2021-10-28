@@ -1,7 +1,7 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
 
-interface CheckResults {
+export interface CheckResults {
   timestamp: number;
   results?: any;
   attempt?: any;

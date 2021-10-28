@@ -1,7 +1,9 @@
 defmodule OliWeb.Pow.UserRoutes do
   use Pow.Phoenix.Routes
   use OliWeb, :controller
+
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Accounts.User
 
   @impl true
   def after_sign_in_path(conn) do
@@ -22,6 +24,17 @@ defmodule OliWeb.Pow.UserRoutes do
 
       _ ->
         Routes.pow_session_path(conn, :new)
+    end
+  end
+
+  @impl true
+  def after_user_updated_path(conn) do
+    case conn.assigns[:current_user] do
+      %User{independent_learner: true} ->
+        Routes.delivery_path(conn, :open_and_free_index)
+
+      _ ->
+        Routes.delivery_path(conn, :index)
     end
   end
 end

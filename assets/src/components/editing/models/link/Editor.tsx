@@ -1,25 +1,32 @@
-import React, { useState } from 'react';
-import { Popover } from 'react-tiny-popover';
-import * as ContentModel from 'data/content/model';
-import { updateModel } from 'components/editing/models/utils';
 import { EditorProps } from 'components/editing/models/interfaces';
-import { LinkablePages } from 'components/editing/models/link/utils';
-import { EditLink } from 'components/editing/models/link/EditLink';
 import { DisplayLink } from 'components/editing/models/link/DisplayLink';
+import { EditLink } from 'components/editing/models/link/EditLink';
+import { LinkablePages } from 'components/editing/models/link/utils';
+import { updateModel } from 'components/editing/models/utils';
+import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import * as ContentModel from 'data/content/model';
+import { centeredAbove } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
-// eslint-disable-next-line
+import React, { useState } from 'react';
+import { Range } from 'slate';
+import { useFocused, useSelected } from 'slate-react';
+
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 
 export const LinkEditor = (props: Props) => {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const focused = useFocused();
+  const selected = useSelected();
+
   const [editLink, setEditLink] = useState(false);
 
   // All of the pages that we have available in the course
   // for allowing links to
-  const [pages, setPages] = useState({ type: 'Uninitialized' } as LinkablePages);
+  const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
 
   // The selected page, when in link from page mode
-  const [selectedPage, setSelectedPage] = useState(null as Persistence.Page | null);
+  const [selectedPage, setSelectedPage] = useState<Persistence.Page | null>(null);
+
+  const isEditButton = editLink && selectedPage && pages.type === 'success';
 
   const { attributes, children, editor, model } = props;
 
@@ -27,27 +34,44 @@ export const LinkEditor = (props: Props) => {
     if (href !== '' && href !== model.href) {
       updateModel<ContentModel.Hyperlink>(editor, model, { href });
     }
-    setIsPopoverOpen(false);
+    setEditLink(false);
   };
 
+  const toolbarYOffset = isEditButton ? 132 : 50;
+  const isToolbarOpen =
+    (focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)) || editLink;
+
   return (
-    <Popover
-      onClickOutside={() => setIsPopoverOpen(false)}
-      isOpen={isPopoverOpen}
-      padding={25}
-      content={() => {
-        if (editLink && selectedPage && pages.type === 'success') {
-          return (
-            <EditLink
-              href={model.href}
-              onEdit={onEdit}
-              pages={pages}
-              selectedPage={selectedPage}
-              setSelectedPage={setSelectedPage}
-            />
-          );
-        }
-        return (
+    <HoveringToolbar
+      isOpen={() => isToolbarOpen}
+      showArrow
+      target={
+        <a
+          id={props.model.id}
+          href="#"
+          className="inline-link"
+          {...attributes}
+          onClick={() => {
+            setEditLink(false);
+          }}
+        >
+          {children}
+        </a>
+      }
+      contentLocation={(loc) => centeredAbove(loc, toolbarYOffset)}
+    >
+      <>
+        {isEditButton && (
+          <EditLink
+            setEditLink={setEditLink}
+            href={model.href}
+            onEdit={onEdit}
+            pages={pages}
+            selectedPage={selectedPage}
+            setSelectedPage={setSelectedPage}
+          />
+        )}
+        {!isEditButton && (
           <DisplayLink
             setEditLink={setEditLink}
             commandContext={props.commandContext}
@@ -57,21 +81,8 @@ export const LinkEditor = (props: Props) => {
             selectedPage={selectedPage}
             setSelectedPage={setSelectedPage}
           />
-        );
-      }}
-    >
-      <a
-        id={props.model.id}
-        href="#"
-        className="inline-link"
-        {...attributes}
-        onClick={() => {
-          setIsPopoverOpen(true);
-          setEditLink(false);
-        }}
-      >
-        {children}
-      </a>
-    </Popover>
+        )}
+      </>
+    </HoveringToolbar>
   );
 };

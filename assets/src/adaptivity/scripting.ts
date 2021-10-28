@@ -58,7 +58,8 @@ export const getExpressionStringForValue = (
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     try {
-      const evalResult = evalScript(`let foo = ${val};`, env);
+      const testEnv = new Environment(env);
+      const evalResult = evalScript(`let foo = ${val};`, testEnv);
       // when evalScript is executed successfully, evalResult.result is null.
       // evalScript does not trigger catch block even though there is error and add the error in stack property.
       if (evalResult?.result !== null) {

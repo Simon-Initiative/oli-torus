@@ -19,6 +19,7 @@ defmodule OliWeb.Router do
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "default.html"})
     plug(:put_layout, {OliWeb.LayoutView, "app.html"})
+    plug(Oli.Plugs.SetCurrentUser)
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -92,7 +93,6 @@ defmodule OliWeb.Router do
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug(Oli.Plugs.SetDefaultPow, :user)
-    plug(Oli.Plugs.SetCurrentUser)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -108,9 +108,26 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
+  pipeline :delivery_and_admin do
+    plug(Oli.Plugs.GiveAdminPriority)
+
+    plug(PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
+
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
+    plug(Oli.Plugs.RemoveXFrameOptions)
+
+    plug(Oli.Plugs.LayoutBasedOnUser)
+  end
+
   pipeline :authoring_protected do
     plug(Oli.Plugs.SetDefaultPow, :author)
-    plug(Oli.Plugs.SetCurrentUser)
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -241,10 +258,9 @@ defmodule OliWeb.Router do
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
-    get("/account", WorkspaceController, :account)
+    live("/account", Workspace.AccountDetailsLive)
+
     put("/account", WorkspaceController, :update_author)
-    post("/account/theme", WorkspaceController, :update_theme)
-    post("/account/live_preview_display", WorkspaceController, :update_live_preview_display)
 
     # keep a session active by periodically calling this endpoint
     get("/keep-alive", StaticPageController, :keep_alive)
@@ -544,17 +560,6 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug/updates", PageDeliveryController, :updates)
-
-    live("/:section_slug/grades", Grades.GradesLive)
-
-    live("/:section_slug/manage", Delivery.ManageSection)
-
-    live("/:section_slug/remix", Delivery.RemixSection)
-    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
-
-    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
     get("/:section_slug/payment/code", PaymentController, :use_code)
@@ -572,7 +577,7 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug", PageDeliveryController, :index)
+    get("/:section_slug/overview", PageDeliveryController, :index)
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -587,6 +592,29 @@ defmodule OliWeb.Router do
       PageDeliveryController,
       :review_attempt
     )
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_and_admin,
+      :pow_email_layout
+    ])
+
+    live("/:section_slug", Sections.OverviewView)
+
+    live("/:section_slug/grades/lms", Grades.GradesLive)
+    live("/:section_slug/grades/gradebook", Grades.GradebookView)
+    live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
+    live("/:section_slug/progress/:user_id", Progress.StudentView)
+    get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
+    get("/:section_slug/updates", PageDeliveryController, :updates)
+    live("/:section_slug/remix", Delivery.RemixSection)
+    live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
+    live("/:section_slug/enrollments", Sections.EnrollmentsView)
+    live("/:section_slug/edit", Sections.EditView)
   end
 
   scope "/sections", OliWeb do
@@ -655,6 +683,7 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/sections", Sections.SectionsView)
+
     live("/open_and_free/create", Delivery.SelectSource)
     live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
 

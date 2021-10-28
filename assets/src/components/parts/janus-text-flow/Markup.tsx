@@ -1,3 +1,5 @@
+import { evalScript, getAssignScript } from 'adaptivity/scripting';
+import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
 import guid from 'utils/guid';
 
@@ -16,37 +18,95 @@ const styleFilter = (styles: any) => {
 // supporting SS templates which look like
 // "some {stage.value} thing, and {q:1234|stage.value} other thing"
 // eslint-disable-next-line
-const getVars = /[^{\}]+(?=})/g;
-const templatizeText = (text: string, state: any) => {
-  const vars = text.match(getVars);
+const getExpressions = /[^{\}]+(?=})/g;
+
+// function to select the content between only the outermost {}
+const getExpression = (text: string) => {
+  const firstCurly = text.indexOf('{');
+  let lastCurly = -1;
+  let counter = 1;
+  let opens = 1;
+  while (counter < text.length && lastCurly === -1) {
+    if (text[firstCurly + counter] === '{') {
+      opens++;
+    } else if (text[firstCurly + counter] === '}') {
+      opens--;
+      if (opens === 0) {
+        lastCurly = firstCurly + counter;
+      }
+    }
+    counter++;
+  }
+  return text.substring(firstCurly + 1, lastCurly);
+};
+
+// extract all expressions from a string
+const extractExpressions = (text: string): string[] => {
+  const expressions = [];
+  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+    const expr = getExpression(text);
+    const rest = text.substring(text.indexOf(expr) + expr.length + 1);
+    expressions.push(expr);
+    expressions.push(...extractExpressions(rest));
+  }
+  return expressions;
+};
+
+const templatizeText = (text: string, state: any, env?: Environment): string => {
+  let innerEnv = env;
+  const vars = extractExpressions(text);
+  /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
     return text;
   }
+  /* innerEnv = evalScript(janus_std, innerEnv).env; */
+  try {
+    const stateAssignScript = getAssignScript(state, innerEnv);
+    evalScript(stateAssignScript, innerEnv);
+  } catch (e) {
+    console.warn('[Markup] error injecting state into env', { e, state, innerEnv });
+  }
+  /*  console.log('templatizeText', { text, state, vars }); */
   let templatizedText = text;
 
   // check for state items that were included in the string
   const vals = vars.map((v) => {
-    // TODO: evaluate expressions?
-    const stateValue = state[v];
+    let stateValue = state[v];
+    if (!stateValue || typeof stateValue === 'object') {
+      try {
+        const result = evalScript(v, innerEnv);
+        /* console.log('trying to eval text', { v, result }); */
+        innerEnv = result.env;
+        if (result?.result && !result?.result?.message) {
+          stateValue = result.result;
+        }
+      } catch (e) {
+        // ignore?
+        console.log('error evaluating text', { v, e });
+      }
+    }
     if (!stateValue) {
       return;
     }
-    return Array.isArray(stateValue) ? stateValue.join(' ') : stateValue;
-    /* const stateItem = state.find((item: any) => item.id === v);
-    if (!stateItem) {
-      return;
+    let strValue = stateValue;
+    /* console.log({ strValue, typeOD: typeof stateValue }); */
+
+    if (Array.isArray(stateValue)) {
+      strValue = stateValue.map((v) => `"${v}"`).join(', ');
+    } else if (typeof stateValue === 'object') {
+      strValue = JSON.stringify(stateValue);
+    } else if (typeof stateValue === 'number') {
+      strValue = parseFloat(parseFloat(strValue).toFixed(4));
     }
-    // return stateItem or stateItem.value if set
-    return !!stateItem?.value && Array.isArray(stateItem.value)
-      ? stateItem?.value?.join(' ')
-      : stateItem.value; */
+    return strValue;
   });
 
   vars.forEach((v, index) => {
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  return templatizedText;
+  // support nested {} like {{variables.foo} * 3}
+  return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 /*eslint-disable */
 const Markup: React.FC<any> = ({
@@ -60,6 +120,7 @@ const Markup: React.FC<any> = ({
   state = {},
   customCssClass = '',
   displayRawText = false,
+  env = new Environment(),
 }) => {
   /*eslint-enable */
   const el = useRef<any>(null);
@@ -96,7 +157,7 @@ const Markup: React.FC<any> = ({
   let processedText = text;
   // allow (authoring usually) skipping the template processing
   if (!displayRawText) {
-    processedText = templatizeText(text, state);
+    processedText = templatizeText(text, state, env);
   }
 
   // eslint-disable-next-line
@@ -104,13 +165,18 @@ const Markup: React.FC<any> = ({
     // empty elements in HTML don't stay in the flow
     // add a non breaking space instead of nothing
 
-    processedText =
-      processedText.length < 2 && !processedText.trim()
-        ? '\u00a0'
-        : processedText.replace(/ \s/g, '\u00a0 ');
-  } else if (processedText.length !== processedText.trim().length) {
+    processedText = processedText.length < 2 && !processedText.trim() ? '\u00a0' : processedText;
+  }
+  if (processedText.length !== processedText.trimLeft().length) {
+    const noOfleadingSpaces = processedText.length - processedText.trimLeft().length;
+    let leadingSpacePart = processedText.substring(0, noOfleadingSpaces);
+    let actualText = processedText.substring(noOfleadingSpaces);
+    leadingSpacePart = leadingSpacePart.replace(/ /g, '\u00a0');
+    actualText = actualText.replace(/\s /g, ' \u00a0');
+    processedText = leadingSpacePart + actualText;
     // check if text has leading and trailing spaces.
     //handling the leading blank spacecs in the span
+  } else {
     processedText = processedText.replace(/\s /g, ' \u00a0');
   }
 
@@ -254,6 +320,10 @@ const Markup: React.FC<any> = ({
         renderStyles.lineHeight = 'normal';
       }
       //let's not do this for all P tags forces fontSize to be specified
+      //PMP-1308 - Uncommenting this for fixing spacing issues. If lineHeight is not applied then SS sets it to 0px.
+      //In future, if for some reason someone has to comment it, please make sure to check PMP-1308
+      // FIXME: we can't do this because this will basically make all the text invisible
+      // TODO: figure out how to do it both ways
       /* if (!renderStyles.fontSize) {
         renderStyles.fontSize = '0px';
       } */

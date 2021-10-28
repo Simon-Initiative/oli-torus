@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import CustomFieldTemplate from 'apps/authoring/components/PropertyEditor/custom/CustomFieldTemplate';
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
@@ -335,3 +336,9 @@ export const transformSchemaToModel = (schema: Partial<PopupModel>) => {
 export const getCapabilities = () => ({
   configure: true,
 });
+
+export const adaptivitySchema = {
+  isOpen: CapiVariableTypes.BOOLEAN,
+  openByDefault: CapiVariableTypes.BOOLEAN,
+  visible: CapiVariableTypes.BOOLEAN,
+};

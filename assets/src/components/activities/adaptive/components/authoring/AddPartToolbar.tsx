@@ -124,6 +124,8 @@ const AddPartToolbar: React.FC<AddPartToolbarProps> = ({
             placement="bottom"
             container={document.getElementById('advanced-authoring')}
             containerPadding={20}
+            rootClose={true}
+            onHide={() => setShowMorePartsMenu(false)}
           >
             <Popover id="moreComponents-popover">
               <Popover.Title as="h3">More Components</Popover.Title>

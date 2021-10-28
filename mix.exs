@@ -67,6 +67,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:appsignal_phoenix, "~> 2.0.0"},
       {:bamboo, "~> 1.6"},
       {:bamboo_ses, "~> 0.1.0"},
       {:base32_crockford, "~> 1.0.0"},

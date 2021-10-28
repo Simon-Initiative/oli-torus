@@ -460,17 +460,20 @@ const DeckLayoutFooter: React.FC = () => {
   }, [currentActivity]);
 
   const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
-      <NextButton
-        isLoading={isLoading || !initPhaseComplete}
-        text={nextButtonText}
-        handler={checkHandler}
-        isGoodFeedbackPresent={isGoodFeedback}
-        currentFeedbacksCount={currentFeedbacks.length}
-        isFeedbackIconDisplayed={displayFeedbackIcon}
-        showCheckBtn={currentActivity?.custom?.showCheckBtn}
-      />
+      {currentActivity?.custom?.showCheckBtn && (
+        <NextButton
+          isLoading={isLoading || !initPhaseComplete}
+          text={nextButtonText}
+          handler={checkHandler}
+          isGoodFeedbackPresent={isGoodFeedback}
+          currentFeedbacksCount={currentFeedbacks.length}
+          isFeedbackIconDisplayed={displayFeedbackIcon}
+          showCheckBtn={currentActivity?.custom?.showCheckBtn}
+        />
+      )}
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
         <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
           <button

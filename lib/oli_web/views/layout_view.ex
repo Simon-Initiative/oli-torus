@@ -44,6 +44,7 @@ defmodule OliWeb.LayoutView do
   def additional_stylesheets(assigns) do
     Map.get(assigns, :additional_stylesheets, [])
     |> Enum.filter(fn url -> String.valid?(url) end)
+    |> Enum.map(fn url -> String.trim(url, " ") end)
     |> Enum.map(&URI.encode(&1))
     |> Enum.map(fn url -> "\n<link rel=\"stylesheet\" href=\"#{url}\">" end)
     |> raw()
@@ -110,7 +111,7 @@ defmodule OliWeb.LayoutView do
     icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")
 
     link([icon],
-      to: Routes.workspace_path(conn, :account),
+      to: Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive),
       class: "#{active_class(active_or_nil(assigns), :account)} account-link"
     )
   end

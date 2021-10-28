@@ -81,7 +81,5 @@ export const createSchema = (): Partial<InputNumberModel> => ({
   unitsLabel: 'units',
   requireManualGrading: false,
   maxManualGrade: 0,
-  maxValue: 1,
-  minValue: 0,
   prompt: 'enter a number...',
 });

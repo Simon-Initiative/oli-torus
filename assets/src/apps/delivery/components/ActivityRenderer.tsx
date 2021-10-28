@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -15,11 +16,14 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
+import { Environment } from 'janus-script';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
+  CheckResults,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
   selectInitStateFacts,
@@ -189,8 +193,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const result: Success = {
       type: 'success',
     };
+    // provide each activity with a local scope based on the global scope
+    // should allow it to do some same screen interactivity/adaptivity
+    const activityScriptEnv = new Environment(defaultGlobalEnv);
+    /* evalScript(`let global.screenId = "${activity.id}"`, activityScriptEnv); */
     // BS: TODO make compatible with *any* activity
-    return { ...results, ...result };
+    return { ...results, ...result, env: activityScriptEnv };
   };
 
   const onResize = async (attemptGuid: string) => {
@@ -277,6 +285,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CHECK_STARTED, { ts: lastCheckTriggered });
   }, [lastCheckTriggered]);
 
+  const notifyCheckComplete = async (results: CheckResults) => {
+    if (!ref.current) {
+      return;
+    }
+    const { snapshot } = await onRequestLatestState();
+    const payload = { ...clone(results), snapshot };
+    setCheckInProgress(false);
+    ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
+  };
+
   useEffect(() => {
     if (checkInProgress && lastCheckResults && lastCheckResults.timestamp === lastCheckTriggered) {
       /* console.log('AR Check Effect', { lastCheckTriggered, lastCheckResults }); */
@@ -284,8 +302,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
       }
-      ref.current.notify(NotificationType.CHECK_COMPLETE, lastCheckResults);
-      setCheckInProgress(false);
+      notifyCheckComplete(lastCheckResults);
     }
   }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
 

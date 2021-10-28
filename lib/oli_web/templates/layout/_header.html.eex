@@ -11,12 +11,10 @@
         </div>
 
         <%= if user_signed_in?(@conn) do %>
-        <div>
-            <%= link "Sign out", to: Routes.pow_session_path(@conn, :delete), method: :delete, class: "btn btn-outline-primary ml-2" %>
-        </div>
+            <%= render "_user_account_dropdown.html", assigns %>
         <% else %>
         <%= if @conn.request_path == "/" do %>
-        <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
+            <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
       <% end %>
     <% end %>
     </div>

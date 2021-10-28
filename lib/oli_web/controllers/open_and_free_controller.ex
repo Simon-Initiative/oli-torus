@@ -266,7 +266,7 @@ defmodule OliWeb.OpenAndFreeController do
     end
   end
 
-  defp parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
+  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
     section_timezone = Timex.Timezone.get(from_timezone)
     utc_timezone = Timex.Timezone.get(:utc, Timex.now())
 

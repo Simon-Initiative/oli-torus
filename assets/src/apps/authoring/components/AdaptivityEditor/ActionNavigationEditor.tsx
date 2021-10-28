@@ -10,19 +10,22 @@ import React, { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTemplate';
 
 interface ActionNavigationEditorProps {
   action: NavigationAction;
+  allowDelete: boolean;
   onChange: (changes: NavigationActionParams) => void;
   onDelete: (changes: NavigationAction) => void;
 }
 
 const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) => {
-  const { action, onChange, onDelete } = props;
+  const { action, allowDelete, onChange, onDelete } = props;
   const sequence = useSelector(selectSequence);
   const selectedSequence = findInSequence(sequence, action?.params?.target);
   const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'next');
+  const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const uuid = guid();
 
   const onChangeHandler = (sequenceId: string) => {
@@ -51,23 +54,38 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
           dropDownCSSClass="adaptivityDropdown form-control"
           buttonCSSClass="form-control-sm"
         />
-
-        <OverlayTrigger
-          placement="top"
-          delay={{ show: 150, hide: 150 }}
-          overlay={
-            <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              Delete Action
-            </Tooltip>
-          }
-        >
-          <span>
-            <button className="btn btn-link p-0 ml-1" onClick={() => onDelete(action)}>
-              <i className="fa fa-trash-alt" />
-            </button>
-          </span>
-        </OverlayTrigger>
+        {allowDelete && (
+          <OverlayTrigger
+            placement="top"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                Delete Action
+              </Tooltip>
+            }
+          >
+            <span>
+              <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
+                <i className="fa fa-trash-alt" />
+              </button>
+            </span>
+          </OverlayTrigger>
+        )}
       </div>
+      {showConfirmDelete && (
+        <ConfirmDelete
+          show={showConfirmDelete}
+          elementType="Action"
+          elementName="this navigation action"
+          deleteHandler={() => {
+            onDelete(action);
+            setShowConfirmDelete(false);
+          }}
+          cancelHandler={() => {
+            setShowConfirmDelete(false);
+          }}
+        />
+      )}
     </div>
   );
 };

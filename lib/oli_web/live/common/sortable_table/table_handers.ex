@@ -29,7 +29,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.offset,
                  socket.assigns.filter
                )
-             )
+             ),
+           replace: true
          )}
       end
 
@@ -44,7 +45,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.offset,
                  ""
                )
-             )
+             ),
+           replace: true
          )}
       end
 
@@ -59,7 +61,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  String.to_integer(offset),
                  socket.assigns.applied_filter
                )
-             )
+             ),
+           replace: true
          )}
       end
 
@@ -78,7 +81,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
              @table_push_patch_path.(
                socket,
                get_patch_params(table_model, offset, socket.assigns.applied_filter)
-             )
+             ),
+           replace: true
          )}
       end
 
