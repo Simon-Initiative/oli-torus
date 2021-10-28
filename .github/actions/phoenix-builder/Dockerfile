@@ -34,6 +34,10 @@ RUN npm install -g yarn
 # https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
 ENV LANG=C.UTF-8
 
+# replace openssl-devel with regular openssl now that we are done with it
+# and need proper openssl for appsignal_phoenix
+RUN yum remove openssl-devel -y && yum install openssl -y
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
