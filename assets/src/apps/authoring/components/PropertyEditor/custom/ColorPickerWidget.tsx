@@ -1,9 +1,11 @@
 import React, { CSSProperties, useRef, useState } from 'react';
 import { RGBColor, ColorResult, SketchPicker } from 'react-color';
 interface ColorPickerProps {
+  id: string;
   label: string;
   value: string;
   onChange: (colorValue: string) => void;
+  onBlur: (id: string, colorValue: string) => void;
 }
 
 const getColorValueString = (value: ColorResult) => {
@@ -60,6 +62,7 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
               color={color}
               onChangeComplete={(color) => {
                 props.onChange(getColorValueString(color));
+                props.onBlur(props.id, getColorValueString(color));
               }}
             />
           </div>

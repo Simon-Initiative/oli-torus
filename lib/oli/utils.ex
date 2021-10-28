@@ -23,6 +23,10 @@ defmodule Oli.Utils do
     end
   end
 
+  def has_non_empty_value(v) do
+    !is_nil(v) and v != ""
+  end
+
   @doc """
   Renders the specified view template with inner content in the do: block
   """
@@ -75,12 +79,29 @@ defmodule Oli.Utils do
 
   def maybe_name_from_given_and_family(changeset) do
     case changeset do
-      # if changeset is valid and doesn't have a name in changes or data, derive name from given_name and family_name
+      # here we try to derive a full display name using changes or data for name
+      # using the fields :name, :given_name and :family_name.
+      #
+      # if changeset is valid and doesn't have a name in changes, but there is a change
+      # for given_name or family_name, then derive name from given_name and family_name
       %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
-        case {Map.get(changes, :name), Map.get(data, :name)} do
-          {nil, nil} ->
+        case {
+          Map.has_key?(changes, :name),
+          Map.has_key?(changes, :given_name) or Map.has_key?(changes, :family_name)
+        } do
+          {false, true} ->
+            first_name =
+              Map.get(changes, :given_name)
+              |> value_or(Map.get(data, :given_name))
+              |> value_or("")
+
+            last_name =
+              Map.get(changes, :family_name)
+              |> value_or(Map.get(data, :family_name))
+              |> value_or("")
+
             name =
-              "#{Map.get(changes, :given_name) |> value_or(Map.get(data, :given_name)) |> value_or("")} #{Map.get(changes, :family_name) |> value_or(Map.get(data, :family_name)) |> value_or("")}"
+              "#{first_name} #{last_name}"
               |> String.trim()
 
             Ecto.Changeset.put_change(changeset, :name, name)

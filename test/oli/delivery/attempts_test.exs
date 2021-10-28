@@ -327,6 +327,46 @@ defmodule Oli.Delivery.AttemptsTest do
       assert is_nil(access.score)
     end
 
+    test "get graded resource access for specific students", %{
+      section: section,
+      graded_page: %{revision: revision},
+      user1: user1,
+      user2: user2
+    } do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+
+      PageContext.create_for_visit(section.slug, revision.slug, user1)
+
+      {:ok, %AttemptState{} = _} =
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          user1.id,
+          activity_provider
+        )
+
+      PageContext.create_for_visit(section.slug, revision.slug, user2)
+
+      {:ok, %AttemptState{} = _} =
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          user2.id,
+          activity_provider
+        )
+
+      accesses1 = Attempts.get_graded_resource_access_for_context(section.slug, [user1.id])
+      assert Enum.all?(accesses1, fn a -> a.user_id == user1.id end)
+
+      accesses2 = Attempts.get_graded_resource_access_for_context(section.slug, [user2.id])
+      assert Enum.all?(accesses2, fn a -> a.user_id == user2.id end)
+
+      accesses_both =
+        Attempts.get_graded_resource_access_for_context(section.slug, [user1.id, user2.id])
+
+      assert length(accesses_both) == length(accesses1) + length(accesses2)
+    end
+
     test "get latest attempt - activity attempts", %{
       attempt2: attempt2,
       activity_attempt2: activity_attempt2,

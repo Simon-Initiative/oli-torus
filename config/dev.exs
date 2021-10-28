@@ -151,3 +151,5 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Configure Joken for jwt signing and verification
 config :joken, default_signer: "secret"
+
+config :appsignal, :config, active: false
