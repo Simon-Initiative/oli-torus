@@ -67,7 +67,7 @@ const ConfigurationModal: React.FC<ConfigModalProps> = ({
       </Modal.Header>
       <Modal.Body id={bodyId}></Modal.Body>
       <Modal.Footer>
-        <button type="button" onClick={handleSaveClick} className={'btn btn-danger'}>
+        <button type="button" onClick={handleSaveClick} className="btn btn-primary">
           save
         </button>
         <button
