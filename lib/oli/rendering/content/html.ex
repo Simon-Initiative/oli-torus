@@ -7,6 +7,7 @@ defmodule Oli.Rendering.Content.Html do
   alias Oli.Rendering.Context
   alias Oli.Utils
   alias Phoenix.HTML
+  import Oli.Rendering.Utils
 
   require Logger
 
@@ -246,18 +247,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def popup_anchor(%Context{} = _context, next, %{"trigger" => trigger}, id) do
-    # TODO: PLACEHOLDER FOR POPUP
-    # Handle triggers (click, hover)
-    # How - javascript?
-
     [
-      ~s|<span role="button" class="popup-link" data-trigger="#{escape_xml!(trigger)}" data-toggle="popover" data-placement="top" data-popover-content="##{id}">#{next.()}</button>\n|
+      ~s|<span role="button" class="popup-link" data-trigger="#{escape_xml!(trigger)}" data-toggle="popover" data-placement="top" data-popover-content="##{id}">#{next.()}</span>\n|
     ]
   end
 
   def popup_content(%Context{} = _context, next, _e, id) do
+    IO.inspect(next.())
+
     [
-      ~s|<div id=#{id} class="d-none">#{next.()}</div>\n|
+      ~s|<div id="#{id}" class="popup-wrapper d-none"><span class="popup-content">#{next.()}</span></div>\n|
     ]
   end
 

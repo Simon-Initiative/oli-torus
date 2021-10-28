@@ -181,7 +181,8 @@ defmodule Oli.Rendering.Content do
           writer.popup_anchor(context, next, element, id),
           writer.popup_content(
             context,
-            fn -> render(context, element["content"], writer) end,
+            fn -> IO.inspect(RenderUtils.parse_html_content(element["content"], context), label: "Parsed") end,
+            # fn -> render(context, element["content"], writer) end,
             element["content"],
             id
           )
