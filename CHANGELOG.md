@@ -6,6 +6,12 @@
 
 ### Enhancements
 
+## 0.14.3 (2021-10-28)
+
+### Bug Fixes
+
+- Make score display in gradebook even more robust
+
 ## 0.14.2 (2021-10-28)
 
 ### Bug Fixes

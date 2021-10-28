@@ -76,6 +76,13 @@ defmodule OliWeb.Grades.GradebookTableModel do
         </a>
         """
 
+      0.0 ->
+        ~F"""
+        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+          <span>{score}/{out_of} 0%</span>
+        </a>
+        """
+
       _ ->
         percentage =
           case is_nil(score) or is_nil(out_of) do
