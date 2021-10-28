@@ -9,6 +9,7 @@
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar
 - Fix an issue where previewing a project with no pages crashes
 - Fix some issues related to searching and viewing sortable tables
+- Fix an issue where activity submissions would not display activity feedback
 
 ### Enhancements
 
