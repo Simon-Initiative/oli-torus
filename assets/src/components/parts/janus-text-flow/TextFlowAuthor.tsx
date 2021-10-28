@@ -114,7 +114,7 @@ const Editor: React.FC<any> = React.memo(({ html, tree, portal }) => {
   if (html) {
     quillProps.html = html;
   }
-  /* console.log('TFE RERENDER', { html, tree, portal }); */
+  /* console.log('E RERENDER', { html, tree, portal }); */
   const E = () => (
     <div style={{ padding: 20 }}>{React.createElement(quillEditorTagName, quillProps)}</div>
   );
