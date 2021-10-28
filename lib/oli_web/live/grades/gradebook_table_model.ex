@@ -61,6 +61,12 @@ defmodule OliWeb.Grades.GradebookTableModel do
       %ResourceAccess{score: nil, out_of: nil} ->
         ""
 
+      %ResourceAccess{score: nil} ->
+        ""
+
+      %ResourceAccess{out_of: nil} ->
+        ""
+
       # We have a rolled-up grade from at least one attempt
       %ResourceAccess{score: score, out_of: out_of} ->
         show_score(assigns, row, resource_id, score, out_of)
