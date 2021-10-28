@@ -1,4 +1,3 @@
-import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { evalScript, getAssignScript } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
@@ -20,13 +19,47 @@ const styleFilter = (styles: any) => {
 // "some {stage.value} thing, and {q:1234|stage.value} other thing"
 // eslint-disable-next-line
 const getExpressions = /[^{\}]+(?=})/g;
+
+// function to select the content between only the outermost {}
+const getExpression = (text: string) => {
+  const firstCurly = text.indexOf('{');
+  let lastCurly = -1;
+  let counter = 1;
+  let opens = 1;
+  while (counter < text.length && lastCurly === -1) {
+    if (text[firstCurly + counter] === '{') {
+      opens++;
+    } else if (text[firstCurly + counter] === '}') {
+      opens--;
+      if (opens === 0) {
+        lastCurly = firstCurly + counter;
+      }
+    }
+    counter++;
+  }
+  return text.substring(firstCurly + 1, lastCurly);
+};
+
+// extract all expressions from a string
+const extractExpressions = (text: string): string[] => {
+  const expressions = [];
+  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+    const expr = getExpression(text);
+    const rest = text.substring(text.indexOf(expr) + expr.length + 1);
+    expressions.push(expr);
+    expressions.push(...extractExpressions(rest));
+  }
+  return expressions;
+};
+
 const templatizeText = (text: string, state: any, env?: Environment): string => {
   let innerEnv = env;
-  const vars = text.match(getExpressions);
+  const vars = extractExpressions(text);
+  /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
     return text;
   }
-  innerEnv = evalScript(janus_std, innerEnv).env;
+  /* innerEnv = evalScript(janus_std, innerEnv).env; */
   try {
     const stateAssignScript = getAssignScript(state, innerEnv);
     evalScript(stateAssignScript, innerEnv);
@@ -73,7 +106,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
   });
 
   // support nested {} like {{variables.foo} * 3}
-  return templatizeText(templatizedText, state, innerEnv);
+  return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 /*eslint-disable */
 const Markup: React.FC<any> = ({
@@ -87,6 +120,7 @@ const Markup: React.FC<any> = ({
   state = {},
   customCssClass = '',
   displayRawText = false,
+  env = new Environment(),
 }) => {
   /*eslint-enable */
   const el = useRef<any>(null);
@@ -123,7 +157,7 @@ const Markup: React.FC<any> = ({
   let processedText = text;
   // allow (authoring usually) skipping the template processing
   if (!displayRawText) {
-    processedText = templatizeText(text, state);
+    processedText = templatizeText(text, state, env);
   }
 
   // eslint-disable-next-line

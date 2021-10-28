@@ -54,6 +54,7 @@ export const savePage = createAsyncThunk(
         displayApplicationChrome,
         custom: payload.custom || currentPage.custom,
         customCss: payload.customCss || currentPage.customCss,
+        customScript: payload.customScript || currentPage.customScript,
         additionalStylesheets: payload.additionalStylesheets || currentPage.additionalStylesheets,
       },
       releaseLock: false,
