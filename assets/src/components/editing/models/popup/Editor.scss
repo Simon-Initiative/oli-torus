@@ -7,19 +7,15 @@
 }
 
 .popup-content {
+  &.show {
+    max-width: 100% !important;
+  }
   p:last-of-type {
     margin: 0;
   }
-}
-.popup-content > * {
-  display: inline-block;
 }
 
 .popup__modal-content {
   text-align: initial;
   min-width: 600px;
-}
-
-.popover.show {
-  max-width: 100% !important;
 }

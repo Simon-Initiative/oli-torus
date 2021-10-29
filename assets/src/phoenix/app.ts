@@ -77,16 +77,16 @@ $(() => {
   ($('[data-toggle="popover"]') as any).not('.popup-link').popover();
   ($('.popup-link[data-toggle=popover]') as any).popover({
     html: true,
-    content: function () {
-      const contentId = $(this).attr('data-popover-content');
-      if (!contentId) return;
-      const elem = $(contentId);
-      // elem.appendTo($('body'));
-      return elem
-        .clone()
-        .children()
-        .map((i, e) => e);
-    },
+    // content: function () {
+    //   const contentId = $(this).attr('data-popover-content');
+    //   if (!contentId) return;
+    //   const elem = $(contentId);
+    //   // elem.appendTo($('body'));
+    //   return elem
+    //     .clone()
+    //     .children()
+    //     .map((i, e) => e);
+    // },
   });
   ($('[data-toggle="tooltip"]') as any).tooltip();
 });

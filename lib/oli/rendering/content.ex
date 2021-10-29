@@ -42,8 +42,8 @@ defmodule Oli.Rendering.Content do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
-  @callback popup_anchor(%Context{}, next, %{}, String.t()) :: [any()]
-  @callback popup_content(%Context{}, next, %{}, String.t()) :: [any()]
+  @callback popup(%Context{}, next, %{}) :: [any()]
+  # @callback popup_content(%Context{}, next, %{}, String.t()) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -175,18 +175,20 @@ defmodule Oli.Rendering.Content do
         writer.a(context, next, element)
 
       "popup" ->
-        id = UUID.uuid4()
+        # id = UUID.uuid4()
 
-        [
-          writer.popup_anchor(context, next, element, id),
-          writer.popup_content(
-            context,
-            fn -> IO.inspect(RenderUtils.parse_html_content(element["content"], context), label: "Parsed") end,
-            # fn -> render(context, element["content"], writer) end,
-            element["content"],
-            id
-          )
-        ]
+        writer.popup(context, next, element)
+
+        # [
+        #   writer.popup_anchor(context, next, element, id),
+        #   writer.popup_content(
+        #     context,
+        #     fn -> IO.inspect(RenderUtils.parse_html_content(element["content"], context), label: "Parsed") end,
+        #     # fn -> render(context, element["content"], writer) end,
+        #     element["content"],
+        #     id
+        #   )
+        # ]
 
       # content = RenderUtils.parse_html_content(element["content"], context)
       # writer.popup(context, next, element, content)
