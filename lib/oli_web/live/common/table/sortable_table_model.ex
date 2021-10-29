@@ -25,7 +25,6 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   The `id_field` is the field name from the row items that uniquely identifies a row item.  This will be used
   when emitting events related to a particular row item.
   """
-
   alias OliWeb.Common.Table.ColumnSpec
 
   # the items to display
@@ -40,7 +39,9 @@ defmodule OliWeb.Common.Table.SortableTableModel do
             sort_order: :asc,
             event_suffix: "",
             # the field used to identify uniquely a row item
-            id_field: nil
+            id_field: nil,
+            # extra data a view can push down to custom sorts or renderers
+            data: %{}
 
   def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field) do
     model =
@@ -61,7 +62,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: sort_by_spec
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order
       ) do
     model =
       %__MODULE__{
@@ -69,7 +71,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: sort_by_spec
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order
       }
       |> sort
 
@@ -140,7 +143,10 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   def update_from_params(%__MODULE__{} = struct, params) do
     column_names =
       Enum.reduce(struct.column_specs, %{}, fn spec, m ->
-        Map.put(m, Atom.to_string(spec.name), spec)
+        case spec.name do
+          atom when is_atom(atom) -> Map.put(m, Atom.to_string(spec.name), spec)
+          _ -> Map.put(m, spec.name, spec)
+        end
       end)
 
     sort_by =

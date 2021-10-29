@@ -71,6 +71,25 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_graded_resource_access_for_context(section_slug, student_ids) do
+    Repo.all(
+      from(a in ResourceAccess,
+        join: s in Section,
+        on: a.section_id == s.id,
+        join: spp in SectionsProjectsPublications,
+        on: s.id == spp.section_id,
+        join: pr in PublishedResource,
+        on: pr.publication_id == spp.publication_id,
+        join: r in Revision,
+        on: pr.revision_id == r.id,
+        where:
+          a.user_id in ^student_ids and s.slug == ^section_slug and s.status != :deleted and
+            r.graded == true,
+        select: a
+      )
+    )
+  end
+
   @doc """
   Retrieves all graded resource access for a given context
 
@@ -127,6 +146,23 @@ defmodule Oli.Delivery.Attempts.Core do
           a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
             a.resource_id == ^resource_id,
         select: a
+      )
+    )
+  end
+
+  def get_resource_accesses(section_slug, user_id) do
+    Repo.all(
+      from(a in ResourceAccess,
+        join: ra in ResourceAttempt,
+        on: a.id == ra.resource_access_id,
+        join: s in Section,
+        on: a.section_id == s.id,
+        where: a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
+        group_by: a.id,
+        select: a,
+        select_merge: %{
+          resource_attempts_count: count(ra.id)
+        }
       )
     )
   end

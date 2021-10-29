@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.14.0",
+      version: "0.14.2",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -67,6 +67,7 @@ defmodule Oli.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:appsignal_phoenix, "~> 2.0.0"},
       {:bamboo, "~> 1.6"},
       {:bamboo_ses, "~> 0.1.0"},
       {:base32_crockford, "~> 1.0.0"},

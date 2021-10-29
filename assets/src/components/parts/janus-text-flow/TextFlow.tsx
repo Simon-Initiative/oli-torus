@@ -1,4 +1,5 @@
 import chroma from 'chroma-js';
+import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
 import guid from 'utils/guid';
 import {
@@ -48,6 +49,7 @@ export const renderFlow = (
   state: any[] = [],
   fontSize?: any,
   specialTag?: string,
+  env?: Environment,
 ) => {
   // clone styles
   const styles: any = { ...treeNode.style };
@@ -74,6 +76,7 @@ export const renderFlow = (
       style={styles}
       text={treeNode.text}
       state={state}
+      env={env}
     >
       {treeNode.children &&
         treeNode.children.map((child, index) => {
@@ -84,6 +87,7 @@ export const renderFlow = (
             state,
             fontSize,
             customTag,
+            env,
           );
         })}
     </Markup>
@@ -91,9 +95,10 @@ export const renderFlow = (
 };
 
 const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [state, setState] = useState<any>({});
+  const [model, setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
+  const [scriptEnv, setScriptEnv] = useState<any>();
   const id: string = props.id;
 
   const initialize = useCallback(async (pModel) => {
@@ -108,33 +113,18 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
 
+    if (initResult.env) {
+      // make a child scope so that any textflow scripts can't affect the parent
+      const flowEnv = new Environment(initResult.env);
+      setScriptEnv(flowEnv);
+    }
+
     setReady(true);
   }, []);
 
   useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
-    initialize(pModel);
-  }, [props]);
+    initialize(model);
+  }, [model]);
 
   useEffect(() => {
     if (!props.notify) {
@@ -148,14 +138,16 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`[TEXTFLOW]: ${notificationType.toString()} notification handled`, payload);
+        /* console.log(`[TEXTFLOW]: ${notificationType.toString()} notification handled`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
-            const { snapshot } = payload;
-            setState(snapshot);
+            {
+              const { snapshot } = payload;
+              setState(snapshot);
+            }
             break;
           case NotificationType.STATE_CHANGED:
             {
@@ -164,6 +156,10 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
+            {
+              const { snapshot } = payload;
+              setState({ ...state, ...snapshot });
+            }
             break;
         }
       };
@@ -178,10 +174,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   }, [props.notify]);
 
   const {
-    x = 0,
-    y = 0,
     width,
-    z = 0,
     customCssClass,
     nodes,
     palette,
@@ -264,7 +257,15 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   return ready ? (
     <div data-janus-type={tagName} style={styles}>
       {tree?.map((subtree: MarkupTree) =>
-        renderFlow(`textflow-${guid()}`, subtree, styleOverrides, state, fontSize),
+        renderFlow(
+          `textflow-${guid()}`,
+          subtree,
+          styleOverrides,
+          state,
+          fontSize,
+          undefined,
+          scriptEnv,
+        ),
       )}
     </div>
   ) : null;

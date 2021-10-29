@@ -1,6 +1,6 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-
+  alias OliWeb.Router.Helpers, as: Routes
   import OliWeb.Common.Utils
   use Surface.LiveComponent
 
@@ -39,19 +39,31 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         base_columns
       end
 
-    SortableTableModel.new(
-      rows: users,
-      column_specs: column_specs,
-      event_suffix: "",
-      id_field: [:id]
-    )
+    {:ok, model} =
+      SortableTableModel.new(
+        rows: users,
+        column_specs: column_specs,
+        event_suffix: "",
+        id_field: [:id]
+      )
+
+    {:ok, Map.put(model, :data, %{section_slug: section.slug})}
   end
 
   def render_name_column(
-        _,
-        %{name: name, given_name: given_name, family_name: family_name},
+        assigns,
+        %{
+          id: id,
+          name: name,
+          given_name: given_name,
+          family_name: family_name
+        },
         _
       ) do
-    name(name, given_name, family_name)
+    ~F"""
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}>
+      {name(name, given_name, family_name)}
+    </a>
+    """
   end
 end

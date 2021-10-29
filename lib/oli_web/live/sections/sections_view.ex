@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.SectionsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
@@ -127,7 +127,7 @@ defmodule OliWeb.Sections.SectionsView do
 
       <div class="mb-3"/>
 
-      <TextSearch id="text-search"/>
+      <TextSearch id="text-search" text={@options.text_search} />
 
       <div class="mb-3"/>
 
@@ -161,7 +161,8 @@ defmodule OliWeb.Sections.SectionsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

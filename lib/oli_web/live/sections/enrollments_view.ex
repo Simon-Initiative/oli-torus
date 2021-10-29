@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.EnrollmentsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
@@ -140,6 +140,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
          Routes.live_path(
            socket,
            __MODULE__,
+           socket.assigns.section.slug,
            Map.merge(
              %{
                sort_by: socket.assigns.table_model.sort_by_spec.name,
@@ -149,7 +150,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

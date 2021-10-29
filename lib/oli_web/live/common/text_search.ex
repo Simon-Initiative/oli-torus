@@ -3,34 +3,32 @@ defmodule OliWeb.Common.TextSearch do
 
   prop apply, :event, default: "text_search_apply"
   prop reset, :event, default: "text_search_reset"
-  data text, :string, default: ""
+  prop change, :event, default: "text_search_change"
+  prop text, :string, default: ""
 
-  def render(assigns) do
+  def render(%{id: id} = assigns) do
     ~F"""
-      <div class="input-group" style="max-width: 500px;">
-        <input type="text" class="form-control" placeholder="Search..." :on-change="change" :on-blur="change">
-        <div class="input-group-append">
-          <button class="btn btn-outline-secondary" :on-click={@apply, target: :live_view} phx-value-text={@text}>Search</button>
-          <button class="btn btn-outline-secondary" :on-click={@reset, target: :live_view} phx-value-text={""}>Reset</button>
-        </div>
+      <div class="input-group" style="max-width: 350px;">
+        <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-value-change={@change}>
+        {#if @text != ""}
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" :on-click={@reset, target: :live_view} phx-value-id={@id}><i class="las la-times"></i></button>
+          </div>
+        {/if}
       </div>
     """
-  end
-
-  def handle_event("change", %{"value" => value}, socket) do
-    {:noreply, assign(socket, text: value)}
   end
 
   def handle_delegated(event, params, socket, patch_fn) do
     delegate_handle_event(event, params, socket, patch_fn)
   end
 
-  def delegate_handle_event("text_search_reset", _, socket, patch_fn) do
-    patch_fn.(socket, %{text_search: ""})
+  def delegate_handle_event("text_search_reset", %{"id" => _id}, socket, patch_fn) do
+    patch_fn.(socket, %{text_search: "", offset: 0})
   end
 
-  def delegate_handle_event("text_search_apply", %{"text" => text}, socket, patch_fn) do
-    patch_fn.(socket, %{text_search: text})
+  def delegate_handle_event("text_search_change", %{"value" => value}, socket, patch_fn) do
+    patch_fn.(socket, %{text_search: value, offset: 0})
   end
 
   def delegate_handle_event(_, _, _, _) do

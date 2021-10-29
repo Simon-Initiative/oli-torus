@@ -29,6 +29,7 @@ export const initializeFromContext = createAsyncThunk(
       resourceId: params.context.resourceId,
       additionalStylesheets: params.context.content.additionalStylesheets,
       customCss: params.context.content.customCss,
+      customScript: params.context.content.customScript,
       custom: params.context.content.custom || {},
     };
     if (!params.context.content.model.length && !pageState.custom.themeId) {

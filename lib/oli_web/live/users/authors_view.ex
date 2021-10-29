@@ -113,7 +113,7 @@ defmodule OliWeb.Users.AuthorsView do
     ~F"""
     <div>
 
-      <TextSearch id="text-search"/>
+      <TextSearch id="text-search" text={@options.text_search} />
 
       <div class="mb-3"/>
 
@@ -145,7 +145,8 @@ defmodule OliWeb.Users.AuthorsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

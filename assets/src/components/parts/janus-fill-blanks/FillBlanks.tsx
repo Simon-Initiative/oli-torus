@@ -257,7 +257,25 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled) {
+                setEnabled(parseBool(sEnabled));
+              }
+              const sShowCorrect = changes[`stage.${id}.showCorrect`];
+              if (sShowCorrect) {
+                setShowCorrect(parseBool(sShowCorrect));
+              }
+              const sCustomCss = changes[`stage.${id}.customCss`];
+              if (sCustomCss) {
+                setCustomCss(sCustomCss);
+              }
+              const sCustomCssClass = changes[`stage.${id}.customCssClass`];
+              if (sCustomCssClass) {
+                setCustomCssClass(sCustomCssClass);
+              }
+            }
             break;
         }
       };

@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -15,6 +16,7 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
+import { Environment } from 'janus-script';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
@@ -56,6 +58,11 @@ const defaultHandler = async () => {
 // because of events and function references, we need to store state outside of the function
 const sharedAttemptStateMap = new Map();
 
+const AllAttemptStateList: {
+  activityId: string | undefined;
+  attemptGuid: string;
+  attempt: unknown;
+}[] = [];
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -191,8 +198,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const result: Success = {
       type: 'success',
     };
+    // provide each activity with a local scope based on the global scope
+    // should allow it to do some same screen interactivity/adaptivity
+    const activityScriptEnv = new Environment(defaultGlobalEnv);
+    /* evalScript(`let global.screenId = "${activity.id}"`, activityScriptEnv); */
     // BS: TODO make compatible with *any* activity
-    return { ...results, ...result };
+    return { ...results, ...result, env: activityScriptEnv };
   };
 
   const onResize = async (attemptGuid: string) => {
@@ -226,7 +237,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       let isForMe = false;
 
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
-      if (attemptGuid === currentAttempt.attemptGuid) {
+      const currentActivityAllAttempt = AllAttemptStateList.filter(
+        (activityAttempt) =>
+          activityAttempt.activityId === activity.id && activityAttempt.attemptGuid === attemptGuid,
+      );
+
+      if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
         /* console.log('EVENT FOR ME', { e, activity, attempt }); */
         isForMe = true;
       }
@@ -295,6 +311,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
+        AllAttemptStateList.push({
+          activityId: activity?.id,
+          attemptGuid: lastCheckResults.attempt.attemptGuid,
+          attempt: lastCheckResults.attempt,
+        });
       }
       notifyCheckComplete(lastCheckResults);
     }

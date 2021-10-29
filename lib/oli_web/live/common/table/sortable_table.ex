@@ -41,7 +41,7 @@ defmodule OliWeb.Common.Table.SortableTable do
       <thead>
         <tr>
           <%= for column_spec <- @model.column_specs do %>
-            <%= th(assigns, column_spec, @model.sort_by_spec, @model.sort_order, @model.event_suffix) %>
+            <%= th(with_data(assigns, @model.data), column_spec, @model.sort_by_spec, @model.sort_order, @model.event_suffix) %>
           <% end %>
         </tr>
       </thead>
@@ -56,7 +56,7 @@ defmodule OliWeb.Common.Table.SortableTable do
               <td>
                 <%= case column_spec.render_fn do
                   nil -> ColumnSpec.default_render_fn(column_spec, row)
-                  func -> func.(assigns, row, column_spec)
+                  func -> func.(with_data(assigns, @model.data), row, column_spec)
                   end %>
               </td>
             <% end %>
@@ -65,5 +65,9 @@ defmodule OliWeb.Common.Table.SortableTable do
       </tbody>
     </table>
     """
+  end
+
+  defp with_data(assigns, data) do
+    Map.merge(assigns, data)
   end
 end

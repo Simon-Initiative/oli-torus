@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.OverviewView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb}
@@ -95,20 +95,22 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
         </ul>
       </Group>
-      <Group label="Manage" description="Manage all aspects of course delivery including enrollments and grades">
+      <Group label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>View Enrolled Students</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}>Edit Section Details</a></li>
-          <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
         </ul>
       </Group>
-      {#if !@section.open_and_free}
-        <Group label="LMS" description="Manage LMS Connection">
-          <ul class="link-list">
+      <Group label="Grading" description="View and manage student grades and progress">
+        <ul class="link-list">
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
+          <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
+          {#if !@section.open_and_free}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}>Manage LMS Gradebook</a></li>
+          {/if}
           </ul>
-        </Group>
-      {/if}
+      </Group>
+
       {#if @is_admin and !@section.open_and_free}
         <Group label="LMS Admin" description="Administrator LMS Connection">
           <UnlinkSection unlink="unlink" section={@section}/>

@@ -110,7 +110,22 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts } = payload;
+
+              const sEnabled = initStateFacts[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
+              const sValue = initStateFacts[`stage.${id}.value`];
+              if (sValue !== undefined) {
+                setInputNumberValue(sValue);
+              }
+              const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
+              if (sCssClass !== undefined) {
+                setCssClass(sCssClass);
+              }
+            }
             break;
         }
       };

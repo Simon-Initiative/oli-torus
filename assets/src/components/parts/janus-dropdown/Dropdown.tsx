@@ -279,7 +279,43 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
-            // nothing to do
+            {
+              const { initStateFacts: changes } = payload;
+              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
+              if (sSelectedIndex !== undefined) {
+                const stateSelection = Number(sSelectedIndex);
+                if (selection !== stateSelection) {
+                  setSelection(stateSelection);
+                  setSelectedItem(optionLabels[stateSelection - 1]);
+                }
+                props.onSave({
+                  id: `${id}`,
+                  responses: [
+                    {
+                      key: 'selectedIndex',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sSelectedIndex,
+                    },
+                  ],
+                });
+              }
+
+              const sSelectedItem = changes[`stage.${id}.selectedItem`];
+              if (sSelectedItem !== undefined) {
+                if (selectedItem !== sSelectedItem) {
+                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
+                    sSelectedItem.includes(str),
+                  );
+                  setSelectedItem(sSelectedItem);
+                  setSelection(selectionIndex + 1);
+                }
+              }
+
+              const sEnabled = changes[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
+            }
             break;
         }
       };

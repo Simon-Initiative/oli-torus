@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ResourceContent } from 'data/content/resource';
 import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
+import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
 import { selectProjectSlug } from '../../app/slice';
 import { RootState } from '../../rootReducer';
@@ -29,16 +30,31 @@ export const savePage = createAsyncThunk(
         : currentPage.displayApplicationChrome;
 
     // the API expects to overwrite all the properties every time
+
+    // need to strip out resourceId from the model items and their children
+    // we don't want to persist that value
+    const updatedModel = clone(model);
+    const removeResourceId = (items: any[]) => {
+      items.forEach((item) => {
+        delete item.resourceId;
+        if (item.children) {
+          removeResourceId(item.children);
+        }
+      });
+    };
+    removeResourceId(updatedModel);
+
     const update: ResourceUpdate = {
       title: payload.title || currentPage.title,
       objectives: payload.objectives || currentPage.objectives,
       content: {
-        model: model as ResourceContent[],
+        model: updatedModel as ResourceContent[],
         advancedAuthoring,
         advancedDelivery,
         displayApplicationChrome,
         custom: payload.custom || currentPage.custom,
         customCss: payload.customCss || currentPage.customCss,
+        customScript: payload.customScript || currentPage.customScript,
         additionalStylesheets: payload.additionalStylesheets || currentPage.additionalStylesheets,
       },
       releaseLock: false,

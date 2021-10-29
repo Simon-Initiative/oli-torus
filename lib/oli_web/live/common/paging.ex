@@ -17,12 +17,12 @@ defmodule OliWeb.Common.Paging do
         <ul class="pagination">
           <li class={"page-item", disabled: (params.current_page_index == 0)}>
             <a class="page-link" :on-click={@click} phx-value-offset={0} phx-value-limit={@limit}>
-              &lt;&lt;
+              <i class="las la-angle-double-left"></i>
             </a>
           </li>
           <li class={"page-item", disabled: (params.current_page_index == 0)}>
             <a class="page-link" :on-click={@click} phx-value-offset={@offset - @limit} phx-value-limit={@limit}>
-              &lt;
+              <i class="las la-angle-left"></i>
             </a>
           </li>
           {#for i <- 0..(params.rendered_pages_count- 1)}
@@ -34,12 +34,12 @@ defmodule OliWeb.Common.Paging do
           {/for}
           <li class={"page-item", disabled: (params.current_page_index == params.last_page_index)}>
             <a class="page-link" :on-click={@click} phx-value-offset={@offset + @limit} phx-value-limit={@limit}>
-              &gt;
+              <i class="las la-angle-right"></i>
             </a>
           </li>
           <li class={"page-item", disabled: (params.current_page_index == params.last_page_index)}>
             <a class="page-link" :on-click={@click} phx-value-offset={params.last_page_index * @limit} phx-value-limit={@limit}>
-              &gt;&gt;
+              <i class="las la-angle-double-right"></i>
             </a>
           </li>
         </ul>
