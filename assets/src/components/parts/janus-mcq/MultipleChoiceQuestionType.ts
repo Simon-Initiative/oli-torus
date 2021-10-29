@@ -18,4 +18,6 @@ export interface JanusMultipleChoiceQuestionItemProperties extends JanusCustomCs
   disabled?: boolean;
   index: number;
   overrideHeight: boolean;
+  onConfigOptionClick?: any;
+  configureMode?: boolean;
 }

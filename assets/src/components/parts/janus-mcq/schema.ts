@@ -92,6 +92,10 @@ export const adaptivitySchema = {
 
 export const uiSchema = {};
 
+export const getCapabilities = () => ({
+  configure: true,
+});
+
 export const createSchema = (): Partial<McqModel> => {
   const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
