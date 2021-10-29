@@ -489,7 +489,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     // watch for new choices that may be set programmatically
     // trigger item selection handler for each
     if (
-      multipleSelection &&
       prevSelectedChoices &&
       // if previous selected is less than 1 and selected are greater than 1
       ((prevSelectedChoices.length < 1 && selectedChoices.length > 0) ||
@@ -497,11 +496,11 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
-      let shouldSave = false;
+      // if we reach here, it means selectedChoices is being set from either init or mutate state and
+      //hence need to save the variables.
+
       if (!selectedChoicesText?.length) {
-        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
-        //hence need to save the props.
-        shouldSave = true;
+        //update SelectedChoicesText with the latest selection
         const choicesText = selectedChoices.map((choice) => getOptionTextById(options, choice));
         setSelectedChoicesText(choicesText);
       }
@@ -513,7 +512,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             textValue: getOptionTextById(options, selectedChoice),
             checked: true,
           },
-          shouldSave,
+          true,
         );
       });
     }

@@ -143,7 +143,8 @@ defmodule OliWeb.Users.UsersView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

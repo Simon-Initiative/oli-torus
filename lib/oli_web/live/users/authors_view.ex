@@ -145,7 +145,8 @@ defmodule OliWeb.Users.AuthorsView do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 

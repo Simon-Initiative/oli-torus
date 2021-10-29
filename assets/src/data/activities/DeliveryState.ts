@@ -59,7 +59,7 @@ export const activityDeliverySlice = createSlice({
           outOf: out_of,
           parts: state.attemptState.parts.map((part) => {
             const feedbackAction = action.payload.actions.find(
-              (action: FeedbackAction) => action.attempt_guid === part.partId,
+              (action: FeedbackAction) => action.attempt_guid === part.attemptGuid,
             ) as FeedbackAction | undefined;
             if (!feedbackAction) return part;
             return Object.assign(part, {

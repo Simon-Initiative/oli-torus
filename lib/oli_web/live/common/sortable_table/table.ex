@@ -74,16 +74,20 @@ defmodule OliWeb.Common.SortableTable.Table do
       <thead>
         <tr>
         {#for column_spec <- @model.column_specs}
-          {render_th(assigns, column_spec)}
+          {render_th(with_data(assigns, @model.data), column_spec)}
         {/for}
         </tr>
       </thead>
       <tbody>
       {#for row <- @model.rows}
-        {render_row(assigns, row)}
+        {render_row(with_data(assigns, @model.data), row)}
       {/for}
       </tbody>
     </table>
     """
+  end
+
+  defp with_data(assigns, data) do
+    Map.merge(assigns, data)
   end
 end

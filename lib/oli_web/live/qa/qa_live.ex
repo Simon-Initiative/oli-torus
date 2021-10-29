@@ -90,7 +90,8 @@ defmodule OliWeb.Qa.QaLive do
            OliWeb.Qa.QaLive,
            state.project.slug,
            State.to_params(filters, selected_id)
-         )
+         ),
+       replace: true
      )}
   end
 
@@ -105,7 +106,8 @@ defmodule OliWeb.Qa.QaLive do
            OliWeb.Qa.QaLive,
            socket.assigns.project.slug,
            State.to_params(filters, warning_id)
-         )
+         ),
+       replace: true
      )}
   end
 

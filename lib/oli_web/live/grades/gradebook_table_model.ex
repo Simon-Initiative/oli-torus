@@ -68,25 +68,43 @@ defmodule OliWeb.Grades.GradebookTableModel do
   end
 
   defp show_score(assigns, row, resource_id, score, out_of) do
-    case out_of do
-      0 ->
-        ~F"""
-        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
-          <span>{score}/{out_of} 0%</span>
-        </a>
-        """
+    if out_of == 0 or out_of == 0.0 do
+      ~F"""
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+        <span>{score}/{out_of} 0%</span>
+      </a>
+      """
+    else
+      percentage =
+        case is_nil(score) or is_nil(out_of) do
+          true ->
+            ""
 
-      _ ->
-        percentage =
-          ((score / out_of * 100)
-           |> Float.round(2)
-           |> Float.to_string()) <> "%"
+          false ->
+            ((score / out_of * 100)
+             |> Float.round(2)
+             |> Float.to_string()) <> "%"
+        end
 
-        ~F"""
-        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
-        {score}/{out_of} <small class="text-muted">{percentage}</small>
-        </a>
-        """
+      safe_score =
+        if is_nil(score) do
+          "?"
+        else
+          score
+        end
+
+      safe_out_of =
+        if is_nil(out_of) do
+          "?"
+        else
+          out_of
+        end
+
+      ~F"""
+      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+      {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
+      </a>
+      """
     end
   end
 

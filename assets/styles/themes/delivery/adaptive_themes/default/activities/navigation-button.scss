@@ -1,0 +1,72 @@
+/*-- BUTTON primary --*/
+janus-navigation-button button {
+  font-family: 'OpenSansBold', 'Arial', 'Helvetica', sans-serif;
+  color: var(--white100) !important;
+  min-width: 100px;
+  height: auto !important;
+  min-height: 44px;
+  background-color: var(--blue100);
+  border-radius: 3px;
+  border: none;
+  -moz-box-shadow: 2px 2px var(--black20_a);
+  -webkit-box-shadow: 2px 2px var(--black20_a);
+  box-shadow: 2px 2px var(--black20_a);
+  padding: 10px 20px;
+  cursor: pointer;
+}
+janus-navigation-button button:active {
+  -moz-box-shadow: inset 0px 2px var(--black40_a);
+  -webkit-box-shadow: inset 0px 2px var(--black40_a);
+  box-shadow: inset 0px 2px var(--black40_a);
+  color: var(--white90);
+  transform: translateY(1px);
+}
+janus-navigation-button button:focus-visible {
+  outline: double 5px var(--black40_a);
+}
+janus-navigation-button button:disabled,
+janus-navigation-button button:disabled:hover {
+  background-color: var(--grayDark20);
+  cursor: not-allowed;
+}
+
+janus-navigation-button button:disabled:active {
+  -moz-box-shadow: inset 0px 0px var(--black0_a);
+  -webkit-box-shadow: inset 0px 0px var(--black0_a);
+  box-shadow: inset 0px 0px var(--black0_a);
+  color: var(--white90_a);
+  transform: translateY(0px);
+}
+
+janus-navigation-button button:hover {
+  background-color: var(--blueimperial100);
+}
+janus-navigation-button button:focus {
+  box-shadow: inset 0 0 0 4px var(--bluesea100_a);
+}
+
+/*-- BUTTONS secondary --*/
+janus-navigation-button.secondary button {
+  background-color: var(--orange100);
+}
+janus-navigation-button.secondary button:hover {
+  background-color: var(--orange20dark);
+}
+janus-navigation-button.secondary button:focus {
+  box-shadow: inset 0 0 0 4px var(--orange100);
+}
+
+/* dont know if this is used or not, dont remove*/
+/* .primary-spot{
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 100px !important;
+    box-shadow: none !important;
+    border: 3px solid rgba(255,255,255,.6) !important;
+    background-color: rgba(0, 101, 134, .4);
+}
+.primary-spot:hover{
+    background-color: rgba(0, 101, 134, .6);
+} */
