@@ -76,7 +76,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   return (
     <div className="headerContainer">
-      <header id="everApp-container">
+      <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
           <h2 className="questionTitle">{activityName}</h2>
@@ -91,7 +91,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                 <OverlayTrigger
                   trigger="click"
                   placement={'bottom'}
-                  container={document.getElementById('everApp-container')}
+                  container={document.getElementById('delivery-header')}
                   onExit={() => setIsPopoverOpen(false)}
                   overlay={
                     <Popover
@@ -107,7 +107,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                                   key={everApp.id}
                                   trigger="click"
                                   placement="bottom"
-                                  container={document.getElementById('everApp-container')}
+                                  container={document.getElementById('delivery-header')}
                                   onExit={() => {
                                     setIsPopoverOpen(false);
                                     evalScript(`let app.active = "none";`, defaultGlobalEnv);
@@ -186,7 +186,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                     }}
                   >
                     <img src={BeagleLogo}></img>
-                    {/* Beagle Apps */}
                   </button>
                 </OverlayTrigger>
               </div>
@@ -200,7 +199,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               <span className="theme-header-score__label">Score:&nbsp;</span>
               <span className="theme-header-score__value">{scoreText}</span>
             </div>
-            {/*beaglecontainer*/}
             <div className="theme-header-profile">
               <button
                 className="theme-header-profile__toggle"

@@ -182,7 +182,7 @@ export const BeagleAppIFrame = {
     slug: 'oli_adaptive',
     title: 'Adaptive Activity',
   },
-  title: 'Malav',
+  title: 'EverApp Renderer',
   attemptGuid: 'preview_2946819616',
 };
 

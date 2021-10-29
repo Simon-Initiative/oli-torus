@@ -525,7 +525,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
 
     try {
-      // TODO: this should call an actual API that fetches from user storage
       if (!props.onGetData) {
         return;
       }
@@ -598,7 +597,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
 
     try {
-      // TODO: this should call a real API to write to user storage
       if (!props.onSetData) {
         return;
       }

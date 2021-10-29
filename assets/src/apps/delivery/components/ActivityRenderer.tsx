@@ -85,19 +85,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentUserId = useSelector(selectUserId);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-    console.log('Saving', attemptGuid, partAttemptGuid, payload);
     const objId = `${payload.key}`;
     debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
-    console.log('Saving Done');
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-    console.log('Reading', attemptGuid, partAttemptGuid, payload);
     // Read only the key from the simid
     const objId = `${payload.key}`;
-    const a = debouncedReadData({ isPreviewMode, payload, objId });
-    console.log('debounced Read', a);
-    return a;
+    const data = debouncedReadData({ isPreviewMode, payload, objId });
+    return data;
   };
 
   const debouncedReadData = debounce(
