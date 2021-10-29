@@ -92,6 +92,13 @@ const customHandlers = {
       this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
     }
   },
+  image: function (value: string) {
+    const range = this.quill.getSelection();
+    const expression = prompt('Enter the image URL', '');
+    if (expression) {
+      this.quill.insertEmbed(range.index, 'image', expression);
+    }
+  },
 };
 
 const QuillEditor: React.FC<QuillEditorProps> = ({
