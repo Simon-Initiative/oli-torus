@@ -1,4 +1,5 @@
 import { normalizeHref } from 'components/editing/models/link/utils';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Element, Node, Range } from 'slate';
 import guid from 'utils/guid';
 
@@ -244,10 +245,9 @@ export interface InputRef extends Element, Identifiable {
   type: 'input_ref';
 }
 
-export type PopupTriggerMode = 'hover' | 'click';
 export interface Popup extends Element, Identifiable {
   type: 'popup';
-  trigger: PopupTriggerMode;
+  trigger: OverlayTriggerType;
   content: ModelElement[];
 }
 

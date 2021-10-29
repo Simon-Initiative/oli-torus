@@ -20,6 +20,7 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
   const { content, toolbarItems, editMode, projectSlug } = props;
 
   const onEdit = (children: Node[], selection: Selection) => {
+    console.log('selection', selection);
     const updated = Object.assign({}, content, { children, selection });
     props.onEdit(updated);
   };

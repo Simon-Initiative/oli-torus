@@ -4,6 +4,7 @@ import { CommandContext } from 'components/editing/commands/interfaces';
 import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
 import * as ContentModel from 'data/content/model';
 import React from 'react';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 
 interface Props {
   onDone: (changes: Partial<ContentModel.Popup>) => void;
@@ -18,7 +19,7 @@ export const PopupContentModal = (props: Props) => {
   });
   const [trigger, setTrigger] = React.useState(props.model.trigger);
 
-  const isTriggerMode = (mode: ContentModel.PopupTriggerMode) => mode === trigger;
+  const isTriggerMode = (mode: OverlayTriggerType) => mode === trigger;
 
   const triggerSettings = (
     <form onSubmit={() => {}} id="popup__trigger_mode">

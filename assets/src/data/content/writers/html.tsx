@@ -33,6 +33,7 @@ import {
   YouTube,
 } from 'data/content/model';
 import React from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import { WriterContext } from './context';
@@ -248,23 +249,24 @@ export class HtmlParser implements WriterImpl {
     }
   }
 
-  popup(context: WriterContext, next: Next, popup: Popup) {
+  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: Popup) {
+    const popupContent = (
+      <Popover id={popup.id}>
+        <Popover.Content>{contentNext()}</Popover.Content>
+      </Popover>
+    );
+
     return (
-      <>
-        <span
-          role="button"
-          className="popup-link"
-          data-trigger={`${this.escapeXml(popup.trigger)}`}
-          data-toggle="popover"
-          data-placement="top"
-          data-popover-content={`#${popup.id}`}
-        >
-          {next()}
+      <OverlayTrigger
+        // trigger={this.escapeXml(popup.trigger) as OverlayTriggerType}
+        trigger={['hover', 'click']}
+        placement="top"
+        overlay={popupContent}
+      >
+        <span role="button" className="popup-link">
+          {anchorNext()}
         </span>
-        <span id={popup.id} className="popup-wrapper d-none">
-          <span className="popup-content">{popup['content']}</span>
-        </span>
-      </>
+      </OverlayTrigger>
     );
   }
 
