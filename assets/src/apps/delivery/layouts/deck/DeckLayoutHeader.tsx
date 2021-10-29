@@ -1,14 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectPaths } from 'apps/authoring/store/app/slice';
 import { selectScore } from '../../store/features/page/slice';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { EverAppActivity, getEverAppActivity, udpateAttemptGuid } from './EverApps';
 import { selectPageContent } from '../../store/features/page/slice';
 import { ActivityState } from 'components/activities/types';
 import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
-import EverAppLogo from 'static/images/icons/icon-nine-dots.svg';
 import { defaultGlobalEnv, evalScript } from '../../../../adaptivity/scripting';
 
 interface DeckLayoutHeaderProps {
@@ -121,7 +119,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                                       <img
                                         onError={(ev) => {
                                           const element = ev.target as HTMLImageElement;
-                                          element.src = EverAppLogo;
+                                          element.src = '/images/icons/icon-nine-dots.svg';
                                         }}
                                         src={everApp.iconUrl}
                                         style={{ height: '30px', width: '30px' }}
@@ -149,7 +147,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                       height: '100%',
                     }}
                   >
-                    <img src={EverAppLogo}></img>
+                    <img src={'/images/icons/icon-nine-dots.svg'}></img>
                   </button>
                 </OverlayTrigger>
               </div>
