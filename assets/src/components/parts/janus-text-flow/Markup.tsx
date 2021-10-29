@@ -318,6 +318,9 @@ const Markup: React.FC<any> = ({
       // sets line-height: 1.4 for everything
       if (!renderStyles.lineHeight) {
         renderStyles.lineHeight = 'normal';
+        if (processedText.trim().length === 0) {
+          renderStyles.lineHeight = '0px';
+        }
       }
       //let's not do this for all P tags forces fontSize to be specified
       //PMP-1308 - Uncommenting this for fixing spacing issues. If lineHeight is not applied then SS sets it to 0px.
