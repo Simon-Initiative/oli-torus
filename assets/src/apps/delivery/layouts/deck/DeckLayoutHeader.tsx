@@ -1,13 +1,14 @@
 /* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { selectPaths } from 'apps/authoring/store/app/slice';
 import { selectScore } from '../../store/features/page/slice';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { EverAppActivity, getEverAppActivity, udpateAttemptGuid } from './EverApps';
 import { selectPageContent } from '../../store/features/page/slice';
 import { ActivityState } from 'components/activities/types';
 import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
-import BeagleLogo from '../../../../../static/images/icons/icon-nine-dots.svg';
+import EverAppLogo from 'static/images/icons/icon-nine-dots.svg';
 import { defaultGlobalEnv, evalScript } from '../../../../adaptivity/scripting';
 
 interface DeckLayoutHeaderProps {
@@ -33,45 +34,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
   const currentPage = useSelector(selectPageContent);
   const everApps = currentPage?.custom?.everApps;
-
-  // const activityState: ActivityState = {
-  //   attemptGuid: 'preview_2946819616',
-  //   attemptNumber: 1,
-  //   dateEvaluated: null,
-  //   score: null,
-  //   outOf: null,
-  //   parts: [
-  //     {
-  //       attemptGuid: 'sampleIframeGuid',
-  //       attemptNumber: 1,
-  //       dateEvaluated: null,
-  //       score: null,
-  //       outOf: null,
-  //       response: null,
-  //       feedback: null,
-  //       hints: [],
-  //       partId: 'janus_capi_iframe-3311152192',
-  //       hasMoreAttempts: false,
-  //       hasMoreHints: false,
-  //     },
-  //   ],
-  //   hasMoreAttempts: true,
-  //   hasMoreHints: true,
-  // };
-
-  // const updateEverAppIFrameURL = (everAppObj: any, url: string, index: number) => {
-  //   const updatedObject = clone(everAppObj);
-  //   updatedObject.id = everAppObj.id + index;
-  //   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
-  //   updatedObject.content.partsLayout[0].custom.src = url;
-  //   return updatedObject;
-  // };
-
-  // const udpateAttemptGuid = (index: number) => {
-  //   const updatedObject = clone(everAppActivityState);
-  //   updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
-  //   return updatedObject;
-  // };
 
   return (
     <div className="headerContainer">
@@ -157,7 +119,10 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                                       }}
                                     >
                                       <img
-                                        onError={(ev) => (ev.target.src = BeagleLogo)}
+                                        onError={(ev) => {
+                                          const element = ev.target as HTMLImageElement;
+                                          element.src = EverAppLogo;
+                                        }}
                                         src={everApp.iconUrl}
                                         style={{ height: '30px', width: '30px' }}
                                       ></img>
@@ -184,7 +149,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                       height: '100%',
                     }}
                   >
-                    <img src={BeagleLogo}></img>
+                    <img src={EverAppLogo}></img>
                   </button>
                 </OverlayTrigger>
               </div>

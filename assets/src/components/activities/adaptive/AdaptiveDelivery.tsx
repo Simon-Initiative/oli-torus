@@ -210,7 +210,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       return;
     }
     console.log('CurrentAttempt', currentAttemptState, partAttempt);
-    await props.onSetData(currentAttemptState.attemptGuid, partAttempt?.attemptGuid, payload);
+    if (props.onWriteUserState) {
+      await props.onWriteUserState(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        payload,
+      );
+    }
   };
 
   const handleGetData = async (payload: any) => {
@@ -222,11 +228,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       console.error(`part attempt guid for ${payload.id} not found!`);
       return;
     }
-    return await props.onGetData(
-      currentAttemptState.attemptGuid,
-      partAttempt?.attemptGuid,
-      payload,
-    );
+    if (props.onReadUserState) {
+      return await props.onReadUserState(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        payload,
+      );
+    }
   };
 
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
