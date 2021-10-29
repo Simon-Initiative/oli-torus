@@ -98,15 +98,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const debouncedReadData = debounce(
     async ({ isPreviewMode, payload, objId }) => {
-      if (isPreviewMode) {
-        // Fetch from LocalStorage
-        return localStorage.getItem(objId);
-      } else {
-        // Fetch from API
-        // Read the upper key, make a copy and only update the necessary value associated with child key
-        const data = (await Extrinsic.readGlobal([`${payload.simId}`])) as any;
-        return JSON.parse(data)[payload.simId]?.[objId];
-      }
+      const retrievedData = await Extrinsic.readGlobalUserState(
+        [`${payload.simId}`],
+        isPreviewMode,
+      );
+      return JSON.parse(retrievedData)[payload.simId]?.[objId];
     },
     500,
     { maxWait: 10000, leading: true, trailing: false },
@@ -114,15 +110,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const debouncedSaveData = debounce(
     async ({ isPreviewMode, payload, objId, value }) => {
-      console.log('InitStateFacts Saving', payload, objId, value);
-      if (isPreviewMode) {
-        // Store to Local Storage
-        localStorage.setItem(objId, value);
-      } else {
-        // Store to Backend
-        await Extrinsic.upsertGlobal({ [payload.simId]: { [objId]: value } });
-        console.log('InitStateFacts saving done for', payload, objId, value);
-      }
+      await Extrinsic.updateGlobalUserState({ [payload.simId]: { [objId]: value } }, isPreviewMode);
     },
     200,
     { maxWait: 10000, leading: true, trailing: false },
@@ -388,13 +376,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     });
 
     const arrayPLData = Object.keys(payloadData);
-    const retrivedData = (await Extrinsic.readGlobal(arrayPLData)) as any;
-    const parsedRetriedData = JSON.parse(retrivedData);
+    const retrievedData = (await Extrinsic.readGlobal(arrayPLData)) as any;
+    const parsedRetrievedData = JSON.parse(retrievedData);
 
-    Object.keys(parsedRetriedData).map((retrivedDataKey) => {
-      payloadData[retrivedDataKey] = {
-        ...parsedRetriedData[retrivedDataKey],
-        ...payloadData[retrivedDataKey],
+    Object.keys(parsedRetrievedData).map((retrievedDataKey) => {
+      payloadData[retrievedDataKey] = {
+        ...parsedRetrievedData[retrievedDataKey],
+        ...payloadData[retrievedDataKey],
       };
     });
 
