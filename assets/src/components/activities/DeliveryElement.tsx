@@ -47,8 +47,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   userId: number;
   notify?: EventEmitter;
 
-  onGetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
-  onSetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+  onReadUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+  onWriteUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (
     attemptGuid: string,
@@ -204,8 +204,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       preview,
       review,
       sectionSlug,
-      onSetData: this.onSetData,
-      onGetData: this.onGetData,
+      onWriteUserState: this.onSetData,
+      onReadUserState: this.onGetData,
       onRequestHint: this.onRequestHint,
       onSavePart: this.onSavePart,
       onSubmitPart: this.onSubmitPart,

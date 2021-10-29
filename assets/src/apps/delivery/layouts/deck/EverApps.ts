@@ -1,4 +1,32 @@
-export const BeagleAppIFrame = {
+import { clone } from 'utils/common';
+import { ActivityState } from 'components/activities/types';
+
+export const everAppActivityState: ActivityState = {
+  attemptGuid: 'preview_2946819616',
+  attemptNumber: 1,
+  dateEvaluated: null,
+  score: null,
+  outOf: null,
+  parts: [
+    {
+      attemptGuid: 'sampleIframeGuid',
+      attemptNumber: 1,
+      dateEvaluated: null,
+      score: null,
+      outOf: null,
+      response: null,
+      feedback: null,
+      hints: [],
+      partId: 'janus_capi_iframe-3311152192',
+      hasMoreAttempts: false,
+      hasMoreHints: false,
+    },
+  ],
+  hasMoreAttempts: true,
+  hasMoreHints: true,
+};
+
+export const EverAppActivity = {
   id: 'aa_3864718503',
   resourceId: 150,
   content: {
@@ -186,4 +214,18 @@ export const BeagleAppIFrame = {
   attemptGuid: 'preview_2946819616',
 };
 
-export default BeagleAppIFrame;
+export const getEverAppActivity = (everAppObj: any, url: string, index: number) => {
+  const updatedObject = clone(everAppObj);
+  updatedObject.id = everAppObj.id + index;
+  updatedObject.attemptGuid = everAppObj.attemptGuid + index;
+  updatedObject.content.partsLayout[0].custom.src = url;
+  return updatedObject;
+};
+
+export const udpateAttemptGuid = (index: number) => {
+  const updatedObject = clone(everAppActivityState);
+  updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
+  return updatedObject;
+};
+
+export default EverAppActivity;

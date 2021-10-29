@@ -6,8 +6,6 @@ export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss
   src: string;
   configData: any;
   allowScrolling: boolean;
-  readUserData?: () => any;
-  saveUserData?: () => any;
 }
 
 export const schema: JSONSchema7Object = {
