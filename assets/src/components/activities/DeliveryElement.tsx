@@ -46,6 +46,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   sectionSlug?: string;
   userId: number;
   notify?: EventEmitter;
+  mountPoint: HTMLElement;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (
@@ -204,6 +205,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onResize: this.onResize,
       userId,
       notify: this._notify,
+      mountPoint: this.mountPoint,
     };
   }
 

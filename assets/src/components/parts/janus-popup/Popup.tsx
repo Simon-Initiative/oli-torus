@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable react/prop-types */
-import chroma from 'chroma-js';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
@@ -9,16 +7,15 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import PartsLayoutRenderer from '../../activities/adaptive/components/delivery/PartsLayoutRenderer';
 import { PartComponentProps } from '../types/parts';
 import { getIcon, getIconSrc } from './GetIcon';
+import PopupWindow from './PopupWindow';
 import { PopupModel } from './schema';
 import { InitResultProps } from './types';
 
 const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [ready, setReady] = useState<boolean>(false);
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
+  const [model, setModel] = useState<any>(props.model);
   const id: string = props.id;
   const [context, setContext] = useState<boolean>(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -26,6 +23,9 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [iconSrc, setIconSrc] = useState('');
 
   const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
+
+  const [activityHost, setActivityHost] = useState<any>(null);
+
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
@@ -47,7 +47,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
         },
       ],
     });
-    /* console.log('POPUP INIT', initResult); */
+
+    console.log('POPUP INIT', initResult);
+    setActivityHost(initResult.context.host);
+
     // result of init has a state snapshot with latest (init state applied)
     setInitSnapshot(initResult);
     const currentStateSnapshot = initResult.snapshot;
@@ -78,35 +81,13 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   }, []);
 
   useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
+    const { iconURL, defaultURL } = props.model;
 
-    const { iconURL, defaultURL } = pModel;
-
-    setShowPopup(!!pModel.openByDefault);
-    setPopupVisible(!!pModel.visible);
+    setShowPopup(!!props.model.openByDefault);
+    setPopupVisible(!!props.model.visible);
     setIconSrc(getIconSrc(iconURL, defaultURL));
 
-    initialize(pModel);
+    initialize(props.model);
   }, [props]);
 
   const {
@@ -227,13 +208,9 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify]);
 
-  const popupStyles: CSSProperties = {
+  const iconTriggerStyle: CSSProperties = {
     width,
     height,
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    zIndex: z,*/
   };
 
   // Toggle popup open/close
@@ -251,6 +228,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       ],
     });
   };
+
   useEffect(() => {
     const popupModalZ = config?.z || 1000;
     const zIndexIcon = z || 0;
@@ -260,93 +238,23 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       props.onResize({ id: `${id}`, settings: modifiedData });
     }
   }, [showPopup, model]);
-  const handlePartInit = () => {
-    return initSnapshot;
-  };
+
   const partComponents = popup?.partsLayout;
-
   const config = popup?.custom ? popup.custom : null;
-  const popupModalStyles: CSSProperties = {
-    width: config?.width || 1300,
-  };
-  if (config?.palette) {
-    if (config.palette.useHtmlProps) {
-      popupModalStyles.backgroundColor = config.palette.backgroundColor;
-      popupModalStyles.borderColor = config.palette.borderColor;
-      popupModalStyles.borderWidth = config.palette.borderWidth;
-      popupModalStyles.borderStyle = config.palette.borderStyle;
-      popupModalStyles.borderRadius = config.palette.borderRadius;
-    } else {
-      popupModalStyles.borderWidth = `${
-        config?.palette?.lineThickness ? config?.palette?.lineThickness + 'px' : '1px'
-      }`;
-      popupModalStyles.borderRadius = '10px';
-      popupModalStyles.borderStyle = 'solid';
-      popupModalStyles.borderColor = `rgba(${
-        config?.palette?.lineColor || config?.palette?.lineColor === 0
-          ? chroma(config?.palette?.lineColor).rgb().join(',')
-          : '255, 255, 255'
-      },${config?.palette?.lineAlpha})`;
-      popupModalStyles.backgroundColor = `rgba(${
-        config?.palette?.fillColor || config?.palette?.fillColor === 0
-          ? chroma(config?.palette?.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${config?.palette?.fillAlpha})`;
+
+  const PortalWindow = () => {
+    if (!initSnapshot) {
+      return null;
     }
-  }
-  // position is an offset from the parent element now
-  const modalX = (config?.x || 0) - x;
-  const modalY = (config?.y || 0) - y;
-  popupModalStyles.left = modalX;
-  popupModalStyles.top = modalY;
-  popupModalStyles.zIndex = config?.z ? config?.z : 1000;
-  popupModalStyles.height = config?.height;
-  popupModalStyles.overflow = 'hidden';
-  popupModalStyles.position = 'absolute';
-
-  const popupCloseStyles: CSSProperties = {
-    position: 'absolute',
-    padding: 0,
-    zIndex: 5000,
-    background: 'transparent',
-    textDecoration: 'none',
-    width: '25px',
-    height: '25px',
-    fontSize: '1.4em',
-    fontFamily: 'Arial',
-    right: 0,
-    opacity: 1,
+    const windowProps = {
+      config,
+      parts: partComponents,
+      snapshot: initSnapshot.snapshot,
+      context: initSnapshot.context,
+      onClose: () => handleToggleIcon(false),
+    };
+    return activityHost && ReactDOM.createPortal(<PopupWindow {...windowProps} />, activityHost);
   };
-
-  const closeButtonSpanStyles: CSSProperties = {
-    marginLeft: 12,
-    padding: 0,
-    textShadow: 'none',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    fontWeight: 'bold',
-    fontFamily: 'Arial',
-    marginTop: -6,
-    position: 'absolute',
-    right: 0,
-  };
-
-  const popupBGStyles: CSSProperties = {
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
-    borderRadius: 10,
-    padding: 0,
-    overflow: 'hidden',
-    width: '100%',
-    height: '100%',
-  };
-
-  if (showPopup) {
-    /* console.log('SHOW POPUP: ', { model, popupModalStyles }); */
-  }
 
   return ready ? (
     <React.Fragment>
@@ -367,7 +275,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           aria-controls={id}
           aria-haspopup="true"
           aria-label={description}
-          style={popupStyles}
+          style={iconTriggerStyle}
           {...(useToggleBehavior
             ? {
                 onClick: () => handleToggleIcon(!showPopup),
@@ -380,33 +288,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
               })}
         />
       ) : null}
-      {showPopup ? (
-        <React.Fragment>
-          {partComponents ? (
-            <div
-              className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
-              style={popupModalStyles}
-            >
-              <div className="popup-background" style={popupBGStyles}>
-                <PartsLayoutRenderer
-                  onPartInit={handlePartInit}
-                  parts={partComponents}
-                ></PartsLayoutRenderer>
-                <button
-                  aria-label="Close"
-                  className="close"
-                  style={popupCloseStyles}
-                  onClick={() => handleToggleIcon(false)}
-                >
-                  <span style={closeButtonSpanStyles}>x</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>Popup could not load</div>
-          )}
-        </React.Fragment>
-      ) : null}
+      {showPopup ? <PortalWindow /> : null}
     </React.Fragment>
   ) : null;
 };
