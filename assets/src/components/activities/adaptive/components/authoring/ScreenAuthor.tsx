@@ -30,7 +30,7 @@ interface ScreenAuthorProps {
 const screenSchema: JSONSchema7 = {
   type: 'object',
   properties: {
-    Position: {
+    /* Position: {
       type: 'object',
       title: 'Dimensions',
       properties: {
@@ -38,7 +38,7 @@ const screenSchema: JSONSchema7 = {
         y: { type: 'number' },
         z: { type: 'number' },
       },
-    },
+    }, */
     Size: {
       type: 'object',
       title: 'Dimensions',
@@ -172,11 +172,11 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
       // current should be screen, formatted to match the schema
       // console.log('screen selected', currentScreenData);
       const data = {
-        Position: {
+        /* Position: {
           x: currentScreenData.custom.x || 0,
           y: currentScreenData.custom.y || 0,
           z: currentScreenData.custom.z || 0,
-        },
+        }, */
         Size: {
           width: currentScreenData.custom.width,
           height: currentScreenData.custom.height,

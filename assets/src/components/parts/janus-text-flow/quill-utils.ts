@@ -8,6 +8,7 @@ interface JanusMarkupNode {
   children: JanusMarkupNode[];
   text?: string;
   customCssClass?: string;
+  src?: string;
 }
 
 const appendToStringProperty = (append: string, str?: string) => {
@@ -77,7 +78,19 @@ export const convertQuillToJanus = (delta: Delta) => {
     }
 
     line.forEach((op) => {
-      if (typeof op.insert === 'string') {
+      if (typeof op.insert === 'object') {
+        const imageDetails: any = op.insert;
+        const child: JanusMarkupNode = {
+          tag: 'img',
+          style: {
+            height: '100%',
+            width: '100%',
+          },
+          src: `${imageDetails.image}`,
+          children: [],
+        };
+        node.children.push(child);
+      } else if (typeof op.insert === 'string') {
         const style: any = {};
         if (op.attributes) {
           if (op.attributes.font) {
@@ -146,7 +159,7 @@ export const convertQuillToJanus = (delta: Delta) => {
     }
   });
 
-  console.log('Q -> J', { doc, nodes });
+  /* console.log('Q -> J', { doc, nodes }); */
 
   return nodes;
 };
@@ -217,18 +230,19 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           if (child.style?.textAlign) {
             lineAttrs.align = child.style.textAlign;
           }
-          line.insert('\n', lineAttrs);
+          if (child.tag === 'img') {
+            doc.insert({ image: child.src });
+          }
         }
       }
       const childLine = processJanusChildren(child, new Delta(), attrs);
       doc = line.compose(childLine).compose(doc);
     });
   }
-
   return doc;
 };
 
-const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+const blockTags = ['p', 'blockquote', 'ol', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img'];
 
 export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
   let doc = new Delta();
@@ -263,7 +277,7 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
     doc = line.compose(childLine).compose(doc);
   });
 
-  console.log('J -> Q', { nodes, doc });
+  /*   console.log('J -> Q', { nodes, doc }); */
 
   return doc;
 };

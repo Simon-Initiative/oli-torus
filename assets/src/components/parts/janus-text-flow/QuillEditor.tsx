@@ -11,6 +11,7 @@ interface QuillEditorProps {
   onSave: (contents: any) => void;
   onCancel: () => void;
   showSaveCancelButtons?: boolean;
+  showimagecontrol?: boolean;
 }
 
 const supportedFonts = ['Initial', 'Arial', 'Times New Roman', 'Sans Serif'];
@@ -91,6 +92,13 @@ const customHandlers = {
       this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
     }
   },
+  image: function (value: string) {
+    const range = this.quill.getSelection();
+    const expression = prompt('Enter the image URL', '');
+    if (expression) {
+      this.quill.insertEmbed(range.index, 'image', expression);
+    }
+  },
 };
 
 const QuillEditor: React.FC<QuillEditorProps> = ({
@@ -100,15 +108,16 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   onChange,
   onSave,
   onCancel,
+  showimagecontrol = false,
 }) => {
   const [contents, setContents] = React.useState<any>(tree);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
 
-  console.log('[QuillEditor]', { tree, html });
+  /*  console.log('[QuillEditor]', { tree, html }); */
 
   useEffect(() => {
     const convertedTree = convertJanusToQuill(tree);
-    console.log('[QuillEditor] convertedTree', convertedTree);
+    /* console.log('[QuillEditor] convertedTree', convertedTree); */
     setDelta(convertedTree);
   }, [tree]);
 
@@ -166,6 +175,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
                 [{ align: [] }],
                 ['link', 'adaptivity'],
                 ['clean'], // remove formatting button
+                showimagecontrol ? ['image'] : [],
               ],
               handlers: customHandlers,
             },
@@ -188,7 +198,7 @@ export const tagName = 'tf-quill-editor';
 
 export const registerEditor = () => {
   if (!customElements.get(tagName)) {
-    register(QuillEditor, tagName, ['tree', 'html'], {
+    register(QuillEditor, tagName, ['tree', 'html', 'showimagecontrol'], {
       shadow: false, // shadow dom breaks the quill toolbar
       customEvents: {
         onChange: `${tagName}-change`,

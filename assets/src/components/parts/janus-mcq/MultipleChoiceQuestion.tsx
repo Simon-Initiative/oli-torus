@@ -64,6 +64,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   idx,
   overrideHeight,
   columns = 1,
+  onConfigOptionClick,
+  index,
+  configureMode,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -95,10 +98,71 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       onSelected(selection);
     }
   };
-
   return (
     <React.Fragment>
       <div style={mcqItemStyles}>
+        {configureMode && (
+          <>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 2)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fa fa-trash"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Delete the option"
+              ></i>{' '}
+            </button>
+
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 1)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fas fa-edit"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Edit the option"
+              ></i>{' '}
+            </button>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 3)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+                marginRight: 2,
+              }}
+            >
+              <i
+                className="fas fa-plus"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Add new option"
+              ></i>{' '}
+            </button>
+          </>
+        )}
         <input
           style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
@@ -635,7 +699,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   if (customCssClass === 'four-columns') {
     columns = 4;
   }
-
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
