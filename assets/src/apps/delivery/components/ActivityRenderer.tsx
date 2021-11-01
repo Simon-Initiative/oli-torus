@@ -98,11 +98,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const debouncedReadData = debounce(
     async ({ isPreviewMode, payload, objId }) => {
-      const retrievedData = await Extrinsic.readGlobalUserState(
-        [`${payload.simId}`],
-        isPreviewMode,
-      );
-      return JSON.parse(retrievedData)[payload.simId]?.[objId];
+      const retrievedData = await Extrinsic.readGlobalUserState([payload.simId], isPreviewMode);
+      return retrievedData?.[payload.simId]?.[objId];
     },
     500,
     { maxWait: 10000, leading: true, trailing: false },
@@ -115,6 +112,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     200,
     { maxWait: 10000, leading: true, trailing: false },
   );
+
   const activityState: ActivityState = {
     attemptGuid: 'foo',
     attemptNumber: 1,
@@ -374,25 +372,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         payloadData[data[1]] = { ...payloadData[data[1]], [objId]: value };
       }
     });
-
-    const arrayPLData = Object.keys(payloadData);
-    const retrievedData = (await Extrinsic.readGlobal(arrayPLData)) as any;
-    const parsedRetrievedData = JSON.parse(retrievedData);
-
-    Object.keys(parsedRetrievedData).map((retrievedDataKey) => {
-      payloadData[retrievedDataKey] = {
-        ...parsedRetrievedData[retrievedDataKey],
-        ...payloadData[retrievedDataKey],
-      };
-    });
-
-    if (isPreviewMode) {
-      // Store to Local Storage
-      Object.keys(payloadData).map((data) => localStorage.setItem(data, payloadData[data]));
-    } else {
-      // Store to Backend
-      await Extrinsic.upsertGlobal(payloadData);
-    }
+    await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
   };
 
   const notifyContextChanged = async () => {

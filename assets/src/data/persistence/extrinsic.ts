@@ -17,7 +17,6 @@ export function readGlobal(keys: string[] | null = null) {
   const params = {
     method: 'GET',
     url: '/state' + toKeyParams(keys),
-    hasTextResult: true,
   };
 
   return makeRequest<ExtrinsicRead>(params);
