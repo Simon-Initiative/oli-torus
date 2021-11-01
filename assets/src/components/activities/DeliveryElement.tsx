@@ -46,7 +46,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   sectionSlug?: string;
   userId: number;
   notify?: EventEmitter;
-  mountPoint: HTMLElement;
+  mountPoint?: HTMLElement;
 
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
   onSubmitActivity: (
