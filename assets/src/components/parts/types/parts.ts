@@ -43,6 +43,8 @@ export interface PartComponentProps<T extends CustomProperties> {
   onSave: (payload: any) => Promise<any>;
   onSubmit: (payload: any) => Promise<any>;
   onResize: (payload: any) => Promise<any>;
+  onGetData?: (payload: any) => Promise<any>;
+  onSetData?: (payload: any) => Promise<any>;
 }
 
 export interface AuthorPartComponentProps<T extends CustomProperties>
