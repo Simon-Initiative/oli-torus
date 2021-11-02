@@ -150,6 +150,23 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_resource_accesses(section_slug, user_id) do
+    Repo.all(
+      from(a in ResourceAccess,
+        join: ra in ResourceAttempt,
+        on: a.id == ra.resource_access_id,
+        join: s in Section,
+        on: a.section_id == s.id,
+        where: a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
+        group_by: a.id,
+        select: a,
+        select_merge: %{
+          resource_attempts_count: count(ra.id)
+        }
+      )
+    )
+  end
+
   def get_part_attempts_and_users(project_id) do
     Repo.all(
       from(

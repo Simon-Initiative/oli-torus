@@ -19,7 +19,10 @@ defmodule OliWeb.Sections.Mount do
         {:error, :not_found}
 
       %Oli.Delivery.Sections.Section{type: :blueprint} = section ->
-        ensure_author_of(section, author_id)
+        case ensure_author_of(section, author_id) do
+          {:error, _} -> ensure_admin(section, author_id)
+          result -> result
+        end
 
       section ->
         case {user_id, author_id} do

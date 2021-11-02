@@ -107,11 +107,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return styles;
     });
 
-    if (pageContent?.custom?.customScript) {
+    if (pageContent?.customScript) {
       // apply a custom *janus* script if defined
       // this is for user defined functions (also legacy)
       // TODO: something if there are errors
-      evalScript(pageContent?.custom?.customScript, defaultGlobalEnv);
+      const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
+      /* console.log('Lesson Custom Script: ', {
+        script: pageContent?.customScript,
+        csResult,
+      }); */
     }
 
     if (Array.isArray(pageContent?.custom?.variables)) {
@@ -193,7 +197,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           currentActivityTree,
           timeout,
         });
-      }, 4000);
+      }, 10000);
     });
     sharedActivityPromise = { promise, resolve, reject };
 

@@ -1,0 +1,75 @@
+/*-- label --*/
+janus-input-text label,
+janus-input-number label,
+janus-multi-line-text label {
+  font-family: 'OpenSansBold';
+  color: var(--grayDark60);
+  display: inline-block;
+  margin-bottom: 5px;
+}
+/*-- input --*/
+janus-input-text input,
+janus-input-number input,
+janus-multi-line-text textarea {
+  padding: 5px;
+  border: 1px solid var(--grayDark20);
+  box-sizing: border-box;
+  border-radius: 2px;
+  min-height: 44px;
+}
+
+janus-input-text input::placeholder,
+janus-input-number input::placeholder,
+janus-multi-line-text textarea::placeholder {
+  color: var(--grayDark40);
+}
+
+/*-- input focused --*/
+janus-input-text input:focus,
+janus-input-text input:active,
+janus-input-text input:focus-visible,
+janus-input-text:active input,
+janus-input-text:focus input,
+janus-input-text:focus-within input,
+janus-input-number input:focus,
+janus-input-number input:active,
+janus-input-number input:focus-visible,
+janus-input-number:active input,
+janus-input-number:focus input,
+janus-input-number:focus-within input,
+janus-multi-line-text textarea:focus,
+janus-multi-line-text textarea:active,
+janus-multi-line-text textarea:focus-visible,
+janus-multi-line-text:active textarea,
+janus-multi-line-text:focus textarea,
+janus-multi-line-text:focus-within textarea {
+  border: 2px solid var(--blue100);
+  box-shadow: 0 0 0 3px var(--blue40_a);
+}
+
+/*-- input disabled --*/
+janus-input-text input:disabled,
+janus-input-number input:disabled,
+janus-multi-line-text textarea:disabled {
+  background-color: var(--grayLight20);
+  color: var(--grayDark40);
+}
+/*This may usable later on
+janus-multi-line-text textarea {
+    resize: both !important;
+}*/
+
+/*-- character counter --*/
+janus-multi-line-text .characterCounter {
+  margin: 0;
+  width: auto !important;
+  font-size: 0.95rem !important;
+  font-family: 'OpenSans', sans-serif !important;
+}
+
+/*-- units --*/
+janus-input-number .unitsLabel {
+  position: absolute;
+  margin-left: 10px;
+  margin-top: 10px;
+}

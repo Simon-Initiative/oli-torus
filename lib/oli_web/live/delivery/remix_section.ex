@@ -124,6 +124,7 @@ defmodule OliWeb.Delivery.RemixSection do
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) or
          Accounts.is_admin?(current_author) do
       init_state(socket,
+        breadcrumbs: set_breadcrumbs(:user, section),
         section: section,
         redirect_after_save: redirect_after_save,
         available_publications: Publishing.all_available_publications()

@@ -126,8 +126,8 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
   // since it's a child of the parent element and not the activity (screen) directly
   const offsetWindowConfig = {
     ...model.popup.custom,
-    x: model.popup.custom.x - (x || 0),
-    y: model.popup.custom.y - (y || 0),
+    x: model.popup.custom.x /*  - (x || 0) */,
+    y: model.popup.custom.y /*  - (y || 0) */,
     z: Math.max((z || 0) + 1000, (model.popup.custom.z || 0) + 1000),
   };
 
@@ -157,9 +157,18 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
     styles.opacity = 0.5;
   }
 
-  useEffect(() => {
+  const init = useCallback(async () => {
+    const initResult = await props.onInit({ id, responses: [] });
+    console.log('PA INIT', { id, initResult });
+
+    setContext((c) => ({ ...c, ...initResult.context }));
+
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
+  }, [props]);
+
+  useEffect(() => {
+    init();
   }, []);
 
   const handleScreenAuthorChange = (changedScreen: any) => {
@@ -191,6 +200,20 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
 
   const [authorStyleOverride, setAuthorStyleOverride] = useState<string>('');
 
+  const PortalWindow = () => {
+    if (!context.host) {
+      return null;
+    }
+    const windowProps = {
+      config: windowConfig,
+      parts: windowParts,
+      snapshot: {},
+      context,
+      onClose: handleWindowClose,
+    };
+    return ReactDOM.createPortal(<PopupWindow {...windowProps} />, context.host);
+  };
+
   return (
     <React.Fragment>
       <style>{authorStyleOverride}</style>
@@ -218,14 +241,7 @@ const PopupAuthor: React.FC<AuthorPartComponentProps<PopupModel>> = (props) => {
         aria-label={description}
         style={styles}
       />
-      {showWindow && (
-        <PopupWindow
-          config={windowConfig}
-          parts={windowParts}
-          context={context}
-          onClose={handleWindowClose}
-        />
-      )}
+      {showWindow && <PortalWindow />}
     </React.Fragment>
   );
 };

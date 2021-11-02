@@ -22,6 +22,10 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
+  // TODO: this type should be Environment | undefined; this is a local script env for each activity
+  // should be provided by the parent as a child env, possibly default to having its own instead
+  const [scriptEnv, setScriptEnv] = useState<any>();
+
   const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
@@ -153,14 +157,23 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       if (parts.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady) {
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
+          const { env } = readyResults;
+          if (env) {
+            setScriptEnv(env);
+          }
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
           partsInitDeferred.resolve({
             snapshot: readyResults.snapshot || {},
-            context: readyResults.context,
+            context: { ...readyResults.context, host: props.mountPoint },
+            env,
           });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
-          partsInitDeferred.resolve({ snapshot: {}, context: { mode: 'VIEWER' } });
+          partsInitDeferred.resolve({
+            snapshot: {},
+            context: { mode: 'VIEWER', host: props.mountPoint },
+            env: scriptEnv,
+          });
         }
       }
       return partsInitDeferred.promise;
@@ -175,9 +188,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       const saveResults = await handlePartSave(payload);
     }
 
-    const { snapshot, context } = await partInit(payload.id.toString());
+    const { snapshot, context, env } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot, context };
+    return { snapshot, context, env };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {
@@ -189,6 +202,43 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     // no need to do anything for now.
     /*  console.log('handlePartResize called'); */
     return true;
+  };
+
+  const handleSetData = async (payload: any) => {
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${payload.id} not found!`);
+      return;
+    }
+    console.log('CurrentAttempt', currentAttemptState, partAttempt);
+    if (props.onWriteUserState) {
+      await props.onWriteUserState(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        payload,
+      );
+    }
+  };
+
+  const handleGetData = async (payload: any) => {
+    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    // part attempt guid should be located in currentAttemptState.parts matched to id
+    const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+    if (!partAttempt) {
+      // throw err? if this happens we can't proceed...
+      console.error(`part attempt guid for ${payload.id} not found!`);
+      return;
+    }
+    if (props.onReadUserState) {
+      return await props.onReadUserState(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        payload,
+      );
+    }
   };
 
   const handlePartSave = async ({ id, responses }: { id: string | number; responses: any[] }) => {
@@ -248,6 +298,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         onPartSave={handlePartSave}
         onPartSubmit={handlePartSubmit}
         onPartResize={handlePartResize}
+        onPartSetData={handleSetData}
+        onPartGetData={handleGetData}
       />
     </NotificationContext.Provider>
   ) : null;

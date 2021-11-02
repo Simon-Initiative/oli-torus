@@ -1,0 +1,164 @@
+/*-----------------------------------------
+    Color Swatch Variables
+-----------------------------------------*/
+:root {
+  /*Blue (oceanic)*/
+  --blue100: #006586;
+  --blue100_a: rgba(0, 101, 134, 1);
+  --blue90: #23809f;
+  --blue80: #3398b9;
+  --blue80_a: rgba(0, 101, 134, 0.8);
+  --blue60: #66b2cb;
+  --blue60_a: rgba(0, 101, 134, 0.6);
+  --blue40: #99cbdc;
+  --blue40_a: rgba(0, 101, 134, 0.4);
+  --blue20: #cce5ee;
+  --blue20_a: rgba(0, 101, 134, 0.2);
+  --blue40dark: #003d50;
+  --blue20dark: #00516b;
+  --bluesea100: #056a8b;
+  --bluesea100_a: rgba(5, 106, 139, 1);
+  --blueimperial100: #004c6d;
+  --blueimperial100_a: rgba(0, 76, 109, 1);
+
+  /*Orange (autumn)*/
+  --orange100: #d77009;
+  --orange100_a: rgba(215, 112, 9, 1);
+  --orange80: #df8d3a;
+  --orange80_a: rgba(215, 112, 9, 0.8);
+  --orange60: #e7a96b;
+  --orange60_a: rgba(215, 112, 9, 0.6);
+  --orange40: #efc69d;
+  --orange40_a: rgba(215, 112, 9, 0.4);
+  --orange20: #ffe8cc;
+  --orange20_a: rgba(215, 112, 9, 0.2);
+  --orange40dark: #814305;
+  --orange20dark: #ac5a07;
+
+  /* Orange (burnt) */
+  /* reference https://www.2020colours.com/d77009 */
+  --orange100_fb: #be5700;
+  --orange100_fb_a: rgba(190, 87, 0, 1);
+
+  /*Purple (royal)*/
+  --purple100: #5b2778;
+  --purple100_a: rgba(91, 39, 120, 1);
+  --purple80: #7c5293;
+  --purple80_a: rgba(91, 39, 120, 0.8);
+  --purple60: #9d7dae;
+  --purple60_a: rgba(91, 39, 120, 0.6);
+  --purple40: #bda9c9;
+  --purple40_a: rgba(91, 39, 120, 0.4);
+  --purple20: #ded4e4;
+  --purple20_a: rgba(91, 39, 120, 0.2);
+  --purple40dark: #371748;
+  --purple20dark: #491f60;
+
+  /*Green (pine)*/
+  --green100: #195e2f;
+  --green100_a: rgba(25, 94, 47, 1);
+  --green80: #477e59;
+  --green80_a: rgba(25, 94, 47, 0.8);
+  --green60: #759e82;
+  --green60_a: rgba(25, 94, 47, 0.6);
+  --green40: #a3bfac;
+  --green40_a: rgba(25, 94, 47, 0.4);
+  --green20: #d1dfd5;
+  --green20_a: rgba(25, 94, 47, 0.2);
+  --green40dark: #0f381c;
+  --green20dark: #144b26;
+
+  /*Red (cardinal)*/
+  --red100: #bd1f2e;
+  --red100_a: rgba(189, 31, 46, 1);
+  --red80: #ca4c58;
+  --red80_a: rgba(189, 31, 46, 0.8);
+  --red60: #d77982;
+  --red60_a: rgba(189, 31, 46, 0.6);
+  --red40: #e5a5ab;
+  --red40_a: rgba(189, 31, 46, 0.4);
+  --red20: #f2d2d5;
+  --red20_a: rgba(189, 31, 46, 0.2);
+  --red40dark: #71131c;
+  --red20dark: #971925;
+
+  /*Yellow (canary)*/
+  --yellow100: #fce300;
+  --yellow100_a: rgba(252, 227, 0, 1);
+  --yellow80: #fde933;
+  --yellow80_a: rgba(252, 227, 0, 0.8);
+  --yellow60: #fdee66;
+  --yellow60_a: rgba(252, 227, 0, 0.6);
+  --yellow40: #fef499;
+  --yellow40_a: rgba(252, 227, 0, 0.4);
+  --yellow20: #fef9cc;
+  --yellow20_a: rgba(252, 227, 0, 0.2);
+  --yellow40dark: #978800;
+  --yellow20dark: #cab600;
+
+  /*Dark Gary (graphite)*/
+  --grayDark100: #333333;
+  --grayDark100_a: rgba(51, 51, 51, 1);
+  --grayDark80: #484848;
+  --grayDark80_a: rgba(51, 51, 51, 0.8);
+  --grayDark60: #5c5c5c;
+  --grayDark60_a: rgba(51, 51, 51, 0.6);
+  --grayDark40: #717171;
+  --grayDark40_a: rgba(51, 51, 51, 0.4);
+  --grayDark20: #858585;
+  --grayDark20_a: rgba(51, 51, 51, 0.2);
+
+  /*Light Gray (overcast)*/
+  --grayLight100: #999999;
+  --grayLight100_a: rgba(153, 153, 153, 1);
+  --grayLight80: #adadad;
+  --grayLight80_a: rgba(153, 153, 153, 0.8);
+  --grayLight60: #c2c2c2;
+  --grayLight60_a: rgba(153, 153, 153, 0.6);
+  --grayLight40: #d6d6d6;
+  --grayLight40_a: rgba(153, 153, 153, 0.4);
+  --grayLight20: #ebebeb;
+  --grayLight20_a: rgba(153, 153, 153, 0.2);
+
+  /* White */
+  --white100: #ffffff;
+  --white100_a: rgba(255, 255, 255, 1);
+  --white90: #ffffffe6;
+  --white90_a: rgba(255, 255, 255, 0.9);
+  --white80: #ffffffcc;
+  --white80_a: rgba(255, 255, 255, 0.8);
+  --white60: #ffffff99;
+  --white60_a: rgba(255, 255, 255, 0.6);
+  --white40: #ffffff66;
+  --white40_a: rgba(255, 255, 255, 0.4);
+  --white20: #ffffff33;
+  --white20_a: rgba(255, 255, 255, 0.2);
+  --white10: #ffffff1a;
+  --white10_a: rgba(255, 255, 255, 0.1);
+  --white5: #ffffff0d;
+  --white5_a: rgba(255, 255, 255, 0.05);
+  --white0: #ffffff00;
+  --white0_a: rgba(255, 255, 255, 0);
+
+  /* reference https://gist.github.com/lopspower/03fb1cc0ac9f32ef38f4 */
+
+  /* Black */
+  --black100: #000000;
+  --black100_a: rgba(0, 0, 0, 1);
+  --black90: #000000e6;
+  --black80_a: rgba(0, 0, 0, 0.9);
+  --black80: #000000cc;
+  --black80_a: rgba(0, 0, 0, 0.8);
+  --black60: #00000099;
+  --black60_a: rgba(0, 0, 0, 0.6);
+  --black40: #00000066;
+  --black40_a: rgba(0, 0, 0, 0.4);
+  --black20: #00000033;
+  --black20_a: rgba(0, 0, 0, 0.2);
+  --black10: #0000001a;
+  --black10_a: rgba(0, 0, 0, 0.1);
+  --black5: #0000000d;
+  --black5_a: rgba(0, 0, 0, 0.05);
+  --black0: #00000000;
+  --black0_a: rgba(0, 0, 0, 0);
+}

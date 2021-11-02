@@ -4,11 +4,32 @@
 
 ### Bug Fixes
 
+- Fix an issue with sorting by title in open and free source selection table
+
+### Enhancements
+
+## 0.14.3 (2021-11-01)
+
+### Bug Fixes
+
+- Fix problem with accessing course product remix
+
+## 0.14.2 (2021-10-28)
+
+### Bug Fixes
+
+- Make score display in gradebook more robust
+
+## 0.14.1 (2021-10-28)
+
+### Bug Fixes
+
 - Fix an issue with Apply Update button and move content updates to async worker
 - Fix text editor issue where image resizing didn't work from right drag handle
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar
 - Fix an issue where previewing a project with no pages crashes
 - Fix some issues related to searching and viewing sortable tables
+- Fix an issue where activity submissions would not display activity feedback
 
 ### Enhancements
 
@@ -16,6 +37,7 @@
 - New Instructor Course Section overview page
 - Allow LMS and System admins to unlink LMS section
 - Gradebook and graded page per student details with instructor centered grade override
+- Student specific progress display
 
 ## 0.14.0 (2021-10-13)
 

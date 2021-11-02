@@ -15,6 +15,7 @@ export interface PageState {
   displayApplicationChrome?: boolean;
   additionalStylesheets?: string[];
   customCss?: string;
+  customScript?: string;
   custom?: any;
 }
 
@@ -30,6 +31,7 @@ const initialState: PageState = {
   displayApplicationChrome: false,
   additionalStylesheets: [],
   customCss: '',
+  customScript: '',
   custom: {},
 };
 
@@ -49,6 +51,7 @@ const slice: Slice<PageState> = createSlice({
       state.additionalStylesheets =
         action.payload.additionalStylesheets || initialState.additionalStylesheets;
       state.customCss = action.payload.customCss || initialState.customCss;
+      state.customScript = action.payload.customScript || initialState.customScript;
       state.custom = action.payload.custom || initialState.custom;
     },
     updatePage(state, action: PayloadAction<Partial<PageState>>) {
@@ -69,6 +72,9 @@ const slice: Slice<PageState> = createSlice({
       }
       if (action.payload.customCss !== undefined) {
         state.customCss = action.payload.customCss;
+      }
+      if (action.payload.customScript !== undefined) {
+        state.customScript = action.payload.customScript;
       }
       if (action.payload.additionalStylesheets !== undefined) {
         state.additionalStylesheets = action.payload.additionalStylesheets;

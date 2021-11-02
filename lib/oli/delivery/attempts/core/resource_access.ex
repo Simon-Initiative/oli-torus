@@ -12,6 +12,8 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
     belongs_to(:resource, Oli.Resources.Resource)
     has_many(:resource_attempts, Oli.Delivery.Attempts.Core.ResourceAttempt)
 
+    field :resource_attempts_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 

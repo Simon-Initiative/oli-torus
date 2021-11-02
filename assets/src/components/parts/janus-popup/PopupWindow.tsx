@@ -7,10 +7,17 @@ interface PopupWindowProps {
   config: any;
   parts: any[];
   context: ContextProps;
+  snapshot?: Record<string, unknown>;
   onClose?: () => void;
 }
 
-const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClose }) => {
+const PopupWindow: React.FC<PopupWindowProps> = ({
+  config,
+  parts,
+  context,
+  onClose,
+  snapshot = {},
+}) => {
   const popupModalStyles: CSSProperties = {
     width: config?.width || 300,
   };
@@ -43,7 +50,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClo
   // position is an offset from the parent element now
   popupModalStyles.left = config.x || 0;
   popupModalStyles.top = config.y || 0;
-  popupModalStyles.zIndex = config.z || 0;
+  popupModalStyles.zIndex = config.z || 1000;
   popupModalStyles.height = config.height || 0;
   popupModalStyles.overflow = 'hidden';
   popupModalStyles.position = 'absolute';
@@ -51,7 +58,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClo
   const popupCloseStyles: CSSProperties = {
     position: 'absolute',
     padding: 0,
-    zIndex: (config.z || 0) + 1,
+    zIndex: (config.z || 1000) + 1,
     background: 'transparent',
     textDecoration: 'none',
     width: '25px',
@@ -74,17 +81,33 @@ const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClo
     height: '100%',
   };
 
+  const closeButtonSpanStyles: CSSProperties = {
+    marginLeft: 12,
+    padding: 0,
+    textShadow: 'none',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    fontWeight: 'bold',
+    fontFamily: 'Arial',
+    marginTop: -6,
+    position: 'absolute',
+    right: 0,
+  };
+
   const handleCloseIconClick = (e: any) => {
     if (onClose) {
       onClose();
     }
   };
 
-  const handlePartInit = () => {
+  const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
     const result: InitResultProps = {
-      snapshot: {},
+      snapshot,
       context,
     };
+
+    /*   console.log('PopupWindow.handlePartInit', { result, id, responses }); */
 
     return result;
   };
@@ -102,7 +125,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({ config, parts, context, onClo
           style={popupCloseStyles}
           onClick={handleCloseIconClick}
         >
-          <span>x</span>
+          <span style={closeButtonSpanStyles}>x</span>
         </button>
       </div>
     </div>

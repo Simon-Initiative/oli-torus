@@ -261,7 +261,8 @@ defmodule OliWeb.Projects.ProjectsLive do
              },
              changes
            )
-         )
+         ),
+       replace: true
      )}
   end
 
