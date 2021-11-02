@@ -5,6 +5,7 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   prop model, :struct, required: true
   prop sort, :event, required: true
+  prop additional_table_class, :string, default: "table-sm"
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do
@@ -70,7 +71,7 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   def render(assigns) do
     ~F"""
-    <table class="table table-striped table-bordered table-sm">
+    <table class={"table table-striped table-bordered " <> @additional_table_class}>
       <thead>
         <tr>
         {#for column_spec <- @model.column_specs}

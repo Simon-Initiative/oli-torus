@@ -172,4 +172,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> update_selection(selected)
     |> sort
   end
+
+  def render_date_column(_, %{inserted_at: inserted_at}, _) do
+    Timex.format!(inserted_at, "{relative}", :relative)
+  end
 end

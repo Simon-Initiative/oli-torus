@@ -1,0 +1,15 @@
+#communities-table .pagination .page-item {
+  &.active {
+    .page-link {
+      background-color: $gray-400;
+    }
+  }
+
+  .page-link {
+    background-color: $gray-700;
+
+    &:hover {
+      background-color: $gray-400;
+    }
+  }
+}

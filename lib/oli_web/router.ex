@@ -702,6 +702,11 @@ defmodule OliWeb.Router do
       end
     end
 
+    scope "/communities" do
+      live("/", CommunityLive.Index)
+      live("/new", CommunityLive.New)
+    end
+
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)
 

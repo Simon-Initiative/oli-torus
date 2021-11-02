@@ -27,7 +27,7 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &__MODULE__.render_date_column/3
+          render_fn: &SortableTableModel.render_date_column/3
         }
       ],
       event_suffix: "",
@@ -61,10 +61,6 @@ defmodule OliWeb.Products.ProductsTableModel do
       label={base_project.title}
       to={Routes.project_path(OliWeb.Endpoint, :overview, base_project.slug)}/>
     """
-  end
-
-  def render_date_column(_, %{inserted_at: inserted_at}, _) do
-    Timex.format!(inserted_at, "{relative}", :relative)
   end
 
   def render(assigns) do

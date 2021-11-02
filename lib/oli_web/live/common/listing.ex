@@ -1,4 +1,4 @@
-defmodule OliWeb.Products.Listing do
+defmodule OliWeb.Common.Listing do
   use Surface.Component
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Paging
@@ -10,6 +10,8 @@ defmodule OliWeb.Products.Listing do
   prop table_model, :struct, required: true
   prop sort, :event, required: true
   prop page_change, :event, required: true
+  prop show_bottom_paging, :boolean, default: true
+  prop additional_table_class, :string
 
   def render(assigns) do
     ~F"""
@@ -19,8 +21,10 @@ defmodule OliWeb.Products.Listing do
       {/if}
       {#if @total_count > 0}
         <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-        <Table model={@table_model} sort={@sort}/>
-        <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+        <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class}/>
+        {#if @show_bottom_paging}
+          <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+        {/if}
       {#else}
         <p>None exist</p>
       {/if}

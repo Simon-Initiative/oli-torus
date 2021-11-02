@@ -2,8 +2,8 @@ defmodule OliWeb.Products.ProductsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias OliWeb.Products.Create
-  alias OliWeb.Products.Filter
-  alias OliWeb.Products.Listing
+  alias OliWeb.Common.Filter
+  alias OliWeb.Common.Listing
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
