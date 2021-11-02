@@ -197,7 +197,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           currentActivityTree,
           timeout,
         });
-      }, 4000);
+      }, 10000);
     });
     sharedActivityPromise = { promise, resolve, reject };
 

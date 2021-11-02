@@ -129,6 +129,8 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     save: props.onSave,
     submit: props.onSubmit,
     resize: props.onResize,
+    getData: props.onGetData || stubHandler,
+    setData: props.onSetData || stubHandler,
     // authoring
     configure: (props as AuthorProps).onConfigure || stubHandler,
     saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -142,6 +144,9 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       save: props.onSave,
       submit: props.onSubmit,
       resize: props.onResize,
+      getData: props.onGetData || stubHandler,
+      setData: props.onSetData || stubHandler,
+
       // authoring
       configure: (props as AuthorProps).onConfigure || stubHandler,
       saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
@@ -153,6 +158,8 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     props.onSave,
     props.onSubmit,
     props.onResize,
+    props.onGetData,
+    props.onSetData,
     (props as AuthorProps).onConfigure,
     (props as AuthorProps).onSaveConfigure,
     (props as AuthorProps).onCancelConfigure,

@@ -96,6 +96,8 @@ export const selectActivityGuidMapping = createSelector(
   (state: PageState) => state.activityGuidMapping,
 );
 
+export const selectUserId = createSelector(selectState, (state) => state.userId);
+
 export const selectUserName = createSelector(selectState, (state) => state.userName);
 
 export const selectScore = createSelector(selectState, (state) => state.score);
