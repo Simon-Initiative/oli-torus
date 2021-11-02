@@ -4,7 +4,7 @@
 
 ### Bug Fixes
 
-- Fix an issue where simultaneous section creations can result in 2 active sections for a given context
+- Fix an issue where simultaneous section creations can result in more than one active sections for a given context
 
 ### Enhancements
 
