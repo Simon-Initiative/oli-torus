@@ -1,3 +1,4 @@
+import { RichText } from 'components/activities/types';
 import { normalizeHref } from 'components/editing/models/link/utils';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Element, Node, Range } from 'slate';
@@ -40,8 +41,6 @@ export const popup = () =>
   create<Popup>({
     type: 'popup',
     trigger: 'hover',
-    // anchorText,
-    // children: [{ type: 'p', children: [{ text: '' }], id: guid() }],
     content: [
       {
         type: 'p',
@@ -49,16 +48,6 @@ export const popup = () =>
         id: guid(),
       },
     ],
-    // content: {
-    //   model: [
-    //     create({
-    //       type: 'p',
-    //       children: [{ text: '' }],
-    //       id: guid(),
-    //     }),
-    //   ],
-    //   selection: null,
-    // },
   });
 
 // eslint-disable-next-line
@@ -249,7 +238,7 @@ export interface InputRef extends Element, Identifiable {
 export interface Popup extends Element, Identifiable {
   type: 'popup';
   trigger: OverlayTriggerType;
-  content: ModelElement[];
+  content: RichText;
 }
 
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';

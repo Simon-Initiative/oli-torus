@@ -1,6 +1,4 @@
 defmodule Oli.Analytics.Datashop.Utils do
-  alias Oli.Rendering.Context
-  alias Oli.Rendering.Content
   import Oli.Utils
   import Oli.Rendering.Utils
   require Logger

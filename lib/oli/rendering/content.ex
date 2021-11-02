@@ -42,7 +42,6 @@ defmodule Oli.Rendering.Content do
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
-  # @callback popup_content(%Context{}, next, %{}, String.t()) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """

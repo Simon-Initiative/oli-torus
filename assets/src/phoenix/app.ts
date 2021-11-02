@@ -88,16 +88,21 @@ $(() => {
     }
   });
 
-  $('body').on('click', (e) => {
+  $('body').on('mousedown', (e) => {
     const isPopover = (e: JQuery.UIEventBase<HTMLElement>) =>
       $(e.target).data('toggle') === 'popover';
     const isClickable = (e: JQuery.UIEventBase<HTMLElement>) =>
       $(e.target).hasClass('popup__click');
     const isPopupContent = (e: JQuery.UIEventBase<HTMLElement>) =>
       $(e.target).parents('.popup__content').length > 0;
+    const isFocused = (e: JQuery.UIEventBase<HTMLElement>) =>
+      document.activeElement && $(document.activeElement).is($(e.target));
 
     if (!isPopover(e) && !isClickable(e) && !isPopupContent(e)) {
-      ($('[data-toggle="popover"]') as any).popover('hide');
+      return ($('[data-toggle="popover"]') as any).popover('hide');
+    }
+    if (isPopover(e) && isClickable(e) && isFocused(e)) {
+      return ($(e.target) as any).popover('toggle');
     }
   });
 

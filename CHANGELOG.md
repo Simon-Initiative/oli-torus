@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- New Popup page element
+
 ## 0.14.3 (2021-11-01)
 
 ### Bug Fixes
@@ -18,11 +20,12 @@
 
 - Make score display in gradebook more robust
 - Fix page editor text selection from resetting when a save triggers
-- Fix formatting toolbar tooltips
+- Fix formatting toolbar tooltips not showing
 - Fix formatting toolbar format toggling
 - Fix insertion toolbar positioning
 - Fix insertion toolbar tooltips not disappearing after inserting content
-- Fix insertion toolbar tooltips
+- Fix insertion toolbar tooltips not showing
+- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 
 ## 0.14.1 (2021-10-28)
 
@@ -31,8 +34,6 @@
 - Fix an issue with Apply Update button and move content updates to async worker
 - Fix text editor issue where image resizing didn't work from right drag handle
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar
-- Fix the "insert content" toolbar positioning
-- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 - Fix an issue where previewing a project with no pages crashes
 - Fix some issues related to searching and viewing sortable tables
 - Fix an issue where activity submissions would not display activity feedback
@@ -40,7 +41,6 @@
 ### Enhancements
 
 - New Admin landing page
-- New Popup page element
 - New Instructor Course Section overview page
 - Allow LMS and System admins to unlink LMS section
 - Gradebook and graded page per student details with instructor centered grade override

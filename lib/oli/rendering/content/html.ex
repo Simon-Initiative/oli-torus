@@ -247,16 +247,24 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
+    trigger =
+      if escape_xml!(trigger) == "hover" do
+        "hover focus"
+      else
+        "manual"
+      end
+
     [
       ~s"""
       <span
         tabindex="0"
         role="button"
-        class="popup__anchorText#{if escape_xml!(trigger) =~ "hover" do
-        ""
-      else
+        class="popup__anchorText#{if !String.contains?(trigger, "hover") do
         " popup__click"
+      else
+        ""
       end}"
+        data-trigger="#{trigger}"
         data-toggle="popover"
         data-placement="top"
         data-html="true"
