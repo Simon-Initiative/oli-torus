@@ -88,7 +88,7 @@
     <script>
     window.$ = $;
     $('.dropdown-toggle').dropdown();
-    <%# $('[data-toggle="popover"]').popover(); %>
+    $('[data-toggle="popover"]').popover();
     </script>
 
     <script>hljs.initHighlightingOnLoad();</script>

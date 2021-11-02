@@ -1,12 +1,20 @@
 @use 'delivery/variables' as delivery;
 
-.popup-link {
-  cursor: pointer;
+.popup__anchorText {
   color: delivery.$orange;
   font-style: italic;
+  cursor: pointer;
 }
 
-.popup-content {
+.slate-editor .popup__anchorText {
+  cursor: inherit;
+}
+
+.popup__click {
+  text-decoration: underline;
+}
+
+.popup__content {
   &.show {
     max-width: 100% !important;
   }
@@ -15,7 +23,7 @@
   }
 }
 
-.popup__modal-content {
+.popup__modalContent {
   text-align: initial;
   min-width: 600px;
 }

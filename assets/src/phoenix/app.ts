@@ -30,7 +30,7 @@ const liveSocket = new LiveSocket('/live', Socket, {
   hooks: Hooks,
   params: { _csrf_token: csrfToken },
   metadata: {
-    keydown: (e: any, el: any) => {
+    keydown: (e: any, _el: any) => {
       return {
         key: e.key,
         shiftKey: e.shiftKey,
@@ -40,8 +40,8 @@ const liveSocket = new LiveSocket('/live', Socket, {
 });
 
 // Show progress bar on live navigation and form submits
-window.addEventListener('phx:page-loading-start', (info) => NProgress.start());
-window.addEventListener('phx:page-loading-stop', (info) => NProgress.done());
+window.addEventListener('phx:page-loading-start', (_info) => NProgress.start());
+window.addEventListener('phx:page-loading-stop', (_info) => NProgress.done());
 
 (window as any).initActivityBridge = initActivityBridge;
 (window as any).initPreviewActivityBridge = initPreviewActivityBridge;
@@ -73,12 +73,33 @@ liveSocket.connect();
 (window as any).liveSocket = liveSocket;
 
 $(() => {
-  $('.popup-wrapper').appendTo('body');
   ($('[data-toggle="popover"]') as any).popover();
   ($('[data-toggle="tooltip"]') as any).tooltip();
-});
-
-$(document).ready(() => {
   ($('.ui.dropdown') as any).dropdown();
   ($('.ui.dropdown.item') as any).dropdown();
+
+  $('[data-toggle="popover"]').on('focus', (e) => {
+    ($('[data-toggle="popover"]:not(.popup__click)') as any).popover('hide');
+    ($(e.target) as any).popover('show');
+  });
+  $('[data-toggle="popover"]').on('blur', (e) => {
+    if (!$(e.target).hasClass('popup__click')) {
+      ($(e.target) as any).popover('hide');
+    }
+  });
+
+  $('body').on('click', (e) => {
+    const isPopover = (e: JQuery.UIEventBase<HTMLElement>) =>
+      $(e.target).data('toggle') === 'popover';
+    const isClickable = (e: JQuery.UIEventBase<HTMLElement>) =>
+      $(e.target).hasClass('popup__click');
+    const isPopupContent = (e: JQuery.UIEventBase<HTMLElement>) =>
+      $(e.target).parents('.popup__content').length > 0;
+
+    if (!isPopover(e) && !isClickable(e) && !isPopupContent(e)) {
+      ($('[data-toggle="popover"]') as any).popover('hide');
+    }
+  });
+
+  (window as any).hljs.initHighlightingOnLoad();
 });

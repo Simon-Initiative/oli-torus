@@ -13,10 +13,7 @@ interface Props {
   commandContext: CommandContext;
 }
 export const PopupContentModal = (props: Props) => {
-  const [content, setContent] = React.useState<RichText>({
-    model: props.model.content,
-    selection: null,
-  });
+  const [content, setContent] = React.useState<RichText>(props.model.content);
   const [trigger, setTrigger] = React.useState(props.model.trigger);
 
   const isTriggerMode = (mode: OverlayTriggerType) => mode === trigger;
@@ -32,11 +29,9 @@ export const PopupContentModal = (props: Props) => {
               onChange={() => setTrigger('hover')}
               checked={isTriggerMode('hover')}
             />
-            <p>Trigger on mouseover</p>
-            <small>
-              Good for shorter content. Students on desktop computers will see this content when
-              they hover over the popup with a mouse. Students on mobile must press.
-            </small>
+            <p>
+              Trigger on <b>mouseover</b>
+            </p>
           </label>
         </div>
         <div className="form-group">
@@ -47,11 +42,9 @@ export const PopupContentModal = (props: Props) => {
               onChange={() => setTrigger('click')}
               checked={isTriggerMode('click')}
             />
-            <p>Trigger on click</p>
-            <small>
-              Good for longer content or including audio, videos. All students must click the popup
-              to see this content.
-            </small>
+            <p>
+              Trigger on <b>click</b>
+            </p>
           </label>
         </div>
       </div>
@@ -61,18 +54,19 @@ export const PopupContentModal = (props: Props) => {
   return (
     <FullScreenModal
       onCancel={(_e) => props.onCancel()}
-      onDone={(_e) => props.onDone({ content: content.model, trigger })}
+      onDone={(_e) => props.onDone({ content, trigger })}
     >
       <div className="row">
         <div className="col-12">
           <h3 className="mb-2">Popup Content</h3>
-          <p className="mb-4">Shown to students when the popup is active</p>
-          <div className="popup__modal-content">
+          <p className="mb-4">Shown to students when triggered</p>
+          <div className="popup__modalContent">
             {triggerSettings}
             <RichTextEditor
+              preventLargeContent
               editMode={true}
-              text={content}
               projectSlug={props.commandContext.projectSlug}
+              value={content}
               onEdit={(content) => setContent(content)}
             />
           </div>

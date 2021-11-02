@@ -7,7 +7,6 @@ defmodule Oli.Rendering.Content do
 
   alias Oli.Rendering.Context
   alias Oli.Utils
-  alias Oli.Rendering.Utils, as: RenderUtils
 
   require Logger
 
@@ -175,23 +174,7 @@ defmodule Oli.Rendering.Content do
         writer.a(context, next, element)
 
       "popup" ->
-        # id = UUID.uuid4()
-
         writer.popup(context, next, element)
-
-        # [
-        #   writer.popup_anchor(context, next, element, id),
-        #   writer.popup_content(
-        #     context,
-        #     fn -> IO.inspect(RenderUtils.parse_html_content(element["content"], context), label: "Parsed") end,
-        #     # fn -> render(context, element["content"], writer) end,
-        #     element["content"],
-        #     id
-        #   )
-        # ]
-
-      # content = RenderUtils.parse_html_content(element["content"], context)
-      # writer.popup(context, next, element, content)
 
       _ ->
         error_id = Utils.generate_error_id()

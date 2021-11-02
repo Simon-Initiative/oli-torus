@@ -250,37 +250,28 @@ defmodule Oli.Rendering.Content.Html do
     [
       ~s"""
       <span
+        tabindex="0"
         role="button"
-        class="popup-link"
-        data-trigger="#{escape_xml!(trigger)}"
+        class="popup__anchorText#{if escape_xml!(trigger) =~ "hover" do
+        ""
+      else
+        " popup__click"
+      end}"
         data-toggle="popover"
         data-placement="top"
         data-html="true"
         data-template='
-          <div class="popover popup-content" role="tooltip">
+          <div class="popover popup__content" role="tooltip">
             <div class="arrow"></div>
             <h3 class="popover-header"></h3>
             <div class="popover-body"></div>
           </div>'
-        data-content="#{escape_xml!(parse_html_content(content, context))}"">
+        data-content="#{escape_xml!(parse_html_content(content, context))}">
         #{next.()}
       </span>\n
       """
     ]
-
-    # [
-    #   ~s|<span role="button" class="popup-link" data-trigger="#{escape_xml!(trigger)}" data-toggle="popover" data-placement="top" data-popover-content="##{id}">#{next.()}</span>\n|
-    # ]
   end
-
-  # def popup_content(%Context{} = _context, next, e, id) do
-  #   IO.inspect(next.())
-
-  #   content = e["content"]
-  #   # [
-  #   #   ~s|<div id="#{id}" class="popup-wrapper d-none"><span class="popup-content">#{next.()}</span></div>\n|
-  #   # ]
-  # end
 
   defp revision_slug_from_course_link(href) do
     href

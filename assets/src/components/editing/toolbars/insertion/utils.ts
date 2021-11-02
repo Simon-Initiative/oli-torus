@@ -1,5 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Editor, Range } from 'slate';
+import { Editor, Element, Range } from 'slate';
 import {
   getHighestTopLevel,
   getNearestBlock,
@@ -9,13 +9,15 @@ import {
 
 export function shouldShowInsertionToolbar(editor: ReactEditor) {
   const { selection } = editor;
-  const isSelectionCollapsed =
-    selection && ReactEditor.isFocused(editor) && Range.isCollapsed(selection);
+  if (!selection) return false;
+  const isSelectionCollapsed = ReactEditor.isFocused(editor) && Range.isCollapsed(selection);
 
   const isInParagraph =
-    Array.from(
-      Editor.nodes(editor, { match: (n) => n.type === 'p' && (n.children as any)[0].text === '' }),
-    ).length > 0;
+    [
+      ...Editor.nodes(editor, {
+        match: (n) => Element.isElement(n) && n.type === 'p' && n.children[0].text === '',
+      }),
+    ].length > 0;
 
   const isTopLevelOrInTable =
     isTopLevel(editor) ||

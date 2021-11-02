@@ -34,6 +34,7 @@ import {
 } from 'data/content/model';
 import React from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import { WriterContext } from './context';
@@ -250,20 +251,22 @@ export class HtmlParser implements WriterImpl {
   }
 
   popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: Popup) {
+    const trigger: OverlayTriggerType[] =
+      this.escapeXml(popup.trigger) === 'hover' ? ['hover', 'focus'] : ['focus'];
+
     const popupContent = (
       <Popover id={popup.id}>
-        <Popover.Content>{contentNext()}</Popover.Content>
+        <Popover.Content className="popup__content">{contentNext()}</Popover.Content>
       </Popover>
     );
 
     return (
-      <OverlayTrigger
-        // trigger={this.escapeXml(popup.trigger) as OverlayTriggerType}
-        trigger={['hover', 'click']}
-        placement="top"
-        overlay={popupContent}
-      >
-        <span role="button" className="popup-link">
+      <OverlayTrigger trigger={trigger} placement="top" overlay={popupContent}>
+        <span
+          tabIndex={0}
+          role="button"
+          className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
+        >
           {anchorNext()}
         </span>
       </OverlayTrigger>

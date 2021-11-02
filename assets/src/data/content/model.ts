@@ -27,7 +27,8 @@ export const link = (href = '') =>
   create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
 export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
-export const p = () => create<Paragraph>({ type: 'p' });
+export const p = (children?: ModelElement[]) =>
+  create<Paragraph>(children ? { type: 'p', children } : { type: 'p' });
 export const code = (): Code => ({
   type: 'code',
   id: guid(),

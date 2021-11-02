@@ -17,18 +17,23 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
   const arrowSize = 8;
 
   const content = (
-    <div className="hovering-toolbar">
+    <div className="hovering-toolbar" onMouseDown={(e) => e.preventDefault()}>
       <div className="btn-group btn-group-sm" role="group">
         {props.children}
       </div>
     </div>
   );
 
+  const target = props.target || <span style={{ userSelect: 'none', display: 'none' }}></span>;
+
+  if (!props.isOpen(editor)) {
+    return target;
+  }
+
   return (
     <Popover
       isOpen={props.isOpen(editor)}
       align={'center'}
-      onClickOutside={props.onClickOutside}
       padding={5}
       parentElement={props.parentRef?.current || undefined}
       content={({ childRect, popoverRect }) => {
@@ -70,7 +75,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
             }
       }
     >
-      {props.target || <span style={{ userSelect: 'none', display: 'none' }}></span>}
+      {target}
     </Popover>
   );
 });

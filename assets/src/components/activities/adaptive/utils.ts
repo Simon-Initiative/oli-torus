@@ -40,7 +40,6 @@ export function fromText(text: string): { id: string; content: RichText } {
           id: guid() + '',
         }),
       ],
-      selection: null,
     },
   };
 }

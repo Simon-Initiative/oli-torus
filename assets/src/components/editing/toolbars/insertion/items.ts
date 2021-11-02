@@ -5,13 +5,21 @@ import { ToolbarItem } from 'components/editing/commands/interfaces';
 import { commandDesc as tableCommandDesc } from 'components/editing/commands/table/TableCmd';
 import { commandDesc as webpageCmdDesc } from 'components/editing/commands/WebpageCmd';
 import { commandDesc as ytCmdDesc } from 'components/editing/commands/YoutubeCmd';
-import { ResourceType } from 'data/content/resource';
 
+type ToolbarContentType = 'all' | 'small';
 // Can be extended to provide different insertion toolbar options based on resource type
-export function getToolbarForResourceType(
-  resourceType: ResourceType,
+export function getToolbarForContentType(
   onRequestMedia: any,
+  type = 'all' as ToolbarContentType,
 ): ToolbarItem[] {
+  if (type === 'small') {
+    return [
+      codeCmd,
+      imageCommandBuilder(onRequestMedia),
+      ytCmdDesc,
+      audioCommandBuilder(onRequestMedia),
+    ];
+  }
   return [
     tableCommandDesc,
     codeCmd,

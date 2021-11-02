@@ -5,10 +5,17 @@ import { HtmlParser } from './html';
 import { ContentWriter } from './writer';
 
 interface Props {
-  text: RichText;
+  content: RichText;
   context: WriterContext;
   style?: React.CSSProperties;
 }
-export const HtmlContentModelRenderer: React.FC<Props> = ({ text, context, style }: Props) => (
-  <div style={style}>{new ContentWriter().render(context, text.model, new HtmlParser())}</div>
-);
+export const HtmlContentModelRenderer: React.FC<Props> = (props) => {
+  // Support content persisted when RichText had a `model` property.
+  const content = (props.content as any).model ? (props.content as any).model : props.content;
+
+  return (
+    <div style={props.style}>
+      {new ContentWriter().render(props.context, content, new HtmlParser())}
+    </div>
+  );
+};

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { useFocused, useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import { CommandContext, ToolbarItem } from '../../commands/interfaces';
 import { DropdownToolbarButton, hideToolbar, showToolbar, Spacer, ToolbarButton } from '../common';
 import { positionInsertion, shouldShowInsertionToolbar } from './utils';
@@ -25,19 +26,20 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
   const ref = useRef<HTMLDivElement>(null);
   const editor = useSlate();
   const focused = useFocused();
+  const id = guid();
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
-
-    if (!el) {
-      return;
-    }
+    if (!el) return;
 
     const reposition = () => positionInsertion(el, editor);
+    if (!isPopoverOpen) {
+      hideToolbar(el);
+    }
 
-    if (focused && shouldShowInsertionToolbar(editor)) {
+    if (isPopoverOpen || (focused && shouldShowInsertionToolbar(editor))) {
       reposition();
       showToolbar(el);
     } else {
@@ -51,11 +53,15 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
     };
   });
 
+  if (!isPopoverOpen && !shouldShowInsertionToolbar(editor)) {
+    return null;
+  }
+
   return (
     <div
       style={{ display: 'none' }}
-      onMouseDown={(e) => e.preventDefault()}
       ref={ref}
+      id={id}
       className={classNames(['toolbar add-resource-content', isPopoverOpen ? 'active' : ''])}
     >
       <div className="insert-button-container">
@@ -97,6 +103,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
                         tooltip: t.description(editor),
                         command: t.command,
                         context: props.commandContext,
+                        parentElement: id,
                         setParentPopoverOpen: setIsPopoverOpen,
                       };
 

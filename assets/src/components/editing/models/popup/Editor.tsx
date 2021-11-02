@@ -7,7 +7,7 @@ import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolba
 import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
 import * as ContentModel from 'data/content/model';
 import { centeredAbove } from 'data/content/utils';
-import React, { useState } from 'react';
+import React from 'react';
 import { Range } from 'slate';
 import { useFocused, useSelected } from 'slate-react';
 import './Editor.scss';
@@ -16,15 +16,11 @@ interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
   const focused = useFocused();
   const selected = useSelected();
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { attributes, children, editor, model } = props;
 
-  console.log('model', model);
-
   const onEdit = (changes: Partial<ContentModel.Popup>) => {
     updateModel<ContentModel.Popup>(editor, model, changes);
-    // setIsPopoverOpen(false);
   };
 
   const commands = [
@@ -63,11 +59,9 @@ export const PopupEditor = (props: Props) => {
       target={
         <span
           {...attributes}
+          style={{ paddingRight: 2 }}
           id={props.model.id}
-          className="popup-link"
-          onClick={() => {
-            setIsPopoverOpen(true);
-          }}
+          className="popup__anchorText"
         >
           {children}
         </span>

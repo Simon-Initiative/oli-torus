@@ -23,7 +23,7 @@ const command: Command = {
 export const commandDesc: CommandDesc = {
   type: 'CommandDesc',
   icon: () => 'outbound',
-  description: () => 'Popup',
+  description: () => 'Popup Content',
   command,
   active: (e) => isActive(e, 'popup'),
 };

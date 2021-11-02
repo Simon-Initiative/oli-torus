@@ -16,16 +16,13 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
   }
 
   const errorText = makeContent('There was an error processing this response');
-  const totalScoreText: RichText = {
-    model: [
-      {
-        type: 'p',
-        children: [{ text: 'Total Score', strong: true }],
-        id: guid(),
-      },
-    ],
-    selection: null,
-  };
+  const totalScoreText: RichText = [
+    {
+      type: 'p',
+      children: [{ text: 'Total Score', strong: true }],
+      id: guid(),
+    },
+  ];
 
   if (parts.length === 1) {
     const error = parts[0].error;
@@ -37,7 +34,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
         outOf={outOf}
       >
         <HtmlContentModelRenderer
-          text={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
+          content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
           context={context}
         />
       </Component>
@@ -47,7 +44,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
   return (
     <>
       <Component resultClass={resultClass(score, outOf, undefined)} score={score} outOf={outOf}>
-        <HtmlContentModelRenderer text={totalScoreText} context={context} />
+        <HtmlContentModelRenderer content={totalScoreText} context={context} />
       </Component>
       {parts.map((partState) => {
         if (!partState.score && !partState.outOf) {
@@ -63,7 +60,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
             outOf={partState.outOf}
           >
             <HtmlContentModelRenderer
-              text={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
+              content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
               context={context}
             />
           </Component>

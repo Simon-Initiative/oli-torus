@@ -7,10 +7,6 @@ export function hideToolbar(el: HTMLElement) {
   el.style.display = 'none';
 }
 
-export function isToolbarHidden(el: HTMLElement) {
-  return el.style.display === 'none';
-}
-
 export function showToolbar(el: HTMLElement) {
   el.style.display = 'block';
 }
@@ -33,6 +29,7 @@ interface ToolbarButtonProps {
   disabled?: boolean;
   position?: 'left' | 'right' | 'top' | 'bottom';
   setParentPopoverOpen?: (b: boolean) => void;
+  parentElement?: string;
 }
 
 export const ToolbarButton = ({
@@ -44,23 +41,20 @@ export const ToolbarButton = ({
   description,
   setParentPopoverOpen,
   tooltip,
+  position,
+  parentElement,
 }: ToolbarButtonProps) => {
   const editor = useSlate();
 
   return (
     <button
+      data-container={parentElement && `#${parentElement}`}
       data-toggle="tooltip"
       ref={(r) => ($(r as any) as any).tooltip()}
-      data-placement="right"
+      data-placement={position === undefined ? 'right' : position}
       title={tooltip}
       className={`btn btn-sm btn-light ${style || ''} ${(active && 'active') || ''}`}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
+      onClick={(_e) => {
         setParentPopoverOpen && setParentPopoverOpen(false);
         command.execute(context, editor);
       }}
@@ -79,6 +73,7 @@ export const DropdownToolbarButton = ({
   description,
   setParentPopoverOpen,
   tooltip,
+  parentElement,
 }: ToolbarButtonProps) => {
   const editor = useSlate();
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
@@ -100,11 +95,10 @@ export const DropdownToolbarButton = ({
       padding={5}
       positions={['right']}
       reposition={false}
-      content={() => (
-        <div>{(command as any).obtainParameters(context, editor, onDone, onCancel)}</div>
-      )}
+      content={() => <div>{command.obtainParameters?.(context, editor, onDone, onCancel)}</div>}
     >
       <button
+        data-container={parentElement || false}
         data-toggle="tooltip"
         data-placement="top"
         title={tooltip}

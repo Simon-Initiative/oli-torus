@@ -61,12 +61,7 @@ export function textNodesInSelection(editor: ReactEditor) {
 }
 
 export function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
-  const [match] = Editor.nodes(editor, {
-    match: (n) => n[mark] === true,
-    universal: true,
-  });
-
-  return !!match;
+  return marksInPartOfSelection(editor).includes(mark);
 }
 
 // Returns a Mark[] that apply to the entire current selection
@@ -161,7 +156,6 @@ export const isActive = (editor: ReactEditor, type: string | string[]) => {
     match: (n) =>
       typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1,
   });
-
   return !!match;
 };
 

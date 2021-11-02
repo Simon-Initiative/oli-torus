@@ -11,6 +11,12 @@
 ### Bug Fixes
 
 - Make score display in gradebook more robust
+- Fix page editor text selection from resetting when a save triggers
+- Fix formatting toolbar tooltips
+- Fix formatting toolbar format toggling
+- Fix insertion toolbar positioning
+- Fix insertion toolbar tooltips not disappearing after inserting content
+- Fix insertion toolbar tooltips
 
 ## 0.14.1 (2021-10-28)
 
