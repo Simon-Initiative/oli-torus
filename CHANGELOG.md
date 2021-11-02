@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue with sorting by title in open and free source selection table
+
 ### Enhancements
 
 ## 0.14.3 (2021-11-01)
