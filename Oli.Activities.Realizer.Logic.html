@@ -10,7 +10,7 @@
     <title>Oli.Activities.Realizer.Logic — OLI Torus v0.14.3</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-188a642ace.js"></script>
+    <script src="dist/sidebar_items-1e0b37d1d4.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -101,34 +101,34 @@ Oli.Activities.Realizer.Logic <small class="app-vsn">(OLI Torus v0.14.3)</small>
 for realizing (aka selecting) activities from the activity bank.</p><p>At an abstract level, the grammar implemented here is:
 &lt;&lt;Logic&gt;&gt; := &lt;&lt;Clause&gt;&gt; || &lt;&lt;Expression&gt;&gt;
 &lt;&lt;Clause&gt;&gt; := [&lt;&lt;Clause&gt;&gt;] || [&lt;&lt;Expression&gt;&gt;]
-&lt;&lt;Expression&gt;&gt; :: Fact Operator Value</p><p>With a &lt;&lt;Clause&gt;&gt; being of type conjunction or disjunction (all vs any)</p><p>The client-side code represents this structure in JSON as:</p><pre><code class="makeup elixir"><span class="p" data-group-id="0458997537-1">{</span><span class="w">
- </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-2">{</span><span class="w">
+&lt;&lt;Expression&gt;&gt; :: Fact Operator Value</p><p>With a &lt;&lt;Clause&gt;&gt; being of type conjunction or disjunction (all vs any)</p><p>The client-side code represents this structure in JSON as:</p><pre><code class="makeup elixir"><span class="p" data-group-id="3176925201-1">{</span><span class="w">
+ </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-2">{</span><span class="w">
     </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;any&quot;</span><span class="p">,</span><span class="w">
-    </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-3">[</span><span class="p" data-group-id="0458997537-4">{</span><span class="w">
+    </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-3">[</span><span class="p" data-group-id="3176925201-4">{</span><span class="w">
       </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-5">[</span><span class="p" data-group-id="0458997537-6">{</span><span class="w">
+      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-5">[</span><span class="p" data-group-id="3176925201-6">{</span><span class="w">
         </span><span class="ss">fact</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;tags&#39;</span><span class="p">,</span><span class="w">
         </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;contains&#39;</span><span class="p">,</span><span class="w">
-        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-7">[</span><span class="mi">40</span><span class="p" data-group-id="0458997537-7">]</span><span class="w">
-      </span><span class="p" data-group-id="0458997537-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0458997537-8">{</span><span class="w">
+        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-7">[</span><span class="mi">40</span><span class="p" data-group-id="3176925201-7">]</span><span class="w">
+      </span><span class="p" data-group-id="3176925201-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3176925201-8">{</span><span class="w">
         </span><span class="ss">fact</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;objectives&#39;</span><span class="p">,</span><span class="w">
         </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;containsExactly&#39;</span><span class="p">,</span><span class="w">
-        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-9">[</span><span class="mi">5</span><span class="p" data-group-id="0458997537-9">]</span><span class="w">
-      </span><span class="p" data-group-id="0458997537-8">}</span><span class="p" data-group-id="0458997537-5">]</span><span class="w">
-    </span><span class="p" data-group-id="0458997537-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0458997537-10">{</span><span class="w">
+        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-9">[</span><span class="mi">5</span><span class="p" data-group-id="3176925201-9">]</span><span class="w">
+      </span><span class="p" data-group-id="3176925201-8">}</span><span class="p" data-group-id="3176925201-5">]</span><span class="w">
+    </span><span class="p" data-group-id="3176925201-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3176925201-10">{</span><span class="w">
       </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;all&quot;</span><span class="w">
-      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-11">[</span><span class="p" data-group-id="0458997537-12">{</span><span class="w">
+      </span><span class="ss">children</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-11">[</span><span class="p" data-group-id="3176925201-12">{</span><span class="w">
         </span><span class="ss">fact</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;tags&#39;</span><span class="p">,</span><span class="w">
         </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;doesNotContain&#39;</span><span class="p">,</span><span class="w">
-        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0458997537-13">[</span><span class="mi">48</span><span class="p" data-group-id="0458997537-13">]</span><span class="w">
-      </span><span class="p" data-group-id="0458997537-12">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0458997537-14">{</span><span class="w">
+        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3176925201-13">[</span><span class="mi">48</span><span class="p" data-group-id="3176925201-13">]</span><span class="w">
+      </span><span class="p" data-group-id="3176925201-12">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3176925201-14">{</span><span class="w">
         </span><span class="ss">fact</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;text&#39;</span><span class="p">,</span><span class="w">
         </span><span class="ss">operator</span><span class="p">:</span><span class="w"> </span><span class="sc">&#39;contains&#39;</span><span class="p">,</span><span class="w">
         </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;some text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="0458997537-14">}</span><span class="p" data-group-id="0458997537-11">]</span><span class="w">
-    </span><span class="p" data-group-id="0458997537-10">}</span><span class="p" data-group-id="0458997537-3">]</span><span class="w">
-  </span><span class="p" data-group-id="0458997537-2">}</span><span class="w">
-</span><span class="p" data-group-id="0458997537-1">}</span></code></pre>
+      </span><span class="p" data-group-id="3176925201-14">}</span><span class="p" data-group-id="3176925201-11">]</span><span class="w">
+    </span><span class="p" data-group-id="3176925201-10">}</span><span class="p" data-group-id="3176925201-3">]</span><span class="w">
+  </span><span class="p" data-group-id="3176925201-2">}</span><span class="w">
+</span><span class="p" data-group-id="3176925201-1">}</span></code></pre>
         </section>
 
 
