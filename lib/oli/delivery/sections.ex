@@ -384,7 +384,22 @@ defmodule Oli.Delivery.Sections do
         limit: 1,
         select: s
     )
-    |> List.first()
+    |> one_or_warn(context_id)
+  end
+
+  defp one_or_warn(result, context_id) do
+    case result do
+      [] ->
+        nil
+
+      [first] ->
+        first
+
+      [first | _] ->
+        Logger.warn("More than one active section was returned for context_id #{context_id}")
+
+        first
+    end
   end
 
   @doc """
