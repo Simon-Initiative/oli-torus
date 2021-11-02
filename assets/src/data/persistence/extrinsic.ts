@@ -22,6 +22,56 @@ export function readGlobal(keys: string[] | null = null) {
   return makeRequest<ExtrinsicRead>(params);
 }
 
+export const readGlobalUserState = async (
+  keys: string[] | null = null,
+  useLocalStorage = false,
+) => {
+  let result: any = {};
+
+  if (useLocalStorage) {
+    // localStorage API doesn't support the "get all" behavior, so we need to put everything into a single object
+    const storedUserState = JSON.parse(localStorage.getItem('torus.userState') || '{}');
+    if (keys) {
+      keys.forEach((key) => {
+        result[key] = storedUserState[key];
+      });
+    } else {
+      result = storedUserState;
+    }
+  } else {
+    const serverUserState = await readGlobal(keys);
+    // merge server state with result
+    if ((serverUserState as any).type !== 'ServerError') {
+      result = serverUserState;
+    }
+  }
+
+  return result;
+};
+
+export const updateGlobalUserState = async (
+  updates: { [topKey: string]: { [key: string]: any } },
+  useLocalStorage = false,
+) => {
+  const topLevelKeys = Object.keys(updates);
+  const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
+
+  const newState = { ...currentState };
+  topLevelKeys.forEach((topKey) => {
+    const actualKeys = Object.keys(updates[topKey]);
+    actualKeys.forEach((actualKey) => {
+      newState[topKey] = { ...newState[topKey], [actualKey]: updates[topKey][actualKey] };
+    });
+  });
+
+  if (useLocalStorage) {
+    localStorage.setItem('torus.userState', JSON.stringify(newState));
+  } else {
+    await upsertGlobal(newState);
+  }
+  return newState;
+};
+
 export function deleteGlobal(keys: string[]) {
   const params = {
     method: 'DELETE',
@@ -72,12 +122,12 @@ export function upsertSection(slug: SectionSlug, keyValues: KeyValues) {
 // Take a list of string key names and turn it into the form expected by
 // Phoenix: foo[]=bar&foo[]=baz&foo[]=qux.
 function toKeyParams(keys: string[] | null = null) {
-  keys === null
+  return keys === null
     ? ''
     : '?' +
-      keys
-        .reduce((p, k) => {
-          return p + '&keys[]=' + k;
-        }, '')
-        .substr(1);
+        keys
+          .reduce((p, k) => {
+            return p + '&keys[]=' + k;
+          }, '')
+          .substr(1);
 }
