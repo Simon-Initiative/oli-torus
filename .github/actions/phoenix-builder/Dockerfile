@@ -3,7 +3,7 @@ FROM amazonlinux:2
 RUN yum update -y
 RUN yum install -y tar wget git
 
-RUN yum install ncurses-devel openssl-devel -y
+RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
