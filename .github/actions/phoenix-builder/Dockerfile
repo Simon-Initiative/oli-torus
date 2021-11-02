@@ -3,7 +3,7 @@ FROM amazonlinux:2
 RUN yum update -y
 RUN yum install -y tar wget git
 
-RUN yum install ncurses-devel openssl-devel -y
+RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
@@ -33,10 +33,6 @@ RUN npm install -g yarn
 # fix elixir encoding warning
 # https://stackoverflow.com/questions/32407164/the-vm-is-running-with-native-name-encoding-of-latin1-which-may-cause-elixir-to
 ENV LANG=C.UTF-8
-
-# replace openssl-devel with regular openssl now that we are done with it
-# and need proper openssl for appsignal_phoenix
-RUN yum remove openssl-devel -y && yum install openssl -y
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
