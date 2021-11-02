@@ -8,6 +8,12 @@
 
 ### Enhancements
 
+## 0.14.3 (2021-11-01)
+
+### Bug Fixes
+
+- Fix problem with accessing course product remix
+
 ## 0.14.2 (2021-10-28)
 
 ### Bug Fixes
