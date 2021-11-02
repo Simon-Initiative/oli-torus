@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where simultaneous section creations can result in 2 active sections for a given context
+
 ### Enhancements
 
 ## 0.14.3 (2021-11-01)

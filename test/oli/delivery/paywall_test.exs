@@ -24,7 +24,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: map.institution.id,
           base_project_id: map.project.id
         })
@@ -41,7 +41,7 @@ defmodule Oli.Delivery.PaywallTest do
           timezone: "1",
           registration_open: true,
           has_grace_period: false,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
           end_date: DateTime.add(DateTime.utc_now(), 5),
           institution_id: map.institution.id,
@@ -157,7 +157,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: map.institution.id,
           base_project_id: map.project.id
         })
@@ -171,7 +171,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: map.institution.id,
           base_project_id: map.project.id
         })
@@ -189,7 +189,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
           end_date: DateTime.add(DateTime.utc_now(), 5),
           institution_id: map.institution.id,
@@ -206,7 +206,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
           end_date: DateTime.add(DateTime.utc_now(), 5),
           institution_id: map.institution.id,
@@ -319,7 +319,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: map.institution.id,
           base_project_id: map.project.id
         })
@@ -333,7 +333,7 @@ defmodule Oli.Delivery.PaywallTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: map.institution.id,
           base_project_id: map.project.id
         })

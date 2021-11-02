@@ -324,7 +324,7 @@ defmodule Oli.Seeder do
         title: "1",
         timezone: "1",
         registration_open: true,
-        context_id: "1",
+        context_id: UUID.uuid4(),
         institution_id: map.institution.id,
         base_project_id: map.project.id
       })
@@ -336,7 +336,7 @@ defmodule Oli.Seeder do
         title: "2",
         timezone: "1",
         registration_open: true,
-        context_id: "2",
+        context_id: UUID.uuid4(),
         institution_id: map.institution.id,
         base_project_id: map.project.id
       })
@@ -349,7 +349,7 @@ defmodule Oli.Seeder do
         timezone: "1",
         registration_open: true,
         open_and_free: true,
-        context_id: "3",
+        context_id: UUID.uuid4(),
         institution_id: map.institution.id,
         base_project_id: map.project.id
       })
@@ -381,7 +381,7 @@ defmodule Oli.Seeder do
       start_date: ~U[2010-04-17 00:00:00.000000Z],
       timezone: "some timezone",
       title: "some title",
-      context_id: "context_id",
+      context_id: UUID.uuid4(),
       base_project_id: map.project.id,
       institution_id: map.institution.id
     }
@@ -403,7 +403,7 @@ defmodule Oli.Seeder do
           start_date: ~U[2010-04-17 00:00:00.000000Z],
           timezone: "some timezone",
           title: "some title",
-          context_id: "context_id",
+          context_id: UUID.uuid4(),
           base_project_id: map.project.id,
           institution_id: map.institution.id
         },
