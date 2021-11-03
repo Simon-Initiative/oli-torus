@@ -10,7 +10,7 @@
   margin: 0 6px 15px 0 !important;
   min-height: 20px;
   line-height: normal !important;
-  vertical-align: middle;
+  vertical-align: text-top;
 }
 /*<div id="mcq" class="mcq-input"> <div class=""> <input name="mcq" id="" type="radio" value="" class="">*/
 #stage-stage .mcq-input input {
@@ -98,7 +98,7 @@
   width: 6px;
   content: '';
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
-  border: 2px solid #ffffff;
+  border: 3px solid #ffffff;
   border-top: 0;
   border-left: 0;
   transform: rotate(45deg) scale(0.4) translate(-50%, -50%);
@@ -107,8 +107,15 @@
   top: 50%;
   left: 0;
   opacity: 0;
-  margin-left: 5px;
+  margin-left: 4px;
   margin-top: -2px;
+}
+
+
+/*align checkbox to top-left of text*/
+#stage-stage .mcq-input label:before,
+#stage-stage .mcq-input input[type=checkbox]+label:after {
+    top: 0.75rem;
 }
 
 /*<div id="mcq" class="mcq-input"> <div class=""> <input name="mcq" id="" type="radio" value="" class=""> <label for="" class=""> <div class="">*/
