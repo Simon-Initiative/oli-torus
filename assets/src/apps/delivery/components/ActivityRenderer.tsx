@@ -253,8 +253,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     submitEvaluations: onSubmitEvaluations,
     activityReady: onReady,
     resizePart: onResize,
-    getData: readUserData,
-    setData: saveUserData,
+    getUserData: readUserData,
+    setUserData: saveUserData,
   };
 
   const [isReady, setIsReady] = useState(false);
