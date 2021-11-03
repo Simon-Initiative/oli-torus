@@ -144,6 +144,11 @@ Oli.Delivery.Evaluation.Rule.html
 Oli.Delivery.Evaluation.Standard.html
 Oli.Delivery.Evaluation.html
 Oli.Delivery.ExtrinsicState.html
+Oli.Delivery.Gating.GatingCondition.html
+Oli.Delivery.Gating.GatingConditionData.html
+Oli.Delivery.Gating.Strategies.Schedule.html
+Oli.Delivery.Gating.Strategies.Strategy.html
+Oli.Delivery.Gating.html
 Oli.Delivery.Hierarchy.HierarchyNode.html
 Oli.Delivery.Hierarchy.html
 Oli.Delivery.Page.ActivityContext.html
@@ -579,8 +584,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-ac80991064.js
-dist/sidebar_items-1e0b37d1d4.js
+dist/search_items-7fa241dc95.js
+dist/sidebar_items-51cf4bc5e7.js
 index.html
 license.html
 readme.html
