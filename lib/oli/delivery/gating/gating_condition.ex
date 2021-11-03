@@ -9,13 +9,12 @@ defmodule Oli.Delivery.Gating.GatingCondition do
   schema "gating_conditions" do
     field :type, Ecto.Enum,
       values: [
-        :start_datetime,
-        :end_datetime
+        :schedule,
       ]
 
     # data used by the condition evaluator, e.g. start or end datetime, a list of
     # resource_ids, etc.
-    field :data, :map
+    embeds_one :data, Oli.Delivery.Gating.GatingConditionData, on_replace: :delete
 
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :section, Oli.Delivery.Sections.Section
@@ -29,7 +28,8 @@ defmodule Oli.Delivery.Gating.GatingCondition do
   @doc false
   def changeset(gating_condition, attrs) do
     gating_condition
-    |> cast(attrs, [:type, :data, :resource_id, :section_id, :user_id])
-    |> validate_required([:type, :data, :resource_id, :section_id])
+    |> cast(attrs, [:type, :resource_id, :section_id, :user_id])
+    |> cast_embed(:data)
+    |> validate_required([:type, :resource_id, :section_id])
   end
 end

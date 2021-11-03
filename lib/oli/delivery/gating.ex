@@ -9,19 +9,6 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Delivery.Gating.GatingCondition
 
   @doc """
-  Returns the list of gating_conditions.
-
-  ## Examples
-
-      iex> list_gating_conditions()
-      [%GatingCondition{}, ...]
-
-  """
-  def list_gating_conditions do
-    Repo.all(GatingCondition)
-  end
-
-  @doc """
   Returns the list of gating_conditions for the list of given resource ids
 
   ## Examples
@@ -30,9 +17,11 @@ defmodule Oli.Delivery.Gating do
       [%GatingCondition{}, ...]
 
   """
-  def list_gating_conditions(resource_ids) do
+  def list_gating_conditions(section_id, resource_ids) do
     from(gc in GatingCondition,
-      where: gc.resource_id in ^resource_ids
+      where:
+        gc.section_id == ^section_id and
+          gc.resource_id in ^resource_ids
     )
     |> Repo.all()
   end
