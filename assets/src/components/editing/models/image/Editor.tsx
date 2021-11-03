@@ -1,16 +1,15 @@
-import { EditorProps } from 'components/editing/models/interfaces';
-import { getEditMode, updateModel } from 'components/editing/models/utils';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
-import { Resizer } from 'components/misc/resizer/Resizer';
-import * as ContentModel from 'data/content/model';
-import { centeredAbove, displayModelToClassName } from 'data/content/utils';
 import React, { useRef } from 'react';
-import { Transforms } from 'slate';
-import { ReactEditor, useFocused, useSelected } from 'slate-react';
+import { useFocused, useSelected, ReactEditor } from 'slate-react';
+import { updateModel, getEditMode } from 'components/editing/models/utils';
+import * as ContentModel from 'data/content/model';
+import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from '../settings/Settings';
+import { Transforms } from 'slate';
+import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { initCommands } from './commands';
-
+import { centeredAbove, displayModelToClassName } from 'data/content/utils';
+import { Resizer } from 'components/misc/resizer/Resizer';
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps): JSX.Element => {
   const { attributes, children, editor, model } = props;
@@ -33,12 +32,6 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   const setCaption = (caption: string) => {
     onEdit(update({ caption }));
   };
-
-  console.log(
-    'show resizer',
-    ReactEditor.isFocused(editor) && selected && imageRef.current,
-    imageRef.current?.getBoundingClientRect(),
-  );
 
   return (
     <div
