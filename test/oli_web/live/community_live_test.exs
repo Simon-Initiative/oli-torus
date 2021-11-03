@@ -157,15 +157,12 @@ defmodule OliWeb.CommunityLiveTest do
     test "saves new community when data is valid", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
+      params = params_for(:community)
+
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(%{
-        community: %{
-          name: "Testing name",
-          description: "Testing description",
-          key_contact: "Testing key contact",
-          prohibit_global_access: true
-        }
+        community: params
       })
 
       assert view
@@ -173,16 +170,9 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                "Community succesfully created."
 
-      assert [
-               %Community{
-                 name: "Testing name",
-                 description: "Testing description",
-                 key_contact: "Testing key contact",
-                 prohibit_global_access: true
-               }
-               | _tail
-             ] =
-               Groups.list_communities()
+      [%Community{name: name} | _tail] = Groups.list_communities()
+
+      assert ^name = params.name
     end
   end
 end

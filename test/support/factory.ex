@@ -8,7 +8,7 @@ defmodule Oli.Factory do
       name: sequence("Example Community"),
       description: "An awesome description",
       key_contact: "keycontact@example.com",
-      prohibit_global_access: false
+      global_access: true
     }
   end
 end

@@ -11,7 +11,7 @@ defmodule OliWeb.Common.Listing do
   prop sort, :event, required: true
   prop page_change, :event, required: true
   prop show_bottom_paging, :boolean, default: true
-  prop additional_table_class, :string
+  prop additional_table_class, :string, default: "table-sm"
 
   def render(assigns) do
     ~F"""

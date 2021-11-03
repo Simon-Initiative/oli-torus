@@ -6,7 +6,7 @@ defmodule Oli.Groups.Community do
     field :name, :string
     field :description, :string
     field :key_contact, :string
-    field :prohibit_global_access, :boolean
+    field :global_access, :boolean, default: true
 
     timestamps(type: :utc_datetime)
   end
@@ -14,7 +14,7 @@ defmodule Oli.Groups.Community do
   @doc false
   def changeset(community, attrs \\ %{}) do
     community
-    |> cast(attrs, [:name, :description, :key_contact, :prohibit_global_access])
+    |> cast(attrs, [:name, :description, :key_contact, :global_access])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

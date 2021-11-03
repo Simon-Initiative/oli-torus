@@ -47,9 +47,9 @@ defmodule OliWeb.CommunityLive.New do
             <TextInput class="form-control" opts={placeholder: "Key Contact"}/>
           </Field>
 
-          <Field name={:prohibit_global_access} class="form-check">
+          <Field name={:global_access} class="form-check">
             <Checkbox class="form-check-input"/>
-            <Label class="form-check-label" text="Prohibit access to Global Project or Products"/>
+            <Label class="form-check-label" text="Access to Global Project or Products"/>
           </Field>
 
           <button class="btn btn-md btn-primary btn-block mt-3" type="submit">Create</button>

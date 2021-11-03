@@ -9,24 +9,20 @@ defmodule Oli.GroupsTest do
     alias Oli.Groups.Community
 
     test "create_community/1 with valid data creates a community" do
-      assert {:ok, %Community{} = community} =
-        Groups.create_community(%{
-          name: "Testing name",
-          description: "Testing description",
-          key_contact: "Testing key contact",
-          prohibit_global_access: false})
+      params = params_for(:community)
+      assert {:ok, %Community{} = community} = Groups.create_community(params)
 
-      assert community.name == "Testing name"
-      assert community.description == "Testing description"
-      assert community.key_contact == "Testing key contact"
-      assert community.prohibit_global_access == false
+      assert community.name == params.name
+      assert community.description == params.description
+      assert community.key_contact == params.key_contact
+      assert community.global_access == params.global_access
     end
 
     test "create_community/1 with existing name returns error changeset" do
       insert(:community, %{name: "Testing"})
 
-      assert {:error, %Ecto.Changeset{}}
-        = Groups.create_community(%{name: "Testing"})
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community(%{name: "Testing"})
     end
 
     test "list_communities/0 returns ok when there are no communities" do
