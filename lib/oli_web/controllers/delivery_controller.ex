@@ -12,6 +12,8 @@ defmodule OliWeb.DeliveryController do
 
   import Oli.Utils
 
+  require Logger
+
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
@@ -286,50 +288,63 @@ defmodule OliWeb.DeliveryController do
     user = conn.assigns.current_user
 
     # guard against creating a new section if one already exists
-    case Sections.get_section_from_lti_params(lti_params) do
-      nil ->
-        issuer = lti_params["iss"]
-        client_id = lti_params["aud"]
-        deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    Repo.transaction(fn ->
+      case Sections.get_section_from_lti_params(lti_params) do
+        nil ->
+          issuer = lti_params["iss"]
+          client_id = lti_params["aud"]
+          deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
-        {institution, _registration, deployment} =
-          Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+          {institution, _registration, deployment} =
+            Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
 
-        # create section, section resources and enroll instructor
-        {:ok, section} =
-          case source_id do
-            "publication:" <> publication_id ->
-              create_from_publication(
-                String.to_integer(publication_id),
-                user,
-                institution,
-                lti_params,
-                deployment
-              )
+          # create section, section resources and enroll instructor
+          {:ok, section} =
+            case source_id do
+              "publication:" <> publication_id ->
+                create_from_publication(
+                  String.to_integer(publication_id),
+                  user,
+                  institution,
+                  lti_params,
+                  deployment
+                )
 
-            "product:" <> product_id ->
-              create_from_product(
-                String.to_integer(product_id),
-                user,
-                institution,
-                lti_params,
-                deployment
-              )
+              "product:" <> product_id ->
+                create_from_product(
+                  String.to_integer(product_id),
+                  user,
+                  institution,
+                  lti_params,
+                  deployment
+                )
+            end
+
+          if is_remix?(params) do
+            conn
+            |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
+          else
+            conn
+            |> redirect(to: Routes.delivery_path(conn, :index))
           end
 
-        if is_remix?(params) do
+        section ->
+          # a section already exists, redirect to index
           conn
-          |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
-        else
-          conn
-          |> redirect(to: Routes.delivery_path(conn, :index))
-        end
-
-      section ->
-        # a section already exists, redirect to index
+          |> put_flash(:error, "Unable to create new section. This section already exists.")
+          |> redirect_to_page_delivery(section)
+      end
+    end)
+    |> case do
+      {:ok, conn} ->
         conn
-        |> put_flash(:error, "Unable to create new section. This section already exists.")
-        |> redirect_to_page_delivery(section)
+
+      {:error, error} ->
+        Logger.error("Failed to create new section: #{inspect(error)}")
+
+        conn
+        |> put_flash(:error, "Failed to create new section")
+        |> redirect(to: Routes.delivery_path(conn, :index))
     end
   end
 

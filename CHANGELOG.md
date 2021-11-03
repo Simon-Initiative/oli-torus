@@ -4,13 +4,14 @@
 
 ### Bug Fixes
 
+- Fix an issue where simultaneous section creations can result in more than one active sections for a given context
 - Fix an issue with sorting by title in open and free source selection table
 
 ### Enhancements
 
 ### Release Notes
 
-**OpenSSL 11 Upgrade Required**
+**OpenSSL 1.1.1 Upgrade Required**
 
 Releases are now built using openssl11-devel for erlang which means that openssl11 is required
 to be installed on the deployment target for all future releases.
