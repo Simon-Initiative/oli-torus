@@ -18,7 +18,6 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
   const focused = useFocused();
   const selected = useSelected();
 
-  const parentRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const editMode = getEditMode(editor);
@@ -35,10 +34,15 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
     onEdit(update({ caption }));
   };
 
+  console.log(
+    'show resizer',
+    ReactEditor.isFocused(editor) && selected && imageRef.current,
+    imageRef.current?.getBoundingClientRect(),
+  );
+
   return (
     <div
       {...attributes}
-      ref={parentRef}
       style={{ userSelect: 'none' }}
       className={'image-editor text-center ' + displayModelToClassName(model.display)}
     >
