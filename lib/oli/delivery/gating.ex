@@ -9,11 +9,11 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Delivery.Gating.GatingCondition
 
   @doc """
-  Returns the list of gating_conditions for the list of given resource ids
+  Returns the list of gating_conditions for a section and list of resource ids
 
   ## Examples
 
-      iex> list_gating_conditions([1,2,3])
+      iex> list_gating_conditions(123, [1,2,3])
       [%GatingCondition{}, ...]
 
   """
