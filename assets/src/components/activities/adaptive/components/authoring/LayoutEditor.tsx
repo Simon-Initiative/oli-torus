@@ -6,9 +6,10 @@ import {
 } from 'apps/delivery/components/NotificationContext';
 import { AnyPartComponent, defaultCapabilities } from 'components/parts/types/parts';
 import EventEmitter from 'events';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Draggable from 'react-draggable';
 import { clone } from 'utils/common';
+import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
 
 interface LayoutEditorProps {
@@ -365,9 +366,22 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   }, [pusher]);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
+    console.log('LE:PartInit', { id, responses });
+    return {
+      snapshot: {},
+      context: {
+        mode: contexts.AUTHOR,
+        host: containerRef.current,
+      },
+    };
+  };
+
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>
-      <div className="activity-content">
+      <div ref={containerRef} className="activity-content">
         <style>
           {`
           .activity-content {
@@ -490,7 +504,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
             configureMode: part.id === configurePartId,
             editMode: true,
             portal: portalId,
-            onInit: defaultHandler,
+            onInit: handlePartInit,
             onReady: defaultHandler,
             onSave: defaultHandler,
             onSubmit: defaultHandler,

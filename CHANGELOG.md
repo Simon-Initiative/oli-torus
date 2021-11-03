@@ -4,7 +4,36 @@
 
 ### Bug Fixes
 
+- Fix an issue with sorting by title in open and free source selection table
+
 ### Enhancements
+
+### Release Notes
+
+**OpenSSL 11 Upgrade Required**
+
+Releases are now built using openssl11-devel for erlang which means that openssl11 is required
+to be installed on the deployment target for all future releases.
+```
+# Centos/Redhat
+sudo yum install openssl
+
+# Debian/Ubuntu
+sudo apt install openssl
+```
+
+**Environment Configs**
+
+The following environment configs are now available for AppSignal integration. All are required
+for AppSignal support. If none are specified, AppSignal integration will be disabled.
+
+```
+APPSIGNAL_OTP_APP       (Optional) AppSignal integration OTP app. Should be set to "oli".
+APPSIGNAL_PUSH_API_KEY  (Optional) AppSignal API Key
+APPSIGNAL_APP_NAME      (Optional) AppSignal app name. e.g. "Torus"
+APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
+
+```
 
 ## 0.14.3 (2021-11-01)
 

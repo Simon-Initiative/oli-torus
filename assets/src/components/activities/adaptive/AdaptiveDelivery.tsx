@@ -164,12 +164,16 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
           partsInitDeferred.resolve({
             snapshot: readyResults.snapshot || {},
-            context: readyResults.context,
+            context: { ...readyResults.context, host: props.mountPoint },
             env,
           });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
-          partsInitDeferred.resolve({ snapshot: {}, context: { mode: 'VIEWER' }, env: scriptEnv });
+          partsInitDeferred.resolve({
+            snapshot: {},
+            context: { mode: 'VIEWER', host: props.mountPoint },
+            env: scriptEnv,
+          });
         }
       }
       return partsInitDeferred.promise;
