@@ -1,30 +1,51 @@
 defmodule OliWeb.ProductControllerTest do
+  @moduledoc false
+
   use OliWeb.ConnCase
 
   alias Oli.Seeder
 
-  describe "product controller tests" do
+  describe "index" do
     setup [:setup_session]
 
-    test "can fetch all products", %{
+    test "lists all products", %{
       conn: conn,
-      api_key: api_key
+      api_key: api_key,
+      map: map
     } do
-      conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
+      prod1 = map.prod1
+      prod2 = map.prod2
 
       conn =
-        get(
-          conn,
-          Routes.product_path(conn, :index)
-        )
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> Base.encode64(api_key))
+        |> get(Routes.product_path(conn, :index))
 
-      assert %{"result" => "success", "products" => products} = json_response(conn, 200)
-      assert length(products) == 2
-      assert Enum.find(products, fn p -> p["amount"] == "$100.00" end)
-      assert Enum.find(products, fn p -> p["amount"] == "$24.99" end)
+      assert json_response(conn, 200)["products"] == [
+               %{
+                 "amount" => Money.to_string!(prod1.amount),
+                 "grace_period_days" => prod1.grace_period_days,
+                 "grace_period_strategy" => Atom.to_string(prod1.grace_period_strategy),
+                 "has_grace_period" => prod1.has_grace_period,
+                 "requires_payment" => prod1.requires_payment,
+                 "slug" => prod1.slug,
+                 "status" => Atom.to_string(prod1.status),
+                 "title" => prod1.title
+               },
+               %{
+                 "amount" => nil,
+                 "grace_period_days" => 0,
+                 "grace_period_strategy" => Atom.to_string(prod2.grace_period_strategy),
+                 "has_grace_period" => prod2.has_grace_period,
+                 "requires_payment" => prod2.requires_payment,
+                 "slug" => prod2.slug,
+                 "status" => Atom.to_string(prod2.status),
+                 "title" => prod2.title
+               }
+             ]
     end
 
-    test "request fails when api key does not have product scope", %{
+    test "renders error when api key does not have product scope", %{
       conn: conn,
       api_key: api_key,
       key: key
@@ -33,16 +54,12 @@ defmodule OliWeb.ProductControllerTest do
 
       Oli.Interop.update_key(key, %{products_enabled: false})
 
-      conn =
-        get(
-          conn,
-          Routes.product_path(conn, :index)
-        )
+      conn = get(conn, Routes.product_path(conn, :index))
 
       assert response(conn, 401)
     end
 
-    test "request fails when api key has been disabled", %{
+    test "renders error when api key has been disabled", %{
       conn: conn,
       api_key: api_key,
       key: key
@@ -51,11 +68,7 @@ defmodule OliWeb.ProductControllerTest do
 
       Oli.Interop.update_key(key, %{status: :disabled})
 
-      conn =
-        get(
-          conn,
-          Routes.product_path(conn, :index)
-        )
+      conn = get(conn, Routes.product_path(conn, :index))
 
       assert response(conn, 401)
     end
@@ -64,7 +77,15 @@ defmodule OliWeb.ProductControllerTest do
   defp setup_session(%{conn: conn}) do
     map =
       Seeder.base_project_with_resource2()
-      |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+      |> Seeder.create_product(
+        %{
+          title: "My 1st product",
+          amount: Money.new(:USD, 100),
+          requires_payment: true,
+          grace_period_days: 14
+        },
+        :prod1
+      )
       |> Seeder.create_product(
         %{title: "My 2nd product", amount: Money.new(:USD, "24.99")},
         :prod2
