@@ -30,6 +30,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
 
+  require Logger
+
   def browse_enrollments(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
@@ -369,7 +371,7 @@ defmodule Oli.Delivery.Sections do
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
 
-    Repo.one(
+    Repo.all(
       from s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
@@ -378,8 +380,26 @@ defmodule Oli.Delivery.Sections do
         where:
           s.context_id == ^context_id and s.status != :deleted and r.issuer == ^issuer and
             r.client_id == ^client_id,
+        order_by: [asc: :id],
+        limit: 1,
         select: s
     )
+    |> one_or_warn(context_id)
+  end
+
+  defp one_or_warn(result, context_id) do
+    case result do
+      [] ->
+        nil
+
+      [first] ->
+        first
+
+      [first | _] ->
+        Logger.warn("More than one active section was returned for context_id #{context_id}")
+
+        first
+    end
   end
 
   @doc """

@@ -122,6 +122,7 @@ defmodule Oli.Delivery.Sections.Section do
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)
+    |> unique_constraint(:context_id, name: :sections_active_context_id_unique_index)
     |> Slug.update_never("sections")
   end
 

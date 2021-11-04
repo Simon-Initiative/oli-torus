@@ -46,6 +46,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   sectionSlug?: string;
   userId: number;
   notify?: EventEmitter;
+  mountPoint?: HTMLElement;
 
   onReadUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
   onWriteUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
@@ -126,13 +127,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.onRequestHint = (attemptGuid: string, partAttemptGuid: string) =>
       this.dispatch('requestHint', attemptGuid, partAttemptGuid);
 
-    this.onGetData = (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-      return this.dispatch('getData', attemptGuid, partAttemptGuid, payload);
-    };
+    this.onGetData = (attemptGuid: string, partAttemptGuid: string, payload: any) =>
+      this.dispatch('getUserData', attemptGuid, partAttemptGuid, payload);
 
-    this.onSetData = (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-      return this.dispatch('setData', attemptGuid, partAttemptGuid, payload);
-    };
+    this.onSetData = (attemptGuid: string, partAttemptGuid: string, payload: any) =>
+      this.dispatch('setUserData', attemptGuid, partAttemptGuid, payload);
 
     this.onSaveActivity = (attemptGuid: string, partResponses: PartResponse[]) =>
       this.dispatch('saveActivity', attemptGuid, undefined, partResponses);
@@ -218,6 +217,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onResize: this.onResize,
       userId,
       notify: this._notify,
+      mountPoint: this.mountPoint,
     };
   }
 

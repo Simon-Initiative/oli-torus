@@ -25,7 +25,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
@@ -134,7 +134,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: another.project.id
         })
@@ -148,7 +148,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
