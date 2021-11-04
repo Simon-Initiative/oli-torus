@@ -20,6 +20,8 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
       '\t\t<asset name="questions">webcontent/customact/parts1.xml</asset>\n' +
       '\t</assets>\n' +
       '</embed_activity>',
+    resourceBase: guid(),
+    resourceURLs: [],
     stem: fromText(''),
     title: 'Embedded activity',
     authoring: {
