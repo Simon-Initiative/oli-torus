@@ -64,6 +64,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   idx,
   overrideHeight,
   columns = 1,
+  onConfigOptionClick,
+  index,
+  configureMode,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -95,10 +98,71 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       onSelected(selection);
     }
   };
-
   return (
     <React.Fragment>
       <div style={mcqItemStyles}>
+        {configureMode && (
+          <>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 2)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fa fa-trash"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Delete the option"
+              ></i>{' '}
+            </button>
+
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 1)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+              }}
+            >
+              <i
+                className="fas fa-edit"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Edit the option"
+              ></i>{' '}
+            </button>
+            <button
+              className="aa-add-button btn btn-primary btn-sm"
+              type="button"
+              aria-describedby="button-tooltip"
+              onClick={() => onConfigOptionClick(index, 3)}
+              style={{
+                fontSize: '10px;',
+                padding: 1,
+                marginLeft: 4,
+                cursor: 'pointer',
+                marginRight: 2,
+              }}
+            >
+              <i
+                className="fas fa-plus"
+                style={{ cursor: 'pointer', color: 'white' }}
+                aria-hidden="true"
+                title="Add new option"
+              ></i>{' '}
+            </button>
+          </>
+        )}
         <input
           style={{ position: 'absolute', marginTop: 5 }}
           name={groupId}
@@ -489,7 +553,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     // watch for new choices that may be set programmatically
     // trigger item selection handler for each
     if (
-      multipleSelection &&
       prevSelectedChoices &&
       // if previous selected is less than 1 and selected are greater than 1
       ((prevSelectedChoices.length < 1 && selectedChoices.length > 0) ||
@@ -497,11 +560,11 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         (prevSelectedChoices.length > 0 &&
           !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
     ) {
-      let shouldSave = false;
+      // if we reach here, it means selectedChoices is being set from either init or mutate state and
+      //hence need to save the variables.
+
       if (!selectedChoicesText?.length) {
-        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
-        //hence need to save the props.
-        shouldSave = true;
+        //update SelectedChoicesText with the latest selection
         const choicesText = selectedChoices.map((choice) => getOptionTextById(options, choice));
         setSelectedChoicesText(choicesText);
       }
@@ -513,7 +576,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             textValue: getOptionTextById(options, selectedChoice),
             checked: true,
           },
-          shouldSave,
+          true,
         );
       });
     }
@@ -636,7 +699,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   if (customCssClass === 'four-columns') {
     columns = 4;
   }
-
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (

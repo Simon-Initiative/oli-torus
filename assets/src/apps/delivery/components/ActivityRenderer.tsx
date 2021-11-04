@@ -32,7 +32,9 @@ import {
   selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
-import { selectPreviewMode } from '../store/features/page/slice';
+import { debounce } from 'lodash';
+import * as Extrinsic from 'data/persistence/extrinsic';
+import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -58,6 +60,11 @@ const defaultHandler = async () => {
 // because of events and function references, we need to store state outside of the function
 const sharedAttemptStateMap = new Map();
 
+const AllAttemptStateList: {
+  activityId: string | undefined;
+  attemptGuid: string;
+  attempt: unknown;
+}[] = [];
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -75,7 +82,36 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onRequestLatestState = async () => ({ snapshot: {} }),
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
-  const currentUserId = 1; // TODO from state
+  const currentUserId = useSelector(selectUserId);
+
+  const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    const objId = `${payload.key}`;
+    debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
+  };
+
+  const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
+    // Read only the key from the simid
+    const objId = `${payload.key}`;
+    const data = debouncedReadData({ isPreviewMode, payload, objId });
+    return data;
+  };
+
+  const debouncedReadData = debounce(
+    async ({ isPreviewMode, payload, objId }) => {
+      const retrievedData = await Extrinsic.readGlobalUserState([payload.simId], isPreviewMode);
+      return retrievedData?.[payload.simId]?.[objId];
+    },
+    500,
+    { maxWait: 10000, leading: true, trailing: false },
+  );
+
+  const debouncedSaveData = debounce(
+    async ({ isPreviewMode, payload, objId, value }) => {
+      await Extrinsic.updateGlobalUserState({ [payload.simId]: { [objId]: value } }, isPreviewMode);
+    },
+    200,
+    { maxWait: 10000, leading: true, trailing: false },
+  );
 
   const activityState: ActivityState = {
     attemptGuid: 'foo',
@@ -217,6 +253,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     submitEvaluations: onSubmitEvaluations,
     activityReady: onReady,
     resizePart: onResize,
+    getUserData: readUserData,
+    setUserData: saveUserData,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -232,7 +270,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       let isForMe = false;
 
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
-      if (attemptGuid === currentAttempt.attemptGuid) {
+      const currentActivityAllAttempt = AllAttemptStateList.filter(
+        (activityAttempt) =>
+          activityAttempt.activityId === activity.id && activityAttempt.attemptGuid === attemptGuid,
+      );
+
+      if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
         /* console.log('EVENT FOR ME', { e, activity, attempt }); */
         isForMe = true;
       }
@@ -301,6 +344,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
+        AllAttemptStateList.push({
+          activityId: activity?.id,
+          attemptGuid: lastCheckResults.attempt.attemptGuid,
+          attempt: lastCheckResults.attempt,
+        });
       }
       notifyCheckComplete(lastCheckResults);
     }
@@ -312,12 +360,30 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateFacts = useSelector(selectInitStateFacts);
+
+  const updateGlobalState = async (snapshot: any, stateFacts: any) => {
+    const payloadData = {} as any;
+    stateFacts.map((fact: string) => {
+      // EverApp Information
+      if (fact.startsWith('app.')) {
+        const data = fact.split('.');
+        const objId = data.splice(2).join('.');
+        const value = snapshot[fact];
+        payloadData[data[1]] = { ...payloadData[data[1]], [objId]: value };
+      }
+    });
+    await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+  };
+
   const notifyContextChanged = async () => {
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
+
+    updateGlobalState(snapshot, initStateFacts);
+
     const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
       acc[key] = snapshot[key];
       return acc;
@@ -370,6 +436,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onSubmitPart,
     onReady,
     onResize,
+    onSetData: saveUserData,
+    onGetData: readUserData,
   };
 
   // don't render until we're already listening!

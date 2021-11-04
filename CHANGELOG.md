@@ -4,6 +4,54 @@
 
 ### Bug Fixes
 
+- Fix an issue where simultaneous section creations can result in more than one active sections for a given context
+- Fix an issue with sorting by title in open and free source selection table
+
+### Enhancements
+
+### Release Notes
+
+**OpenSSL 1.1.1 Upgrade Required**
+
+Releases are now built using openssl11-devel for erlang which means that openssl11 is required
+to be installed on the deployment target for all future releases.
+```
+# Centos/Redhat
+sudo yum install openssl
+
+# Debian/Ubuntu
+sudo apt install openssl
+```
+
+**Environment Configs**
+
+The following environment configs are now available for AppSignal integration. All are required
+for AppSignal support. If none are specified, AppSignal integration will be disabled.
+
+```
+APPSIGNAL_OTP_APP       (Optional) AppSignal integration OTP app. Should be set to "oli".
+APPSIGNAL_PUSH_API_KEY  (Optional) AppSignal API Key
+APPSIGNAL_APP_NAME      (Optional) AppSignal app name. e.g. "Torus"
+APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
+
+```
+
+## 0.14.3 (2021-11-01)
+
+### Bug Fixes
+
+- Fix problem with accessing course product remix
+
+## 0.14.2 (2021-10-28)
+
+### Bug Fixes
+
+- Make score display in gradebook more robust
+
+## 0.14.1 (2021-10-28)
+
+### Bug Fixes
+
 - Fix an issue with Apply Update button and move content updates to async worker
 - Fix text editor issue where image resizing didn't work from right drag handle
 - Fix text editor issue where link editing tooltip could overlap with formatting toolbar

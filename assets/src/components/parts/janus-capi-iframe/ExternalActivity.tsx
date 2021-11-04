@@ -11,15 +11,6 @@ import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
-const fakeUserStorage: any = {};
-const getFromUserStorage = async (simId: string | number, key: string | number) =>
-  fakeUserStorage[simId]?.[key];
-const setToUserStorage = async (simId: string | number, key: string | number, value: any) => {
-  if (!fakeUserStorage[simId]) {
-    fakeUserStorage[simId] = {};
-  }
-  fakeUserStorage[simId][key] = value;
-};
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
 const getExternalActivityMap = () => {
@@ -534,10 +525,16 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
 
     try {
-      // TODO: this should call an actual API that fetches from user storage
-      const val = await getFromUserStorage(simId, key);
-      const value = val || {};
+      if (!props.onGetData) {
+        return;
+      }
+      const val = await props.onGetData({ simId, key, id });
+      let value = val || '{}';
+
       const exists = val !== undefined;
+      if (exists && typeof val !== 'string') {
+        value = JSON.stringify(val);
+      }
       response.values.responseType = 'success';
       response.values.value = value;
       response.values.exists = exists;
@@ -545,6 +542,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       response.values.responseType = 'error';
       response.values.error = err;
     }
+
+    console.log('Sending the response', response);
 
     sendFormedResponse(
       simLife.handshake,
@@ -603,8 +602,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
 
     try {
-      // TODO: this should call a real API to write to user storage
-      await setToUserStorage(simId, key, value);
+      if (!props.onSetData) {
+        return;
+      }
+      const obj = value;
+      await props.onSetData({ simId, key, value: obj, id });
       response.values.responseType = 'success';
       response.values.value = value;
     } catch (err) {

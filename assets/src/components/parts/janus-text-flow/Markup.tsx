@@ -86,7 +86,7 @@ const templatizeText = (text: string, state: any, env?: Environment): string => 
       }
     }
     if (!stateValue) {
-      return;
+      return '';
     }
     let strValue = stateValue;
     /* console.log({ strValue, typeOD: typeof stateValue }); */
