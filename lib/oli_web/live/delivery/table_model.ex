@@ -13,17 +13,18 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
       rows: products,
       column_specs: [
         %ColumnSpec{
-          name: :title,
+          name: :action,
           label: "",
           render_fn: &__MODULE__.render_action_column/3
         },
         %ColumnSpec{
           name: :title,
           label: "Title",
-          render_fn: &__MODULE__.render_title_column/3
+          render_fn: &__MODULE__.render_title_column/3,
+          sort_fn: &__MODULE__.sort_title_column/2
         },
         %ColumnSpec{
-          name: :title,
+          name: :type,
           label: "Type",
           render_fn: &__MODULE__.render_type_column/3
         },
@@ -79,6 +80,9 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         """
     end
   end
+
+  def sort_title_column(sort_order, sort_spec),
+    do: {& &1.project, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
 
   def render_action_column(assigns, item, _) do
     id =

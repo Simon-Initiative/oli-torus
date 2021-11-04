@@ -36,7 +36,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
             title: title,
             timezone: "1",
             registration_open: true,
-            context_id: "1",
+            context_id: UUID.uuid4(),
             institution_id:
               if is_nil(institution) do
                 nil
