@@ -15,14 +15,11 @@
 
 **OpenSSL 1.1.1 Upgrade Required**
 
-Releases are now built using openssl11-devel for erlang which means that openssl11 is required
+Releases are now built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required
 to be installed on the deployment target for all future releases.
 ```
-# Centos/Redhat
-sudo yum install openssl
-
-# Debian/Ubuntu
-sudo apt install openssl
+# centos
+sudo yum install openssl11
 ```
 
 **Environment Configs**
