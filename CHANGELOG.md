@@ -15,8 +15,8 @@
 
 **OpenSSL 1.1.1 Upgrade Required**
 
-Releases are now built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required
-to be installed on the deployment target for all future releases.
+Releases are now built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required to be installed on the deployment target for all future releases.
+
 ```
 # centos
 sudo yum install openssl11
@@ -24,8 +24,7 @@ sudo yum install openssl11
 
 **Environment Configs**
 
-The following environment configs are now available for AppSignal integration. All are required
-for AppSignal support. If none are specified, AppSignal integration will be disabled.
+The following environment configs are now available for AppSignal integration. All are required for AppSignal support. If none are specified, AppSignal integration will be disabled.
 
 ```
 APPSIGNAL_OTP_APP       (Optional) AppSignal integration OTP app. Should be set to "oli".
