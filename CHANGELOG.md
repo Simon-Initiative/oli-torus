@@ -1,13 +1,15 @@
 # Changelog
 
 ## Unreleased
+### Bug Fixes
+### Enhancements
+### Release Notes
 
+## 0.14.4 (2021-11-04)
 ### Bug Fixes
 
 - Fix an issue where simultaneous section creations can result in more than one active sections for a given context
 - Fix an issue with sorting by title in open and free source selection table
-
-### Enhancements
 
 ### Release Notes
 
