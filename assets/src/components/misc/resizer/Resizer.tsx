@@ -39,34 +39,41 @@ export const Resizer = ({ onResize, element, constrainProportions }: Props): Rea
     return () => window.removeEventListener('mouseup', onMouseUp);
   }, [resizingFrom, element]);
 
-  const boundResizeStyles = !element
-    ? {}
-    : resizeHandleStyles(
-        !resizingFrom || !mousePosition
-          ? offsetBoundingRect(element)
-          : boundingRectFromMousePosition(
-              clientBoundingRect(element),
-              offsetBoundingRect(element),
-              mousePosition,
-              resizingFrom,
-            ),
-      );
+  const boundResizeStyles: (pos: Position | 'border') => Partial<BoundingRect> = (() => {
+    const currentlyResizing = resizingFrom && mousePosition;
+    if (!element) return () => ({ top: 0, left: 0, width: 0, height: 0 });
+    if (!currentlyResizing) return resizeHandleStyles(offsetBoundingRect(element));
+    return resizeHandleStyles(
+      boundingRectFromMousePosition(
+        clientBoundingRect(element),
+        offsetBoundingRect(element),
+        mousePosition,
+        resizingFrom,
+      ),
+    );
+  })();
 
-  const onMouseDown = (position: Position) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    e.preventDefault();
-    setResizingFrom(position);
-  };
+  const onMouseDown = React.useCallback(
+    (position: Position) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      e.preventDefault();
+      setResizingFrom(position);
+    },
+    [],
+  );
 
-  const resizeHandle = (position: Position) => (
-    <div
-      onMouseDown={onMouseDown(position)}
-      className="resize-selection-box-handle"
-      style={boundResizeStyles(position)}
-    ></div>
+  const resizeHandle = React.useCallback(
+    (position: Position) => (
+      <div
+        onMouseDown={onMouseDown(position)}
+        className="resize-selection-box-handle"
+        style={boundResizeStyles(position)}
+      ></div>
+    ),
+    [],
   );
 
   return (
-    <div>
+    <>
       <div className="resize-selection-box-border" style={boundResizeStyles('border')}></div>
       {resizeHandle('nw')}
       {resizeHandle('ne')}
@@ -80,6 +87,6 @@ export const Resizer = ({ onResize, element, constrainProportions }: Props): Rea
           {resizeHandle('w')}
         </>
       )}
-    </div>
+    </>
   );
 };

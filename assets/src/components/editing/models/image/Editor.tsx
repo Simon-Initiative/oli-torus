@@ -10,6 +10,7 @@ import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolba
 import { initCommands } from './commands';
 import { centeredAbove, displayModelToClassName } from 'data/content/utils';
 import { Resizer } from 'components/misc/resizer/Resizer';
+
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps): JSX.Element => {
   const { attributes, children, editor, model } = props;
