@@ -529,7 +529,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         return;
       }
       const val = await props.onGetData({ simId, key, id });
-      let value = val || '{}';
+      let value = val;
 
       const exists = val !== undefined;
       if (exists && typeof val !== 'string') {
@@ -543,7 +543,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       response.values.error = err;
     }
 
-    console.log('Sending the response', response);
+    /* console.log('Sending the response', response); */
 
     sendFormedResponse(
       simLife.handshake,
