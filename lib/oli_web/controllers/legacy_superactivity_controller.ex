@@ -269,7 +269,7 @@ defmodule OliWeb.LegacySuperactivityController do
 #          Oli.Resources.ResourceType.get_id_by_type("page")
 #      end)
 
-    IO.inspect(page_nodes, limit: :infinity)
+    IO.inspect(hierarchy, limit: :infinity)
     {:error, "command not supported", 400}
   end
 

@@ -12,3 +12,34 @@
     }
   }
 }
+
+.rendered-react-keyed-file-browser {
+  .files table {
+    width: 100%;
+    margin-bottom: 2rem;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  .action-bar {
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    display: flex;
+    align-items: flex-start;
+
+    input[type="search"] {
+      display: block;
+      flex-grow: 2;
+      min-width: 300px;
+      padding: 0.25rem 0.5rem;
+      font-size: 1rem;
+      line-height: 1em;
+      margin-bottom: 0.5rem;
+      border: 0.1rem solid #ddd;
+    }
+  }
+}
