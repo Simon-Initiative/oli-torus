@@ -65,7 +65,12 @@ export const updateGlobalUserState = async (
   });
 
   if (useLocalStorage) {
-    localStorage.setItem('torus.userState', JSON.stringify(newState));
+    const existingState = localStorage.getItem('torus.userState') || '{}';
+    const parsedState = JSON.parse(existingState);
+
+    const mergedState = { ...parsedState, ...newState };
+
+    localStorage.setItem('torus.userState', JSON.stringify(mergedState));
   } else {
     await upsertGlobal(newState);
   }
