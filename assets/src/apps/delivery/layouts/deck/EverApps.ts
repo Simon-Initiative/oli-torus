@@ -219,6 +219,11 @@ export const getEverAppActivity = (everAppObj: any, url: string, index: number) 
   updatedObject.id = everAppObj.id + index;
   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
   updatedObject.content.partsLayout[0].custom.src = url;
+  if (url.split('/').includes('ispk-bio-blue-planet-report')) {
+    // To Show Blue Planet Report in a wider IFrame
+    updatedObject.content.partsLayout[0].custom.width = 850;
+    updatedObject.content.partsLayout[0].custom.x = -720;
+  }
   return updatedObject;
 };
 
