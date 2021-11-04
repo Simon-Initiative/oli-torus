@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.14.3">
+    <meta name="project" content="OLI Torus v0.14.4">
 
-    <title>Oli.Cldr.Rbnf.Ordinal — OLI Torus v0.14.3</title>
+    <title>Oli.Cldr.Rbnf.Ordinal — OLI Torus v0.14.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-ac097a8eb1.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.14.3
+        v0.14.4
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Cldr.Rbnf.Ordinal <small class="app-vsn">(OLI Torus v0.14.3)</small>
+Oli.Cldr.Rbnf.Ordinal <small class="app-vsn">(OLI Torus v0.14.4)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/cldr.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -99,10 +99,10 @@ Oli.Cldr.Rbnf.Ordinal <small class="app-vsn">(OLI Torus v0.14.3)</small>
         <section id="moduledoc">
 <p>Functions to implement the ordinal rule-based-number-format rules of CLDR.</p><p>As CLDR notes, the data is incomplete or non-existent for many languages.  It
 is considered complete for English however.</p><p>The standard public API for RBNF is via the <a href="https://hexdocs.pm/ex_cldr_numbers/2.22.1/Cldr.Number.html#to_string/2"><code class="inline">Cldr.Number.to_string/2</code></a> function.</p><p>The functions on this module are defined at compile time based upon the RBNF rules
-defined in the Unicode CLDR data repository.  Available rules are identified by:</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Rbnf.Ordinal</span><span class="o">.</span><span class="n">rule_sets</span><span class="p" data-group-id="2400140487-1">(</span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="2400140487-1">)</span><span class="w">
-</span><span class="p" data-group-id="2400140487-2">[</span><span class="ss">:digits_ordinal</span><span class="p" data-group-id="2400140487-2">]</span></code></pre><p>A rule can then be invoked on an available rule_set.  For example</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Rbnf.Ordinal</span><span class="o">.</span><span class="n">digits_ordinal</span><span class="p" data-group-id="6148600456-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="6148600456-1">)</span><span class="w">
-</span><span class="s">&quot;123rd&quot;</span></code></pre><p>This call is equivalent to the call through the public API of:</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Number</span><span class="o">.</span><span class="n">to_string</span><span class="p" data-group-id="7973061821-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">format</span><span class="p">:</span><span class="w"> </span><span class="ss">:ordinal</span><span class="p" data-group-id="7973061821-1">)</span><span class="w">
-</span><span class="p" data-group-id="7973061821-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;123rd&quot;</span><span class="p" data-group-id="7973061821-2">}</span></code></pre>
+defined in the Unicode CLDR data repository.  Available rules are identified by:</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Rbnf.Ordinal</span><span class="o">.</span><span class="n">rule_sets</span><span class="p" data-group-id="9714397969-1">(</span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="9714397969-1">)</span><span class="w">
+</span><span class="p" data-group-id="9714397969-2">[</span><span class="ss">:digits_ordinal</span><span class="p" data-group-id="9714397969-2">]</span></code></pre><p>A rule can then be invoked on an available rule_set.  For example</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Rbnf.Ordinal</span><span class="o">.</span><span class="n">digits_ordinal</span><span class="p" data-group-id="9686431846-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="9686431846-1">)</span><span class="w">
+</span><span class="s">&quot;123rd&quot;</span></code></pre><p>This call is equivalent to the call through the public API of:</p><pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Oli.Cldr.Number</span><span class="o">.</span><span class="n">to_string</span><span class="p" data-group-id="2396850054-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">format</span><span class="p">:</span><span class="w"> </span><span class="ss">:ordinal</span><span class="p" data-group-id="2396850054-1">)</span><span class="w">
+</span><span class="p" data-group-id="2396850054-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;123rd&quot;</span><span class="p" data-group-id="2396850054-2">}</span></code></pre>
         </section>
 
 
