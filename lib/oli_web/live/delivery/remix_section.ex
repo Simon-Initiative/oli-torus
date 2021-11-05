@@ -96,6 +96,27 @@ defmodule OliWeb.Delivery.RemixSection do
     )
   end
 
+  def mount_as_instructor(socket, section, %{"current_author_id" => current_author_id} = _session) do
+    author = Accounts.get_author!(current_author_id)
+
+    redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
+
+    section =
+      section
+      |> Repo.preload(:institution)
+
+    available_publications = Publishing.available_publications(author, section.institution)
+
+    # only permit instructor or admin level access
+
+    init_state(socket,
+      breadcrumbs: set_breadcrumbs(:user, section),
+      section: section,
+      redirect_after_save: redirect_after_save,
+      available_publications: available_publications
+    )
+  end
+
   def mount_as_open_and_free(
         socket,
         section,

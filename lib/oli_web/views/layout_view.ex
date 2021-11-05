@@ -99,13 +99,28 @@ defmodule OliWeb.LayoutView do
     initials =
       case current_author.name do
         nil ->
-          ""
+          "?"
 
         name ->
-          name
-          |> String.split(~r{\s+})
-          |> Enum.map(&String.at(&1, 0))
-          |> Enum.take(2)
+          name = String.trim(name)
+
+          cond do
+            # After trimming, if a name contains a space that space can only be between two other non-space characters
+            # so we guarantee that two initials can be extracted
+            String.contains?(name, " ") ->
+              name
+              |> String.split(~r{\s+})
+              |> Enum.map(&String.at(&1, 0))
+              |> Enum.take(2)
+
+            # If after trimming there is no space, but there is text, we simply take the first character as a singular
+            String.length(name) > 0 ->
+              String.at(name, 0)
+
+            # If after trimming, there is the empty string, we show the question mark
+            true ->
+              "?"
+          end
       end
 
     icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")

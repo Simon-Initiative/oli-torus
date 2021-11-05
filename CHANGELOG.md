@@ -1,15 +1,20 @@
 # Changelog
 
 ## Unreleased
+
+## 0.14.5 (2021-11-05)
+
 ### Bug Fixes
+
 - Improve error logging
+- Determine author's initials in a more robust manner
 
 ### Enhancements
+
 - New Popup page element
 
-### Release Notes
-
 ## 0.14.4 (2021-11-04)
+
 ### Bug Fixes
 
 - Fix an issue where simultaneous section creations can result in more than one active sections for a given context
