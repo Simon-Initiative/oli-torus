@@ -10,7 +10,7 @@
     <title>Oli.Utils — OLI Torus v0.14.5</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7a8fa5f733.js"></script>
+    <script src="dist/sidebar_items-3f9942709e.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -119,13 +119,6 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.14.5)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#generate_error_id/0">generate_error_id()</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#get_base_url/0">get_base_url()</a>
 
   </div>
@@ -138,6 +131,17 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.14.5)</small>
     <a href="#has_non_empty_value/1">has_non_empty_value(v)</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#log_error/2">log_error(msg, metadata \\ nil)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Logs an error message with a unique identifier. Returns a tuple with the unique identifier
+and a user focused error message that contains a unique identifier for support. This unique
+identifier is included in the server side log message so it can be found quickly.</p></div>
 
 </div>
 <div class="summary-row">
@@ -275,29 +279,7 @@ Functions
     </a>
     <h1 class="signature">format_datetime(datetime)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L43" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="generate_error_id/0">
-
-  <div class="detail-header">
-    <a href="#generate_error_id/0" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">generate_error_id()</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L9" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L69" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -319,7 +301,7 @@ Functions
     </a>
     <h1 class="signature">get_base_url()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L145" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L171" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -341,7 +323,7 @@ Functions
     </a>
     <h1 class="signature">has_non_empty_value(v)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -354,6 +336,34 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="log_error/2">
+
+    <span id="log_error/1"></span>
+
+  <div class="detail-header">
+    <a href="#log_error/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">log_error(msg, metadata \\ nil)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L20" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Logs an error message with a unique identifier. Returns a tuple with the unique identifier
+and a user focused error message that contains a unique identifier for support. This unique
+identifier is included in the server side log message so it can be found quickly.</p><p>Takes in a short message (msg) describing the error (this will be displayed to a user) and
+an optional metadata object (metadata) which will be kernel inspected in the server side log.
+Metadata is not exposed in the user facing error message.</p>
+  </section>
+</section>
 <section class="detail" id="lowercase_email/1">
 
   <div class="detail-header">
@@ -363,7 +373,7 @@ Functions
     </a>
     <h1 class="signature">lowercase_email(changeset)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L118" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L144" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -385,7 +395,7 @@ Functions
     </a>
     <h1 class="signature">maybe_create_unique_sub(changeset)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L61" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L87" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -407,7 +417,7 @@ Functions
     </a>
     <h1 class="signature">maybe_name_from_given_and_family(changeset)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L80" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L106" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -429,7 +439,7 @@ Functions
     </a>
     <h1 class="signature">positive_or_nil(num)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L134" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L160" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -451,7 +461,7 @@ Functions
     </a>
     <h1 class="signature">pretty(map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L181" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L207" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -473,7 +483,7 @@ Functions
     </a>
     <h1 class="signature">random_string(length)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L5" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L7" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -495,7 +505,7 @@ Functions
     </a>
     <h1 class="signature">read_json_file(filename)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L130" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L156" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -517,7 +527,7 @@ Functions
     </a>
     <h1 class="signature">render(view, template, assigns, list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L33" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L59" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -539,7 +549,7 @@ Functions
     </a>
     <h1 class="signature">snake_case_to_friendly(snake_input)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L37" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L63" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -563,7 +573,7 @@ Functions
     </a>
     <h1 class="signature">trap_nil(result, description_tag \\ :not_found)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L54" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L80" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -586,7 +596,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">uuid()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L161" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L187" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -608,7 +618,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">validate_required_if(changeset, fields, condition)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L122" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L148" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -630,7 +640,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">value_or(value, default_value)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L16" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L42" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -652,7 +662,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">zip(filename_content_tuples, zip_filename)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L169" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L195" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
