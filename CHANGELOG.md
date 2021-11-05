@@ -2,8 +2,11 @@
 
 ## Unreleased
 ### Bug Fixes
+- Improve error logging
+
 ### Enhancements
 - New Popup page element
+
 ### Release Notes
 
 ## 0.14.4 (2021-11-04)
