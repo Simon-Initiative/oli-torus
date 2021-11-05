@@ -93,7 +93,7 @@ defmodule Oli.Content.Content.HtmlTest do
                # render an error message for the unsupported content element
                assert rendered_html_string =~
                         "<div class=\"content unsupported\">Content element type 'i-am-unsupported' is not supported"
-             end) =~ "Content element is not supported"
+             end) =~ "Content element type is not supported"
     end
   end
 end

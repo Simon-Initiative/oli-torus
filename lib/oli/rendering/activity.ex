@@ -23,7 +23,7 @@ defmodule Oli.Rendering.Activity do
   # Renders an error message if the signature above does not match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
-    {error_id, error_msg} = log_error("Activty render error", element)
+    {error_id, error_msg} = log_error("Activity render error", element)
 
     if render_opts.render_errors do
       writer.error(context, element, {:invalid, error_id, error_msg})

@@ -9,7 +9,7 @@ import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
 import {
   AttemptSlice,
-  selectActivtyAttemptState,
+  selectActivityAttemptState,
   selectById,
   upsertActivityAttemptState,
 } from '../slice';
@@ -80,7 +80,7 @@ export const savePartStateToTree = createAsyncThunk(
     }
 
     const updates = activityTree.map((activity: any) => {
-      const attempt = selectActivtyAttemptState(rootState, activity.resourceId);
+      const attempt = selectActivityAttemptState(rootState, activity.resourceId);
       if (!attempt) {
         return Promise.reject('could not find attempt!');
       }
