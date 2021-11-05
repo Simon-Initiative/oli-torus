@@ -4,11 +4,9 @@ defmodule Oli.Rendering.Activity do
   extensibile to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `activity/html.ex`.
   """
+  import Oli.Utils
 
-  alias Oli.Utils
   alias Oli.Rendering.Context
-
-  require Logger
 
   @callback activity(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
@@ -25,12 +23,7 @@ defmodule Oli.Rendering.Activity do
   # Renders an error message if the signature above does not match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Activity error: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
+    {error_id, error_msg} = log_error("Activty render error", element)
 
     if render_opts.render_errors do
       writer.error(context, element, {:invalid, error_id, error_msg})

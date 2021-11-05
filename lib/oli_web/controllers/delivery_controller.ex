@@ -340,10 +340,10 @@ defmodule OliWeb.DeliveryController do
         conn
 
       {:error, error} ->
-        Logger.error("Failed to create new section: #{inspect(error)}")
+        {_error_id, error_msg} = log_error("Failed to create new section", error)
 
         conn
-        |> put_flash(:error, "Failed to create new section")
+        |> put_flash(:error, error_msg)
         |> redirect(to: Routes.delivery_path(conn, :index))
     end
   end
