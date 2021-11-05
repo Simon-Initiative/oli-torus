@@ -41,6 +41,7 @@ defmodule Oli.Rendering.Content do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
+  @callback popup(%Context{}, next, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -170,6 +171,9 @@ defmodule Oli.Rendering.Content do
 
       "a" ->
         writer.a(context, next, element)
+
+      "popup" ->
+        writer.popup(context, next, element)
 
       _ ->
         error_id = Utils.generate_error_id()

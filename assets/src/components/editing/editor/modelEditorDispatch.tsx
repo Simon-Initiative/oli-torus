@@ -1,21 +1,22 @@
-import * as React from 'react';
-import * as ContentModel from 'data/content/model';
-import { ImageEditor } from '../models/image/Editor';
-import { YouTubeEditor } from '../models/youtube/Editor';
-import { BlockQuoteEditor } from '../models/blockquote/Editor';
-import { LinkEditor } from 'components/editing/models/link/Editor';
-import { AudioEditor } from '../models/audio/Editor';
-import { CodeEditor, CodeBlockLine } from '../models/blockcode/Editor';
-import { EditorProps } from '../models/interfaces';
-import { CommandContext } from '../commands/interfaces';
-import { TableEditor } from 'components/editing/models/table/TableEditor';
-import { ThEditor } from 'components/editing/models/table/ThEditor';
-import { TdEditor } from 'components/editing/models/table/TdEditor';
-import { TrEditor } from 'components/editing/models/table/TrEditor';
-import { WebpageEditor } from '../models/webpage/Editor';
 import { InputRefEditor } from 'components/editing/models/inputref/Editor';
-import { ReactEditor } from 'slate-react';
+import { LinkEditor } from 'components/editing/models/link/Editor';
+import { PopupEditor } from 'components/editing/models/popup/Editor';
+import { TableEditor } from 'components/editing/models/table/TableEditor';
+import { TdEditor } from 'components/editing/models/table/TdEditor';
+import { ThEditor } from 'components/editing/models/table/ThEditor';
+import { TrEditor } from 'components/editing/models/table/TrEditor';
+import * as ContentModel from 'data/content/model';
+import * as React from 'react';
 import { Editor } from 'slate';
+import { ReactEditor } from 'slate-react';
+import { CommandContext } from '../commands/interfaces';
+import { AudioEditor } from '../models/audio/Editor';
+import { CodeBlockLine, CodeEditor } from '../models/blockcode/Editor';
+import { BlockQuoteEditor } from '../models/blockquote/Editor';
+import { ImageEditor } from '../models/image/Editor';
+import { EditorProps } from '../models/interfaces';
+import { WebpageEditor } from '../models/webpage/Editor';
+import { YouTubeEditor } from '../models/youtube/Editor';
 
 export function editorFor(
   element: ContentModel.ModelElement,
@@ -64,6 +65,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'popup':
+      return <PopupEditor {...(editorProps as EditorProps<ContentModel.Popup>)} />;
     case 'audio':
       return <AudioEditor {...(editorProps as EditorProps<ContentModel.Audio>)} />;
     case 'code':

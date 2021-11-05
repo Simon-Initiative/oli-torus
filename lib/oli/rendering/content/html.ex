@@ -7,6 +7,7 @@ defmodule Oli.Rendering.Content.Html do
   alias Oli.Rendering.Context
   alias Oli.Utils
   alias Phoenix.HTML
+  import Oli.Rendering.Utils
 
   require Logger
 
@@ -243,6 +244,41 @@ defmodule Oli.Rendering.Content.Html do
 
   defp external_link(%Context{} = _context, next, href) do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+  end
+
+  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
+    trigger =
+      if escape_xml!(trigger) == "hover" do
+        "hover focus"
+      else
+        "manual"
+      end
+
+    [
+      ~s"""
+      <span
+        tabindex="0"
+        role="button"
+        class="popup__anchorText#{if !String.contains?(trigger, "hover") do
+        " popup__click"
+      else
+        ""
+      end}"
+        data-trigger="#{trigger}"
+        data-toggle="popover"
+        data-placement="top"
+        data-html="true"
+        data-template='
+          <div class="popover popup__content" role="tooltip">
+            <div class="arrow"></div>
+            <h3 class="popover-header"></h3>
+            <div class="popover-body"></div>
+          </div>'
+        data-content="#{escape_xml!(parse_html_content(content, context))}">
+        #{next.()}
+      </span>\n
+      """
+    ]
   end
 
   defp revision_slug_from_course_link(href) do

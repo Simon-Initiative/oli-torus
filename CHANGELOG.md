@@ -3,6 +3,7 @@
 ## Unreleased
 ### Bug Fixes
 ### Enhancements
+- New Popup page element
 ### Release Notes
 
 ## 0.14.4 (2021-11-04)
@@ -10,6 +11,8 @@
 
 - Fix an issue where simultaneous section creations can result in more than one active sections for a given context
 - Fix an issue with sorting by title in open and free source selection table
+
+### Enhancements
 
 ### Release Notes
 
@@ -45,6 +48,13 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 ### Bug Fixes
 
 - Make score display in gradebook more robust
+- Fix page editor text selection from resetting when a save triggers
+- Fix formatting toolbar tooltips not showing
+- Fix formatting toolbar format toggling
+- Fix insertion toolbar positioning
+- Fix insertion toolbar tooltips not disappearing after inserting content
+- Fix insertion toolbar tooltips not showing
+- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 
 ## 0.14.1 (2021-10-28)
 

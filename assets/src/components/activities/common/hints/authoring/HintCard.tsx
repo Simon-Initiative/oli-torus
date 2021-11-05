@@ -16,7 +16,7 @@ export const HintCard: React.FC<{
       <Card.Content>
         <RichTextEditorConnected
           placeholder={placeholder}
-          text={hint.content}
+          value={hint.content}
           onEdit={(content) => updateOne(hint.id, content)}
         />
       </Card.Content>

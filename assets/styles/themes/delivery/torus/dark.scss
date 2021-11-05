@@ -4,18 +4,18 @@
  * Theme-specific variables and custom styles
  */
 
- $gray-100: #cdcfdd;
- $gray-200: #b7b9c5;
- $gray-300: #a2a4af;
- $gray-400: #83858f;
- $gray-500: #73757e;
- $gray-600: #5c5d64;
- $gray-700: #494a50;
- $gray-800: #3e3f44;
- $gray-900: #333438;
+$gray-100: #cdcfdd;
+$gray-200: #b7b9c5;
+$gray-300: #a2a4af;
+$gray-400: #83858f;
+$gray-500: #73757e;
+$gray-600: #5c5d64;
+$gray-700: #494a50;
+$gray-800: #3e3f44;
+$gray-900: #333438;
 
- $black: #000;
- $white: #fff;
+$black: #000;
+$white: #fff;
 
 $blue: #4977c2;
 $indigo: #7e39ec;
@@ -209,7 +209,7 @@ $activity-purpose-learnbydoing-color: lighten($green, 10%);
 // This import is required and must always be after the last variable
 // declaration and before any custom styles in this style sheet
 ///////////////////////////////////////////////////////////////////////////////
-@import "delivery.scss";
+@import 'delivery.scss';
 ///////////////////////////////////////////////////////////////////////////////
 
 /** Theme-specific custom styles **/

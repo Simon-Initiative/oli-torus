@@ -32,7 +32,7 @@ export const Item = (props: ItemProps) => {
       <RichTextEditor
         projectSlug={props.projectSlug}
         editMode={editMode}
-        text={feedback.content}
+        value={feedback.content}
         onRequestMedia={props.onRequestMedia}
         onEdit={(content) => onEditResponse(score, content)}
       />

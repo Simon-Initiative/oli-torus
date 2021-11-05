@@ -1,10 +1,10 @@
-import * as React from 'react';
-import { CommandDesc } from 'components/editing/commands/interfaces';
-import * as ContentModel from 'data/content/model';
-import { Modal } from 'components/editing/toolbars/Modal';
-import { useState } from 'react';
 import { modalActions } from 'actions/modal';
 import { selectImage } from 'components/editing/commands/ImageCmd';
+import { CommandDesc } from 'components/editing/commands/interfaces';
+import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
+import * as ContentModel from 'data/content/model';
+import * as React from 'react';
+import { useState } from 'react';
 import { Maybe } from 'tsmonad';
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 const ImageModal = ({ onDone, onCancel, model }: Props) => {
   const [value, setValue] = useState(model.alt);
   return (
-    <Modal onCancel={(_e) => onCancel()} onDone={() => onDone(value)}>
+    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone(value)}>
       <div>
         <h3 className="mb-2">Alternative Text</h3>
         <p className="mb-4">
@@ -39,7 +39,7 @@ const ImageModal = ({ onDone, onCancel, model }: Props) => {
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
         />
       </div>
-    </Modal>
+    </FullScreenModal>
   );
 };
 

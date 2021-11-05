@@ -1,12 +1,14 @@
 import { schema } from 'data/content/model';
-import { Editor } from 'slate';
+import { Editor, Element } from 'slate';
 
 // Override isVoid to incorporate our schema's opinion on which
 export const withVoids = (editor: Editor) => {
   editor.isVoid = (element) => {
     try {
-      const result = (schema as any)[element.type as any].isVoid;
-      return result;
+      if (Element.isElement(element)) {
+        return schema[element.type as string].isVoid;
+      }
+      return false;
     } catch (e) {
       return false;
     }
