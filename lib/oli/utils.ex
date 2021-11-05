@@ -10,13 +10,15 @@ defmodule Oli.Utils do
 
   @doc """
   Logs an error message with a unique identifier. Returns a tuple with the unique identifier
-  and a user facing error message also containing the unique identifier for support.
+  and a user focused error message that contains a unique identifier for support. This unique
+  identifier is included in the server side log message so it can be found quickly.
 
   Takes in a short message (msg) describing the error (this will be displayed to a user) and
-  an optional metadata object (metadata) which will be kernel inspected in the log (not displayed to user).
+  an optional metadata object (metadata) which will be kernel inspected in the server side log.
+  Metadata is not exposed in the user facing error message.
   """
   def log_error(msg, metadata \\ nil) do
-    error_id = uuid()
+    error_id = uuid() |> String.upcase()
 
     metadata_str =
       case metadata do
