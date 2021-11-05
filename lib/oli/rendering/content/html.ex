@@ -4,12 +4,11 @@ defmodule Oli.Rendering.Content.Html do
 
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
+  import Oli.Utils
+
   alias Oli.Rendering.Context
-  alias Oli.Utils
   alias Phoenix.HTML
   import Oli.Rendering.Utils
-
-  require Logger
 
   @behaviour Oli.Rendering.Content
 
@@ -90,7 +89,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
@@ -102,7 +101,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def youtube(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -116,7 +115,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def iframe(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -126,7 +125,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def table(%Context{} = _context, next, attrs) do
@@ -186,11 +185,12 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def code(
-        %Context{} = context,
+        %Context{} = _context,
         next,
         attrs
       ) do
-    maybe_log_error(context, attrs)
+    {_error_id, _error_msg} =
+      log_error("Malformed content element. Missing language attribute", attrs)
 
     figure(attrs, [
       ~s|<pre><code class="language-none">|,
@@ -215,8 +215,10 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def a(%Context{} = context, next, e) do
-    maybe_log_error(context, e)
+  def a(%Context{} = context, next, attrs) do
+    {_error_id, _error_msg} =
+      log_error("Malformed content element. Missing href attribute", attrs)
+
     external_link(context, next, "#")
   end
 
@@ -365,27 +367,13 @@ defmodule Oli.Rendering.Content.Html do
 
   defp figure(_attrs, content), do: content
 
-  defp missing_media(%Context{render_opts: render_opts} = context, element) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Rendering error: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
+  defp missing_media_src(%Context{render_opts: render_opts} = context, element) do
+    {error_id, error_msg} = log_error("Malformed content element. Missing src attribute", element)
 
     if render_opts.render_errors do
       error(context, element, {:invalid, error_id, error_msg})
     else
       []
     end
-  end
-
-  defp maybe_log_error(%Context{render_opts: render_opts}, element) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Rendering error: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
   end
 end

@@ -6,6 +6,7 @@
 
 ### Bug Fixes
 
+- Improve error logging
 - Determine author's initials in a more robust manner
 
 ### Enhancements
