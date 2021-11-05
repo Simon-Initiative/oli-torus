@@ -341,6 +341,7 @@ OliWeb.Api.PlatformInstanceController.html
 OliWeb.Api.PlatformInstanceView.html
 OliWeb.Api.ProductController.ProductListingResponse.html
 OliWeb.Api.ProductController.html
+OliWeb.Api.ProductView.html
 OliWeb.Api.ResourceAttemptStateController.html
 OliWeb.Api.ResourceController.html
 OliWeb.Api.RulesEngineController.html
@@ -584,8 +585,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-3c22ae6c5f.js
-dist/sidebar_items-ac097a8eb1.js
+dist/search_items-7b0f9c42d2.js
+dist/sidebar_items-0aab72a44e.js
 index.html
 license.html
 readme.html
