@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- Fix the rendering of HTML special characters within activities
+
+### Enhancements
+
 ## 0.14.5 (2021-11-05)
 
 ### Bug Fixes
