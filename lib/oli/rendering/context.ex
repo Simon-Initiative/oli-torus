@@ -9,8 +9,8 @@ defmodule Oli.Rendering.Context do
             render_opts: %{
               render_errors: true
             },
-            preview: false,
-            review_mode: false,
+            # Mode can be one of  [:delivery, :review, :author_preview, :instructor_preview]
+            mode: :delivery,
             section_slug: nil,
             project_slug: nil
 end

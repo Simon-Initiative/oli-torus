@@ -223,22 +223,30 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp internal_link(
-         %Context{section_slug: section_slug, preview: preview, project_slug: project_slug},
+         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
          next,
          href
        ) do
     href =
       case section_slug do
         nil ->
-          if preview do
-            "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
-          else
-            "#"
+          case mode do
+            :author_preview ->
+              "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+
+            _ ->
+              "#"
           end
 
         section_slug ->
           # rewrite internal link using section slug and revision slug
-          "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+          case mode do
+            :instructor_preview ->
+              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+
+            _ ->
+              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+          end
       end
 
     [~s|<a class="internal-link" href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
