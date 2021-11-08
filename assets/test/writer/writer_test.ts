@@ -37,7 +37,7 @@ describe('parser', () => {
         return (
           element?.tagName.toLowerCase() === 'p' &&
           content.startsWith(
-            'The American colonials proclaimed &quot;no taxation without representation',
+            'The American colonials proclaimed "no taxation without representation',
           )
         );
       }),
