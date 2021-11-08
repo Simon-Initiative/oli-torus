@@ -27,14 +27,12 @@ export const readGlobalUserState = async (
   useLocalStorage = false,
 ) => {
   let result: any = {};
-  console.log('In Extrinsic Read Global User State', keys, useLocalStorage);
   if (useLocalStorage) {
     // localStorage API doesn't support the "get all" behavior, so we need to put everything into a single object
     const storedUserState = JSON.parse(localStorage.getItem('torus.userState') || '{}');
     if (keys) {
       keys.forEach((key) => {
         result[key] = storedUserState[key];
-        console.log('In Extrinsic Read Global User State key', key, storedUserState[key]);
       });
     } else {
       result = storedUserState;
@@ -46,7 +44,6 @@ export const readGlobalUserState = async (
       result = serverUserState;
     }
   }
-  console.log('In Extrinsic Read Done', result);
   return result;
 };
 
@@ -54,11 +51,8 @@ export const updateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
-  console.log('In Extrinsic Save data', updates, useLocalStorage);
   const topLevelKeys = Object.keys(updates);
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
-
-  console.log('In Extrinsic Read Global User State key', updates);
 
   const newState = { ...currentState };
   topLevelKeys.forEach((topKey) => {
@@ -78,7 +72,6 @@ export const updateGlobalUserState = async (
   } else {
     await upsertGlobal(newState);
   }
-  console.log('In Extrinsic Save done for', newState);
   return newState;
 };
 

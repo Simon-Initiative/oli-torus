@@ -1,13 +1,7 @@
 /* eslint-disable react/prop-types */
-import React, { useState } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectScore } from '../../store/features/page/slice';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { EverAppActivity, getEverAppActivity, udpateAttemptGuid } from './EverApps';
-import { selectPageContent } from '../../store/features/page/slice';
-import { ActivityState } from 'components/activities/types';
-import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
-import { defaultGlobalEnv, evalScript } from '../../../../adaptivity/scripting';
 import EverAppContainer from './EverAppContainer';
 
 interface DeckLayoutHeaderProps {
@@ -29,11 +23,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const isLegacyTheme = !themeId;
   const scoreToShow = scoreValue.toFixed(2);
   const scoreText = isLegacyTheme ? `(Score: ${scoreToShow})` : scoreToShow;
-
-  const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
-  const currentPage = useSelector(selectPageContent);
-  const everApps = currentPage?.custom?.everApps;
-  console.log('EverApps', everApps);
 
   return (
     <div className="headerContainer">

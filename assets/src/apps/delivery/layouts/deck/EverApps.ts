@@ -217,7 +217,6 @@ export const EverAppActivity = {
 export const getEverAppActivity = (everAppObj: any, url: string, index: number) => {
   const updatedObject = clone(EverAppActivity);
   updatedObject.id = everAppObj.id + index;
-  console.log('EverAppObj-1', everAppObj);
   updatedObject.content.partsLayout[0].id = everAppObj.id;
   updatedObject.authoring.parts[0].id = everAppObj.id;
   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
@@ -227,7 +226,6 @@ export const getEverAppActivity = (everAppObj: any, url: string, index: number) 
 
 export const udpateAttemptGuid = (index: number, everAppObj: any) => {
   const updatedObject = clone(everAppActivityState);
-  console.log('EverAppObj-2', everAppObj, updatedObject);
   updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
   updatedObject.parts[0].partId = everAppObj.id;
   return updatedObject;
