@@ -166,7 +166,7 @@ defmodule Oli.Content.Page.HtmlTest do
 
                # ensure unsupported page item doesnt prevent rendering over other valid items
                assert rendered_html_string =~ to_check
-             end) =~ "Render Error"
+             end) =~ "Malformed content element"
     end
   end
 end

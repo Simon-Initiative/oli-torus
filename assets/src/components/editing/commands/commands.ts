@@ -2,7 +2,7 @@ import { Editor } from 'slate';
 import { Mark } from 'data/content/model';
 import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from './interfaces';
-import { marksInEntireSelection, isMarkActive } from '../utils';
+import { marksInEntireSelection, isMarkActive, marksInPartOfSelection } from '../utils';
 
 interface CommandWrapperProps {
   icon: string;
@@ -31,7 +31,7 @@ export function createToggleFormatCommand(attrs: {
   return createCommandDesc({
     ...attrs,
     execute: (context, editor) => toggleMark(editor, attrs.mark),
-    active: (editor) => marksInEntireSelection(editor).indexOf(attrs.mark) !== -1,
+    active: (editor) => isMarkActive(editor, attrs.mark),
   });
 }
 

@@ -1,6 +1,8 @@
 defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
+  import Oli.Utils
+
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Institutions
@@ -403,8 +405,10 @@ defmodule OliWeb.LtiController do
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end
 
-          _ ->
-            throw("Error creating user")
+          {:error, changeset} ->
+            {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
+
+            throw(error_msg)
         end
     end
   end

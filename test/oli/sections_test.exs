@@ -150,8 +150,7 @@ defmodule Oli.SectionsTest do
        Map.merge(map, %{section: section, institution: institution, valid_attrs: valid_attrs})}
     end
 
-    test "create_section/1 with valid data creates a section", %{valid_attrs: valid_attrs} do
-      assert {:ok, %Section{} = section} = Sections.create_section(valid_attrs)
+    test "create_section/1 with valid data creates a section", %{section: section} do
       assert section.end_date == ~U[2010-04-17 00:00:00Z]
       assert section.registration_open == true
       assert section.start_date == ~U[2010-04-17 00:00:00Z]
@@ -318,7 +317,7 @@ defmodule Oli.SectionsTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
@@ -373,7 +372,7 @@ defmodule Oli.SectionsTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
@@ -488,7 +487,7 @@ defmodule Oli.SectionsTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })
@@ -635,7 +634,7 @@ defmodule Oli.SectionsTest do
           title: "1",
           timezone: "1",
           registration_open: true,
-          context_id: "1",
+          context_id: UUID.uuid4(),
           institution_id: institution.id,
           base_project_id: project.id
         })

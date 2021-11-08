@@ -529,9 +529,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         return;
       }
       const val = await props.onGetData({ simId, key, id });
-      const value = val || '';
+      let value = val;
 
       const exists = val !== undefined;
+      if (exists && typeof val !== 'string') {
+        value = JSON.stringify(val);
+      }
       response.values.responseType = 'success';
       response.values.value = value;
       response.values.exists = exists;
@@ -539,6 +542,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       response.values.responseType = 'error';
       response.values.error = err;
     }
+
+    /* console.log('Sending the response', response); */
 
     sendFormedResponse(
       simLife.handshake,

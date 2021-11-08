@@ -17,7 +17,7 @@ $workspace-sidebar-width: 65px;
     height: $workspace-header-height;
     position: sticky;
     top: 0;
-    z-index: 203;
+    z-index: $z-content-3;
     background-color: $workspace-header-bg;
     box-shadow: 0 2px 4px 0 rgba($black, 0.15);
 
@@ -76,7 +76,7 @@ $workspace-sidebar-width: 65px;
     position: sticky;
     top: $workspace-header-height;
     height: calc(100vh - #{$workspace-header-height});
-    z-index: 202;
+    z-index: $z-content-2;
   }
 
   .workspace-right {
@@ -161,14 +161,14 @@ $workspace-sidebar-width: 65px;
     width: $workspace-sidebar-width;
     background-color: $workspace-sidebar-bg;
     box-shadow: inset -1px 0 3px 0 rgba(0, 0, 0, 0.09);
-    z-index: 1;
+    z-index: $z-content-1;
 
     .dropdown-menu {
       padding-top: 0px;
       padding-bottom: 0px;
       margin-right: 2px;
       margin-left: 0px;
-      z-index: 202;
+      z-index: $z-content-2;
 
       a {
         // display: flex;

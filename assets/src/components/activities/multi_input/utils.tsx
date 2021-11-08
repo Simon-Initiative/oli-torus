@@ -28,16 +28,13 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
 
 export const multiInputStem = (input: InputRef) => ({
   id: guid(),
-  content: {
-    model: [
-      {
-        type: 'p',
-        id: guid(),
-        children: [{ text: 'Example question with a fill in the blank ' }, input, { text: '.' }],
-      } as Paragraph,
-    ],
-    selection: null,
-  },
+  content: [
+    {
+      type: 'p',
+      id: guid(),
+      children: [{ text: 'Example question with a fill in the blank ' }, input, { text: '.' }],
+    } as Paragraph,
+  ],
 });
 
 export const defaultModel = (): MultiInputSchema => {
@@ -83,7 +80,7 @@ export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInput
 }
 
 function inputsMatchInputRefs(model: MultiInputSchema) {
-  const inputRefs = elementsOfType(model.stem.content.model, 'input_ref');
+  const inputRefs = elementsOfType(model.stem.content, 'input_ref');
   const union = setUnion(
     inputRefs.map(({ id }) => id),
     model.inputs.map(({ id }) => id),
@@ -136,7 +133,7 @@ function ensureHasInput(model: MultiInputSchema) {
   const part = makePart(Responses.forTextInput(), [makeHint('')]);
   const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
-  const firstParagraph = model.stem.content.model.find((elem) => elem.type === 'p');
+  const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
   firstParagraph?.children.push(ref);
   firstParagraph?.children.push({ text: '' });
 
@@ -212,7 +209,7 @@ function matchInputsToParts(model: MultiInputSchema) {
     });
     part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.model.find((elem) => elem.type === 'p');
+    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
     firstParagraph?.children.push(ref);
     firstParagraph?.children.push({ text: '' });
   });
@@ -225,7 +222,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
     return model;
   }
 
-  const inputRefIds = elementsOfType(model.stem.content.model, 'input_ref').map(({ id }) => id);
+  const inputRefIds = elementsOfType(model.stem.content, 'input_ref').map(({ id }) => id);
   const inputIds = model.inputs.map(({ id }) => id);
 
   const unmatchedInputs = setDifference(inputIds, inputRefIds).map((id) =>
@@ -238,7 +235,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
 
   unmatchedInputs.forEach((input: MultiInput) => {
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.model.find((elem) => elem.type === 'p');
+    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
     firstParagraph?.children.push({ ...inputRef(), id: input.id });
     firstParagraph?.children.push({ text: '' });
   });

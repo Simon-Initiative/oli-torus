@@ -77,7 +77,7 @@ export const CognitiveHints: React.FC<CognitiveProps> = ({
           <RichTextEditorConnected
             placeholder={placeholder || 'Explain how to solve the problem'}
             className="mb-2 flex-grow-1"
-            text={hint.content}
+            value={hint.content}
             onEdit={(content) => updateOne(hint.id, content)}
           />
           <div className="d-flex align-items-stretch">

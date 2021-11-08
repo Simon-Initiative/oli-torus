@@ -1,6 +1,6 @@
-import { Mark, ModelElement, Selection } from 'data/content/model';
+import { Mark, ModelElement } from 'data/content/model';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createEditor, Editor as SlateEditor, Operation, Range } from 'slate';
+import { createEditor, Editor as SlateEditor, Operation } from 'slate';
 import { withHistory } from 'slate-history';
 import {
   Editable,
@@ -30,17 +30,14 @@ import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
 
 export type EditorProps = {
-  // Callback when there has been any change to the editor (including selection state)
+  // Callback when there has been any change to the editor
   onEdit: (
     value: ModelElement[],
-    selection: Selection,
     editor: SlateEditor & ReactEditor,
     operations: Operation[],
   ) => void;
   // The content to display
   value: ModelElement[];
-  // The current selection
-  selection: Selection;
   // The insertion toolbar configuration
   toolbarItems: ToolbarItem[];
   // Whether or not editing is allowed
@@ -63,9 +60,6 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.editMode === nextProps.editMode &&
     prevProps.toolbarItems === nextProps.toolbarItems &&
     prevProps.value === nextProps.value &&
-    !!prevProps.selection &&
-    !!nextProps.selection &&
-    Range.equals(prevProps.selection, nextProps.selection) &&
     prevProps.placeholder === nextProps.placeholder
   );
 }
@@ -91,13 +85,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
       setInstalled(true);
     }
   }, [installed]);
-
-  // Pure selection changes are uncontrolled and maintained in the Slate Editable state.
-  // Content changes propagate through onEdit along with the selection to allow undo/redo
-  // to override the selection when undo/redo is triggered.
-  if (props.selection) {
-    editor.selection = props.selection;
-  }
 
   const renderElement = useCallback(
     (props: RenderElementProps) => {
@@ -125,12 +112,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
   }, []);
 
   const onChange = (value: ModelElement[]) => {
-    const { operations, selection } = editor;
+    const { operations } = editor;
 
     // Determine if this onChange was due to an actual content change.
     // Otherwise, undo/redo will save pure selection changes.
     if (operations.filter(({ type }) => type !== 'set_selection').length) {
-      props.onEdit(value, selection, editor, operations);
+      props.onEdit(value, editor, operations);
     }
   };
 

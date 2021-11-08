@@ -4,14 +4,14 @@
   position: fixed;
   top: 60px;
   right: 20px;
-  z-index: 1000;
+  z-index: $z-highest;
 }
 
 .undotoast {
   background-color: $gray-100;
   color: $body-color;
   position: relative;
-  z-index: 1000;
+  z-index: $z-highest;
   width: 270px;
   font-size: 1em;
   border: 1px solid $gray-200;

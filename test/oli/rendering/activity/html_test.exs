@@ -79,7 +79,7 @@ defmodule Oli.Content.Activity.HtmlTest do
 
                assert rendered_html_string =~
                         "<div class=\"activity invalid alert alert-danger\">Activity error"
-             end) =~ "Activity error"
+             end) =~ "Activity render error"
     end
 
     test "handles missing activity from activity-map gracefully", %{author: author} do

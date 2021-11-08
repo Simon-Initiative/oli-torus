@@ -1,7 +1,6 @@
 import React from 'react';
 import { Node } from 'slate';
 import { StructuredContent } from 'data/content/resource';
-import { Selection } from 'data/content/model';
 import { Editor } from 'components/editing/editor/Editor';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
@@ -19,9 +18,8 @@ export type StructuredContentEditor = {
 export const StructuredContentEditor = (props: StructuredContentEditor) => {
   const { content, toolbarItems, editMode, projectSlug } = props;
 
-  const onEdit = (children: Node[], selection: Selection) => {
-    const updated = Object.assign({}, content, { children, selection });
-    props.onEdit(updated);
+  const onEdit = (children: Node[]) => {
+    props.onEdit(Object.assign({}, content, { children }));
   };
 
   return (
@@ -31,7 +29,6 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
         commandContext={{ projectSlug }}
         editMode={editMode}
         value={content.children}
-        selection={content.selection}
         onEdit={onEdit}
         toolbarItems={toolbarItems}
       />

@@ -4,11 +4,9 @@ defmodule Oli.Rendering.Content do
   extensibile to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `content/html.ex`.
   """
+  import Oli.Utils
 
   alias Oli.Rendering.Context
-  alias Oli.Utils
-
-  require Logger
 
   @type next :: (() -> String.t())
   @type children :: [%{}]
@@ -41,6 +39,7 @@ defmodule Oli.Rendering.Content do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
+  @callback popup(%Context{}, next, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -171,13 +170,11 @@ defmodule Oli.Rendering.Content do
       "a" ->
         writer.a(context, next, element)
 
-      _ ->
-        error_id = Utils.generate_error_id()
-        error_msg = "Content element is not supported: #{Kernel.inspect(element)}"
+      "popup" ->
+        writer.popup(context, next, element)
 
-        if render_opts.log_errors,
-          do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-          else: nil
+      _ ->
+        {error_id, error_msg} = log_error("Content element type is not supported", element)
 
         if render_opts.render_errors do
           writer.error(context, element, {:unsupported, error_id, error_msg})
@@ -190,12 +187,7 @@ defmodule Oli.Rendering.Content do
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Content element is invalid: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
+    {error_id, error_msg} = log_error("Content element is invalid", element)
 
     if render_opts.render_errors do
       writer.error(context, element, {:invalid, error_id, error_msg})
