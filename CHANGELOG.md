@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.14.6 (2021-11-05)
+## 0.14.6 (2021-11-08)
 
 ### Bug Fixes
 - Fix the rendering of HTML special characters within activities
