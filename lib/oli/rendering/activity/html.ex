@@ -8,16 +8,6 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
-  @spec activity(
-          %Oli.Rendering.Context{
-            :activity_map => nil | maybe_improper_list | map,
-            :mode => any,
-            :render_opts => any,
-            :user => any,
-            optional(any) => any
-          },
-          map
-        ) :: [binary | [<<_::64, _::_*8>>, ...]]
   def activity(
         %Context{
           activity_map: activity_map,

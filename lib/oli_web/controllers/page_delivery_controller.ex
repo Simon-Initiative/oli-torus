@@ -20,6 +20,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
+  alias Oli.Rendering.Activity.ActivitySummary
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -51,6 +52,32 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def page(conn, %{
+        "section_slug" => section_slug,
+        "revision_slug" => revision_slug,
+        "mode" => "preview"
+      }) do
+    user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
+    is_admin? = Oli.Accounts.is_admin?(current_author)
+
+    # We only allow access to preview mode if the user is logged in as an author admin, or
+    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # we want to redirect out of this mode to render the page in regular delivery mode.
+
+    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
+      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+        render_preview_mode(conn, section_slug, revision_slug)
+      else
+        # Any attempt by a student to enter preview mode is simply ignored and redirect back to
+        # regular delivery mode
+        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
 
@@ -60,6 +87,71 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
+  end
+
+  defp render_preview_mode(conn, section_slug, revision_slug) do
+    revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
+    page_model = Map.get(revision.content, "model")
+
+    type_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
+
+    ativities_and_selections =
+      Oli.Resources.PageContent.flat_filter(revision.content, fn item ->
+        item["type"] == "activity-reference" or item["type"] == "selection"
+      end)
+      |> Enum.group_by(& &1["type"])
+
+    activity_ids =
+      Map.get(ativities_and_selections, "activity-reference", [])
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    activity_map =
+      Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, activity_ids)
+      |> Enum.map(fn rev ->
+        type = Map.get(type_by_id, rev.activity_type_id)
+
+        %ActivitySummary{
+          id: rev.resource_id,
+          script: type.authoring_script,
+          attempt_guid: nil,
+          state: nil,
+          model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: type.delivery_element,
+          authoring_element: type.authoring_element,
+          graded: revision.graded
+        }
+      end)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    render_context = %Context{
+      user: conn.assigns.current_user,
+      section_slug: section_slug,
+      mode: :instructor_preview,
+      activity_map: activity_map
+    }
+
+    html = Page.render(render_context, page_model, Page.Html)
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+
+    all_activities = Activities.list_activity_registrations()
+
+    render(
+      conn,
+      "instructor_preview.html",
+      %{
+        summary: %{title: ""},
+        section_slug: section_slug,
+        scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
+        previous_page: nil,
+        next_page: nil,
+        title: revision.title,
+        html: html,
+        objectives: []
+      }
+    )
   end
 
   defp render_page(
@@ -170,7 +262,12 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: user,
       section_slug: section_slug,
-      review_mode: context.review_mode,
+      mode:
+        if context.review_mode do
+          :review
+        else
+          :delivery
+        end,
       activity_map: context.activities
     }
 
