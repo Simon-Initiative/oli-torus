@@ -32,6 +32,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
+  console.log('we are props', props);
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -174,14 +175,16 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // INIT STATE also needs to take in all the sim values
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        if (key.indexOf(`stage.${id}.`) === 0) {
-          collect[key] = currentStateSnapshot[key];
+        console.log('key and collection', collect, key);
+        if (key.indexOf(`stage.${id}.`) === 0 || key.indexOf(`app.${id}.`) === 0) {
+          collect[key.replace(`app.${id}.`, '')] = currentStateSnapshot[key];
         }
         return collect;
       },
       {},
     );
     setInitState(interestedSnapshot);
+    console.log('WE have the interested state as', interestedSnapshot, id, currentStateSnapshot);
     setInitStateReceived(true);
   };
 
@@ -396,6 +399,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+              console.log('Context Changed', { id, context, payload });
+
               processInitStateVariable(currentStateSnapshot);
 
               setSimIsInitStatePassedOnce(false);
@@ -513,7 +518,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // GET DATA is meant to pull data from user based persistance for a specific sim
     // this data is *not* stored by the current scripting environment (used by adaptivity)
     const { key, simId } = msgData.values;
-
+    console.log('Key in ExternalActivity Msg', msgData.values);
     simLife.key = key;
     simLife.simId = simId;
 
@@ -530,7 +535,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       }
       const val = await props.onGetData({ simId, key, id });
       let value = val;
+      console.log('Key in ExternalActivity', { simId, key, id, val });
 
+      console.log('Val in External Activity', val);
       const exists = val !== undefined;
       if (exists && typeof val !== 'string') {
         value = JSON.stringify(val);

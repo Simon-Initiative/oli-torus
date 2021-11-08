@@ -86,13 +86,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const objId = `${payload.key}`;
-    debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
+    await debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     // Read only the key from the simid
     const objId = `${payload.key}`;
-    const data = debouncedReadData({ isPreviewMode, payload, objId });
+    const data = await debouncedReadData({ isPreviewMode, payload, objId });
     return data;
   };
 
@@ -100,6 +100,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     async ({ isPreviewMode, payload, objId }) => {
       const retrievedData = await Extrinsic.readGlobalUserState([payload.simId], isPreviewMode);
       return retrievedData?.[payload.simId]?.[objId];
+      console.log('RetrievedData', retrievedData)
+      // return retrievedData?.[payload.simId];
     },
     500,
     { maxWait: 10000, leading: true, trailing: false },

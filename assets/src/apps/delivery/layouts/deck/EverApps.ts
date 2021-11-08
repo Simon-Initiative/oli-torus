@@ -9,7 +9,7 @@ export const everAppActivityState: ActivityState = {
   outOf: null,
   parts: [
     {
-      attemptGuid: 'sampleIframeGuid',
+      attemptGuid: 'sampleIframeGuid', // This is PartAttemptGuid
       attemptNumber: 1,
       dateEvaluated: null,
       score: null,
@@ -215,16 +215,26 @@ export const EverAppActivity = {
 };
 
 export const getEverAppActivity = (everAppObj: any, url: string, index: number) => {
-  const updatedObject = clone(everAppObj);
+  const updatedObject = clone(EverAppActivity);
   updatedObject.id = everAppObj.id + index;
+  console.log('EverAppObj-1', everAppObj);
+  updatedObject.content.partsLayout[0].id = everAppObj.id;
+  updatedObject.authoring.parts[0].id = everAppObj.id;
   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
   updatedObject.content.partsLayout[0].custom.src = url;
+  if (url.split('/').includes('ispk-bio-blue-planet-report')) {
+    // To Show Blue Planet Report in a wider IFrame
+    updatedObject.content.partsLayout[0].custom.width = 850;
+    updatedObject.content.partsLayout[0].custom.x = -720;
+  }
   return updatedObject;
 };
 
-export const udpateAttemptGuid = (index: number) => {
+export const udpateAttemptGuid = (index: number, everAppObj: any) => {
   const updatedObject = clone(everAppActivityState);
+  console.log('EverAppObj-2', everAppObj, updatedObject);
   updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
+  updatedObject.parts[0].partId = everAppObj.id;
   return updatedObject;
 };
 
