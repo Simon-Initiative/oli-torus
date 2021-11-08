@@ -16,7 +16,7 @@ import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
-import { bulkApplyState, evalAssignScript, evalScript, getValue } from './scripting';
+import { bulkApplyState, evalAssignScript, evalScript, getValue, looksLikeJson } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;
@@ -57,8 +57,9 @@ const applyToEveryCondition = (top: TopLevelCondition | NestedCondition, callbac
 };
 
 const evaluateValueExpression = (value: string, env: Environment) => {
+  const looksLikeJSON = looksLikeJson(value);
   // only if there is {} in it should it be processed, otherwise it's just a string
-  if (value.indexOf('{') === -1) {
+  if (value.indexOf('{') === -1 || looksLikeJSON) {
     return value;
   }
   // it might be that it's still just a string, if it's a JSON value (TODO, is this really something that would be authored?)
