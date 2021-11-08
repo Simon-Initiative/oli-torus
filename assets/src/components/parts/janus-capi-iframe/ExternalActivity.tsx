@@ -32,7 +32,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
-  console.log('we are props', props);
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -175,16 +174,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // INIT STATE also needs to take in all the sim values
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        console.log('key and collection', collect, key);
         if (key.indexOf(`stage.${id}.`) === 0 || key.indexOf(`app.${id}.`) === 0) {
-          collect[key.replace(`app.${id}.`, '')] = currentStateSnapshot[key];
+          collect[key] = currentStateSnapshot[key];
         }
         return collect;
       },
       {},
     );
     setInitState(interestedSnapshot);
-    console.log('WE have the interested state as', interestedSnapshot, id, currentStateSnapshot);
     setInitStateReceived(true);
   };
 
@@ -294,7 +291,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -399,7 +396,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
-              console.log('Context Changed', { id, context, payload });
 
               processInitStateVariable(currentStateSnapshot);
 
@@ -535,9 +531,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       }
       const val = await props.onGetData({ simId, key, id });
       let value = val;
-      console.log('Key in ExternalActivity', { simId, key, id, val });
-
-      console.log('Val in External Activity', val);
       const exists = val !== undefined;
       if (exists && typeof val !== 'string') {
         value = JSON.stringify(val);
@@ -818,12 +811,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       return;
     }
 
-    writeCapiLog('INIT STATE APPLIED', 3);
+    writeCapiLog('INIT STATE APPLIED', 3, { initState });
     Object.keys(initState)
       .reverse()
       .forEach((key: any) => {
         const formatted: Record<string, unknown> = {};
-        const baseKey = key.replace(`stage.${id}.`, '');
+        const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
         const value = initState[key];
         const cVar = new CapiVariable({
           key: baseKey,

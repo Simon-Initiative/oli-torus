@@ -100,8 +100,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     async ({ isPreviewMode, payload, objId }) => {
       const retrievedData = await Extrinsic.readGlobalUserState([payload.simId], isPreviewMode);
       return retrievedData?.[payload.simId]?.[objId];
-      console.log('RetrievedData', retrievedData)
-      // return retrievedData?.[payload.simId];
     },
     500,
     { maxWait: 10000, leading: true, trailing: false },
