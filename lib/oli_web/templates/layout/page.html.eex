@@ -5,7 +5,7 @@
   <% end %>
 
   <% url =
-    if @conn.assigns.preview_mode do
+    if Map.get(@conn.assigns, :preview_mode, false) do
       Routes.page_delivery_path(@conn, :index, @section_slug, mode: "preview")
     else
       Routes.page_delivery_path(@conn, :index, @section_slug)

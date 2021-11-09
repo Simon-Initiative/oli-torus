@@ -147,6 +147,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     text
   end
 
+  def selection(%Context{} = _context, _, _selection) do
+    ["[Activity Bank Selection]"]
+  end
+
   def error(%Context{} = _context, element, error) do
     case error do
       {:unsupported, error_id, _error_msg} ->
