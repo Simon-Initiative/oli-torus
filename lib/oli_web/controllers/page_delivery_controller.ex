@@ -135,18 +135,13 @@ defmodule OliWeb.PageDeliveryController do
       Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
 
-    ativities_and_selections =
-      Oli.Resources.PageContent.flat_filter(revision.content, fn item ->
-        item["type"] == "activity-reference" or item["type"] == "selection"
-      end)
-      |> Enum.group_by(& &1["type"])
-
     activity_ids =
-      Map.get(ativities_and_selections, "activity-reference", [])
+      Oli.Resources.PageContent.flat_filter(revision.content, fn item ->
+        item["type"] == "activity-reference"
+      end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section_slug)
-
     {previous, next} = Oli.Delivery.Page.PageContext.determine_previous_next(hierarchy, revision)
 
     activity_map =
@@ -293,7 +288,7 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: context.previous_page,
       next_page: context.next_page,
       user_id: user.id,
-      preview_mode: false
+      preview_mode: is_preview_mode?(conn)
     })
   end
 
@@ -352,6 +347,16 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts
       }
     )
+  end
+
+  defp is_preview_mode?(conn) do
+    user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
+    section_slug = Map.get(conn.path_params, "section_slug")
+    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+
+    Map.get(conn.query_params, "mode", "delivery") == "preview" and
+      (is_admin? or Sections.is_instructor?(user, section_slug))
   end
 
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
