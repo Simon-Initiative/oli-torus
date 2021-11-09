@@ -135,6 +135,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[link with missing href ", next.(), " "]
   end
 
+  def popup(%Context{} = _context, next, _) do
+    ["[popup with text ", next.(), "]"]
+  end
+
   def definition(%Context{} = _context, next, _) do
     [next.(), " "]
   end

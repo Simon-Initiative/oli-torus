@@ -5,7 +5,7 @@ import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
 import { ActivityEditContext } from './activity';
-import { ModelElement, Selection } from './model';
+import { ModelElement } from './model';
 
 export type PageContent = {
   model: ResourceContent[];
@@ -63,14 +63,13 @@ export const ContentPurposes: Purpose[] = [
   { value: 'manystudentswonder', label: 'Many students wonder' },
 ];
 
-export const createDefaultStructuredContent = () => {
+export const createDefaultStructuredContent = (): StructuredContent => {
   return {
     type: 'content',
     id: guid(),
     children: [{ type: 'p', id: guid(), children: [{ text: '' }] }],
     purpose: 'none',
-    selection: null,
-  } as StructuredContent;
+  };
 };
 
 export const createDefaultSelection = () => {
@@ -88,7 +87,6 @@ export interface StructuredContent {
   id: string;
   children: ModelElement[];
   purpose: string;
-  selection: Selection;
 }
 
 export interface ActivityBankSelection {

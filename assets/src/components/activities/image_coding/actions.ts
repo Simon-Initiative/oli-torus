@@ -1,6 +1,5 @@
 import { ImageCodingModelSchema } from './schema';
-import { fromText } from './utils';
-import { RichText, Hint as HintType, Choice } from '../types';
+import { RichText, Hint as HintType, makeHint } from '../types';
 import { Maybe } from 'tsmonad';
 import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model';
@@ -19,7 +18,7 @@ export class ICActions {
   static editStem(content: RichText) {
     return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
       draftState.stem.content = content;
-      const previewText = toSimpleText({ children: content.model } as any);
+      const previewText = toSimpleText({ children: content });
       draftState.authoring.previewText = previewText;
     };
   }
@@ -82,7 +81,7 @@ export class ICActions {
 
   static addCognitiveHint() {
     return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
-      const newHint: HintType = fromText('');
+      const newHint: HintType = makeHint('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
       const bottomOutIndex = draftState.authoring.parts[0].hints.length - 1;

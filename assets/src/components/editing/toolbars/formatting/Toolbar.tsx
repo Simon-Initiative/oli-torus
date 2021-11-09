@@ -26,13 +26,15 @@ export const FormattingToolbar = (props: HoveringToolbarProps) => {
         icon: cmdDesc.icon(editor),
         command: cmdDesc.command,
         context: props.commandContext,
+        tooltip: description,
+        position: 'top' as any,
       };
 
       return acc.concat([
         cmdDesc.command.obtainParameters === undefined ? (
           <ToolbarButton {...shared} />
         ) : (
-          <DropdownToolbarButton {...shared} position="bottom" />
+          <DropdownToolbarButton {...shared} />
         ),
       ]);
     }, []);

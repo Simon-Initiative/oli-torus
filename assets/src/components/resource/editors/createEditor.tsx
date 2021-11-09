@@ -1,16 +1,9 @@
-// Factory for creating top level editors, for things like structured
-
 import React from 'react';
-import {
-  ActivityReference,
-  ResourceContent,
-  ResourceContext,
-  ResourceType,
-} from 'data/content/resource';
+import { ActivityReference, ResourceContent, ResourceContext } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
-import { getToolbarForResourceType } from '../../editing/toolbars/insertion/items';
+import { getToolbarForContentType } from '../../editing/toolbars/insertion/items';
 import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
@@ -70,10 +63,7 @@ export const createEditor = (
           content={content}
           onEdit={onEdit}
           projectSlug={projectSlug}
-          toolbarItems={getToolbarForResourceType(
-            graded ? ResourceType.assessment : ResourceType.page,
-            null,
-          )}
+          toolbarItems={getToolbarForContentType(null)}
         />
       </ContentBlock>
     );

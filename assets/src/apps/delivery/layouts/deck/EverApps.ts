@@ -215,16 +215,19 @@ export const EverAppActivity = {
 };
 
 export const getEverAppActivity = (everAppObj: any, url: string, index: number) => {
-  const updatedObject = clone(everAppObj);
+  const updatedObject = clone(EverAppActivity);
   updatedObject.id = everAppObj.id + index;
+  updatedObject.content.partsLayout[0].id = everAppObj.id;
+  updatedObject.authoring.parts[0].id = everAppObj.id;
   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
   updatedObject.content.partsLayout[0].custom.src = url;
   return updatedObject;
 };
 
-export const udpateAttemptGuid = (index: number) => {
+export const udpateAttemptGuid = (index: number, everAppObj: any) => {
   const updatedObject = clone(everAppActivityState);
   updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
+  updatedObject.parts[0].partId = everAppObj.id;
   return updatedObject;
 };
 

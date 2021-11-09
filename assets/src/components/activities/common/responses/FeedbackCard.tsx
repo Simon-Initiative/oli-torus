@@ -16,7 +16,7 @@ export const FeedbackCard: React.FC<{
       <Card.Content>
         <RichTextEditorConnected
           placeholder={placeholder === undefined ? 'Enter feedback' : placeholder}
-          text={feedback.content}
+          value={feedback.content}
           onEdit={(content) => update(feedback.id, content)}
         />
       </Card.Content>

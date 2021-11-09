@@ -18,7 +18,7 @@ export const StemActions = {
       StemActions.editStem(content, stemPath)(model);
       Operations.apply(
         model,
-        Operations.replace(previewTextPath, toSimpleText({ children: content.model })),
+        Operations.replace(previewTextPath, toSimpleText({ children: content })),
       );
     };
   },

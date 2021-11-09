@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 0.14.6 (2021-11-08)
+
+### Bug Fixes
+- Fix the rendering of HTML special characters within activities
+- Fix an issue where email was always being required regardless of independent_learner and guest status
+
+## 0.14.5 (2021-11-05)
+
+### Bug Fixes
+
+- Improve error logging
+- Determine author's initials in a more robust manner
+
+### Enhancements
+
+- New Popup page element
+
+## 0.14.4 (2021-11-04)
+
 ### Bug Fixes
 
 - Fix an issue where simultaneous section creations can result in more than one active sections for a given context
@@ -13,20 +32,16 @@
 
 **OpenSSL 1.1.1 Upgrade Required**
 
-Releases are now built using openssl11-devel for erlang which means that openssl11 is required
-to be installed on the deployment target for all future releases.
-```
-# Centos/Redhat
-sudo yum install openssl
+Releases are now built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required to be installed on the deployment target for all future releases.
 
-# Debian/Ubuntu
-sudo apt install openssl
+```
+# centos
+sudo yum install openssl11
 ```
 
 **Environment Configs**
 
-The following environment configs are now available for AppSignal integration. All are required
-for AppSignal support. If none are specified, AppSignal integration will be disabled.
+The following environment configs are now available for AppSignal integration. All are required for AppSignal support. If none are specified, AppSignal integration will be disabled.
 
 ```
 APPSIGNAL_OTP_APP       (Optional) AppSignal integration OTP app. Should be set to "oli".
@@ -47,6 +62,13 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 ### Bug Fixes
 
 - Make score display in gradebook more robust
+- Fix page editor text selection from resetting when a save triggers
+- Fix formatting toolbar tooltips not showing
+- Fix formatting toolbar format toggling
+- Fix insertion toolbar positioning
+- Fix insertion toolbar tooltips not disappearing after inserting content
+- Fix insertion toolbar tooltips not showing
+- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
 
 ## 0.14.1 (2021-10-28)
 

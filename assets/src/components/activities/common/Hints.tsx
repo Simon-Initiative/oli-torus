@@ -39,7 +39,7 @@ export const Hints = ({
       <RichTextEditor
         className="mb-3"
         editMode={editMode}
-        text={deerInHeadlightsHint.content}
+        value={deerInHeadlightsHint.content}
         projectSlug={projectSlug}
         onEdit={(content) => onEditHint(deerInHeadlightsHint.id, content)}
       />
@@ -58,7 +58,7 @@ export const Hints = ({
           <div className="d-flex mb-3">
             <RichTextEditor
               editMode={editMode}
-              text={hint.content}
+              value={hint.content}
               projectSlug={projectSlug}
               onEdit={(content) => onEditHint(hint.id, content)}
             />
@@ -81,7 +81,7 @@ export const Hints = ({
         className="mb-3"
         projectSlug={projectSlug}
         editMode={editMode}
-        text={bottomOutHint.content}
+        value={bottomOutHint.content}
         onEdit={(content) => onEditHint(bottomOutHint.id, content)}
       />
 

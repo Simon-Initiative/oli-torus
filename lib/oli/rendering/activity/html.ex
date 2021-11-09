@@ -2,10 +2,9 @@ defmodule Oli.Rendering.Activity.Html do
   @moduledoc """
   Implements the Html writer for Oli activity rendering
   """
-  alias Oli.Utils
-  alias Oli.Rendering.Context
+  import Oli.Utils
 
-  require Logger
+  alias Oli.Rendering.Context
 
   @behaviour Oli.Rendering.Activity
 
@@ -23,14 +22,11 @@ defmodule Oli.Rendering.Activity.Html do
 
     case activity_summary do
       nil ->
-        error_id = Utils.generate_error_id()
-
-        error_msg =
-          "ActivitySummary with id #{activity_id} missing from activity_map: #{Kernel.inspect({activity, activity_map})}"
-
-        if render_opts.log_errors,
-          do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-          else: nil
+        {error_id, error_msg} =
+          log_error(
+            "ActivitySummary with id #{activity_id} missing from activity_map",
+            {activity, activity_map}
+          )
 
         if render_opts.render_errors do
           error(context, activity, {:activity_missing, error_id, error_msg})
