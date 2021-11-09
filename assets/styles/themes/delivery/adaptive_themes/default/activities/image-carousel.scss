@@ -3,7 +3,9 @@
 -----------------------------------------*/
 /*-- Container --*/
 #stage-stage janus-image-carousel div .swiper-container {
-  background-color: var(--black10_a);
+  background-color: var(--grayLight20);
+  border-top: solid 10px var(--grayLight20);
+  box-sizing: border-box;
 }
 
 #stage-stage janus-image-carousel div.janus-image-carousel {
@@ -15,8 +17,8 @@
 #stage-stage janus-image-carousel div .swiper-button-next {
   background-color: rgba(0, 0, 0, 0.4);
   border-radius: 100%;
-  height: 2rem;
-  width: 2rem;
+  height: 48px;
+  width: 48px;
 }
 
 .swiper-button-next:after,
@@ -58,7 +60,12 @@
   background-color: var(--blue80);
 }
 
-/*-- Content --*/
+/*-- Swiper --*/
+.janus-image-carousel .swiper-wrapper {
+  height: calc(100% - 40px);
+}
+
+/*-- Swiper Content --*/
 .janus-image-carousel figure {
   margin: 0;
 }
