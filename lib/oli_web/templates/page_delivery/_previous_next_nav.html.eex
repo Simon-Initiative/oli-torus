@@ -1,7 +1,7 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
   <%= if @previous_page != nil do %>
-    <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @previous_page.slug), class: "page-nav-link btn" do %>
+    <%= link to: previous_url(@conn), class: "page-nav-link btn" do %>
       <div class="d-flex flex-row">
         <div>
           <i class="fas fa-arrow-left nav-icon"></i>
@@ -19,7 +19,7 @@
   <div class="flex-grow-1"></div>
 
   <%= if @next_page != nil do %>
-    <%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @next_page.slug), class: "page-nav-link btn" do %>
+    <%= link to: next_url(@conn), class: "page-nav-link btn" do %>
       <div class="d-flex flex-row">
         <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
           <div class="nav-label">Next</div>

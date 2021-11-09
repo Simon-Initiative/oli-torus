@@ -1,5 +1,13 @@
 <% link_class = "page-link graded-page-link list-group-item list-group-item-action flex-column align-items-start " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
-<%= link to: Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug), class: link_class do %>
+<% url =
+  if @preview_mode do
+    Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug, mode: "preview")
+  else
+    Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug)
+  end
+%>
+
+<%= link to: url, class: link_class do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="page-title">
       <i class="far fa-check-circle mr-2"></i> <%= @node.revision.title %>

@@ -242,7 +242,7 @@ defmodule Oli.Rendering.Content.Html do
           # rewrite internal link using section slug and revision slug
           case mode do
             :instructor_preview ->
-              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}?mode=review"
 
             _ ->
               "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
