@@ -12,7 +12,9 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     :schedule
   end
 
-  def check(%GatingCondition{data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}}) do
+  def check(%GatingCondition{
+        data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
+      }) do
     now = DateTime.utc_now()
 
     case {start_datetime, end_datetime} do
@@ -27,7 +29,7 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
 
       {start_datetime, end_datetime} ->
         DateTime.compare(start_datetime, now) == :lt and
-        DateTime.compare(now, end_datetime) == :lt
+          DateTime.compare(now, end_datetime) == :lt
     end
   end
 end

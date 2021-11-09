@@ -266,6 +266,36 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Build a map that contains a list of ancestor resource_ids for each node
+  """
+  def gated_ancestry_map(%HierarchyNode{} = root, %{} = gated_resource_id_map) do
+    gated_ancestry_map(root, %{}, [], gated_resource_id_map)
+  end
+
+  defp gated_ancestry_map(
+         %HierarchyNode{resource_id: resource_id, children: children},
+         node_map,
+         current_gated_ancestors,
+         gated_resource_id_map
+       ) do
+    {node_map, current_gated_ancestors} =
+      if Map.has_key?(gated_resource_id_map, resource_id) do
+        current_gated_ancestors = [resource_id | current_gated_ancestors]
+
+        {
+          Map.put(node_map, resource_id, current_gated_ancestors),
+          current_gated_ancestors
+        }
+      else
+        {node_map, current_gated_ancestors}
+      end
+
+    Enum.reduce(children, node_map, fn node, acc ->
+      gated_ancestry_map(node, acc, current_gated_ancestors, gated_resource_id_map)
+    end)
+  end
+
+  @doc """
   Debugging utility to inspect a hierarchy without all the noise. Choose which keys
   to drop in the HierarchyNodes using the drop_keys option.
   """

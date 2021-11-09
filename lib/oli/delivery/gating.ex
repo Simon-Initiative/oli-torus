@@ -7,6 +7,30 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Repo
 
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Hierarchy
+
+  @strategies [
+    Oli.Delivery.Gating.Strategies.Schedule
+  ]
+
+  @doc """
+  Returns the list of gating_conditions for a section
+
+  ## Examples
+
+      iex> list_gating_conditions(123, [1,2,3])
+      [%GatingCondition{}, ...]
+
+  """
+  def list_gating_conditions(section_id) do
+    from(gc in GatingCondition,
+      where: gc.section_id == ^section_id
+    )
+    |> Repo.all()
+  end
 
   @doc """
   Returns the list of gating_conditions for a section and list of resource ids
@@ -105,5 +129,56 @@ defmodule Oli.Delivery.Gating do
   """
   def change_gating_condition(%GatingCondition{} = gating_condition, attrs \\ %{}) do
     GatingCondition.changeset(gating_condition, attrs)
+  end
+
+  @doc """
+  Updates a sections resource gating index
+  """
+  def update_resource_gating_index(%Section{} = section) do
+    section
+    |> Sections.update_section(%{
+      resource_gating_index: generate_resource_gating_index(section)
+    })
+  end
+
+  @doc """
+  Returns a resource gating index for a particular section hierarchy
+
+  A resource gating index is a map from resource_id to a list of resource_ids.
+  The resource_ids in the list represent all hierarchy parent resources which
+  have gating conditions associated with them
+  """
+  def generate_resource_gating_index(%Section{id: section_id, slug: section_slug}) do
+    hierarchy = DeliveryResolver.full_hierarchy(section_slug)
+
+    gated_resource_id_map =
+      list_gating_conditions(section_id)
+      |> Enum.reduce(%{}, fn rc, acc -> Map.put(acc, rc.resource_id, true) end)
+
+    Hierarchy.gated_ancestry_map(hierarchy, gated_resource_id_map)
+  end
+
+  @doc """
+  Returns true if all gating conditions pass for a resource and it's ancestors
+  """
+  def check_resource(
+        %Section{id: section_id, resource_gating_index: resource_gating_index},
+        resource_id
+      ) do
+    if Map.has_key?(resource_gating_index, resource_id) do
+      list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
+      |> Enum.all?(&check_condition/1)
+    else
+      true
+    end
+  end
+
+  @doc """
+  Returns true if the gating conditions passes
+  """
+  def check_condition(%GatingCondition{type: type} = gating_condition) do
+    @strategies
+    |> Enum.find(fn s -> s.type() == type end)
+    |> then(fn strategy -> strategy.check(gating_condition) end)
   end
 end

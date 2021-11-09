@@ -43,6 +43,8 @@ defmodule Oli.Delivery.Sections.Section do
     field :nrps_enabled, :boolean, default: false
     field :nrps_context_memberships_url, :string
 
+    field :resource_gating_index, :map, default: %{}, null: false
+
     belongs_to :lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment,
       foreign_key: :lti_1p3_deployment_id
 
@@ -103,6 +105,7 @@ defmodule Oli.Delivery.Sections.Section do
       :line_items_service_url,
       :nrps_enabled,
       :nrps_context_memberships_url,
+      :resource_gating_index,
       :lti_1p3_deployment_id,
       :institution_id,
       :base_project_id,
