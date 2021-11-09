@@ -13,11 +13,17 @@ export const isEqual = (factValue: any, value: any): boolean => {
     return false;
   }
 
+  const typeOfValue = typeof value;
+  const typeOfFactValue = typeof factValue;
   if (Array.isArray(factValue)) {
     let compareValue = value;
     const updatedFactValue = parseArray(factValue);
+    let updatedValue = value;
     //Need to parse before we check "if" condition else it will fail for cases where value = '[0,0]'.
-    const updatedValue = parseArray(value);
+    if (!Array.isArray(value) && typeOfValue === 'number') {
+      updatedValue = `[${value}]`;
+    }
+    updatedValue = parseArray(updatedValue);
     if (Array.isArray(updatedValue)) {
       // ** We are doing this for the cases where factValue comes [2 , 5] but the values comes as ['2','5'] */
       // ** DT - making sure that value is of array type else value.map() will throw error. */
@@ -29,9 +35,6 @@ export const isEqual = (factValue: any, value: any): boolean => {
     updatedFactValue.sort();
     return JSON.stringify(updatedFactValue) === JSON.stringify(compareValue);
   }
-
-  const typeOfValue = typeof value;
-  const typeOfFactValue = typeof factValue;
   // for boolean values,  factValue comes as true and value comes as 'true'
   // and some factValue comes as 'true' and value comes as true
   if (typeOfFactValue === 'boolean') {
