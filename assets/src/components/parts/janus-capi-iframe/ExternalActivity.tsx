@@ -174,7 +174,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // INIT STATE also needs to take in all the sim values
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        if (key.indexOf(`stage.${id}.`) === 0) {
+        if (key.indexOf(`stage.${id}.`) === 0 || key.indexOf(`app.${id}.`) === 0) {
           collect[key] = currentStateSnapshot[key];
         }
         return collect;
@@ -396,6 +396,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+
               processInitStateVariable(currentStateSnapshot);
 
               setSimIsInitStatePassedOnce(false);
@@ -513,7 +514,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // GET DATA is meant to pull data from user based persistance for a specific sim
     // this data is *not* stored by the current scripting environment (used by adaptivity)
     const { key, simId } = msgData.values;
-
     simLife.key = key;
     simLife.simId = simId;
 
@@ -530,7 +530,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       }
       const val = await props.onGetData({ simId, key, id });
       let value = val;
-
       const exists = val !== undefined;
       if (exists && typeof val !== 'string') {
         value = JSON.stringify(val);
@@ -811,12 +810,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       return;
     }
 
-    writeCapiLog('INIT STATE APPLIED', 3);
+    writeCapiLog('INIT STATE APPLIED', 3, { initState });
     Object.keys(initState)
       .reverse()
       .forEach((key: any) => {
         const formatted: Record<string, unknown> = {};
-        const baseKey = key.replace(`stage.${id}.`, '');
+        const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
         const value = initState[key];
         const cVar = new CapiVariable({
           key: baseKey,
