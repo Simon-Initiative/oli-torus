@@ -1,5 +1,6 @@
 defmodule Oli.Repo.Migrations.UpdateUsersTableCanCreateSections do
   use Ecto.Migration
+  import Ecto.Query, warn: false
 
   def change do
     alter table(:users) do
