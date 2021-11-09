@@ -5,6 +5,7 @@ import {
   ActivityState,
   makeFeedback,
   makeHint,
+  DeliveryMode,
   PartState,
 } from 'components/activities/types';
 
@@ -71,7 +72,7 @@ export const defaultDeliveryElementProps = {
   onResetPart,
   onSubmitEvaluations,
   state: attemptState,
-  review: false,
+  mode: 'delivery' as DeliveryMode,
   userId: 1,
 };
 
