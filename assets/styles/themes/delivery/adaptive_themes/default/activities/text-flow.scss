@@ -5,8 +5,8 @@ html:not(html .headerContainer) {
 }
 
 janus-text-flow div * {
-  /*may not use this if a text-flow can hold more than one text type (p, h1, h2, h3...)*/
-  margin: 0 !important;
+  /*may not use this if a text-flow can hold more than one text type (p, h1, h2, h3...)
+  margin: 0 !important;*/
 }
 
 /*-----------------------------------------
@@ -23,6 +23,7 @@ janus-text-flow h2,
 janus-text-flow h3,
 janus-text-flow p {
   margin-bottom: 1rem;
+  margin-top: 0;
 }
 janus-text-flow h2 {
   font-size: 1.5rem;
@@ -39,9 +40,9 @@ janus-text-flow h3 {
 -----------------------------------------*/
 janus-text-flow p {
   margin: 0 0 1rem 0;
-  /*the following two style overrides can be removed once we eliminate the .content styles that control it*/
-  font-size: 1rem;
-  font-family: OpenSans;
+}
+janus-text-flow p:last-of-type {
+  margin-bottom: 0;
 }
 janus-text-flow p b,
 janus-text-flow p strong,
