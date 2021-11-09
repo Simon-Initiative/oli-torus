@@ -78,6 +78,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.MaybeEnrollOpenAndFreeUser)
   end
 
+  pipeline :maybe_gated_resource do
+    plug(Oli.Plugs.MaybeGatedResource)
+  end
+
   pipeline :require_lti_params do
     plug(Oli.Plugs.RequireLtiParams)
   end
@@ -560,6 +564,7 @@ defmodule OliWeb.Router do
       :require_section,
       :maybe_enroll_open_and_free,
       :delivery_protected,
+      :maybe_gated_resource,
       :enforce_paywall,
       :pow_email_layout
     ])

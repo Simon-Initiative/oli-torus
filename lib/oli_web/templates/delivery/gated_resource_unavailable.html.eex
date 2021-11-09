@@ -1,0 +1,14 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12 text-center pt-4">
+      <p><i class="la la-times-circle-o" aria-hidden="true" style="font-size: 64px"></i></p>
+      <h2 class="mt-4 mb-4">This resource is gated</h2>
+      <p>
+        You are attempting to access a gated resource that has not been unlocked.
+      </p>
+
+      <p>If you think this is an error or would like more information, please <a href="javascript:" onclick="showHelpModal();">contact OLI Support</a>.</p>
+
+    </div>
+  </div>
+</div>

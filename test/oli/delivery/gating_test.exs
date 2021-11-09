@@ -16,15 +16,6 @@ defmodule Oli.Delivery.GatingTest do
     @update_attrs %{type: :schedule, data: %{}}
     @invalid_attrs %{type: nil, data: nil}
 
-    def gating_condition_fixture(attrs \\ %{}) do
-      {:ok, gating_condition} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Gating.create_gating_condition()
-
-      gating_condition
-    end
-
     test "list_gating_conditions/1 returns all gating_conditions for a given section",
          %{
            container: %{resource: container_resource},

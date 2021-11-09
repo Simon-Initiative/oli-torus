@@ -162,9 +162,17 @@ defmodule Oli.Delivery.Gating do
   Returns true if all gating conditions pass for a resource and it's ancestors
   """
   def check_resource(
+        section,
+        resource_id
+      )
+      when is_integer(resource_id),
+      do: check_resource(section, Integer.to_string(resource_id))
+
+  def check_resource(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id
-      ) do
+      )
+      when is_binary(resource_id) do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
       |> Enum.all?(&check_condition/1)

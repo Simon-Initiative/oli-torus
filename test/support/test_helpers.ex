@@ -215,6 +215,15 @@ defmodule Oli.TestHelpers do
     %{objective: objective, objective_revision: revision}
   end
 
+  def gating_condition_fixture(attrs \\ %{}) do
+    {:ok, gating_condition} =
+      attrs
+      |> Enum.into(%{type: :schedule, data: %{}})
+      |> Oli.Delivery.Gating.create_gating_condition()
+
+    gating_condition
+  end
+
   def url_from_conn(conn) do
     scheme = if conn.scheme == :https, do: "https", else: "http"
     port = if conn.port == 80 or conn.port == 443, do: "", else: ":#{conn.port}"
