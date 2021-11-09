@@ -26,6 +26,11 @@ defmodule Oli.Rendering.Page do
           %{"type" => "content"} ->
             {element, output ++ writer.content(context, element)}
 
+          # Activity bank selections only are rendered during an instructor preview, otherwise
+          # they have already been realized into specific activity-references
+          %{"type" => "selection"} ->
+            {element, output ++ writer.content(context, element)}
+
           %{"type" => "activity-reference"} ->
             {element, output ++ writer.activity(context, element)}
 

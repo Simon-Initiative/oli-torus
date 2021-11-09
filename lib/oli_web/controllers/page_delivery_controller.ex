@@ -125,18 +125,19 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
+    all_activities = Activities.list_activity_registrations()
+
     render_context = %Context{
       user: conn.assigns.current_user,
       section_slug: section_slug,
       mode: :instructor_preview,
-      activity_map: activity_map
+      activity_map: activity_map,
+      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
     }
 
     html = Page.render(render_context, page_model, Page.Html)
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
-
-    all_activities = Activities.list_activity_registrations()
 
     render(
       conn,

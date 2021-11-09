@@ -40,6 +40,8 @@ defmodule Oli.Rendering.Content do
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
+  @callback selection(%Context{}, next, %{}) :: [any()]
+
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -182,6 +184,10 @@ defmodule Oli.Rendering.Content do
           []
         end
     end
+  end
+
+  def render(%Context{} = context, %{"type" => "selection"} = selection, writer) do
+    writer.selection(context, fn -> true end, selection)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
