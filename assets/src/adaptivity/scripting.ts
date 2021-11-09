@@ -120,7 +120,9 @@ export const getExpressionStringForValue = (
   }
 
   if (!v.type || v.type === CapiVariableTypes.UNKNOWN) {
-    if (typeof val === 'string' && val[0] !== '"' && val.slice(-1) !== '"') {
+    if (typeof v.value === 'object' && Array.isArray(v.value)) {
+      val = JSON.stringify(v.value);
+    } else if (typeof val === 'string' && val[0] !== '"' && val.slice(-1) !== '"') {
       val = `"${val}"`;
     }
   }

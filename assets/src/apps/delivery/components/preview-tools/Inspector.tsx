@@ -59,7 +59,7 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
 
   const getStageState = () => {
     const statePuff: any = unflatten(globalState);
-    const stageSlice = currentActivityTree?.reduce((collect: any, activity) => {
+    const stageSlice = currentActivityTree?.reverse()?.reduce((collect: any, activity) => {
       const next = { ...collect, ...statePuff[`${activity.id}|stage`] };
       return next;
     }, {});
