@@ -213,7 +213,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       console.error(`part attempt guid for ${payload.id} not found!`);
       return;
     }
-    console.log('CurrentAttempt', currentAttemptState, partAttempt);
     if (props.onWriteUserState) {
       await props.onWriteUserState(
         currentAttemptState.attemptGuid,

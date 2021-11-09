@@ -43,15 +43,6 @@ import { Next, WriterImpl } from './writer';
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
 
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
 
@@ -274,7 +265,7 @@ export class HtmlParser implements WriterImpl {
   }
 
   text(context: WriterContext, textEntity: Text) {
-    return this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
+    return this.wrapWithMarks(textEntity.text, textEntity);
   }
   unsupported(_context: WriterContext, x: ModelElement) {
     console.error('Content element ' + JSON.stringify(x) + ' is invalid and could not display.');

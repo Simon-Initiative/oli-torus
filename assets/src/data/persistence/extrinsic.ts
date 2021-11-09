@@ -27,7 +27,6 @@ export const readGlobalUserState = async (
   useLocalStorage = false,
 ) => {
   let result: any = {};
-
   if (useLocalStorage) {
     // localStorage API doesn't support the "get all" behavior, so we need to put everything into a single object
     const storedUserState = JSON.parse(localStorage.getItem('torus.userState') || '{}');
@@ -45,7 +44,6 @@ export const readGlobalUserState = async (
       result = serverUserState;
     }
   }
-
   return result;
 };
 

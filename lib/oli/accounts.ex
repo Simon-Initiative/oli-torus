@@ -215,18 +215,18 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Returns user details if a record matches sub, or creates and returns a new user
+  Updates user details if a record matches sub, otherwise creates a new user
 
   ## Examples
 
-      iex> insert_or_update_user(%{field: value})
+      iex> insert_or_update_lms_user(%{sub, "123", field: value})
       {:ok, %User{}}    -> # Inserted or updated with success
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_user(%{sub: sub} = changes) do
+  def insert_or_update_lms_user(%{sub: sub} = changes) do
     case Repo.get_by(User, sub: sub) do
-      nil -> %User{}
+      nil -> %User{sub: sub, independent_learner: false}
       user -> user
     end
     |> User.noauth_changeset(changes)
