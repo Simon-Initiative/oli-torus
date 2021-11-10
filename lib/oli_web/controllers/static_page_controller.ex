@@ -20,6 +20,12 @@ defmodule OliWeb.StaticPageController do
     |> send_resp(200, "Ok")
   end
 
+  def timezone(conn, %{"local_tz" => local_tz}) do
+    conn
+    |> put_session("local_tz", local_tz)
+    |> send_resp(200, "Ok")
+  end
+
   def site_webmanifest(conn, _params) do
     conn
     |> json(%{

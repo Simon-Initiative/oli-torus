@@ -66,13 +66,6 @@ defmodule Oli.Utils do
     |> Enum.join(" ")
   end
 
-  def format_datetime(datetime) do
-    ampm = if datetime.hour < 13, do: "AM", else: "PM"
-    hour = if datetime.hour < 13, do: datetime.hour, else: datetime.hour - 12
-    minute = if datetime.minute < 10, do: "#{datetime.minute}0", else: datetime.minute
-    "#{datetime.month}/#{datetime.day}/#{datetime.year} #{hour}:#{minute} #{ampm}"
-  end
-
   @doc """
   Traps a nil and wraps it in an {:error, _} tuple, otherwise passes thru
   the non-nil result as {:ok, result}

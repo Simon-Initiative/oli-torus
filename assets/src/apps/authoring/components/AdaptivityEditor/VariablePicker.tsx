@@ -243,26 +243,50 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       {Object.keys(sessionVariables).map((variable: string, index: number) => {
         if (variable !== 'visits') {
           const limitedType = getLimitedTypeCheck(sessionVariables[variable]);
-          return (
-            <div key={index} className="part-type">
-              <button
-                type="button"
-                className="text-btn font-italic"
-                onClick={() => {
-                  setTargetRef(`session.${variable}`);
-                  setTypeRef(`${limitedType}`);
-                }}
-                title={`${
-                  CapiVariableTypes[limitedType][0] +
-                  CapiVariableTypes[limitedType].slice(1).toLowerCase()
-                }`}
-              >
-                {variable}
-              </button>
-            </div>
-          );
+          // PMP-2039: if the context is mutate, we only want to show tutorialScore and currentQuestionScore
+          if (context === 'mutate') {
+            if (variable === 'tutorialScore' || variable === 'currentQuestionScore') {
+              return (
+                <div key={index} className="part-type">
+                  <button
+                    type="button"
+                    className="text-btn font-italic"
+                    onClick={() => {
+                      setTargetRef(`session.${variable}`);
+                      setTypeRef(`${limitedType}`);
+                    }}
+                    title={`${
+                      CapiVariableTypes[limitedType][0] +
+                      CapiVariableTypes[limitedType].slice(1).toLowerCase()
+                    }`}
+                  >
+                    {variable}
+                  </button>
+                </div>
+              );
+            }
+          } else {
+            return (
+              <div key={index} className="part-type">
+                <button
+                  type="button"
+                  className="text-btn font-italic"
+                  onClick={() => {
+                    setTargetRef(`session.${variable}`);
+                    setTypeRef(`${limitedType}`);
+                  }}
+                  title={`${
+                    CapiVariableTypes[limitedType][0] +
+                    CapiVariableTypes[limitedType].slice(1).toLowerCase()
+                  }`}
+                >
+                  {variable}
+                </button>
+              </div>
+            );
+          }
         }
-        if (variable === 'visits') {
+        if (variable === 'visits' && context !== 'mutate') {
           const sessionVisits = getSessionVisits(hierarchy);
           return (
             <Accordion>
@@ -384,7 +408,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                     >
                       {FilterItems.SCREEN}
                     </Dropdown.Item>
-                    {context !== 'init' && context !== 'mutate' && (
+                    {context !== 'init' && (
                       <>
                         <Dropdown.Item
                           active={activeFilter === FilterItems.SESSION}
@@ -395,26 +419,30 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
                         >
                           {FilterItems.SESSION}
                         </Dropdown.Item>
-                        <Dropdown.Item
-                          active={activeFilter === FilterItems.VARIABLES}
-                          onClick={() => {
-                            setActiveFilter(FilterItems.VARIABLES);
-                            setSpecificSequenceId('variables');
-                          }}
-                        >
-                          {FilterItems.VARIABLES}
-                        </Dropdown.Item>
+                        {context !== 'mutate' && (
+                          <>
+                            <Dropdown.Item
+                              active={activeFilter === FilterItems.VARIABLES}
+                              onClick={() => {
+                                setActiveFilter(FilterItems.VARIABLES);
+                                setSpecificSequenceId('variables');
+                              }}
+                            >
+                              {FilterItems.VARIABLES}
+                            </Dropdown.Item>
 
-                        <Dropdown.Divider />
-                        <Dropdown.Header>Other Screens</Dropdown.Header>
-                        <div className="screen-picker-container">
-                          <SequenceDropdown
-                            items={hierarchy}
-                            onChange={onChangeHandler}
-                            value={'next'}
-                            showNextBtn={false}
-                          />
-                        </div>
+                            <Dropdown.Divider />
+                            <Dropdown.Header>Other Screens</Dropdown.Header>
+                            <div className="screen-picker-container">
+                              <SequenceDropdown
+                                items={hierarchy}
+                                onChange={onChangeHandler}
+                                value={'next'}
+                                showNextBtn={false}
+                              />
+                            </div>
+                          </>
+                        )}
                       </>
                     )}
                   </Dropdown.Menu>

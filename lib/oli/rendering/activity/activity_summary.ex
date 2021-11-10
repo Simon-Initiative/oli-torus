@@ -12,6 +12,7 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :state,
     :model,
     :delivery_element,
+    :authoring_element,
     :graded
   ]
   defstruct [
@@ -25,8 +26,9 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :state,
     # already encoded json of the model of the activity
     :model,
-    # the webcomponent element
+    # the webcomponent elements
     :delivery_element,
+    :authoring_element,
     # whether or not the activity is rendering in a graded context
     :graded
   ]

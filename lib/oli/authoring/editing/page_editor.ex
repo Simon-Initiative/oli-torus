@@ -234,12 +234,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   def render_page_html(project_slug, content, author, options \\ []) do
+    mode =
+      if Keyword.get(options, :preview, false) do
+        :author_preview
+      else
+        :delivery
+      end
+
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{
            user: author,
-           preview: Keyword.get(options, :preview, false),
+           mode: mode,
            activity_map: activities,
            project_slug: project_slug
          } do
@@ -293,6 +300,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
            delivery_element: type.delivery_element,
+           authoring_element: type.authoring_element,
            script: type.delivery_script,
            graded: graded
          }

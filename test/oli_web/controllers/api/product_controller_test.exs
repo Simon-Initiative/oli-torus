@@ -21,8 +21,8 @@ defmodule OliWeb.ProductControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> Base.encode64(api_key))
         |> get(Routes.product_path(conn, :index))
 
-      assert json_response(conn, 200)["products"] == [
-               %{
+      assert json_response(conn, 200)["products"] |> Enum.count() == 2
+      assert json_response(conn, 200)["products"] |> Enum.find(fn p -> p == %{
                  "amount" => Money.to_string!(prod1.amount),
                  "grace_period_days" => prod1.grace_period_days,
                  "grace_period_strategy" => Atom.to_string(prod1.grace_period_strategy),
@@ -31,8 +31,9 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod1.slug,
                  "status" => Atom.to_string(prod1.status),
                  "title" => prod1.title
-               },
-               %{
+               } end)
+
+      assert json_response(conn, 200)["products"] |> Enum.find(fn p -> p == %{
                  "amount" => nil,
                  "grace_period_days" => 0,
                  "grace_period_strategy" => Atom.to_string(prod2.grace_period_strategy),
@@ -41,8 +42,7 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod2.slug,
                  "status" => Atom.to_string(prod2.status),
                  "title" => prod2.title
-               }
-             ]
+               } end)
     end
 
     test "renders error when api key does not have product scope", %{

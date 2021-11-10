@@ -6,6 +6,8 @@ import { PathOperation } from 'utils/pathOperations';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
+export type DeliveryMode = 'delivery' | 'review' | 'preview';
+
 export type MediaItemRequest = {
   type: 'MediaItemRequest';
   mimeTypes: string[];
