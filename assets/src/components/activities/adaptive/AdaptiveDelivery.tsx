@@ -26,6 +26,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   // should be provided by the parent as a child env, possibly default to having its own instead
   const [scriptEnv, setScriptEnv] = useState<any>();
 
+  const [adaptivityDomain, setAdaptivityDomain] = useState<string>('stage');
+
   const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
@@ -158,14 +160,21 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       if (parts.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady) {
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
-          const { env } = readyResults;
+          const { env, domain } = readyResults;
           if (env) {
             setScriptEnv(env);
+          }
+          if (domain) {
+            setAdaptivityDomain(domain);
           }
           /* console.log('ACTIVITY READY RESULTS', readyResults); */
           partsInitDeferred.resolve({
             snapshot: readyResults.snapshot || {},
-            context: { ...readyResults.context, host: props.mountPoint },
+            context: {
+              ...readyResults.context,
+              host: props.mountPoint,
+              domain: domain || adaptivityDomain,
+            },
             env,
           });
         } else {
@@ -174,12 +183,13 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             snapshot: {},
             context: { mode: 'VIEWER', host: props.mountPoint },
             env: scriptEnv,
+            domain: adaptivityDomain,
           });
         }
       }
       return partsInitDeferred.promise;
     },
-    [parts],
+    [parts, adaptivityDomain],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
