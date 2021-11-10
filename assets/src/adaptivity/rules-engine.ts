@@ -113,6 +113,14 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           }
         }
       }
+      if (
+        typeof ogValue === 'string' &&
+        condition?.type === 3 &&
+        ogValue.charAt(0) !== '[' &&
+        ogValue.slice(-1) !== ']'
+      ) {
+        modifiedValue = `[${ogValue}]`;
+      }
       condition.value = modifiedValue;
     });
   });
