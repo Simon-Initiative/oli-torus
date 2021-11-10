@@ -589,6 +589,19 @@ defmodule OliWeb.Router do
     )
   end
 
+  scope "/sections/:section_slug/preview/", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_and_admin,
+      :pow_email_layout
+    ])
+
+    get("/overview", PageDeliveryController, :index_preview)
+    get("/page/:revision_slug", PageDeliveryController, :page_preview)
+  end
+
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
