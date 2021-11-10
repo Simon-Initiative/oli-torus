@@ -157,6 +157,7 @@ defmodule Oli.Delivery.GatingTest do
     test "generate_resource_gating_index/1 returns a gating index map", %{
       unit1_container: %{resource: unit1},
       nested_page1: nested_page1,
+      nested_page2: nested_page2,
       page1: page1,
       page2: page2,
       section_1: section,
@@ -177,18 +178,22 @@ defmodule Oli.Delivery.GatingTest do
       index = Gating.generate_resource_gating_index(section)
 
       # ensure all defined gating conditions for section are in the index
-      assert Enum.count(index) == 3
+      assert Enum.count(index) == 4
 
-      assert index[Integer.to_string(page2_gating_condition.resource_id)] == [
+      assert index[Integer.to_string(page2.id)] == [
                page2_gating_condition.resource_id
              ]
 
-      assert index[Integer.to_string(unit_gating_condition.resource_id)] == [
+      assert index[Integer.to_string(unit1.id)] == [
                unit_gating_condition.resource_id
              ]
 
-      assert index[Integer.to_string(nested_page1_gating_condition.resource_id)] == [
+      assert index[Integer.to_string(nested_page1.id)] == [
                nested_page1_gating_condition.resource_id,
+               unit_gating_condition.resource_id
+             ]
+
+      assert index[Integer.to_string(nested_page2.id)] == [
                unit_gating_condition.resource_id
              ]
 
