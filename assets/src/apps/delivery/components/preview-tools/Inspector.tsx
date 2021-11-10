@@ -59,8 +59,21 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
 
   const getStageState = () => {
     const statePuff: any = unflatten(globalState);
-    const stageSlice = currentActivityTree?.reverse()?.reduce((collect: any, activity) => {
-      const next = { ...collect, ...statePuff[`${activity.id}|stage`] };
+    const stageSlice = currentActivityTree?.reduce((collect: any, activity) => {
+      const activityVars = statePuff[`${activity.id}|stage`];
+      let ownerVariables: Record<string, any> = {};
+      if (activityVars) {
+        ownerVariables = Object.keys(activityVars)?.reduce((col: any, part: any) => {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === part),
+          );
+          if (ownerActivity.id === activity.id) {
+            const next = { ...col, ...statePuff[`${activity.id}|stage`] };
+            return next;
+          }
+        }, {});
+      }
+      const next = { ...collect, ...ownerVariables };
       return next;
     }, {});
     /* console.log('STAGE STATE PUFF', { statePuff, stageSlice }); */
