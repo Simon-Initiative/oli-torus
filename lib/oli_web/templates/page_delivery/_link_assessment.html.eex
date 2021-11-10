@@ -1,7 +1,7 @@
 <% link_class = "page-link graded-page-link list-group-item list-group-item-action flex-column align-items-start " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
 <% url =
-  if @preview_mode do
-    Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug, mode: "preview")
+  if Map.get(@conn.assigns, :preview_mode, false) do
+    Routes.page_delivery_path(@conn, :page_preview, @section_slug, @node.revision.slug)
   else
     Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug)
   end
@@ -12,8 +12,5 @@
     <span class="page-title">
       <i class="far fa-check-circle mr-2"></i> <%= @node.revision.title %>
     </span>
-    <%= if Map.has_key?(@summary.access_map, @node.revision.resource_id) do %>
-      <small class="text-secondary"><%= calculate_score_percentage(Map.get(@summary.access_map, @node.revision.resource_id)) %></small>
-    <% end %>
   </div>
 <% end %>
