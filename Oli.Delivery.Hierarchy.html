@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Hierarchy — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-6669ea9356.js"></script>
+    <script src="dist/sidebar_items-24f1843982.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -181,6 +181,16 @@ in the hierarchy. Containers appear before their contents</p></div>
 
     <div class="summary-synopsis"><p>From a constructed hierarchy root node, or a collection of hierarchy nodes, return
 an ordered flat list of the nodes of only the pages in the hierarchy.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#gated_ancestry_map/2">gated_ancestry_map(root, gated_resource_id_map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Builds a map that contains a list of gated ancestor resource_ids for each node. The list will
+contain the resource_id of the node itself, if that resource is gated.</p></div>
 
 </div>
 <div class="summary-row">
@@ -370,7 +380,7 @@ Functions
   <section class="docstring">
 
 <p>Given a hierarchy node, this function &quot;flattens&quot; all nodes below into a list, in the order that
-a student would encounter the resources working linearly through a course.</p><p>As an example, consider the followign hierarchy:</p><p>--Unit 1
+a student would encounter the resources working linearly through a course.</p><p>As an example, consider the following hierarchy:</p><p>--Unit 1
 ----Module 1
 ------Page A
 ------Page B
@@ -432,6 +442,44 @@ in the hierarchy. Containers appear before their contents</p>
 an ordered flat list of the nodes of only the pages in the hierarchy.</p>
   </section>
 </section>
+<section class="detail" id="gated_ancestry_map/2">
+
+  <div class="detail-header">
+    <a href="#gated_ancestry_map/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">gated_ancestry_map(root, gated_resource_id_map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L300" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Builds a map that contains a list of gated ancestor resource_ids for each node. The list will
+contain the resource_id of the node itself, if that resource is gated.</p><p>The keys of the map will be returned as strings, but the list of resource_ids themselves
+will be integers. This is done this way for consistency because when this map gets
+persisted to a the Postgres JSON datatype, these keys will be stored to strings.</p><p>Takes 2 parameters. First is the root of the hierarchy. Second is a gated_resource_id_map
+which is a map containing the resource_ids of gated resources as keys (the value is ignored)</p><p>For example, consider the following hierarchy:</p><p>--Unit 1 (gated: true, resource_id: 1)
+----Module 1 (gated: true, resource_id: 2)
+------Page A (gated: true, resource_id: 3)
+------Page B (gated: false, resource_id: 4)
+--Unit 2 (gated: false, resource_id: 5)
+----Moudule 2 (gated: false, resource_id: 6)
+------Page C (gated: true, resource_id: 7)</p><p>The following ancestry map will be returned:</p><p>%{
+  &quot;1&quot; =&gt; [1],
+  &quot;2&quot; =&gt; [2, 1],
+  &quot;3&quot; =&gt; [3, 2 ,1],
+  &quot;4&quot; =&gt; [2, 1],
+  &quot;7&quot; =&gt; [7]
+}</p>
+  </section>
+</section>
 <section class="detail" id="inspect/2">
 
     <span id="inspect/1"></span>
@@ -443,7 +491,7 @@ an ordered flat list of the nodes of only the pages in the hierarchy.</p>
     </a>
     <h1 class="signature">inspect(hierarchy, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L272" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L335" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
