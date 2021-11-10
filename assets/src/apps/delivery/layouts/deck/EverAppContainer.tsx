@@ -1,19 +1,19 @@
 import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
 import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
-import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { ActivityState, StudentResponse } from 'components/activities/types';
+import * as Extrinsic from 'data/persistence/extrinsic';
 import React, { useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   defaultGlobalEnv,
+  evalAssignScript,
   evalScript,
   getLocalizedStateSnapshot,
 } from '../../../../adaptivity/scripting';
 import { selectPageContent, selectPreviewMode } from '../../store/features/page/slice';
 import { getEverAppActivity, udpateAttemptGuid } from './EverApps';
-import * as Extrinsic from 'data/persistence/extrinsic';
 
 const EverAppContainer = () => {
   const dispatch = useDispatch();
@@ -45,23 +45,16 @@ const EverAppContainer = () => {
       partAttemptGuid: string,
       response: StudentResponse,
     ) => {
-      console.log('EVERAPP SAVE PART', {
+      /* console.log('EVERAPP SAVE PART', {
         activityId,
         attemptGuid,
         partAttemptGuid,
         response,
         currentActivityTree,
-      });
+      }); */
       if (!currentActivityTree) {
         return { result: 'error' };
       }
-      const responseMap = response.input.reduce(
-        (result: { [x: string]: any }, item: { key: string; path: string }) => {
-          result[item.key] = { ...item, path: `app.${item.path}` };
-          return result;
-        },
-        {},
-      );
       /*
       id: "app.ispk-bio-observer.external.env"
       key: "external.env"
@@ -75,7 +68,12 @@ const EverAppContainer = () => {
         result[simId][item.key] = item.value;
         return result;
       }, {});
-      // do I need to update the scripting env??
+      const responseMap = response.input.reduce((result: any, item: any) => {
+        result[item.id] = item.value;
+        return result;
+      }, {});
+      // need to update scripting env
+      evalAssignScript(responseMap, defaultGlobalEnv);
       const currentActivityIds = currentActivityTree.map((a) => a.id);
       // because the everapp attemptGuid and partAttemptGuid are always made up
       // can't save it like normal, instead setData should cover it
@@ -92,18 +90,29 @@ const EverAppContainer = () => {
       partAttemptGuid: string,
       response: StudentResponse,
     ) => {
-      // TODO: save anything first? or just triggering check OK??
-      if (!currentActivityTree) {
-        return; // very bad!
-      }
-      const currentActivityIds = currentActivityTree.map((a) => a.id);
+      const { result, snapshot } = await handleActivitySavePart(
+        activityId,
+        attemptGuid,
+        partAttemptGuid,
+        response,
+      );
 
       dispatch(triggerCheck({ activityId: activityId.toString() }));
 
-      return { result: true, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+      return { result, snapshot };
     },
     [currentActivityTree],
   );
+
+  const handleRequestLatestState = React.useCallback(async () => {
+    if (!currentActivityTree) {
+      return; // very bad!
+    }
+    const currentActivityIds = currentActivityTree.map((a) => a.id);
+    return {
+      snapshot: getLocalizedStateSnapshot(currentActivityIds),
+    };
+  }, [currentActivityTree]);
 
   return (
     <div className={'beagle'} style={{ order: 3 }}>
@@ -145,7 +154,7 @@ const EverAppContainer = () => {
                                 onActivitySavePart={handleActivitySavePart}
                                 onActivitySubmitPart={handleActivitySubmitPart}
                                 onActivityReady={handleEverappActivityReady}
-                                onRequestLatestState={() => {}}
+                                onRequestLatestState={handleRequestLatestState}
                                 adaptivityDomain="app"
                               />
                             </div>
