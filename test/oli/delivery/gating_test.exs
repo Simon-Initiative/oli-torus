@@ -187,8 +187,6 @@ defmodule Oli.Delivery.GatingTest do
 
       index = Gating.generate_resource_gating_index(section)
 
-      IO.inspect({index, nested_page2.id})
-
       # ensure all defined gating conditions for section are in the index
       assert Enum.count(index) == 4
       assert index[page2.id] == [page2_gating_condition.resource_id]
