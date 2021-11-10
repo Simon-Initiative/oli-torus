@@ -11,10 +11,15 @@
 
 /*-- Activity Types --*/
 @import 'activities/text-flow';
+@import 'activities/image';
 @import 'activities/navigation-button';
 @import 'activities/mcq';
 @import 'activities/text-input';
 @import 'activities/dropdown';
+@import 'activities/slider';
+@import 'activities/popup';
+@import 'activities/image-carousel';
+@import 'activities/fill-blanks';
 
 /*------------------------------------------
     General UI
@@ -73,7 +78,7 @@ html [type='button'],
   width: 25% !important;
 }
 
-.pointer-evenets-none {
+.pointer-events-none {
   pointer-events: none !important;
 }
 .pointer-events-initial {

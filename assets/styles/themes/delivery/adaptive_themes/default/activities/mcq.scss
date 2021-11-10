@@ -1,32 +1,33 @@
-/*<div id="mcq" class="mcq-input">*/
-#stage-stage .mcq-input {
-  border: none !important;
-  padding: 0px;
+janus-mcq {
+  .mcq-input {
+    border: none !important;
+    padding: 0px;
+
+    > div {
+      display: block;
+      position: static !important;
+      margin: 0 6px 15px 0 !important;
+      min-height: 20px;
+      line-height: normal !important;
+      vertical-align: text-top;
+    }
+
+    input {
+      position: absolute !important;
+      opacity: 0;
+      z-index: 100;
+      /*pointer-events: none;*/
+      cursor: pointer;
+      width: 1rem;
+      height: 1rem;
+      padding: 0px;
+      margin: 0;
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+  }
 }
-/*<div id="mcq" class="mcq-input"> <div class="">*/
-#stage-stage .mcq-input > div {
-  display: block;
-  position: static !important;
-  margin: 0 6px 15px 0 !important;
-  min-height: 20px;
-  line-height: normal !important;
-  vertical-align: text-top;
-}
-/*<div id="mcq" class="mcq-input"> <div class=""> <input name="mcq" id="" type="radio" value="" class="">*/
-#stage-stage .mcq-input input {
-  position: absolute !important;
-  opacity: 0;
-  z-index: 100;
-  /*pointer-events: none;*/
-  cursor: pointer;
-  width: 1rem;
-  height: 1rem;
-  padding: 0px;
-  margin: 0;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-/*<div id="mcq" class="mcq-input"> <div class=""> <input name="mcq" id="" type="radio" value="" class=""> <label for="" class="">*/
+
 #stage-stage .mcq-input label {
   display: block;
   padding-left: 30px !important;
@@ -111,11 +112,10 @@
   margin-top: -2px;
 }
 
-
 /*align checkbox to top-left of text*/
 #stage-stage .mcq-input label:before,
-#stage-stage .mcq-input input[type=checkbox]+label:after {
-    top: 0.75rem;
+#stage-stage .mcq-input input[type='checkbox'] + label:after {
+  top: 0.75rem;
 }
 
 /*<div id="mcq" class="mcq-input"> <div class=""> <input name="mcq" id="" type="radio" value="" class=""> <label for="" class=""> <div class="">*/
