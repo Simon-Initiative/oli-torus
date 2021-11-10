@@ -1,3 +1,4 @@
+import { JanusConditionProperties } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
 import { Environment } from 'janus-script';
 import {
   AllConditions,
@@ -90,7 +91,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       correct: !!rule.correct,
       default: !!rule.default,
     };
-    applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
+    applyToEveryCondition(rule.conditions, (condition: JanusConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
