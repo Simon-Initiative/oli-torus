@@ -142,8 +142,8 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   width: 16px;
   height: 16px;
   border-radius: 10px;
-  background-color: #4ad3ad;
-  background-image: url(data:image/svg+xml;utf8,<svg xmlns=http://www.w3.org/2000/svg width=8 height=6 viewBox=0 0 8 6> <g fill=none fill-rule=evenodd transform=translate(-3 -4)> <rect width=14 height=14 fill=%23D8D8D8 opacity=0/> <polygon fill=%23FFF points=5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818/> </g> </svg>);
+  background-color: #fff;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'> <g fill='none' fill-rule='evenodd' transform='translate(-3 -4)'> <rect width='14' height='14' fill='%23477e59' opacity='0'/> <polygon fill='%23477e59 ' points='5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818'/> </g> </svg>");
   background-size: 50%;
   background-position: center;
   background-repeat: no-repeat;
@@ -151,6 +151,8 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   box-shadow: none;
   padding: 0;
   margin: 0;
-  margin-right: 5 px;
+  margin-right: 7px;
+  margin-left: -4px;
+  margin-top: -2px;
   vertical-align: middle;
 }
