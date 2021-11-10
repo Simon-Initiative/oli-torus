@@ -22,7 +22,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
 
-  def index(conn, %{"section_slug" => section_slug, "mode" => "preview"}) do
+  def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author
     is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
@@ -88,10 +88,9 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def page(conn, %{
+  def page_preview(conn, %{
         "section_slug" => section_slug,
-        "revision_slug" => revision_slug,
-        "mode" => "preview"
+        "revision_slug" => revision_slug
       }) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author

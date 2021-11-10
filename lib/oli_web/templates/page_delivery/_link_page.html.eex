@@ -1,7 +1,7 @@
 <% link_class = "page-link ungraded-page-link list-group-item list-group-item-action " <> if @active_page == @node.revision.slug, do: "active", else: "" %>
 <% url =
-  if @preview_mode do
-    Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug, mode: "preview")
+  if Map.get(@conn.assigns, :preview_mode, false) do
+    Routes.page_delivery_path(@conn, :page_preview, @section_slug, @node.revision.slug)
   else
     Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug)
   end
