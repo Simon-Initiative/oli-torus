@@ -11,8 +11,5 @@
     <span class="page-title">
       <i class="far fa-file mr-2"></i> <%= @node.revision.title %>
     </span>
-    <%= if Map.has_key?(@summary.access_map, @node.revision.resource_id) do %>
-      <small class="text-secondary"><i class="fa fa-check"></i></small>
-    <% end %>
   </div>
 <% end %>

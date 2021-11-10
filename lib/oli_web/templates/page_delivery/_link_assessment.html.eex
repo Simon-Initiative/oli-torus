@@ -12,8 +12,5 @@
     <span class="page-title">
       <i class="far fa-check-circle mr-2"></i> <%= @node.revision.title %>
     </span>
-    <%= if Map.has_key?(@summary.access_map, @node.revision.resource_id) do %>
-      <small class="text-secondary"><%= calculate_score_percentage(Map.get(@summary.access_map, @node.revision.resource_id)) %></small>
-    <% end %>
   </div>
 <% end %>

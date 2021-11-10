@@ -594,7 +594,7 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :delivery_protected,
+      :delivery_and_admin,
       :pow_email_layout
     ])
 
