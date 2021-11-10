@@ -295,10 +295,12 @@ defmodule Oli.Delivery.Hierarchy do
   }
   ```
 
-  The above construct is designed to allow a lightweight, constant time determination (and then rendering) of Previous and Next
-  links.  Given a resource id of the current page, at most three map lookups are required to gather all the information required to
-  render links.  It is expected that this map is already in memory, retrieved from the section record itself, which overall then
-  greatly improves the performane around determining prev and next links.
+  The above construct is designed to allow a lightweight, constant time determination
+  (and then rendering) of Previous and Next links.  Given a resource id of the current
+  page, at most three map lookups are required to gather all the information required to
+  render links.  It is expected that this map is already in memory, retrieved from the
+  section record itself, which overall then greatly improves the performance of
+  determining prev and next links.
   """
   def build_navigation_link_map(%HierarchyNode{} = root) do
   end
