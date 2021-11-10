@@ -80,6 +80,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       return unsub;
     });
     return () => {
+      /* console.log('AD UNSUB'); */
       notifications.forEach((unsub) => {
         unsub();
       });
@@ -306,6 +307,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class AdaptiveDelivery extends DeliveryElement<AdaptiveModelSchema> {
+  disconnectedCallback() {
+    ReactDOM.unmountComponentAtNode(this.mountPoint);
+    this.connected = false;
+  }
+
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<AdaptiveModelSchema>) {
     ReactDOM.render(<Adaptive {...props} />, mountPoint);
   }

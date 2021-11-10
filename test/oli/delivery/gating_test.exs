@@ -67,6 +67,38 @@ defmodule Oli.Delivery.GatingTest do
       another_section_gating_condition =
         gating_condition_fixture(%{section_id: section2.id, resource_id: page2.id})
 
+      gcs = Gating.list_gating_conditions(section.id)
+
+      # ensure all defined gating conditions for section are returned
+      assert Enum.count(gcs) == 3
+      assert Enum.find(gcs, fn gc -> gc.id == gating_condition1.id end)
+      assert Enum.find(gcs, fn gc -> gc.id == gating_condition2.id end)
+      assert Enum.find(gcs, fn gc -> gc.id == gating_condition3.id end)
+
+      # ensure all defined gating conditions for another section are not
+      assert !Enum.find(gcs, fn gc -> gc.id == another_section_gating_condition.id end)
+    end
+
+    test "list_gating_conditions/2 returns all gating_conditions for a given section and list of resource_ids",
+         %{
+           container: %{resource: container_resource},
+           page1: page1,
+           page2: page2,
+           section_1: section,
+           section_2: section2
+         } do
+      gating_condition1 =
+        gating_condition_fixture(%{section_id: section.id, resource_id: container_resource.id})
+
+      gating_condition2 =
+        gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
+
+      gating_condition3 =
+        gating_condition_fixture(%{section_id: section.id, resource_id: page2.id})
+
+      another_section_gating_condition =
+        gating_condition_fixture(%{section_id: section2.id, resource_id: page2.id})
+
       resource_ids = [container_resource.id, page1.id, page2.id]
       gcs = Gating.list_gating_conditions(section.id, resource_ids)
 
