@@ -260,6 +260,7 @@ Oli.Rendering.Activity.Html.html
 Oli.Rendering.Activity.html
 Oli.Rendering.Content.Html.html
 Oli.Rendering.Content.Plaintext.html
+Oli.Rendering.Content.Selection.html
 Oli.Rendering.Content.html
 Oli.Rendering.Context.html
 Oli.Rendering.Page.Html.html
@@ -586,8 +587,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-3ac12519a5.js
-dist/sidebar_items-24f1843982.js
+dist/search_items-b1b3694606.js
+dist/sidebar_items-f4cd4bb81f.js
 index.html
 license.html
 readme.html

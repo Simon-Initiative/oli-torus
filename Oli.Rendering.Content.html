@@ -10,7 +10,7 @@
     <title>Oli.Rendering.Content — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-24f1843982.js"></script>
+    <script src="dist/sidebar_items-f4cd4bb81f.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -300,6 +300,13 @@ that format at render time. For an example of how exactly to extend this, see <c
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#c:selection/3">selection(%Oli.Rendering.Context{}, next, map)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#c:table/3">table(%Oli.Rendering.Context{}, next, map)</a>
 
   </div>
@@ -475,10 +482,10 @@ Callbacks
           <pre>a(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -516,10 +523,10 @@ Callbacks
           <pre>audio(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -557,10 +564,10 @@ Callbacks
           <pre>blockquote(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -598,10 +605,10 @@ Callbacks
           <pre>code(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -639,10 +646,10 @@ Callbacks
           <pre>code_line(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -664,7 +671,7 @@ Callbacks
     </a>
     <h1 class="signature">error(%Oli.Rendering.Context{}, map, {})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L43" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L45" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -680,10 +687,10 @@ Callbacks
           <pre>error(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -721,10 +728,10 @@ Callbacks
           <pre>example(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -762,10 +769,10 @@ Callbacks
           <pre>h1(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -803,10 +810,10 @@ Callbacks
           <pre>h2(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -844,10 +851,10 @@ Callbacks
           <pre>h3(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -885,10 +892,10 @@ Callbacks
           <pre>h4(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -926,10 +933,10 @@ Callbacks
           <pre>h5(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -967,10 +974,10 @@ Callbacks
           <pre>h6(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1008,10 +1015,10 @@ Callbacks
           <pre>iframe(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1049,10 +1056,10 @@ Callbacks
           <pre>img(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1090,10 +1097,10 @@ Callbacks
           <pre>learn_more(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1131,10 +1138,10 @@ Callbacks
           <pre>li(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1172,10 +1179,10 @@ Callbacks
           <pre>manystudentswonder(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1213,10 +1220,10 @@ Callbacks
           <pre>math(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1254,10 +1261,10 @@ Callbacks
           <pre>math_line(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1295,10 +1302,10 @@ Callbacks
           <pre>ol(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1336,10 +1343,10 @@ Callbacks
           <pre>p(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1377,10 +1384,51 @@ Callbacks
           <pre>popup(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
+  },
+  <a href="#t:next/0">next</a>(),
+  %{}
+) :: [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()]</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="c:selection/3">
+
+  <div class="detail-header">
+    <a href="#c:selection/3" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">selection(%Oli.Rendering.Context{}, next, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L43" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>selection(
+  %Oli.Rendering.Context{
+    activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1418,10 +1466,10 @@ Callbacks
           <pre>table(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1459,10 +1507,10 @@ Callbacks
           <pre>td(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1500,10 +1548,10 @@ Callbacks
           <pre>text(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1540,10 +1588,10 @@ Callbacks
           <pre>th(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1581,10 +1629,10 @@ Callbacks
           <pre>tr(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1622,10 +1670,10 @@ Callbacks
           <pre>ul(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1663,10 +1711,10 @@ Callbacks
           <pre>youtube(
   %Oli.Rendering.Context{
     activity_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    preview: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    activity_types_map: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
+    mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     project_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     render_opts: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
-    review_mode: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     section_slug: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>(),
     user: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">term</a>()
   },
@@ -1701,7 +1749,7 @@ Functions
     </a>
     <h1 class="signature">render(context, element, writer)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/rendering/content.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
