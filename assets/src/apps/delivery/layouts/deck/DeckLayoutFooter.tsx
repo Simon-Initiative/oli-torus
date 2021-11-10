@@ -187,7 +187,7 @@ const DeckLayoutFooter: React.FC = () => {
     let isDifferentNavigationExist = false;
     const { actions } = event.params;
     actions.forEach((action: any) => {
-      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+      if (action.type === 'navigation') {
         isDifferentNavigationExist = true;
       }
     });
@@ -205,19 +205,17 @@ const DeckLayoutFooter: React.FC = () => {
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
     let eventsToProcess = [lastCheckResults.results[0]];
+    let doesFirstEventHasNavigation = false;
     if (combineFeedback) {
       //if the first event has a navigation to different screen
       // we ignore the rest of the events ang fire this one.
-      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
-        lastCheckResults.results[0],
-      );
+      doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
       if (doesFirstEventHasNavigation) {
         eventsToProcess = [lastCheckResults.results[0]];
       } else {
         eventsToProcess = lastCheckResults.results;
       }
     }
-
     const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
@@ -309,6 +307,22 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToLastActivity());
             break;
           default:
+            if (doesFirstEventHasNavigation && combineFeedback && navTarget === currentActivityId) {
+              const updateAttempt: ApplyStateOperation[] = [
+                {
+                  target: 'session.attemptNumber',
+                  operator: '=',
+                  value: 1,
+                },
+                {
+                  target: `${navTarget}|session.attemptNumber`,
+                  operator: '=',
+                  value: 1,
+                },
+              ];
+              bulkApplyState(updateAttempt, defaultGlobalEnv);
+              setHasOnlyMutation(true);
+            }
             // assume it's a sequenceId
             dispatch(navigateToActivity(navTarget));
         }
