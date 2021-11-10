@@ -229,7 +229,7 @@ defmodule Oli.Delivery.Hierarchy do
   Given a hierarchy node, this function "flattens" all nodes below into a list, in the order that
   a student would encounter the resources working linearly through a course.
 
-  As an example, consider the following hierarchy:
+  As an example, consider the followign hierarchy:
 
   --Unit 1
   ----Module 1
@@ -266,70 +266,42 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
-  Builds a map that contains a list of gated ancestor resource_ids for each node. The list will
-  contain the resource_id of the node itself, if that resource is gated.
+  Given a course section hierarchy, this function builds a "navigation link map" for a course section that is
+  used during delivery to efficiently render the "Previous" and "Next" page links.
 
-  The keys of the map will be returned as strings, but the list of resource_ids themselves
-  will be integers. This is done this way for consistency because when this map gets
-  persisted to a the Postgres JSON datatype, these keys will be stored to strings.
+  This function produces a map of resource ids (as string keys) to inner maps containing previous and next
+  resource ids references (again as strings) as well as the page title and slug. An example navigation link map is:
 
-  Takes 2 parameters. First is the root of the hierarchy. Second is a gated_resource_id_map
-  which is a map containing the resource_ids of gated resources as keys (the value is ignored)
-
-  For example, consider the following hierarchy:
-
-  --Unit 1 (gated: true, resource_id: 1)
-  ----Module 1 (gated: true, resource_id: 2)
-  ------Page A (gated: true, resource_id: 3)
-  ------Page B (gated: false, resource_id: 4)
-  --Unit 2 (gated: false, resource_id: 5)
-  ----Moudule 2 (gated: false, resource_id: 6)
-  ------Page C (gated: true, resource_id: 7)
-
-  The following ancestry map will be returned:
-
+  ```
   %{
-    "1" => [1],
-    "2" => [2, 1],
-    "3" => [3, 2 ,1],
-    "4" => [2, 1],
-    "7" => [7]
+    "1" => %{
+      "prev" => nil,
+      "next" => "2",
+      "title" => "Introduction to Biology",
+      "slug" => "intro_bio"
+    },
+    "2" => %{
+      "prev" => "1",
+      "next" => "3",
+      "title" => "Photosynthesis",
+      "slug" => "photosyn_2",
+    },
+    "3" => %{
+      "prev" => "2",
+      "next" => nil,
+      "title" => "Final Exam",
+      "slug" => "final_exam"
+    }
   }
+  ```
 
+  The above construct is designed to allow a lightweight, constant time determination (and then rendering) of Previous and Next
+  links.  Given a resource id of the current page, at most three map lookups are required to gather all the information required to
+  render links.  It is expected that this map is already in memory, retrieved from the section record itself, which overall then
+  greatly improves the performane around determining prev and next links.
   """
-  def gated_ancestry_map(%HierarchyNode{} = root, %{} = gated_resource_id_map) do
-    gated_ancestry_map(root, %{}, [], gated_resource_id_map)
+  def build_navigation_link_map(%HierarchyNode{} = root) do
   end
-
-  defp gated_ancestry_map(
-         %HierarchyNode{resource_id: resource_id, children: children},
-         index_map,
-         gated_ancestors,
-         gated_resource_id_map
-       ) do
-    # if this node is gated, then we add it to the list of gated ancestors
-    gated_ancestors =
-      if Map.has_key?(gated_resource_id_map, resource_id) do
-        [resource_id | gated_ancestors]
-      else
-        gated_ancestors
-      end
-
-    # if any ancestors are gated (including the current node), then add it to the index
-    index_map =
-      if Enum.empty?(gated_ancestors) == false do
-        Map.put(index_map, ensure_string(resource_id), gated_ancestors)
-      else
-        index_map
-      end
-
-    Enum.reduce(children, index_map, fn node, acc ->
-      gated_ancestry_map(node, acc, gated_ancestors, gated_resource_id_map)
-    end)
-  end
-
-  defp ensure_string(maybe_str) when is_binary(maybe_str), do: maybe_str
-  defp ensure_string(maybe_str) when is_integer(maybe_str), do: Integer.to_string(maybe_str)
 
   @doc """
   Debugging utility to inspect a hierarchy without all the noise. Choose which keys
