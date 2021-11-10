@@ -113,6 +113,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           }
         }
       }
+      //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
       if (
         typeof ogValue === 'string' &&
         condition?.type === 3 &&
