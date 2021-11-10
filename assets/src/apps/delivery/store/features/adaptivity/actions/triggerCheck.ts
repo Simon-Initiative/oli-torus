@@ -141,11 +141,11 @@ export const triggerCheck = createAsyncThunk(
     if (!isPreviewMode) {
       // update the server with the latest changes
       const extrnisicState = selectExtrinsicState(getState() as RootState);
-      console.log('trigger check last min extrinsic state', {
+      /* console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,
         extrnisicState,
-      });
+      }); */
       await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
     }
 
@@ -177,7 +177,7 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
+      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
       const check_call_result = (await check(
         localizedSnapshot,
         rulesToCheck,
@@ -187,7 +187,7 @@ export const triggerCheck = createAsyncThunk(
       isCorrect = check_call_result.correct;
       score = check_call_result.score;
       outOf = check_call_result.out_of;
-      console.log('CHECK RESULT', {
+      /* console.log('CHECK RESULT', {
         check_call_result,
         currentActivity,
         currentRules,
@@ -196,7 +196,7 @@ export const triggerCheck = createAsyncThunk(
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
-      });
+      }); */
     } else {
       // need to get this fresh right now so it is the latest
       const rootState = getState() as RootState;
@@ -249,14 +249,14 @@ export const triggerCheck = createAsyncThunk(
         },
       );
 
-      console.log('CHECKING', {
+      /* console.log('CHECKING', {
         sectionSlug,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
         localizedSnapshot,
         partResponses,
-      });
+      }); */
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
@@ -264,7 +264,7 @@ export const triggerCheck = createAsyncThunk(
         partResponses,
       );
 
-      console.log('EVAL RESULT', { evalResult });
+      /* console.log('EVAL RESULT', { evalResult }); */
       const resultData: CheckResult = (evalResult as any).result.actions;
       checkResult = resultData.results;
       isCorrect = resultData.correct;

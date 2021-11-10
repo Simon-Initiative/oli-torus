@@ -293,7 +293,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
