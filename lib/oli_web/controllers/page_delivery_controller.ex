@@ -20,6 +20,39 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
+  alias Oli.Rendering.Activity.ActivitySummary
+
+  def index(conn, %{"section_slug" => section_slug, "mode" => "preview"}) do
+    user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
+    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+
+    # We only allow access to preview mode if the user is logged in as an author admin, or
+    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # we want to redirect out of this mode to render the page in regular delivery mode.
+
+    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
+      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+        case Summary.get_summary(section_slug, user) do
+          {:ok, summary} ->
+            render(conn, "index.html",
+              section_slug: section_slug,
+              summary: summary,
+              preview_mode: true
+            )
+
+          {:error, _} ->
+            render(conn, "error.html")
+        end
+      else
+        # Any attempt by a student to enter preview mode is simply ignored and redirect back to
+        # regular delivery mode
+        redirect(conn, to: Routes.page_delivery_path(conn, :index, section_slug))
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -27,7 +60,11 @@ defmodule OliWeb.PageDeliveryController do
     if Sections.is_enrolled?(user.id, section_slug) do
       case Summary.get_summary(section_slug, user) do
         {:ok, summary} ->
-          render(conn, "index.html", section_slug: section_slug, summary: summary)
+          render(conn, "index.html",
+            section_slug: section_slug,
+            summary: summary,
+            preview_mode: false
+          )
 
         {:error, _} ->
           render(conn, "error.html")
@@ -51,6 +88,32 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def page(conn, %{
+        "section_slug" => section_slug,
+        "revision_slug" => revision_slug,
+        "mode" => "preview"
+      }) do
+    user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
+    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+
+    # We only allow access to preview mode if the user is logged in as an author admin, or
+    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # we want to redirect out of this mode to render the page in regular delivery mode.
+
+    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
+      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+        render_preview_mode(conn, section_slug, revision_slug)
+      else
+        # Any attempt by a student to enter preview mode is simply ignored and redirect back to
+        # regular delivery mode
+        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+      end
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
 
@@ -60,6 +123,74 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
+  end
+
+  defp render_preview_mode(conn, section_slug, revision_slug) do
+    section = conn.assigns.section
+
+    revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
+    page_model = Map.get(revision.content, "model")
+
+    type_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
+
+    activity_ids =
+      Oli.Resources.PageContent.flat_filter(revision.content, fn item ->
+        item["type"] == "activity-reference"
+      end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section_slug)
+    {previous, next} = Oli.Delivery.Page.PageContext.determine_previous_next(hierarchy, revision)
+
+    activity_map =
+      Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, activity_ids)
+      |> Enum.map(fn rev ->
+        type = Map.get(type_by_id, rev.activity_type_id)
+
+        %ActivitySummary{
+          id: rev.resource_id,
+          script: type.authoring_script,
+          attempt_guid: nil,
+          state: nil,
+          model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: type.delivery_element,
+          authoring_element: type.authoring_element,
+          graded: revision.graded
+        }
+      end)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    all_activities = Activities.list_activity_registrations()
+
+    render_context = %Context{
+      user: conn.assigns.current_user,
+      section_slug: section_slug,
+      mode: :instructor_preview,
+      activity_map: activity_map,
+      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
+    }
+
+    html = Page.render(render_context, page_model, Page.Html)
+
+    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+
+    render(
+      conn,
+      "instructor_preview.html",
+      %{
+        summary: %{title: section.title},
+        section_slug: section_slug,
+        scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
+        preview_mode: true,
+        previous_page: previous,
+        next_page: next,
+        title: revision.title,
+        html: html,
+        objectives: []
+      }
+    )
   end
 
   defp render_page(
@@ -157,7 +288,7 @@ defmodule OliWeb.PageDeliveryController do
       previous_page: context.previous_page,
       next_page: context.next_page,
       user_id: user.id,
-      preview_mode: false
+      preview_mode: is_preview_mode?(conn)
     })
   end
 
@@ -170,7 +301,12 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: user,
       section_slug: section_slug,
-      review_mode: context.review_mode,
+      mode:
+        if context.review_mode do
+          :review
+        else
+          :delivery
+        end,
       activity_map: context.activities
     }
 
@@ -211,6 +347,16 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts
       }
     )
+  end
+
+  defp is_preview_mode?(conn) do
+    user = conn.assigns.current_user
+    current_author = conn.assigns.current_author
+    section_slug = Map.get(conn.path_params, "section_slug")
+    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+
+    Map.get(conn.query_params, "mode", "delivery") == "preview" and
+      (is_admin? or Sections.is_instructor?(user, section_slug))
   end
 
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do

@@ -11,6 +11,7 @@ import {
   PartState,
   StudentResponse,
   Success,
+  DeliveryMode,
 } from './types';
 import React, { useContext } from 'react';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
@@ -41,8 +42,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   graded: boolean;
   model: T;
   state: ActivityState;
-  preview: boolean;
-  review: boolean;
+  mode: DeliveryMode;
   sectionSlug?: string;
   userId: number;
   notify?: EventEmitter;
@@ -84,7 +84,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
 export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTMLElement {
   mountPoint: HTMLDivElement;
   connected: boolean;
-  review: string;
+  review: boolean;
   onGetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
   onSetData?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
 
@@ -189,19 +189,17 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
-    const preview = valueOr(JSON.parse(this.getAttribute('preview') as any), false);
-    const review = valueOr(JSON.parse(this.getAttribute('review') as any), false);
+    const mode = valueOr(this.getAttribute('mode'), 'delivery') as DeliveryMode;
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
     const userId = this.getAttribute('user_id') as any;
 
-    this.review = review;
+    this.review = mode === 'review';
 
     return {
       graded,
       model,
       state,
-      preview,
-      review,
+      mode,
       sectionSlug,
       onWriteUserState: this.onSetData,
       onReadUserState: this.onGetData,
