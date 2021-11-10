@@ -50,6 +50,7 @@ interface ActivityRendererProps {
   onActivitySubmitEvaluations?: any;
   onActivityReady?: any;
   onRequestLatestState?: any;
+  adaptivityDomain?: string; // currently 'stage' or 'app'
 }
 
 const defaultHandler = async () => {
@@ -80,6 +81,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivitySubmitEvaluations = defaultHandler,
   onActivityReady = defaultHandler,
   onRequestLatestState = async () => ({ snapshot: {} }),
+  adaptivityDomain = 'stage',
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = useSelector(selectUserId);
@@ -234,7 +236,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const activityScriptEnv = new Environment(defaultGlobalEnv);
     /* evalScript(`let global.screenId = "${activity.id}"`, activityScriptEnv); */
     // BS: TODO make compatible with *any* activity
-    return { ...results, ...result, env: activityScriptEnv };
+    return { ...results, ...result, env: activityScriptEnv, domain: adaptivityDomain };
   };
 
   const onResize = async (attemptGuid: string) => {
@@ -276,7 +278,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       );
 
       if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
-        /* console.log('EVENT FOR ME', { e, activity, attempt }); */
+        console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt });
         isForMe = true;
       }
       const handler = bridgeEvents[e.type];
@@ -393,6 +395,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot,
+      domain: adaptivityDomain,
     });
   };
 

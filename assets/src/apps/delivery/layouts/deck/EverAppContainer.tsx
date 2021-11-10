@@ -1,21 +1,26 @@
 import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
+import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
+import { savePartState } from 'apps/delivery/store/features/attempt/actions/savePart';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
-import { ActivityState } from 'components/activities/types';
+import { ActivityState, StudentResponse } from 'components/activities/types';
 import React, { useState } from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   defaultGlobalEnv,
   evalScript,
   getLocalizedStateSnapshot,
 } from '../../../../adaptivity/scripting';
-import { selectPageContent } from '../../store/features/page/slice';
+import { selectPageContent, selectPreviewMode } from '../../store/features/page/slice';
 import { getEverAppActivity, udpateAttemptGuid } from './EverApps';
+import * as Extrinsic from 'data/persistence/extrinsic';
 
 const EverAppContainer = () => {
+  const dispatch = useDispatch();
   const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
   const currentPage = useSelector(selectPageContent);
   const everApps = currentPage?.custom?.everApps;
+  const isPreviewMode = useSelector(selectPreviewMode);
 
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
@@ -32,6 +37,73 @@ const EverAppContainer = () => {
       },
     };
   }, [currentActivityTree]);
+
+  const handleActivitySavePart = React.useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      partAttemptGuid: string,
+      response: StudentResponse,
+    ) => {
+      console.log('EVERAPP SAVE PART', {
+        activityId,
+        attemptGuid,
+        partAttemptGuid,
+        response,
+        currentActivityTree,
+      });
+      if (!currentActivityTree) {
+        return { result: 'error' };
+      }
+      const responseMap = response.input.reduce(
+        (result: { [x: string]: any }, item: { key: string; path: string }) => {
+          result[item.key] = { ...item, path: `app.${item.path}` };
+          return result;
+        },
+        {},
+      );
+      /*
+      id: "app.ispk-bio-observer.external.env"
+      key: "external.env"
+      path: "ispk-bio-observer.external.env"
+      type: 2
+      value: "{\"Location:\": \"Sonoran Desert\", \"Temperature:\": \"10°C to 48°C\"}"
+      */
+      const updatedState = response.input.reduce((result: any, item: any) => {
+        const [simId] = item.path.split('.');
+        result[simId] = result[simId] || {};
+        result[simId][item.key] = item.value;
+        return result;
+      }, {});
+      // do I need to update the scripting env??
+      const currentActivityIds = currentActivityTree.map((a) => a.id);
+      // because the everapp attemptGuid and partAttemptGuid are always made up
+      // can't save it like normal, instead setData should cover it
+      const result = Extrinsic.updateGlobalUserState(updatedState, isPreviewMode);
+      return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    },
+    [currentActivityTree],
+  );
+
+  const handleActivitySubmitPart = React.useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      partAttemptGuid: string,
+      response: StudentResponse,
+    ) => {
+      // TODO: save anything first? or just triggering check OK??
+      if (!currentActivityTree) {
+        return; // very bad!
+      }
+      const currentActivityIds = currentActivityTree.map((a) => a.id);
+
+      dispatch(triggerCheck({ activityId: activityId.toString() }));
+
+      return { result: true, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    },
+    [currentActivityTree],
+  );
 
   return (
     <div className={'beagle'} style={{ order: 3 }}>
@@ -68,12 +140,13 @@ const EverAppContainer = () => {
                                 key={everApp.id}
                                 activity={getEverAppActivity(everApp, everApp.url, index)}
                                 attempt={udpateAttemptGuid(index, everApp) as ActivityState}
-                                onActivitySave={() => {}}
-                                onActivitySubmit={() => {}}
-                                onActivitySavePart={() => {}}
-                                onActivitySubmitPart={() => {}}
+                                onActivitySave={async () => true}
+                                onActivitySubmit={async () => true}
+                                onActivitySavePart={handleActivitySavePart}
+                                onActivitySubmitPart={handleActivitySubmitPart}
                                 onActivityReady={handleEverappActivityReady}
                                 onRequestLatestState={() => {}}
+                                adaptivityDomain="app"
                               />
                             </div>
                           }

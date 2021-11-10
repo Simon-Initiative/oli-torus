@@ -127,46 +127,47 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (initResult.context.mode) {
       context = initResult.context.mode;
     }
-    processInitStateVariable(currentStateSnapshot);
+    simLife.domain = initResult.context.domain || 'stage';
+    processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
-  const processInitStateVariable = (currentStateSnapshot: any) => {
-    const sVisible = currentStateSnapshot[`stage.${id}.IFRAME_frameVisible`];
+  const processInitStateVariable = (currentStateSnapshot: any, domain = 'stage') => {
+    const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
       setFrameVisible(parseBool(sVisible));
     }
 
-    const sX = currentStateSnapshot[`stage.${id}.IFRAME_frameX`];
+    const sX = currentStateSnapshot[`${domain}.${id}.IFRAME_frameX`];
     if (sX !== undefined) {
       setFrameX(sX);
     }
 
-    const sY = currentStateSnapshot[`stage.${id}.IFRAME_frameY`];
+    const sY = currentStateSnapshot[`${domain}.${id}.IFRAME_frameY`];
     if (sY !== undefined) {
       setFrameY(sY);
     }
 
-    const sZ = currentStateSnapshot[`stage.${id}.IFRAME_frameZ`];
+    const sZ = currentStateSnapshot[`${domain}.${id}.IFRAME_frameZ`];
     if (sZ !== undefined) {
       setFrameZ(sZ);
     }
 
-    const sWidth = currentStateSnapshot[`stage.${id}.IFRAME_frameWidth`];
+    const sWidth = currentStateSnapshot[`${domain}.${id}.IFRAME_frameWidth`];
     if (sWidth !== undefined) {
       setFrameWidth(sWidth);
     }
 
-    const sHeight = currentStateSnapshot[`stage.${id}.IFRAME_frameHeight`];
+    const sHeight = currentStateSnapshot[`${domain}.${id}.IFRAME_frameHeight`];
     if (sHeight !== undefined) {
       setFrameHeight(sHeight);
     }
 
-    const sCssClass = currentStateSnapshot[`stage.${id}.IFRAME_frameCssClass`];
+    const sCssClass = currentStateSnapshot[`${domain}.${id}.IFRAME_frameCssClass`];
     if (sCssClass !== undefined) {
       setFrameCssClass(sCssClass);
     }
 
-    const sSrc = currentStateSnapshot[`stage.${id}.IFRAME_frameSrc`];
+    const sSrc = currentStateSnapshot[`${domain}.${id}.IFRAME_frameSrc`];
     if (sSrc !== undefined) {
       setFrameSrc(sSrc);
     }
@@ -174,7 +175,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // INIT STATE also needs to take in all the sim values
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        if (key.indexOf(`stage.${id}.`) === 0 || key.indexOf(`app.${id}.`) === 0) {
+        if (key.indexOf(`${domain}.${id}.`) === 0) {
           collect[key] = currentStateSnapshot[key];
         }
         return collect;
@@ -269,6 +270,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // these 2 are mysterious
     key: '',
     simId: '',
+    domain: 'stage',
     // ...
     handshakeMade: false,
     handshake: {
@@ -291,7 +293,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -378,7 +380,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                   currentMutateStateSnapshot[key],
                 );
               });
-              processInitStateVariable(currentMutateStateSnapshot);
+              processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
               setSimIsInitStatePassedOnce(false);
             }
             break;
@@ -389,6 +391,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife,
                 payload,
               });
+              if (payload.domain) {
+                simLife.domain = payload.domain;
+              }
               simLife.handshake.config = {
                 context: payload.mode,
                 questionId: payload.currentActivityId,
@@ -397,7 +402,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
 
-              processInitStateVariable(currentStateSnapshot);
+              processInitStateVariable(currentStateSnapshot, simLife.domain);
 
               setSimIsInitStatePassedOnce(false);
             }
@@ -444,9 +449,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     return mutableState;
   };
 
-  const createCapiObjectFromStateVars = (vars: any[]) => {
+  const createCapiObjectFromStateVars = (vars: any[], domain = 'stage') => {
     return vars
-      .filter((v) => v.id.indexOf(`stage.${id}.`) === 0)
+      .filter((v) => v.id.indexOf(`${domain}.${id}.`) === 0)
       .reduce((capiFormatted, item) => {
         capiFormatted[item.key] = new CapiVariable({
           key: item.key,
@@ -497,9 +502,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     updateSimLife.ready = true;
     setSimLife(updateSimLife);
     // should / will sim send onReady more than once??
-    const filterVars = createCapiObjectFromStateVars(simLife.currentState);
+    const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
-      handleIFrameSpecificProperties(simLife.currentState);
+      handleIFrameSpecificProperties(simLife.currentState, simLife.domain);
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
     }
     //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
@@ -566,12 +571,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     [],
   );
 
-  const handleValueChange = (msgData: any) => {
-    // TODO: is it possible to set "other" values?
-    // like session.whatever from here? if so, the following won't work
+  const handleValueChange = (msgData: any, domain = 'stage') => {
     const stateVarsFromSim = Object.keys(msgData.values).map((stateValueKey) => {
       const variableObj = {
-        id: `stage.${id}.${stateValueKey}`,
+        id: `${domain}.${id}.${stateValueKey}`,
         key: stateValueKey,
         type: msgData.values[stateValueKey] ? msgData.values[stateValueKey].type : null,
         value: msgData.values[stateValueKey] ? msgData.values[stateValueKey].value : null,
@@ -673,8 +676,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   //#endregion
 
-  const handleIFrameSpecificProperties = (stateVars: any[]) => {
-    const interested = stateVars.filter((v) => v.id.indexOf(`stage.${id}.`) === 0);
+  const handleIFrameSpecificProperties = (stateVars: any[], domain = 'stage') => {
+    const interested = stateVars.filter((v) => v.id.indexOf(`${domain}.${id}.`) === 0);
 
     const visibility = interested.find((v) => v.key === 'IFRAME_frameVisible');
     if (visibility) {
@@ -715,7 +718,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // so here we want to apply configData FIRST, then overwrite it with anything already set in the state
     const configDataState: any = [
       ...configData.map((cdVar: { key: any }) => {
-        return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
+        return { ...cdVar, id: `${newLife.domain}.${id}.${cdVar.key}` };
       }),
     ];
     // override configData values from init trap state data.
@@ -771,7 +774,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.VALUE_CHANGE:
-          if (context !== contexts.REVIEW) handleValueChange(data);
+          if (context !== contexts.REVIEW) handleValueChange(data, simLife.domain);
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
