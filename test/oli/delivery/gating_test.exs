@@ -12,18 +12,8 @@ defmodule Oli.Delivery.GatingTest do
       Seeder.base_project_with_resource4()
     end
 
-    @valid_attrs %{type: :schedule, data: %{}}
     @update_attrs %{type: :schedule, data: %{}}
     @invalid_attrs %{type: nil, data: nil}
-
-    def gating_condition_fixture(attrs \\ %{}) do
-      {:ok, gating_condition} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Gating.create_gating_condition()
-
-      gating_condition
-    end
 
     test "list_gating_conditions/1 returns all gating_conditions for a given section",
          %{
@@ -77,8 +67,7 @@ defmodule Oli.Delivery.GatingTest do
       another_section_gating_condition =
         gating_condition_fixture(%{section_id: section2.id, resource_id: page2.id})
 
-      resource_ids = [container_resource.id, page1.id, page2.id]
-      gcs = Gating.list_gating_conditions(section.id, resource_ids)
+      gcs = Gating.list_gating_conditions(section.id)
 
       # ensure all defined gating conditions for section are returned
       assert Enum.count(gcs) == 3
@@ -189,15 +178,23 @@ defmodule Oli.Delivery.GatingTest do
 
       # ensure all defined gating conditions for section are in the index
       assert Enum.count(index) == 4
-      assert index[page2.id] == [page2_gating_condition.resource_id]
-      assert index[unit1.id] == [unit_gating_condition.resource_id]
 
-      assert index[nested_page1.id] == [
+      assert index[Integer.to_string(page2.id)] == [
+               page2_gating_condition.resource_id
+             ]
+
+      assert index[Integer.to_string(unit1.id)] == [
+               unit_gating_condition.resource_id
+             ]
+
+      assert index[Integer.to_string(nested_page1.id)] == [
                nested_page1_gating_condition.resource_id,
                unit_gating_condition.resource_id
              ]
 
-      assert index[nested_page2.id] == [unit_gating_condition.resource_id]
+      assert index[Integer.to_string(nested_page2.id)] == [
+               unit_gating_condition.resource_id
+             ]
 
       # ensure a gating condition for a resource only in another section does not
       # appear in this index

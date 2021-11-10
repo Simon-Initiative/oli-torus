@@ -318,7 +318,7 @@ defmodule Oli.Delivery.Hierarchy do
     # if any ancestors are gated (including the current node), then add it to the index
     index_map =
       if Enum.empty?(gated_ancestors) == false do
-        Map.put(index_map, resource_id, gated_ancestors)
+        Map.put(index_map, ensure_string(resource_id), gated_ancestors)
       else
         index_map
       end
@@ -327,6 +327,9 @@ defmodule Oli.Delivery.Hierarchy do
       gated_ancestry_map(node, acc, gated_ancestors, gated_resource_id_map)
     end)
   end
+
+  defp ensure_string(maybe_str) when is_binary(maybe_str), do: maybe_str
+  defp ensure_string(maybe_str) when is_integer(maybe_str), do: Integer.to_string(maybe_str)
 
   @doc """
   Debugging utility to inspect a hierarchy without all the noise. Choose which keys

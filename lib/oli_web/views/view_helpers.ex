@@ -63,4 +63,31 @@ defmodule OliWeb.ViewHelpers do
         ""
     end
   end
+
+  @doc """
+  Converts a datetime to a specific timezone based on a user's session. This
+  session timezone information is set and updated on the timezone api call every
+  time a page is loaded.
+  """
+  def local_datetime(conn, %DateTime{} = datetime) do
+    case Plug.Conn.get_session(conn, "local_tz") do
+      nil ->
+        datetime
+
+      local_tz ->
+        Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))
+    end
+  end
+
+  def format_datetime(%DateTime{time_zone: time_zone} = datetime) do
+    # show the timezone if the datetime hasnt been converted to a local timezone
+    maybe_show_timezone =
+      if time_zone == Timex.Timezone.get(:utc, Timex.now()) do
+        " {Zabbr}"
+      else
+        ""
+      end
+
+    Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m}:{s} {AM}#{maybe_show_timezone}")
+  end
 end
