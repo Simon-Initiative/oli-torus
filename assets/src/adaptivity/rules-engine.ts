@@ -91,6 +91,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       correct: !!rule.correct,
       default: !!rule.default,
     };
+    //need the 'type' property hence using JanusConditionProperties which extends ConditionProperties
     applyToEveryCondition(rule.conditions, (condition: JanusConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
