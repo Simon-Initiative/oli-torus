@@ -225,6 +225,7 @@ Oli.Plugs.GiveAdminPriority.html
 Oli.Plugs.LayoutBasedOnUser.html
 Oli.Plugs.LoadTestingCSRFBypass.html
 Oli.Plugs.MaybeEnrollOpenAndFreeUser.html
+Oli.Plugs.MaybeGatedResource.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.RegistrationCaptcha.html
 Oli.Plugs.RemoveXFrameOptions.html
@@ -587,8 +588,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-b1b3694606.js
-dist/sidebar_items-f4cd4bb81f.js
+dist/search_items-ff18f75b9c.js
+dist/sidebar_items-5b752e5dbd.js
 index.html
 license.html
 readme.html

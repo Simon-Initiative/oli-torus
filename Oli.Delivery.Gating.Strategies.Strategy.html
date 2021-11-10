@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Gating.Strategies.Strategy — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-f4cd4bb81f.js"></script>
+    <script src="dist/sidebar_items-5b752e5dbd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -120,7 +120,21 @@ Oli.Delivery.Gating.Strategies.Strategy <small>behaviour</small> <small class="a
 
   </div>
 
-    <div class="summary-synopsis"><p>Returns true if the condition evaluates that the resource is available</p></div>
+    <div class="summary-synopsis"><p>Returns true if the condition evaluation determines that the resource is unlocked.
+This function call is inteded to be as efficient as possible for the ideal case when
+a resource is accessible. Use the <code class="inline">reason</code> callback to generate a more detailed
+message as to why a resource is locked.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#c:reason/2">reason(t, arg2)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns a human readable (and html renderable) message as to why a resource is locked.
+Takes the GatingCondition and any additional opts that may be utilized by certain
+strategies, such as formatting helpers or data providers.</p></div>
 
 </div>
 <div class="summary-row">
@@ -156,7 +170,7 @@ Callbacks
     </a>
     <h1 class="signature">check(t)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -173,7 +187,41 @@ Callbacks
 
       </div>
 
-<p>Returns true if the condition evaluates that the resource is available</p>
+<p>Returns true if the condition evaluation determines that the resource is unlocked.
+This function call is inteded to be as efficient as possible for the ideal case when
+a resource is accessible. Use the <code class="inline">reason</code> callback to generate a more detailed
+message as to why a resource is locked.</p>
+  </section>
+</section>
+<section class="detail" id="c:reason/2">
+
+  <div class="detail-header">
+    <a href="#c:reason/2" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">reason(t, arg2)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L25" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>reason(Oli.Delivery.Gating.GatingCondition.t(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>() | nil) :: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()</pre>
+
+      </div>
+
+<p>Returns a human readable (and html renderable) message as to why a resource is locked.
+Takes the GatingCondition and any additional opts that may be utilized by certain
+strategies, such as formatting helpers or data providers.</p>
   </section>
 </section>
 <section class="detail" id="c:type/0">

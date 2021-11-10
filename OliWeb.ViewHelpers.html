@@ -10,7 +10,7 @@
     <title>OliWeb.ViewHelpers — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-f4cd4bb81f.js"></script>
+    <script src="dist/sidebar_items-5b752e5dbd.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -128,6 +128,13 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.14.6)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#format_datetime/1">format_datetime(datetime)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#is_admin?/2">is_admin?(section_slug, user)</a>
 
   </div>
@@ -145,6 +152,17 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.14.6)</small>
     <a href="#is_section_instructor_or_admin?/2">is_section_instructor_or_admin?(section_slug, user)</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#local_datetime/2">local_datetime(conn, datetime)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Converts a datetime to a specific timezone based on a user's session. This
+session timezone information is set and updated on the timezone api call every
+time a page is loaded.</p></div>
 
 </div>
 <div class="summary-row">
@@ -224,6 +242,28 @@ Functions
 <p>Renders a link with text and an external icon which opens in a new tab</p>
   </section>
 </section>
+<section class="detail" id="format_datetime/1">
+
+  <div class="detail-header">
+    <a href="#format_datetime/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">format_datetime(datetime)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L82" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="is_admin?/2">
 
   <div class="detail-header">
@@ -288,6 +328,30 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="local_datetime/2">
+
+  <div class="detail-header">
+    <a href="#local_datetime/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">local_datetime(conn, datetime)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L72" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Converts a datetime to a specific timezone based on a user's session. This
+session timezone information is set and updated on the timezone api call every
+time a page is loaded.</p>
   </section>
 </section>
 <section class="detail" id="maybe_section_slug/1">
