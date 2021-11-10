@@ -4,6 +4,6 @@
   <%= if Enum.empty?(@node.children) do %>
     <span class="text-secondary">There are no items</span>
   <% else %>
-    <%= render "_outline.html", nodes: @node.children, conn: @conn, section_slug: @section_slug, nodes: @nodes, active_page: nil %>
+    <%= render "_outline.html", preview_mode: @preview_mode, nodes: @node.children, conn: @conn, section_slug: @section_slug, nodes: @nodes, active_page: nil %>
   <% end %>
 </div>
