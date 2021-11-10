@@ -185,9 +185,8 @@ abstract class ReactCustomElement extends HTMLElement {
   }
 
   disconnectedCallback() {
+    ReactDOM.unmountComponentAtNode(this._root);
     this._vdom = null;
-    // the following was in preact, not sure if is needed
-    // ReactDOM.render(null, this._root);
   }
 
   attributeChangedCallback(name: string, oldValue: any, newValue: any) {
