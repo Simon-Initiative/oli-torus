@@ -266,7 +266,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
-  Builds a map that contains a list of ancestor resource_ids for each node. The list will
+  Builds a map that contains a list of gated ancestor resource_ids for each node. The list will
   contain the resource_id of the node itself, if that resource is gated.
 
   The keys of the map will be returned as strings, but the list of resource_ids themselves
@@ -303,24 +303,28 @@ defmodule Oli.Delivery.Hierarchy do
 
   defp gated_ancestry_map(
          %HierarchyNode{resource_id: resource_id, children: children},
-         node_map,
-         current_gated_ancestors,
+         index_map,
+         gated_ancestors,
          gated_resource_id_map
        ) do
-    {node_map, current_gated_ancestors} =
+    # if this node is gated, then we add it to the list of gated ancestors
+    gated_ancestors =
       if Map.has_key?(gated_resource_id_map, resource_id) do
-        current_gated_ancestors = [resource_id | current_gated_ancestors]
-
-        {
-          Map.put(node_map, resource_id, current_gated_ancestors),
-          current_gated_ancestors
-        }
+        [resource_id | gated_ancestors]
       else
-        {node_map, current_gated_ancestors}
+        gated_ancestors
       end
 
-    Enum.reduce(children, node_map, fn node, acc ->
-      gated_ancestry_map(node, acc, current_gated_ancestors, gated_resource_id_map)
+    # if any ancestors are gated (including the current node), then add it to the index
+    index_map =
+      if Enum.empty?(gated_ancestors) == false do
+        Map.put(index_map, resource_id, gated_ancestors)
+      else
+        index_map
+      end
+
+    Enum.reduce(children, index_map, fn node, acc ->
+      gated_ancestry_map(node, acc, gated_ancestors, gated_resource_id_map)
     end)
   end
 
