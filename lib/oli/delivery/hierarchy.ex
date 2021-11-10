@@ -283,7 +283,7 @@ defmodule Oli.Delivery.Hierarchy do
         current_gated_ancestors = [resource_id | current_gated_ancestors]
 
         {
-          Map.put(node_map, resource_id, current_gated_ancestors),
+          Map.put(node_map, ensure_string(resource_id), current_gated_ancestors),
           current_gated_ancestors
         }
       else
@@ -294,6 +294,9 @@ defmodule Oli.Delivery.Hierarchy do
       gated_ancestry_map(node, acc, current_gated_ancestors, gated_resource_id_map)
     end)
   end
+
+  defp ensure_string(maybe_str) when is_binary(maybe_str), do: maybe_str
+  defp ensure_string(maybe_str) when is_integer(maybe_str), do: Integer.to_string(maybe_str)
 
   @doc """
   Debugging utility to inspect a hierarchy without all the noise. Choose which keys

@@ -71,9 +71,7 @@ defmodule OliWeb.HelpController do
       family_name = if current_user.family_name == nil, do: " ", else: " "
 
       account_created_date =
-        DateTime.to_string(
-          Timex.Timezone.convert(current_user.inserted_at, Timex.Timezone.local())
-        )
+        DateTime.to_string(OliWeb.ViewHelpers.local_datetime(conn, current_user.inserted_at))
 
       {
         :ok,

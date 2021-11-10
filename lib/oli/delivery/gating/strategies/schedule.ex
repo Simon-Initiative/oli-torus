@@ -5,6 +5,8 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
   """
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Gating.GatingConditionData
+  alias Oli.Delivery.Sections
+  alias Oli.Publishing.DeliveryResolver
 
   @behaviour Oli.Delivery.Gating.Strategies.Strategy
 
@@ -30,6 +32,38 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
       {start_datetime, end_datetime} ->
         DateTime.compare(start_datetime, now) == :lt and
           DateTime.compare(now, end_datetime) == :lt
+    end
+  end
+
+  def reason(
+        %GatingCondition{
+          section_id: section_id,
+          resource_id: resource_id,
+          data: %GatingConditionData{
+            start_datetime: start_datetime,
+            end_datetime: end_datetime
+          }
+        },
+        opts \\ []
+      ) do
+    section = Sections.get_section!(section_id)
+    revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
+    now = DateTime.utc_now()
+
+    format_datetime =
+      Keyword.get(opts, :format_datetime, fn dt ->
+        Timex.format!(dt, "{M}/{D}/{YYYY} at {h12}:{m}:{s} {AM}")
+      end)
+
+    cond do
+      start_datetime != nil && DateTime.compare(start_datetime, now) != :lt ->
+        "#{revision.title} is not available before #{format_datetime.(start_datetime)}"
+
+      end_datetime != nil && DateTime.compare(now, end_datetime) != :lt ->
+        "#{revision.title} is not available after #{format_datetime.(end_datetime)}"
+
+      true ->
+        "An error occurred. Please try again."
     end
   end
 end

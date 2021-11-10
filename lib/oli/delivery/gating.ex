@@ -171,8 +171,7 @@ defmodule Oli.Delivery.Gating do
   def check_resource(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id
-      )
-      when is_binary(resource_id) do
+      ) do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
       |> Enum.all?(&check_condition/1)
@@ -181,12 +180,44 @@ defmodule Oli.Delivery.Gating do
     end
   end
 
-  @doc """
-  Returns true if the gating conditions passes
-  """
-  def check_condition(%GatingCondition{type: type} = gating_condition) do
+  # Returns true if the gating condition passes
+  defp check_condition(%GatingCondition{type: type} = gating_condition) do
     @strategies
     |> Enum.find(fn s -> s.type() == type end)
     |> then(fn strategy -> strategy.check(gating_condition) end)
+  end
+
+  @doc """
+  Returns a list of reasons why one or more gating conditions blocked access
+  """
+  def reasons(
+        section,
+        resource_id,
+        format_datetime: format_datetime
+      )
+      when is_integer(resource_id),
+      do: reasons(section, Integer.to_string(resource_id), format_datetime: format_datetime)
+
+  def reasons(
+        %Section{id: section_id, resource_gating_index: resource_gating_index},
+        resource_id,
+        format_datetime: format_datetime
+      )
+      when is_binary(resource_id) do
+    if Map.has_key?(resource_gating_index, resource_id) do
+      list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
+      |> Enum.reduce([], fn gc, acc ->
+        [reason(gc, format_datetime: format_datetime) | acc]
+      end)
+    else
+      []
+    end
+  end
+
+  # Returns true if the gating conditions passes
+  defp reason(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
+    @strategies
+    |> Enum.find(fn s -> s.type() == type end)
+    |> then(fn strategy -> strategy.reason(gating_condition, format_datetime: format_datetime) end)
   end
 end

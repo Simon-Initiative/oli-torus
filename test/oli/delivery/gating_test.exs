@@ -12,7 +12,6 @@ defmodule Oli.Delivery.GatingTest do
       Seeder.base_project_with_resource4()
     end
 
-    @valid_attrs %{type: :schedule, data: %{}}
     @update_attrs %{type: :schedule, data: %{}}
     @invalid_attrs %{type: nil, data: nil}
 
@@ -179,10 +178,16 @@ defmodule Oli.Delivery.GatingTest do
 
       # ensure all defined gating conditions for section are in the index
       assert Enum.count(index) == 3
-      assert index[page2_gating_condition.resource_id] == [page2_gating_condition.resource_id]
-      assert index[unit_gating_condition.resource_id] == [unit_gating_condition.resource_id]
 
-      assert index[nested_page1_gating_condition.resource_id] == [
+      assert index[Integer.to_string(page2_gating_condition.resource_id)] == [
+               page2_gating_condition.resource_id
+             ]
+
+      assert index[Integer.to_string(unit_gating_condition.resource_id)] == [
+               unit_gating_condition.resource_id
+             ]
+
+      assert index[Integer.to_string(nested_page1_gating_condition.resource_id)] == [
                nested_page1_gating_condition.resource_id,
                unit_gating_condition.resource_id
              ]

@@ -229,6 +229,9 @@ defmodule OliWeb.Router do
     get("/consent/cookie", CookieConsentController, :retrieve)
 
     get("/site.webmanifest", StaticPageController, :site_webmanifest)
+
+    # update session timezone information
+    post("/timezone", StaticPageController, :timezone)
   end
 
   scope "/.well-known", OliWeb do

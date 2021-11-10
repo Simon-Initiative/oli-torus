@@ -1,6 +1,7 @@
 defmodule Oli.Plugs.MaybeGatedResource do
   import Plug.Conn
   import Phoenix.Controller
+  import OliWeb.ViewHelpers
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing.DeliveryResolver
@@ -19,7 +20,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
           if Gating.check_resource(section, resource_id) do
             conn
           else
-            gated_resource_unavailable(conn)
+            gated_resource_unavailable(conn, section, resource_id)
           end
 
         _ ->
@@ -33,11 +34,21 @@ defmodule Oli.Plugs.MaybeGatedResource do
     end
   end
 
-  defp gated_resource_unavailable(conn) do
+  defp gated_resource_unavailable(conn, section, resource_id) do
+    reasons = Gating.reasons(section, resource_id, format_datetime: format_datetime_fn(conn))
+
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_status(403)
-    |> render("gated_resource_unavailable.html")
+    |> render("gated_resource_unavailable.html", reasons: reasons)
     |> halt()
+  end
+
+  defp format_datetime_fn(conn) do
+    fn datetime ->
+      conn
+      |> local_datetime(datetime)
+      |> format_datetime()
+    end
   end
 end

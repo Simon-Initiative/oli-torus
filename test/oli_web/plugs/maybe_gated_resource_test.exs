@@ -1,4 +1,4 @@
-defmodule OliWeb.PageDeliveryControllerTest do
+defmodule Oli.Plugs.MaybeGatedResourceTest do
   use OliWeb.ConnCase
 
   alias Oli.Delivery.Sections
@@ -65,13 +65,15 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       {:ok, section} = Gating.update_resource_gating_index(section)
 
-      # recycle(conn)
       conn =
         conn
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 403) =~
-               "You are attempting to access a gated resource that has not been unlocked."
+               "You are trying to access a resource that is blocked for the following reasons"
+
+      assert html_response(conn, 403) =~
+               "#{revision.title} is not available after"
     end
   end
 
