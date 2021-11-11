@@ -36,6 +36,7 @@ import {
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
+import EverappContainer from './components/EverappContainer';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
@@ -532,6 +533,7 @@ const DeckLayoutFooter: React.FC = () => {
           </div>
         </div>
       </div>
+      <EverappContainer apps={currentPage?.custom?.everApps || []} />
       <HistoryNavigation />
     </div>
   );

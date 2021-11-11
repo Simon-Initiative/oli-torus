@@ -1,0 +1,61 @@
+import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
+import React, { Fragment, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { Everapp } from './EverappRenderer';
+
+export interface IEverappMenuProps {
+  apps: Everapp[];
+}
+
+const EverappMenu: React.FC<IEverappMenuProps> = ({ apps }) => {
+  const dispatch = useDispatch();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  const handleItemClick = (app: Everapp) => {
+    setIsOpen(false);
+    dispatch(toggleEverapp({ id: app.id }));
+  };
+
+  return (
+    <Fragment>
+      <button
+        className="beagleAppListToggle"
+        title="Toggle Everapp Menu"
+        aria-label="Toggle Everapp menu"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="icon-beagle"></div>
+      </button>
+      <div className="beagleAppPanel">
+        <div className={`beagleAppListView ${isOpen ? '' : 'displayNone'}`}>
+          <div className="beagleAppListWrapper">
+            <div className="beagleAppList">
+              {apps
+                .filter((app) => app.isVisible)
+                .map((app) => (
+                  <div
+                    key={app.id}
+                    className="beagleAppItemView"
+                    onClick={() => handleItemClick(app)}
+                  >
+                    <div className={`beagleAppItem beagleAppItem-${app.id}`}>
+                      <div className="beagleAppItemContentWrapper">
+                        <div className="beagleAppItemContent">
+                          <div className="appIcon">
+                            <img src={app.iconUrl} />
+                          </div>
+                          <div className="appName">{app.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Fragment>
+  );
+};
+
+export default EverappMenu;
