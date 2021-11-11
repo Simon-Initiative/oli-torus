@@ -274,8 +274,7 @@ defmodule OliWeb.PageDeliveryController do
       resource_id: page.resource_id,
       slug: context.page.slug,
       max_attempts: page.max_attempts,
-      section: section,
-      summary: summary
+      section: section
     })
   end
 
