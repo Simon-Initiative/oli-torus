@@ -28,14 +28,14 @@ export const everAppActivityState: ActivityState = {
 
 export const EverAppActivity = {
   id: 'aa_3864718503',
-  resourceId: 150,
+  // resourceId: 150,
   content: {
     custom: {
       applyBtnFlag: false,
       applyBtnLabel: '',
       checkButtonLabel: 'Next',
       combineFeedback: false,
-      customCssClass: '',
+      customCssClass: 'everapp-activity',
       facts: [],
       lockCanvasSize: false,
       mainBtnLabel: '',
@@ -63,10 +63,10 @@ export const EverAppActivity = {
           allowScrolling: true,
           configData: [],
           customCssClass: '',
-          height: 800,
+          height: '100%',
           src: 'https://www.github.com/Simon-Initiative/oli-torus',
-          width: 420,
-          x: -390,
+          width: '100%',
+          x: 0,
           y: 0,
           z: 0,
         },
