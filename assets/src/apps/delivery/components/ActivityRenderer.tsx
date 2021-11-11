@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
+import { defaultGlobalEnv, evalScript, getValue } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -420,7 +420,33 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     notifyStateMutation();
   }, [mutationTriggered]);
+  const debounceStateChanges = async (changes: any) => {
+    if (!ref.current) {
+      return;
+    }
+    const currentStateSnapshot: any = {};
+    if (changes.changed.length > 1 && Array.isArray(changes.changed)) {
+      changes.changed.forEach((element: string, index: number) => {
+        if (index > 0) {
+          const variable = element.split(`${currentActivityId}|`);
+          const variableName = variable?.length > 1 ? variable[1] : element;
+          currentStateSnapshot[variableName] = getValue(element, defaultGlobalEnv);
+        }
+      });
 
+      if (Object.keys(currentStateSnapshot).length > 0) {
+        ref.current.notify(NotificationType.STATE_CHANGED, {
+          mutateChanges: currentStateSnapshot,
+        });
+      }
+    }
+  };
+  useEffect(() => {
+    defaultGlobalEnv.addListener('change', debounceStateChanges);
+    return () => {
+      defaultGlobalEnv.removeListener('change', debounceStateChanges);
+    };
+  }, [activity.id]);
   const elementProps = {
     ref,
     graded: false,
