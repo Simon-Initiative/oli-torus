@@ -32,6 +32,10 @@ defmodule Oli.Delivery.PreviousNextIndex do
   end
 
   def retrieve(%Section{previous_next_index: previous_next_index}, resource_id) do
+    retrieve(previous_next_index, resource_id)
+  end
+
+  def retrieve(previous_next_index, resource_id) when is_map(previous_next_index) do
     case Map.get(previous_next_index, Integer.to_string(resource_id)) do
       nil ->
         {:ok, {nil, nil}}

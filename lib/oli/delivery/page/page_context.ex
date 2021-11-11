@@ -5,26 +5,20 @@ defmodule Oli.Delivery.Page.PageContext do
 
   @enforce_keys [
     :review_mode,
-    :summary,
     :page,
     :progress_state,
     :resource_attempts,
     :activities,
     :objectives,
-    :previous_page,
-    :next_page,
     :latest_attempts
   ]
   defstruct [
     :review_mode,
-    :summary,
     :page,
     :progress_state,
     :resource_attempts,
     :activities,
     :objectives,
-    :previous_page,
-    :next_page,
     :latest_attempts
   ]
 
@@ -64,20 +58,13 @@ defmodule Oli.Delivery.Page.PageContext do
           {:error, [], %{}}
       end
 
-    {:ok, summary} = Summary.get_summary(section_slug, user)
-
-    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
-
     %PageContext{
       review_mode: true,
-      summary: summary,
       page: page_revision,
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
-      previous_page: previous,
-      next_page: next,
       latest_attempts: latest_attempts
     }
   end
@@ -131,53 +118,15 @@ defmodule Oli.Delivery.Page.PageContext do
         page_revision
       end
 
-    {:ok, summary} = Summary.get_summary(section_slug, user)
-
-    {previous, next} = determine_previous_next(summary.hierarchy, page_revision)
-
     %PageContext{
       review_mode: false,
-      summary: summary,
       page: page_revision,
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
-      previous_page: previous,
-      next_page: next,
       latest_attempts: latest_attempts
     }
-  end
-
-  def determine_previous_next(hierarchy, revision) do
-    flattened_hierarchy = Hierarchy.flatten_pages(hierarchy)
-
-    index =
-      Enum.find_index(flattened_hierarchy, fn node ->
-        node.revision.id == revision.id
-      end)
-
-    case {index, length(flattened_hierarchy) - 1} do
-      {nil, _} ->
-        {nil, nil}
-
-      {_, 0} ->
-        {nil, nil}
-
-      {0, _} ->
-        {nil, revision_at(flattened_hierarchy, 1)}
-
-      {a, a} ->
-        {revision_at(flattened_hierarchy, a - 1), nil}
-
-      {a, _} ->
-        {revision_at(flattened_hierarchy, a - 1), revision_at(flattened_hierarchy, a + 1)}
-    end
-  end
-
-  defp revision_at(flattened_hierarchy, index) do
-    node = Enum.at(flattened_hierarchy, index)
-    node.revision
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
