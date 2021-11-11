@@ -59,15 +59,8 @@ const handleContainsOperator = (
   } else if (Array.isArray(factValue) && value) {
     // We are parseArrayString for the cases where factValue contains strings but the values contain strings
     const updatedFacts = parseArray(factValue);
-    // split value into array
-    return (
-      value
-        .split(',')
-        // We are parseNumString for the cases where factValue contains numbers but the values contain strings
-        .map((item: string) => parseNumString(item))
-        // check if value is found in factValue array
-        .some((item: any) => updatedFacts.includes(item))
-    );
+    const updatedValue = parseArray(value);
+    return updatedValue.some((item: any) => updatedFacts.includes(item));
   }
 
   return false;
