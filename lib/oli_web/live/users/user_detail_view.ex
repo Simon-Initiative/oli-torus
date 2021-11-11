@@ -3,6 +3,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
   use OliWeb.Common.Modal
+  alias Oli.Delivery.Sections
 
   import OliWeb.Common.Properties.Utils
   import OliWeb.Common.Utils
@@ -15,6 +16,8 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Pow.UserContext
   alias OliWeb.Users.Actions
+  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.DataProviders.EctoProvider.Marshaler
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -22,6 +25,8 @@ defmodule OliWeb.Users.UsersDetailView do
     DeleteAccountModal,
     ConfirmEmailModal
   }
+
+  @institution_instructor PlatformRoles.get_role(:institution_instructor)
 
   prop author, :any
   data breadcrumbs, :any
@@ -42,7 +47,11 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"csrf_token" => csrf_token, "current_author_id" => author_id},
         socket
       ) do
-    case Accounts.get_user_by(id: user_id) do
+    user =
+      Accounts.get_user_by(id: user_id)
+      |> Repo.preload(:platform_roles)
+
+    case user do
       nil ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
@@ -73,18 +82,38 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly label="Last Name" value={@user.family_name}/>
             <ReadOnly label="Email" value={@user.email}/>
             <ReadOnly label="Guest" value={boolean(@user.guest)}/>
-            <Field name={:independent_learner}>
-              <Label>Independent Learner</Label>
-              <div class="form-control mb-2">
+            <div class="form-control mb-2">
+              <Field name={:independent_learner}>
                 <Checkbox/>
+                <Label class="form-check-label mr-2">Independent Learner</Label>
+              </Field>
+            </div>
+
+            <section>
+              <heading>
+                <p>Enable LMS-Lite Section Creation <small>(check both)</small></p>
+              </heading>
+              <div class="form-row align-items-center">
+                <div class="col-sm-6">
+                  <div class="form-control mb-2">
+                    <Field name={:can_create_sections}>
+                      <Checkbox />
+                      <Label class="form-check-label mr-2">Can Create Sections?</Label>
+                    </Field>
+                  </div>
+                </div>
+
+                <div class="col-sm-6">
+                  <div class="form-control mb-2">
+                    <Field name={:institution_instructor}>
+                      <Checkbox value={Sections.is_institution_instructor?(@user)} />
+                      <Label class="form-check-label mr-2">Institution Instructor</Label>
+                    </Field>
+                  </div>
+                </div>
               </div>
-            </Field>
-            <Field name={:can_create_sections}>
-              <Label>Can Create LMS-Lite Sections?</Label>
-              <div class="form-control mb-2">
-                <Checkbox/>
-              </div>
-            </Field>
+            </section>
+
             <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
             <ReadOnly label="Email Confirmed" value={date(@user.email_confirmed_at)}/>
             <ReadOnly label="Created" value={date(@user.inserted_at)}/>
@@ -151,12 +180,12 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"id" => id},
         socket
       ) do
-    user = Accounts.get_user!(id)
+    user = user_with_platform_roles(id)
     UserContext.lock(user)
 
     {:noreply,
      socket
-     |> assign(user: Accounts.get_user!(id))
+     |> assign(user: user_with_platform_roles(id))
      |> hide_modal()}
   end
 
@@ -177,17 +206,17 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"id" => id},
         socket
       ) do
-    user = Accounts.get_user!(id)
+    user = user_with_platform_roles(id)
     UserContext.unlock(user)
 
     {:noreply,
      socket
-     |> assign(user: Accounts.get_user!(id))
+     |> assign(user: user_with_platform_roles(id))
      |> hide_modal()}
   end
 
   def handle_event("show_delete_account_modal", %{"id" => id}, socket) do
-    user = Accounts.get_user!(id)
+    user = user_with_platform_roles(id)
 
     modal = %{
       component: DeleteAccountModal,
@@ -205,7 +234,7 @@ defmodule OliWeb.Users.UsersDetailView do
         %{"id" => id},
         socket
       ) do
-    user = Accounts.get_user!(id)
+    user = user_with_platform_roles(id)
 
     case Accounts.delete_user(user) do
       {:ok, _} ->
@@ -223,13 +252,40 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("submit", _params, socket) do
     Repo.update!(socket.assigns.changeset)
+
     {:noreply,
      socket
-     |> assign(user: Accounts.get_user!(socket.assigns.user.id))}
+     |> assign(user: user_with_platform_roles(socket.assigns.user.id))}
   end
+
+  def user_with_platform_roles(id) do
+    Accounts.get_user!(id, preload: [:platform_roles])
+  end
+
+  def maybe_change_platform_roles(user_changeset, %{"institution_instructor" => "true"}) do
+    user_changeset
+    |> Ecto.Changeset.put_assoc(:platform_roles, [
+      Marshaler.to(@institution_instructor)
+      | user_changeset.data.platform_roles
+    ])
+  end
+
+  # Remove
+  def maybe_change_platform_roles(user_changeset, %{"institution_instructor" => "false"}) do
+    user_changeset
+    |> Ecto.Changeset.put_assoc(
+      :platform_roles,
+      Enum.filter(user_changeset.data.platform_roles, fn role ->
+        role.id != @institution_instructor.id
+      end)
+    )
+  end
+
+  def maybe_change_platform_roles(user_changeset, _), do: user_changeset
 
   def user_changeset(user, attrs \\ %{}) do
     User.noauth_changeset(user, attrs)
+    |> maybe_change_platform_roles(attrs)
     |> Map.put(:action, :update)
   end
 
