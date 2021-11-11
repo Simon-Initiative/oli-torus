@@ -1,20 +1,26 @@
 /* eslint-disable react/prop-types */
-import { setRestartLesson } from '../../../store/features/adaptivity/slice';
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import HistoryPanel from './HistoryPanel';
-import { selectCurrentActivityId } from '../../../store/features/activities/slice';
-import { selectEnableHistory } from '../../../store/features/page/slice';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
+import { selectCurrentActivityId } from '../../../store/features/activities/slice';
+import {
+  setHistoryNavigationTriggered,
+  setRestartLesson,
+} from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
-import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
+import {
+  selectEnableHistory,
+  selectShowHistory,
+  setShowHistory,
+} from '../../../store/features/page/slice';
+import HistoryPanel from './HistoryPanel';
 
 const HistoryNavigation: React.FC = () => {
   const currentActivityId = useSelector(selectCurrentActivityId);
   const enableHistory = useSelector(selectEnableHistory);
+  const showHistory = useSelector(selectShowHistory);
 
-  const [minimized, setMinimized] = useState(true);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
 
@@ -23,7 +29,7 @@ const HistoryNavigation: React.FC = () => {
   };
 
   const minimizeHandler = () => {
-    setMinimized(!minimized);
+    dispatch(setShowHistory({ show: !showHistory }));
   };
 
   const snapshot = getEnvState(defaultGlobalEnv);
@@ -103,7 +109,7 @@ const HistoryNavigation: React.FC = () => {
           enableHistory ? undefined : 'pullLeftInCheckContainer',
         ].join(' ')}
       >
-        <aside className={minimized ? 'minimized' : undefined}>
+        <aside className={showHistory ? undefined : 'minimized'}>
           {enableHistory ? (
             <Fragment>
               <button
