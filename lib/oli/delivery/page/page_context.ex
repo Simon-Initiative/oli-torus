@@ -28,9 +28,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Page.ObjectivesRollup
-  alias Oli.Delivery.Hierarchy
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -42,7 +40,7 @@ defmodule Oli.Delivery.Page.PageContext do
   to a renderer.
   """
   @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
-  def create_for_review(section_slug, attempt_guid, user) do
+  def create_for_review(section_slug, attempt_guid, _) do
     {progress_state, resource_attempts, latest_attempts, activities, page_revision} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
