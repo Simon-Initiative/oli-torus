@@ -1,4 +1,3 @@
-import { JanusConditionProperties } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
 import { Environment } from 'janus-script';
 import {
   AllConditions,
@@ -12,6 +11,7 @@ import {
   TopLevelCondition,
 } from 'json-rules-engine';
 import { b64EncodeUnicode } from 'utils/decode';
+import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
@@ -118,7 +118,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
       if (
         typeof ogValue === 'string' &&
-        condition?.type === 3 &&
+        condition?.type === CapiVariableTypes.ARRAY &&
         ogValue.charAt(0) !== '[' &&
         ogValue.slice(-1) !== ']'
       ) {
