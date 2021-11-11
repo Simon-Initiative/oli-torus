@@ -1,0 +1,21 @@
+<div class="container">
+  <div class="row">
+    <div class="col-12 text-center pt-4">
+      <p><i class="la la-times-circle-o" aria-hidden="true" style="font-size: 64px"></i></p>
+      <h2 class="mt-4 mb-4">Access to this resource is blocked</h2>
+      <p>
+        You are trying to access a resource that is blocked for the following reasons:
+
+        <ul>
+          <%= for reason <- @reasons do %>
+            <li><%= reason %></li>
+          <% end %>
+
+        </ul>
+      </p>
+
+      <p>If you think this is an error or would like more information, please <a href="javascript:" onclick="showHelpModal();">contact OLI Support</a>.</p>
+
+    </div>
+  </div>
+</div>

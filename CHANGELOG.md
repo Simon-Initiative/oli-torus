@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+### Enhancements
+
+- Instructor "Preview" mode
+
 ## 0.14.6 (2021-11-08)
 
 ### Bug Fixes

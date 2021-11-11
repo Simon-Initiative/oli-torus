@@ -60,7 +60,21 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
   const getStageState = () => {
     const statePuff: any = unflatten(globalState);
     const stageSlice = currentActivityTree?.reduce((collect: any, activity) => {
-      const next = { ...collect, ...statePuff[`${activity.id}|stage`] };
+      //A layer variable exist in state with owner screen Id as well as with it's child screen. So, we have to make sure that we only display the owner Id's variables in the inspector
+      const activityVars = statePuff[`${activity.id}|stage`];
+      let ownerVariables: Record<string, any> = {};
+      if (activityVars) {
+        ownerVariables = Object.keys(activityVars)?.reduce((col: any, part: any) => {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === part),
+          );
+          if (ownerActivity.id === activity.id) {
+            const next = { ...col, ...statePuff[`${activity.id}|stage`] };
+            return next;
+          }
+        }, {});
+      }
+      const next = { ...collect, ...ownerVariables };
       return next;
     }, {});
     /* console.log('STAGE STATE PUFF', { statePuff, stageSlice }); */

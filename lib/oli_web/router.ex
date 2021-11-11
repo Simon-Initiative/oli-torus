@@ -78,6 +78,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.MaybeEnrollOpenAndFreeUser)
   end
 
+  pipeline :maybe_gated_resource do
+    plug(Oli.Plugs.MaybeGatedResource)
+  end
+
   pipeline :require_lti_params do
     plug(Oli.Plugs.RequireLtiParams)
   end
@@ -225,6 +229,9 @@ defmodule OliWeb.Router do
     get("/consent/cookie", CookieConsentController, :retrieve)
 
     get("/site.webmanifest", StaticPageController, :site_webmanifest)
+
+    # update session timezone information
+    post("/timezone", StaticPageController, :timezone)
   end
 
   scope "/.well-known", OliWeb do
@@ -560,6 +567,7 @@ defmodule OliWeb.Router do
       :require_section,
       :maybe_enroll_open_and_free,
       :delivery_protected,
+      :maybe_gated_resource,
       :enforce_paywall,
       :pow_email_layout
     ])
@@ -579,6 +587,19 @@ defmodule OliWeb.Router do
       PageDeliveryController,
       :review_attempt
     )
+  end
+
+  scope "/sections/:section_slug/preview/", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_and_admin,
+      :pow_email_layout
+    ])
+
+    get("/overview", PageDeliveryController, :index_preview)
+    get("/page/:revision_slug", PageDeliveryController, :page_preview)
   end
 
   scope "/sections", OliWeb do
