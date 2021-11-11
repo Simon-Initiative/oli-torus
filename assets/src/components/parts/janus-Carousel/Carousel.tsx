@@ -71,6 +71,11 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
       setCssClass(sCssClass);
     }
 
+    const sCurrentImage = currentStateSnapshot[`stage.${id}.Current Image`];
+    if (sCurrentImage !== undefined) {
+      setCurrentSlide(sCurrentImage);
+    }
+
     setReady(true);
   }, []);
 
@@ -221,8 +226,8 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
           onSwiper={(swiper) => {
-            setCurrentSlide(swiper.realIndex);
             setSwiper(swiper);
+            swiper.slideTo(currentSlide);
           }}
           onSlideChange={(swiper) => {
             handleSlideChange(swiper.realIndex);
