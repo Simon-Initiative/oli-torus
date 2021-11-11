@@ -420,12 +420,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     notifyStateMutation();
   }, [mutationTriggered]);
-  const debounceStateChanges = async (changes: any) => {
+  const handleStateChangeEvents = async (changes: any) => {
     if (!ref.current) {
       return;
     }
     const currentStateSnapshot: any = {};
-    if (changes.changed.length > 1 && Array.isArray(changes.changed)) {
+    if (changes?.changed?.length > 1) {
       changes.changed.forEach((element: string, index: number) => {
         if (index > 0) {
           const variable = element.split(`${currentActivityId}|`);
@@ -442,9 +442,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   };
   useEffect(() => {
-    defaultGlobalEnv.addListener('change', debounceStateChanges);
+    defaultGlobalEnv.addListener('change', handleStateChangeEvents);
     return () => {
-      defaultGlobalEnv.removeListener('change', debounceStateChanges);
+      defaultGlobalEnv.removeListener('change', handleStateChangeEvents);
     };
   }, [activity.id]);
   const elementProps = {
