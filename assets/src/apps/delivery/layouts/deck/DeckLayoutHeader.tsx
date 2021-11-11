@@ -40,7 +40,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           <div className={`wrapper ${!isLegacyTheme ? 'displayNone' : ''}`}>
             <div className="nameScoreButtonWrapper">
               {/* <a className="trapStateListToggle">Force Adaptivity</a> */}
-              {/* beagleToggleContainer here */}
               {isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
 
               <div className="name">{userName}</div>
