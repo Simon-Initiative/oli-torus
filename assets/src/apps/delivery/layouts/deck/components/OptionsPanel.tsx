@@ -1,6 +1,7 @@
 import { setRestartLesson } from 'apps/delivery/store/features/adaptivity/slice';
 import {
   selectEnableHistory,
+  selectPreviewMode,
   selectShowHistory,
   setShowHistory,
 } from 'apps/delivery/store/features/page/slice';
@@ -15,6 +16,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   const dispatch = useDispatch();
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
+  const isPreviewMode = useSelector(selectPreviewMode);
 
   const handleToggleHistory = (show: boolean) => {
     dispatch(setShowHistory({ show }));
@@ -29,7 +31,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
       <div className={`displayOptionsView${open ? '' : ' displayNone'}`}>
         <div className="title">Display options</div>
         <div className={`option navigationOption${enableHistory ? '' : ' displayNone'}`}>
-          <span className="historyText">Screen List</span>
+          <span className="historyText">{isPreviewMode ? 'Screen List' : 'Lesson History'}</span>
           <div className="state navigationBtn">
             <button
               className={`on btn${showHistory ? '' : ' displayNone'}`}
