@@ -26,6 +26,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   const [captionRefs, setCaptionRefs] = useState<any[]>([]);
   const [carouselZoom, setCarouselZoom] = useState<boolean>(true);
   const [cssClass, setCssClass] = useState('');
+  const [swiper, setSwiper] = useState<any>(null);
 
   // initialize the swiper
   SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
@@ -70,6 +71,11 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
       setCssClass(sCssClass);
     }
 
+    const sCurrentImage = currentStateSnapshot[`stage.${id}.Current Image`];
+    if (sCurrentImage !== undefined) {
+      setCurrentSlide(sCurrentImage);
+    }
+
     setReady(true);
   }, []);
 
@@ -101,6 +107,12 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
               if (sZoom !== undefined) {
                 setCarouselZoom(sZoom);
               }
+              const sCurrentImage = changes[`stage.${id}.Current Image`];
+              if (sCurrentImage !== undefined) {
+                if (swiper) {
+                  swiper.slideTo(sCurrentImage);
+                }
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -123,7 +135,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify]);
+  }, [props.notify, swiper]);
 
   useEffect(() => {
     initialize(props.model);
@@ -214,7 +226,8 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
           onSwiper={(swiper) => {
-            setCurrentSlide(swiper.realIndex);
+            setSwiper(swiper);
+            swiper.slideTo(currentSlide);
           }}
           onSlideChange={(swiper) => {
             handleSlideChange(swiper.realIndex);
@@ -227,7 +240,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
             <SwiperSlide key={index} zoom={carouselZoom}>
               <figure className="swiper-zoom-container">
                 <img style={imgStyles} src={image.url} alt={image.alt ? image.alt : undefined} />
-                <figcaption ref={captionRefs[index]}>{image.caption}</figcaption>
+                {image.caption && <figcaption ref={captionRefs[index]}>{image.caption}</figcaption>}
               </figure>
             </SwiperSlide>
           ))}
