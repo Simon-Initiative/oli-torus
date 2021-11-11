@@ -1,3 +1,4 @@
+import { ConditionProperties } from 'json-rules-engine';
 import { isStringArray, parseArray, parseBoolean } from 'utils/common';
 
 export enum CapiVariableTypes {
@@ -97,6 +98,11 @@ export interface ICapiVariableOptions {
   writeonly?: boolean;
   allowedValues?: string[];
   bindTo?: string;
+}
+
+export interface JanusConditionProperties extends ConditionProperties {
+  id: string;
+  type?: CapiVariableTypes;
 }
 
 export class CapiVariable {

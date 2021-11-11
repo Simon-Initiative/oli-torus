@@ -1,4 +1,8 @@
-import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
+import {
+  CapiVariableTypes,
+  getCapiType,
+  JanusConditionProperties,
+} from '../../../../adaptivity/capi';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import {
@@ -9,7 +13,6 @@ import {
   TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
-import { JanusConditionProperties } from './ConditionsBlockEditor';
 import { VariablePicker, OverlayPlacements } from './VariablePicker';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 
