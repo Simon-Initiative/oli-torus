@@ -1,5 +1,5 @@
 import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
-import React, { Fragment, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Everapp } from './EverappRenderer';
 
@@ -17,7 +17,7 @@ const EverappMenu: React.FC<IEverappMenuProps> = ({ apps }) => {
   };
 
   return (
-    <Fragment>
+    <div className="beagleToggleContainer">
       <button
         className="beagleAppListToggle"
         title="Toggle Everapp Menu"
@@ -54,7 +54,7 @@ const EverappMenu: React.FC<IEverappMenuProps> = ({ apps }) => {
           </div>
         </div>
       </div>
-    </Fragment>
+    </div>
   );
 };
 

@@ -4,8 +4,10 @@ import {
   getLocalizedStateSnapshot,
 } from 'adaptivity/scripting';
 import ActivityRenderer from 'apps/delivery/components/ActivityRenderer';
+import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 import { triggerCheck } from 'apps/delivery/store/features/adaptivity/actions/triggerCheck';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
+import { toggleEverapp } from 'apps/delivery/store/features/page/actions/toggleEverapp';
 import { selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import { ActivityState, StudentResponse } from 'components/activities/types';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
@@ -30,11 +32,11 @@ export interface IEverappRendererProps {
 const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
   const everApp = props.app;
   const index = props.index;
-  const open = props.open;
 
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
-  const [isOpen, setIsOpen] = useState(open);
+  const [isOpen, setIsOpen] = useState<boolean>(props.open);
+
   const currentActivityTree = useSelector(selectCurrentActivityTree);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
   const handleEverappActivityReady = useCallback(async () => {
     if (!currentActivityTree) {
+      console.warn('READY BUT NO TREE????');
       return; // very bad!
     }
     const currentActivityIds = currentActivityTree.map((a) => a.id);
@@ -55,81 +58,85 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
     };
   }, [currentActivityTree]);
 
-  const handleActivitySavePart = useCallback(
-    async (
-      activityId: string | number,
-      attemptGuid: string,
-      partAttemptGuid: string,
-      response: StudentResponse,
-    ) => {
-      /* console.log('EVERAPP SAVE PART', {
-        activityId,
-        attemptGuid,
-        partAttemptGuid,
-        response,
-        currentActivityTree,
-      }); */
-      if (!currentActivityTree) {
-        return { result: 'error' };
-      }
-      /*
+  const handleActivitySavePart = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partAttemptGuid: string,
+    response: StudentResponse,
+  ) => {
+    /*
       id: "app.ispk-bio-observer.external.env"
       key: "external.env"
       path: "ispk-bio-observer.external.env"
       type: 2
       value: "{\"Location:\": \"Sonoran Desert\", \"Temperature:\": \"10°C to 48°C\"}"
       */
-      const updatedState = response.input.reduce((result: any, item: any) => {
-        const [simId] = item.path.split('.');
-        result[simId] = result[simId] || {};
-        result[simId][item.key] = item.value;
-        return result;
-      }, {});
-      const responseMap = response.input.reduce((result: any, item: any) => {
-        result[item.id] = item.value;
-        return result;
-      }, {});
-      // need to update scripting env
-      evalAssignScript(responseMap, defaultGlobalEnv);
-      const currentActivityIds = currentActivityTree.map((a) => a.id);
-      // because the everapp attemptGuid and partAttemptGuid are always made up
-      // can't save it like normal, instead setData should cover it
-      const result = updateGlobalUserState(updatedState, isPreviewMode);
-      return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
-    },
-    [currentActivityTree],
-  );
+    const updatedState = response.input.reduce((result: any, item: any) => {
+      const [simId] = item.path.split('.');
+      result[simId] = result[simId] || {};
+      result[simId][item.key] = item.value;
+      return result;
+    }, {});
+    const responseMap = response.input.reduce((result: any, item: any) => {
+      result[item.id] = item.value;
+      return result;
+    }, {});
+    // need to update scripting env
+    evalAssignScript(responseMap, defaultGlobalEnv);
 
-  const handleActivitySubmitPart = useCallback(
-    async (
-      activityId: string | number,
-      attemptGuid: string,
-      partAttemptGuid: string,
-      response: StudentResponse,
-    ) => {
-      const { result, snapshot } = await handleActivitySavePart(
-        activityId,
-        attemptGuid,
-        partAttemptGuid,
-        response,
-      );
+    // because the everapp attemptGuid and partAttemptGuid are always made up
+    // can't save it like normal, instead setData should cover it
+    const result = await updateGlobalUserState(updatedState, isPreviewMode);
 
-      dispatch(triggerCheck({ activityId: activityId.toString() }));
+    console.log('EVERAPP SAVE PART', {
+      activityId,
+      attemptGuid,
+      partAttemptGuid,
+      response,
+      responseMap,
+      updatedState,
+      result,
+    });
 
-      return { result, snapshot };
-    },
-    [currentActivityTree],
-  );
+    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
+    const {
+      payload: { snapshot },
+    } = sResult as any;
+    return { result, snapshot };
+  };
 
-  const handleRequestLatestState = useCallback(async () => {
-    if (!currentActivityTree) {
-      return; // very bad!
-    }
-    const currentActivityIds = currentActivityTree.map((a) => a.id);
+  const handleActivitySubmitPart = async (
+    activityId: string | number,
+    attemptGuid: string,
+    partAttemptGuid: string,
+    response: StudentResponse,
+  ) => {
+    const { result, snapshot } = await handleActivitySavePart(
+      activityId,
+      attemptGuid,
+      partAttemptGuid,
+      response,
+    );
+
+    dispatch(triggerCheck({ activityId: activityId.toString() }));
+
+    return { result, snapshot };
+  };
+
+  const handleRequestLatestState = async () => {
+    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
+    const {
+      payload: { snapshot },
+    } = sResult as any;
     return {
-      snapshot: getLocalizedStateSnapshot(currentActivityIds),
+      snapshot,
     };
-  }, [currentActivityTree]);
+  };
+
+  const handleCloseClick = useCallback(() => {
+    setIsOpen(false);
+    dispatch(toggleEverapp({ id: everApp.id }));
+  }, [everApp]);
 
   return (
     <div
@@ -137,23 +144,24 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
     >
       <div className="appHeader">
         <div className="appTitle">{everApp.name}</div>
-        <div className="closeBtn icon-clear"></div>
+        <div className="closeBtn icon-clear" onClick={handleCloseClick}></div>
       </div>
 
       <div className="appContainer">
-        <style>{`.everapp-activity { width: 100%; height: 100%; display: block; }`}</style>
-        <ActivityRenderer
-          key={everApp.id}
-          activity={getEverAppActivity(everApp, everApp.url, index)}
-          attempt={udpateAttemptGuid(index, everApp) as ActivityState}
-          onActivitySave={async () => true}
-          onActivitySubmit={async () => true}
-          onActivitySavePart={handleActivitySavePart}
-          onActivitySubmitPart={handleActivitySubmitPart}
-          onActivityReady={handleEverappActivityReady}
-          onRequestLatestState={handleRequestLatestState}
-          adaptivityDomain="app"
-        />
+        {isOpen && (
+          <ActivityRenderer
+            key={everApp.id}
+            activity={getEverAppActivity(everApp, everApp.url, index)}
+            attempt={udpateAttemptGuid(index, everApp) as ActivityState}
+            onActivitySave={async () => true}
+            onActivitySubmit={async () => true}
+            onActivitySavePart={handleActivitySavePart}
+            onActivitySubmitPart={handleActivitySubmitPart}
+            onActivityReady={handleEverappActivityReady}
+            onRequestLatestState={handleRequestLatestState}
+            adaptivityDomain="app"
+          />
+        )}
       </div>
     </div>
   );
