@@ -32,7 +32,7 @@ export const MultiInputStem: React.FC<Props> = (props) => {
     <div className="flex-grow-1 mb-3">
       <RichTextEditorConnected
         normalizerContext={{ whitelist: ['input_ref'] }}
-        text={model.stem.content}
+        value={model.stem.content}
         onEdit={(content, editor, operations) => {
           dispatch(MultiInputActions.editStemAndPreviewText(content, editor, operations));
           if (elementsRemoved(operations, 'input_ref').length > 0) {

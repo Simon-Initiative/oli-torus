@@ -40,14 +40,14 @@ export const Choices: React.FC<Props> = ({
                   <input
                     className="form-control"
                     placeholder="Answer choice"
-                    value={toSimpleText({ children: choice.content.model })}
+                    value={toSimpleText({ children: choice.content })}
                     onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}
                   />
                 ) : (
                   <RichTextEditorConnected
                     style={{ flexGrow: 1, cursor: 'text' }}
                     placeholder="Answer choice"
-                    text={choice.content}
+                    value={choice.content}
                     onEdit={(content) => onEdit(choice.id, content)}
                   />
                 )}

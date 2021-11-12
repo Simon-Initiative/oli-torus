@@ -6,6 +6,8 @@ import { PathOperation } from 'utils/pathOperations';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
+export type DeliveryMode = 'delivery' | 'review' | 'preview';
+
 export type MediaItemRequest = {
   type: 'MediaItemRequest';
   mimeTypes: string[];
@@ -29,10 +31,7 @@ export type ChoiceId = ID;
 export type PartId = ID;
 export type ResponseId = ID;
 
-export type RichText = {
-  model: ModelElement[];
-  selection: Selection;
-};
+export type RichText = ModelElement[];
 
 export interface Success {
   type: 'success';
@@ -44,16 +43,13 @@ export interface HasContent {
 export function makeContent(text: string, id?: string): { id: string; content: RichText } {
   return {
     id: id ? id : guid(),
-    content: {
-      model: [
-        create({
-          type: 'p',
-          children: [{ text }],
-          id: guid(),
-        }),
-      ],
-      selection: null,
-    },
+    content: [
+      create({
+        type: 'p',
+        children: [{ text }],
+        id: guid(),
+      }),
+    ],
   };
 }
 

@@ -13,65 +13,69 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
   schema "sections" do
-    field :type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable
+    field(:type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable)
 
-    field :registration_open, :boolean, default: false
-    field :start_date, :utc_datetime
-    field :end_date, :utc_datetime
-    field :timezone, :string
-    field :title, :string
-    field :description, :string
-    field :context_id, :string
-    field :slug, :string
-    field :open_and_free, :boolean, default: false
-    field :status, Ecto.Enum, values: [:active, :deleted], default: :active
-    field :invite_token, :string
-    field :passcode, :string
+    field(:registration_open, :boolean, default: false)
+    field(:start_date, :utc_datetime)
+    field(:end_date, :utc_datetime)
+    field(:timezone, :string)
+    field(:title, :string)
+    field(:description, :string)
+    field(:context_id, :string)
+    field(:slug, :string)
+    field(:open_and_free, :boolean, default: false)
+    field(:status, Ecto.Enum, values: [:active, :deleted], default: :active)
+    field(:invite_token, :string)
+    field(:passcode, :string)
 
-    field :visibility, Ecto.Enum, values: [:selected, :global], default: :global
-    field :requires_payment, :boolean, default: false
-    field :amount, Money.Ecto.Map.Type
-    field :has_grace_period, :boolean, default: true
-    field :grace_period_days, :integer
+    field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
+    field(:requires_payment, :boolean, default: false)
+    field(:amount, Money.Ecto.Map.Type)
+    field(:has_grace_period, :boolean, default: true)
+    field(:grace_period_days, :integer)
 
-    field :grace_period_strategy, Ecto.Enum,
+    field(:grace_period_strategy, Ecto.Enum,
       values: [:relative_to_section, :relative_to_student],
       default: :relative_to_section
+    )
 
-    field :grade_passback_enabled, :boolean, default: false
-    field :line_items_service_url, :string
-    field :nrps_enabled, :boolean, default: false
-    field :nrps_context_memberships_url, :string
+    field(:grade_passback_enabled, :boolean, default: false)
+    field(:line_items_service_url, :string)
+    field(:nrps_enabled, :boolean, default: false)
+    field(:nrps_context_memberships_url, :string)
 
-    belongs_to :lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment,
+    field(:resource_gating_index, :map, default: %{}, null: false)
+
+    belongs_to(:lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment,
       foreign_key: :lti_1p3_deployment_id
+    )
 
-    belongs_to :institution, Institution
-    belongs_to :brand, Brand
+    belongs_to(:institution, Institution)
+    belongs_to(:brand, Brand)
 
-    has_many :enrollments, Enrollment
+    has_many(:enrollments, Enrollment)
 
     # base project
-    belongs_to :base_project, Project
+    belongs_to(:base_project, Project)
 
     # root section resource container
-    belongs_to :root_section_resource, SectionResource
+    belongs_to(:root_section_resource, SectionResource)
 
     # section resources
-    has_many :section_resources, SectionResource
+    has_many(:section_resources, SectionResource)
 
     # section delivery policy
-    belongs_to :delivery_policy, DeliveryPolicy
+    belongs_to(:delivery_policy, DeliveryPolicy)
 
-    belongs_to :blueprint, Oli.Delivery.Sections.Section
+    belongs_to(:blueprint, Oli.Delivery.Sections.Section)
 
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
-    has_many :section_project_publications, SectionsProjectsPublications, on_replace: :delete
+    has_many(:section_project_publications, SectionsProjectsPublications, on_replace: :delete)
 
-    field :enrollments_count, :integer, virtual: true
-    field :total_count, :integer, virtual: true
-    field :institution_name, :string, virtual: true
+    field(:enrollments_count, :integer, virtual: true)
+    field(:total_count, :integer, virtual: true)
+    field(:institution_name, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
@@ -103,6 +107,7 @@ defmodule Oli.Delivery.Sections.Section do
       :line_items_service_url,
       :nrps_enabled,
       :nrps_context_memberships_url,
+      :resource_gating_index,
       :lti_1p3_deployment_id,
       :institution_id,
       :base_project_id,

@@ -2,10 +2,9 @@ defmodule Oli.Rendering.Activity.Html do
   @moduledoc """
   Implements the Html writer for Oli activity rendering
   """
-  alias Oli.Utils
-  alias Oli.Rendering.Context
+  import Oli.Utils
 
-  require Logger
+  alias Oli.Rendering.Context
 
   @behaviour Oli.Rendering.Activity
 
@@ -13,8 +12,7 @@ defmodule Oli.Rendering.Activity.Html do
         %Context{
           activity_map: activity_map,
           render_opts: render_opts,
-          preview: preview,
-          review_mode: review_mode,
+          mode: mode,
           user: user
         } = context,
         %{"activity_id" => activity_id, "purpose" => purpose} = activity
@@ -23,14 +21,11 @@ defmodule Oli.Rendering.Activity.Html do
 
     case activity_summary do
       nil ->
-        error_id = Utils.generate_error_id()
-
-        error_msg =
-          "ActivitySummary with id #{activity_id} missing from activity_map: #{Kernel.inspect({activity, activity_map})}"
-
-        if render_opts.log_errors,
-          do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-          else: nil
+        {error_id, error_msg} =
+          log_error(
+            "ActivitySummary with id #{activity_id} missing from activity_map",
+            {activity, activity_map}
+          )
 
         if render_opts.render_errors do
           error(context, activity, {:activity_missing, error_id, error_msg})
@@ -39,15 +34,29 @@ defmodule Oli.Rendering.Activity.Html do
         end
 
       _ ->
-        tag = activity_summary.delivery_element
+        tag =
+          case mode do
+            :instructor_preview -> activity_summary.authoring_element
+            _ -> activity_summary.delivery_element
+          end
+
         state = activity_summary.state
         graded = activity_summary.graded
         model_json = activity_summary.model
         section_slug = context.section_slug
 
-        activity_html = [
-          "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" preview=\"#{preview}\" user_id=\"#{user.id}\" review=\"#{review_mode}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
-        ]
+        activity_html =
+          case mode do
+            :instructor_preview ->
+              [
+                "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+              ]
+
+            _ ->
+              [
+                "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+              ]
+          end
 
         case purpose do
           "none" ->

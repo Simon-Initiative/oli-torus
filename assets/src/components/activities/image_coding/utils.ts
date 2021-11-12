@@ -1,8 +1,7 @@
-import guid from 'utils/guid';
-import * as ContentModel from 'data/content/model';
 import { ImageCodingModelSchema } from './schema';
-import { RichText, ScoringStrategy } from '../types';
+import { ScoringStrategy } from '../types';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { fromText } from 'components/activities/adaptive/utils';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
   return {
@@ -31,22 +30,6 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
     },
   };
 };
-
-export function fromText(text: string): { id: string; content: RichText } {
-  return {
-    id: guid() + '',
-    content: {
-      model: [
-        ContentModel.create<ContentModel.Paragraph>({
-          type: 'p',
-          children: [{ text }],
-          id: guid() + '',
-        }),
-      ],
-      selection: null,
-    },
-  };
-}
 
 export function lastPart(path: string): string {
   return path.substring(path.lastIndexOf('/') + 1);

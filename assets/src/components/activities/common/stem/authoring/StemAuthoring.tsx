@@ -10,7 +10,7 @@ interface Props {
 export const StemAuthoring: React.FC<Props> = ({ stem, onEdit }) => {
   return (
     <div className="flex-grow-1">
-      <RichTextEditorConnected text={stem.content} onEdit={onEdit} placeholder="Question" />
+      <RichTextEditorConnected value={stem.content} onEdit={onEdit} placeholder="Question" />
     </div>
   );
 };

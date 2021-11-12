@@ -57,8 +57,8 @@ const positions =
   };
 
 export const resizeHandleStyles =
-  (boundingRect: BoundingRect): any =>
-  (position: 'border' | Position) =>
+  (boundingRect: BoundingRect) =>
+  (position: 'border' | Position): Partial<BoundingRect> =>
     Object.assign(
       position === 'border'
         ? positions(boundingRect)(position)

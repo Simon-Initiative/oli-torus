@@ -6987,10 +6987,10 @@ react-select2-wrapper@^1.0.4-beta6:
     select2 "^4.0.0"
     shallow-equal-fuzzy "^0.0.2"
 
-react-tiny-popover@^6.0.5:
-  version "6.0.5"
-  resolved "https://registry.yarnpkg.com/react-tiny-popover/-/react-tiny-popover-6.0.5.tgz#2d5eb21d8a2758396ffa5bf5b761baac87dd6297"
-  integrity sha512-na6ZghMy5kqTPFSATb1pdSHO+/MikZvUxNk+zjXlz+gMXgiaOVuik5AiC5Oyj4yHpPf0nxoOmVQOmOmuDob6+A==
+react-tiny-popover@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/react-tiny-popover/-/react-tiny-popover-7.0.1.tgz#efb396cae335f00a0767ad98b9579d28744aec9e"
+  integrity sha512-uV+nTZXkCtfPFQtoKwbfX8waaU7+b8LEOoyOUjtmRxqnH3KLX1FkPm7RU+RC8eXxtOe4rC1cuhOIbQFcc71vQQ==
 
 react-transition-group@^4.4.1:
   version "4.4.2"

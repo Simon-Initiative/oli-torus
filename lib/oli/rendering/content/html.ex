@@ -4,11 +4,11 @@ defmodule Oli.Rendering.Content.Html do
 
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
-  alias Oli.Rendering.Context
-  alias Oli.Utils
-  alias Phoenix.HTML
+  import Oli.Utils
 
-  require Logger
+  alias Oli.Rendering.Context
+  alias Phoenix.HTML
+  import Oli.Rendering.Utils
 
   @behaviour Oli.Rendering.Content
 
@@ -89,7 +89,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
@@ -101,7 +101,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def youtube(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -115,7 +115,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def iframe(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
@@ -125,7 +125,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = context, _, e) do
-    missing_media(context, e)
+    missing_media_src(context, e)
   end
 
   def table(%Context{} = _context, next, attrs) do
@@ -185,11 +185,12 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def code(
-        %Context{} = context,
+        %Context{} = _context,
         next,
         attrs
       ) do
-    maybe_log_error(context, attrs)
+    {_error_id, _error_msg} =
+      log_error("Malformed content element. Missing language attribute", attrs)
 
     figure(attrs, [
       ~s|<pre><code class="language-none">|,
@@ -214,28 +215,38 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def a(%Context{} = context, next, e) do
-    maybe_log_error(context, e)
+  def a(%Context{} = context, next, attrs) do
+    {_error_id, _error_msg} =
+      log_error("Malformed content element. Missing href attribute", attrs)
+
     external_link(context, next, "#")
   end
 
   defp internal_link(
-         %Context{section_slug: section_slug, preview: preview, project_slug: project_slug},
+         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
          next,
          href
        ) do
     href =
       case section_slug do
         nil ->
-          if preview do
-            "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
-          else
-            "#"
+          case mode do
+            :author_preview ->
+              "/authoring/project/#{project_slug}/preview/#{revision_slug_from_course_link(href)}"
+
+            _ ->
+              "#"
           end
 
         section_slug ->
           # rewrite internal link using section slug and revision slug
-          "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+          case mode do
+            :instructor_preview ->
+              "/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
+
+            _ ->
+              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+          end
       end
 
     [~s|<a class="internal-link" href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
@@ -243,6 +254,45 @@ defmodule Oli.Rendering.Content.Html do
 
   defp external_link(%Context{} = _context, next, href) do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+  end
+
+  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
+    trigger =
+      if escape_xml!(trigger) == "hover" do
+        "hover focus"
+      else
+        "manual"
+      end
+
+    [
+      ~s"""
+      <span
+        tabindex="0"
+        role="button"
+        class="popup__anchorText#{if !String.contains?(trigger, "hover") do
+        " popup__click"
+      else
+        ""
+      end}"
+        data-trigger="#{trigger}"
+        data-toggle="popover"
+        data-placement="top"
+        data-html="true"
+        data-template='
+          <div class="popover popup__content" role="tooltip">
+            <div class="arrow"></div>
+            <h3 class="popover-header"></h3>
+            <div class="popover-body"></div>
+          </div>'
+        data-content="#{escape_xml!(parse_html_content(content, context))}">
+        #{next.()}
+      </span>\n
+      """
+    ]
+  end
+
+  def selection(%Context{} = context, _, selection) do
+    Oli.Rendering.Content.Selection.render(context, selection)
   end
 
   defp revision_slug_from_course_link(href) do
@@ -329,27 +379,13 @@ defmodule Oli.Rendering.Content.Html do
 
   defp figure(_attrs, content), do: content
 
-  defp missing_media(%Context{render_opts: render_opts} = context, element) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Rendering error: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
+  defp missing_media_src(%Context{render_opts: render_opts} = context, element) do
+    {error_id, error_msg} = log_error("Malformed content element. Missing src attribute", element)
 
     if render_opts.render_errors do
       error(context, element, {:invalid, error_id, error_msg})
     else
       []
     end
-  end
-
-  defp maybe_log_error(%Context{render_opts: render_opts}, element) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Rendering error: #{Kernel.inspect(element)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
   end
 end

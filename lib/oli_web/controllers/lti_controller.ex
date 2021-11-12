@@ -1,6 +1,8 @@
 defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
+  import Oli.Utils
+
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Institutions
@@ -332,7 +334,7 @@ defmodule OliWeb.LtiController do
 
         # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
         # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
-        case Accounts.insert_or_update_user(%{
+        case Accounts.insert_or_update_lms_user(%{
                sub: lti_params["sub"],
                name: lti_params["name"],
                given_name: lti_params["given_name"],
@@ -352,7 +354,6 @@ defmodule OliWeb.LtiController do
                phone_number: lti_params["phone_number"],
                phone_number_verified: lti_params["phone_number_verified"],
                address: lti_params["address"],
-               independent_learner: false,
                institution_id: institution.id
              }) do
           {:ok, user} ->
@@ -403,8 +404,10 @@ defmodule OliWeb.LtiController do
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end
 
-          _ ->
-            throw("Error creating user")
+          {:error, changeset} ->
+            {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
+
+            throw(error_msg)
         end
     end
   end

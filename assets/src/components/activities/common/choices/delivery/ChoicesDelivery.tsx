@@ -37,7 +37,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
               <div className="d-flex align-items-center">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
                 <div className="choices__choice-content">
-                  <HtmlContentModelRenderer text={choice.content} context={context} />
+                  <HtmlContentModelRenderer content={choice.content} context={context} />
                 </div>
               </div>
             </label>

@@ -121,7 +121,7 @@ export const triggerCheck = createAsyncThunk(
 
     const treeActivityIds = currentActivityTree.map((a) => a.id);
     const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
-    //handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
+    handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
     const extrinsicSnapshot = Object.keys(localizedSnapshot).reduce(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');
@@ -141,11 +141,11 @@ export const triggerCheck = createAsyncThunk(
     if (!isPreviewMode) {
       // update the server with the latest changes
       const extrnisicState = selectExtrinsicState(getState() as RootState);
-      console.log('trigger check last min extrinsic state', {
+      /* console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,
         extrnisicState,
-      });
+      }); */
       await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
     }
 
@@ -249,14 +249,14 @@ export const triggerCheck = createAsyncThunk(
         },
       );
 
-      console.log('CHECKING', {
+      /* console.log('CHECKING', {
         sectionSlug,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
         localizedSnapshot,
         partResponses,
-      });
+      }); */
 
       const evalResult = await evalActivityAttempt(
         sectionSlug,
@@ -264,7 +264,7 @@ export const triggerCheck = createAsyncThunk(
         partResponses,
       );
 
-      console.log('EVAL RESULT', { evalResult });
+      /* console.log('EVAL RESULT', { evalResult }); */
       const resultData: CheckResult = (evalResult as any).result.actions;
       checkResult = resultData.results;
       isCorrect = resultData.correct;

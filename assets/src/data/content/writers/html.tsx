@@ -23,6 +23,7 @@ import {
   ModelElement,
   OrderedList,
   Paragraph,
+  Popup,
   Table,
   TableData,
   TableHeader,
@@ -32,6 +33,8 @@ import {
   YouTube,
 } from 'data/content/model';
 import React from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import { WriterContext } from './context';
@@ -39,15 +42,6 @@ import { Next, WriterImpl } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
-
-function escapeHtml(unsafe: string): string {
-  return unsafe
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 export class HtmlParser implements WriterImpl {
   private escapeXml = (text: string) => decodeURI(encodeURI(text));
@@ -246,8 +240,32 @@ export class HtmlParser implements WriterImpl {
         assertNever(inputData.input);
     }
   }
+
+  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: Popup) {
+    const trigger: OverlayTriggerType[] =
+      this.escapeXml(popup.trigger) === 'hover' ? ['hover', 'focus'] : ['focus'];
+
+    const popupContent = (
+      <Popover id={popup.id}>
+        <Popover.Content className="popup__content">{contentNext()}</Popover.Content>
+      </Popover>
+    );
+
+    return (
+      <OverlayTrigger trigger={trigger} placement="top" overlay={popupContent}>
+        <span
+          tabIndex={0}
+          role="button"
+          className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
+        >
+          {anchorNext()}
+        </span>
+      </OverlayTrigger>
+    );
+  }
+
   text(context: WriterContext, textEntity: Text) {
-    return this.wrapWithMarks(escapeHtml(textEntity.text), textEntity);
+    return this.wrapWithMarks(textEntity.text, textEntity);
   }
   unsupported(_context: WriterContext, x: ModelElement) {
     console.error('Content element ' + JSON.stringify(x) + ' is invalid and could not display.');

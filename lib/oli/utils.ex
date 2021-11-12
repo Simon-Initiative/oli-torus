@@ -1,4 +1,6 @@
 defmodule Oli.Utils do
+  require Logger
+
   @doc """
   Generates a random hex string of the given length
   """
@@ -6,8 +8,32 @@ defmodule Oli.Utils do
     :crypto.strong_rand_bytes(length) |> Base.encode16() |> binary_part(0, length)
   end
 
-  def generate_error_id() do
-    random_string(8)
+  @doc """
+  Logs an error message with a unique identifier. Returns a tuple with the unique identifier
+  and a user focused error message that contains a unique identifier for support. This unique
+  identifier is included in the server side log message so it can be found quickly.
+
+  Takes in a short message (msg) describing the error (this will be displayed to a user) and
+  an optional metadata object (metadata) which will be kernel inspected in the server side log.
+  Metadata is not exposed in the user facing error message.
+  """
+  def log_error(msg, metadata \\ nil) do
+    error_id = uuid() |> String.upcase()
+
+    metadata_str =
+      case metadata do
+        nil ->
+          ""
+
+        metadata ->
+          ": #{inspect(metadata)}"
+      end
+
+    Logger.error("##{error_id} #{msg}#{metadata_str}")
+
+    error_msg = "#{msg}. Please try again or contact support with issue ##{error_id}."
+
+    {error_id, error_msg}
   end
 
   @doc """
@@ -38,13 +64,6 @@ defmodule Oli.Utils do
     String.split(snake_input, "_")
     |> Enum.map(fn word -> String.capitalize(word) end)
     |> Enum.join(" ")
-  end
-
-  def format_datetime(datetime) do
-    ampm = if datetime.hour < 13, do: "AM", else: "PM"
-    hour = if datetime.hour < 13, do: datetime.hour, else: datetime.hour - 12
-    minute = if datetime.minute < 10, do: "#{datetime.minute}0", else: datetime.minute
-    "#{datetime.month}/#{datetime.day}/#{datetime.year} #{hour}:#{minute} #{ampm}"
   end
 
   @doc """

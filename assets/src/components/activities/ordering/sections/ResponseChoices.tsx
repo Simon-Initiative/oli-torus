@@ -22,7 +22,7 @@ export const ResponseChoices: React.FC<Props> = ({ choices, setChoices }) => {
             <>
               <Draggable.DragIndicator />
               <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>
-              <HtmlContentModelRenderer text={choice.content} context={defaultWriterContext()} />
+              <HtmlContentModelRenderer content={choice.content} context={defaultWriterContext()} />
             </>
           )}
         </Draggable.Item>

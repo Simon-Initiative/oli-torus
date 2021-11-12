@@ -11,12 +11,13 @@ import {
   TopLevelCondition,
 } from 'json-rules-engine';
 import { b64EncodeUnicode } from 'utils/decode';
+import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
-import { bulkApplyState, evalAssignScript, evalScript, getValue } from './scripting';
+import { bulkApplyState, evalAssignScript, evalScript, getValue, looksLikeJson } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;
@@ -57,14 +58,25 @@ const applyToEveryCondition = (top: TopLevelCondition | NestedCondition, callbac
 };
 
 const evaluateValueExpression = (value: string, env: Environment) => {
+  let result = value;
+  const looksLikeJSON = looksLikeJson(value);
   // only if there is {} in it should it be processed, otherwise it's just a string
-  if (value.indexOf('{') === -1) {
+  if (value.indexOf('{') === -1 || looksLikeJSON) {
     return value;
   }
   // it might be that it's still just a string, if it's a JSON value (TODO, is this really something that would be authored?)
   // handle {{{q:1498672976730:866|stage.unknownabosrbance.Current Display Value}-{q:1522195641637:1014|stage.slide13_y_intercept.value}}/{q:1498673825305:874|stage.slide13_slope.value}}
   value = value.replace(/{{{/g, '(({').replace(/{{/g, '({').replace(/}}/g, '})');
-  return evalScript(value, env).result;
+  try {
+    result = evalScript(value, env).result;
+  } catch (e) {
+    // TODO: this currently is good for when math is encountered
+    // should create a "looksLikeMath" check above?? the math that is the problem
+    // *might* always have a ^ in it... not sure...
+    // otherwise any time it fails above for any reason, the value will be treated as a normal string
+    console.warn(`[evaluateValueExpression] Error evaluating ${value} `, e);
+  }
+  return result;
 };
 
 const processRules = (rules: JanusRuleProperties[], env: Environment) => {
@@ -79,7 +91,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       correct: !!rule.correct,
       default: !!rule.default,
     };
-    applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
+    //need the 'type' property hence using JanusConditionProperties which extends ConditionProperties
+    applyToEveryCondition(rule.conditions, (condition: JanusConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
@@ -101,6 +114,15 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
             modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
           }
         }
+      }
+      //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
+      if (
+        typeof ogValue === 'string' &&
+        condition?.type === CapiVariableTypes.ARRAY &&
+        ogValue.charAt(0) !== '[' &&
+        ogValue.slice(-1) !== ']'
+      ) {
+        modifiedValue = `[${ogValue}]`;
       }
       condition.value = modifiedValue;
     });

@@ -100,26 +100,7 @@ defmodule OliWeb.LtiControllerTest do
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
-      |> expect(:get, 2, fn "some key_set_url" ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               keys: [
-                 platform_jwk.pem
-                 |> JOSE.JWK.from_pem()
-                 |> JOSE.JWK.to_public()
-                 |> JOSE.JWK.to_map()
-                 |> (fn {_kty, public_jwk} -> public_jwk end).()
-                 |> Map.put("typ", platform_jwk.typ)
-                 |> Map.put("alg", platform_jwk.alg)
-                 |> Map.put("kid", platform_jwk.kid)
-                 |> Map.put("use", "sig")
-               ]
-             })
-         }}
-      end)
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
 
       state = "some-state"
       conn = Plug.Test.init_test_session(conn, state: state)
@@ -162,6 +143,38 @@ defmodule OliWeb.LtiControllerTest do
                  registration.client_id,
                  deployment_id
                )
+    end
+
+    test "launch successful for valid params with no email", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+        |> Map.delete("email")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
     end
 
     test "launch handles invalid registration and shows registration form", %{conn: conn} do
@@ -358,5 +371,28 @@ defmodule OliWeb.LtiControllerTest do
       registration: registration,
       institution: institution
     }
+  end
+
+  defp mock_keyset_endpoint(url, platform_jwk) do
+    fn ^url ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             keys: [
+               platform_jwk.pem
+               |> JOSE.JWK.from_pem()
+               |> JOSE.JWK.to_public()
+               |> JOSE.JWK.to_map()
+               |> (fn {_kty, public_jwk} -> public_jwk end).()
+               |> Map.put("typ", platform_jwk.typ)
+               |> Map.put("alg", platform_jwk.alg)
+               |> Map.put("kid", platform_jwk.kid)
+               |> Map.put("use", "sig")
+             ]
+           })
+       }}
+    end
   end
 end

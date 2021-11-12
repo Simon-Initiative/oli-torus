@@ -1,4 +1,6 @@
+import { RichText } from 'components/activities/types';
 import { normalizeHref } from 'components/editing/models/link/utils';
+import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Element, Node, Range } from 'slate';
 import guid from 'utils/guid';
 
@@ -26,7 +28,8 @@ export const link = (href = '') =>
   create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
 export const image = (src = '') => create<Image>({ type: 'img', src, display: 'block' });
 export const audio = (src = '') => create<Audio>({ type: 'audio', src });
-export const p = () => create<Paragraph>({ type: 'p' });
+export const p = (children?: ModelElement[]) =>
+  create<Paragraph>(children ? { type: 'p', children } : { type: 'p' });
 export const code = (): Code => ({
   type: 'code',
   id: guid(),
@@ -34,6 +37,18 @@ export const code = (): Code => ({
   children: [{ type: 'code_line', id: guid(), children: [{ text: '' }] }],
 });
 export const inputRef = () => create<InputRef>({ type: 'input_ref' });
+export const popup = () =>
+  create<Popup>({
+    type: 'popup',
+    trigger: 'hover',
+    content: [
+      {
+        type: 'p',
+        children: [{ text: '' }],
+        id: guid(),
+      },
+    ],
+  });
 
 // eslint-disable-next-line
 export function mutate<ModelElement>(obj: ModelElement, changes: Object): ModelElement {
@@ -70,6 +85,7 @@ export type ModelElement =
   | CodeLine
   | Blockquote
   | Hyperlink
+  | Popup
   | InputRef;
 
 export const isModelElement = (n: Node): n is ModelElement =>
@@ -219,6 +235,12 @@ export interface InputRef extends Element, Identifiable {
   type: 'input_ref';
 }
 
+export interface Popup extends Element, Identifiable {
+  type: 'popup';
+  trigger: OverlayTriggerType;
+  content: RichText;
+}
+
 export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
 
 export enum Marks {
@@ -267,11 +289,11 @@ export enum CodeLanguages {
   'clojure',
 }
 
-const toObj = (arr: string[]) =>
-  arr.reduce((p: unknown, c: string) => {
-    (p as any)[c] = true;
+const toObj = (arr: string[]): Record<string, boolean> =>
+  arr.reduce((p, c) => {
+    p[c] = true;
     return p;
-  }, {});
+  }, {} as Record<string, boolean>);
 
 export type SchemaConfig = {
   isVoid: boolean;
@@ -309,7 +331,18 @@ const list = {
   validChildren: toObj(['li', 'ol', 'ul']),
 };
 
-export const schema = {
+interface Schema
+  extends Record<
+    string,
+    {
+      isVoid: boolean;
+      isBlock: boolean;
+      isTopLevel: boolean;
+      validChildren: Record<string, boolean>;
+      isSimpleText?: boolean;
+    }
+  > {}
+export const schema: Schema = {
   p: {
     isVoid: false,
     isBlock: true,
@@ -381,6 +414,12 @@ export const schema = {
     validChildren: toObj(['p']),
   },
   a: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  popup: {
     isVoid: false,
     isBlock: false,
     isTopLevel: false,

@@ -135,12 +135,20 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[link with missing href ", next.(), " "]
   end
 
+  def popup(%Context{} = _context, next, _) do
+    ["[popup with text ", next.(), "]"]
+  end
+
   def definition(%Context{} = _context, next, _) do
     [next.(), " "]
   end
 
   def text(%Context{} = _context, %{"text" => text}) do
     text
+  end
+
+  def selection(%Context{} = _context, _, _selection) do
+    ["[Activity Bank Selection]"]
   end
 
   def error(%Context{} = _context, element, error) do

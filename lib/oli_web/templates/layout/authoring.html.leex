@@ -113,6 +113,19 @@
           return location.hash = $(e.target).attr('href').substr(1);
         });
       });
+
+      // update session timezone
+      const local_tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      fetch('/timezone', {
+        method: 'post',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({local_tz})
+      })
+      .then(_res => console.log("local timezone information updated", local_tz))
+      .catch(_res => console.error("failed to update local timezone information", local_tz));
     </script>
   </body>
 </html>

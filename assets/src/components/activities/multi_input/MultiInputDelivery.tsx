@@ -84,7 +84,7 @@ export const MultiInputComponent: React.FC = () => {
                   .filter((c) => input.choiceIds.includes(c.id))
                   .map((choice) => ({
                     value: choice.id,
-                    displayValue: toSimpleText({ children: choice.content.model }),
+                    displayValue: toSimpleText({ children: choice.content }),
                   })),
               }
             : { id: input.id, inputType: input.inputType },

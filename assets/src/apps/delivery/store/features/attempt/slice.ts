@@ -81,7 +81,7 @@ export const {
 export const selectState = (state: RootState): AttemptState => state[AttemptSlice] as AttemptState;
 export const { selectAll, selectById, selectTotal } = adapter.getSelectors(selectState);
 
-export const selectActivtyAttemptState = (
+export const selectActivityAttemptState = (
   state: RootState,
   activityId: number | undefined,
 ): ActivityState | undefined => {

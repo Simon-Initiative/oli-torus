@@ -36,12 +36,14 @@ import {
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
+import EverappContainer from './components/EverappContainer';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
 export const handleValueExpression = (
   currentActivityTree: any[] | null,
   operationValue: string,
+  operator?: string,
 ) => {
   let value = operationValue;
   if (typeof value === 'string' && currentActivityTree) {
@@ -69,6 +71,15 @@ export const handleValueExpression = (
           }
         }
       });
+    } else if (operator === 'bind to') {
+      const variables = value.split('.');
+      const ownerActivity = currentActivityTree?.find(
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === variables[1]),
+      );
+      //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+      if (ownerActivity) {
+        value = `${ownerActivity.id}|${value}`;
+      }
     }
   }
   return value;
@@ -187,7 +198,7 @@ const DeckLayoutFooter: React.FC = () => {
     let isDifferentNavigationExist = false;
     const { actions } = event.params;
     actions.forEach((action: any) => {
-      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+      if (action.type === 'navigation') {
         isDifferentNavigationExist = true;
       }
     });
@@ -205,19 +216,18 @@ const DeckLayoutFooter: React.FC = () => {
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
     let eventsToProcess = [lastCheckResults.results[0]];
+    let doesFirstEventHasNavigation = false;
     if (combineFeedback) {
       //if the first event has a navigation to different screen
-      // we ignore the rest of the events ang fire this one.
-      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
-        lastCheckResults.results[0],
-      );
-      if (doesFirstEventHasNavigation) {
+      // we ignore the rest of the events and fire this one.
+      doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
+      // if all the rules are correct, we process all the events because we want to display all the correct feedbacks
+      if (doesFirstEventHasNavigation && !isCorrect) {
         eventsToProcess = [lastCheckResults.results[0]];
       } else {
         eventsToProcess = lastCheckResults.results;
       }
     }
-
     const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
@@ -242,7 +252,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: handleValueExpression(currentActivityTree, op.params.value),
+          value: handleValueExpression(currentActivityTree, op.params.value, op.params.operator),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
@@ -309,6 +319,22 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToLastActivity());
             break;
           default:
+            if (doesFirstEventHasNavigation && combineFeedback && navTarget === currentActivityId) {
+              const updateAttempt: ApplyStateOperation[] = [
+                {
+                  target: 'session.attemptNumber',
+                  operator: '=',
+                  value: 1,
+                },
+                {
+                  target: `${navTarget}|session.attemptNumber`,
+                  operator: '=',
+                  value: 1,
+                },
+              ];
+              bulkApplyState(updateAttempt, defaultGlobalEnv);
+              setHasOnlyMutation(true);
+            }
             // assume it's a sequenceId
             dispatch(navigateToActivity(navTarget));
         }
@@ -463,17 +489,15 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
-      {currentActivity?.custom?.showCheckBtn && (
-        <NextButton
-          isLoading={isLoading || !initPhaseComplete}
-          text={nextButtonText}
-          handler={checkHandler}
-          isGoodFeedbackPresent={isGoodFeedback}
-          currentFeedbacksCount={currentFeedbacks.length}
-          isFeedbackIconDisplayed={displayFeedbackIcon}
-          showCheckBtn={currentActivity?.custom?.showCheckBtn}
-        />
-      )}
+      <NextButton
+        isLoading={isLoading || !initPhaseComplete}
+        text={nextButtonText}
+        handler={checkHandler}
+        isGoodFeedbackPresent={isGoodFeedback}
+        currentFeedbacksCount={currentFeedbacks.length}
+        isFeedbackIconDisplayed={displayFeedbackIcon}
+        showCheckBtn={currentActivity?.custom?.showCheckBtn}
+      />
       <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
         <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
           <button
@@ -520,6 +544,7 @@ const DeckLayoutFooter: React.FC = () => {
           </div>
         </div>
       </div>
+      <EverappContainer apps={currentPage?.custom?.everApps || []} />
       <HistoryNavigation />
     </div>
   );

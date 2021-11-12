@@ -4,10 +4,9 @@ defmodule Oli.Rendering.Page do
   extensibile to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `page/html.ex`.
   """
-  alias Oli.Utils
-  alias Oli.Rendering.Context
+  import Oli.Utils
 
-  require Logger
+  alias Oli.Rendering.Context
 
   @callback content(%Context{}, %{}) :: [any()]
   @callback activity(%Context{}, %{}) :: [any()]
@@ -27,6 +26,11 @@ defmodule Oli.Rendering.Page do
           %{"type" => "content"} ->
             {element, output ++ writer.content(context, element)}
 
+          # Activity bank selections only are rendered during an instructor preview, otherwise
+          # they have already been realized into specific activity-references
+          %{"type" => "selection"} ->
+            {element, output ++ writer.content(context, element)}
+
           %{"type" => "activity-reference"} ->
             {element, output ++ writer.activity(context, element)}
 
@@ -34,12 +38,7 @@ defmodule Oli.Rendering.Page do
             {element, output}
 
           _ ->
-            error_id = Utils.generate_error_id()
-            error_msg = "Page item is not supported: #{Kernel.inspect(element)}"
-
-            if render_opts.log_errors,
-              do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-              else: nil
+            {error_id, error_msg} = log_error("Page item is not supported", element)
 
             if render_opts.render_errors do
               {element,
@@ -56,12 +55,7 @@ defmodule Oli.Rendering.Page do
   # Renders an error message if the signature above does not match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, page_model, writer) do
-    error_id = Utils.generate_error_id()
-    error_msg = "Page model is invalid: #{Kernel.inspect(page_model)}"
-
-    if render_opts.log_errors,
-      do: Logger.error("##{error_id} Render Error: #{error_msg}"),
-      else: nil
+    {error_id, error_msg} = log_error("Page model is invalid", page_model)
 
     if render_opts.render_errors do
       writer.error(context, page_model, {:invalid_page_model, error_id, error_msg})

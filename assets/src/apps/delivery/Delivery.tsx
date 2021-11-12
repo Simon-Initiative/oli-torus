@@ -75,6 +75,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         enableHistory,
         score: 0,
         graded,
+        activeEverapp: 'none',
       }),
     );
   };

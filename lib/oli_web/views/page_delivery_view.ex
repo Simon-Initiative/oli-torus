@@ -4,6 +4,7 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias OliWeb.Router.Helpers, as: Routes
 
   def show_score(score, out_of) do
     cond do
@@ -14,6 +15,42 @@ defmodule OliWeb.PageDeliveryView do
         (score / out_of * 100)
         |> round
         |> Integer.to_string()
+    end
+  end
+
+  def previous_url(conn) do
+    if Map.get(conn.assigns, :preview_mode, false) do
+      Routes.page_delivery_path(
+        conn,
+        :page_preview,
+        conn.assigns.section_slug,
+        conn.assigns.previous_page.slug
+      )
+    else
+      Routes.page_delivery_path(
+        conn,
+        :page,
+        conn.assigns.section_slug,
+        conn.assigns.previous_page.slug
+      )
+    end
+  end
+
+  def next_url(conn) do
+    if Map.get(conn.assigns, :preview_mode, false) do
+      Routes.page_delivery_path(
+        conn,
+        :page_preview,
+        conn.assigns.section_slug,
+        conn.assigns.next_page.slug
+      )
+    else
+      Routes.page_delivery_path(
+        conn,
+        :page,
+        conn.assigns.section_slug,
+        conn.assigns.next_page.slug
+      )
     end
   end
 

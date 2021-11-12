@@ -1,5 +1,8 @@
 defmodule OliWeb.CollaboratorController do
   use OliWeb, :controller
+
+  import Oli.Utils
+
   alias Oli.Authoring.Collaborators
 
   require Logger
@@ -39,24 +42,23 @@ defmodule OliWeb.CollaboratorController do
               |> redirect(to: Routes.project_path(conn, :overview, project_id))
 
             {conn, failures} ->
-              failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
-              error_id = Oli.Utils.generate_error_id()
-
-              Logger.error("##{error_id} Failed to add collaborators: #{inspect(failures)}")
-
               if Enum.count(failures) == Enum.count(emails) do
+                {_, error_msg} = log_error("Failed to add collaborators", failures)
+
                 conn
-                |> put_flash(
-                  :error,
-                  "Failed to add collaborators. Please try again or contact support with issue ##{error_id}."
-                )
+                |> put_flash(:error, error_msg)
                 |> redirect(to: Routes.project_path(conn, :overview, project_id))
               else
+                failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
+
+                {_, error_msg} =
+                  log_error(
+                    "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}",
+                    failures
+                  )
+
                 conn
-                |> put_flash(
-                  :error,
-                  "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}. Please try again or contact support with issue ##{error_id}."
-                )
+                |> put_flash(:error, error_msg)
                 |> redirect(to: Routes.project_path(conn, :overview, project_id))
               end
           end

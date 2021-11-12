@@ -28,14 +28,14 @@ export const everAppActivityState: ActivityState = {
 
 export const EverAppActivity = {
   id: 'aa_3864718503',
-  resourceId: 150,
+  // resourceId: 150,
   content: {
     custom: {
       applyBtnFlag: false,
       applyBtnLabel: '',
       checkButtonLabel: 'Next',
       combineFeedback: false,
-      customCssClass: '',
+      customCssClass: 'everapp-activity',
       facts: [],
       lockCanvasSize: false,
       mainBtnLabel: '',
@@ -63,10 +63,10 @@ export const EverAppActivity = {
           allowScrolling: true,
           configData: [],
           customCssClass: '',
-          height: 800,
+          height: '100%',
           src: 'https://www.github.com/Simon-Initiative/oli-torus',
-          width: 420,
-          x: -390,
+          width: '100%',
+          x: 0,
           y: 0,
           z: 0,
         },
@@ -215,16 +215,20 @@ export const EverAppActivity = {
 };
 
 export const getEverAppActivity = (everAppObj: any, url: string, index: number) => {
-  const updatedObject = clone(everAppObj);
+  const updatedObject = clone(EverAppActivity);
   updatedObject.id = everAppObj.id + index;
+  updatedObject.content.partsLayout[0].id = everAppObj.id;
+  updatedObject.authoring.parts[0].id = everAppObj.id;
   updatedObject.attemptGuid = everAppObj.attemptGuid + index;
   updatedObject.content.partsLayout[0].custom.src = url;
   return updatedObject;
 };
 
-export const udpateAttemptGuid = (index: number) => {
+export const udpateAttemptGuid = (index: number, everAppObj: any) => {
   const updatedObject = clone(everAppActivityState);
-  updatedObject.attemptGuid = everAppActivityState.attemptGuid + index;
+  updatedObject.attemptGuid = `${everAppActivityState.attemptGuid}_${index}`;
+  updatedObject.parts[0].partId = everAppObj.id;
+  updatedObject.parts[0].attemptGuid = `${everAppObj.id}_${updatedObject.attemptGuid}`;
   return updatedObject;
 };
 
