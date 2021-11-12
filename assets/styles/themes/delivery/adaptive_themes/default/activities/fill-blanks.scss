@@ -132,25 +132,31 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
 
 .dropdown.incorrect + .select2-container .select2-selection__rendered {
   background-color: white !important;
-  color: #bd1f2e !important;
-  border: solid 2px#bd1f2e !important;
+  color: #971925 !important;
+  border: solid 2px#971925 !important;
+}
+.dropdown.incorrect + .select2-container .select2-selection__rendered:hover {
+  background-color: #f2d2d5 !important;
 }
 .dropdown.incorrect
   + .select2-container
   .select2-selection__rendered:hover
   + .select2-selection__arrow
   b {
-  border-color: #bd1f2e transparent transparent !important;
+  border-color: #971925 transparent transparent !important;
 }
 .dropdown.incorrect
   + .select2-container
   .select2-selection__rendered
   + .select2-selection__arrow
   b {
-  border-color: #bd1f2e transparent transparent !important;
+  border-color: #971925 transparent transparent !important;
 }
 .dropdown.correct + .select2-container .select2-selection__rendered {
   background-color: #477e59 !important;
+}
+.dropdown.correct + .select2-container .select2-selection__rendered:hover {
+  background-color: #195e2f !important;
 }
 
 .select2-selection__rendered::before {
@@ -161,7 +167,6 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   height: 16px;
   border-radius: 10px;
   background-color: #fff;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'> <g fill='none' fill-rule='evenodd' transform='translate(-3 -4)'> <rect width='14' height='14' fill='%23477e59' opacity='0'/> <polygon fill='%23477e59 ' points='5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818'/> </g> </svg>");
   background-size: 50%;
   background-position: center;
   background-repeat: no-repeat;
@@ -173,4 +178,19 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   margin-left: -4px;
   margin-top: -2px;
   vertical-align: middle;
+}
+.dropdown.correct + .select2-container .select2-selection__rendered::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'> <g fill='none' fill-rule='evenodd' transform='translate(-3 -4)'> <rect width='14' height='14' fill='%23477e59' opacity='0'/> <polygon fill='%23477e59' stroke='%23477e59' stroke-width='1px' points='5.857 10 3 7.121 3.806 6.309 5.857 8.37 10.194 4 11 4.818'/> </g> </svg>");
+}
+
+.dropdown.incorrect + .select2-container .select2-selection__rendered::before {
+  content: '×';
+  color: #971925;
+  user-select: none;
+  line-height: 1rem;
+  background-color: transparent;
+  background-image: none;
+}
+.dropdown.incorrect + .select2-container .select2-selection__rendered::before {
+  display: inline-block;
 }
