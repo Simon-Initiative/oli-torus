@@ -119,7 +119,7 @@ export const selectActiveEverapp = createSelector(selectState, (state) => state.
 
 export const selectIsLegacyTheme = createSelector(
   selectState,
-  (state) => !!state.content?.custom?.themeId,
+  (state) => !state.content?.custom?.themeId,
 );
 
 export default pageSlice.reducer;

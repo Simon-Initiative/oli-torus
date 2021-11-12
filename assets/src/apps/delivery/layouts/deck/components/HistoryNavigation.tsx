@@ -109,7 +109,7 @@ const HistoryNavigation: React.FC = () => {
           enableHistory ? undefined : 'pullLeftInCheckContainer',
         ].join(' ')}
       >
-        <aside className={showHistory ? undefined : 'minimized'}>
+        <aside className={`ui-resizable ${showHistory ? undefined : 'minimized'}`}>
           {enableHistory ? (
             <Fragment>
               <button

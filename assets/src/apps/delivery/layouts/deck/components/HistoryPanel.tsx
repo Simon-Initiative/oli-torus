@@ -1,4 +1,4 @@
-import { selectIsLegacyTheme } from 'apps/delivery/store/features/page/slice';
+import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import TimeAgo from '../../../../../components/common/TimeAgo';
@@ -57,17 +57,24 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
   };
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
+  const isPreviewMode = useSelector(selectPreviewMode);
 
   return (
     <>
       {isLegacyTheme ? (
-        <nav className="history">
-          {items.map((item) => (
-            <div key={item.id} id={`qrID${item.id}`} className={getItemClasses(item)}>
-              {item.name}
-            </div>
-          ))}
-        </nav>
+        <>
+          <div className="navbar-resize-dots"></div>
+          <div className="title screenListTitle">
+            {isPreviewMode ? 'Screen List' : 'Lesson History'}
+          </div>
+          <nav className="history">
+            {items.map((item, index) => (
+              <div key={item.id} id={`qrID${item.id}`} className={getItemClasses(item)}>
+                {items.length - index}. {item.name}
+              </div>
+            ))}
+          </nav>
+        </>
       ) : (
         <div
           id="theme-history-panel"
