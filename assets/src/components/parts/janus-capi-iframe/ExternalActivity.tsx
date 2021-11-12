@@ -176,7 +176,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
         if (key.indexOf(`${domain}.${id}.`) === 0) {
-          collect[key] = currentStateSnapshot[key];
+          const value = currentStateSnapshot[key];
+          collect[key] =
+            typeof value === 'string' &&
+            value?.length === 2 &&
+            value.charAt(0) === '[' &&
+            value.charAt(1) === ']'
+              ? ''
+              : value;
         }
         return collect;
       },

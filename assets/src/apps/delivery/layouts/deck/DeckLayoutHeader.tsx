@@ -1,7 +1,9 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectScore } from '../../store/features/page/slice';
+import { selectPageContent, selectScore } from '../../store/features/page/slice';
+import EverappMenu from './components/EverappMenu';
+import { Everapp } from './components/EverappRenderer';
 import EverAppContainer from './EverAppContainer';
 
 interface DeckLayoutHeaderProps {
@@ -24,6 +26,11 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const scoreToShow = scoreValue.toFixed(2);
   const scoreText = isLegacyTheme ? `(Score: ${scoreToShow})` : scoreToShow;
 
+  const currentPage = useSelector(selectPageContent);
+
+  const everApps: Everapp[] = currentPage?.custom?.everApps || [];
+  const hasEverApps = everApps.filter((a) => a.isVisible).length > 0;
+
   return (
     <div className="headerContainer">
       <header id="delivery-header">
@@ -33,8 +40,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           <div className={`wrapper ${!isLegacyTheme ? 'displayNone' : ''}`}>
             <div className="nameScoreButtonWrapper">
               {/* <a className="trapStateListToggle">Force Adaptivity</a> */}
-              {/* beagleToggleContainer here */}
-              {isLegacyTheme && <EverAppContainer />}
+              {isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
 
               <div className="name">{userName}</div>
               <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
@@ -59,7 +65,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                   <span className="theme-header-profile__label">{userName}</span>
                 </span>
               </button>
-              {!isLegacyTheme && <EverAppContainer />}
+              {!isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
               {/*update panel - logout and update details button*/}
             </div>
             {/*  */}

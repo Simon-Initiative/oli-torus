@@ -18,6 +18,7 @@ export interface PageState {
   activityTypes: any[];
   score: number;
   graded: boolean;
+  activeEverapp: string;
 }
 
 const initialState: PageState = {
@@ -36,6 +37,7 @@ const initialState: PageState = {
   activityTypes: [],
   score: 0,
   graded: false,
+  activeEverapp: '',
 };
 
 const pageSlice = createSlice({
@@ -68,12 +70,15 @@ const pageSlice = createSlice({
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
     },
+    setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
+      state.activeEverapp = action.payload.id;
+    },
   },
 });
 
 export const PageSlice = pageSlice.name;
 
-export const { loadPageState, setScore } = pageSlice.actions;
+export const { loadPageState, setActiveEverapp, setScore } = pageSlice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
@@ -103,5 +108,7 @@ export const selectUserName = createSelector(selectState, (state) => state.userN
 export const selectScore = createSelector(selectState, (state) => state.score);
 
 export const selectIsGraded = createSelector(selectState, (state) => state.graded);
+
+export const selectActiveEverapp = createSelector(selectState, (state) => state.activeEverapp);
 
 export default pageSlice.reducer;

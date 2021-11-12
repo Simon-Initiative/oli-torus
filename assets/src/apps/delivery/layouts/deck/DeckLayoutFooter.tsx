@@ -36,12 +36,14 @@ import {
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
 import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
+import EverappContainer from './components/EverappContainer';
 import FeedbackRenderer from './components/FeedbackRenderer';
 import HistoryNavigation from './components/HistoryNavigation';
 
 export const handleValueExpression = (
   currentActivityTree: any[] | null,
   operationValue: string,
+  operator?: string,
 ) => {
   let value = operationValue;
   if (typeof value === 'string' && currentActivityTree) {
@@ -69,6 +71,15 @@ export const handleValueExpression = (
           }
         }
       });
+    } else if (operator === 'bind to') {
+      const variables = value.split('.');
+      const ownerActivity = currentActivityTree?.find(
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === variables[1]),
+      );
+      //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+      if (ownerActivity) {
+        value = `${ownerActivity.id}|${value}`;
+      }
     }
   }
   return value;
@@ -240,7 +251,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: handleValueExpression(currentActivityTree, op.params.value),
+          value: handleValueExpression(currentActivityTree, op.params.value, op.params.operator),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
@@ -532,6 +543,7 @@ const DeckLayoutFooter: React.FC = () => {
           </div>
         </div>
       </div>
+      <EverappContainer apps={currentPage?.custom?.everApps || []} />
       <HistoryNavigation />
     </div>
   );

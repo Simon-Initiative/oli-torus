@@ -48,7 +48,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       ],
     });
 
-    console.log('POPUP INIT', initResult);
+    /* console.log('POPUP INIT', initResult); */
     setActivityHost(initResult.context.host);
 
     // result of init has a state snapshot with latest (init state applied)

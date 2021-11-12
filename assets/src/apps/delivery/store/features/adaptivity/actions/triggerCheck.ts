@@ -177,7 +177,7 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      /* console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot }); */
+      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
       const check_call_result = (await check(
         localizedSnapshot,
         rulesToCheck,
@@ -187,7 +187,7 @@ export const triggerCheck = createAsyncThunk(
       isCorrect = check_call_result.correct;
       score = check_call_result.score;
       outOf = check_call_result.out_of;
-      /* console.log('CHECK RESULT', {
+      console.log('CHECK RESULT', {
         check_call_result,
         currentActivity,
         currentRules,
@@ -196,7 +196,7 @@ export const triggerCheck = createAsyncThunk(
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
-      }); */
+      });
     } else {
       // need to get this fresh right now so it is the latest
       const rootState = getState() as RootState;

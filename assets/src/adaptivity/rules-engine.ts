@@ -11,6 +11,7 @@ import {
   TopLevelCondition,
 } from 'json-rules-engine';
 import { b64EncodeUnicode } from 'utils/decode';
+import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
@@ -90,7 +91,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       correct: !!rule.correct,
       default: !!rule.default,
     };
-    applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
+    //need the 'type' property hence using JanusConditionProperties which extends ConditionProperties
+    applyToEveryCondition(rule.conditions, (condition: JanusConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
@@ -112,6 +114,15 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
             modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
           }
         }
+      }
+      //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
+      if (
+        typeof ogValue === 'string' &&
+        condition?.type === CapiVariableTypes.ARRAY &&
+        ogValue.charAt(0) !== '[' &&
+        ogValue.slice(-1) !== ']'
+      ) {
+        modifiedValue = `[${ogValue}]`;
       }
       condition.value = modifiedValue;
     });
