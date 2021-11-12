@@ -117,4 +117,9 @@ export const selectIsGraded = createSelector(selectState, (state) => state.grade
 
 export const selectActiveEverapp = createSelector(selectState, (state) => state.activeEverapp);
 
+export const selectIsLegacyTheme = createSelector(
+  selectState,
+  (state) => !!state.content?.custom?.themeId,
+);
+
 export default pageSlice.reducer;
