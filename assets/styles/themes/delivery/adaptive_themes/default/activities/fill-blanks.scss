@@ -135,10 +135,24 @@ p .dropdown-blot .select2-container .select2-selection--single .select2-selectio
   color: #bd1f2e !important;
   border: solid 2px#bd1f2e !important;
 }
+.dropdown.incorrect
+  + .select2-container
+  .select2-selection__rendered:hover
+  + .select2-selection__arrow
+  b {
+  border-color: #bd1f2e transparent transparent !important;
+}
+.dropdown.incorrect
+  + .select2-container
+  .select2-selection__rendered
+  + .select2-selection__arrow
+  b {
+  border-color: #bd1f2e transparent transparent !important;
+}
 .dropdown.correct + .select2-container .select2-selection__rendered {
   background-color: #477e59 !important;
 }
-.select2-selection__rendered .incorrect-icon,
+
 .select2-selection__rendered::before {
   content: '';
   display: none;
