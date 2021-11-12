@@ -111,7 +111,6 @@ janus-popup {
     align-content: center;
     align-items: center;
     border: 0;
-    font-family: 'OpenSans', sans-serif !important;
     border-radius: 3px;
     cursor: pointer;
   }
@@ -119,13 +118,8 @@ janus-popup {
     box-sizing: border-box;
     height: 2rem !important;
     width: 2rem !important;
-    padding: 0.25rem !important;
-    margin: initial !important;
-    line-height: 1rem;
     position: initial !important;
-    font-weight: initial !important;
-    font-family: 'OpenSansBold', sans-serif !important;
-    color: var(--black0_a);
+    color: transparent;
     user-select: none;
     display: inline-block;
     background-color: var(--white100);
@@ -146,11 +140,13 @@ janus-popup {
   }
 
   // Content
-  .popup-background janus-text-flow,
-  .popup-background janus-image {
-    max-width: calc(100% - 20px) !important;
-  }
-  .popup-background janus-image img {
-    width: 100% !important;
+  .popup-background {
+    janus-text-flow,
+    janus-image {
+      max-width: calc(100% - 20px) !important; //prevent overflow from popup window
+    }
+    janus-image img {
+      width: 100% !important;
+    }
   }
 }
