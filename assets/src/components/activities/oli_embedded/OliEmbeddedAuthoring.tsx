@@ -10,34 +10,46 @@ import {OliEmbeddedModelSchema} from "components/activities/oli_embedded/schema"
 import ReactDOM from "react-dom";
 import {Provider} from "react-redux";
 import * as ActivityTypes from "components/activities/types";
-import {ActivityXmlEditor} from "components/activities/oli_embedded/sections/ActivityXmlEditor";
 import {OliEmbeddedActions} from "components/activities/oli_embedded/actions";
-// // @ts-ignore
-// import FileBrowser, {Icons} from "react-keyed-file-browser";
 
 import guid from "utils/guid";
 import {uploadFiles} from "components/media/manager/upload";
 import {CloseButton} from "components/misc/CloseButton";
+import * as ContentModel from "data/content/model";
+import {MediaItemRequest} from "components/activities/types";
+import {lastPart} from "components/activities/oli_embedded/utils";
+import {ActivityXmlEditor} from "components/common/ActivityXmlEditor";
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<OliEmbeddedModelSchema>();
-  // const [files, setFiles] = useState([
-  //   {
-  //     key: 'photos/animals/cat in a hat.png',
-  //     // modified: +Moment().subtract(1, 'hours'),
-  //     size: 1.5 * 1024 * 1024,
-  //   },
-  //   {
-  //     key: 'photos/animals/kitten_ball.png',
-  //     // modified: +Moment().subtract(3, 'days'),
-  //     size: 545 * 1024,
-  //   },
-  // ])
+
   const { projectSlug } = props;
 
-  const onFileUpload = (files: FileList) => {
+  function select(_projectSlug: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const request = {
+        type: 'MediaItemRequest'
+      } as MediaItemRequest;
+      if (props.onRequestMedia) {
+        props.onRequestMedia(request).then((r) => {
+          if (r === false) {
+            reject('error');
+          } else {
+            resolve(r as string);
+          }
+        });
+      }
+    });
+  }
 
+  const addFile = (e: any) => {
+    select(projectSlug).then((url: string) => {
+      dispatch(OliEmbeddedActions.addResourceURL(url));
+    });
+  };
+
+  const onFileUpload = (files: FileList) => {
     // get a list of the files to upload
     const fileList: File[] = [];
     for (let i = 0; i < files.length; i = i + 1) {
@@ -47,8 +59,13 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
     uploadFiles(projectSlug, fileList)
       .then((result: any) => {
-        console.log(result);
-      });
+        result.forEach((i: any) => {
+          OliEmbeddedActions.addResourceURL(i.url);
+        })
+        console.log(JSON.stringify(result));
+      }).catch((reason: any) => {
+      console.log(JSON.stringify(reason));
+    });
 
   }
 
@@ -70,11 +87,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const id = guid();
   return (
     <>
-      <Heading
-        title="Embedded Activity"
-        subtitle="Embedded Activity subtitle"
-        id="embedded"
-      />
       <ActivityXmlEditor
         value={model.modelXml} disabled={false}
         onChange={(newValue: string) => dispatch(OliEmbeddedActions.editActivityXml(newValue))}/>
@@ -88,17 +100,23 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           type="file"
         />
         <button
-          // disabled={disabled}
           className="btn btn-primary media-toolbar-item upload"
           onClick={() => onUploadClick(id)}
         >
           <i className="fa fa-upload" /> Upload File
         </button>
+        &nbsp;&nbsp;&nbsp;
+        <button
+          className="btn btn-primary media-toolbar-item upload"
+          onClick={() => addFile(id)}
+        >
+          Media Library
+        </button>
       </div>
       <ul className="list-group">
         {model.resourceURLs.map((url, i) => (
           <li className="list-group-item" key={i}>
-            {url}
+            {lastPart(url)}
             <CloseButton
               className="pl-3 pr-1"
               editMode={props.editMode}
@@ -107,16 +125,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           </li>
         ))}
       </ul>
-      {/*<FileBrowser*/}
-      {/*  files={files}*/}
-      {/*  icons={{*/}
-      {/*    File: <i className="fa fa-file" />,*/}
-      {/*    Image: <i className="fa fa-file-image" />,*/}
-      {/*    Folder: <i className="fa fa-folder" />,*/}
-      {/*    FolderOpen: <i className="fa fa-folder-open" />*/}
-      {/*  }}*/}
-      {/*/>*/}
-
     </>
   );
 };
