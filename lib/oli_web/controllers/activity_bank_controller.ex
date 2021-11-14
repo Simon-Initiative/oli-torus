@@ -3,12 +3,12 @@ defmodule OliWeb.ActivityBankController do
 
   alias Oli.Accounts
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Router.Helpers, as: Routes
 
   alias Oli.Activities.Realizer.Logic
   alias Oli.Activities.Realizer.Query
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Result
+  alias OliWeb.Common.PagingParams
 
   @doc false
   def index(conn, %{
@@ -58,11 +58,32 @@ defmodule OliWeb.ActivityBankController do
 
           activity_types = Oli.Activities.list_activity_registrations()
 
+          activity_types_map =
+            Enum.reduce(activity_types, %{}, fn e, m -> Map.put(m, e.id, e) end)
+
+          paging_params = PagingParams.calculate(total_count, offset, 5, 5)
+
+          render_context = %Oli.Rendering.Context{
+            activity_map: activity_types_map,
+            revision_slug: revision.slug,
+            section_slug: section_slug
+          }
+
+          rendered_selection =
+            Oli.Rendering.Content.Selection.render(render_context, selection, false)
+            |> IO.iodata_to_binary()
+
           render(conn, "preview.html",
+            title: "Actiivty Bank Selection Preview",
+            rendered_selection: rendered_selection,
+            paging: paging_params,
+            limit: 5,
             section_slug: section_slug,
             activities: activities,
-            activity_types: Enum.reduce(activity_types, %{}, fn e, m -> Map.put(m, e.id, e) end),
+            activity_types: activity_types_map,
             revision: revision,
+            revision_slug: revision.slug,
+            selection_id: selection_id,
             selection: selection,
             total_count: total_count,
             offset: offset,

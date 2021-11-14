@@ -2,8 +2,18 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<%= for activity <- @activities do %>
-  <% type = Map.get(@activity_types, activity.activity_type_id) %>
-  <p>Test</p>
-  <<%= type.authoring_element %> model="<%= activity.encoded_model %>" editmode="false" projectSlug="<%= @section_slug %>"></<%= type.authoring_element %>>
-<% end %>
+<div class="delivery">
+
+  <h4><%= @revision.title %></h4>
+
+  <%= raw(@rendered_selection) %>
+
+  <%= render "paging.html", conn: @conn, params: @paging, offset: @offset, limit: @limit %>
+
+  <%= for activity <- @activities do %>
+    <% type = Map.get(@activity_types, activity.activity_type_id) %>
+    <p>Test</p>
+    <<%= type.authoring_element %> model="<%= activity.encoded_model %>" editmode="false" projectSlug="<%= @section_slug %>"></<%= type.authoring_element %>>
+  <% end %>
+
+</div>

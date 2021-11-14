@@ -5,7 +5,8 @@ defmodule Oli.Rendering.Content.Selection do
           revision_slug: revision_slug,
           activity_types_map: activity_types_map
         },
-        %{"logic" => logic, "count" => count, "id" => id} = selection
+        %{"logic" => logic, "count" => count, "id" => id} = selection,
+        include_link?
       ) do
     titles = titles_from_selection(section_slug, selection)
     url = "/sections/#{section_slug}/preview/page/#{revision_slug}/selection/#{id}"
@@ -19,7 +20,11 @@ defmodule Oli.Rendering.Content.Selection do
     [
       "<div class=\"selection\"><div class=\"title\">Activity Bank Selection</div>",
       [prefix, render_html(logic, titles, activity_types_map)],
-      "<a href=\"#{url}\">Preview all possible activities for this selection</a>",
+      if include_link? do
+        "<a href=\"#{url}\">Preview all possible activities for this selection</a>"
+      else
+        ""
+      end,
       "</div>"
     ]
   end
