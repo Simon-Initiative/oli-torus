@@ -177,7 +177,7 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
+      //console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
       const check_call_result = (await check(
         localizedSnapshot,
         rulesToCheck,
