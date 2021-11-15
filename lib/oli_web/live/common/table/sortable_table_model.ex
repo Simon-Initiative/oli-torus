@@ -189,6 +189,12 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     """
   end
 
+  def render_span_column(assigns, text, class \\ "") do
+    ~F"""
+      <span class={class}>{text}</span>
+    """
+  end
+
   def render(assigns) do
     ~F"""
       <div>nothing</div>

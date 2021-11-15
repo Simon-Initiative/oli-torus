@@ -34,7 +34,7 @@ defmodule Oli.GroupsTest do
       assert 3 = length(Groups.list_communities())
     end
 
-    test "get_community/1 returns a community when the id exists" do
+    test "get_community/1 returns a community when the id exists and it is active" do
       community = insert(:community)
 
       returned_community = Groups.get_community(community.id)
@@ -45,6 +45,12 @@ defmodule Oli.GroupsTest do
 
     test "get_community/1 returns nil if the community does not exist" do
       assert nil == Groups.get_community(123)
+    end
+
+    test "get_community/1 returns nil if the community is not active" do
+      community = insert(:community, status: :deleted)
+
+      assert nil == Groups.get_community(community.id)
     end
 
     test "update_community/2 updates the community successfully" do
@@ -67,15 +73,25 @@ defmodule Oli.GroupsTest do
       assert error =~ "has already been taken"
     end
 
-    test "delete_community/1 deletes the community" do
+    test "delete_community/1 marks the community as deleted" do
       community = insert(:community)
-      assert {:ok, %Community{}} = Groups.delete_community(community)
-      refute Groups.get_community(community.id)
+      assert {:ok, deleted_community} = Groups.delete_community(community)
+      assert deleted_community.status == :deleted
     end
 
     test "change_community/1 returns a community changeset" do
       community = insert(:community)
       assert %Ecto.Changeset{} = Groups.change_community(community)
+    end
+
+    test "search_communities/1 returns all communities meeting the criteria" do
+      active_communities = insert_pair(:community, status: :active)
+      insert(:community, status: :deleted)
+
+      returned_communities = Groups.search_communities(%{status: :active})
+
+      assert length(returned_communities) == 2
+      assert returned_communities == active_communities
     end
   end
 end

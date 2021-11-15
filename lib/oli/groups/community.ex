@@ -7,6 +7,7 @@ defmodule Oli.Groups.Community do
     field :description, :string
     field :key_contact, :string
     field :global_access, :boolean, default: true
+    field :status, Ecto.Enum, values: [:active, :deleted], default: :active
 
     timestamps(type: :utc_datetime)
   end
@@ -14,8 +15,8 @@ defmodule Oli.Groups.Community do
   @doc false
   def changeset(community, attrs \\ %{}) do
     community
-    |> cast(attrs, [:name, :description, :key_contact, :global_access])
-    |> validate_required([:name])
+    |> cast(attrs, [:name, :description, :key_contact, :global_access, :status])
+    |> validate_required([:name, :global_access, :status])
     |> unique_constraint(:name)
   end
 end

@@ -18,14 +18,14 @@ defmodule OliWeb.Products.PaymentsView do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
-  data filter, :string, default: ""
-  data applied_filter, :string, default: ""
+  data query, :string, default: ""
+  data applied_query, :string, default: ""
 
-  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/2
+  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
 
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
+  def filter_rows(socket, query, _filter) do
+    case String.downcase(query) do
       "" ->
         socket.assigns.payments
 
@@ -85,12 +85,12 @@ defmodule OliWeb.Products.PaymentsView do
 
       <hr class="mt-5 mb-5"/>
 
-      <Filter apply={"apply_filter"} change={"change_filter"} reset="reset_filter"/>
+      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@applied_filter}
+        filter={@applied_query}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}

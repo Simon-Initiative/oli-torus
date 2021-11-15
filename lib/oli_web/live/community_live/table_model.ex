@@ -1,4 +1,5 @@
 defmodule OliWeb.CommunityLive.TableModel do
+  alias Oli.Groups.Community
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -27,6 +28,11 @@ defmodule OliWeb.CommunityLive.TableModel do
           name: :actions,
           label: "Actions",
           render_fn: &__MODULE__.render_overview_button/3
+        },
+        %ColumnSpec{
+          name: :status,
+          label: "Status",
+          render_fn: &__MODULE__.render_status/3
         }
       ],
       event_suffix: "",
@@ -34,14 +40,22 @@ defmodule OliWeb.CommunityLive.TableModel do
     )
   end
 
-  def render_overview_button(assigns, community, _) do
-    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Show, community.id)
+  def render_overview_button(assigns, %Community{id: id, status: status}, _) do
+    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Show, id)
 
     SortableTableModel.render_link_column(
       assigns,
       "Overview",
       route_path,
-      "btn btn-sm btn-primary"
+      "btn btn-sm btn-primary #{if status == :deleted, do: "disabled"}"
     )
+  end
+
+  def render_status(assigns, %Community{status: :active}, _) do
+    SortableTableModel.render_span_column(assigns, "Active", "text-success")
+  end
+
+  def render_status(assigns, %Community{status: :deleted}, _) do
+    SortableTableModel.render_span_column(assigns, "Deleted", "text-danger")
   end
 end

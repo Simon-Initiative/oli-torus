@@ -7,6 +7,7 @@ defmodule Oli.Repo.Migrations.CreateCommunities do
       add :description, :text
       add :key_contact, :string
       add :global_access, :boolean, default: true, null: false
+      add :status, :string, default: "active", null: false
 
       timestamps(type: :timestamptz)
     end

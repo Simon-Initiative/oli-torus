@@ -1,15 +1,23 @@
 defmodule OliWeb.CommunityLive.Show do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.Modal
 
   alias Oli.Groups
-  alias OliWeb.Common.Breadcrumb
-  alias OliWeb.CommunityLive.{FormComponent, Index}
+  alias Oli.Groups.Community
+  alias OliWeb.Common.{Breadcrumb, DeleteModalComponent}
+  alias OliWeb.CommunityLive.{FormComponent, Index, ShowSectionComponent}
   alias OliWeb.Router.Helpers, as: Routes
 
-  data(title, :string, default: "Edit Community")
-  data(community, :struct)
-  data(changeset, :changeset)
-  data(breadcrumbs, :list)
+  data title, :string, default: "Edit Community"
+  data community, :struct
+  data changeset, :changeset
+  data breadcrumbs, :list
+  data modal, :any, default: nil
+
+  @delete_modal_description """
+    This action will not affect existing course sections that are using this community.
+    Those sections will continue to operate as intended.
+  """
 
   def breadcrumb(community_id) do
     Index.breadcrumb() ++
@@ -26,7 +34,7 @@ defmodule OliWeb.CommunityLive.Show do
       case Groups.get_community(community_id) do
         nil ->
           socket
-          |> put_flash(:info, "That community does not exist.")
+          |> put_flash(:info, "That community does not exist or it was deleted.")
           |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, Index))
 
         community ->
@@ -44,16 +52,17 @@ defmodule OliWeb.CommunityLive.Show do
 
   def render(assigns) do
     ~F"""
+      {render_modal(assigns)}
       <div id="community-overview" class="overview container">
-        <div class="row py-5 border-bottom">
-          <div class="col-md-4">
-            <h4>Details</h4>
-            <div class="text-muted">Main community fields that will be shown to system admins and community admins.</div>
+        <ShowSectionComponent section_title="Details" section_description="Main community fields that will be shown to system admins and community admins.">
+          <FormComponent changeset={@changeset} save="save"/>
+        </ShowSectionComponent>
+        <ShowSectionComponent section_title="Actions">
+          <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
+            <span>Permanently delete this community.</span>
           </div>
-          <div class="col-md-8">
-            <FormComponent changeset={@changeset} save="save"/>
-          </div>
-        </div>
+        </ShowSectionComponent>
       </div>
     """
   end
@@ -76,5 +85,56 @@ defmodule OliWeb.CommunityLive.Show do
 
         {:noreply, assign(socket, changeset: changeset)}
     end
+  end
+
+  def handle_event("delete", _params, socket) do
+    socket =
+      case Groups.delete_community(socket.assigns.community) do
+        {:ok, _community} ->
+          socket
+          |> put_flash(:info, "Community successfully deleted.")
+          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, Index))
+
+        {:error, %Ecto.Changeset{}} ->
+          put_flash(
+            socket,
+            :error,
+            "Community couldn't be deleted."
+          )
+      end
+
+    {:noreply, socket |> hide_modal()}
+  end
+
+  def handle_event("validate_name_for_deletion", %{"community" => %{"name" => name}}, socket) do
+    delete_enabled = name == socket.assigns.community.name
+    %{modal: modal} = socket.assigns
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | delete_enabled: delete_enabled
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("show_delete_modal", _, socket) do
+    modal = %{
+      component: DeleteModalComponent,
+      assigns: %{
+        id: "delete_community_modal",
+        description: @delete_modal_description,
+        entity_name: socket.assigns.community.name,
+        entity_type: "community",
+        delete_enabled: false,
+        validate: "validate_name_for_deletion",
+        delete: "delete"
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
   end
 end

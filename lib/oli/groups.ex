@@ -20,6 +20,22 @@ defmodule Oli.Groups do
   def list_communities, do: Repo.all(Community)
 
   @doc """
+  Returns the list of communities that meets the criteria passed in the input.
+
+  ## Examples
+
+      iex> search_communities(%{status: :active})
+      [%Community{status: :active}, ...]
+
+      iex> search_communities(%{global_access: false})
+      []
+  """
+  def search_communities(filter) do
+    from(c in Community, where: ^filter_conditions(filter))
+    |> Repo.all()
+  end
+
+  @doc """
   Creates a community.
 
   ## Examples
@@ -47,7 +63,7 @@ defmodule Oli.Groups do
       iex> get_community(123)
       nil
   """
-  def get_community(id), do: Repo.get(Community, id)
+  def get_community(id), do: Repo.get_by(Community, %{id: id, status: :active})
 
   @doc """
   Updates a community.
@@ -78,7 +94,7 @@ defmodule Oli.Groups do
 
   """
   def delete_community(%Community{} = community) do
-    Repo.delete(community)
+    update_community(community, %{status: :deleted})
   end
 
   @doc """
@@ -92,5 +108,11 @@ defmodule Oli.Groups do
   """
   def change_community(%Community{} = community, attrs \\ %{}) do
     Community.changeset(community, attrs)
+  end
+
+  defp filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
+    end)
   end
 end

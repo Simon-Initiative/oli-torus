@@ -7,12 +7,15 @@ defmodule OliWeb.CommunityLive.Index do
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.{New, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Checkbox, Field, Label}
   alias Surface.Components.Link
 
   data title, :string, default: "Communities"
   data breadcrumbs, :any
 
-  data filter, :string, default: ""
+  data filter, :any, default: %{"status" => "active"}
+  data query, :string, default: ""
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
@@ -21,19 +24,22 @@ defmodule OliWeb.CommunityLive.Index do
   data show_bottom_paging, :boolean, default: false
   data additional_table_class, :string, default: ""
 
-  @table_filter_fn &__MODULE__.filter_rows/2
+  @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
-      "" ->
-        socket.assigns.communities
+  def filter_rows(socket, query, filter) do
+    filter =
+      Enum.reduce(filter, %{}, fn {field, value}, acc ->
+        Map.put(acc, field, String.split(value, ","))
+      end)
 
-      str ->
-        Enum.filter(socket.assigns.communities, fn c ->
-          String.contains?(String.downcase(c.name), str)
-        end)
-    end
+    query_str = String.downcase(query)
+    status_list = filter["status"]
+
+    Enum.filter(socket.assigns.communities, fn c ->
+      String.contains?(String.downcase(c.name), query_str) and
+        Enum.member?(status_list, Atom.to_string(c.status))
+    end)
   end
 
   def live_path(socket, params) do
@@ -67,19 +73,27 @@ defmodule OliWeb.CommunityLive.Index do
     ~F"""
       <div class="d-flex p-3 justify-content-between">
         <Filter
-          change="change_filter"
-          reset="reset_filter"
-          apply="apply_filter"
-          filter={@filter}/>
+          change="change_search"
+          reset="reset_search"
+          apply="apply_search"
+          query={@query}/>
 
         <Link class="btn btn-primary" to={Routes.live_path(@socket, New)}>
           Create Community
         </Link>
       </div>
+      <div id="community-filters" class="p-3">
+        <Form for={:filter} change="apply_filter" class="pl-4">
+          <Field name={:status} class="form-group">
+            <Checkbox value={Map.get(@filter, "status", "active")} checked_value="active" unchecked_value="active,deleted" class="form-check-input"/>
+            <Label class="form-check-label" text="Show only active communities"/>
+          </Field>
+        </Form>
+      </div>
 
       <div id="communities-table" class="p-4">
         <Listing
-          filter={@filter}
+          filter={@query}
           table_model={@table_model}
           total_count={@total_count}
           offset={@offset}
