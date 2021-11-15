@@ -73,6 +73,8 @@ defmodule OliWeb.ActivityBankController do
             Oli.Rendering.Content.Selection.render(render_context, selection, false)
             |> IO.iodata_to_binary()
 
+          conn = put_root_layout(conn, {OliWeb.LayoutView, "delivery.html"})
+
           render(conn, "preview.html",
             title: "Actiivty Bank Selection Preview",
             rendered_selection: rendered_selection,
