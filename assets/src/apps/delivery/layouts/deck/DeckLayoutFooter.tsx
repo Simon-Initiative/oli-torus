@@ -219,9 +219,10 @@ const DeckLayoutFooter: React.FC = () => {
     let doesFirstEventHasNavigation = false;
     if (combineFeedback) {
       //if the first event has a navigation to different screen
-      // we ignore the rest of the events ang fire this one.
+      // we ignore the rest of the events and fire this one.
       doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
-      if (doesFirstEventHasNavigation) {
+      // if all the rules are correct, we process all the events because we want to display all the correct feedbacks
+      if (doesFirstEventHasNavigation && !isCorrect) {
         eventsToProcess = [lastCheckResults.results[0]];
       } else {
         eventsToProcess = lastCheckResults.results;
