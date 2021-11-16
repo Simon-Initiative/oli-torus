@@ -27,6 +27,43 @@ defmodule Oli.Delivery.HierarchyTest do
       |> Map.put(:nested_page_two_node, nested_page_two_node)
     end
 
+    test "build_navigation_link_map/1", %{
+      hierarchy: hierarchy,
+      page_one_node: node1,
+      page_two_node: node2,
+      nested_page_one_node: node3,
+      nested_page_two_node: node4
+    } do
+      link_map = Hierarchy.build_navigation_link_map(hierarchy)
+
+      get = fn n -> Map.get(link_map, n.revision.resource_id |> Integer.to_string()) end
+
+      # verify that all four pages exist within the link map
+      assert 4 == Map.keys(link_map) |> Enum.count()
+
+      # verify that the links are set up correctly and that the slugs and titles
+      # are present and correct
+      assert get.(node1)["prev"] == nil
+      assert get.(node1)["next"] == Integer.to_string(node2.revision.resource_id)
+      assert get.(node1)["slug"] == node1.revision.slug
+      assert get.(node1)["title"] == node1.revision.title
+
+      assert get.(node2)["prev"] == Integer.to_string(node1.revision.resource_id)
+      assert get.(node2)["next"] == Integer.to_string(node3.revision.resource_id)
+      assert get.(node2)["slug"] == node2.revision.slug
+      assert get.(node2)["title"] == node2.revision.title
+
+      assert get.(node3)["prev"] == Integer.to_string(node2.revision.resource_id)
+      assert get.(node3)["next"] == Integer.to_string(node4.revision.resource_id)
+      assert get.(node3)["slug"] == node3.revision.slug
+      assert get.(node3)["title"] == node3.revision.title
+
+      assert get.(node4)["prev"] == Integer.to_string(node3.revision.resource_id)
+      assert get.(node4)["next"] == nil
+      assert get.(node4)["slug"] == node4.revision.slug
+      assert get.(node4)["title"] == node4.revision.title
+    end
+
     test "flatten_pages/1", %{hierarchy: hierarchy} do
       flattened = Hierarchy.flatten_pages(hierarchy)
 

@@ -600,6 +600,7 @@ defmodule OliWeb.Router do
 
     get("/overview", PageDeliveryController, :index_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
+    get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
 
   scope "/sections", OliWeb do

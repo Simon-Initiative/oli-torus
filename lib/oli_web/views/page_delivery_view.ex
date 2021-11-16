@@ -24,14 +24,14 @@ defmodule OliWeb.PageDeliveryView do
         conn,
         :page_preview,
         conn.assigns.section_slug,
-        conn.assigns.previous_page.slug
+        conn.assigns.previous_page["slug"]
       )
     else
       Routes.page_delivery_path(
         conn,
         :page,
         conn.assigns.section_slug,
-        conn.assigns.previous_page.slug
+        conn.assigns.previous_page["slug"]
       )
     end
   end
@@ -42,14 +42,14 @@ defmodule OliWeb.PageDeliveryView do
         conn,
         :page_preview,
         conn.assigns.section_slug,
-        conn.assigns.next_page.slug
+        conn.assigns.next_page["slug"]
       )
     else
       Routes.page_delivery_path(
         conn,
         :page,
         conn.assigns.section_slug,
-        conn.assigns.next_page.slug
+        conn.assigns.next_page["slug"]
       )
     end
   end

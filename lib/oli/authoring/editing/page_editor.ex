@@ -19,7 +19,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
-  alias Oli.Delivery.Page.PageContext
   alias Oli.Authoring.Editing.ActivityEditor
 
   import Ecto.Query, warn: false
@@ -205,7 +204,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
-      {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
+      {:ok, {previous, next}} =
+        Oli.Delivery.Hierarchy.build_navigation_link_map(hierarchy)
+        |> Oli.Delivery.PreviousNextIndex.retrieve(revision.resource_id)
 
       activity_ids = activities_from_content(revision.content)
 
