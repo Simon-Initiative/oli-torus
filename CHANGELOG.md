@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix bug that prevented deletion of authors that have locked resource revisions
+
 ### Enhancements
 
 - Instructor "Preview" mode
