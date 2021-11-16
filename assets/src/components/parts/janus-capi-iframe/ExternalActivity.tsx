@@ -178,17 +178,18 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         if (key.indexOf(`${domain}.${id}.`) === 0) {
           const value = currentStateSnapshot[key];
           const typeOfValue = typeof value;
-          collect[key] =
+          if (
             typeof value === 'string' &&
             value?.length === 2 &&
             value.charAt(0) === '[' &&
             value.charAt(1) === ']'
-              ? ''
-              : // use case: value: {a: 1, b: 2} and it's not stringified so
-              //when it gets send to SIM as value:[object object] and which throws error so to avoid that we stringfy it. need to make sure, we do it for Arrays.
-              typeOfValue === 'object' && !Array.isArray(value)
-              ? JSON.stringify(value)
-              : value;
+          ) {
+            collect[key] = '';
+          } else if (typeOfValue === 'object' && !Array.isArray(value)) {
+            collect[key] = JSON.stringify(value);
+          } else {
+            collect[key] = value;
+          }
         }
         return collect;
       },
