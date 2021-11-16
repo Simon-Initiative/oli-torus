@@ -28,8 +28,15 @@ const lessonSchema: JSONSchema7 = {
           title: 'Lesson Appearance',
           properties: {
             theme: {
-              type: 'string',
-              title: 'Lesson Theme',
+              anyOf: [
+                {
+                  type: 'string',
+                  title: 'Default Theme',
+                  enum: ['/css/delivery_adaptive_themes_default_light.css'],
+                  default: '/css/delivery_adaptive_themes_default_light.css',
+                },
+                { type: 'string', title: 'Custom Theme' },
+              ],
             },
             customCssUrl: {
               type: 'string',
