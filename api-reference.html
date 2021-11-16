@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-81e0da9004.js"></script>
+    <script src="dist/sidebar_items-9bc7c7acef.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -1310,7 +1310,13 @@ can define a start and/or end datetime for a resource to be available.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><p>A module for hierarchy and HierarchyNode operations and utilities</p></div>
+    <div class="summary-synopsis"><p>A module for hierarchy and HierarchyNode operations and utilities
+A delivery hierarchy is the main structure in which a course curriculum is organized
+to be delivered. It is mainly persisted through section resource records. A hierarchy is
+also a generic in-memory representation of a curriculum which can be passed into
+delivery-centric functions from an authoring context, in which case the hierarchy could
+be ephemeral and section_resources are empty (e.g. course preview)
+See also HierarchyNode for more details</p></div>
 
 </div>
 <div class="summary-row">
@@ -1391,6 +1397,13 @@ be safely delivered to a browser in delivery model.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="Oli.Delivery.Paywall.Providers.Stripe.html">Oli.Delivery.Paywall.Providers.Stripe</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Delivery.PreviousNextIndex.html">Oli.Delivery.PreviousNextIndex</a>
 
   </div>
 
