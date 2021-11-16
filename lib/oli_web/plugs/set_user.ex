@@ -1,6 +1,7 @@
 defmodule Oli.Plugs.SetCurrentUser do
   import Plug.Conn
 
+  alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
   alias Oli.Repo
@@ -21,13 +22,23 @@ defmodule Oli.Plugs.SetCurrentUser do
     if author = Pow.Plug.current_user(conn, pow_config) do
       cond do
         current_author = Repo.get(Author, author.id) ->
+          is_community_admin =
+            current_author.id
+            |> Accounts.list_admin_communities()
+            |> Enum.empty?() ==
+              false
+
           conn
           |> put_session(:current_author_id, current_author.id)
+          |> put_session(:is_community_admin, is_community_admin)
+          |> put_session(:is_system_admin, Accounts.is_admin?(current_author))
           |> assign(:current_author, current_author)
 
         true ->
           conn
           |> delete_session(:current_author_id)
+          |> delete_session(:is_community_admin)
+          |> delete_session(:is_system_admin)
           |> assign(:current_author, nil)
       end
     else

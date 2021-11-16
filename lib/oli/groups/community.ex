@@ -9,6 +9,10 @@ defmodule Oli.Groups.Community do
     field :global_access, :boolean, default: true
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
 
+    many_to_many :users, Oli.Accounts.User, join_through: Oli.Groups.CommunityAccount
+
+    many_to_many :authors, Oli.Accounts.Author, join_through: Oli.Groups.CommunityAccount
+
     timestamps(type: :utc_datetime)
   end
 

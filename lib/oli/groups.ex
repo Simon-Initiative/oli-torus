@@ -4,9 +4,11 @@ defmodule Oli.Groups do
   """
 
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
-  alias Oli.Groups.Community
+  alias Oli.Accounts
+  alias Oli.Accounts.Author
+  alias Oli.Groups.{Community, CommunityAccount}
+  alias Oli.Repo
 
   @doc """
   Returns the list of communities.
@@ -114,5 +116,115 @@ defmodule Oli.Groups do
     Enum.reduce(filter, false, fn {field, value}, conditions ->
       dynamic([entity], field(entity, ^field) == ^value or ^conditions)
     end)
+  end
+
+  @doc """
+  Creates a community account.
+
+  ## Examples
+
+      iex> create_community_account(%{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_community_account(attrs \\ %{}) do
+    %CommunityAccount{}
+    |> CommunityAccount.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a community account from an author email (gets the author first).
+
+  ## Examples
+
+      iex> create_community_account_from_author_email("example@foo.com", %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_author_email("example@foo.com", %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_author_email(email, attrs \\ %{}) do
+    case Accounts.get_author_by_email(email) do
+      %Author{id: id} ->
+        attrs |> Map.put(:author_id, id) |> create_community_account()
+
+      nil ->
+        {:error, :author_not_found}
+    end
+  end
+
+  @doc """
+  Gets a community account by id.
+
+  ## Examples
+
+      iex> get_community_account(1)
+      %CommunityAccount{}
+      iex> get_community_account(123)
+      nil
+  """
+  def get_community_account(id), do: Repo.get(CommunityAccount, id)
+
+  @doc """
+  Gets a community account by clauses. Will raise an error if
+  more than one matches the criteria.
+
+  ## Examples
+
+      iex> get_community_account_by!(%{author_id: 1})
+      %CommunityAccount{}
+      iex> get_community_account_by!(%{author_id: 123})
+      nil
+      iex> get_community_account_by!(%{author_id: 2})
+      Ecto.MultipleResultsError
+  """
+  def get_community_account_by!(clauses), do: Repo.get_by(CommunityAccount, clauses)
+
+  @doc """
+  Deletes a community account.
+
+  ## Examples
+
+      iex> delete_community_account(%{community_id: 1, author_id: 1})
+      {:ok, %CommunityAccount{}}
+
+      iex> delete_community_account(%{community_id: 1, author_id: bad})
+      nil
+
+  """
+  def delete_community_account(clauses) do
+    case get_community_account_by!(clauses) do
+      nil -> {:error, :not_found}
+      community_account -> Repo.delete(community_account)
+    end
+  end
+
+  @doc """
+  Get all the admins for a specific community.
+
+  ## Examples
+
+      iex> list_community_admins(1)
+      {:ok, [%Author{}, ...]}
+
+      iex> list_community_admins(123)
+      {:ok, []}
+  """
+  def list_community_admins(community_id) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: author in assoc(community_account, :author),
+        where:
+          community_account.community_id == ^community_id and community_account.is_admin == true,
+        select: author
+      )
+    )
   end
 end

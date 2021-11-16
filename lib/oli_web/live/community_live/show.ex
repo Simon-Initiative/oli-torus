@@ -3,9 +3,15 @@ defmodule OliWeb.CommunityLive.Show do
   use OliWeb.Common.Modal
 
   alias Oli.Groups
-  alias Oli.Groups.Community
   alias OliWeb.Common.{Breadcrumb, DeleteModalComponent}
-  alias OliWeb.CommunityLive.{FormComponent, Index, ShowSectionComponent}
+
+  alias OliWeb.CommunityLive.{
+    FormComponent,
+    Index,
+    AccountInvitationComponent,
+    ShowSectionComponent
+  }
+
   alias OliWeb.Router.Helpers, as: Routes
 
   data title, :string, default: "Edit Community"
@@ -13,6 +19,7 @@ defmodule OliWeb.CommunityLive.Show do
   data changeset, :changeset
   data breadcrumbs, :list
   data modal, :any, default: nil
+  data community_admins, :list
 
   @delete_modal_description """
     This action will not affect existing course sections that are using this community.
@@ -39,11 +46,13 @@ defmodule OliWeb.CommunityLive.Show do
 
         community ->
           changeset = Groups.change_community(community)
+          community_admins = Groups.list_community_admins(community_id)
 
           assign(socket,
             community: community,
             changeset: changeset,
-            breadcrumbs: breadcrumb(community_id)
+            breadcrumbs: breadcrumb(community_id),
+            community_admins: community_admins
           )
       end
 
@@ -57,6 +66,19 @@ defmodule OliWeb.CommunityLive.Show do
         <ShowSectionComponent section_title="Details" section_description="Main community fields that will be shown to system admins and community admins.">
           <FormComponent changeset={@changeset} save="save"/>
         </ShowSectionComponent>
+
+        <ShowSectionComponent
+          section_title="Community Admins"
+          section_description="Add other authors by email to administrate the community."
+        >
+          <AccountInvitationComponent
+            invite="add_collaborator"
+            remove="remove_collaborator"
+            placeholder="admin@example.edu"
+            button_text="Add"
+            collaborators={@community_admins}/>
+        </ShowSectionComponent>
+
         <ShowSectionComponent section_title="Actions">
           <div class="d-flex align-items-center">
             <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
@@ -136,5 +158,54 @@ defmodule OliWeb.CommunityLive.Show do
     }
 
     {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("add_collaborator", %{"collaborator" => %{"email" => email}}, socket) do
+    socket = clear_flash(socket)
+
+    attrs = %{
+      community_id: socket.assigns.community.id,
+      is_admin: true
+    }
+
+    case Groups.create_community_account_from_author_email(email, attrs) do
+      {:ok, _community_account} ->
+        socket = put_flash(socket, :info, "Admin successfully added.")
+        community_admins = Groups.list_community_admins(attrs.community_id)
+
+        {:noreply, assign(socket, community_admins: community_admins)}
+
+      {:error, error} ->
+        message =
+          case error do
+            :author_not_found ->
+              "Community admin couldn't be added. Author does not exist."
+
+            %Ecto.Changeset{} ->
+              "Community admin couldn't be added. Author is already an admin or an unexpected error occurred."
+          end
+
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("remove_collaborator", %{"collaborator-id" => admin_id}, socket) do
+    socket = clear_flash(socket)
+
+    attrs = %{
+      community_id: socket.assigns.community.id,
+      author_id: admin_id
+    }
+
+    case Groups.delete_community_account(attrs) do
+      {:ok, _community_account} ->
+        socket = put_flash(socket, :info, "Admin successfully removed.")
+        community_admins = Groups.list_community_admins(attrs.community_id)
+
+        {:noreply, assign(socket, community_admins: community_admins)}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Community admin couldn't be removed.")}
+    end
   end
 end

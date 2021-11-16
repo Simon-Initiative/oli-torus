@@ -14,6 +14,8 @@ defmodule Oli.Accounts do
     AuthorPreferences
   }
 
+  alias Oli.Groups.CommunityAccount
+
   def browse_users(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -545,6 +547,28 @@ defmodule Oli.Accounts do
           assoc.project_id == ^project.id and
             (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: author
+      )
+    )
+  end
+
+  @doc """
+  Get all the communities for which the author is an admin.
+
+  ## Examples
+
+      iex> list_admin_communities(1)
+      {:ok, [%Community{}, ...]}
+
+      iex> list_admin_communities(123)
+      {:ok, []}
+  """
+  def list_admin_communities(author_id) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: community in assoc(community_account, :community),
+        where: community_account.author_id == ^author_id and community_account.is_admin == true,
+        select: community
       )
     )
   end

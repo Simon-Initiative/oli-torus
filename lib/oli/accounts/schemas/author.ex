@@ -39,6 +39,8 @@ defmodule Oli.Accounts.Author do
     many_to_many :sections, Oli.Delivery.Sections.Section,
       join_through: Oli.Delivery.Sections.AuthorsSections
 
+    many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityAccount
+
     field :collaborations_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
 

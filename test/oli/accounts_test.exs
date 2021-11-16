@@ -1,6 +1,8 @@
 defmodule Oli.AccountsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
@@ -121,6 +123,21 @@ defmodule Oli.AccountsTest do
                ],
                :all
              )
+    end
+  end
+
+  describe "communities accounts" do
+    alias Oli.Groups.Community
+
+    test "list_admin_communities/1 returns the communities for which the author is an admin" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{author: community_account.author})
+      insert(:community_account, %{author: community_account.author, is_admin: false})
+
+      communties = Accounts.list_admin_communities(community_account.author_id)
+
+      assert [%Community{} | _tail] = communties
+      assert 2 = length(communties)
     end
   end
 end

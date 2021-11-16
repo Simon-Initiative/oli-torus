@@ -4,10 +4,9 @@ defmodule Oli.GroupsTest do
   import Oli.Factory
 
   alias Oli.Groups
+  alias Oli.Groups.Community
 
   describe "community" do
-    alias Oli.Groups.Community
-
     test "create_community/1 with valid data creates a community" do
       params = params_for(:community)
       assert {:ok, %Community{} = community} = Groups.create_community(params)
@@ -92,6 +91,145 @@ defmodule Oli.GroupsTest do
 
       assert length(returned_communities) == 2
       assert returned_communities == active_communities
+    end
+  end
+
+  describe "community account" do
+    alias Oli.Groups.CommunityAccount
+    alias Oli.Accounts.Author
+
+    test "create_community_account/1 with valid data creates a community account" do
+      params = params_for(:community_account)
+
+      assert {:ok, %CommunityAccount{} = community_account} =
+               Groups.create_community_account(params)
+
+      assert community_account.author_id == params.author_id
+      assert community_account.community_id == params.community_id
+      assert community_account.is_admin == params.is_admin
+    end
+
+    test "create_community_account/1 for existing author and community returns error changeset" do
+      author = build(:author)
+      community = build(:community)
+      insert(:community_account, %{author: author, community: community})
+
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community_account(%{author: author, community: community})
+    end
+
+    test "create_community_account_from_author_email/1 with valid data creates a community account" do
+      author = insert(:author)
+      params = params_for(:community_account)
+
+      assert {:ok, %CommunityAccount{} = community_account} =
+               Groups.create_community_account_from_author_email(author.email, params)
+
+      assert community_account.author_id == author.id
+      assert community_account.community_id == params.community_id
+      assert community_account.is_admin == params.is_admin
+    end
+
+    test "create_community_account_from_author_email/1 for non existing author email returns author not found" do
+      params = params_for(:community_account)
+
+      assert {:error, :author_not_found} =
+               Groups.create_community_account_from_author_email("testing@email.com", params)
+    end
+
+    test "create_community_account_from_author_email/1 for existing author and community returns error changeset" do
+      author = build(:author)
+      community = build(:community)
+      insert(:community_account, %{author: author, community: community})
+
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community_account_from_author_email(author.email, %{
+                 author: author,
+                 community: community
+               })
+    end
+
+    test "get_community_account/1 returns a community account when the id exists" do
+      community_account = insert(:community_account)
+
+      returned_community_account = Groups.get_community_account(community_account.id)
+
+      assert community_account.id == returned_community_account.id
+      assert community_account.author_id == returned_community_account.author_id
+      assert community_account.community_id == returned_community_account.community_id
+    end
+
+    test "get_community_account/1 returns nil if the community account does not exist" do
+      assert nil == Groups.get_community_account(123)
+    end
+
+    test "delete_community_account/1 deletes the community account" do
+      community_account = insert(:community_account)
+
+      assert {:ok, %CommunityAccount{}} =
+               Groups.delete_community_account(%{
+                 community_id: community_account.community_id,
+                 author_id: community_account.author_id
+               })
+
+      refute Groups.get_community_account(community_account.id)
+    end
+
+    test "delete_community_account/1 fails when the community account does not exist" do
+      community_account = insert(:community_account)
+
+      assert {:error, :not_found} =
+               Groups.delete_community_account(%{
+                 community_id: 12345
+               })
+
+      assert Groups.get_community_account(community_account.id)
+    end
+
+    test "list_community_admins/1 returns the admins for a community" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{community: community_account.community})
+      insert(:community_account, %{community: community_account.community, is_admin: false})
+
+      admins = Groups.list_community_admins(community_account.community_id)
+
+      assert [%Author{} | _tail] = admins
+      assert 2 = length(admins)
+    end
+
+    test "get_community_account_by!/1 returns a community account when meets the clauses" do
+      community_account = insert(:community_account)
+
+      returned_community_account =
+        Groups.get_community_account_by!(%{
+          community_id: community_account.community_id,
+          author_id: community_account.author_id
+        })
+
+      assert community_account.id == returned_community_account.id
+      assert community_account.author_id == returned_community_account.author_id
+      assert community_account.community_id == returned_community_account.community_id
+    end
+
+    test "get_community_account_by!/1 returns nil if the community account does not exist" do
+      assert nil ==
+               Groups.get_community_account_by!(%{
+                 community_id: 1,
+                 author_id: 2
+               })
+    end
+
+    test "get_community_account_by!/1 returns error if more than one meets the requirements" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{community: community_account.community})
+
+      assert_raise Ecto.MultipleResultsError,
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn ->
+                     Groups.get_community_account_by!(%{
+                       community_id: community_account.community_id
+                     })
+                   end
     end
   end
 end

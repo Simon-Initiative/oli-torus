@@ -5,9 +5,12 @@
     <div class="label mt-1">Projects</div>
   </a>
 
-
   <%= if Accounts.is_admin?(@current_author) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
+  <% else %>
+    <%= if Plug.Conn.get_session(@conn, :is_community_admin) do %>
+      <%= render OliWeb.LayoutView, "_community_admin_sidebar.html", assigns %>
+    <% end %>
   <% end %>
 
 </div>
