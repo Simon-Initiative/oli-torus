@@ -48,12 +48,6 @@ export const schema: JSONSchema7Object = {
     title: 'Vertical Gap',
     type: 'number',
   },
-  showLabel: {
-    title: 'Show Label',
-    type: 'boolean',
-    description: 'specifies whether to show the MCQ label',
-    default: true,
-  },
   multipleSelection: {
     title: 'Multiple Selection',
     type: 'boolean',
@@ -64,12 +58,6 @@ export const schema: JSONSchema7Object = {
     title: 'Randomize',
     type: 'boolean',
     description: 'specifies whether to randomize the MCQ items',
-    default: false,
-  },
-  showNumbering: {
-    title: 'Show Numbering',
-    type: 'boolean',
-    description: 'specifies whether to show numbering on the MCQ items',
     default: false,
   },
   enabled: {
