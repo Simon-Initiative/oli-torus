@@ -15,13 +15,13 @@
   window.userToken = "<%= assigns[:user_token] %>";
 
   <%= if @previous_page != nil do %>
-    const previousPageURL = previous_url(@conn);
+    const previousPageURL = "<%= previous_url(@conn) %>";
   <% else %>
     const previousPageURL = null;
   <% end %>
 
   <%= if @next_page != nil do %>
-    const nextPageURL = next_url(@conn);
+    const nextPageURL = "<%= next_url(@conn) %>";
   <% else %>
     const nextPageURL = null;
   <% end %>
