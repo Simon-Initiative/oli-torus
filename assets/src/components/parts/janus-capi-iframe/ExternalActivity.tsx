@@ -185,7 +185,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             value.charAt(1) === ']'
           ) {
             collect[key] = '';
-          } else if (typeOfValue === 'object' && !Array.isArray(value)) {
+          } else if (typeOfValue === 'object') {
             collect[key] = JSON.stringify(value);
           } else {
             collect[key] = value;
