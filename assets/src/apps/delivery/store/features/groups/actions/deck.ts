@@ -65,7 +65,7 @@ export const initializeActivity = createAsyncThunk(
     const visitOperation: ApplyStateOperation = {
       target: `session.visits.${currentSequenceId}`,
       operator: '+',
-      value: 1,
+      value: 0,
     };
     const timeOnQuestion: ApplyStateOperation = {
       target: 'session.timeOnQuestion',
