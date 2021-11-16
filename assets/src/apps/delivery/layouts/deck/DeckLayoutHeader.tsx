@@ -1,10 +1,9 @@
-/* eslint-disable react/prop-types */
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectPageContent, selectScore } from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
-import EverAppContainer from './EverAppContainer';
+import OptionsPanel from './components/OptionsPanel';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;
@@ -31,6 +30,8 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const everApps: Everapp[] = currentPage?.custom?.everApps || [];
   const hasEverApps = everApps.filter((a) => a.isVisible).length > 0;
 
+  const [showOptions, setShowOptions] = React.useState(false);
+
   return (
     <div className="headerContainer">
       <header id="delivery-header">
@@ -44,8 +45,18 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
               <div className="name">{userName}</div>
               <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
-              {/* optionsToggle here */}
+              <button
+                className="optionsToggle"
+                title="Toggle menu visibility"
+                aria-label="Toggle menu visibility"
+                onClick={() => {
+                  setShowOptions(!showOptions);
+                }}
+              >
+                <div className="icon-reorder"></div>
+              </button>
             </div>
+            <OptionsPanel open={showOptions} />
           </div>
           <div className={`theme-header ${isLegacyTheme ? 'displayNone' : ''}`}>
             <div className={`theme-header-score ${!showScore ? 'displayNone' : ''}`}>
