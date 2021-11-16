@@ -2,21 +2,38 @@ defmodule Oli.Rendering.Content.Selection do
   def render(
         %Oli.Rendering.Context{
           section_slug: section_slug,
+          revision_slug: revision_slug,
           activity_types_map: activity_types_map
         },
-        %{"logic" => logic, "count" => count} = selection
+        %{"logic" => logic, "count" => count, "id" => id} = selection,
+        include_link?
       ) do
     titles = titles_from_selection(section_slug, selection)
+    url = "/sections/#{section_slug}/preview/page/#{revision_slug}/selection/#{id}"
 
-    prefix =
+    count_desc =
       case count do
-        1 -> "<p>Selecting 1 activity from:</p>"
-        _ -> "<p>Selecting #{count} activities from:</p>"
+        1 -> "1 activity"
+        _ -> "#{count} activities"
       end
 
     [
-      "<div class=\"selection\"><div class=\"title\">Activity Bank Selection</div>",
-      [prefix, render_html(logic, titles, activity_types_map)],
+      "<div class=\"jumbotron selection\">",
+      "<h2 class=\"display-6\">Activity Bank Selection</h2>",
+      "<p class=\"lead\">The following activity bank selection will select ",
+      "<span class=\"badge badge-pill badge-primary\">#{count_desc}</span> randomly according to the following constraints:",
+      "</p>",
+      "<hr class=\"my-4\">",
+      [render_html(logic, titles, activity_types_map)],
+      if include_link? do
+        [
+          "<p class=\"lead\">",
+          "<a class=\"btn btn-primary\" href=\"#{url}\">Preview activities</a>",
+          "</p>"
+        ]
+      else
+        ""
+      end,
       "</div>"
     ]
   end

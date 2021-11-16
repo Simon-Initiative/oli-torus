@@ -7,10 +7,12 @@
 ### Enhancements
 
 - Instructor "Preview" mode
+- Previewing of activity bank selections
 
 ## 0.14.6 (2021-11-08)
 
 ### Bug Fixes
+
 - Fix the rendering of HTML special characters within activities
 - Fix an issue where email was always being required regardless of independent_learner and guest status
 

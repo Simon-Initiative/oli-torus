@@ -190,6 +190,7 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: conn.assigns.current_user,
       section_slug: section_slug,
+      revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
