@@ -1,10 +1,11 @@
 import { parseBoolean, parseArray } from 'utils/common';
 
 export const isAnyOfOperator = (factValue: any, value: any): boolean => {
-  if (!Array.isArray(value)) {
+  const parsedValue = parseArray(value);
+  if (!Array.isArray(parsedValue)) {
     return false;
   }
-  return value.some((val) => isEqual(factValue, val));
+  return parsedValue.some((val) => isEqual(factValue, val));
 };
 
 export const isEqual = (factValue: any, value: any): boolean => {
