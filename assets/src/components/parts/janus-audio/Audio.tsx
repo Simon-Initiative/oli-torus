@@ -103,6 +103,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
       return;
     }
     initialize(pModel);
+    setAudioAutoPlay(!!pModel.autoPlay);
   }, [props]);
 
   useEffect(() => {
