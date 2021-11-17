@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:attempt_guid, :string)
     field(:attempt_number, :integer)
     field(:date_evaluated, :utc_datetime)
+    field(:scoreable, :boolean, default: true)
     field(:score, :float)
     field(:out_of, :float)
     field(:transformed_model, :map)
@@ -27,6 +28,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :score,
       :out_of,
       :date_evaluated,
+      :scoreable,
       :transformed_model,
       :resource_attempt_id,
       :resource_id,

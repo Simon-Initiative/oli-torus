@@ -3,6 +3,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
   alias Oli.Delivery.ActivityProvider
   alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Delivery.ActivityProvider.Result
 
   describe "fulfilling static activity references with adaptive page" do
     setup do
@@ -96,7 +97,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      {errors, activity_revisions, _} =
+      %{errors: errors, revisions: activity_revisions} =
         ActivityProvider.provide(
           page.revision,
           source,
@@ -237,7 +238,11 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      {errors, activity_revisions, transformed_content} =
+      %Result{
+        errors: errors,
+        revisions: activity_revisions,
+        transformed_content: transformed_content
+      } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
@@ -324,7 +329,11 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      {errors, activity_revisions, transformed_content} =
+      %Result{
+        errors: errors,
+        revisions: activity_revisions,
+        transformed_content: transformed_content
+      } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
@@ -413,7 +422,11 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      {errors, activity_revisions, transformed_content} =
+      %Result{
+        errors: errors,
+        revisions: activity_revisions,
+        transformed_content: transformed_content
+      } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
