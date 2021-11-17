@@ -27,18 +27,21 @@ defmodule OliWeb.CommunityLive.IndexView do
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
-  def filter_rows(socket, query, filter) do
-    filter =
-      Enum.reduce(filter, %{}, fn {field, value}, acc ->
-        Map.put(acc, field, String.split(value, ","))
-      end)
+  defp allowed_values("status"), do: ["active", "deleted"]
 
+  defp withelist_filter(filter, filter_name) do
+    Map.get(filter, filter_name)
+    |> String.split(",")
+    |> Enum.filter(&(&1 in allowed_values(filter_name)))
+  end
+
+  def filter_rows(socket, query, filter) do
     query_str = String.downcase(query)
-    status_list = filter["status"]
+    status_list = withelist_filter(filter, "status")
 
     Enum.filter(socket.assigns.communities, fn c ->
       String.contains?(String.downcase(c.name), query_str) and
-        Enum.member?(status_list, Atom.to_string(c.status))
+        Atom.to_string(c.status) in status_list
     end)
   end
 
