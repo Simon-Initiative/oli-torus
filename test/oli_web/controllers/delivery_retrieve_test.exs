@@ -197,7 +197,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       |> Seeder.create_section_resources()
 
     Oli.Accounts.update_user(user, %{"sub" => "a73d59affc5b2c4cd493"})
-    Oli.Accounts.update_user(user, %{"sub" => "a73d59affc5b2c4cd494"})
+    Oli.Accounts.update_user(instructor, %{"sub" => "a73d59affc5b2c4cd494"})
 
     Oli.Delivery.Sections.enroll(user.id, map.section.id, [
       ContextRoles.get_role(:context_learner)
