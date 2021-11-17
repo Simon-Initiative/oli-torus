@@ -276,7 +276,19 @@ const DeckLayoutFooter: React.FC = () => {
       );
       // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
       const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
-        collect[op.params.target] = latestSnapshot[op.params.target];
+        let target = op.params.target;
+        if (target.indexOf('stage') === 0) {
+          const lstVar = op.params.target.split('.');
+          if (lstVar?.length > 1) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            );
+            target = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${op.params.target}`;
+          }
+        }
+        collect[op.params.target] = latestSnapshot[target];
         return collect;
       }, {});
 
