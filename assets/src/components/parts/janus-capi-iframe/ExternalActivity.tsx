@@ -177,13 +177,19 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       (collect: Record<string, any>, key) => {
         if (key.indexOf(`${domain}.${id}.`) === 0) {
           const value = currentStateSnapshot[key];
-          collect[key] =
+          const typeOfValue = typeof value;
+          if (
             typeof value === 'string' &&
             value?.length === 2 &&
             value.charAt(0) === '[' &&
             value.charAt(1) === ']'
-              ? ''
-              : value;
+          ) {
+            collect[key] = '';
+          } else if (typeOfValue === 'object') {
+            collect[key] = JSON.stringify(value);
+          } else {
+            collect[key] = value;
+          }
         }
         return collect;
       },
