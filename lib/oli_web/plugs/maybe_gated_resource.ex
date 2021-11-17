@@ -17,7 +17,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
         %Revision{resource_id: resource_id} ->
           %{section: section} = conn.assigns
 
-          if Gating.check_resource(section, resource_id) do
+          if Gating.resource_open(section, resource_id) do
             conn
           else
             gated_resource_unavailable(conn, section, resource_id)
@@ -35,12 +35,12 @@ defmodule Oli.Plugs.MaybeGatedResource do
   end
 
   defp gated_resource_unavailable(conn, section, resource_id) do
-    reasons = Gating.reasons(section, resource_id, format_datetime: format_datetime_fn(conn))
+    details = Gating.details(section, resource_id, format_datetime: format_datetime_fn(conn))
 
     conn
     |> put_view(OliWeb.DeliveryView)
     |> put_status(403)
-    |> render("gated_resource_unavailable.html", reasons: reasons)
+    |> render("gated_resource_unavailable.html", details: details)
     |> halt()
   end
 

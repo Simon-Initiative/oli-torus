@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Gating.Strategies.Schedule do
+defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
   @moduledoc """
   Schedule strategy provides a temporal based gating condition. A schedule condition
   can define a start and/or end datetime for a resource to be available.
@@ -8,13 +8,13 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
 
-  @behaviour Oli.Delivery.Gating.Strategies.Strategy
+  @behaviour Oli.Delivery.Gating.ConditionTypes.ConditionType
 
   def type do
     :schedule
   end
 
-  def can_access?(%GatingCondition{
+  def open?(%GatingCondition{
         data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
       }) do
     now = DateTime.utc_now()
@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     end
   end
 
-  def access_details(
+  def details(
         %GatingCondition{
           section_id: section_id,
           resource_id: resource_id,
@@ -52,32 +52,15 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
 
     format_datetime = Keyword.get(opts, :format_datetime, &format_datetime_default/1)
 
-    case {start_datetime, end_datetime} do
-      {nil, nil} ->
-        {:granted}
+    cond do
+      start_datetime != nil && DateTime.compare(start_datetime, now) != :lt ->
+        "#{revision.title} is scheduled to start #{format_datetime.(start_datetime)}"
 
-      {start_datetime, nil} ->
-        if DateTime.compare(start_datetime, now) == :lt do
-          {:granted}
-        else
-          {:blocked,
-           "#{revision.title} is not scheduled to start until #{format_datetime.(start_datetime)}"}
-        end
+      end_datetime != nil && DateTime.compare(now, end_datetime) != :lt ->
+        "#{revision.title} is scheduled to end #{format_datetime.(end_datetime)}"
 
-      {nil, end_datetime} ->
-        if DateTime.compare(now, end_datetime) == :lt do
-          {:granted}
-        else
-          {:blocked,
-           "#{revision.title} was scheduled to end at #{format_datetime.(end_datetime)}"}
-        end
-
-      {start_datetime, end_datetime} ->
-        if DateTime.compare(start_datetime, now) == :lt and
-             DateTime.compare(now, end_datetime) == :lt do
-          {:granted}
-        else
-        end
+      true ->
+        nil
     end
   end
 

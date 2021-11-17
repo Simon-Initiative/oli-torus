@@ -13,10 +13,7 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
   alias Oli.Accounts.User
-
-  @strategies [
-    Oli.Delivery.Gating.Strategies.Schedule
-  ]
+  alias Oli.Delivery.Gating.ConditionTypes
 
   def browse_gating_conditions(
         %Section{id: section_id, slug: section_slug},
@@ -217,44 +214,44 @@ defmodule Oli.Delivery.Gating do
   @doc """
   Returns true if all gating conditions pass for a resource and it's ancestors
   """
-  def check_resource(
+  def resource_open(
         section,
         resource_id
       )
       when is_integer(resource_id),
-      do: check_resource(section, Integer.to_string(resource_id))
+      do: resource_open(section, Integer.to_string(resource_id))
 
-  def check_resource(
+  def resource_open(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id
       ) do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
-      |> Enum.all?(&check_condition/1)
+      |> Enum.all?(&condition_open/1)
     else
       true
     end
   end
 
   # Returns true if the gating condition passes
-  defp check_condition(%GatingCondition{type: type} = gating_condition) do
-    @strategies
-    |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy -> strategy.can_access?(gating_condition) end)
+  defp condition_open(%GatingCondition{type: type} = gating_condition) do
+    ConditionTypes.types()
+    |> Enum.find(fn {_name, ct} -> ct.type() == type end)
+    |> then(fn {_name, ct} -> ct.open?(gating_condition) end)
   end
 
   @doc """
   Returns a list of reasons why one or more gating conditions blocked access
   """
-  def reasons(
+  def details(
         section,
         resource_id,
         format_datetime: format_datetime
       )
       when is_integer(resource_id),
-      do: reasons(section, Integer.to_string(resource_id), format_datetime: format_datetime)
+      do: details(section, Integer.to_string(resource_id), format_datetime: format_datetime)
 
-  def reasons(
+  def details(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id,
         format_datetime: format_datetime
@@ -263,21 +260,20 @@ defmodule Oli.Delivery.Gating do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
       |> Enum.reduce([], fn gc, acc ->
-        [reason(gc, format_datetime: format_datetime) | acc]
+        [details(gc, format_datetime: format_datetime) | acc]
       end)
-      |> Enum.filter(fn access -> access != {:granted} end)
-      |> Enum.map(fn {:blocked, reason} -> reason end)
+      |> Enum.filter(fn reason -> reason != nil end)
     else
       []
     end
   end
 
   # Returns true if the gating conditions passes
-  defp reason(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
-    @strategies
-    |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy ->
-      strategy.access_details(gating_condition, format_datetime: format_datetime)
+  defp details(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
+    ConditionTypes.types()
+    |> Enum.find(fn {_name, ct} -> ct.type() == type end)
+    |> then(fn {_name, ct} ->
+      ct.details(gating_condition, format_datetime: format_datetime)
     end)
   end
 end

@@ -2,15 +2,10 @@ defmodule OliWeb.Sections.CreateGatingCondition do
   use Surface.LiveComponent
 
   alias Surface.Components.Form.DateTimeLocalInput
-
-  @condition_types [
-    {"Schedule", Oli.Delivery.Gating.Strategies.Schedule}
-  ]
+  alias Oli.Delivery.Gating.ConditionTypes
 
   prop gating_condition, :map, required: true
-
-  data condition_types, :list, default: @condition_types
-
+ 
   def render(%{gating_condition: gating_condition} = assigns) do
     ~F"""
     <div class="container">
@@ -28,7 +23,7 @@ defmodule OliWeb.Sections.CreateGatingCondition do
         <label for="conditionTypeSelect">Type</label>
         <select class="form-control" id="conditionTypeSelect" phx-hook="SelectListener" phx-value-change="select-condition">
           <option value="" selected disabled hidden>Choose a condition...</option>
-          {#for {name, c} <- @condition_types}
+          {#for {name, c} <- ConditionTypes.types()}
             <option value={c.type()}>{name}</option>
           {/for}
         </select>
