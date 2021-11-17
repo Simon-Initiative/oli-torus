@@ -22,7 +22,7 @@
           </p>
       <% end %>
 
-      <p>If you think this is an error or would like more information, please <a href="javascript:" onclick="showHelpModal();">contact OLI Support</a>.</p>
+      <p>If you think this is an error or would like more information, please <a href="javascript:" onclick="showHelpModal();">contact support</a>.</p>
 
     </div>
   </div>
