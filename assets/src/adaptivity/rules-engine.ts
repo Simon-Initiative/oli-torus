@@ -306,6 +306,8 @@ export const check = async (
   }
 
   let score = 0;
+  //below condition make sure the score calculation will happen only if the answer is correct and
+  //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
   if (isCorrect || scoringContext.negativeScoreAllowed) {
     if (scoringContext.trapStateScoreScheme) {
       // apply all the actions from the resultEvents that mutate the state
