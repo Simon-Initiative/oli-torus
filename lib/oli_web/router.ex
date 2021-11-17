@@ -270,12 +270,12 @@ defmodule OliWeb.Router do
     scope "/communities" do
       pipe_through [:community_admin]
 
-      live("/", CommunityLive.Index)
+      live("/", CommunityLive.IndexView)
 
       scope "/:community_id" do
         pipe_through [:authorize_community]
 
-        live("/", CommunityLive.Show)
+        live("/", CommunityLive.ShowView)
       end
     end
   end
@@ -722,7 +722,7 @@ defmodule OliWeb.Router do
       end
     end
 
-    live("/communities/new", CommunityLive.New)
+    live("/communities/new", CommunityLive.NewView)
 
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)

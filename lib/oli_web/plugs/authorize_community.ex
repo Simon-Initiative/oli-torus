@@ -18,7 +18,7 @@ defmodule Oli.Plugs.AuthorizeCommunity do
           conn
           |> Phoenix.Controller.put_flash(:info, "You are not an admin of this Community")
           |> Phoenix.Controller.redirect(
-            to: Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Index)
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)
           )
           |> Plug.Conn.halt()
 

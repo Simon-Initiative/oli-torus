@@ -1,4 +1,4 @@
-defmodule OliWeb.CommunityLive.FormComponent do
+defmodule OliWeb.CommunityLive.Form do
   use Surface.Component
 
   alias Surface.Components.Form

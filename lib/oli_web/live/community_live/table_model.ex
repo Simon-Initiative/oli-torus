@@ -41,7 +41,7 @@ defmodule OliWeb.CommunityLive.TableModel do
   end
 
   def render_overview_button(assigns, %Community{id: id, status: status}, _) do
-    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Show, id)
+    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, id)
 
     SortableTableModel.render_link_column(
       assigns,

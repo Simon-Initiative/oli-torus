@@ -1,4 +1,4 @@
-defmodule OliWeb.CommunityLive.AccountInvitationComponent do
+defmodule OliWeb.CommunityLive.AccountInvitation do
   use Surface.Component
 
   alias Surface.Components.Form

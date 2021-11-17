@@ -1,15 +1,15 @@
-defmodule OliWeb.CommunityLive.Show do
+defmodule OliWeb.CommunityLive.ShowView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
   alias Oli.Groups
-  alias OliWeb.Common.{Breadcrumb, DeleteModalComponent}
+  alias OliWeb.Common.{Breadcrumb, DeleteModal}
 
   alias OliWeb.CommunityLive.{
-    FormComponent,
-    Index,
-    AccountInvitationComponent,
-    ShowSectionComponent
+    Form,
+    IndexView,
+    AccountInvitation,
+    ShowSection
   }
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -27,7 +27,7 @@ defmodule OliWeb.CommunityLive.Show do
   """
 
   def breadcrumb(community_id) do
-    Index.breadcrumb() ++
+    IndexView.breadcrumb() ++
       [
         Breadcrumb.new(%{
           full_title: "Overview",
@@ -42,7 +42,7 @@ defmodule OliWeb.CommunityLive.Show do
         nil ->
           socket
           |> put_flash(:info, "That community does not exist or it was deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, Index))
+          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         community ->
           changeset = Groups.change_community(community)
@@ -63,28 +63,28 @@ defmodule OliWeb.CommunityLive.Show do
     ~F"""
       {render_modal(assigns)}
       <div id="community-overview" class="overview container">
-        <ShowSectionComponent section_title="Details" section_description="Main community fields that will be shown to system admins and community admins.">
-          <FormComponent changeset={@changeset} save="save"/>
-        </ShowSectionComponent>
+        <ShowSection section_title="Details" section_description="Main community fields that will be shown to system admins and community admins.">
+          <Form changeset={@changeset} save="save"/>
+        </ShowSection>
 
-        <ShowSectionComponent
+        <ShowSection
           section_title="Community Admins"
           section_description="Add other authors by email to administrate the community."
         >
-          <AccountInvitationComponent
+          <AccountInvitation
             invite="add_collaborator"
             remove="remove_collaborator"
             placeholder="admin@example.edu"
             button_text="Add"
             collaborators={@community_admins}/>
-        </ShowSectionComponent>
+        </ShowSection>
 
-        <ShowSectionComponent section_title="Actions">
+        <ShowSection section_title="Actions">
           <div class="d-flex align-items-center">
             <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
             <span>Permanently delete this community.</span>
           </div>
-        </ShowSectionComponent>
+        </ShowSection>
       </div>
     """
   end
@@ -115,7 +115,7 @@ defmodule OliWeb.CommunityLive.Show do
         {:ok, _community} ->
           socket
           |> put_flash(:info, "Community successfully deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, Index))
+          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         {:error, %Ecto.Changeset{}} ->
           put_flash(
@@ -145,7 +145,7 @@ defmodule OliWeb.CommunityLive.Show do
 
   def handle_event("show_delete_modal", _, socket) do
     modal = %{
-      component: DeleteModalComponent,
+      component: DeleteModal,
       assigns: %{
         id: "delete_community_modal",
         description: @delete_modal_description,

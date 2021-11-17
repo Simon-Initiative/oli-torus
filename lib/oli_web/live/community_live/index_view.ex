@@ -1,11 +1,11 @@
-defmodule OliWeb.CommunityLive.Index do
+defmodule OliWeb.CommunityLive.IndexView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Accounts
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
-  alias OliWeb.CommunityLive.{New, TableModel}
+  alias OliWeb.CommunityLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Field, Label}
@@ -89,7 +89,7 @@ defmodule OliWeb.CommunityLive.Index do
           query={@query}/>
 
         {#if @is_system_admin}
-          <Link class="btn btn-primary" to={Routes.live_path(@socket, New)}>
+          <Link class="btn btn-primary" to={Routes.live_path(@socket, NewView)}>
             Create Community
           </Link>
         {/if}

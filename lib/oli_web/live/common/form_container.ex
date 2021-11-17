@@ -1,4 +1,4 @@
-defmodule OliWeb.Common.FormContainerComponent do
+defmodule OliWeb.Common.FormContainer do
   use Surface.Component
 
   prop title, :string, required: true

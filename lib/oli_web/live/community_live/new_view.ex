@@ -1,10 +1,10 @@
-defmodule OliWeb.CommunityLive.New do
+defmodule OliWeb.CommunityLive.NewView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Groups
   alias Oli.Groups.Community
-  alias OliWeb.Common.{Breadcrumb, FormContainerComponent}
-  alias OliWeb.CommunityLive.{FormComponent, Index}
+  alias OliWeb.Common.{Breadcrumb, FormContainer}
+  alias OliWeb.CommunityLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
 
   data(title, :string, default: "New Community")
@@ -12,7 +12,7 @@ defmodule OliWeb.CommunityLive.New do
   data(breadcrumbs, :list)
 
   def breadcrumb() do
-    Index.breadcrumb() ++
+    IndexView.breadcrumb() ++
       [
         Breadcrumb.new(%{
           full_title: "New",
@@ -30,9 +30,9 @@ defmodule OliWeb.CommunityLive.New do
 
   def render(assigns) do
     ~F"""
-      <FormContainerComponent title={@title}>
-        <FormComponent changeset={@community} save="save" display_labels={false}/>
-      </FormContainerComponent>
+      <FormContainer title={@title}>
+        <Form changeset={@community} save="save" display_labels={false}/>
+      </FormContainer>
     """
   end
 

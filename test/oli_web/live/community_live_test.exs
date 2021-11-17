@@ -8,12 +8,12 @@ defmodule OliWeb.CommunityLiveTest do
   alias Oli.Groups
   alias Oli.Groups.Community
 
-  @live_view_index_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Index)
-  @live_view_new_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.New)
+  @live_view_index_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView)
+  @live_view_new_route Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.NewView)
   @form_fields [:name, :description, :key_contact, :global_access]
 
   defp live_view_show_route(community_id) do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Show, community_id)
+    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community_id)
   end
 
   defp create_community(_conn) do

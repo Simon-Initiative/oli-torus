@@ -1,4 +1,4 @@
-defmodule OliWeb.Common.DeleteModalComponent do
+defmodule OliWeb.Common.DeleteModal do
   use Surface.Component
 
   alias Surface.Components.Form
