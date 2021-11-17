@@ -338,6 +338,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
     const payload = { ...clone(results), snapshot };
     setCheckInProgress(false);
+    if (!ref.current) {
+      return;
+    }
     ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
   };
 
