@@ -623,6 +623,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     live("/:section_slug/edit", Sections.EditView)
+    live("/:section_slug/gating", Sections.GatingAndScheduling)
   end
 
   scope "/sections", OliWeb do

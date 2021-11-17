@@ -4,9 +4,9 @@
       <p><i class="la la-times-circle-o" aria-hidden="true" style="font-size: 64px"></i></p>
       <h2 class="mt-4 mb-4">Access to this resource is blocked</h2>
       <p>
-        You are trying to access a resource that is blocked for the following reasons:
+        You are trying to access a resource that is blocked for the following reason<%= if Enum.count(@reasons) > 1, do: "s", else: "" %>:
 
-        <ul>
+        <ul style="list-style-position: inside">
           <%= for reason <- @reasons do %>
             <li><%= reason %></li>
           <% end %>

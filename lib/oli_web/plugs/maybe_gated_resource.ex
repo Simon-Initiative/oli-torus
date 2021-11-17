@@ -46,9 +46,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
   defp format_datetime_fn(conn) do
     fn datetime ->
-      conn
-      |> local_datetime(datetime)
-      |> format_datetime()
+      dt(datetime, conn)
     end
   end
 end

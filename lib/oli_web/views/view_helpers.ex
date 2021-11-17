@@ -65,29 +65,89 @@ defmodule OliWeb.ViewHelpers do
   end
 
   @doc """
+  Converts a datetime to a specific timezone based on a user's session or specified timezone
+  and returns a formatted string.
+
+  This session timezone information is set and updated on the timezone api call every time a
+  page is loaded.
+
+  ## Examples
+      iex> dt(datetime, conn)
+      "December 31, 2021 at 11:59:59 PM"
+
+      iex> dt(datetime, "America/New_York")
+      "December 31, 2021 at 11:59:59 PM"
+
+      iex> dt(datetime, nil)
+      "January 1, 2022 at 4:59:59 AM UTC"
+
+      iex> dt(datetime)
+      "January 1, 2022 at 4:59:59 AM UTC"
+  """
+  def dt(datetime, conn_or_local_tz \\ nil) do
+    datetime
+    |> local_datetime(conn_or_local_tz)
+    |> format_datetime()
+  end
+
+  @doc """
   Converts a datetime to a specific timezone based on a user's session. This
   session timezone information is set and updated on the timezone api call every
   time a page is loaded.
   """
-  def local_datetime(conn, %DateTime{} = datetime) do
-    case Plug.Conn.get_session(conn, "local_tz") do
-      nil ->
-        datetime
+  def local_datetime(%DateTime{} = datetime, %Plug.Conn{} = conn) do
+    local_datetime(datetime, Plug.Conn.get_session(conn, "local_tz"))
+  end
 
-      local_tz ->
-        Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))
+  def local_datetime(%DateTime{} = datetime, nil), do: datetime
+
+  def local_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
+    # ensure local_tz is a valid timezone
+    if Enum.find(Oli.Predefined.timezones(), fn {_d, tz} -> local_tz == tz end) do
+      Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))
+    else
+      datetime
     end
   end
 
-  def format_datetime(%DateTime{time_zone: time_zone} = datetime) do
+  @doc """
+  Formats a datetime by converting it to a string. If the timezone attached is UTC, then
+  it is assumed this datetime has not been localized and the timezone is included.
+
+  Precision of the datetime can be set to :date, :minutes, or :seconds (default)
+
+  ## Examples
+      iex> dt(datetime)
+      "December 31, 2021 at 11:59:59 PM"
+
+      iex> dt(datetime_utc)
+      "December 31, 2021 at 11:59:59 PM UTC"
+
+      iex> dt(datetime, :date)
+      "December 31, 2021"
+
+      iex> dt(datetime, :minutes)
+      "December 31, 2021 at 11:59 PM"
+
+  """
+  def format_datetime(%DateTime{time_zone: time_zone} = datetime, precision \\ :seconds) do
     # show the timezone if the datetime hasnt been converted to a local timezone
-    maybe_show_timezone =
+    maybe_timezone =
       if time_zone == Timex.Timezone.get(:utc, Timex.now()) do
         " {Zabbr}"
       else
         ""
       end
 
-    Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m}:{s} {AM}#{maybe_show_timezone}")
+    case precision do
+      :date ->
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY}#{maybe_timezone}")
+
+      :minutes ->
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM}#{maybe_timezone}")
+
+      :seconds ->
+        Timex.format!(datetime, "{Mfull} {D}, {YYYY} at {h12}:{m}:{s} {AM}#{maybe_timezone}")
+    end
   end
 end

@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     :schedule
   end
 
-  def check(%GatingCondition{
+  def can_access?(%GatingCondition{
         data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
       }) do
     now = DateTime.utc_now()
@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     end
   end
 
-  def reason(
+  def access_details(
         %GatingCondition{
           section_id: section_id,
           resource_id: resource_id,
@@ -50,20 +50,38 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
     now = DateTime.utc_now()
 
-    format_datetime =
-      Keyword.get(opts, :format_datetime, fn dt ->
-        Timex.format!(dt, "{M}/{D}/{YYYY} at {h12}:{m}:{s} {AM}")
-      end)
+    format_datetime = Keyword.get(opts, :format_datetime, &format_datetime_default/1)
 
-    cond do
-      start_datetime != nil && DateTime.compare(start_datetime, now) != :lt ->
-        "#{revision.title} is not available before #{format_datetime.(start_datetime)}"
+    case {start_datetime, end_datetime} do
+      {nil, nil} ->
+        {:granted}
 
-      end_datetime != nil && DateTime.compare(now, end_datetime) != :lt ->
-        "#{revision.title} is not available after #{format_datetime.(end_datetime)}"
+      {start_datetime, nil} ->
+        if DateTime.compare(start_datetime, now) == :lt do
+          {:granted}
+        else
+          {:blocked,
+           "#{revision.title} is not scheduled to start until #{format_datetime.(start_datetime)}"}
+        end
 
-      true ->
-        "An error occurred. Please try again."
+      {nil, end_datetime} ->
+        if DateTime.compare(now, end_datetime) == :lt do
+          {:granted}
+        else
+          {:blocked,
+           "#{revision.title} was scheduled to end at #{format_datetime.(end_datetime)}"}
+        end
+
+      {start_datetime, end_datetime} ->
+        if DateTime.compare(start_datetime, now) == :lt and
+             DateTime.compare(now, end_datetime) == :lt do
+          {:granted}
+        else
+        end
     end
+  end
+
+  defp format_datetime_default(%DateTime{} = dt) do
+    Timex.format!(dt, "{M}/{D}/{YYYY} {h12}:{m}:{s} {AM} {Zabbr}")
   end
 end

@@ -4,17 +4,73 @@ defmodule Oli.Delivery.Gating do
   """
 
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
+  alias Oli.Accounts.User
 
   @strategies [
     Oli.Delivery.Gating.Strategies.Schedule
   ]
+
+  def browse_gating_conditions(
+        %Section{id: section_id, slug: section_slug},
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        text_search \\ nil
+      ) do
+    filter_by_text =
+      if text_search == "" or is_nil(text_search) do
+        true
+      else
+        dynamic(
+          [_, s],
+          ilike(s.name, ^"%#{text_search}%") or
+            ilike(s.email, ^"%#{text_search}%") or
+            ilike(s.given_name, ^"%#{text_search}%") or
+            ilike(s.family_name, ^"%#{text_search}%") or
+            ilike(s.name, ^"#{text_search}") or
+            ilike(s.email, ^"#{text_search}") or
+            ilike(s.given_name, ^"#{text_search}") or
+            ilike(s.family_name, ^"#{text_search}")
+        )
+      end
+
+    query =
+      GatingCondition
+      |> join(:left, [gc], u in User, on: u.id == gc.user_id)
+      |> join(
+        :inner,
+        [gc, _],
+        rev in subquery(
+          from([pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+            select: rev
+          )
+        ),
+        on: rev.resource_id == gc.resource_id
+      )
+      |> where(^filter_by_text)
+      |> where([gc, _], gc.section_id == ^section_id)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([gc, _, rev], %{
+        total_count: fragment("count(*) OVER()"),
+        revision: rev
+      })
+
+    query =
+      case field do
+        :title -> order_by(query, [e, _, rev], {^direction, rev.title})
+        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @doc """
   Returns the list of gating_conditions for a section
@@ -184,7 +240,7 @@ defmodule Oli.Delivery.Gating do
   defp check_condition(%GatingCondition{type: type} = gating_condition) do
     @strategies
     |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy -> strategy.check(gating_condition) end)
+    |> then(fn strategy -> strategy.can_access?(gating_condition) end)
   end
 
   @doc """
@@ -209,6 +265,8 @@ defmodule Oli.Delivery.Gating do
       |> Enum.reduce([], fn gc, acc ->
         [reason(gc, format_datetime: format_datetime) | acc]
       end)
+      |> Enum.filter(fn access -> access != {:granted} end)
+      |> Enum.map(fn {:blocked, reason} -> reason end)
     else
       []
     end
@@ -218,6 +276,8 @@ defmodule Oli.Delivery.Gating do
   defp reason(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
     @strategies
     |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy -> strategy.reason(gating_condition, format_datetime: format_datetime) end)
+    |> then(fn strategy ->
+      strategy.access_details(gating_condition, format_datetime: format_datetime)
+    end)
   end
 end
