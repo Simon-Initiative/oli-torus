@@ -43,6 +43,7 @@ defmodule Oli.Accounts.Author do
 
     field :collaborations_count, :integer, virtual: true
     field :total_count, :integer, virtual: true
+    field :community_admin_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end

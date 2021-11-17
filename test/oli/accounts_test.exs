@@ -124,6 +124,22 @@ defmodule Oli.AccountsTest do
                :all
              )
     end
+
+    test "get_author_with_community_admin_count/1 returns the author with the community_admin_count as zero" do
+      author = insert(:author)
+
+      assert %Author{community_admin_count: 0} =
+               Accounts.get_author_with_community_admin_count(author.id)
+    end
+
+    test "get_author_with_community_admin_count/1 returns the author with the community_admin_count field populated" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{author: community_account.author})
+      insert(:community_account, %{author: community_account.author, is_admin: false})
+
+      assert %Author{community_admin_count: 2} =
+               Accounts.get_author_with_community_admin_count(community_account.author_id)
+    end
   end
 
   describe "communities accounts" do

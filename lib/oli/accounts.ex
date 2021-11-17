@@ -372,6 +372,32 @@ defmodule Oli.Accounts do
   def get_author!(id), do: Repo.get!(Author, id)
 
   @doc """
+  Gets a single author with the count of communities for which the author is an admin.
+
+  ## Examples
+      iex> get_author_with_community_admin_count(1)
+      %Author{community_admin_count: 1}
+
+      iex> get_author_with_community_admin_count(456)
+      nil
+
+  """
+  def get_author_with_community_admin_count(id) do
+    from(
+      author in Author,
+      left_join: community_account in CommunityAccount,
+      on: community_account.author_id == author.id and community_account.is_admin == true,
+      where: author.id == ^id,
+      group_by: author.id,
+      select: author,
+      select_merge: %{
+        community_admin_count: count(community_account)
+      }
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a single author with the given email
   """
   def get_author_by_email(email) do
