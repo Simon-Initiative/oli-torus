@@ -36,6 +36,7 @@ import { debounce } from 'lodash';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
+import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -362,7 +363,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateFacts = useSelector(selectInitStateFacts);
-
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
     const payloadData = {} as any;
     stateFacts.map((fact: string) => {
@@ -387,7 +388,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     updateGlobalState(snapshot, initStateFacts);
 
     const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
-      acc[key] = snapshot[key];
+      let target = key;
+      if (target.indexOf('stage') === 0) {
+        const lstVar = target.split('.');
+        if (lstVar?.length > 1) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
+        }
+      }
+      acc[key] = snapshot[target];
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
