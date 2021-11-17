@@ -17,6 +17,46 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
       assert %{"content" => %{"stem" => "1"}} = json_response(conn, 200)
     end
+
+    test "retrieves the published activity in preview mode", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id,
+      instructor: instructor
+    } do
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          instructor,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      conn =
+        get(
+          conn,
+          Routes.activity_path(conn, :retrieve_delivery, section.slug, activity_id,
+            mode: "preview"
+          )
+        )
+
+      assert %{"content" => %{"authoring" => _, "stem" => "1"}} = json_response(conn, 200)
+    end
+
+    test "fails to retrieve the published activity in preview mode for a student", %{
+      conn: conn,
+      section: section,
+      activity_id: activity_id
+    } do
+      conn =
+        get(
+          conn,
+          Routes.activity_path(conn, :retrieve_delivery, section.slug, activity_id,
+            mode: "preview"
+          )
+        )
+
+      assert response(conn, 403)
+    end
   end
 
   describe "bulk get resource for delivery" do
@@ -33,6 +73,51 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
       assert %{"results" => results} = json_response(conn, 200)
       assert length(results) == 2
+    end
+
+    test "retrieves the published pages in preview mode", %{
+      conn: conn,
+      section: section,
+      page_revision1: rev1,
+      page_revision2: rev2,
+      instructor: instructor
+    } do
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          instructor,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      conn =
+        post(
+          conn,
+          Routes.activity_path(conn, :bulk_retrieve_delivery, section.slug, mode: "preview"),
+          %{
+            "resourceIds" => [rev1.resource_id, rev2.resource_id]
+          }
+        )
+
+      assert %{"results" => results} = json_response(conn, 200)
+      assert length(results) == 2
+    end
+
+    test "fails to retrieve the published pages in preview mode for a student", %{
+      conn: conn,
+      section: section,
+      page_revision1: rev1,
+      page_revision2: rev2
+    } do
+      conn =
+        post(
+          conn,
+          Routes.activity_path(conn, :bulk_retrieve_delivery, section.slug, mode: "preview"),
+          %{
+            "resourceIds" => [rev1.resource_id, rev2.resource_id]
+          }
+        )
+
+      assert response(conn, 403)
     end
   end
 
@@ -58,6 +143,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
   defp setup_session(%{conn: conn}) do
     user = user_fixture()
+    instructor = user_fixture()
 
     content = %{
       "stem" => "1",
@@ -111,9 +197,14 @@ defmodule OliWeb.DeliveryRetrieveTest do
       |> Seeder.create_section_resources()
 
     Oli.Accounts.update_user(user, %{"sub" => "a73d59affc5b2c4cd493"})
+    Oli.Accounts.update_user(user, %{"sub" => "a73d59affc5b2c4cd494"})
 
     Oli.Delivery.Sections.enroll(user.id, map.section.id, [
       ContextRoles.get_role(:context_learner)
+    ])
+
+    Oli.Delivery.Sections.enroll(instructor.id, map.section.id, [
+      ContextRoles.get_role(:context_instructor)
     ])
 
     lti_params =
@@ -132,6 +223,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok,
+     instructor: instructor,
      conn: conn,
      map: map,
      activity_id: Map.get(map, :activity).resource.id,
