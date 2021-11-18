@@ -32,6 +32,7 @@ import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
 import { parseArray, parseNumString } from 'utils/common';
+import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   // migrated legacy include as customCss
@@ -395,8 +396,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   };
 
   const handleActivityRequestLatestState = useCallback(async () => {
-    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-    return { snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
+    const {
+      payload: { snapshot },
+    } = sResult as any;
+    return {
+      snapshot,
+    };
   }, [currentActivityTree]);
 
   const renderActivities = useCallback(() => {

@@ -62,11 +62,6 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: currentSequenceId,
     };
-    const visitOperation: ApplyStateOperation = {
-      target: `session.visits.${currentSequenceId}`,
-      operator: '+',
-      value: 1,
-    };
     const timeOnQuestion: ApplyStateOperation = {
       target: 'session.timeOnQuestion',
       operator: '=',
@@ -106,7 +101,6 @@ export const initializeActivity = createAsyncThunk(
 
     const sessionOps = [
       resumeTarget,
-      visitOperation,
       timeStartOp,
       timeOnQuestion,
       timeExceededOp,
