@@ -282,7 +282,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case section
+        case section.line_items_service_url
              |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
           {:ok, line_item} ->
             fetch_students(access_token, section)
@@ -310,6 +310,14 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
+  @spec handle_info(
+          :pop_task_queue,
+          atom
+          | %{
+              :assigns => atom | %{:task_queue => [...], optional(any) => any},
+              optional(any) => any
+            }
+        ) :: {:noreply, any}
   def handle_info(:pop_task_queue, socket) do
     # take the first item off the queue
     [task | task_queue] = socket.assigns.task_queue
