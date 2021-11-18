@@ -97,7 +97,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      %{errors: errors, revisions: activity_revisions} =
+      %Result{errors: errors, revisions: activity_revisions} =
         ActivityProvider.provide(
           page.revision,
           source,

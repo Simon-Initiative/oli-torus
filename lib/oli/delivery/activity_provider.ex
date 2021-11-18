@@ -3,7 +3,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
   alias Oli.Resources.Revision
-  alias Oli.Delivery.ActivityProvider.Result
+  alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
 
   @doc """
   Realizes and resolves activities in a page.
@@ -58,7 +58,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
-    %Result{
+    %ProviderResult{
       errors: [],
       revisions: revisions,
       transformed_content: content,
@@ -76,7 +76,7 @@ defmodule Oli.Delivery.ActivityProvider do
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
-    %Result{
+    %ProviderResult{
       errors: errors,
       revisions: only_revisions,
       transformed_content: Map.put(content, "model", Enum.reverse(model)),
