@@ -15,19 +15,12 @@ defmodule OliWeb.Grades.GradesLive do
 
   def mount(
         _params,
-        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = session,
+        %{"section_slug" => section_slug} = session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
 
-    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
-
-    if is_admin_author?(session) or
-         ContextRoles.has_role?(
-           current_user,
-           section.slug,
-           ContextRoles.get_role(:context_instructor)
-         ) do
+    if is_admin_author?(session) or is_instructor?(session, section) do
       do_mount(section, socket)
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
@@ -71,6 +64,22 @@ defmodule OliWeb.Grades.GradesLive do
           nil -> false
           author -> Accounts.is_admin?(author)
         end
+    end
+  end
+
+  defp is_instructor?(session, section) do
+    case session["current_user_id"] do
+      nil ->
+        false
+
+      id ->
+        user = Accounts.get_user!(id) |> Repo.preload([:platform_roles, :author])
+
+        ContextRoles.has_role?(
+          user,
+          section.slug,
+          ContextRoles.get_role(:context_instructor)
+        )
     end
   end
 
