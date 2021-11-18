@@ -22,6 +22,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   data breadcrumbs, :list
   data modal, :any, default: nil
   data community_admins, :list
+  data community_members, :list
 
   @delete_modal_description """
     This action will not affect existing course sections that are using this community.
@@ -49,13 +50,15 @@ defmodule OliWeb.CommunityLive.ShowView do
         community ->
           changeset = Groups.change_community(community)
           community_admins = Groups.list_community_admins(community_id)
+          community_members = Groups.list_community_members(community_id)
 
           assign(socket,
             community: community,
             changeset: changeset,
             breadcrumbs: breadcrumb(community_id),
             community_admins: community_admins,
-            community_id: community_id
+            community_id: community_id,
+            community_members: community_members
           )
       end
 
@@ -75,11 +78,23 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add other authors by email to administrate the community."
         >
           <AccountInvitation
-            invite="add_collaborator"
-            remove="remove_collaborator"
+            invite="add_admin"
+            remove="remove_admin"
             placeholder="admin@example.edu"
             button_text="Add"
             collaborators={@community_admins}/>
+        </ShowSection>
+
+        <ShowSection
+          section_title="Community Members"
+          section_description="Add users by email to be members of the community."
+        >
+          <AccountInvitation
+            invite="add_member"
+            remove="remove_member"
+            placeholder="user@example.edu"
+            button_text="Add"
+            collaborators={@community_members}/>
         </ShowSection>
 
         <ShowSection
@@ -172,20 +187,30 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, assign(socket, modal: modal)}
   end
 
-  def handle_event("add_collaborator", %{"collaborator" => %{"email" => email}}, socket) do
+  defp community_users_assigns("admin", community_id) do
+    [community_admins: Groups.list_community_admins(community_id)]
+  end
+
+  defp community_users_assigns("member", community_id) do
+    [community_members: Groups.list_community_members(community_id)]
+  end
+
+  defp community_users_assigns(_user_type, _community_id), do: []
+
+  def handle_event("add_" <> user_type, %{"collaborator" => %{"email" => email}}, socket) do
     socket = clear_flash(socket)
 
     attrs = %{
       community_id: socket.assigns.community.id,
-      is_admin: true
+      is_admin: user_type == "admin"
     }
 
-    case Groups.create_community_account_from_author_email(email, attrs) do
+    case Groups.create_community_account_from_email(user_type, email, attrs) do
       {:ok, _community_account} ->
-        socket = put_flash(socket, :info, "Admin successfully added.")
-        community_admins = Groups.list_community_admins(attrs.community_id)
+        socket = put_flash(socket, :info, "Community #{user_type} successfully added.")
+        updated_assigns = community_users_assigns(user_type, attrs.community_id)
 
-        {:noreply, assign(socket, community_admins: community_admins)}
+        {:noreply, assign(socket, updated_assigns)}
 
       {:error, error} ->
         message =
@@ -193,31 +218,39 @@ defmodule OliWeb.CommunityLive.ShowView do
             :author_not_found ->
               "Community admin couldn't be added. Author does not exist."
 
+            :user_not_found ->
+              "Community member couldn't be added. User does not exist."
+
             %Ecto.Changeset{} ->
-              "Community admin couldn't be added. Author is already an admin or an unexpected error occurred."
+              "Community user couldn't be added. It is already associated to the community or an unexpected error occurred."
           end
 
         {:noreply, put_flash(socket, :error, message)}
     end
   end
 
-  def handle_event("remove_collaborator", %{"collaborator-id" => admin_id}, socket) do
+  def handle_event("remove_" <> user_type, %{"collaborator-id" => user_id}, socket) do
     socket = clear_flash(socket)
 
     attrs = %{
-      community_id: socket.assigns.community.id,
-      author_id: admin_id
+      community_id: socket.assigns.community.id
     }
 
-    case Groups.delete_community_account(attrs) do
+    case user_type do
+      "admin" -> %{author_id: user_id}
+      "member" -> %{user_id: user_id}
+    end
+    |> Map.merge(attrs)
+    |> Groups.delete_community_account()
+    |> case do
       {:ok, _community_account} ->
-        socket = put_flash(socket, :info, "Admin successfully removed.")
-        community_admins = Groups.list_community_admins(attrs.community_id)
+        socket = put_flash(socket, :info, "Community #{user_type} successfully removed.")
+        updated_assigns = community_users_assigns(user_type, attrs.community_id)
 
-        {:noreply, assign(socket, community_admins: community_admins)}
+        {:noreply, assign(socket, updated_assigns)}
 
       {:error, _error} ->
-        {:noreply, put_flash(socket, :error, "Community admin couldn't be removed.")}
+        {:noreply, put_flash(socket, :error, "Community #{user_type} couldn't be removed.")}
     end
   end
 end
