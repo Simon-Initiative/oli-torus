@@ -310,14 +310,6 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
-  @spec handle_info(
-          :pop_task_queue,
-          atom
-          | %{
-              :assigns => atom | %{:task_queue => [...], optional(any) => any},
-              optional(any) => any
-            }
-        ) :: {:noreply, any}
   def handle_info(:pop_task_queue, socket) do
     # take the first item off the queue
     [task | task_queue] = socket.assigns.task_queue
