@@ -261,7 +261,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
             : {
                 type: 'button',
               })}
-          className={`info-icon`}
+          className={`info-icon${customCssClass ? ' ' + customCssClass : ''}`}
           aria-controls={id}
           aria-haspopup="true"
           aria-label={description}
