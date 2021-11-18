@@ -625,8 +625,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (shouldSave) {
       saveState({
         numberOfSelectedChoices: newCount,
-        selectedChoice: newSelectedChoices.slice(-1)[0] || 0,
-        selectedChoiceText: updatedChoicesText.slice(-1)[0] || '',
+        selectedChoice: newSelectedChoices.sort()[0] || 0,
+        selectedChoiceText: updatedChoicesText.sort()[0] || '',
         selectedChoices: newSelectedChoices,
         selectedChoicesText: updatedChoicesText,
       });
