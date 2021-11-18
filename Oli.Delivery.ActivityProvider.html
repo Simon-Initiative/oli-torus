@@ -10,7 +10,7 @@
     <title>Oli.Delivery.ActivityProvider — OLI Torus v0.14.6</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-090c8d1658.js"></script>
+    <script src="dist/sidebar_items-2cd823e055.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -143,7 +143,7 @@ Functions
     </a>
     <h1 class="signature">provide(revision, source, resolver)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L28" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/activity_provider.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -161,9 +161,9 @@ resource. A second type of reference is a selection from the activity bank (via 
 These are realized by fulfilling the selection (i.e. drawing the required number of activities randomly
 from the bank according to defined criteria).</p><p>Activity realization can change the content of the page revision. This is true currently only for
 selections.  The selection element from within the page must be replaced by static activity references
-(which later then drive rendering).</p><p>Returns a three element tuple, with the first element being a list of any errors encountered,
-the second being the revisions of all provided activities, and the third being the transformed
-content of the page revision.</p>
+(which later then drive rendering).</p><p>Returns a %Oli.Delivery.ActivityProvider.Result{}, which contains a list of any errors, the provided
+activity revisions, a MapSet of those revision resource ids that are to be unscored
+activities and the transformed page model.</p>
   </section>
 </section>
 

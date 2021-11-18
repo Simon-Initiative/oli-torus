@@ -106,6 +106,7 @@ Oli.Cldr.Rbnf.Spellout.html
 Oli.Cldr.html
 Oli.Consent.CookiesConsent.html
 Oli.Consent.html
+Oli.Delivery.ActivityProvider.Result.html
 Oli.Delivery.ActivityProvider.html
 Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.html
 Oli.Delivery.Attempts.ActivityLifecycle.Persistence.html
@@ -589,8 +590,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-7941b6f12b.js
-dist/sidebar_items-090c8d1658.js
+dist/search_items-f2f206cdba.js
+dist/sidebar_items-2cd823e055.js
 index.html
 license.html
 readme.html
