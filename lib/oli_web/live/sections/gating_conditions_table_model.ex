@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
+  alias Oli.Accounts.User
 
   def render(assigns) do
     ~F"""
@@ -16,7 +17,7 @@ defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
   def new(gating_condition_rows, section) do
     column_specs = [
       %ColumnSpec{
-        name: :name,
+        name: :title,
         label: "Resource",
         render_fn: &__MODULE__.render_resource_column/3
       },
@@ -29,6 +30,11 @@ defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
         name: :details,
         label: "Details",
         render_fn: &__MODULE__.render_details_column/3
+      },
+      %ColumnSpec{
+        name: :user,
+        label: "User",
+        render_fn: &__MODULE__.render_user_column/3
       }
     ]
 
@@ -86,6 +92,21 @@ defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
       </div>
       <div :if={end_datetime}>
         End: {dt(end_datetime, local_tz)}
+      </div>
+    """
+  end
+
+  def render_user_column(
+        assigns,
+        %GatingCondition{
+          user_id: user_id,
+          user: user
+        },
+        _
+      ) do
+    ~F"""
+      <div :if={user_id}>
+        {user.name}
       </div>
     """
   end

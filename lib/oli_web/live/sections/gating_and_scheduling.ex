@@ -2,8 +2,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
-  alias Oli.Repo.{Paging, Sorting}
+  import OliWeb.DelegatedEvents
+  import OliWeb.Common.Params
+
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.Table.SortableTableModel
   alias Surface.Components.{Link}
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
@@ -89,6 +93,36 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       [] -> 0
       [hd | _] -> hd.total_count
     end
+  end
+
+  def handle_params(params, _, socket) do
+    table_model =
+      SortableTableModel.update_from_params(
+        socket.assigns.table_model,
+        params
+      )
+
+    offset = get_int_param(params, "offset", 0)
+    text_search = get_str_param(params, "text_search", "")
+
+    rows =
+      Gating.browse_gating_conditions(
+        socket.assigns.section,
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        text_search
+      )
+
+    table_model = Map.put(table_model, :rows, rows)
+    total_count = determine_total(rows)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       text_search: text_search
+     )}
   end
 
   def render(assigns) do
@@ -255,5 +289,35 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     {:ok, _section} = Gating.update_resource_gating_index(section)
 
     {:noreply, soft_reload(socket)}
+  end
+
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([
+      &TextSearch.handle_delegated/4,
+      &PagedTable.handle_delegated/4
+    ])
+  end
+
+  def patch_with(socket, changes) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           __MODULE__,
+           socket.assigns.section.slug,
+           Map.merge(
+             %{
+               sort_by: socket.assigns.table_model.sort_by_spec.name,
+               sort_order: socket.assigns.table_model.sort_order,
+               offset: socket.assigns.offset,
+               text_search: socket.assigns.text_search
+             },
+             changes
+           )
+         ),
+       replace: true
+     )}
   end
 end

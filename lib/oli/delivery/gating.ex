@@ -26,15 +26,12 @@ defmodule Oli.Delivery.Gating do
         true
       else
         dynamic(
-          [_, s],
-          ilike(s.name, ^"%#{text_search}%") or
-            ilike(s.email, ^"%#{text_search}%") or
-            ilike(s.given_name, ^"%#{text_search}%") or
-            ilike(s.family_name, ^"%#{text_search}%") or
-            ilike(s.name, ^"#{text_search}") or
-            ilike(s.email, ^"#{text_search}") or
-            ilike(s.given_name, ^"#{text_search}") or
-            ilike(s.family_name, ^"#{text_search}")
+          [_gc, u, rev],
+          ilike(rev.title, ^"%#{text_search}%") or
+            ilike(u.name, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%") or
+            ilike(u.given_name, ^"%#{text_search}%") or
+            ilike(u.family_name, ^"%#{text_search}%")
         )
       end
 
@@ -62,8 +59,10 @@ defmodule Oli.Delivery.Gating do
 
     query =
       case field do
-        :title -> order_by(query, [e, _, rev], {^direction, rev.title})
-        _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
+        :title -> order_by(query, [_gc, _u, rev], {^direction, rev.title})
+        :user -> order_by(query, [gc_, u, _rev], {^direction, u.name})
+        :details -> query
+        _ -> order_by(query, [gc, _u, _rev], {^direction, field(gc, ^field)})
       end
 
     Repo.all(query)
