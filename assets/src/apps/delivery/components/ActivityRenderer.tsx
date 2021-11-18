@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
+import { defaultGlobalEnv, evalScript, getValue } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -36,6 +36,7 @@ import { debounce } from 'lodash';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
+import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -50,6 +51,7 @@ interface ActivityRendererProps {
   onActivitySubmitEvaluations?: any;
   onActivityReady?: any;
   onRequestLatestState?: any;
+  adaptivityDomain?: string; // currently 'stage' or 'app'
 }
 
 const defaultHandler = async () => {
@@ -80,19 +82,20 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivitySubmitEvaluations = defaultHandler,
   onActivityReady = defaultHandler,
   onRequestLatestState = async () => ({ snapshot: {} }),
+  adaptivityDomain = 'stage',
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = useSelector(selectUserId);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const objId = `${payload.key}`;
-    debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
+    await debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     // Read only the key from the simid
     const objId = `${payload.key}`;
-    const data = debouncedReadData({ isPreviewMode, payload, objId });
+    const data = await debouncedReadData({ isPreviewMode, payload, objId });
     return data;
   };
 
@@ -234,7 +237,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const activityScriptEnv = new Environment(defaultGlobalEnv);
     /* evalScript(`let global.screenId = "${activity.id}"`, activityScriptEnv); */
     // BS: TODO make compatible with *any* activity
-    return { ...results, ...result, env: activityScriptEnv };
+    return { ...results, ...result, env: activityScriptEnv, domain: adaptivityDomain };
   };
 
   const onResize = async (attemptGuid: string) => {
@@ -276,7 +279,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       );
 
       if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
-        /* console.log('EVENT FOR ME', { e, activity, attempt }); */
+        /* console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt }); */
         isForMe = true;
       }
       const handler = bridgeEvents[e.type];
@@ -335,6 +338,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
     const payload = { ...clone(results), snapshot };
     setCheckInProgress(false);
+    if (!ref.current) {
+      return;
+    }
     ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
   };
 
@@ -360,7 +366,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateFacts = useSelector(selectInitStateFacts);
-
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
     const payloadData = {} as any;
     stateFacts.map((fact: string) => {
@@ -385,7 +391,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     updateGlobalState(snapshot, initStateFacts);
 
     const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
-      acc[key] = snapshot[key];
+      let target = key;
+      if (target.indexOf('stage') === 0) {
+        const lstVar = target.split('.');
+        if (lstVar?.length > 1) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
+        }
+      }
+      acc[key] = snapshot[target];
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
@@ -393,6 +409,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot,
+      domain: adaptivityDomain,
     });
   };
 
@@ -417,7 +434,33 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     notifyStateMutation();
   }, [mutationTriggered]);
+  const handleStateChangeEvents = async (changes: any) => {
+    if (!ref.current) {
+      return;
+    }
+    const currentStateSnapshot: any = {};
+    if (changes?.changed?.length > 1) {
+      changes.changed.forEach((element: string, index: number) => {
+        if (index > 0) {
+          const variable = element.split(`${currentActivityId}|`);
+          const variableName = variable?.length > 1 ? variable[1] : element;
+          currentStateSnapshot[variableName] = getValue(element, defaultGlobalEnv);
+        }
+      });
 
+      if (Object.keys(currentStateSnapshot).length > 0) {
+        ref.current.notify(NotificationType.STATE_CHANGED, {
+          mutateChanges: currentStateSnapshot,
+        });
+      }
+    }
+  };
+  useEffect(() => {
+    defaultGlobalEnv.addListener('change', handleStateChangeEvents);
+    return () => {
+      defaultGlobalEnv.removeListener('change', handleStateChangeEvents);
+    };
+  }, [activity.id]);
   const elementProps = {
     ref,
     graded: false,

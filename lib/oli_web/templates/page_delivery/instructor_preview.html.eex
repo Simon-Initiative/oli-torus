@@ -1,0 +1,11 @@
+<h1 class="title"><%= @title %> (Preview)</h1>
+
+<script>
+window.userToken = "<%= assigns[:user_token] %>";
+</script>
+
+<%= render "_objectives.html", objectives: @objectives %>
+
+<div>
+  <%= raw(@html) %>
+</div>

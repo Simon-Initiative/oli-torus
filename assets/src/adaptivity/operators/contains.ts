@@ -13,6 +13,10 @@ const handleContainsOperator = (
 
   if (isString(factValue)) {
     if (!isString(value)) {
+      // use case: factValue = 'abc' and value = ['abc',' abc']
+      if (Array.isArray(value)) {
+        return value.some((item: any) => item.trim() === factValue.trim());
+      }
       return false;
     }
     // TODO there are inconsistencies between the what the sim puts out Wan-C wan-C
@@ -21,13 +25,7 @@ const handleContainsOperator = (
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
     value = parseArray(value);
-    return (
-      value
-        // We are parseNumString for the cases where factValue contains numbers but the values contain strings
-        .map((item: string) => parseNumString(item))
-        // check if value is found in factValue array
-        .some((item: any) => factValue.includes(item))
-    );
+    return value.some((item: any) => factValue.includes(item.trim()));
   }
 
   if (Array.isArray(factValue) && Array.isArray(value)) {
@@ -59,15 +57,8 @@ const handleContainsOperator = (
   } else if (Array.isArray(factValue) && value) {
     // We are parseArrayString for the cases where factValue contains strings but the values contain strings
     const updatedFacts = parseArray(factValue);
-    // split value into array
-    return (
-      value
-        .split(',')
-        // We are parseNumString for the cases where factValue contains numbers but the values contain strings
-        .map((item: string) => parseNumString(item))
-        // check if value is found in factValue array
-        .some((item: any) => updatedFacts.includes(item))
-    );
+    const updatedValue = parseArray(value);
+    return updatedValue.some((item: any) => updatedFacts.includes(item));
   }
 
   return false;

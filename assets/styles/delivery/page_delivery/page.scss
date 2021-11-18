@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@import 'delivery/variables';
 
 h1.title {
   font-weight: 300;
@@ -43,6 +43,42 @@ h1.title {
   width: 100%;
   flex: 1;
   margin-top: 20px;
+}
+
+.selection {
+  border-top: 1px solid $gray-400;
+  border-bottom: 1px solid $gray-400;
+  padding: 10px;
+
+  .title {
+    font-size: 1.2em;
+    font-weight: 600;
+  }
+
+  .tag {
+    background-color: #007bff2c;
+    padding: 4px;
+    outline: none;
+    border-radius: 2px;
+  }
+
+  .objective {
+    background-color: #007bff2c;
+    padding: 4px;
+    outline: none;
+    border-radius: 2px;
+  }
+
+  .activity-name {
+    background-color: #007bff2c;
+    padding: 4px;
+    outline: none;
+    border-radius: 2px;
+  }
+
+  .operator {
+    font-weight: 600;
+  }
 }
 
 /** override styles for devices medium-sized and smaller */

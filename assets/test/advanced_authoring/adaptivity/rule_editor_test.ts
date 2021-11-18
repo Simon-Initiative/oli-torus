@@ -1,8 +1,8 @@
+import { JanusConditionProperties } from 'adaptivity/capi';
 import {
   deleteConditionById,
   findConditionById,
   forEachCondition,
-  JanusConditionProperties,
 } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
 import { mockDefaultRule, mockRuleNestedConditions, mockRuleWithConditions1 } from './rule_mocks';
 

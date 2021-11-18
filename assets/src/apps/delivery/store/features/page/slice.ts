@@ -15,9 +15,11 @@ export interface PageState {
   activityGuidMapping: any;
   previewMode: boolean;
   enableHistory: boolean;
+  showHistory: boolean;
   activityTypes: any[];
   score: number;
   graded: boolean;
+  activeEverapp: string;
 }
 
 const initialState: PageState = {
@@ -33,9 +35,11 @@ const initialState: PageState = {
   activityGuidMapping: {},
   previewMode: false,
   enableHistory: false,
+  showHistory: false,
   activityTypes: [],
   score: 0,
   graded: false,
+  activeEverapp: '',
 };
 
 const pageSlice = createSlice({
@@ -68,12 +72,18 @@ const pageSlice = createSlice({
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
     },
+    setActiveEverapp(state, action: PayloadAction<{ id: string }>) {
+      state.activeEverapp = action.payload.id;
+    },
+    setShowHistory(state, action: PayloadAction<{ show: boolean }>) {
+      state.showHistory = action.payload.show;
+    },
   },
 });
 
 export const PageSlice = pageSlice.name;
 
-export const { loadPageState, setScore } = pageSlice.actions;
+export const { loadPageState, setActiveEverapp, setScore, setShowHistory } = pageSlice.actions;
 
 export const selectState = (state: RootState): PageState => state[PageSlice];
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
@@ -82,6 +92,7 @@ export const selectPageSlug = createSelector(selectState, (state) => state.pageS
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
+export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(
   selectState,
   (state) => state.resourceAttemptGuid,
@@ -103,5 +114,12 @@ export const selectUserName = createSelector(selectState, (state) => state.userN
 export const selectScore = createSelector(selectState, (state) => state.score);
 
 export const selectIsGraded = createSelector(selectState, (state) => state.graded);
+
+export const selectActiveEverapp = createSelector(selectState, (state) => state.activeEverapp);
+
+export const selectIsLegacyTheme = createSelector(
+  selectState,
+  (state) => !state.content?.custom?.themeId,
+);
 
 export default pageSlice.reducer;

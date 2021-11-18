@@ -38,6 +38,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
          model: prepare_model(model),
          state: prepare_state(state),
          delivery_element: type.delivery_element,
+         authoring_element: type.authoring_element,
          script: type.delivery_script,
          graded: graded
        }}
@@ -84,7 +85,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
     end
   end
 
-  defp encode(s) do
+  def encode(s) do
     {:safe, encoded} = HTML.html_escape(s)
     IO.iodata_to_binary(encoded)
   end

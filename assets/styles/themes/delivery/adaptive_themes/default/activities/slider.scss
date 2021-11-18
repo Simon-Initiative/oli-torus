@@ -1,0 +1,16 @@
+/*-- slider thumb --*/
+janus-slider .slider input::-webkit-slider-thumb {
+  background-color: var(--blue100);
+}
+
+/*-- readout --*/
+janus-slider .slider .rangeValue span {
+  color: var(--grayDark100);
+  font-size: 1rem;
+  background-color: var(--grayLight60);
+}
+janus-slider .slider .rangeValue span:before {
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--grayLight60);
+}

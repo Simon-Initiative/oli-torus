@@ -62,11 +62,6 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: currentSequenceId,
     };
-    const visitOperation: ApplyStateOperation = {
-      target: `session.visits.${currentSequenceId}`,
-      operator: '+',
-      value: 1,
-    };
     const timeOnQuestion: ApplyStateOperation = {
       target: 'session.timeOnQuestion',
       operator: '=',
@@ -106,7 +101,6 @@ export const initializeActivity = createAsyncThunk(
 
     const sessionOps = [
       resumeTarget,
-      visitOperation,
       timeStartOp,
       timeOnQuestion,
       timeExceededOp,
@@ -146,7 +140,7 @@ export const initializeActivity = createAsyncThunk(
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
-      const modifiedValue = handleValueExpression(currentActivityTree, s.value);
+      const modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };

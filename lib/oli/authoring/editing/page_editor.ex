@@ -19,7 +19,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Delivery.Page.ActivityContext
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
-  alias Oli.Delivery.Page.PageContext
   alias Oli.Authoring.Editing.ActivityEditor
 
   import Ecto.Query, warn: false
@@ -205,7 +204,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
-      {previous, next} = PageContext.determine_previous_next(hierarchy, revision)
+      {:ok, {previous, next}} =
+        Oli.Delivery.Hierarchy.build_navigation_link_map(hierarchy)
+        |> Oli.Delivery.PreviousNextIndex.retrieve(revision.resource_id)
 
       activity_ids = activities_from_content(revision.content)
 
@@ -234,12 +235,19 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   def render_page_html(project_slug, content, author, options \\ []) do
+    mode =
+      if Keyword.get(options, :preview, false) do
+        :author_preview
+      else
+        :delivery
+      end
+
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{
            user: author,
-           preview: Keyword.get(options, :preview, false),
+           mode: mode,
            activity_map: activities,
            project_slug: project_slug
          } do
@@ -293,6 +301,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
            delivery_element: type.delivery_element,
+           authoring_element: type.authoring_element,
            script: type.delivery_script,
            graded: graded
          }

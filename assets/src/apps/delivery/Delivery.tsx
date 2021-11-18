@@ -73,8 +73,10 @@ const Delivery: React.FC<DeliveryProps> = ({
         previewMode: !!previewMode,
         activityTypes,
         enableHistory,
+        showHistory: false,
         score: 0,
         graded,
+        activeEverapp: 'none',
       }),
     );
   };

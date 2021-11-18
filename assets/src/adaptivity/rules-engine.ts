@@ -11,6 +11,7 @@ import {
   TopLevelCondition,
 } from 'json-rules-engine';
 import { b64EncodeUnicode } from 'utils/decode';
+import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
@@ -90,7 +91,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       correct: !!rule.correct,
       default: !!rule.default,
     };
-    applyToEveryCondition(rule.conditions, (condition: ConditionProperties) => {
+    //need the 'type' property hence using JanusConditionProperties which extends ConditionProperties
+    applyToEveryCondition(rule.conditions, (condition: JanusConditionProperties) => {
       const ogValue = condition.value;
       let modifiedValue = ogValue;
       if (Array.isArray(ogValue)) {
@@ -112,6 +114,15 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
             modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
           }
         }
+      }
+      //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.
+      if (
+        typeof ogValue === 'string' &&
+        condition?.type === CapiVariableTypes.ARRAY &&
+        ogValue.charAt(0) !== '[' &&
+        ogValue.slice(-1) !== ']'
+      ) {
+        modifiedValue = `[${ogValue}]`;
       }
       condition.value = modifiedValue;
     });
@@ -295,31 +306,36 @@ export const check = async (
   }
 
   let score = 0;
-  if (scoringContext.trapStateScoreScheme) {
-    // apply all the actions from the resultEvents that mutate the state
-    // then check the session.currentQuestionScore and clamp it against the maxScore
-    // setting that value to score
-    const mutations = resultEvents.reduce((acc, evt) => {
-      const { actions } = evt.params as Record<string, any>;
-      const mActions = actions.filter(
-        (action: any) =>
-          action.type === 'mutateState' && action.params.target === 'session.currentQuestionScore',
-      );
-      return acc.concat(...acc, mActions);
-    }, []);
-    if (mutations.length) {
-      const mutApplies = mutations.map(({ params }) => params);
-      bulkApplyState(mutApplies, env);
-      score = getValue('session.currentQuestionScore', env) || 0;
+  //below condition make sure the score calculation will happen only if the answer is correct and
+  //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
+  if (isCorrect || scoringContext.negativeScoreAllowed) {
+    if (scoringContext.trapStateScoreScheme) {
+      // apply all the actions from the resultEvents that mutate the state
+      // then check the session.currentQuestionScore and clamp it against the maxScore
+      // setting that value to score
+      const mutations = resultEvents.reduce((acc, evt) => {
+        const { actions } = evt.params as Record<string, any>;
+        const mActions = actions.filter(
+          (action: any) =>
+            action.type === 'mutateState' &&
+            action.params.target === 'session.currentQuestionScore',
+        );
+        return acc.concat(...acc, mActions);
+      }, []);
+      if (mutations.length) {
+        const mutApplies = mutations.map(({ params }) => params);
+        bulkApplyState(mutApplies, env);
+        score = getValue('session.currentQuestionScore', env) || 0;
+      }
+    } else {
+      const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+      const scorePerAttempt = maxScore / maxAttempt;
+      score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
     }
-  } else {
-    const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
-    const scorePerAttempt = maxScore / maxAttempt;
-    score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
-  }
-  score = Math.min(score, scoringContext.maxScore);
-  if (!scoringContext.negativeScoreAllowed) {
-    score = Math.max(0, score);
+    score = Math.min(score, scoringContext.maxScore);
+    if (!scoringContext.negativeScoreAllowed) {
+      score = Math.max(0, score);
+    }
   }
 
   const finalResults = {

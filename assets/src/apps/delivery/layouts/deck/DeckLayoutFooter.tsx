@@ -35,13 +35,20 @@ import {
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
 import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
-import { selectEnableHistory, selectPageContent, setScore } from '../../store/features/page/slice';
-import FeedbackRenderer from './components/FeedbackRenderer';
+import {
+  selectEnableHistory,
+  selectIsLegacyTheme,
+  selectPageContent,
+  setScore,
+} from '../../store/features/page/slice';
+import EverappContainer from './components/EverappContainer';
+import FeedbackContainer from './components/FeedbackContainer';
 import HistoryNavigation from './components/HistoryNavigation';
 
 export const handleValueExpression = (
   currentActivityTree: any[] | null,
   operationValue: string,
+  operator?: string,
 ) => {
   let value = operationValue;
   if (typeof value === 'string' && currentActivityTree) {
@@ -69,6 +76,15 @@ export const handleValueExpression = (
           }
         }
       });
+    } else if (operator === 'bind to') {
+      const variables = value.split('.');
+      const ownerActivity = currentActivityTree?.find(
+        (activity) => !!activity.content.partsLayout.find((p: any) => p.id === variables[1]),
+      );
+      //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+      if (ownerActivity) {
+        value = `${ownerActivity.id}|${value}`;
+      }
     }
   }
   return value;
@@ -187,7 +203,7 @@ const DeckLayoutFooter: React.FC = () => {
     let isDifferentNavigationExist = false;
     const { actions } = event.params;
     actions.forEach((action: any) => {
-      if (action.type === 'navigation' && action.params.target !== currentActivityId) {
+      if (action.type === 'navigation') {
         isDifferentNavigationExist = true;
       }
     });
@@ -205,19 +221,18 @@ const DeckLayoutFooter: React.FC = () => {
     // depending on combineFeedback value is whether we should address more than one event
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
     let eventsToProcess = [lastCheckResults.results[0]];
+    let doesFirstEventHasNavigation = false;
     if (combineFeedback) {
       //if the first event has a navigation to different screen
-      // we ignore the rest of the events ang fire this one.
-      const doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(
-        lastCheckResults.results[0],
-      );
-      if (doesFirstEventHasNavigation) {
+      // we ignore the rest of the events and fire this one.
+      doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
+      // if all the rules are correct, we process all the events because we want to display all the correct feedbacks
+      if (doesFirstEventHasNavigation && !isCorrect) {
         eventsToProcess = [lastCheckResults.results[0]];
       } else {
         eventsToProcess = lastCheckResults.results;
       }
     }
-
     const actionsByType = processResults(eventsToProcess);
 
     const hasFeedback = actionsByType.feedback.length > 0;
@@ -242,7 +257,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: handleValueExpression(currentActivityTree, op.params.value),
+          value: handleValueExpression(currentActivityTree, op.params.value, op.params.operator),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;
@@ -261,7 +276,19 @@ const DeckLayoutFooter: React.FC = () => {
       );
       // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
       const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
-        collect[op.params.target] = latestSnapshot[op.params.target];
+        let target = op.params.target;
+        if (target.indexOf('stage') === 0) {
+          const lstVar = op.params.target.split('.');
+          if (lstVar?.length > 1) {
+            const ownerActivity = currentActivityTree?.find(
+              (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+            );
+            target = ownerActivity
+              ? `${ownerActivity.id}|${op.params.target}`
+              : `${op.params.target}`;
+          }
+        }
+        collect[op.params.target] = latestSnapshot[target];
         return collect;
       }, {});
 
@@ -309,6 +336,22 @@ const DeckLayoutFooter: React.FC = () => {
             dispatch(navigateToLastActivity());
             break;
           default:
+            if (doesFirstEventHasNavigation && combineFeedback && navTarget === currentActivityId) {
+              const updateAttempt: ApplyStateOperation[] = [
+                {
+                  target: 'session.attemptNumber',
+                  operator: '=',
+                  value: 1,
+                },
+                {
+                  target: `${navTarget}|session.attemptNumber`,
+                  operator: '=',
+                  value: 1,
+                },
+              ];
+              bulkApplyState(updateAttempt, defaultGlobalEnv);
+              setHasOnlyMutation(true);
+            }
             // assume it's a sequenceId
             dispatch(navigateToActivity(navTarget));
         }
@@ -403,16 +446,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
   }, [checkInProgress, lastCheckResults]);
 
-  const checkFeedbackHandler = () => {
-    // right now just nav w/o checking
-    setDisplayFeedback(!displayFeedback);
-  };
-
-  const closeFeedbackHandler = () => {
-    // right now just nav w/o checking
-    setDisplayFeedback(false);
-  };
-
   const updateButtontext = () => {
     let text = currentActivity?.custom?.mainBtnLabel || 'Next';
     if (currentFeedbacks && currentFeedbacks.length) {
@@ -422,7 +455,8 @@ const DeckLayoutFooter: React.FC = () => {
     setNextButtonText(text);
   };
 
-  const isLegacyTheme = currentPage?.custom?.themeId;
+  const isLegacyTheme = useSelector(selectIsLegacyTheme);
+
   // TODO: global const for default width magic number?
   const containerWidth =
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
@@ -459,67 +493,47 @@ const DeckLayoutFooter: React.FC = () => {
     setIsLoading(false);
   }, [currentActivity]);
 
-  const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-
   return (
-    <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
-      <NextButton
-        isLoading={isLoading || !initPhaseComplete}
-        text={nextButtonText}
-        handler={checkHandler}
-        isGoodFeedbackPresent={isGoodFeedback}
-        currentFeedbacksCount={currentFeedbacks.length}
-        isFeedbackIconDisplayed={displayFeedbackIcon}
-        showCheckBtn={currentActivity?.custom?.showCheckBtn}
-      />
-      <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
-        <div className={`bottomContainer fixed ${!displayFeedback ? 'minimized' : ''}`}>
-          <button
-            onClick={checkFeedbackHandler}
-            className={displayFeedbackIcon ? 'toggleFeedbackBtn' : 'toggleFeedbackBtn displayNone'}
-            title="Toggle feedback visibility"
-            aria-label="Show feedback"
-            aria-haspopup="true"
-            aria-controls="stage-feedback"
-            aria-pressed="false"
-          >
-            <div className="icon" />
-          </button>
-          <div
-            id="stage-feedback"
-            className={displayFeedback ? '' : 'displayNone'}
-            role="alertdialog"
-            aria-live="polite"
-            aria-hidden="true"
-            aria-label="Feedback dialog"
-          >
-            <div className={`theme-feedback-header ${!displayFeedbackHeader ? 'displayNone' : ''}`}>
-              <button
-                onClick={closeFeedbackHandler}
-                className="theme-feedback-header__close-btn"
-                aria-label="Minimize feedback"
-              >
-                <span>
-                  <div className="theme-feedback-header__close-icon" />
-                </span>
-              </button>
-            </div>
-            <style type="text/css" aria-hidden="true" />
-            <div className="content" style={{ overflow: 'hidden auto !important' }}>
-              {/* TODO: snapshot method causes constant re-render (props change) */}
-              <FeedbackRenderer
-                feedbacks={currentFeedbacks}
-                snapshot={getLocalizedStateSnapshot(currentActivityIds)}
-              />
-            </div>
-            {/* <button className="showSolnBtn showSolution displayNone">
-                            <div className="ellipsis">Show solution</div>
-                        </button> */}
-          </div>
-        </div>
+    <>
+      <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
+        <NextButton
+          isLoading={isLoading || !initPhaseComplete}
+          text={nextButtonText}
+          handler={checkHandler}
+          isGoodFeedbackPresent={isGoodFeedback}
+          currentFeedbacksCount={currentFeedbacks.length}
+          isFeedbackIconDisplayed={displayFeedbackIcon}
+          showCheckBtn={currentActivity?.custom?.showCheckBtn}
+        />
+        {!isLegacyTheme && (
+          <>
+            <FeedbackContainer
+              minimized={!displayFeedback}
+              showIcon={displayFeedbackIcon}
+              showHeader={displayFeedbackHeader}
+              onMinimize={() => setDisplayFeedback(false)}
+              onMaximize={() => setDisplayFeedback(true)}
+              feedbacks={currentFeedbacks}
+            />
+            <HistoryNavigation />
+          </>
+        )}
       </div>
-      <HistoryNavigation />
-    </div>
+      {isLegacyTheme && (
+        <>
+          <FeedbackContainer
+            minimized={!displayFeedback}
+            showIcon={displayFeedbackIcon}
+            showHeader={displayFeedbackHeader}
+            onMinimize={() => setDisplayFeedback(false)}
+            onMaximize={() => setDisplayFeedback(true)}
+            feedbacks={currentFeedbacks}
+          />
+          <HistoryNavigation />
+        </>
+      )}
+      <EverappContainer apps={currentPage?.custom?.everApps || []} />
+    </>
   );
 };
 
