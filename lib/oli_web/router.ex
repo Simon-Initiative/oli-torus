@@ -276,6 +276,11 @@ defmodule OliWeb.Router do
         pipe_through [:authorize_community]
 
         live("/", CommunityLive.ShowView)
+
+        scope "/associated" do
+          live("/", CommunityLive.Associated.IndexView)
+          live("/new", CommunityLive.Associated.NewView)
+        end
       end
     end
   end
