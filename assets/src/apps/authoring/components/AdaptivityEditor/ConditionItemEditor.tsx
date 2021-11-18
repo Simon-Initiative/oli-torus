@@ -1,20 +1,17 @@
-import {
-  CapiVariableTypes,
-  getCapiType,
-  JanusConditionProperties,
-} from '../../../../adaptivity/capi';
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
   ConditionOperatorOption,
   conditionOperatorOptions,
   ConditionTypeOperatorCombo,
   conditionTypeOperatorCombos,
+  inferTypeFromOperatorAndValue,
   TypeOption,
   typeOptions,
 } from './AdaptiveItemOptions';
-import { VariablePicker, OverlayPlacements } from './VariablePicker';
-import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import { OverlayPlacements, VariablePicker } from './VariablePicker';
 
 interface ConditionItemEditorProps {
   condition: JanusConditionProperties;
@@ -28,7 +25,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
 
   const [fact, setFact] = useState<string>(condition.fact);
   const [targetType, setTargetType] = useState<CapiVariableTypes>(
-    condition.type || getCapiType(condition.value),
+    condition.type || inferTypeFromOperatorAndValue(condition.operator, condition.value),
   );
   const [operator, setOperator] = useState<string>(condition.operator);
   const [value, setValue] = useState<any>(condition.value);
