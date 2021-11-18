@@ -570,6 +570,14 @@ defmodule Oli.Delivery.Sections do
     Section.changeset(section, attrs)
   end
 
+  def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
+  end
+
+  def change_open_and_free_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true}), attrs)
+  end
+
   @doc """
   Create all section resources from the given section and publication using the
   root resource's revision tree. Returns the root section resource record.

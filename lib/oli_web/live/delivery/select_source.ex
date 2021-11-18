@@ -6,6 +6,8 @@ defmodule OliWeb.Delivery.SelectSource do
   alias OliWeb.Products.Listing
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Accounts
+  alias Oli.Institutions.Institution
 
   data breadcrumbs, :any,
     default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
@@ -66,24 +68,13 @@ defmodule OliWeb.Delivery.SelectSource do
     Routes.select_source_path(socket, socket.assigns.live_action, params)
   end
 
-  defp retrieve_all_sources() do
-    products = Blueprint.list()
+  def mount(_params, %{"current_user_id" => user_id}, socket) do
+    # SelectSource used in two routes.
+    # live_action is :independent_learner or :admin
+    route = socket.assigns.live_action
 
-    free_project_publications =
-      Oli.Publishing.all_available_publications()
-      |> then(fn publications ->
-        Blueprint.filter_for_free_projects(
-          products,
-          publications
-        )
-      end)
-
-    free_project_publications ++ products
-  end
-
-  def mount(_, _, socket) do
     sources =
-      retrieve_all_sources()
+      retrieve_all_sources(route, user_id)
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
     total_count = length(sources)
@@ -92,8 +83,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
     {:ok,
      assign(socket,
-       # SelectSource used in two routes. live_action is :section or :admin
-       breadcrumbs: breadcrumbs(socket.assigns.live_action),
+       breadcrumbs: breadcrumbs(route),
        total_count: total_count,
        table_model: table_model,
        sources: sources
@@ -133,4 +123,45 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
+
+  defp retrieve_all_sources(route, user_id) do
+    author =
+      user_id
+      |> Accounts.get_user!(preload: [:author])
+      |> Map.get(:author)
+
+    IO.inspect(Accounts.get_user!(user_id, preload: [:author]), label: "Author")
+    IO.inspect(route, label: "route")
+
+    products = get_products(route, author)
+
+    project_publications = get_publications(route, author, products)
+
+    project_publications ++ products
+  end
+
+  defp get_products(:admin, _author), do: Blueprint.list()
+
+  defp get_products(:independent_learner, author) do
+    Blueprint.available_products(author, empty_institution())
+  end
+
+  # Admins filter to free pubs
+  defp get_publications(:admin, _author, products),
+    do:
+      Oli.Publishing.all_available_publications()
+      |> then(fn publications ->
+        Blueprint.filter_for_free_projects(
+          products,
+          publications
+        )
+      end)
+
+  defp get_publications(:independent_learner, author, _products),
+    do: Oli.Publishing.available_publications(author, empty_institution())
+
+  defp empty_institution(),
+    do: %Institution{
+      id: "invalid id used only to fulfill query requirement"
+    }
 end

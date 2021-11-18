@@ -1,18 +1,14 @@
 defmodule OliWeb.OpenAndFreeView do
   use OliWeb, :view
 
-  def get_path([conn_or_action | rest]) do
-    if is_admin_path?(conn_or_action) do
-      apply(Routes, :admin_open_and_free_path, [OliWeb.Endpoint | rest])
-    else
-      apply(Routes, :independent_sections_path, [OliWeb.Endpoint | rest])
-    end
-  end
+  def index_path(:admin), do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)
 
-  def is_admin_path?(conn_or_action = %Plug.Conn{}) do
-    Enum.member?(conn_or_action.path_info, "admin")
-  end
+  def index_path(:independent_learner),
+    do: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
 
-  def is_admin_path?(:admin = _conn_or_action), do: true
-  def is_admin_path?(_), do: false
+  def get_path([:admin | rest]),
+    do: apply(Routes, :admin_open_and_free_path, [OliWeb.Endpoint | rest])
+
+  def get_path([:independent_learner | rest]),
+    do: apply(Routes, :independent_sections_path, [OliWeb.Endpoint | rest])
 end

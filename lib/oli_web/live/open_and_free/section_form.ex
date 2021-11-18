@@ -17,14 +17,9 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       "cancel" => cancel
     } = session
 
-    IO.inspect(session, label: "Session")
-    IO.inspect(socket.assigns, label: "Socket assigns")
-
     available_brands =
       Branding.list_brands()
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
-
-    IO.inspect(action, label: "Action in section form")
 
     socket =
       socket
@@ -60,6 +55,7 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         </div>
       <% end %>
 
+      <% # Only show source if creating a new section (not editing) %>
       <%= if @action == Routes.admin_open_and_free_path(@socket, :create)
           || @action == Routes.independent_sections_path(@socket, :create) do %>
         <div class="form-label-group">
@@ -151,7 +147,9 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
         <div class="custom-control custom-switch" style="width: 88px;">
           <%= checkbox f, :registration_open, class: "custom-control-input" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
-          <%= label f, :registration_open, "Open", class: "custom-control-label" %>
+          <%= label f, :registration_open, class: "custom-control-label" do %>
+            <%= if @changeset.data.registration_open do "Open" else "Closed" end %>
+          <% end %>
           <%= error_tag f, :registration_open %>
         </div>
 
@@ -168,8 +166,10 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         </div>
 
         <div class="custom-control custom-switch" style="width: 88px;">
-          <%= checkbox f, :requires_enrollment, class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
-          <%= label f, :requires_enrollment, "No", class: "custom-control-label" %>
+          <%= checkbox f, :requires_enrollment, checked_value: "false", unchecked_value: "true", class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+          <%= label f, :requires_enrollment, class: "custom-control-label" do %>
+            <%= if @changeset.data.requires_enrollment do "No" else "Yes" end %>
+          <% end %>
           <%= error_tag f, :requires_enrollment %>
         </div>
 

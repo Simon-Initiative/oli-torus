@@ -7,6 +7,17 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Authoring.Course
   alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb}
+  alias Lti_1p3.Tool.{ContextRoles}
+
+  plug :add_assigns
+
+  defp add_assigns(conn, _opts) do
+    merge_assigns(conn,
+      route: determine_route(conn),
+      active: :open_and_free,
+      title: "Open and Free"
+    )
+  end
 
   @doc """
   Provides API access to the open and free sections that are open for registration.
@@ -26,7 +37,7 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def index(conn, _params) do
-    render_with_title(conn, "index.html",
+    render(conn, "index.html",
       sections: Sections.list_open_and_free_sections(),
       breadcrumbs: set_breadcrumbs(),
       user: conn.assigns.current_user
@@ -34,8 +45,6 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def new(conn, %{"source_id" => id}) do
-    IO.inspect(conn, label: "Conn in new")
-
     source =
       case id do
         "product:" <> id ->
@@ -48,9 +57,14 @@ defmodule OliWeb.OpenAndFreeController do
           publication.project
       end
 
-    render_with_title(conn, "new.html",
+    IO.inspect(
+      Sections.change_independent_learner_section(%Section{registration_open: true}).data,
+      label: "Changeset in new"
+    )
+
+    render(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
-      changeset: Sections.change_section(%Section{open_and_free: true, registration_open: true}),
+      changeset: Sections.change_independent_learner_section(%Section{registration_open: true}),
       source: source
     )
   end
@@ -79,31 +93,29 @@ defmodule OliWeb.OpenAndFreeController do
           timezone: timezone
         })
 
-      case Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params) do
+      case create_from_product(conn, blueprint, section_params) do
         {:ok, section} ->
           conn
-          |> put_flash(:info, "Open and free created successfully.")
-          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
+          |> put_flash(:info, "Section created successfully.")
+          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
 
         _ ->
           changeset =
-            Sections.change_section(%Section{open_and_free: true, requires_enrollment: true})
+            Sections.change_independent_learner_section(%Section{})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-          render_with_title(conn, "new.html",
+          render(conn, "new.html",
             changeset: changeset,
             breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
           )
-
-          # Enroll this user with their proper roles (instructor)
       end
     else
       _ ->
         changeset =
-          Sections.change_section(%Section{open_and_free: true})
+          Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-        render_with_title(conn, "new.html",
+        render(conn, "new.html",
           changeset: changeset,
           breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
         )
@@ -132,16 +144,16 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("start_date", utc_start_date)
         |> Map.put("end_date", utc_end_date)
 
-      case Sections.create_section(section_params) do
-        {:ok, section} ->
-          {:ok, section} = Sections.create_section_resources(section, publication)
+      IO.inspect(conn.assigns, label: "Conn in creation")
 
+      case create_from_publication(conn, publication, section_params) do
+        {:ok, section} ->
           conn
-          |> put_flash(:info, "Open and free created successfully.")
-          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
+          |> put_flash(:info, "Section created successfully.")
+          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render_with_title(conn, "new.html",
+          render(conn, "new.html",
             changeset: changeset,
             breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
           )
@@ -149,10 +161,10 @@ defmodule OliWeb.OpenAndFreeController do
     else
       _ ->
         changeset =
-          Sections.change_section(%Section{open_and_free: true})
+          Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
 
-        render_with_title(conn, "new.html",
+        render(conn, "new.html",
           changeset: changeset,
           breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
         )
@@ -164,11 +176,9 @@ defmodule OliWeb.OpenAndFreeController do
       Sections.get_section_preloaded!(id)
       |> convert_utc_to_section_tz()
 
-    updates = Sections.check_for_available_publication_updates(section)
-
-    render_with_title(conn, "show.html",
+    render(conn, "show.html",
       section: section,
-      updates: updates,
+      updates: Sections.check_for_available_publication_updates(section),
       breadcrumbs: set_breadcrumbs() |> show_breadcrumb()
     )
   end
@@ -178,7 +188,7 @@ defmodule OliWeb.OpenAndFreeController do
       Sections.get_section_preloaded!(id)
       |> convert_utc_to_section_tz()
 
-    render_with_title(conn, "edit.html",
+    render(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
@@ -205,11 +215,11 @@ defmodule OliWeb.OpenAndFreeController do
     case Sections.update_section(section, section_params) do
       {:ok, section} ->
         conn
-        |> put_flash(:info, "Open and free section updated successfully.")
-        |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
+        |> put_flash(:info, "Section updated successfully.")
+        |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_with_title(conn, "edit.html",
+        render(conn, "edit.html",
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
@@ -221,6 +231,16 @@ defmodule OliWeb.OpenAndFreeController do
   ###
   ### Helpers
   ###
+
+  # This controller is used across two scopes (admin and independent learner
+  # section management, so template links need to know where to route)
+  defp determine_route(conn) do
+    if Enum.member?(conn.path_info, "admin") do
+      :admin
+    else
+      :independent_learner
+    end
+  end
 
   # The OpenAndFree controller is used with multiple routes. Breadcrumbs
   # are only needed for the authoring admin route.
@@ -326,10 +346,35 @@ defmodule OliWeb.OpenAndFreeController do
     |> Map.put(:end_date, end_date)
   end
 
-  defp render_with_title(conn, template, assigns) do
-    render(conn, template, Keyword.merge(assigns, active: :open_and_free, title: "Open and Free"))
+  defp create_from_product(conn, blueprint, section_params) do
+    Repo.transaction(fn ->
+      {:ok, section} = Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params)
+      {:ok, _maybe_enrollment} = enroll(conn, section)
+
+      section
+    end)
   end
 
-  def is_admin_route(conn) do
+  defp create_from_publication(conn, publication, section_params) do
+    Repo.transaction(fn ->
+      {:ok, section} = Sections.create_section(section_params)
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      {:ok, _enrollment} = enroll(conn, section)
+
+      section
+    end)
+  end
+
+  # Enroll a user as a section instructor ONLY if it is a delivery user.
+  # Router plugs handle user auth, so a user must be present here if in
+  # delivery (independent learner) mode.
+  defp enroll(conn, section) do
+    if is_nil(conn.assigns.current_user) do
+      {:ok, nil}
+    else
+      Sections.enroll(conn.assigns.current_user.id, section.id, [
+        ContextRoles.get_role(:context_instructor)
+      ])
+    end
   end
 end

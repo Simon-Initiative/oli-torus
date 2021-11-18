@@ -557,7 +557,7 @@ defmodule OliWeb.Router do
       :delivery_layout
     ])
 
-    live("/independent/create", Delivery.SelectSource, :section, as: :select_source)
+    live("/independent/create", Delivery.SelectSource, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
     # live("/new/:source_id", OpenAndFree.SectionForm, :section, as: :section_form)
   end
