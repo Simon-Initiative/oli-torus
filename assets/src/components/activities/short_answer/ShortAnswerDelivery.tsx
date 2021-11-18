@@ -16,7 +16,7 @@ import {
   resetAction,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
-import { safelySelectInputs } from 'data/activities/utils';
+import { safelySelectStringInputs } from 'data/activities/utils';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
@@ -74,7 +74,7 @@ export const ShortAnswerComponent: React.FC = () => {
         activityState,
         // Short answers only have one input, but the selection is modeled
         // as an array just to make it consistent with the other activity types
-        safelySelectInputs(activityState).caseOf({
+        safelySelectStringInputs(activityState).caseOf({
           just: (input) => input,
           nothing: () => ({
             [DEFAULT_PART_ID]: [''],
