@@ -8,53 +8,6 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb}
 
-  def index(conn, _params) do
-    sections = Sections.list_open_and_free_sections()
-    render_workspace_page(conn, "index.html", sections: sections, breadcrumbs: set_breadcrumbs())
-  end
-
-  def set_breadcrumbs() do
-    OliWeb.Admin.AdminView.breadcrumb()
-    |> breadcrumb()
-  end
-
-  def breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Open and Free Sections",
-          link: Routes.open_and_free_path(OliWeb.Endpoint, :index)
-        })
-      ]
-  end
-
-  def edit_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Edit"
-        })
-      ]
-  end
-
-  def new_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "New"
-        })
-      ]
-  end
-
-  def show_breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "Show"
-        })
-      ]
-  end
-
   @doc """
   Provides API access to the open and free sections that are open for registration.
   """
@@ -72,7 +25,17 @@ defmodule OliWeb.OpenAndFreeController do
     json(conn, sections)
   end
 
+  def index(conn, _params) do
+    render_with_title(conn, "index.html",
+      sections: Sections.list_open_and_free_sections(),
+      breadcrumbs: set_breadcrumbs(),
+      user: conn.assigns.current_user
+    )
+  end
+
   def new(conn, %{"source_id" => id}) do
+    IO.inspect(conn, label: "Conn in new")
+
     source =
       case id do
         "product:" <> id ->
@@ -85,20 +48,11 @@ defmodule OliWeb.OpenAndFreeController do
           publication.project
       end
 
-    changeset = Sections.change_section(%Section{open_and_free: true, registration_open: true})
-
-    render_workspace_page(conn, "new.html",
+    render_with_title(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
-      changeset: changeset,
+      changeset: Sections.change_section(%Section{open_and_free: true, registration_open: true}),
       source: source
     )
-  end
-
-  defp to_atom_keys(map) do
-    Map.keys(map)
-    |> Enum.reduce(%{}, fn k, m ->
-      Map.put(m, String.to_existing_atom(k), Map.get(map, k))
-    end)
   end
 
   def create(conn, %{"section" => %{"product_slug" => _} = section_params}) do
@@ -129,14 +83,14 @@ defmodule OliWeb.OpenAndFreeController do
         {:ok, section} ->
           conn
           |> put_flash(:info, "Open and free created successfully.")
-          |> redirect(to: Routes.open_and_free_path(conn, :show, section))
+          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
 
         _ ->
           changeset =
-            Sections.change_section(%Section{open_and_free: true})
+            Sections.change_section(%Section{open_and_free: true, requires_enrollment: true})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-          render_workspace_page(conn, "new.html",
+          render_with_title(conn, "new.html",
             changeset: changeset,
             breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
           )
@@ -149,7 +103,7 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_section(%Section{open_and_free: true})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-        render_workspace_page(conn, "new.html",
+        render_with_title(conn, "new.html",
           changeset: changeset,
           breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
         )
@@ -184,10 +138,10 @@ defmodule OliWeb.OpenAndFreeController do
 
           conn
           |> put_flash(:info, "Open and free created successfully.")
-          |> redirect(to: Routes.open_and_free_path(conn, :show, section))
+          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          render_workspace_page(conn, "new.html",
+          render_with_title(conn, "new.html",
             changeset: changeset,
             breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
           )
@@ -198,7 +152,7 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_section(%Section{open_and_free: true})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
 
-        render_workspace_page(conn, "new.html",
+        render_with_title(conn, "new.html",
           changeset: changeset,
           breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
         )
@@ -212,7 +166,7 @@ defmodule OliWeb.OpenAndFreeController do
 
     updates = Sections.check_for_available_publication_updates(section)
 
-    render_workspace_page(conn, "show.html",
+    render_with_title(conn, "show.html",
       section: section,
       updates: updates,
       breadcrumbs: set_breadcrumbs() |> show_breadcrumb()
@@ -224,12 +178,10 @@ defmodule OliWeb.OpenAndFreeController do
       Sections.get_section_preloaded!(id)
       |> convert_utc_to_section_tz()
 
-    changeset = Sections.change_section(section)
-
-    render_workspace_page(conn, "edit.html",
+    render_with_title(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
-      changeset: changeset,
+      changeset: Sections.change_section(section),
       timezones: Predefined.timezones()
     )
   end
@@ -254,16 +206,71 @@ defmodule OliWeb.OpenAndFreeController do
       {:ok, section} ->
         conn
         |> put_flash(:info, "Open and free section updated successfully.")
-        |> redirect(to: Routes.open_and_free_path(conn, :show, section))
+        |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn, :show, section]))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render_workspace_page(conn, "edit.html",
+        render_with_title(conn, "edit.html",
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
           timezones: Predefined.timezones()
         )
     end
+  end
+
+  ###
+  ### Helpers
+  ###
+
+  # The OpenAndFree controller is used with multiple routes. Breadcrumbs
+  # are only needed for the authoring admin route.
+  def set_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb()
+    |> breadcrumb()
+  end
+
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Open and Free Sections",
+          link: Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)
+        })
+      ]
+  end
+
+  def edit_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Edit"
+        })
+      ]
+  end
+
+  def new_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "New"
+        })
+      ]
+  end
+
+  def show_breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Show"
+        })
+      ]
+  end
+
+  defp to_atom_keys(map) do
+    Map.keys(map)
+    |> Enum.reduce(%{}, fn k, m ->
+      Map.put(m, String.to_existing_atom(k), Map.get(map, k))
+    end)
   end
 
   def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
@@ -319,7 +326,10 @@ defmodule OliWeb.OpenAndFreeController do
     |> Map.put(:end_date, end_date)
   end
 
-  defp render_workspace_page(conn, template, assigns) do
+  defp render_with_title(conn, template, assigns) do
     render(conn, template, Keyword.merge(assigns, active: :open_and_free, title: "Open and Free"))
+  end
+
+  def is_admin_route(conn) do
   end
 end

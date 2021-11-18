@@ -63,7 +63,7 @@ defmodule OliWeb.DeliveryController do
 
     sections = Sections.list_user_open_and_free_sections(user)
 
-    render(conn, "open_and_free_index.html", sections: sections)
+    render(conn, "open_and_free_index.html", sections: sections, user: user)
   end
 
   defp render_course_not_configured(conn) do

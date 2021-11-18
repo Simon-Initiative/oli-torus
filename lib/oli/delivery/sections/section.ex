@@ -24,6 +24,7 @@ defmodule Oli.Delivery.Sections.Section do
     field :context_id, :string
     field :slug, :string
     field :open_and_free, :boolean, default: false
+    field :requires_enrollment, :boolean, default: false
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
     field :invite_token, :string
     field :passcode, :string
@@ -109,7 +110,8 @@ defmodule Oli.Delivery.Sections.Section do
       :brand_id,
       :delivery_policy_id,
       :blueprint_id,
-      :root_section_resource_id
+      :root_section_resource_id,
+      :requires_enrollment
     ])
     |> validate_required([
       :type,

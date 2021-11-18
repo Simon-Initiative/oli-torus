@@ -17,9 +17,14 @@ defmodule OliWeb.OpenAndFree.SectionForm do
       "cancel" => cancel
     } = session
 
+    IO.inspect(session, label: "Session")
+    IO.inspect(socket.assigns, label: "Socket assigns")
+
     available_brands =
       Branding.list_brands()
       |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
+    IO.inspect(action, label: "Action in section form")
 
     socket =
       socket
@@ -55,9 +60,9 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         </div>
       <% end %>
 
-      <%= if @action == Routes.open_and_free_path(@socket, :create) do %>
-        <div class="form-label-group"
-          >
+      <%= if @action == Routes.admin_open_and_free_path(@socket, :create)
+          || @action == Routes.independent_sections_path(@socket, :create) do %>
+        <div class="form-label-group">
           <%= hidden_input f, source_param_name, value: @source.slug %>
           <input type="text" value="<%= @source.title %>" disabled class="form-control"/>
           <label class="control-label"><%= source_label %></label>
@@ -153,6 +158,24 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         <script>
           $('#section_registration_open').change(function() {
             $('label[for="section_registration_open"]').text(this.checked ? 'Open' : 'Closed');
+          });
+        </script>
+      </div>
+
+      <div class="form-row d-flex flex-row px-1 my-4">
+        <div class="flex-grow-1 mr-2">
+          Allow Guests (Unenrolled Students)
+        </div>
+
+        <div class="custom-control custom-switch" style="width: 88px;">
+          <%= checkbox f, :requires_enrollment, class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+          <%= label f, :requires_enrollment, "No", class: "custom-control-label" %>
+          <%= error_tag f, :requires_enrollment %>
+        </div>
+
+        <script>
+          $('#section_requires_enrollment').change(function() {
+            $('label[for="section_requires_enrollment"]').text(this.checked ? 'Yes' : 'No');
           });
         </script>
       </div>

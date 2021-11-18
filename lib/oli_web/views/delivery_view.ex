@@ -1,6 +1,7 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
 
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
