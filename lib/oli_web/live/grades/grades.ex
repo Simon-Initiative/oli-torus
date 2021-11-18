@@ -41,6 +41,8 @@ defmodule OliWeb.Grades.GradesLive do
 
     {:ok,
      assign(socket,
+       title: "LMS Grades",
+       breadcrumbs: [],
        graded_pages: graded_pages,
        selected_page: selected_page,
        line_items_url: line_items_url,
