@@ -2,11 +2,20 @@ import { SelectOption } from 'components/activities/common/authoring/InputTypeDr
 import React from 'react';
 
 interface Props {
+  selected: any;
   options: SelectOption[];
   onChange: React.ChangeEventHandler<HTMLSelectElement>;
   disabled?: boolean;
 }
 export const DropdownInput: React.FC<Props> = (props) => {
+  const options = [
+    {
+      value: '',
+      displayValue: '',
+    },
+    ...props.options,
+  ];
+
   return (
     <select
       onChange={props.onChange}
@@ -14,8 +23,8 @@ export const DropdownInput: React.FC<Props> = (props) => {
       className="custom-select"
       style={{ flexBasis: '160px', width: '160px' }}
     >
-      {props.options.map((option, i) => (
-        <option key={i} value={option.value}>
+      {options.map((option, i) => (
+        <option selected={option.value === props.selected} key={i} value={option.value}>
           {option.displayValue}
         </option>
       ))}

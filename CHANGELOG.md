@@ -6,6 +6,7 @@
 
 - Fix bug that prevented deletion of authors that have locked resource revisions
 - Fix an issue related to next previous page links that causes 500 internal server error on advanced authoring pages
+- Fix a bug that prevented MultiInput activities with dropdowns from evaluating correctly
 
 ### Enhancements
 
