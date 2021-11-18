@@ -520,7 +520,11 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      {errors, activity_revisions, transformed_content} =
+      %Result{
+        errors: errors,
+        revisions: activity_revisions,
+        transformed_content: transformed_content
+      } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
