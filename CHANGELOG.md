@@ -14,6 +14,7 @@
 - Fix an issue related to next previous page links that causes 500 internal server error on advanced authoring pages
 - Fix a bug that prevented MultiInput activities with dropdowns from evaluating correctly
 - Fix a bug that prevented SingleResponse activities from properly restoring student state
+- Fix a bug that was preventing manual grade sync from executing
 
 ### Enhancements
 
