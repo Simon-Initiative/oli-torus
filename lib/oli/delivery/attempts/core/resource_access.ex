@@ -7,6 +7,13 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
     field(:score, :float)
     field(:out_of, :float)
 
+    field(:last_sync_score, :float)
+    field(:last_sync_out_of, :float)
+    field(:last_sync_type, Ecto.Enum, values: [:inline, :manual, :manual_batch], default: :inline)
+    field(:last_sync_datetime, :utc_datetime)
+    field(:last_sync_result, Ecto.Enum, values: [:success, :failure, :not_run], default: :not_run)
+    field(:last_sync_details, :string)
+
     belongs_to(:user, Oli.Accounts.User)
     belongs_to(:section, Oli.Delivery.Sections.Section)
     belongs_to(:resource, Oli.Resources.Resource)
@@ -20,7 +27,20 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
   @doc false
   def changeset(resource_access, attrs) do
     resource_access
-    |> cast(attrs, [:access_count, :score, :out_of, :user_id, :section_id, :resource_id])
+    |> cast(attrs, [
+      :access_count,
+      :score,
+      :out_of,
+      :last_sync_score,
+      :last_sync_out_of,
+      :last_sync_type,
+      :last_sync_datetime,
+      :last_sync_result,
+      :last_sync_details,
+      :user_id,
+      :section_id,
+      :resource_id
+    ])
     |> validate_required([:access_count, :user_id, :section_id, :resource_id])
     |> validate_score()
     |> validate_out_of()
