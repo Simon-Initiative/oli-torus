@@ -6,6 +6,16 @@
 
 ### Enhancements
 
+## 0.16.0 (2021-11-19)
+
+### Bug Fixes
+
+- Fix issue with bulk line item grade sync
+
+### Enhancements
+
+- Allow instructors to manually send one student grade to LMS
+
 ## 0.15.0 (2021-11-18)
 
 ### Bug Fixes
