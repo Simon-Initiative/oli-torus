@@ -96,7 +96,7 @@ defmodule Oli.GroupsTest do
 
   describe "community account" do
     alias Oli.Groups.CommunityAccount
-    alias Oli.Accounts.Author
+    alias Oli.Accounts.{Author, User}
 
     test "create_community_account/1 with valid data creates a community account" do
       params = params_for(:community_account)
@@ -112,13 +112,13 @@ defmodule Oli.GroupsTest do
     test "create_community_account/1 for existing author and community returns error changeset" do
       author = build(:author)
       community = build(:community)
-      insert(:community_account, %{author: author, community: community})
+      insert(:community_admin_account, %{author: author, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
                Groups.create_community_account(%{author: author, community: community})
     end
 
-    test "create_community_account_from_author_email/1 with valid data creates a community account" do
+    test "create_community_account_from_author_email/2 with valid data creates a community account" do
       author = insert(:author)
       params = params_for(:community_account)
 
@@ -130,23 +130,78 @@ defmodule Oli.GroupsTest do
       assert community_account.is_admin == params.is_admin
     end
 
-    test "create_community_account_from_author_email/1 for non existing author email returns author not found" do
+    test "create_community_account_from_author_email/2 for non existing author email returns author not found" do
       params = params_for(:community_account)
 
       assert {:error, :author_not_found} =
                Groups.create_community_account_from_author_email("testing@email.com", params)
     end
 
-    test "create_community_account_from_author_email/1 for existing author and community returns error changeset" do
+    test "create_community_account_from_author_email/2 for existing author and community returns error changeset" do
       author = build(:author)
       community = build(:community)
-      insert(:community_account, %{author: author, community: community})
+      insert(:community_admin_account, %{author: author, community: community})
 
       assert {:error, %Ecto.Changeset{}} =
                Groups.create_community_account_from_author_email(author.email, %{
                  author: author,
                  community: community
                })
+    end
+
+    test "create_community_account_from_user_email/2 with valid data creates a community account" do
+      user = insert(:user)
+      params = params_for(:community_member_account)
+
+      assert {:ok, %CommunityAccount{} = community_account} =
+               Groups.create_community_account_from_user_email(user.email, params)
+
+      assert community_account.user_id == user.id
+      assert community_account.community_id == params.community_id
+      assert community_account.is_admin == params.is_admin
+    end
+
+    test "create_community_account_from_user_email/2 for non existing user email returns author not found" do
+      params = params_for(:community_account)
+
+      assert {:error, :user_not_found} =
+               Groups.create_community_account_from_user_email("testing@email.com", params)
+    end
+
+    test "create_community_account_from_user_email/2 for existing user and community returns error changeset" do
+      user = build(:user)
+      community = build(:community)
+      insert(:community_member_account, %{user: user, community: community})
+
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community_account_from_user_email(user.email, %{
+                 user: user,
+                 community: community
+               })
+    end
+
+    test "create_community_account_from_email/3 with valid data creates a community admin account" do
+      author = insert(:author)
+      params = params_for(:community_admin_account)
+
+      assert {:ok, %CommunityAccount{} = community_account} =
+               Groups.create_community_account_from_email("admin", author.email, params)
+
+      assert community_account.author_id == author.id
+      assert community_account.community_id == params.community_id
+      assert community_account.is_admin == params.is_admin
+    end
+
+    test "create_community_account_from_email/3 with valid data creates a community member account" do
+      user = insert(:user)
+      params = params_for(:community_member_account)
+
+      assert {:ok, %CommunityAccount{} = community_account} =
+               Groups.create_community_account_from_email("member", user.email, params)
+
+      assert community_account.user_id == user.id
+      assert community_account.community_id == params.community_id
+      assert community_account.is_admin == params.is_admin
     end
 
     test "get_community_account/1 returns a community account when the id exists" do
@@ -187,14 +242,23 @@ defmodule Oli.GroupsTest do
     end
 
     test "list_community_admins/1 returns the admins for a community" do
-      community_account = insert(:community_account)
-      insert(:community_account, %{community: community_account.community})
-      insert(:community_account, %{community: community_account.community, is_admin: false})
+      community_account = insert(:community_admin_account)
+      insert(:community_admin_account, %{community: community_account.community})
+      insert(:community_member_account, %{community: community_account.community})
 
       admins = Groups.list_community_admins(community_account.community_id)
 
       assert [%Author{} | _tail] = admins
       assert 2 = length(admins)
+    end
+
+    test "list_community_members/1 returns the members for a community" do
+      insert(:community_admin_account)
+      %CommunityAccount{community_id: community_id} = insert(:community_member_account)
+
+      members = Groups.list_community_members(community_id)
+
+      assert [%User{}] = members
     end
 
     test "get_community_account_by!/1 returns a community account when meets the clauses" do

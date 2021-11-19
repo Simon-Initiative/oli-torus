@@ -37,11 +37,12 @@ defmodule Oli.Factory do
     }
   end
 
-  def community_account_factory() do
+  def community_account_factory(), do: struct!(community_admin_account_factory())
+
+  def community_admin_account_factory() do
     %CommunityAccount{
       community: insert(:community),
       author: insert(:author),
-      user: insert(:user),
       is_admin: true
     }
   end
@@ -91,6 +92,14 @@ defmodule Oli.Factory do
       institution_email: "ins@example.edu",
       institution_url: "example.edu",
       timezone: "America/New_York"
+    }
+  end
+
+  def community_member_account_factory() do
+    %CommunityAccount{
+      community: insert(:community),
+      user: insert(:user),
+      is_admin: false
     }
   end
 end

@@ -411,13 +411,13 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: author.email}})
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Admin successfully added."
+               "Community admin successfully added."
 
       assert 2 == length(Groups.list_community_admins(community.id))
     end
@@ -432,16 +432,16 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: author.email}})
 
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "Community admin couldn&#39;t be added. Author is already an admin or an unexpected error occurred."
+               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
 
       assert view
@@ -464,13 +464,13 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_collaborator\"")
+      |> element("button[phx-click=\"remove_admin\"")
       |> render_click(%{"collaborator-id" => author.id})
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Admin successfully removed."
+               "Community admin successfully removed."
 
       assert 0 == length(Groups.list_community_admins(community.id))
     end
@@ -487,7 +487,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_collaborator\"")
+      |> element("button[phx-click=\"remove_admin\"")
       |> render_click(%{"collaborator-id" => 12345})
 
       assert view
@@ -496,6 +496,105 @@ defmodule OliWeb.CommunityLiveTest do
                "Community admin couldn&#39;t be removed."
 
       assert 1 == length(Groups.list_community_admins(community.id))
+    end
+
+    test "adds community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: user.email}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully added."
+
+      assert 2 == length(Groups.list_community_members(community.id))
+    end
+
+    test "displays error messages when adding community member fails", %{
+      conn: conn,
+      community: community
+    } do
+      user = build(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: user.email}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community member couldn&#39;t be added. User does not exist."
+
+      assert 1 == length(Groups.list_community_members(community.id))
+    end
+
+    test "removes community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_member\"")
+      |> render_click(%{"collaborator-id" => user.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully removed."
+
+      assert 0 == length(Groups.list_community_admins(community.id))
+    end
+
+    test "displays error messages when removing community member fails", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_member\"")
+      |> render_click(%{"collaborator-id" => 12345})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community member couldn&#39;t be removed."
+
+      assert 1 == length(Groups.list_community_members(community.id))
     end
   end
 
