@@ -3,6 +3,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
 
   import OliWeb.ViewHelpers
 
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.{Link}
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
@@ -34,6 +36,11 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         name: :user,
         label: "User",
         render_fn: &__MODULE__.render_user_column/3
+      },
+      %ColumnSpec{
+        name: :actions,
+        label: "Actions",
+        render_fn: &__MODULE__.render_actions_column/3
       }
     ]
 
@@ -106,6 +113,20 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     ~F"""
       <div :if={user_id}>
         {user.name}
+      </div>
+    """
+  end
+
+  def render_actions_column(
+        %{section_slug: section_slug} = assigns,
+        %GatingCondition{
+          id: id
+        },
+        _
+      ) do
+    ~F"""
+      <div>
+        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)} class="btn btn-sm btn-primary">Edit</Link>
       </div>
     """
   end

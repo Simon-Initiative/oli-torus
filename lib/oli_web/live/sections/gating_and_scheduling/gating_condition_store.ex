@@ -11,6 +11,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   alias Oli.Resources.Revision
   alias OliWeb.Common.Breadcrumb
 
+  def render(assigns) do
+    ~F"""
+    <div>nothing </div>
+    """
+  end
+
   def init(socket, module, section, title, gating_condition_id \\ nil) do
     gating_condition =
       case gating_condition_id do
@@ -19,6 +25,21 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
         id ->
           Gating.get_gating_condition!(id)
+          |> then(fn gc ->
+            %{title: resource_title} =
+              DeliveryResolver.from_resource_id(section.slug, gc.resource_id)
+
+            gc
+            |> Map.take([:id, :type, :section_id, :resource_id])
+            |> Map.put(
+              :resource_title,
+              resource_title
+            )
+            |> Map.put(
+              :data,
+              Map.from_struct(gc.data)
+            )
+          end)
       end
 
     socket
@@ -37,11 +58,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   end
 
   defp breadcrumb(previous, section, module, title) do
+    IO.inspect({module, section.slug})
+
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: title,
-          link: Routes.live_path(OliWeb.Endpoint, module, section.slug)
+          full_title: title
         })
       ]
   end
@@ -185,6 +207,39 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     {:noreply,
      redirect(socket,
+       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+     )}
+  end
+
+  def handle_event(
+        "update_gate",
+        _,
+        socket
+      ) do
+    %{gating_condition: gating_condition, section: section} = socket.assigns
+
+    {:ok, _} =
+      Gating.get_gating_condition!(gating_condition.id)
+      |> Gating.update_gating_condition(gating_condition)
+
+    {:ok, _section} = Gating.update_resource_gating_index(section)
+
+    {:noreply,
+     redirect(socket,
+       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+     )}
+  end
+
+  def handle_event("delete-gating-condition", %{"id" => id}, socket) do
+    %{section: section} = socket.assigns
+
+    {:ok, _deleted} =
+      Gating.get_gating_condition!(String.to_integer(id))
+      |> Gating.delete_gating_condition()
+
+    {:noreply,
+     socket
+     |> redirect(
        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
      )}
   end

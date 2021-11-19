@@ -19,7 +19,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
            __MODULE__,
            section,
            "Edit Gating Condition",
-           gating_condition_id
+           String.to_integer(gating_condition_id)
          )}
 
       {:user, _current_user, section} ->
@@ -29,7 +29,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
            __MODULE__,
            section,
            "Edit Gating Condition",
-           gating_condition_id
+           String.to_integer(gating_condition_id)
          )}
     end
   end
@@ -40,7 +40,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
     <div class="container">
       <h3>{@title}</h3>
 
-      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} />
+      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} create_or_update={:update} />
     </div>
     """
   end
