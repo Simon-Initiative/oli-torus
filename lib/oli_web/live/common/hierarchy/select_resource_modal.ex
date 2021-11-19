@@ -1,5 +1,5 @@
 defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
-  use Surface.LiveComponent
+  use Surface.Component
 
   alias OliWeb.Common.Hierarchy.HierarchyPicker
 
@@ -7,6 +7,9 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
   prop active, :struct, required: true
   prop selection, :any, required: true
   prop filter_items_fn, :fun, default: nil
+
+  prop on_select, :event, required: true
+  prop on_cancel, :event, default: nil
 
   def render(
         %{
@@ -36,11 +39,11 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
                 filter_items_fn: @filter_items_fn}
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="SelectResourceModal.cancel">Cancel</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal" :on-click={@on_cancel}>Cancel</button>
               <button type="submit"
                 class="btn btn-primary"
                 disabled={selection == nil}
-                phx-click="SelectResourceModal.select"
+                :on-click={@on_select}
                 phx-value-selection={selection}>
                 Select
               </button>

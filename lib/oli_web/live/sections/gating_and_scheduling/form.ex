@@ -1,15 +1,18 @@
-defmodule OliWeb.Sections.CreateGatingCondition do
+defmodule OliWeb.Sections.GatingAndScheduling.Form do
   use Surface.LiveComponent
+  use OliWeb.Common.Modal
 
+  alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Form.DateTimeLocalInput
   alias Oli.Delivery.Gating.ConditionTypes
+  alias Surface.Components.{Link}
 
+  prop section, :struct, required: true
   prop gating_condition, :map, required: true
- 
-  def render(%{gating_condition: gating_condition} = assigns) do
+
+  def render(assigns) do
     ~F"""
-    <div class="container">
-      <h3>Create a Gate</h3>
+    <div>
       <div class="form-group">
         <label for="resource">Resource</label>
         <div class="input-group mb-3">
@@ -22,9 +25,9 @@ defmodule OliWeb.Sections.CreateGatingCondition do
       <div class="form-group">
         <label for="conditionTypeSelect">Type</label>
         <select class="form-control" id="conditionTypeSelect" phx-hook="SelectListener" phx-value-change="select-condition">
-          <option value="" selected disabled hidden>Choose a condition...</option>
+          <option {...maybe_type_selected(assigns, :default)} disabled hidden>Choose a condition...</option>
           {#for {name, c} <- ConditionTypes.types()}
-            <option value={c.type()}>{name}</option>
+            <option value={c.type()} {...maybe_type_selected(assigns, c.type())}>{name}</option>
           {/for}
         </select>
       </div>
@@ -33,8 +36,10 @@ defmodule OliWeb.Sections.CreateGatingCondition do
 
       <div class="d-flex">
         <div class="flex-grow-1"></div>
-        <button class="btn btn-outline-primary" phx-click="cancel-create-gate">Cancel</button>
-        <button class="btn btn-primary ml-2" disabled={create_disabled(gating_condition)} phx-click="create_gate">Create</button>
+        <Link class="btn btn-outline-primary" to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>
+          Cancel
+        </Link>
+        <button class="btn btn-primary ml-2" disabled={create_disabled(@gating_condition)} phx-click="create_gate">Create</button>
       </div>
     </div>
     """
@@ -51,6 +56,12 @@ defmodule OliWeb.Sections.CreateGatingCondition do
     do: [value: resource_title]
 
   def maybe_resource_value(_assigns), do: []
+
+  def maybe_type_selected(%{gating_condition: %{type: type}}, t) when type == t, do: [selected: true]
+  def maybe_type_selected(%{gating_condition: %{type: _type}}, _), do: []
+
+  def maybe_type_selected(_assigns, :default), do: [selected: true]
+  def maybe_type_selected(_assigns, _), do: []
 
   def render_condition_options(%{gating_condition: %{type: :schedule}} = assigns) do
     ~F"""

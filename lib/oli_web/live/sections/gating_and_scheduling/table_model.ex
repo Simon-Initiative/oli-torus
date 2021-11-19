@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
+defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   use Surface.LiveComponent
 
   import OliWeb.ViewHelpers
@@ -6,11 +6,10 @@ defmodule OliWeb.Delivery.Sections.GatingConditionsTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
-  alias Oli.Accounts.User
 
   def render(assigns) do
     ~F"""
-    <div>nothing</div>
+    <div></div>
     """
   end
 
