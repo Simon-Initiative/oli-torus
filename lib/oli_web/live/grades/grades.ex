@@ -207,7 +207,7 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp send_grades(students, access_token, section, page, line_item, socket) do
-    task_queue = determine_grade_sync_tasks(section.slug, page, line_item, students)
+    task_queue = determine_grade_sync_tasks(section, page, line_item, students)
 
     send(self(), :pop_task_queue)
 
