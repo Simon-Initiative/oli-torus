@@ -81,6 +81,7 @@ defmodule Oli.MixProject do
       {:ecto_psql_extras, "~> 0.2"},
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
+      {:ex_machina, "~> 2.7.0", only: :test},
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
       {:excoveralls, "~> 0.10", only: :test},

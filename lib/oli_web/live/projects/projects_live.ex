@@ -100,7 +100,7 @@ defmodule OliWeb.Projects.ProjectsLive do
       )
 
     offset = get_int_param(params, "offset", 0)
-    text_search = get_str_param(params, "text_search", "")
+    text_search = get_param(params, "text_search", "")
 
     # if author is an admin, get the show_all value and update if its changed
     {show_all, author} =

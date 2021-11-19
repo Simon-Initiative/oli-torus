@@ -78,7 +78,7 @@ defmodule OliWeb.Users.UsersView do
     offset = get_int_param(params, "offset", 0)
 
     options = %UserBrowseOptions{
-      text_search: get_str_param(params, "text_search", ""),
+      text_search: get_param(params, "text_search", ""),
       include_guests: get_boolean_param(params, "include_guests", false)
     }
 

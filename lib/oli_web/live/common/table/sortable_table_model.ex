@@ -25,7 +25,10 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   The `id_field` is the field name from the row items that uniquely identifies a row item.  This will be used
   when emitting events related to a particular row item.
   """
+  use Surface.LiveComponent
+
   alias OliWeb.Common.Table.ColumnSpec
+  alias Surface.Components.Link
 
   # the items to display
   defstruct rows: [],
@@ -171,5 +174,30 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> Map.put(:sort_order, sort_order)
     |> update_selection(selected)
     |> sort
+  end
+
+  def render_date_column(_, %{inserted_at: inserted_at}, _) do
+    Timex.format!(inserted_at, "{relative}", :relative)
+  end
+
+  def render_link_column(assigns, label, route_path, class \\ "") do
+    ~F"""
+      <Link
+        label={label}
+        to={route_path}
+        class={class}/>
+    """
+  end
+
+  def render_span_column(assigns, text, class \\ "") do
+    ~F"""
+      <span class={class}>{text}</span>
+    """
+  end
+
+  def render(assigns) do
+    ~F"""
+      <div>nothing</div>
+    """
   end
 end

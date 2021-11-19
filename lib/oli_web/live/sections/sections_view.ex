@@ -90,7 +90,7 @@ defmodule OliWeb.Sections.SectionsView do
     offset = get_int_param(params, "offset", 0)
 
     options = %BrowseOptions{
-      text_search: get_str_param(params, "text_search", ""),
+      text_search: get_param(params, "text_search", ""),
       show_deleted: get_boolean_param(params, "show_deleted", false),
       active_only: get_boolean_param(params, "active_only", false),
       # This view is currently for all institutions and all root products
