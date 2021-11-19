@@ -519,6 +519,7 @@ OliWeb.Products.ProductsTableModel.html
 OliWeb.Products.ProductsView.html
 OliWeb.Progress.AttemptHistory.html
 OliWeb.Progress.PageAttemptSummary.html
+OliWeb.Progress.Passback.html
 OliWeb.Progress.ResourceTitle.html
 OliWeb.Progress.StudentResourceView.html
 OliWeb.Progress.StudentTabelModel.html
@@ -590,8 +591,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-f2f206cdba.js
-dist/sidebar_items-2cd823e055.js
+dist/search_items-0771d9c979.js
+dist/sidebar_items-9a030f7409.js
 index.html
 license.html
 readme.html
