@@ -10,7 +10,7 @@
     <title>OliWeb.Common.Table.SortableTableModel — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-9a030f7409.js"></script>
+    <script src="dist/sidebar_items-b10156cea2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -108,7 +108,12 @@ even tertiary columns can contribute to sort order.  The <code class="inline">so
 is used to allow a parent LiveView to differentiate between multiple tables in situations where multiple tables
 exist in the LiveView.  This suffix is also appended to URI parameter names when the attributes of a sortable
 table model are placed in the browser URL for live navigation.</p><p>The <code class="inline">id_field</code> is the field name from the row items that uniquely identifies a row item.  This will be used
-when emitting events related to a particular row item.</p>
+when emitting events related to a particular row item.</p><h2 id="module-properties" class="section-heading">
+  <a href="#module-properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul>
         </section>
 
 
@@ -127,7 +132,46 @@ when emitting events related to a particular row item.</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#mount/1">mount(socket)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#new/1">new(list)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render/1">render(assigns)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_date_column/3">render_date_column(_, map, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_link_column/4">render_link_column(assigns, label, route_path, class \\ &quot;&quot;)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_span_column/3">render_span_column(assigns, text, class \\ &quot;&quot;)</a>
 
   </div>
 
@@ -189,6 +233,28 @@ when emitting events related to a particular row item.</p>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="mount/1">
+
+  <div class="detail-header">
+    <a href="#mount/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">mount(socket)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
+  </section>
+</section>
 <section class="detail" id="new/1">
 
   <div class="detail-header">
@@ -198,7 +264,99 @@ Functions
     </a>
     <h1 class="signature">new(list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L46" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L49" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render/1">
+
+  <div class="detail-header">
+    <a href="#render/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render(assigns)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L198" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="render_date_column/3">
+
+  <div class="detail-header">
+    <a href="#render_date_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_date_column(_, map, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L179" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_link_column/4">
+
+    <span id="render_link_column/3"></span>
+
+  <div class="detail-header">
+    <a href="#render_link_column/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_link_column(assigns, label, route_path, class \\ &quot;&quot;)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L183" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_span_column/3">
+
+    <span id="render_span_column/2"></span>
+
+  <div class="detail-header">
+    <a href="#render_span_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_span_column(assigns, text, class \\ &quot;&quot;)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L192" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -220,7 +378,7 @@ Functions
     </a>
     <h1 class="signature">sort(struct)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L115" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L118" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -242,7 +400,7 @@ Functions
     </a>
     <h1 class="signature">to_params(struct)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L130" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L133" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -264,7 +422,7 @@ Functions
     </a>
     <h1 class="signature">update_from_params(struct, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L143" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L146" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -286,7 +444,7 @@ Functions
     </a>
     <h1 class="signature">update_selection(struct, selected_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L82" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L85" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -308,7 +466,7 @@ Functions
     </a>
     <h1 class="signature">update_sort_params(struct, column_name)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L90" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L93" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -330,7 +488,7 @@ Functions
     </a>
     <h1 class="signature">update_sort_params_and_sort(struct, column_name)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L110" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/common/table/sortable_table_model.ex#L113" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

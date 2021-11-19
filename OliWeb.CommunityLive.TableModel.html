@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.16.0">
 
-    <title>OliWeb.Products.Listing — OLI Torus v0.16.0</title>
+    <title>OliWeb.CommunityLive.TableModel — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-9a030f7409.js"></script>
+    <script src="dist/sidebar_items-b10156cea2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,27 +86,15 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.Products.Listing <small class="app-vsn">(OLI Torus v0.16.0)</small>
+OliWeb.CommunityLive.TableModel <small class="app-vsn">(OLI Torus v0.16.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/listing.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/community_live/table_model.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
 
       </h1>
 
-
-        <section id="moduledoc">
-<h2 id="module-properties" class="section-heading">
-  <a href="#module-properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Properties
-</h2>
-<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="module-events" class="section-heading">
-  <a href="#module-events" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Events
-</h2>
-<ul><li><strong>sort, required: true</strong></li><li><strong>page_change, required: true</strong></li></ul>
-        </section>
 
 
         <section id="summary" class="details-list">
@@ -124,29 +112,23 @@ OliWeb.Products.Listing <small class="app-vsn">(OLI Torus v0.16.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#mount/1">mount(socket)</a>
+    <a href="#new/1">new(communities)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render/1">render(assigns)</a>
+    <a href="#render_overview_button/3">render_overview_button(assigns, community, _)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#update/2">update(assigns, socket)</a>
+    <a href="#render_status/3">render_status(assigns, community, _)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:update/2"><code class="inline">Phoenix.LiveComponent.update/2</code></a>.</p></div>
 
 </div>
 
@@ -164,16 +146,16 @@ OliWeb.Products.Listing <small class="app-vsn">(OLI Torus v0.16.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="mount/1">
+<section class="detail" id="new/1">
 
   <div class="detail-header">
-    <a href="#mount/1" class="detail-link" title="Link to this function">
+    <a href="#new/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">mount(socket)</h1>
+    <h1 class="signature">new(communities)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/listing.ex#L1" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/community_live/table_model.ex#L6" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -183,19 +165,19 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
+
   </section>
 </section>
-<section class="detail" id="render/1">
+<section class="detail" id="render_overview_button/3">
 
   <div class="detail-header">
-    <a href="#render/1" class="detail-link" title="Link to this function">
+    <a href="#render_overview_button/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render(assigns)</h1>
+    <h1 class="signature">render_overview_button(assigns, community, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/listing.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/community_live/table_model.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -205,19 +187,19 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
+
   </section>
 </section>
-<section class="detail" id="update/2">
+<section class="detail" id="render_status/3">
 
   <div class="detail-header">
-    <a href="#update/2" class="detail-link" title="Link to this function">
+    <a href="#render_status/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">update(assigns, socket)</h1>
+    <h1 class="signature">render_status(assigns, community, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/listing.ex#L1" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/community_live/table_model.ex#L54" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -227,7 +209,7 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:update/2"><code class="inline">Phoenix.LiveComponent.update/2</code></a>.</p>
+
   </section>
 </section>
 

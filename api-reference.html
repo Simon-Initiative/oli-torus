@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-9a030f7409.js"></script>
+    <script src="dist/sidebar_items-b10156cea2.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -1637,6 +1637,29 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="Oli.Groups.html">Oli.Groups</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Groups context.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Groups.Community.html">Oli.Groups.Community</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Groups.CommunityAccount.html">Oli.Groups.CommunityAccount</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="Oli.HTTP.html">Oli.HTTP</a>
 
   </div>
@@ -1841,7 +1864,21 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="Oli.Plugs.AuthorizeCommunity.html">Oli.Plugs.AuthorizeCommunity</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="Oli.Plugs.AuthorizeProject.html">Oli.Plugs.AuthorizeProject</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Plugs.CommunityAdmin.html">Oli.Plugs.CommunityAdmin</a>
 
   </div>
 
@@ -3036,6 +3073,57 @@ and update the objectives present in a course project.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.Common.DeleteModal.html">OliWeb.Common.DeleteModal</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-3" class="section-heading">
+  <a href="#properties-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em></li><li><strong>description</strong> <em>:string, required: true</em></li><li><strong>entity_name</strong> <em>:string, required: true</em></li><li><strong>entity_type</strong> <em>:string, required: true</em></li><li><strong>delete_enabled</strong> <em>:boolean, required: true</em></li></ul><h2 id="events-2" class="section-heading">
+  <a href="#events-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>validate, required: true</strong></li><li><strong>delete, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.Filter.html">OliWeb.Common.Filter</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-4" class="section-heading">
+  <a href="#properties-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>query</strong> <em>:string</em></li></ul><h2 id="events-3" class="section-heading">
+  <a href="#events-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>change, required: true</strong></li><li><strong>apply, required: true</strong></li><li><strong>reset, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.FormContainer.html">OliWeb.Common.FormContainer</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-5" class="section-heading">
+  <a href="#properties-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>title</strong> <em>:string, required: true</em></li><li><strong>bs_row_class</strong> <em>:string, default: &quot;row&quot;</em></li><li><strong>bs_col_class</strong> <em>:string, default: &quot;col-sm-12 col-md-10 col-lg-8 col-xl-6 mx-auto&quot;</em></li></ul><h2 id="slots-2" class="section-heading">
+  <a href="#slots-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Slots
+</h2>
+<ul><li><strong>default, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.Common.Hierarchy.HierarchyPicker.html">OliWeb.Common.Hierarchy.HierarchyPicker</a>
 
   </div>
@@ -3055,6 +3143,23 @@ and update the objectives present in a course project.</p></div>
     <a href="OliWeb.Common.Links.html">OliWeb.Common.Links</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.Common.Listing.html">OliWeb.Common.Listing</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-6" class="section-heading">
+  <a href="#properties-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li><li><strong>show_bottom_paging</strong> <em>:boolean, default: true</em></li><li><strong>additional_table_class</strong> <em>:string, default: &quot;table-sm&quot;</em></li></ul><h2 id="events-4" class="section-heading">
+  <a href="#events-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>sort, required: true</strong></li><li><strong>page_change, required: true</strong></li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -3096,12 +3201,12 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-3" class="section-heading">
-  <a href="#properties-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-7" class="section-heading">
+  <a href="#properties-7" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-2" class="section-heading">
-  <a href="#events-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-5" class="section-heading">
+  <a href="#events-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>sort, default: &quot;paged_table_sort&quot;</strong></li><li><strong>page_change, default: &quot;paged_table_page_change&quot;</strong></li></ul></div>
@@ -3113,13 +3218,13 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-4" class="section-heading">
-  <a href="#properties-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-8" class="section-heading">
+  <a href="#properties-8" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li></ul><h2 id="events-3" class="section-heading">
-  <a href="#events-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+.</li><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li></ul><h2 id="events-6" class="section-heading">
+  <a href="#events-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>click, required: true</strong></li></ul></div>
@@ -3145,12 +3250,12 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-5" class="section-heading">
-  <a href="#properties-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-9" class="section-heading">
+  <a href="#properties-9" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>label</strong> <em>:string, required: true</em></li><li><strong>description</strong> <em>:string, required: true</em></li></ul><h2 id="slots-2" class="section-heading">
-  <a href="#slots-2" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>label</strong> <em>:string, required: true</em></li><li><strong>description</strong> <em>:string, required: true</em></li></ul><h2 id="slots-3" class="section-heading">
+  <a href="#slots-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Slots
 </h2>
 <ul><li><strong>default, required: true</strong></li></ul></div>
@@ -3162,8 +3267,8 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="slots-3" class="section-heading">
-  <a href="#slots-3" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="slots-4" class="section-heading">
+  <a href="#slots-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Slots
 </h2>
 <ul><li><strong>default, required: true</strong></li></ul></div>
@@ -3175,8 +3280,8 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-6" class="section-heading">
-  <a href="#properties-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-10" class="section-heading">
+  <a href="#properties-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>label</strong> <em>:string, required: true</em></li><li><strong>value</strong> <em>:string, required: true</em></li><li><strong>type</strong> <em>:string, default: &quot;text&quot;</em></li></ul></div>
@@ -3195,12 +3300,12 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-7" class="section-heading">
-  <a href="#properties-7" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-11" class="section-heading">
+  <a href="#properties-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>label</strong> <em>:string, required: true</em></li><li><strong>description</strong> <em>:string, required: true</em></li></ul><h2 id="slots-4" class="section-heading">
-  <a href="#slots-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>label</strong> <em>:string, required: true</em></li><li><strong>description</strong> <em>:string, required: true</em></li></ul><h2 id="slots-5" class="section-heading">
+  <a href="#slots-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Slots
 </h2>
 <ul><li><strong>default, required: true</strong></li></ul></div>
@@ -3212,12 +3317,12 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-8" class="section-heading">
-  <a href="#properties-8" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-12" class="section-heading">
+  <a href="#properties-12" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-4" class="section-heading">
-  <a href="#events-4" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>model</strong> <em>:struct, required: true</em></li><li><strong>additional_table_class</strong> <em>:string, default: &quot;table-sm&quot;</em></li></ul><h2 id="events-7" class="section-heading">
+  <a href="#events-7" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>sort, required: true</strong></li></ul></div>
@@ -3268,13 +3373,13 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-9" class="section-heading">
-  <a href="#properties-9" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-13" class="section-heading">
+  <a href="#properties-13" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li><li><strong>text</strong> <em>:string, default: &quot;&quot;</em></li></ul><h2 id="events-5" class="section-heading">
-  <a href="#events-5" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+.</li><li><strong>text</strong> <em>:string, default: &quot;&quot;</em></li></ul><h2 id="events-8" class="section-heading">
+  <a href="#events-8" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>apply, default: &quot;text_search_apply&quot;</strong></li><li><strong>reset, default: &quot;text_search_reset&quot;</strong></li><li><strong>change, default: &quot;text_search_change&quot;</strong></li></ul></div>
@@ -3283,6 +3388,112 @@ platforms and course sections.</p></div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="OliWeb.Common.Utils.html">OliWeb.Common.Utils</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.AccountInvitation.html">OliWeb.CommunityLive.AccountInvitation</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-14" class="section-heading">
+  <a href="#properties-14" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>collaborators</strong> <em>:any, default: []</em></li><li><strong>to_invite</strong> <em>:any, default: :collaborator</em></li><li><strong>placeholder</strong> <em>:string, default: &quot;collaborator@example.edu&quot;</em></li><li><strong>button_text</strong> <em>:string, default: &quot;Send invite&quot;</em></li></ul><h2 id="events-9" class="section-heading">
+  <a href="#events-9" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>invite, required: true</strong></li><li><strong>remove, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.Form.html">OliWeb.CommunityLive.Form</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-15" class="section-heading">
+  <a href="#properties-15" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>changeset</strong> <em>:changeset, required: true</em></li><li><strong>display_labels</strong> <em>:boolean, default: true</em></li></ul><h2 id="events-10" class="section-heading">
+  <a href="#events-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>save, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.IndexView.html">OliWeb.CommunityLive.IndexView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-16" class="section-heading">
+  <a href="#properties-16" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.NewView.html">OliWeb.CommunityLive.NewView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-17" class="section-heading">
+  <a href="#properties-17" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.ShowSection.html">OliWeb.CommunityLive.ShowSection</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-18" class="section-heading">
+  <a href="#properties-18" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>section_title</strong> <em>:string, required: true</em></li><li><strong>section_description</strong> <em>:string</em></li></ul><h2 id="slots-6" class="section-heading">
+  <a href="#slots-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Slots
+</h2>
+<ul><li><strong>default, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.ShowView.html">OliWeb.CommunityLive.ShowView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-19" class="section-heading">
+  <a href="#properties-19" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.CommunityLive.TableModel.html">OliWeb.CommunityLive.TableModel</a>
 
   </div>
 
@@ -3458,8 +3669,8 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-10" class="section-heading">
-  <a href="#properties-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-20" class="section-heading">
+  <a href="#properties-20" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -3472,8 +3683,8 @@ platforms and course sections.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-11" class="section-heading">
-  <a href="#properties-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-21" class="section-heading">
+  <a href="#properties-21" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -3488,8 +3699,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-12" class="section-heading">
-  <a href="#properties-12" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-22" class="section-heading">
+  <a href="#properties-22" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -3652,8 +3863,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-13" class="section-heading">
-  <a href="#properties-13" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-23" class="section-heading">
+  <a href="#properties-23" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -3666,8 +3877,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-14" class="section-heading">
-  <a href="#properties-14" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-24" class="section-heading">
+  <a href="#properties-24" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4130,13 +4341,13 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-15" class="section-heading">
-  <a href="#properties-15" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-25" class="section-heading">
+  <a href="#properties-25" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li><li><strong>title</strong> <em>:string, required: true</em></li></ul><h2 id="events-6" class="section-heading">
-  <a href="#events-6" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+.</li><li><strong>title</strong> <em>:string, required: true</em></li></ul><h2 id="events-11" class="section-heading">
+  <a href="#events-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>click, required: true</strong></li><li><strong>change, required: true</strong></li></ul></div>
@@ -4148,8 +4359,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-16" class="section-heading">
-  <a href="#properties-16" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-26" class="section-heading">
+  <a href="#properties-26" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>product</strong> <em>:any, required: true</em></li><li><strong>is_admin</strong> <em>:boolean, required: true</em></li></ul></div>
@@ -4161,8 +4372,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-17" class="section-heading">
-  <a href="#properties-17" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-27" class="section-heading">
+  <a href="#properties-27" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>product</strong> <em>:any, required: true</em></li><li><strong>updates</strong> <em>:any, required: true</em></li></ul></div>
@@ -4174,8 +4385,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-18" class="section-heading">
-  <a href="#properties-18" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-28" class="section-heading">
+  <a href="#properties-28" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>product</strong> <em>:any, default: nil</em></li><li><strong>changeset</strong> <em>:any, default: nil</em></li><li><strong>available_brands</strong> <em>:any, default: nil</em></li></ul></div>
@@ -4187,8 +4398,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-19" class="section-heading">
-  <a href="#properties-19" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-29" class="section-heading">
+  <a href="#properties-29" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4199,47 +4410,17 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="OliWeb.Products.Filter.html">OliWeb.Products.Filter</a>
-
-  </div>
-
-    <div class="summary-synopsis"><h2 id="events-7" class="section-heading">
-  <a href="#events-7" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Events
-</h2>
-<ul><li><strong>change, required: true</strong></li><li><strong>apply, required: true</strong></li><li><strong>reset, required: true</strong></li></ul></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="OliWeb.Products.Listing.html">OliWeb.Products.Listing</a>
-
-  </div>
-
-    <div class="summary-synopsis"><h2 id="properties-20" class="section-heading">
-  <a href="#properties-20" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Properties
-</h2>
-<ul><li><strong>total_count</strong> <em>:integer, required: true</em></li><li><strong>filter</strong> <em>:string, required: true</em></li><li><strong>limit</strong> <em>:integer, required: true</em></li><li><strong>offset</strong> <em>:integer, required: true</em></li><li><strong>table_model</strong> <em>:struct, required: true</em></li></ul><h2 id="events-8" class="section-heading">
-  <a href="#events-8" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Events
-</h2>
-<ul><li><strong>sort, required: true</strong></li><li><strong>page_change, required: true</strong></li></ul></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="OliWeb.Products.Payments.CreateCodes.html">OliWeb.Products.Payments.CreateCodes</a>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-21" class="section-heading">
-  <a href="#properties-21" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-30" class="section-heading">
+  <a href="#properties-30" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li><li><strong>product_slug</strong> <em>:string, required: true</em></li><li><strong>count</strong> <em>:integer, required: true</em></li><li><strong>disabled</strong> <em>:boolean, required: true</em></li></ul><h2 id="events-9" class="section-heading">
-  <a href="#events-9" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+.</li><li><strong>product_slug</strong> <em>:string, required: true</em></li><li><strong>count</strong> <em>:integer, required: true</em></li><li><strong>disabled</strong> <em>:boolean, required: true</em></li></ul><h2 id="events-12" class="section-heading">
+  <a href="#events-12" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>click, required: true</strong></li><li><strong>change, required: true</strong></li></ul></div>
@@ -4251,8 +4432,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-22" class="section-heading">
-  <a href="#properties-22" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-31" class="section-heading">
+  <a href="#properties-31" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4265,8 +4446,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-23" class="section-heading">
-  <a href="#properties-23" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-32" class="section-heading">
+  <a href="#properties-32" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4281,13 +4462,6 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-24" class="section-heading">
-  <a href="#properties-24" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Properties
-</h2>
-<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li></ul></div>
-
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -4295,8 +4469,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-25" class="section-heading">
-  <a href="#properties-25" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-33" class="section-heading">
+  <a href="#properties-33" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4311,8 +4485,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-26" class="section-heading">
-  <a href="#properties-26" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-34" class="section-heading">
+  <a href="#properties-34" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>resource_attempts</strong> <em>:list, required: true</em></li></ul></div>
@@ -4324,8 +4498,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-27" class="section-heading">
-  <a href="#properties-27" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-35" class="section-heading">
+  <a href="#properties-35" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>attempt</strong> <em>:struct, required: true</em></li></ul></div>
@@ -4337,12 +4511,12 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-28" class="section-heading">
-  <a href="#properties-28" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-36" class="section-heading">
+  <a href="#properties-36" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>grade_sync_result</strong> <em>:any, required: true</em></li></ul><h2 id="events-10" class="section-heading">
-  <a href="#events-10" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>grade_sync_result</strong> <em>:any, required: true</em></li></ul><h2 id="events-13" class="section-heading">
+  <a href="#events-13" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>click, required: true</strong></li></ul></div>
@@ -4364,8 +4538,8 @@ path within the curriculum to this resource.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-29" class="section-heading">
-  <a href="#properties-29" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-37" class="section-heading">
+  <a href="#properties-37" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4390,8 +4564,8 @@ course section, for a specific student.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-30" class="section-heading">
-  <a href="#properties-30" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-38" class="section-heading">
+  <a href="#properties-38" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4443,8 +4617,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-31" class="section-heading">
-  <a href="#properties-31" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-39" class="section-heading">
+  <a href="#properties-39" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4608,8 +4782,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-32" class="section-heading">
-  <a href="#properties-32" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-40" class="section-heading">
+  <a href="#properties-40" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4624,8 +4798,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-33" class="section-heading">
-  <a href="#properties-33" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-41" class="section-heading">
+  <a href="#properties-41" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4640,8 +4814,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-34" class="section-heading">
-  <a href="#properties-34" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-42" class="section-heading">
+  <a href="#properties-42" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>users</strong> <em>:list, required: true</em></li></ul></div>
@@ -4653,8 +4827,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-35" class="section-heading">
-  <a href="#properties-35" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-43" class="section-heading">
+  <a href="#properties-43" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>section</strong> <em>:any, required: true</em></li></ul></div>
@@ -4666,8 +4840,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-36" class="section-heading">
-  <a href="#properties-36" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-44" class="section-heading">
+  <a href="#properties-44" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>changeset</strong> <em>:any, required: true</em></li><li><strong>disabled</strong> <em>:boolean, required: true</em></li><li><strong>is_admin</strong> <em>:boolean, required: true</em></li><li><strong>brands</strong> <em>:list, required: true</em></li></ul></div>
@@ -4686,8 +4860,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-37" class="section-heading">
-  <a href="#properties-37" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-45" class="section-heading">
+  <a href="#properties-45" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>changeset</strong> <em>:any, required: true</em></li><li><strong>disabled</strong> <em>:boolean, required: true</em></li><li><strong>is_admin</strong> <em>:boolean, required: true</em></li></ul></div>
@@ -4699,8 +4873,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-38" class="section-heading">
-  <a href="#properties-38" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-46" class="section-heading">
+  <a href="#properties-46" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4715,8 +4889,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-39" class="section-heading">
-  <a href="#properties-39" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-47" class="section-heading">
+  <a href="#properties-47" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>changeset</strong> <em>:any, required: true</em></li><li><strong>disabled</strong> <em>:boolean, required: true</em></li><li><strong>is_admin</strong> <em>:boolean, required: true</em></li></ul></div>
@@ -4728,8 +4902,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-40" class="section-heading">
-  <a href="#properties-40" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-48" class="section-heading">
+  <a href="#properties-48" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4742,8 +4916,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-41" class="section-heading">
-  <a href="#properties-41" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-49" class="section-heading">
+  <a href="#properties-49" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4758,12 +4932,12 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-42" class="section-heading">
-  <a href="#properties-42" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-50" class="section-heading">
+  <a href="#properties-50" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
-<ul><li><strong>section</strong> <em>:struct, required: true</em></li></ul><h2 id="events-11" class="section-heading">
-  <a href="#events-11" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+<ul><li><strong>section</strong> <em>:struct, required: true</em></li></ul><h2 id="events-14" class="section-heading">
+  <a href="#events-14" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Events
 </h2>
 <ul><li><strong>unlink, required: true</strong></li></ul></div>
@@ -4824,8 +4998,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-43" class="section-heading">
-  <a href="#properties-43" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-51" class="section-heading">
+  <a href="#properties-51" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>for_author</strong> <em>:boolean, default: false</em></li><li><strong>user</strong> <em>:any, required: true</em></li><li><strong>csrf_token</strong> <em>:any, required: true</em></li></ul></div>
@@ -4837,8 +5011,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-44" class="section-heading">
-  <a href="#properties-44" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-52" class="section-heading">
+  <a href="#properties-52" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4853,8 +5027,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-45" class="section-heading">
-  <a href="#properties-45" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-53" class="section-heading">
+  <a href="#properties-53" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4867,8 +5041,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-46" class="section-heading">
-  <a href="#properties-46" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-54" class="section-heading">
+  <a href="#properties-54" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4883,8 +5057,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-47" class="section-heading">
-  <a href="#properties-47" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-55" class="section-heading">
+  <a href="#properties-55" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4897,8 +5071,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-48" class="section-heading">
-  <a href="#properties-48" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-56" class="section-heading">
+  <a href="#properties-56" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4913,8 +5087,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-49" class="section-heading">
-  <a href="#properties-49" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-57" class="section-heading">
+  <a href="#properties-57" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -4927,8 +5101,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-50" class="section-heading">
-  <a href="#properties-50" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-58" class="section-heading">
+  <a href="#properties-58" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -4950,8 +5124,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-51" class="section-heading">
-  <a href="#properties-51" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-59" class="section-heading">
+  <a href="#properties-59" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
