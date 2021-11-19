@@ -2,7 +2,10 @@ defmodule OliWeb.CommunityLive.ShowView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
+  alias Oli.Accounts
+  alias Oli.Accounts.{AuthorBrowseOptions, UserBrowseOptions}
   alias Oli.Groups
+  alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, DeleteModal}
   alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
   alias Surface.Components.Link
@@ -23,11 +26,13 @@ defmodule OliWeb.CommunityLive.ShowView do
   data modal, :any, default: nil
   data community_admins, :list
   data community_members, :list
+  data matches, :map, default: %{"admin" => [], "member" => []}
 
   @delete_modal_description """
     This action will not affect existing course sections that are using this community.
     Those sections will continue to operate as intended.
   """
+  @matches_limit 30
 
   def breadcrumb(community_id) do
     IndexView.breadcrumb() ++
@@ -78,8 +83,11 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add other authors by email to administrate the community."
         >
           <AccountInvitation
+            id="admin_invitation"
             invite="add_admin"
             remove="remove_admin"
+            suggest="suggest_admin"
+            matches={@matches["admin"]}
             placeholder="admin@example.edu"
             button_text="Add"
             collaborators={@community_admins}/>
@@ -90,8 +98,11 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add users by email to be members of the community."
         >
           <AccountInvitation
+            id="member_invitation"
             invite="add_member"
             remove="remove_member"
+            suggest="suggest_member"
+            matches={@matches["member"]}
             placeholder="user@example.edu"
             button_text="Add"
             collaborators={@community_members}/>
@@ -187,15 +198,15 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, assign(socket, modal: modal)}
   end
 
-  defp community_users_assigns("admin", community_id) do
+  defp community_accounts_assigns("admin", community_id) do
     [community_admins: Groups.list_community_admins(community_id)]
   end
 
-  defp community_users_assigns("member", community_id) do
+  defp community_accounts_assigns("member", community_id) do
     [community_members: Groups.list_community_members(community_id)]
   end
 
-  defp community_users_assigns(_user_type, _community_id), do: []
+  defp community_accounts_assigns(_user_type, _community_id), do: []
 
   def handle_event("add_" <> user_type, %{"collaborator" => %{"email" => email}}, socket) do
     socket = clear_flash(socket)
@@ -208,7 +219,7 @@ defmodule OliWeb.CommunityLive.ShowView do
     case Groups.create_community_account_from_email(user_type, email, attrs) do
       {:ok, _community_account} ->
         socket = put_flash(socket, :info, "Community #{user_type} successfully added.")
-        updated_assigns = community_users_assigns(user_type, attrs.community_id)
+        updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
 
         {:noreply, assign(socket, updated_assigns)}
 
@@ -245,12 +256,44 @@ defmodule OliWeb.CommunityLive.ShowView do
     |> case do
       {:ok, _community_account} ->
         socket = put_flash(socket, :info, "Community #{user_type} successfully removed.")
-        updated_assigns = community_users_assigns(user_type, attrs.community_id)
+        updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
 
         {:noreply, assign(socket, updated_assigns)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Community #{user_type} couldn't be removed.")}
     end
+  end
+
+  defp browse_accounts("member", query) do
+    options = %UserBrowseOptions{
+      include_guests: false,
+      text_search: query
+    }
+
+    Accounts.browse_users(
+      %Paging{offset: 0, limit: @matches_limit},
+      %Sorting{direction: :asc, field: :name},
+      options
+    )
+  end
+
+  defp browse_accounts("admin", query) do
+    options = %AuthorBrowseOptions{
+      text_search: query
+    }
+
+    Accounts.browse_authors(
+      %Paging{offset: 0, limit: @matches_limit},
+      %Sorting{direction: :asc, field: :name},
+      options
+    )
+  end
+
+  def handle_event("suggest_" <> user_type, %{"collaborator" => %{"email" => query}}, socket) do
+    account_matches = browse_accounts(user_type, query)
+    matches = Map.put(socket.assigns.matches, user_type, account_matches)
+
+    {:noreply, assign(socket, matches: matches)}
   end
 end
