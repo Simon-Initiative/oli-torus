@@ -70,7 +70,14 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
             </button>
           </div>
           <style type="text/css" aria-hidden="true" />
-          <div className="content" style={{ overflow: 'hidden auto !important' }}>
+          <style>
+            {`
+          #stage-feedback .content {
+            overflow: hidden auto !important;
+          }
+        `}
+          </style>
+          <div className="content">
             <FeedbackRenderer
               feedbacks={feedbacks}
               snapshot={getLocalizedStateSnapshot(currentActivityIds)}
