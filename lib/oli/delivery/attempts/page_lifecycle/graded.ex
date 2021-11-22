@@ -118,8 +118,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       part_attempt_guids =
         Enum.map(resource_attempt.activity_attempts, fn a ->
           # some activities will finalize themselves ahead of a graded page
-          # submission.  so we only submit those that are still yet to be finalized.
-          if a.date_evaluated == nil do
+          # submission.  so we only submit those that are still yet to be finalized, and
+          # that are scoreable
+          if a.date_evaluated == nil and a.scoreable do
             Evaluate.evaluate_from_stored_input(a.attempt_guid)
           else
             []
@@ -159,8 +160,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     if resource_attempt.date_evaluated == nil do
       # Leaving this hardcoded to 'total' seems to make sense, but perhaps in the
       # future we do allow this to be configured
+
+      scoreable_attempts =
+        Enum.filter(resource_attempt.activity_attempts, fn activity_attempt ->
+          activity_attempt.scoreable
+        end)
+
       {score, out_of} =
-        Enum.reduce(resource_attempt.activity_attempts, {0, 0}, fn p, {score, out_of} ->
+        Enum.reduce(scoreable_attempts, {0, 0}, fn p, {score, out_of} ->
           {score + p.score, out_of + p.out_of}
         end)
 

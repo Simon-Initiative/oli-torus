@@ -2,8 +2,8 @@ defmodule OliWeb.Products.ProductsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
   alias OliWeb.Products.Create
-  alias OliWeb.Products.Filter
-  alias OliWeb.Products.Listing
+  alias OliWeb.Common.Filter
+  alias OliWeb.Common.Listing
   alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
@@ -23,14 +23,14 @@ defmodule OliWeb.Products.ProductsView do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
-  data filter, :string, default: ""
-  data applied_filter, :string, default: ""
+  data query, :string, default: ""
+  data applied_query, :string, default: ""
 
-  @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/2
+  @table_filter_fn &OliWeb.Products.ProductsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.ProductsView.live_path/2
 
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
+  def filter_rows(socket, query, _filter) do
+    case String.downcase(query) do
       "" ->
         socket.assigns.products
 
@@ -113,13 +113,13 @@ defmodule OliWeb.Products.ProductsView do
       {#if @is_admin_view == false}
         <Create id="creation" title={@creation_title} change="title" click="create"/>
       {#else}
-        <Filter change={"change_filter"} reset="reset_filter" apply="apply_filter"/>
+        <Filter change={"change_search"} reset="reset_search" apply="apply_search"/>
       {/if}
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@filter}
+        filter={@query}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}

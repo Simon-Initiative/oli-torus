@@ -1,14 +1,14 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
   <%= if @context.previous_page != nil do %>
-    <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.previous_page.slug), class: "page-nav-link btn" do %>
+    <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.previous_page["slug"]), class: "page-nav-link btn" do %>
       <div class="d-flex flex-row">
         <div>
           <i class="fas fa-arrow-left nav-icon"></i>
         </div>
         <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
           <div class="nav-label">Previous</div>
-          <div class="nav-title"><%= @context.previous_page.title %></div>
+          <div class="nav-title"><%= @context.previous_page["title"] %></div>
         </div>
       </div>
     <% end %>
@@ -20,11 +20,11 @@
 
   <%= cond do %>
     <% @context.next_page != nil -> %>
-        <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.next_page.slug), class: "page-nav-link btn" do %>
+        <%= link to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.next_page["slug"]), class: "page-nav-link btn" do %>
           <div class="d-flex flex-row">
             <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
               <div class="nav-label">Next</div>
-              <div class="nav-title"><%= @context.next_page.title %></div>
+              <div class="nav-title"><%= @context.next_page["title"] %></div>
             </div>
             <div>
               <i class="fas fa-arrow-right nav-icon"></i>

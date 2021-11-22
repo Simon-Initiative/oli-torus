@@ -70,7 +70,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
           value: dStartTime,
         },
         {
-          key: 'exposureInPercentage',
+          key: 'exposurePercentage',
           type: CapiVariableTypes.NUMBER,
           value: 0,
         },
@@ -367,7 +367,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   }) => {
     const currentVideoTime = parseFloat(currentTime);
     const videoDuration = parseFloat(duration);
-    const exposureInPercentage = (currentVideoTime / videoDuration) * 100;
+    const exposurePercentage = (currentVideoTime / videoDuration) * 100;
     props.onSave({
       id: `${id}`,
       responses: [
@@ -402,9 +402,9 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
           value: currentTime,
         },
         {
-          key: 'exposureInPercentage',
+          key: 'exposurePercentage',
           type: CapiVariableTypes.NUMBER,
-          value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
+          value: isNaN(exposurePercentage) ? 0 : parseInt(exposurePercentage.toString()),
         },
         {
           key: 'hasCompleted',

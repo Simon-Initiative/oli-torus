@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { getCapiType } from 'adaptivity/capi';
+import { inferTypeFromOperatorAndValue } from 'apps/authoring/components/AdaptivityEditor/AdaptiveItemOptions';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import { clone } from 'utils/common';
@@ -18,7 +18,9 @@ const updateNestedConditions = (conditions: any) => {
       condition.id = `c:${guid()}`;
     }
     if (condition.fact && !condition.type) {
-      condition.type = getCapiType(condition.value);
+      // because there might not be a type from an import, and the value might not actually be the type of the fact,
+      // we need to get the type based on the operator AND the value intelligently
+      condition.type = inferTypeFromOperatorAndValue(condition.operator, condition.value);
     }
     if (condition.any || condition.all) {
       if (!condition.id) {

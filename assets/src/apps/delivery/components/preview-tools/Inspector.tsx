@@ -69,13 +69,22 @@ const Inspector: React.FC<InspectorProps> = ({ currentActivity }) => {
             (activity) => !!activity.content.partsLayout.find((p: any) => p.id === part),
           );
           if (ownerActivity.id === activity.id) {
-            const next = { ...col, ...statePuff[`${activity.id}|stage`] };
+            const partVariables = statePuff[`${activity.id}|stage`];
+            const partCol: Record<string, unknown> = {};
+            partCol[part] = partVariables[part];
+            const next = { ...col, ...partCol };
             return next;
+          } else {
+            return { ...col };
           }
         }, {});
       }
-      const next = { ...collect, ...ownerVariables };
-      return next;
+      if (ownerVariables) {
+        const next = { ...collect, ...ownerVariables };
+        return next;
+      } else {
+        return { ...collect };
+      }
     }, {});
     /* console.log('STAGE STATE PUFF', { statePuff, stageSlice }); */
     return setStageState(stageSlice);

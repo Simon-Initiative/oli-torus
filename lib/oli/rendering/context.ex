@@ -11,6 +11,7 @@ defmodule Oli.Rendering.Context do
             },
             # Mode can be one of  [:delivery, :review, :author_preview, :instructor_preview]
             mode: :delivery,
+            revision_slug: nil,
             section_slug: nil,
             project_slug: nil,
             activity_types_map: %{}

@@ -125,7 +125,9 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
           style={popupCloseStyles}
           onClick={handleCloseIconClick}
         >
-          <span style={closeButtonSpanStyles}>x</span>
+          <span aria-hidden={true} style={closeButtonSpanStyles}>
+            x
+          </span>
         </button>
       </div>
     </div>

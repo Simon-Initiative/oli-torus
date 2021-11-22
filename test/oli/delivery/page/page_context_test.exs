@@ -78,51 +78,6 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
       # verify objectives map
       assert context.objectives == ["objective one"]
-
-      # verify previous and next are correct
-      assert context.previous_page.resource_id == page1.id
-      assert context.next_page.resource_id == page2.id
-
-      # verify all other possible variants of prev and next:
-
-      Seeder.replace_pages_with(
-        [p1.resource, page2],
-        container_resource,
-        container_revision,
-        publication
-      )
-
-      Seeder.rebuild_section_resources(%{section: section, publication: publication})
-
-      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
-      assert context.previous_page == nil
-      assert context.next_page.resource_id == page2.id
-
-      Seeder.replace_pages_with(
-        [page2, p1.resource],
-        container_resource,
-        container_revision,
-        publication
-      )
-
-      Seeder.rebuild_section_resources(%{section: section, publication: publication})
-
-      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
-      assert context.previous_page.resource_id == page2.id
-      assert context.next_page == nil
-
-      Seeder.replace_pages_with(
-        [p1.resource],
-        container_resource,
-        container_revision,
-        publication
-      )
-
-      Seeder.rebuild_section_resources(%{section: section, publication: publication})
-
-      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
-      assert context.previous_page == nil
-      assert context.next_page == nil
     end
   end
 end

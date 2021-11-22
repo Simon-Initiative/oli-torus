@@ -33,7 +33,8 @@ export const initializeFromContext = createAsyncThunk(
       custom: params.context.content.custom || {},
     };
     if (!params.context.content.model.length && !pageState.custom.themeId) {
-      pageState.custom.themeId = 'torus-theme-1';
+      pageState.custom.themeId = 'torus-default-light';
+      pageState.additionalStylesheets = ['/css/delivery_adaptive_themes_default_light.css'];
     }
     dispatch(loadPage(pageState));
 
