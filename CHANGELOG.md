@@ -4,13 +4,31 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.16.0 (2021-11-19)
+
+### Bug Fixes
+
+- Fix issue with bulk line item grade sync
+
+### Enhancements
+
+- Allow instructors to manually send one student grade to LMS
+
+## 0.15.0 (2021-11-18)
+
+### Bug Fixes
+
 - Fix bug that prevented deletion of authors that have locked resource revisions
 - Fix an issue related to next previous page links that causes 500 internal server error on advanced authoring pages
+- Fix a bug that prevented MultiInput activities with dropdowns from evaluating correctly
+- Fix a bug that prevented SingleResponse activities from properly restoring student state
+- Fix a bug that was preventing manual grade sync from executing
 
 ### Enhancements
 
 - Instructor "Preview" mode
-- Previewing of activity bank selections
 
 ## 0.14.6 (2021-11-08)
 

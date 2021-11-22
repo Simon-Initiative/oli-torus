@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   alias Oli.Resources.Revision
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
+  alias Oli.Delivery.ActivityProvider.Result
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext, AttemptState}
 
   @doc """
@@ -36,7 +37,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
-    {errors, activity_revisions, transformed_content} =
+    %Result{
+      errors: errors,
+      revisions: activity_revisions,
+      transformed_content: transformed_content,
+      unscored: unscored
+    } =
       context.activity_provider.(
         context.page_revision,
         %Source{
@@ -58,7 +64,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       {:ok, resource_attempt} ->
         attempt_hierarchy =
           Enum.reduce(activity_revisions, %{}, fn revision, m ->
-            case create_full_activity_attempt(resource_attempt, revision) do
+            case create_full_activity_attempt(
+                   resource_attempt,
+                   revision,
+                   !MapSet.member?(unscored, revision.resource_id)
+                 ) do
               {:ok, {activity_attempt, part_attempts}} ->
                 Map.put(m, revision.resource_id, {activity_attempt, part_attempts})
 
@@ -80,7 +90,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   defp create_full_activity_attempt(
          resource_attempt,
-         %Revision{resource_id: resource_id, id: id, content: model} = revision
+         %Revision{resource_id: resource_id, id: id, content: model} = revision,
+         scoreable
        ) do
     with {:ok, parsed_model} <- Model.parse(model),
          {:ok, transformed_model} <- Transformers.apply_transforms(model),
@@ -91,7 +102,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
              attempt_number: 1,
              revision_id: id,
              resource_id: resource_id,
-             transformed_model: transformed_model
+             transformed_model: transformed_model,
+             scoreable: scoreable
            }),
          {:ok, part_attempts} <- create_part_attempts(parsed_model, activity_attempt) do
       # We simulate the effect of preloading the revision by setting it

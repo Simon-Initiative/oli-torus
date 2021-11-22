@@ -34,6 +34,21 @@ export const safelySelectInputs = (activityState: ActivityState | undefined): Ma
   );
 };
 
+export const safelySelectStringInputs = (
+  activityState: ActivityState | undefined,
+): Maybe<PartInputs> => {
+  const partInputs = activityState?.parts.filter((part) => !!part?.response?.input);
+  if (!partInputs) return Maybe.nothing();
+
+  return Maybe.maybe(activityState).lift((state) =>
+    state.parts.reduce((acc, partState) => {
+      const input = partState.response?.input;
+      acc[String(partState.partId)] = [input];
+      return acc;
+    }, {} as PartInputs),
+  );
+};
+
 export const initialPartInputs = (
   activityState: ActivityState | undefined,
   defaultPartInputs: PartInputs = { [DEFAULT_PART_ID]: [] },

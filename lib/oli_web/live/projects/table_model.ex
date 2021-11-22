@@ -53,14 +53,10 @@ defmodule OliWeb.Projects.TableModel do
       :status ->
         case project.status do
           :active ->
-            ~F"""
-            <span class="text-success">Active</span>
-            """
+            SortableTableModel.render_span_column(assigns, "Active", "text-success")
 
           :deleted ->
-            ~F"""
-            <span class="text-danger">Deleted</span>
-            """
+            SortableTableModel.render_span_column(assigns, "Deleted", "text-danger")
         end
 
       :name ->

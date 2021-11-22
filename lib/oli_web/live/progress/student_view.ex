@@ -83,7 +83,7 @@ defmodule OliWeb.Progress.StudentView do
   end
 
   def handle_params(params, _, socket) do
-    text_search = get_str_param(params, "text_search", "")
+    text_search = get_param(params, "text_search", "")
 
     filtered_page_nodes =
       Enum.filter(socket.assigns.page_nodes, fn node ->
