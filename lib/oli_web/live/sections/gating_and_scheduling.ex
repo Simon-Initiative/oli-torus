@@ -75,12 +75,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     )
   end
 
-  defp soft_reload(socket) do
-    %{section: section} = socket.assigns
-
-    assign_defaults(socket, section)
-  end
-
   defp determine_total(rows) do
     case(rows) do
       [] -> 0
@@ -96,7 +90,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       )
 
     offset = get_int_param(params, "offset", 0)
-    text_search = get_str_param(params, "text_search", "")
+    text_search = get_param(params, "text_search", "")
 
     rows =
       Gating.browse_gating_conditions(

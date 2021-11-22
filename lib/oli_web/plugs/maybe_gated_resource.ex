@@ -7,7 +7,6 @@ defmodule Oli.Plugs.MaybeGatedResource do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating
-  alias Oli.Delivery.Page.PageContext
 
   def init(opts), do: opts
 
@@ -36,13 +35,8 @@ defmodule Oli.Plugs.MaybeGatedResource do
   end
 
   defp gated_resource_unavailable(conn, section, revision) do
-    user = conn.assigns.current_user
-
-    %PageContext{
-      summary: summary,
-      previous_page: previous_page,
-      next_page: next_page
-    } = PageContext.create_for_visit(section.slug, revision.slug, user)
+    {:ok, {previous, next}} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
     details =
       Gating.details(section, revision.resource_id, format_datetime: format_datetime_fn(conn))
@@ -53,10 +47,9 @@ defmodule Oli.Plugs.MaybeGatedResource do
     |> put_status(403)
     |> render("gated_resource_unavailable.html",
       section_slug: section.slug,
-      summary: summary,
       scripts: [],
-      previous_page: previous_page,
-      next_page: next_page,
+      previous_page: previous,
+      next_page: next,
       details: details
     )
     |> halt()
