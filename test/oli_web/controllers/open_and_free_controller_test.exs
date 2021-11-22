@@ -89,7 +89,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     test "renders form for editing chosen open_and_free", %{conn: conn, section: section} do
       conn = get(conn, Routes.open_and_free_path(conn, :edit, section))
-      assert html_response(conn, 200) =~ "Edit Open and Free Section"
+      assert html_response(conn, 200) =~ "Edit Section"
     end
   end
 
@@ -108,7 +108,7 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, section: section} do
       conn = put(conn, Routes.open_and_free_path(conn, :update, section), section: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Edit Open and Free Section"
+      assert html_response(conn, 200) =~ "Edit Section"
     end
   end
 
