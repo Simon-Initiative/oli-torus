@@ -20,7 +20,8 @@ interface Context {
   activity_type: string,
   server_url: string,
   user_guid: string,
-  mode: string
+  mode: string,
+  part_ids: string,
 }
 
 const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
@@ -52,7 +53,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   }, []);
 
   const fetchContext = () => {
-    console.log(props);
+    // console.log(props);
     fetch('/jcourse/superactivity/context/'+activityState.attemptGuid, {
       method: 'GET',
     })
@@ -84,7 +85,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
                 data-authenticationtoken="none" data-sessionid="1958e2f50a0000562295c9a569354ab5"
                 data-resourcetypeid={context.activity_type} data-superactivityserver={context.server_url}
                 data-activitymode={context.mode} allowFullScreen={true} data-activitycontextguid={activityState.attemptGuid}
-            data-activityguid={activityState.attemptGuid} data-userguid={context.user_guid} data-mode="oli" />
+            data-activityguid={activityState.attemptGuid} data-userguid={context.user_guid} data-partids={context.part_ids} data-mode="oli" />
       )}
     </>
   );

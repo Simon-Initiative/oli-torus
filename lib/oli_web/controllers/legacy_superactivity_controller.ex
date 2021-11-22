@@ -30,6 +30,10 @@ defmodule OliWeb.LegacySuperactivityController do
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
+    IO.inspect(activity_attempt, limit: :infinity)
+
+    part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
+
     %{"base" => base, "src" => src} = activity_attempt.transformed_model
 
     context = %{
@@ -37,7 +41,8 @@ defmodule OliWeb.LegacySuperactivityController do
       activity_type: activity_attempt.revision.activity_type.slug,
       server_url: "https://#{conn.host}/jcourse/superactivity/server",
       user_guid: user.id,
-      mode: "delivery"
+      mode: "delivery",
+      part_ids: part_ids
     }
 
     json(conn, context)
@@ -189,6 +194,7 @@ defmodule OliWeb.LegacySuperactivityController do
          %{"scoreValue" => score_value, "scoreId" => score_type} = _params
        )
        when command_name === "scoreAttempt" do
+
     # Assumes all custom activities have a single part
     part_attempt = Enum.at(context.activity_attempt.part_attempts, 0)
     # :TODO: oli legacy allows for custom activities to supply arbitrary score types.

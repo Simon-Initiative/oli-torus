@@ -223,23 +223,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     Repo.all(query)
   end
 
-#  @doc """
-#  Query activity_save_file by attempt_guid and attempt_number
-#  """
-#  def get_activity_attempt_save_file(attempt_guid, user_id, nil, file_name) do
-#
-#    query =
-#      from a in ActivityAttemptSaveFile,
-#           where: a.attempt_guid == ^attempt_guid and a.file_name == ^file_name and a.user_id == ^user_id,
-#           select: a
-#    Repo.one(query)
-#  end
-
   def get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name) do
     query =
       from a in ActivityAttemptSaveFile,
            where: a.attempt_guid == ^attempt_guid
-#                  and a.attempt_number == ^attempt_number
                   and a.file_name == ^file_name and a.user_id == ^user_id,
            select: a
     query = if attempt_number != nil do

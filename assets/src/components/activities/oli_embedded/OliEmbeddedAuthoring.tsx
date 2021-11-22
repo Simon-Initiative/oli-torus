@@ -125,6 +125,39 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
           </li>
         ))}
       </ul>
+      <div className="card" >
+        <div className="card-body">
+          <div className="card-title">Parts</div>
+      <div className="d-flex flex-row align-items-baseline">
+        <div className="flex-grow-1">
+          <div className="d-flex justify-content-start m-2">
+            <div className="mr-2 p-2">&nbsp;</div>
+            <div className="mr-2 p-2">Id</div>
+            <div className="mr-2 p-2">Scoring Strategy</div>
+          </div>
+        {model.authoring.parts.map((part, i) => (
+            <div className="d-flex justify-content-start m-2" key={i}>
+              <div className="mr-2 p-2">Part {i+1}</div>
+              <div className="d-flex justify-content-start bg-white p-2">
+              <div className="mr-3">{part.id}</div>
+              <div>
+                <select onChange={handleValueChange} className="custom-select custom-select-sm">
+                  {value?.allowedValues?.map((item: any) => {
+                    return (
+                      <option key={item} value={item} selected={internalValue === item}>
+                        {item}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              </div>
+            </div>
+        ))}
+      </div>
+        </div>
+        </div>
+      </div>
     </>
   );
 };
