@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- Gating and Scheduling
+
 ## 0.16.0 (2021-11-19)
 
 ### Bug Fixes
@@ -29,7 +31,6 @@
 ### Enhancements
 
 - Instructor "Preview" mode
-- Gating and Scheduling
 
 ## 0.14.6 (2021-11-08)
 
