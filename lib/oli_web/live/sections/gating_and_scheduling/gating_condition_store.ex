@@ -58,8 +58,6 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   end
 
   defp breadcrumb(previous, section, module, title) do
-    IO.inspect({module, section.slug})
-
     previous ++
       [
         Breadcrumb.new(%{

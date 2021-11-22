@@ -82,13 +82,13 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     ~F"""
     <div class="form-group">
       <label for="conditionTypeSelect">Start Date</label>
-      <div phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_start_date_changed" phx-update="ignore">
+      <div id="start_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_start_date_changed" phx-update="ignore">
         <DateTimeLocalInput class="form-control" value={initial_start_date}/>
       </div>
     </div>
     <div class="form-group">
       <label for="conditionTypeSelect">End Date</label>
-      <div phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_end_date_changed" phx-update="ignore">
+      <div id="end_date" phx-hook="DateTimeLocalInputListener" phx-value-change="schedule_end_date_changed" phx-update="ignore">
         <DateTimeLocalInput class="form-control" value={initial_end_date} />
       </div>
     </div>
