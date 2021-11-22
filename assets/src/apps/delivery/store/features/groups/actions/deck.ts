@@ -10,6 +10,7 @@ import {
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import {
+  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
@@ -131,6 +132,7 @@ export const initializeActivity = createAsyncThunk(
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: string[] = [];
+    const arrBindToVars: string[] = [];
     const globalizedInitState = initState.map((s: any) => {
       arrInitFacts.push(`${s.target}`);
       if (s.target.indexOf('stage.') !== 0) {
@@ -145,7 +147,21 @@ export const initializeActivity = createAsyncThunk(
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };
       }
+      if (s.operator === 'bind to') {
+        arrBindToVars.push(`${modifiedValue}`);
+      }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
+    });
+    //if a variable is 'bindTo' another variable then we need to make sure that we reset the value of the original variable to ''
+    //otherwise if that original variable is already evaluated on previous screen then on the current screen, those values will be automatically populated
+    // for the current bindto target on page load by default which don't want
+    arrBindToVars.forEach((bindToVar) => {
+      const applyOperation: ApplyStateOperation = {
+        target: bindToVar,
+        operator: '=',
+        value: '',
+      };
+      applyState(applyOperation, defaultGlobalEnv);
     });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
