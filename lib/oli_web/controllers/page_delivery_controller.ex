@@ -164,8 +164,8 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
-    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section_slug)
-    {previous, next} = Oli.Delivery.Page.PageContext.determine_previous_next(hierarchy, revision)
+    {:ok, {previous, next}} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
     activity_map =
       Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, activity_ids)
@@ -190,6 +190,7 @@ defmodule OliWeb.PageDeliveryController do
     render_context = %Context{
       user: conn.assigns.current_user,
       section_slug: section_slug,
+      revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
@@ -211,14 +212,14 @@ defmodule OliWeb.PageDeliveryController do
         next_page: next,
         title: revision.title,
         html: html,
-        objectives: []
+        objectives: [],
+        section: section
       }
     )
   end
 
   defp render_page(
          %PageContext{
-           summary: summary,
            progress_state: :not_started,
            page: page,
            resource_attempts: resource_attempts
@@ -228,6 +229,8 @@ defmodule OliWeb.PageDeliveryController do
          _,
          _
        ) do
+    section = conn.assigns.section
+
     # Only consider graded attempts
     resource_attempts = Enum.filter(resource_attempts, fn a -> a.revision.graded == true end)
 
@@ -254,30 +257,37 @@ defmodule OliWeb.PageDeliveryController do
         r1.date_evaluated <= r2.date_evaluated
       end)
 
+    {:ok, {previous, next}} = Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
+
+    {:ok, summary} =
+      Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
+
     render(conn, "prologue.html", %{
+      summary: summary,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
       resource_attempts: resource_attempts,
-      summary: summary,
-      previous_page: context.previous_page,
-      next_page: context.next_page,
+      previous_page: previous,
+      next_page: next,
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
       resource_id: page.resource_id,
       slug: context.page.slug,
-      max_attempts: page.max_attempts
+      max_attempts: page.max_attempts,
+      section: section
     })
   end
 
   defp render_page(
-         %PageContext{summary: summary, page: %{content: %{"advancedDelivery" => true}}} =
-           context,
+         %PageContext{page: %{content: %{"advancedDelivery" => true}}} = context,
          conn,
          section_slug,
          _,
          preview_mode
        ) do
+    section = conn.assigns.section
+
     layout =
       case Map.get(context.page.content, "displayApplicationChrome", true) do
         true -> "page.html"
@@ -294,6 +304,9 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
       |> Jason.encode()
 
+    {:ok, {previous, next}} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+
     render(conn, "advanced_delivery.html", %{
       review_mode: context.review_mode,
       graded: context.page.graded,
@@ -302,7 +315,6 @@ defmodule OliWeb.PageDeliveryController do
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
-      summary: summary,
       activity_types: Activities.activities_for_section(),
       scripts: Activities.get_activity_scripts(:delivery_script),
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
@@ -310,10 +322,11 @@ defmodule OliWeb.PageDeliveryController do
       title: context.page.title,
       resource_id: context.page.resource_id,
       slug: context.page.slug,
-      previous_page: context.previous_page,
-      next_page: context.next_page,
+      previous_page: previous,
+      next_page: next,
       user_id: user.id,
-      preview_mode: preview_mode
+      preview_mode: preview_mode,
+      section: section
     })
   end
 
@@ -323,6 +336,8 @@ defmodule OliWeb.PageDeliveryController do
 
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
+    section = conn.assigns.section
+
     render_context = %Context{
       user: user,
       section_slug: section_slug,
@@ -343,6 +358,9 @@ defmodule OliWeb.PageDeliveryController do
 
     all_activities = Activities.list_activity_registrations()
 
+    {:ok, {previous, next}} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+
     render(
       conn,
       if ResourceType.get_type_by_id(context.page.resource_type_id) == "container" do
@@ -358,9 +376,8 @@ defmodule OliWeb.PageDeliveryController do
         scripts: Enum.map(all_activities, fn a -> a.delivery_script end),
         activity_type_slug_mapping:
           Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
-        summary: context.summary,
-        previous_page: context.previous_page,
-        next_page: context.next_page,
+        previous_page: previous,
+        next_page: next,
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
@@ -369,7 +386,8 @@ defmodule OliWeb.PageDeliveryController do
         slug: context.page.slug,
         resource_attempt: hd(context.resource_attempts),
         attempt_guid: hd(context.resource_attempts).attempt_guid,
-        latest_attempts: context.latest_attempts
+        latest_attempts: context.latest_attempts,
+        section: section
       }
     )
   end
@@ -462,6 +480,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
+    section = conn.assigns.section
     context = PageContext.create_for_visit(section_slug, revision_slug, user)
 
     message =
@@ -483,17 +502,20 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
+    {:ok, {previous, next}} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
+
     render(conn, "after_finalized.html",
       grade_message: grade_message,
       section_slug: section_slug,
       attempt_guid: attempt_guid,
       scripts: Activities.get_activity_scripts(),
-      summary: context.summary,
-      previous_page: context.previous_page,
-      next_page: context.next_page,
+      previous_page: previous,
+      next_page: next,
       title: context.page.title,
       message: message,
-      slug: context.page.slug
+      slug: context.page.slug,
+      section: section
     )
   end
 

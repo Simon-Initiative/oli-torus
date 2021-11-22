@@ -1,10 +1,11 @@
 import { parseBoolean, parseArray } from 'utils/common';
 
 export const isAnyOfOperator = (factValue: any, value: any): boolean => {
-  if (!Array.isArray(value)) {
+  const parsedValue = parseArray(value);
+  if (!Array.isArray(parsedValue)) {
     return false;
   }
-  return value.some((val) => isEqual(factValue, val));
+  return parsedValue.some((val) => isEqual(factValue, val));
 };
 
 export const isEqual = (factValue: any, value: any): boolean => {
@@ -15,6 +16,11 @@ export const isEqual = (factValue: any, value: any): boolean => {
 
   const typeOfValue = typeof value;
   const typeOfFactValue = typeof factValue;
+  //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
+  //so `is not 32.06` should not fire true if the number is a NaN.
+  if (typeOfValue === 'number' && Number.isNaN(factValue)) {
+    return false;
+  }
   if (Array.isArray(factValue)) {
     let compareValue = value;
     const updatedFactValue = parseArray(factValue);
@@ -118,7 +124,15 @@ export const getValueWithTolerance = (
 export const notEqualWithToleranceOperator = (factValue: any, value: any) =>
   !equalWithToleranceOperator(factValue, value);
 
-export const notEqual = (factValue: any, value: any) => !isEqual(factValue, value);
+export const notEqual = (factValue: any, value: any) => {
+  const typeOfValue = typeof value;
+  //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
+  //so `is not 32.06` should not fire true if the number is a NaN.
+  if (typeOfValue === 'number' && Number.isNaN(factValue)) {
+    return false;
+  }
+  return !isEqual(factValue, value);
+};
 
 const operators = {
   isAnyOf: isAnyOfOperator,

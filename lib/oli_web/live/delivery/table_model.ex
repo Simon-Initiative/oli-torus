@@ -1,6 +1,5 @@
 defmodule OliWeb.Delivery.SelectSource.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Surface.Components.Link
   alias OliWeb.Router.Helpers, as: Routes
   use Surface.LiveComponent
 
@@ -36,7 +35,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &__MODULE__.render_date_column/3
+          render_fn: &SortableTableModel.render_date_column/3
         }
       ],
       event_suffix: "",
@@ -64,20 +63,12 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   def render_title_column(assigns, item, _) do
     case is_product?(item) do
       true ->
-        ~F"""
-        <Link
-          label={item.title}
-          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)}
-        />
-        """
+        route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)
+        SortableTableModel.render_link_column(assigns, item.title, route_path)
 
       _ ->
-        ~F"""
-        <Link
-          label={item.project.title}
-          to={Routes.project_path(OliWeb.Endpoint, :overview, item.project.slug)}
-        />
-        """
+        route_path = Routes.project_path(OliWeb.Endpoint, :overview, item.project.slug)
+        SortableTableModel.render_link_column(assigns, item.project.title, route_path)
     end
   end
 
@@ -104,10 +95,6 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
       true -> "Product"
       _ -> "Course Project"
     end
-  end
-
-  def render_date_column(_, %{inserted_at: inserted_at}, _) do
-    Timex.format!(inserted_at, "{relative}", :relative)
   end
 
   def render(assigns) do

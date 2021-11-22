@@ -306,31 +306,36 @@ export const check = async (
   }
 
   let score = 0;
-  if (scoringContext.trapStateScoreScheme) {
-    // apply all the actions from the resultEvents that mutate the state
-    // then check the session.currentQuestionScore and clamp it against the maxScore
-    // setting that value to score
-    const mutations = resultEvents.reduce((acc, evt) => {
-      const { actions } = evt.params as Record<string, any>;
-      const mActions = actions.filter(
-        (action: any) =>
-          action.type === 'mutateState' && action.params.target === 'session.currentQuestionScore',
-      );
-      return acc.concat(...acc, mActions);
-    }, []);
-    if (mutations.length) {
-      const mutApplies = mutations.map(({ params }) => params);
-      bulkApplyState(mutApplies, env);
-      score = getValue('session.currentQuestionScore', env) || 0;
+  //below condition make sure the score calculation will happen only if the answer is correct and
+  //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
+  if (isCorrect || scoringContext.negativeScoreAllowed) {
+    if (scoringContext.trapStateScoreScheme) {
+      // apply all the actions from the resultEvents that mutate the state
+      // then check the session.currentQuestionScore and clamp it against the maxScore
+      // setting that value to score
+      const mutations = resultEvents.reduce((acc, evt) => {
+        const { actions } = evt.params as Record<string, any>;
+        const mActions = actions.filter(
+          (action: any) =>
+            action.type === 'mutateState' &&
+            action.params.target === 'session.currentQuestionScore',
+        );
+        return acc.concat(...acc, mActions);
+      }, []);
+      if (mutations.length) {
+        const mutApplies = mutations.map(({ params }) => params);
+        bulkApplyState(mutApplies, env);
+        score = getValue('session.currentQuestionScore', env) || 0;
+      }
+    } else {
+      const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+      const scorePerAttempt = maxScore / maxAttempt;
+      score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
     }
-  } else {
-    const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
-    const scorePerAttempt = maxScore / maxAttempt;
-    score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
-  }
-  score = Math.min(score, scoringContext.maxScore);
-  if (!scoringContext.negativeScoreAllowed) {
-    score = Math.max(0, score);
+    score = Math.min(score, scoringContext.maxScore);
+    if (!scoringContext.negativeScoreAllowed) {
+      score = Math.max(0, score);
+    }
   }
 
   const finalResults = {

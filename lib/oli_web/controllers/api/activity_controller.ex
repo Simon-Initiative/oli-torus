@@ -307,7 +307,7 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
-  defp document_to_delivery_result(%{
+  defp document_to_delivery_result(is_preview_mode, %{
          title: title,
          activity_type_id: activity_type_id,
          content: content,
@@ -318,8 +318,29 @@ defmodule OliWeb.Api.ActivityController do
       "title" => title,
       "activityTypeId" => activity_type_id,
       "resourceId" => resource_id,
-      "content" => Map.delete(content, "authoring")
+      "content" =>
+        if is_preview_mode do
+          content
+        else
+          Map.delete(content, "authoring")
+        end
     }
+  end
+
+  defp is_preview_mode?(conn) do
+    case Map.get(conn.query_params, "mode", "delivery") do
+      "preview" -> true
+      _ -> false
+    end
+  end
+
+  defp has_access?(conn, user, section_slug, is_preview_mode) do
+    if is_preview_mode do
+      is_admin? = Oli.Accounts.is_admin?(conn.assigns.current_author)
+      Sections.is_instructor?(user, section_slug) or is_admin?
+    else
+      Sections.is_enrolled?(user.id, section_slug)
+    end
   end
 
   @doc """
@@ -353,10 +374,12 @@ defmodule OliWeb.Api.ActivityController do
       }) do
     user = conn.assigns.current_user
 
-    if Sections.is_enrolled?(user.id, section_slug) do
+    is_preview_mode = is_preview_mode?(conn)
+
+    if has_access?(conn, user, section_slug, is_preview_mode) do
       case DeliveryResolver.from_resource_id(section_slug, activity_id) do
         nil -> error(conn, 404, "not found")
-        rev -> json(conn, document_to_delivery_result(rev))
+        rev -> json(conn, document_to_delivery_result(is_preview_mode, rev))
       end
     else
       error(conn, 403, "unauthorized")
@@ -388,7 +411,9 @@ defmodule OliWeb.Api.ActivityController do
       }) do
     user = conn.assigns.current_user
 
-    if Sections.is_enrolled?(user.id, section_slug) do
+    is_preview_mode = is_preview_mode?(conn)
+
+    if has_access?(conn, user, section_slug, is_preview_mode) do
       case DeliveryResolver.from_resource_id(section_slug, activity_ids) do
         nil ->
           error(conn, 404, "not found")
@@ -396,7 +421,8 @@ defmodule OliWeb.Api.ActivityController do
         revisions ->
           json(conn, %{
             "result" => "success",
-            "results" => Enum.map(revisions, &document_to_delivery_result/1)
+            "results" =>
+              Enum.map(revisions, fn rev -> document_to_delivery_result(is_preview_mode, rev) end)
           })
       end
     else

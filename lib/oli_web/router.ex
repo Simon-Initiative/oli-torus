@@ -166,6 +166,14 @@ defmodule OliWeb.Router do
     plug(:put_pow_mailer_layout, {OliWeb.LayoutView, :email})
   end
 
+  pipeline :community_admin do
+    plug(Oli.Plugs.CommunityAdmin)
+  end
+
+  pipeline :authorize_community do
+    plug(Oli.Plugs.AuthorizeCommunity)
+  end
+
   pipeline :superactivity do
     plug Plug.Static,
          at: "/superactivity",
@@ -271,6 +279,18 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get("/keep-alive", StaticPageController, :keep_alive)
+
+    scope "/communities" do
+      pipe_through [:community_admin]
+
+      live("/", CommunityLive.IndexView)
+
+      scope "/:community_id" do
+        pipe_through [:authorize_community]
+
+        live("/", CommunityLive.ShowView)
+      end
+    end
   end
 
   scope "/authoring/project", OliWeb do
@@ -613,6 +633,7 @@ defmodule OliWeb.Router do
 
     get("/overview", PageDeliveryController, :index_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
+    get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
 
   scope "/sections", OliWeb do
@@ -713,6 +734,8 @@ defmodule OliWeb.Router do
         resources("/deployments", DeploymentController, except: [:index, :show])
       end
     end
+
+    live("/communities/new", CommunityLive.NewView)
 
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)

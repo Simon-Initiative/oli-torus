@@ -297,8 +297,11 @@ export const triggerCheck = createAsyncThunk(
     }
 
     // TODO: get score back from check result
-    applyState(
-      { target: 'session.currentQuestionScore', operator: '=', value: score },
+    bulkApplyState(
+      [
+        { target: 'session.currentQuestionScore', operator: '=', value: score },
+        { target: `session.visits.${currentActivity.id}`, operator: '=', value: 1 },
+      ],
       defaultGlobalEnv,
     );
 

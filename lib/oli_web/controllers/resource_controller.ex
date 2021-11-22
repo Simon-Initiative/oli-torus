@@ -74,7 +74,10 @@ defmodule OliWeb.ResourceController do
         )
 
       revision ->
-        {_, activity_revisions, transformed_content} =
+        %Oli.Delivery.ActivityProvider.Result{
+          revisions: activity_revisions,
+          transformed_content: transformed_content
+        } =
           Oli.Delivery.ActivityProvider.provide(
             revision,
             %Source{
@@ -120,7 +123,6 @@ defmodule OliWeb.ResourceController do
 
     case pages do
       [first | _] ->
-
         conn
         |> redirect(to: Routes.resource_path(conn, :preview, project_slug, first.revision.slug))
 

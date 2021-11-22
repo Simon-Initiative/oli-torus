@@ -141,9 +141,16 @@ export const parseBool = (val: any) => {
 
 /** returns a number if the string can be a number, else leaves it as a string */
 export const parseNumString = (item: string): string | number => {
+  const itemType = typeof item;
   if (!item?.length) return item;
-  // check if items are strings or numbers and converts if number
-  return !Number.isNaN(Number(item)) ? parseFloat(item) : item.trim();
+  if (!Number.isNaN(Number(item))) {
+    // check if items are strings or numbers and converts if number
+    return parseFloat(item);
+  } else if (itemType === 'string') {
+    //trim() only works on strings
+    return item.trim();
+  }
+  return item;
 };
 
 // Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]

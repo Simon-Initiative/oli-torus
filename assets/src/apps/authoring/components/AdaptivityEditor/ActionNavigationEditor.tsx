@@ -1,12 +1,7 @@
 import { NavigationAction, NavigationActionParams } from 'apps/authoring/types';
-import {
-  findInSequence,
-  getHierarchy,
-  SequenceEntry,
-  SequenceEntryChild,
-} from 'apps/delivery/store/features/groups/actions/sequence';
+import { findInSequence } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import guid from 'utils/guid';
@@ -27,6 +22,11 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'next');
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const uuid = guid();
+
+  // When the 'Navigate to' Option is changed
+  useEffect(() => {
+    setTarget(selectedSequence?.custom.sequenceId || 'next');
+  }, [selectedSequence]);
 
   const onChangeHandler = (sequenceId: string) => {
     // console.log('onChange picker', sequenceId);

@@ -8,6 +8,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias OliWeb.Progress.AttemptHistory
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Attempts.Core
+  alias OliWeb.Progress.Passback
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
@@ -17,6 +18,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   data revision, :any
   data user, :any
   data is_editing, :boolean, default: false
+  data grade_sync_result, :any, default: nil
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -47,15 +49,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
-            resource_access =
-              case Oli.Delivery.Attempts.Core.get_resource_access(
-                     resource_id,
-                     section_slug,
-                     user_id
-                   ) do
-                nil -> nil
-                ra -> Oli.Repo.preload(ra, :resource_attempts)
-              end
+            resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =
               case resource_access do
@@ -73,6 +67,17 @@ defmodule OliWeb.Progress.StudentResourceView do
                user: user
              )}
         end
+    end
+  end
+
+  defp get_resource_access(resource_id, section_slug, user_id) do
+    case Oli.Delivery.Attempts.Core.get_resource_access(
+           resource_id,
+           section_slug,
+           user_id
+         ) do
+      nil -> nil
+      ra -> Oli.Repo.preload(ra, :resource_attempts)
     end
   end
 
@@ -124,6 +129,11 @@ defmodule OliWeb.Progress.StudentResourceView do
             {/if}
           </Form>
 
+          {#if !@section.open_and_free}
+            <div class="mb-3"/>
+            <Passback click="passback" grade_sync_result={@grade_sync_result}/>
+          {/if}
+
       </Group>
       {/if}
       <Group label="Attempt History" description="">
@@ -167,6 +177,24 @@ defmodule OliWeb.Progress.StudentResourceView do
     {:noreply, assign(socket, changeset: changeset)}
   end
 
+  def handle_event("passback", _, socket) do
+    section = socket.assigns.section
+    user = socket.assigns.user
+    revision = socket.assigns.revision
+
+    IO.inspect("passback")
+
+    # Read the latest resource_access to account for cases where a student has
+    # just finalized another attempt, or the instructor has overriden the grade in another
+    # instance of this window
+    resource_access = get_resource_access(revision.resource_id, section.slug, user.id)
+
+    grade_sync_result = send_one_grade(section, user, resource_access)
+
+    {:noreply,
+     assign(socket, grade_sync_result: grade_sync_result, resource_access: resource_access)}
+  end
+
   def handle_event("save", %{"resource_access" => params}, socket) do
     params =
       ensure_no_nil(params, "score")
@@ -186,6 +214,25 @@ defmodule OliWeb.Progress.StudentResourceView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
     end
+  end
+
+  defp host() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
+  end
+
+  defp access_token_provider(section) do
+    fn ->
+      {_deployment, registration} =
+        Oli.Delivery.Sections.get_deployment_registration_from_section(section)
+
+      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
+    end
+  end
+
+  def send_one_grade(section, user, resource_access) do
+    Oli.Grading.send_score_to_lms(section, user, resource_access, access_token_provider(section))
   end
 
   defp ensure_no_nil(params, key) do

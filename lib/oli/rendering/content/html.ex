@@ -292,7 +292,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def selection(%Context{} = context, _, selection) do
-    Oli.Rendering.Content.Selection.render(context, selection)
+    Oli.Rendering.Content.Selection.render(context, selection, true)
   end
 
   defp revision_slug_from_course_link(href) do

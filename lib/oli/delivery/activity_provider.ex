@@ -3,6 +3,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
   alias Oli.Resources.Revision
+  alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
 
   @doc """
   Realizes and resolves activities in a page.
@@ -21,16 +22,16 @@ defmodule Oli.Delivery.ActivityProvider do
   selections.  The selection element from within the page must be replaced by static activity references
   (which later then drive rendering).
 
-  Returns a three element tuple, with the first element being a list of any errors encountered,
-  the second being the revisions of all provided activities, and the third being the transformed
-  content of the page revision.
+  Returns a %Oli.Delivery.ActivityProvider.Result{}, which contains a list of any errors, the provided
+  activity revisions, a MapSet of those revision resource ids that are to be unscored
+  activities and the transformed page model.
   """
   def provide(
         %Revision{content: %{"advancedDelivery" => true} = content},
         %Source{} = source,
         resolver
       ) do
-    activity_ids =
+    refs =
       Oli.Resources.PageContent.flat_filter(content, fn e ->
         case Map.get(e, "type", nil) do
           nil -> false
@@ -38,11 +39,31 @@ defmodule Oli.Delivery.ActivityProvider do
           _ -> false
         end
       end)
+
+    unscored =
+      refs
+      |> Enum.filter(fn ref ->
+        case Map.get(ref, "custom", %{}) do
+          %{"isLayer" => true} -> true
+          %{"isBank" => true} -> true
+          _ -> false
+        end
+      end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+      |> MapSet.new()
+
+    activity_ids =
+      refs
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
-    {[], revisions, content}
+    %ProviderResult{
+      errors: [],
+      revisions: revisions,
+      transformed_content: content,
+      unscored: unscored
+    }
   end
 
   def provide(
@@ -55,7 +76,12 @@ defmodule Oli.Delivery.ActivityProvider do
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
-    {errors, only_revisions, Map.put(content, "model", Enum.reverse(model))}
+    %ProviderResult{
+      errors: errors,
+      revisions: only_revisions,
+      transformed_content: Map.put(content, "model", Enum.reverse(model)),
+      unscored: MapSet.new()
+    }
   end
 
   # Make a pass through the revision content model to gather all statically referenced activity ids

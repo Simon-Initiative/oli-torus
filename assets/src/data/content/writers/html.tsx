@@ -235,7 +235,13 @@ export class HtmlParser implements WriterImpl {
       case 'text':
         return withHints(<TextInput {...shared} />);
       case 'dropdown':
-        return withHints(<DropdownInput {...shared} options={inputData.input.options} />);
+        return withHints(
+          <DropdownInput
+            {...shared}
+            options={inputData.input.options}
+            selected={inputData.value}
+          />,
+        );
       default:
         assertNever(inputData.input);
     }
