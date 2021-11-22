@@ -57,7 +57,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     |> breadcrumb(section, module, title)
   end
 
-  defp breadcrumb(previous, section, module, title) do
+  defp breadcrumb(previous, _section, _module, title) do
     previous ++
       [
         Breadcrumb.new(%{
