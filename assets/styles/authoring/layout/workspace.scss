@@ -1,5 +1,6 @@
-$workspace-header-height: 75px;
-$workspace-sidebar-width: 75px;
+// Adaptive page authoring UI depends on these measurements.
+$workspace-header-height: 65px;
+$workspace-sidebar-width: 65px;
 
 #nprogress .spinner {
   top: 10px;
