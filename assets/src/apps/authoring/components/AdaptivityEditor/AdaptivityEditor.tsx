@@ -152,7 +152,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             onChange={(changes: any) => {
               handleActionChange(action, changes);
             }}
-            allowDelete={!currentRule.correct}
+            allowDelete={!currentRule.default}
             onDelete={handleDeleteAction}
           />
         );
