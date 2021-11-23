@@ -42,8 +42,9 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
       ]
   end
 
-  defp retrieve_all_sources() do
-    (Course.list_projects() ++ Blueprint.list())
+  defp retrieve_all_sources(community_id) do
+    (Course.list_projects_not_in_community(community_id) ++
+       Blueprint.list_products_not_in_community(community_id))
     |> Enum.with_index(fn element, index ->
       type =
         case Map.has_key?(element, :type) and Map.get(element, :type) == :blueprint do
@@ -59,7 +60,7 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
   end
 
   def mount(%{"community_id" => community_id}, _session, socket) do
-    sources = retrieve_all_sources()
+    sources = retrieve_all_sources(community_id)
     {:ok, table_model} = TableModel.new(sources)
 
     {:ok,
@@ -111,19 +112,27 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
         end
       )
 
-    socket =
-      case Groups.create_community_visibility(attrs) do
-        {:ok, _community_visibility} ->
-          put_flash(socket, :info, "Association to #{type} succesfully added.")
+    case Groups.create_community_visibility(attrs) do
+      {:ok, _community_visibility} ->
+        socket = put_flash(socket, :info, "Association to #{type} succesfully added.")
 
-        {:error, %Ecto.Changeset{}} ->
-          put_flash(
-            socket,
-            :error,
-            "Couldn't associate #{type}. Already exists or an unexpected error ocurred."
-          )
-      end
+        sources = retrieve_all_sources(socket.assigns.community_id)
+        {:ok, table_model} = TableModel.new(sources)
 
-    {:noreply, socket}
+        {:noreply,
+         assign(socket,
+           sources: sources,
+           table_model: table_model,
+           total_count: length(sources)
+         )}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Couldn't associate #{type}. Already exists or an unexpected error ocurred."
+         )}
+    end
   end
 end

@@ -623,11 +623,19 @@ defmodule OliWeb.CommunityLiveTest do
       assert has_element?(view, "p", "None exist")
     end
 
-    test "lists projects and products", %{conn: conn, community: %Community{id: id}} do
+    test "lists projects and products that aren't related to any community", %{
+      conn: conn,
+      community: community
+    } do
+      associated_project = insert(:project)
+      associated_product = insert(:section)
+      insert(:community_visibility, %{community: community, project: associated_project})
+      insert(:community_visibility, %{community: community, section: associated_product})
+
       project = insert(:project)
       product = insert(:section)
 
-      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
 
       assert view
              |> element("tr:first-child > td:first-child")
