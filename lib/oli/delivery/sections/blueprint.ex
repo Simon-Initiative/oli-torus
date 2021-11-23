@@ -84,7 +84,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
     Repo.all(query)
   end
 
-  def available_products(nil, %Institution{} = _institution), do: available_products()
+  def available_products(nil, _institution), do: available_products()
 
   def available_products() do
     query =

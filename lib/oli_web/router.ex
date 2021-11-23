@@ -171,6 +171,14 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireIndependentInstructor)
   end
 
+  pipeline :community_admin do
+    plug(Oli.Plugs.CommunityAdmin)
+  end
+
+  pipeline :authorize_community do
+    plug(Oli.Plugs.AuthorizeCommunity)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -263,6 +271,18 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get("/keep-alive", StaticPageController, :keep_alive)
+
+    scope "/communities" do
+      pipe_through [:community_admin]
+
+      live("/", CommunityLive.IndexView)
+
+      scope "/:community_id" do
+        pipe_through [:authorize_community]
+
+        live("/", CommunityLive.ShowView)
+      end
+    end
   end
 
   scope "/authoring/project", OliWeb do
@@ -742,6 +762,8 @@ defmodule OliWeb.Router do
     end
     put("/approve_registration", InstitutionController, :approve_registration)
     delete("/pending_registration/:id", InstitutionController, :remove_registration)
+
+    live("/communities/new", CommunityLive.NewView)
 
     # Course Ingestion
     get("/ingest", IngestController, :index)

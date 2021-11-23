@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { defaultGlobalEnv, evalScript, getValue } from 'adaptivity/scripting';
+import { defaultGlobalEnv, getValue } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -37,6 +37,7 @@ import * as Extrinsic from 'data/persistence/extrinsic';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
+import { templatizeText } from './TextParser';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -401,7 +402,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-      acc[key] = snapshot[target];
+      const originalValue = snapshot[target];
+      const typeOfOriginalValue = typeof originalValue;
+      const evaluatedValue =
+        typeOfOriginalValue === 'string'
+          ? templatizeText(originalValue, snapshot, defaultGlobalEnv, true)
+          : originalValue;
+      acc[key] = evaluatedValue;
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {

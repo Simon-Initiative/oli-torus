@@ -136,7 +136,7 @@ defmodule Oli.Publishing do
     Repo.all(query)
   end
 
-  def available_publications(nil, %Institution{} = _institution), do: available_publications()
+  def available_publications(nil, _institution), do: available_publications()
 
   def available_publications(%Author{} = author, %Institution{} = institution) do
     subquery =

@@ -1,6 +1,7 @@
-import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
+import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
+import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import React from 'react';
-import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import FeedbackRenderer from './FeedbackRenderer';
 
 export interface FeedbackContainerProps {
@@ -20,22 +21,8 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   onMinimize,
   onMaximize,
 }) => {
-  const [currentLocalizedSnapshot, setCurrentLocalizedSnapshot] = React.useState<any>({});
-
-  const dispatch = useDispatch();
-
-  const updateSnapshot = React.useCallback(async () => {
-    const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
-    const {
-      payload: { snapshot },
-    } = sResult as any;
-
-    setCurrentLocalizedSnapshot(snapshot);
-  }, []);
-
-  React.useEffect(() => {
-    updateSnapshot();
-  }, [feedbacks]);
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const currentActivityIds = (currentActivityTree || []).map((activity) => activity.id);
 
   const handleToggleFeedback = () => {
     if (minimized) {
@@ -83,9 +70,18 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
             </button>
           </div>
           <style type="text/css" aria-hidden="true" />
-          <div className="content" style={{ overflow: 'hidden auto !important' }}>
-            {/* TODO: snapshot method causes constant re-render (props change) */}
-            <FeedbackRenderer feedbacks={feedbacks} snapshot={currentLocalizedSnapshot} />
+          <style>
+            {`
+          #stage-feedback .content {
+            overflow: hidden auto !important;
+          }
+        `}
+          </style>
+          <div className="content">
+            <FeedbackRenderer
+              feedbacks={feedbacks}
+              snapshot={getLocalizedStateSnapshot(currentActivityIds)}
+            />
           </div>
           {/* <button className="showSolnBtn showSolution displayNone">
                     <div className="ellipsis">Show solution</div>

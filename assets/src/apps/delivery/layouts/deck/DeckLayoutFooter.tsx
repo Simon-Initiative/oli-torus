@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { templatizeText } from 'apps/delivery/components/TextParser';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -288,7 +289,13 @@ const DeckLayoutFooter: React.FC = () => {
               : `${op.params.target}`;
           }
         }
-        collect[op.params.target] = latestSnapshot[target];
+        const originalValue = latestSnapshot[target];
+        const typeOfOriginalValue = typeof originalValue;
+        const evaluatedValue =
+          typeOfOriginalValue === 'string'
+            ? templatizeText(originalValue, latestSnapshot, defaultGlobalEnv, true)
+            : originalValue;
+        collect[op.params.target] = evaluatedValue;
         return collect;
       }, {});
 

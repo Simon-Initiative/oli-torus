@@ -222,6 +222,10 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
         bgColor = chroma(palette.fillColor || 0)
           .alpha(palette.fillAlpha || 0)
           .css();
+        // rgb(255,255,255)' means it's transparent so instead of rgb, we need to use 'rgba'. SS does the same. 'rgb' make it white brackground on the screen
+        if (bgColor === 'rgb(255,255,255)') {
+          bgColor = 'rgba(255,255,255,0)';
+        }
       }
       styles.backgroundColor = bgColor;
     }

@@ -14,6 +14,8 @@ defmodule Oli.Accounts do
     AuthorPreferences
   }
 
+  alias Oli.Groups.CommunityAccount
+
   def browse_users(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -311,6 +313,7 @@ defmodule Oli.Accounts do
   @doc """
   Returns true if an author is an administrator.
   """
+  def is_admin?(nil), do: false
   def is_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().admin == system_role_id
   end
@@ -368,6 +371,32 @@ defmodule Oli.Accounts do
 
   """
   def get_author!(id), do: Repo.get!(Author, id)
+
+  @doc """
+  Gets a single author with the count of communities for which the author is an admin.
+
+  ## Examples
+      iex> get_author_with_community_admin_count(1)
+      %Author{community_admin_count: 1}
+
+      iex> get_author_with_community_admin_count(456)
+      nil
+
+  """
+  def get_author_with_community_admin_count(id) do
+    from(
+      author in Author,
+      left_join: community_account in CommunityAccount,
+      on: community_account.author_id == author.id and community_account.is_admin == true,
+      where: author.id == ^id,
+      group_by: author.id,
+      select: author,
+      select_merge: %{
+        community_admin_count: count(community_account)
+      }
+    )
+    |> Repo.one()
+  end
 
   @doc """
   Gets a single author with the given email
@@ -545,6 +574,28 @@ defmodule Oli.Accounts do
           assoc.project_id == ^project.id and
             (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
         select: author
+      )
+    )
+  end
+
+  @doc """
+  Get all the communities for which the author is an admin.
+
+  ## Examples
+
+      iex> list_admin_communities(1)
+      {:ok, [%Community{}, ...]}
+
+      iex> list_admin_communities(123)
+      {:ok, []}
+  """
+  def list_admin_communities(author_id) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: community in assoc(community_account, :community),
+        where: community_account.author_id == ^author_id and community_account.is_admin == true,
+        select: community
       )
     )
   end

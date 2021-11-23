@@ -1,4 +1,4 @@
-import { CapiVariableTypes } from '../../../../adaptivity/capi';
+import { CapiVariableTypes, getCapiType } from '../../../../adaptivity/capi';
 
 export interface TypeOption {
   key: 'string' | 'number' | 'array' | 'boolean' | 'enum' | 'math' | 'parray';
@@ -182,4 +182,20 @@ export const sessionVariables: Record<string, unknown> = {
   timeStartQuestion: 0,
   tutorialScore: 0,
   visits: [],
+};
+
+export const inferTypeFromOperatorAndValue = (operator: string, value: any): CapiVariableTypes => {
+  const typeCombos = conditionTypeOperatorCombos.filter((combo) =>
+    combo.operators.includes(operator),
+  );
+  // if there is only one type of value that supports this operator, then use that type (i.e. isNaN)
+  if (typeCombos.length === 1) {
+    return typeCombos[0].type;
+  } else {
+    // if there are multiple types of value that support this operator, then best guess based on the value type
+    const valueType = getCapiType(value);
+    // TODO: figure out how to tell that a STRING is an ENUM or a MATH_EXPR
+    // ALSO: strings can contain variables which can be other types, in that case we're hosed...
+    return valueType;
+  }
 };

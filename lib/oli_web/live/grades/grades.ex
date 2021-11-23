@@ -15,19 +15,12 @@ defmodule OliWeb.Grades.GradesLive do
 
   def mount(
         _params,
-        %{"section_slug" => section_slug, "current_user_id" => current_user_id} = session,
+        %{"section_slug" => section_slug} = session,
         socket
       ) do
     section = Sections.get_section_by_slug(section_slug)
 
-    current_user = Accounts.get_user!(current_user_id) |> Repo.preload([:platform_roles, :author])
-
-    if is_admin_author?(session) or
-         ContextRoles.has_role?(
-           current_user,
-           section.slug,
-           ContextRoles.get_role(:context_instructor)
-         ) do
+    if is_admin_author?(session) or is_instructor?(session, section) do
       do_mount(section, socket)
     else
       {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :unauthorized))}
@@ -48,6 +41,8 @@ defmodule OliWeb.Grades.GradesLive do
 
     {:ok,
      assign(socket,
+       title: "LMS Grades",
+       breadcrumbs: [],
        graded_pages: graded_pages,
        selected_page: selected_page,
        line_items_url: line_items_url,
@@ -71,6 +66,22 @@ defmodule OliWeb.Grades.GradesLive do
           nil -> false
           author -> Accounts.is_admin?(author)
         end
+    end
+  end
+
+  defp is_instructor?(session, section) do
+    case session["current_user_id"] do
+      nil ->
+        false
+
+      id ->
+        user = Accounts.get_user!(id) |> Repo.preload([:platform_roles, :author])
+
+        ContextRoles.has_role?(
+          user,
+          section.slug,
+          ContextRoles.get_role(:context_instructor)
+        )
     end
   end
 
@@ -196,7 +207,7 @@ defmodule OliWeb.Grades.GradesLive do
   end
 
   defp send_grades(students, access_token, section, page, line_item, socket) do
-    task_queue = determine_grade_sync_tasks(section.slug, page, line_item, students)
+    task_queue = determine_grade_sync_tasks(section, page, line_item, students)
 
     send(self(), :pop_task_queue)
 
@@ -282,7 +293,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case section
+        case section.line_items_service_url
              |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
           {:ok, line_item} ->
             fetch_students(access_token, section)
