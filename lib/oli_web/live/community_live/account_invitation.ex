@@ -4,7 +4,7 @@ defmodule OliWeb.CommunityLive.AccountInvitation do
   alias Surface.Components.Form
   alias Surface.Components.Form.{ErrorTag, Field, TextInput}
 
-  prop id, :string, required: true
+  prop list_id, :string, required: true
   prop invite, :event, required: true
   prop remove, :event, required: true
   prop suggest, :event
@@ -18,10 +18,10 @@ defmodule OliWeb.CommunityLive.AccountInvitation do
     ~F"""
       <Form for={@to_invite} submit={@invite} change={@suggest} class="d-flex mb-5">
         <Field name={:email} class="w-100">
-          <TextInput class="form-control" opts={placeholder: @placeholder, autocomplete: "off", list: @id <> "_matches"}/>
-          <datalist id={@id <> "_matches"}>
+          <TextInput class="form-control" opts={placeholder: @placeholder, autocomplete: "off", list: @list_id}/>
+          <datalist id={@list_id}>
             {#for match <- @matches}
-              <option value={match.email} >{match.name}</option>
+              <option value={match.email}>{match.name}</option>
             {/for}
           </datalist>
           <ErrorTag/>

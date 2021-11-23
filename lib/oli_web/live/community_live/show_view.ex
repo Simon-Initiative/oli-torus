@@ -83,7 +83,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add other authors by email to administrate the community."
         >
           <AccountInvitation
-            id="admin_invitation"
+            list_id="admin_matches"
             invite="add_admin"
             remove="remove_admin"
             suggest="suggest_admin"
@@ -98,7 +98,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_description="Add users by email to be members of the community."
         >
           <AccountInvitation
-            id="member_invitation"
+            list_id="member_matches"
             invite="add_member"
             remove="remove_member"
             suggest="suggest_member"
@@ -198,16 +198,6 @@ defmodule OliWeb.CommunityLive.ShowView do
     {:noreply, assign(socket, modal: modal)}
   end
 
-  defp community_accounts_assigns("admin", community_id) do
-    [community_admins: Groups.list_community_admins(community_id)]
-  end
-
-  defp community_accounts_assigns("member", community_id) do
-    [community_members: Groups.list_community_members(community_id)]
-  end
-
-  defp community_accounts_assigns(_user_type, _community_id), do: []
-
   def handle_event("add_" <> user_type, %{"collaborator" => %{"email" => email}}, socket) do
     socket = clear_flash(socket)
 
@@ -243,17 +233,18 @@ defmodule OliWeb.CommunityLive.ShowView do
   def handle_event("remove_" <> user_type, %{"collaborator-id" => user_id}, socket) do
     socket = clear_flash(socket)
 
-    attrs = %{
-      community_id: socket.assigns.community.id
-    }
+    attrs =
+      Map.merge(
+        %{
+          community_id: socket.assigns.community.id
+        },
+        case user_type do
+          "admin" -> %{author_id: user_id}
+          "member" -> %{user_id: user_id}
+        end
+      )
 
-    case user_type do
-      "admin" -> %{author_id: user_id}
-      "member" -> %{user_id: user_id}
-    end
-    |> Map.merge(attrs)
-    |> Groups.delete_community_account()
-    |> case do
+    case Groups.delete_community_account(attrs) do
       {:ok, _community_account} ->
         socket = put_flash(socket, :info, "Community #{user_type} successfully removed.")
         updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
@@ -265,35 +256,37 @@ defmodule OliWeb.CommunityLive.ShowView do
     end
   end
 
-  defp browse_accounts("member", query) do
-    options = %UserBrowseOptions{
-      include_guests: false,
-      text_search: query
-    }
-
-    Accounts.browse_users(
-      %Paging{offset: 0, limit: @matches_limit},
-      %Sorting{direction: :asc, field: :name},
-      options
-    )
-  end
-
-  defp browse_accounts("admin", query) do
-    options = %AuthorBrowseOptions{
-      text_search: query
-    }
-
-    Accounts.browse_authors(
-      %Paging{offset: 0, limit: @matches_limit},
-      %Sorting{direction: :asc, field: :name},
-      options
-    )
-  end
-
   def handle_event("suggest_" <> user_type, %{"collaborator" => %{"email" => query}}, socket) do
-    account_matches = browse_accounts(user_type, query)
-    matches = Map.put(socket.assigns.matches, user_type, account_matches)
-
+    matches = Map.put(socket.assigns.matches, user_type, browse_accounts(user_type, query))
     {:noreply, assign(socket, matches: matches)}
   end
+
+  defp community_accounts_assigns("admin", community_id),
+    do: [community_admins: Groups.list_community_admins(community_id)]
+
+  defp community_accounts_assigns("member", community_id),
+    do: [community_members: Groups.list_community_members(community_id)]
+
+  defp community_accounts_assigns(_user_type, _community_id), do: []
+
+  defp browse_accounts("member", query),
+    do:
+      Accounts.browse_users(
+        %Paging{offset: 0, limit: @matches_limit},
+        %Sorting{direction: :asc, field: :name},
+        %UserBrowseOptions{
+          include_guests: false,
+          text_search: query
+        }
+      )
+
+  defp browse_accounts("admin", query),
+    do:
+      Accounts.browse_authors(
+        %Paging{offset: 0, limit: @matches_limit},
+        %Sorting{direction: :asc, field: :name},
+        %AuthorBrowseOptions{
+          text_search: query
+        }
+      )
 end

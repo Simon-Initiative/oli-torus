@@ -498,6 +498,33 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
     end
 
+    test "suggests community admin correctly", %{
+      conn: conn,
+      community: community
+    } do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_admin\"")
+      |> render_change(%{collaborator: %{email: author.name}})
+
+      assert view
+             |> element("#admin_matches")
+             |> render() =~
+               author.email
+
+      view
+      |> element("form[phx-change=\"suggest_admin\"")
+      |> render_change(%{collaborator: %{email: "other_name"}})
+
+      refute view
+             |> element("#admin_matches")
+             |> render() =~
+               author.email
+    end
+
     test "adds community member correctly", %{
       conn: conn,
       community: community
@@ -595,6 +622,33 @@ defmodule OliWeb.CommunityLiveTest do
                "Community member couldn&#39;t be removed."
 
       assert 1 == length(Groups.list_community_members(community.id))
+    end
+
+    test "suggests community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_member\"")
+      |> render_change(%{collaborator: %{email: user.name}})
+
+      assert view
+             |> element("#member_matches")
+             |> render() =~
+               user.email
+
+      view
+      |> element("form[phx-change=\"suggest_member\"")
+      |> render_change(%{collaborator: %{email: "other_name"}})
+
+      refute view
+             |> element("#member_matches")
+             |> render() =~
+               user.email
     end
   end
 

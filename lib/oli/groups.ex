@@ -24,12 +24,6 @@ defmodule Oli.Groups do
   """
   def list_communities, do: Repo.all(Community)
 
-  defp filter_conditions(filter) do
-    Enum.reduce(filter, false, fn {field, value}, conditions ->
-      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
-    end)
-  end
-
   @doc """
   Returns the list of communities that meets the criteria passed in the input.
 
@@ -379,5 +373,11 @@ defmodule Oli.Groups do
         select: member
       )
     )
+  end
+
+  defp filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
+    end)
   end
 end
