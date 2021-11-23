@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.16.0">
 
-    <title>Oli.Delivery.Gating.Strategies.Schedule — OLI Torus v0.16.0</title>
+    <title>OliWeb.Sections.GatingAndScheduling.Edit — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-ac4703939a.js"></script>
+    <script src="dist/sidebar_items-46b9bbf47e.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,9 +86,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Gating.Strategies.Schedule <small class="app-vsn">(OLI Torus v0.16.0)</small>
+OliWeb.Sections.GatingAndScheduling.Edit <small class="app-vsn">(OLI Torus v0.16.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/schedule.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -97,8 +97,14 @@ Oli.Delivery.Gating.Strategies.Schedule <small class="app-vsn">(OLI Torus v0.16.
 
 
         <section id="moduledoc">
-<p>Schedule strategy provides a temporal based gating condition. A schedule condition
-can define a start and/or end datetime for a resource to be available.</p>
+<h2 id="module-properties" class="section-heading">
+  <a href="#module-properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul>
         </section>
 
 
@@ -117,29 +123,43 @@ can define a start and/or end datetime for a resource to be available.</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#check/1">check(gating_condition)</a>
+    <a href="#handle_event/3">handle_event(event, params, socket)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:check/1"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.check/1</code></a>.</p></div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_event/3"><code class="inline">Phoenix.LiveView.handle_event/3</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#reason/2">reason(gating_condition, opts \\ [])</a>
+    <a href="#hide_modal/1">hide_modal(socket)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:reason/2"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.reason/2</code></a>.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#type/0">type()</a>
+    <a href="#mount/3">mount(params, session, socket)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:type/0"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.type/0</code></a>.</p></div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:mount/3"><code class="inline">Phoenix.LiveView.mount/3</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render/1">render(assigns)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_modal/1">render_modal(assigns)</a>
+
+  </div>
 
 </div>
 
@@ -157,16 +177,16 @@ can define a start and/or end datetime for a resource to be available.</p>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="check/1">
+<section class="detail" id="handle_event/3">
 
   <div class="detail-header">
-    <a href="#check/1" class="detail-link" title="Link to this function">
+    <a href="#handle_event/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">check(gating_condition)</h1>
+    <h1 class="signature">handle_event(event, params, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/schedule.ex#L17" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L3" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -176,21 +196,19 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:check/1"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.check/1</code></a>.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_event/3"><code class="inline">Phoenix.LiveView.handle_event/3</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="reason/2">
-
-    <span id="reason/1"></span>
+<section class="detail" id="hide_modal/1">
 
   <div class="detail-header">
-    <a href="#reason/2" class="detail-link" title="Link to this function">
+    <a href="#hide_modal/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">reason(gating_condition, opts \\ [])</h1>
+    <h1 class="signature">hide_modal(socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/schedule.ex#L38" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L3" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -200,19 +218,19 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:reason/2"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.reason/2</code></a>.</p>
+
   </section>
 </section>
-<section class="detail" id="type/0">
+<section class="detail" id="mount/3">
 
   <div class="detail-header">
-    <a href="#type/0" class="detail-link" title="Link to this function">
+    <a href="#mount/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">type()</h1>
+    <h1 class="signature">mount(params, session, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/schedule.ex#L13" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -222,7 +240,51 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="Oli.Delivery.Gating.Strategies.Strategy.html#c:type/0"><code class="inline">Oli.Delivery.Gating.Strategies.Strategy.type/0</code></a>.</p>
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:mount/3"><code class="inline">Phoenix.LiveView.mount/3</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="render/1">
+
+  <div class="detail-header">
+    <a href="#render/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render(assigns)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L37" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="render_modal/1">
+
+  <div class="detail-header">
+    <a href="#render_modal/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_modal(assigns)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/edit.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 

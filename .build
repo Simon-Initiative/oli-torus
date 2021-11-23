@@ -145,10 +145,11 @@ Oli.Delivery.Evaluation.Rule.html
 Oli.Delivery.Evaluation.Standard.html
 Oli.Delivery.Evaluation.html
 Oli.Delivery.ExtrinsicState.html
+Oli.Delivery.Gating.ConditionTypes.ConditionType.html
+Oli.Delivery.Gating.ConditionTypes.Schedule.html
+Oli.Delivery.Gating.ConditionTypes.html
 Oli.Delivery.Gating.GatingCondition.html
 Oli.Delivery.Gating.GatingConditionData.html
-Oli.Delivery.Gating.Strategies.Schedule.html
-Oli.Delivery.Gating.Strategies.Strategy.html
 Oli.Delivery.Gating.html
 Oli.Delivery.Hierarchy.HierarchyNode.html
 Oli.Delivery.Hierarchy.html
@@ -383,6 +384,7 @@ OliWeb.Common.Filter.html
 OliWeb.Common.FormContainer.html
 OliWeb.Common.Hierarchy.HierarchyPicker.html
 OliWeb.Common.Hierarchy.MoveModal.html
+OliWeb.Common.Hierarchy.SelectResourceModal.html
 OliWeb.Common.Links.html
 OliWeb.Common.Listing.html
 OliWeb.Common.LtiSession.html
@@ -426,7 +428,6 @@ OliWeb.Curriculum.OptionsModal.html
 OliWeb.Curriculum.Rollup.html
 OliWeb.Curriculum.Utils.html
 OliWeb.DelegatedEvents.html
-OliWeb.Delivery.ManageSection.html
 OliWeb.Delivery.ManageUpdates.html
 OliWeb.Delivery.Remix.Actions.html
 OliWeb.Delivery.Remix.AddMaterialsModal.html
@@ -435,6 +436,8 @@ OliWeb.Delivery.Remix.Entry.html
 OliWeb.Delivery.Remix.RemoveModal.html
 OliWeb.Delivery.RemixSection.html
 OliWeb.Delivery.Sections.EnrollmentsTableModel.html
+OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore.html
+OliWeb.Delivery.Sections.GatingAndScheduling.TableModel.html
 OliWeb.Delivery.SelectSource.TableModel.html
 OliWeb.Delivery.SelectSource.html
 OliWeb.Delivery.Updates.ApplyUpdateModal.html
@@ -567,6 +570,10 @@ OliWeb.Router.html
 OliWeb.SectionUserStateChannel.html
 OliWeb.Sections.EditView.html
 OliWeb.Sections.EnrollmentsView.html
+OliWeb.Sections.GatingAndScheduling.Edit.html
+OliWeb.Sections.GatingAndScheduling.Form.html
+OliWeb.Sections.GatingAndScheduling.New.html
+OliWeb.Sections.GatingAndScheduling.html
 OliWeb.Sections.Instructors.html
 OliWeb.Sections.LtiSettings.html
 OliWeb.Sections.MainDetails.html
@@ -605,8 +612,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-f51a8238ee.js
-dist/sidebar_items-ac4703939a.js
+dist/search_items-36a8bfd514.js
+dist/sidebar_items-46b9bbf47e.js
 index.html
 license.html
 readme.html

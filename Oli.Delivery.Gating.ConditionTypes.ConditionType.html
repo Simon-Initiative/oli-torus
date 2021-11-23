@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.16.0">
 
-    <title>Oli.Delivery.Gating.Strategies.Strategy — OLI Torus v0.16.0</title>
+    <title>Oli.Delivery.Gating.ConditionTypes.ConditionType — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-ac4703939a.js"></script>
+    <script src="dist/sidebar_items-46b9bbf47e.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,9 +86,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Gating.Strategies.Strategy <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.16.0)</small>
+Oli.Delivery.Gating.ConditionTypes.ConditionType <small>behaviour</small> <small class="app-vsn">(OLI Torus v0.16.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -97,7 +97,7 @@ Oli.Delivery.Gating.Strategies.Strategy <small>behaviour</small> <small class="a
 
 
         <section id="moduledoc">
-<p>Behavior a gating strategy must implement</p>
+<p>Behavior a gating condition type must implement</p>
         </section>
 
 
@@ -116,25 +116,25 @@ Oli.Delivery.Gating.Strategies.Strategy <small>behaviour</small> <small class="a
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:check/1">check(t)</a>
+    <a href="#c:details/2">details(t, arg2)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Returns true if the condition evaluation determines that the resource is unlocked.
-This function call is inteded to be as efficient as possible for the ideal case when
-a resource is accessible. Use the <code class="inline">reason</code> callback to generate a more detailed
-message as to why a resource is locked.</p></div>
+    <div class="summary-synopsis"><p>Returns a human readable message as to why a resource access has been blocked.
+Takes the GatingCondition and any additional opts that may be utilized by certain
+strategies, such as formatting helpers or data providers.</p></div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:reason/2">reason(t, arg2)</a>
+    <a href="#c:open?/1">open?(t)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Returns a human readable (and html renderable) message as to why a resource is locked.
-Takes the GatingCondition and any additional opts that may be utilized by certain
-strategies, such as formatting helpers or data providers.</p></div>
+    <div class="summary-synopsis"><p>Returns true if the condition evaluation determines that the resource can be accessed.
+This function call is inteded to be as efficient as possible for the common case when
+a resource is accessible. Use the <code class="inline">details</code> callback to get more details as to
+why a resource is inaccessible.</p></div>
 
 </div>
 <div class="summary-row">
@@ -161,16 +161,16 @@ strategies, such as formatting helpers or data providers.</p></div>
 Callbacks
           </h1>
           <div class="callbacks-list">
-<section class="detail" id="c:check/1">
+<section class="detail" id="c:details/2">
 
   <div class="detail-header">
-    <a href="#c:check/1" class="detail-link" title="Link to this callback">
+    <a href="#c:details/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">check(t)</h1>
+    <h1 class="signature">details(t, arg2)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L25" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -183,45 +183,46 @@ Callbacks
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>check(Oli.Delivery.Gating.GatingCondition.t()) :: Boolean.t()</pre>
+          <pre>details(Oli.Delivery.Gating.GatingCondition.t(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>() | nil) ::
+  <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()</pre>
 
       </div>
 
-<p>Returns true if the condition evaluation determines that the resource is unlocked.
-This function call is inteded to be as efficient as possible for the ideal case when
-a resource is accessible. Use the <code class="inline">reason</code> callback to generate a more detailed
-message as to why a resource is locked.</p>
-  </section>
-</section>
-<section class="detail" id="c:reason/2">
-
-  <div class="detail-header">
-    <a href="#c:reason/2" class="detail-link" title="Link to this callback">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this callback</span>
-    </a>
-    <h1 class="signature">reason(t, arg2)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L25" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>reason(Oli.Delivery.Gating.GatingCondition.t(), <a href="https://hexdocs.pm/elixir/Keyword.html#t:t/0">Keyword.t</a>() | nil) :: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()</pre>
-
-      </div>
-
-<p>Returns a human readable (and html renderable) message as to why a resource is locked.
+<p>Returns a human readable message as to why a resource access has been blocked.
 Takes the GatingCondition and any additional opts that may be utilized by certain
 strategies, such as formatting helpers or data providers.</p>
+  </section>
+</section>
+<section class="detail" id="c:open?/1">
+
+  <div class="detail-header">
+    <a href="#c:open?/1" class="detail-link" title="Link to this callback">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this callback</span>
+    </a>
+    <h1 class="signature">open?(t)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L18" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>open?(Oli.Delivery.Gating.GatingCondition.t()) :: Boolean.t()</pre>
+
+      </div>
+
+<p>Returns true if the condition evaluation determines that the resource can be accessed.
+This function call is inteded to be as efficient as possible for the common case when
+a resource is accessible. Use the <code class="inline">details</code> callback to get more details as to
+why a resource is inaccessible.</p>
   </section>
 </section>
 <section class="detail" id="c:type/0">
@@ -233,7 +234,7 @@ strategies, such as formatting helpers or data providers.</p>
     </a>
     <h1 class="signature">type()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/strategies/strategy.ex#L10" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
