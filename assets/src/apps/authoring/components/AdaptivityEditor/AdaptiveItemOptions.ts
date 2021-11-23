@@ -96,12 +96,13 @@ export const conditionTypeOperatorCombos: ConditionTypeOperatorCombo[] = [
       'notEqual',
       'is',
       'notIs',
-      'greaterThan',
+      // these are not supported by the rules engine anyway, we don't have all the values typically for an enum
+      /* 'greaterThan',
       'lessThan',
       'greaterThanInclusive',
       'lessThanInclusive',
       'inRange',
-      'notInRange',
+      'notInRange', */
     ],
   },
   {
