@@ -70,7 +70,7 @@ export const schema: JSONSchema7Object = {
 export const uiSchema = {};
 
 export const adaptivitySchema = {
-  exposureinSeconds: CapiVariableTypes.NUMBER,
+  exposureInSeconds: CapiVariableTypes.NUMBER,
   exposurePercentage: CapiVariableTypes.NUMBER,
   hasStarted: CapiVariableTypes.BOOLEAN,
   hasCompleted: CapiVariableTypes.BOOLEAN,

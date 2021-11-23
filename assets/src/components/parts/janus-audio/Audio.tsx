@@ -315,7 +315,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   }) => {
     const currentVideoTime = parseFloat(currentTime || 0);
     const audioDuration = parseFloat(duration || 0);
-    const exposureInPercentage = (currentVideoTime / audioDuration) * 100;
+    const exposurePercentage = (currentVideoTime / audioDuration) * 100;
     props.onSave({
       id: `${props.id}`,
       responses: [
@@ -350,9 +350,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
           value: currentTime,
         },
         {
-          key: 'exposureInPercentage',
+          key: 'exposurePercentage',
           type: CapiVariableTypes.NUMBER,
-          value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
+          value: isNaN(exposurePercentage) ? 0 : parseInt(exposurePercentage.toString()),
         },
         {
           key: 'hasCompleted',
