@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Gating.Strategies.Schedule do
+defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
   @moduledoc """
   Schedule strategy provides a temporal based gating condition. A schedule condition
   can define a start and/or end datetime for a resource to be available.
@@ -8,13 +8,13 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
 
-  @behaviour Oli.Delivery.Gating.Strategies.Strategy
+  @behaviour Oli.Delivery.Gating.ConditionTypes.ConditionType
 
   def type do
     :schedule
   end
 
-  def check(%GatingCondition{
+  def open?(%GatingCondition{
         data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
       }) do
     now = DateTime.utc_now()
@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     end
   end
 
-  def reason(
+  def details(
         %GatingCondition{
           section_id: section_id,
           resource_id: resource_id,
@@ -50,20 +50,21 @@ defmodule Oli.Delivery.Gating.Strategies.Schedule do
     revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
     now = DateTime.utc_now()
 
-    format_datetime =
-      Keyword.get(opts, :format_datetime, fn dt ->
-        Timex.format!(dt, "{M}/{D}/{YYYY} at {h12}:{m}:{s} {AM}")
-      end)
+    format_datetime = Keyword.get(opts, :format_datetime, &format_datetime_default/1)
 
     cond do
       start_datetime != nil && DateTime.compare(start_datetime, now) != :lt ->
-        "#{revision.title} is not available before #{format_datetime.(start_datetime)}"
+        "#{revision.title} is scheduled to start #{format_datetime.(start_datetime)}"
 
       end_datetime != nil && DateTime.compare(now, end_datetime) != :lt ->
-        "#{revision.title} is not available after #{format_datetime.(end_datetime)}"
+        "#{revision.title} is scheduled to end #{format_datetime.(end_datetime)}"
 
       true ->
-        "An error occurred. Please try again."
+        nil
     end
+  end
+
+  defp format_datetime_default(%DateTime{} = dt) do
+    Timex.format!(dt, "{M}/{D}/{YYYY} {h12}:{m}:{s} {AM} {Zabbr}")
   end
 end

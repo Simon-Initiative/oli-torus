@@ -70,10 +70,10 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
         |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
 
       assert html_response(conn, 403) =~
-               "You are trying to access a resource that is blocked for the following reasons"
+               "You are trying to access a resource that is gated by the following condition"
 
       assert html_response(conn, 403) =~
-               "#{revision.title} is not available after"
+               "#{revision.title} is scheduled to end"
     end
   end
 

@@ -33,8 +33,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
               selection: selection,
               preselected: preselected,
               publications: publications,
-              selected_publication: selected_publication,
-              select_mode: :multi %>
+              selected_publication: selected_publication %>
             </div>
             <div class="modal-footer">
               <%= if Enum.count(selection) > 0 do %>
