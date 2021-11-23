@@ -1,4 +1,4 @@
 <a class="sidebar-item btn my-1" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.IndexView) %>">
   <img src="/images/icons/icon-admin-light.svg" height="36px" width="32px"/>
-  <div class="label mt-1">Communities</div>
+  <div class="label mt-1">Community</div>
 </a>

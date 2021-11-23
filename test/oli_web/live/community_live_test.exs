@@ -226,10 +226,8 @@ defmodule OliWeb.CommunityLiveTest do
         community: params
       })
 
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Community succesfully created."
+      flash = assert_redirected(view, @live_view_index_route)
+      assert flash["info"] == "Community successfully created."
 
       [%Community{name: name} | _tail] = Groups.list_communities()
 

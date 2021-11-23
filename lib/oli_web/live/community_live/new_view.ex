@@ -39,8 +39,10 @@ defmodule OliWeb.CommunityLive.NewView do
   def handle_event("save", %{"community" => params}, socket) do
     case Groups.create_community(params) do
       {:ok, _community} ->
-        socket = put_flash(socket, :info, "Community succesfully created.")
-        {:noreply, assign(socket, community: Groups.change_community(%Community{}))}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Community successfully created.")
+         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =
