@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Add student input parsing to show student responses in datashop export
+
 ### Enhancements
 
 - Gating and Scheduling
