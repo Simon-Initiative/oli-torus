@@ -700,8 +700,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     let updatedChoiceText = updatedChoicesText[0];
 
     if (multipleSelection) {
-      console.log({ selectedChoices });
-
       // sets data for checkboxes, which can have multiple values
       newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
         (c) => checked || (!checked && originalValue !== c && c > 0),
