@@ -53,7 +53,7 @@ export const updateActivityRules = createAsyncThunk(
 
       // ensure that all conditions and condition blocks are assigned an id
       activityRulesClone.forEach((rule: any) => {
-        const { conditions } = rule;
+        const { conditions, forceProgress, event } = rule;
         const rootCondition = clone(conditions || { all: [] }); // layers might not have conditions
         const rootConditionIsAll = !!rootCondition.all;
         const conditionsToUpdate = rootCondition[rootConditionIsAll ? 'all' : 'any'];
@@ -62,6 +62,12 @@ export const updateActivityRules = createAsyncThunk(
         }
         updateNestedConditions(conditionsToUpdate);
         rule.conditions = rootCondition;
+        if (forceProgress) {
+          const nav = rule.event.params.actions.find((action: any) => action.type === 'navigation');
+          if (!nav) {
+            rule.event.params.actions.push({ type: 'navigation', params: { target: 'next' } });
+          }
+        }
       });
 
       const childActivityClone = clone(childActivity);
