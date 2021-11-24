@@ -201,7 +201,7 @@ defmodule Oli.Delivery.GatingTest do
       assert index[another_section_gating_condition.resource_id] == nil
     end
 
-    test "check_resource/2 returns true if all ancestor gating conditions pass", %{
+    test "resource_open/2 returns true if all ancestor gating conditions pass", %{
       unit1_container: %{resource: unit1},
       page1: page1,
       nested_page1: nested_page1,
@@ -232,13 +232,13 @@ defmodule Oli.Delivery.GatingTest do
       {:ok, section} = Gating.update_resource_gating_index(section)
 
       # check resource that has no gating condition defined
-      assert Gating.check_resource(section, page1.id) == true
+      assert Gating.resource_open(section, page1.id) == true
 
       # check nested resource that has gating condition defined for itself and its container
-      assert Gating.check_resource(section, nested_page1.id) == true
+      assert Gating.resource_open(section, nested_page1.id) == true
 
       # check for a resource that is gated and condition is not satisfied
-      assert Gating.check_resource(section, nested_page2.id) == false
+      assert Gating.resource_open(section, nested_page2.id) == false
 
       # change unit to have ended yesterday, check that nested resource is now gated properly
       Gating.update_gating_condition(unit_gating_condition, %{
@@ -246,7 +246,7 @@ defmodule Oli.Delivery.GatingTest do
       })
 
       # nested resource should no longer be accessible since unit is gated by a schedule that ended yesterday
-      assert Gating.check_resource(section, nested_page1.id) == false
+      assert Gating.resource_open(section, nested_page1.id) == false
     end
   end
 end
