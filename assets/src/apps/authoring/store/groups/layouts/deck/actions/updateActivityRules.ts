@@ -110,9 +110,6 @@ export const updateActivityRules = createAsyncThunk(
           }
         })
         .filter((id) => id) as number[];
-      if (!referencedActivityIds.includes(childActivity.id as number)) {
-        referencedActivityIds.unshift(childActivity.id as number);
-      }
       if (
         !isEqual(
           childActivityClone.authoring.activitiesRequiredForEvaluation,
