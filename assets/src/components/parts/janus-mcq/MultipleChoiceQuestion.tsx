@@ -687,7 +687,8 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     { value, textValue, checked }: ItemSelectionInput,
     shouldSave = true,
   ) => {
-    let newChoice = checked ? parseInt(value.toString(), 10) : 0;
+    const originalValue = parseInt(value.toString(), 10);
+    let newChoice = checked ? originalValue : 0;
     let newCount = 1;
     let newSelectedChoices = [newChoice];
     let updatedChoicesText = [checked ? textValue : ''];
@@ -696,7 +697,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (multipleSelection) {
       // sets data for checkboxes, which can have multiple values
       newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
-        (c) => checked || (!checked && newChoice !== c),
+        (c) => checked || (!checked && originalValue !== c),
       );
 
       newChoice = newSelectedChoices.sort()[0] || 0;
