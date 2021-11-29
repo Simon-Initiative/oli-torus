@@ -20,7 +20,16 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [videoAutoPlay, setVideoAutoPlay] = useState(false);
   const [videoEnableReplay, setVideoEnableReplay] = useState(true);
   const [cssClass, setCssClass] = useState('');
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${props.id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dCssClass = pModel.customCssClass || cssClass;
@@ -128,7 +137,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-
+    handleStylingChanges();
     setReady(true);
   }, []);
 
