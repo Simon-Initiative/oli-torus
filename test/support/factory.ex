@@ -20,7 +20,7 @@ defmodule Oli.Factory do
   def user_factory() do
     %User{
       email: "#{sequence("user")}@example.edu",
-      name: "User name",
+      name: sequence("User name"),
       given_name: "User given name",
       family_name: "User family name",
       sub: "#{sequence("usersub")}"

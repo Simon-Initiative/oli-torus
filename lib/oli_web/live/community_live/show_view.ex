@@ -14,10 +14,12 @@ defmodule OliWeb.CommunityLive.ShowView do
     Form,
     IndexView,
     AccountInvitation,
-    ShowSection
+    ShowSection,
+    MembersIndexView
   }
 
   alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.Link
 
   data title, :string, default: "Edit Community"
   data community, :struct
@@ -55,7 +57,7 @@ defmodule OliWeb.CommunityLive.ShowView do
         community ->
           changeset = Groups.change_community(community)
           community_admins = Groups.list_community_admins(community_id)
-          community_members = Groups.list_community_members(community_id)
+          community_members = Groups.list_community_members(community_id, 3)
 
           assign(socket,
             community: community,
@@ -74,7 +76,10 @@ defmodule OliWeb.CommunityLive.ShowView do
     ~F"""
       {render_modal(assigns)}
       <div id="community-overview" class="overview container">
-        <ShowSection section_title="Details" section_description="Main community fields that will be shown to system admins and community admins.">
+        <ShowSection
+          section_title="Details"
+          section_description="Main community fields that will be shown to system admins and community admins."
+        >
           <Form changeset={@changeset} save="save"/>
         </ShowSection>
 
@@ -95,7 +100,7 @@ defmodule OliWeb.CommunityLive.ShowView do
 
         <ShowSection
           section_title="Community Members"
-          section_description="Add users by email to be members of the community."
+          section_description="Add users by email as members of the community. Only showing the last 3 additions here."
         >
           <AccountInvitation
             list_id="member_matches"
@@ -106,6 +111,10 @@ defmodule OliWeb.CommunityLive.ShowView do
             placeholder="user@example.edu"
             button_text="Add"
             collaborators={@community_members}/>
+
+          <Link class="btn btn-link float-right mt-4" to={Routes.live_path(@socket, MembersIndexView, @community.id)}>
+            See all >
+          </Link>
         </ShowSection>
 
         <ShowSection
@@ -265,7 +274,7 @@ defmodule OliWeb.CommunityLive.ShowView do
     do: [community_admins: Groups.list_community_admins(community_id)]
 
   defp community_accounts_assigns("member", community_id),
-    do: [community_members: Groups.list_community_members(community_id)]
+    do: [community_members: Groups.list_community_members(community_id, 3)]
 
   defp community_accounts_assigns(_user_type, _community_id), do: []
 

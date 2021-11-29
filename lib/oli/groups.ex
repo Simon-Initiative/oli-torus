@@ -364,13 +364,15 @@ defmodule Oli.Groups do
       iex> list_community_members(123)
       {:ok, []}
   """
-  def list_community_members(community_id) do
+  def list_community_members(community_id, limit \\ nil) do
     Repo.all(
       from(
         community_account in CommunityAccount,
         join: member in assoc(community_account, :user),
         where: community_account.community_id == ^community_id and not community_account.is_admin,
-        select: member
+        select: member,
+        order_by: [desc: :inserted_at],
+        limit: ^limit
       )
     )
   end

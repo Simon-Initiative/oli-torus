@@ -252,13 +252,18 @@ defmodule Oli.GroupsTest do
       assert 2 = length(admins)
     end
 
-    test "list_community_members/1 returns the members for a community" do
+    test "list_community_members/2 returns the members for a community" do
       insert(:community_admin_account)
-      %CommunityAccount{community_id: community_id} = insert(:community_member_account)
+      %CommunityAccount{community: community} = insert(:community_member_account)
+      insert(:community_member_account, %{community: community})
 
-      members = Groups.list_community_members(community_id)
+      members = Groups.list_community_members(community.id)
 
-      assert [%User{}] = members
+      assert [%User{} | _tail] = members
+      assert 2 = length(members)
+
+      members_limited = Groups.list_community_members(community.id, 1)
+      assert [%User{}] = members_limited
     end
 
     test "get_community_account_by!/1 returns a community account when meets the clauses" do
