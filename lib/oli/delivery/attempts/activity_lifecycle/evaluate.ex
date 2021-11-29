@@ -39,7 +39,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           currentAttemptNumber: attempt_number
         }
 
-        activitiesRequiredForEvaluation = Map.get(authoring, "activitiesRequiredForEvaluation", [])
+        activitiesRequiredForEvaluation =
+          Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
@@ -66,7 +67,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         rules,
         activitiesRequiredForEvaluation
       ) do
-    state = assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+    state =
+      assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
 
     encodeResults = true
 
@@ -115,44 +117,56 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
-  defp assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs) do
+  defp assemble_full_adaptive_state(
+         resource_attempt,
+         activities_required_for_evaluation,
+         part_inputs
+       ) do
     extrinsic_state = resource_attempt.state
 
     # if activitiesRequiredForEvaluation is empty, we don't need to get any extra state
-    response_state = if Enum.empty?(activitiesRequiredForEvaluation) do
-      %{}
-    else
-      # need to get *all* of the activity attempts state (part responses saved thus far)
-      attempt_hierarchy =
-        Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
+    response_state =
+      case activities_required_for_evaluation do
+        [] ->
+          %{}
 
-      Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
-        part_responses =
-          Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
-            case pa.response do
-              "" ->
-                acc
+        _ ->
+          # need to get *all* of the activity attempts state (part responses saved thus far)
 
-              nil ->
-                acc
+          attempt_hierarchy =
+            Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(
+              resource_attempt.id,
+              activities_required_for_evaluation
+            )
 
-              _ ->
-                part_values =
-                  Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
-                    case pv do
-                      nil -> acc1
-                      "" -> acc1
-                      _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
-                    end
-                  end)
+          Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts},
+                                                             m ->
+            part_responses =
+              Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
+                case pa.response do
+                  "" ->
+                    acc
 
-                Map.merge(acc, part_values)
-            end
+                  nil ->
+                    acc
+
+                  _ ->
+                    part_values =
+                      Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
+                        case pv do
+                          nil -> acc1
+                          "" -> acc1
+                          _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+                        end
+                      end)
+
+                    Map.merge(acc, part_values)
+                end
+              end)
+
+            Map.merge(m, part_responses)
           end)
-
-        Map.merge(m, part_responses)
-      end)
-    end
+      end
 
     # need to combine with part_inputs as latest
     input_state =
@@ -395,11 +409,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                end)
                |> (fn evaluations -> {:ok, evaluations} end).()
                |> persist_evaluations(part_inputs, roll_up_fn) do
-            {:ok, results} -> results
+            {:ok, results} ->
+              results
+
             {:error, error} ->
               Logger.debug("error inside apply_client_evaluation: #{error}")
               Repo.rollback(error)
-            _ -> Repo.rollback("unknown error")
+
+            _ ->
+              Repo.rollback("unknown error")
           end
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
