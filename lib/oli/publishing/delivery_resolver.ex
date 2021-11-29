@@ -23,7 +23,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     )
   end
 
-  defp section_resource_revisions(section_slug) do
+  def section_resource_revisions(section_slug) do
     from([sr, s] in section_resources(section_slug),
       join: spp in SectionsProjectsPublications,
       as: :spp,

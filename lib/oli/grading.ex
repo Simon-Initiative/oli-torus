@@ -5,6 +5,9 @@ defmodule Oli.Grading do
   """
   require Logger
 
+  import Ecto.Query, warn: false
+  import Oli.Utils, only: [log_error: 2]
+
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -17,7 +20,6 @@ defmodule Oli.Grading do
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
-  import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
@@ -72,7 +74,9 @@ defmodule Oli.Grading do
         end
 
       {:error, e} ->
-        Logger.error(e)
+        {_id, msg} = log_error("Failed to fetch or create LMS line item", e)
+
+        {:error, msg}
     end
   end
 

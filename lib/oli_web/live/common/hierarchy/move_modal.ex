@@ -31,6 +31,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
                 id: "#{id}_hierarchy_picker",
                 hierarchy: hierarchy,
                 active: active,
+                select_mode: :container,
                 filter_items_fn: fn items -> Enum.filter(items, &(&1.uuid != uuid)) end %>
 
               <div class="text-center text-secondary mt-2">
