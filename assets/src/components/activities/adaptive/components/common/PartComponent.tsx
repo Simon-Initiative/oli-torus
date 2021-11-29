@@ -80,21 +80,11 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       const styleChanges: CSSProperties = {};
 
       if (settings?.width) {
-        const newW = settings.width.value;
-        if (settings.width.type === 'relative') {
-          styleChanges.width = parseFloat(componentStyle?.width?.toString() || '0') + newW;
-        } else {
-          styleChanges.width = newW;
-        }
+        styleChanges.width = settings.width.value;
       }
 
       if (settings?.height) {
-        const newH = settings.height.value;
-        if (settings.height.type === 'relative') {
-          styleChanges.height = parseFloat(componentStyle?.height?.toString() || '0') + newH;
-        } else {
-          styleChanges.height = newH;
-        }
+        styleChanges.height = settings.height.value;
       }
 
       if (settings?.zIndex) {

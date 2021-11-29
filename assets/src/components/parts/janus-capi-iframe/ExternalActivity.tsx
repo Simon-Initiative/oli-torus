@@ -45,6 +45,18 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [frameCssClass, setFrameCssClass] = useState('');
   // these rely on being set every render and the "model" useState value being set
   const { src, title, allowScrolling, configData } = model;
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (frameWidth !== undefined) {
+      styleChanges.width = { value: frameWidth as number };
+    }
+    if (frameHeight != undefined) {
+      styleChanges.height = { value: frameHeight as number };
+    }
+    console.log({ styleChanges });
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [frameWidth, frameHeight]);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -646,11 +658,21 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const modifiedData = data;
     if (frameWidth && data?.width) {
       const newW = parseFloat(data.width.value);
-      modifiedData.width.value = newW;
+      if (data.width.type === 'relative') {
+        modifiedData.width.value = frameWidth + newW;
+      } else {
+        modifiedData.width.value = newW;
+      }
+      setFrameWidth(modifiedData.width.value);
     }
     if (frameHeight && data?.height) {
       const newH = parseFloat(data.height.value);
-      modifiedData.height.value = newH;
+      if (data.height.type === 'relative') {
+        modifiedData.height.value = frameHeight + newH;
+      } else {
+        modifiedData.height.value = newH;
+      }
+      setFrameHeight(modifiedData.height.value);
     }
     if (modifiedData?.height?.value) {
       iFrameResponse.push({
@@ -670,7 +692,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       id,
       responses: iFrameResponse,
     });
-    props.onResize({ id: `${id}`, settings: modifiedData });
+    //props.onResize({ id: `${id}`, settings: modifiedData });
     sendFormedResponse(
       simLife.handshake,
       {},
