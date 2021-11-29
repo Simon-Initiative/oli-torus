@@ -818,7 +818,7 @@ defmodule OliWeb.Router do
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])
 
-      get("/openfree", OpenAndFreeController, :index_api)
+      get("/openfree", Api.OpenAndFreeController, :index)
     end
   end
 

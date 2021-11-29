@@ -19,23 +19,6 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
-  @doc """
-  Provides API access to the open and free sections that are open for registration.
-  """
-  def index_api(conn, _params) do
-    sections =
-      Sections.list_open_and_free_sections()
-      |> Enum.filter(fn s -> s.registration_open end)
-      |> Enum.map(fn section ->
-        %{
-          slug: section.slug,
-          url: Routes.page_delivery_path(conn, :index, section.slug)
-        }
-      end)
-
-    json(conn, sections)
-  end
-
   def index(conn, _params) do
     render(conn, "index.html",
       sections: Sections.list_open_and_free_sections(),
@@ -56,11 +39,6 @@ defmodule OliWeb.OpenAndFreeController do
 
           publication.project
       end
-
-    IO.inspect(
-      Sections.change_independent_learner_section(%Section{registration_open: true}).data,
-      label: "Changeset in new"
-    )
 
     render(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
@@ -144,8 +122,6 @@ defmodule OliWeb.OpenAndFreeController do
         |> Map.put("start_date", utc_start_date)
         |> Map.put("end_date", utc_end_date)
 
-      IO.inspect(conn.assigns, label: "Conn in creation")
-
       case create_from_publication(conn, publication, section_params) do
         {:ok, section} ->
           conn
@@ -227,6 +203,9 @@ defmodule OliWeb.OpenAndFreeController do
         )
     end
   end
+
+
+
 
   ###
   ### Helpers
