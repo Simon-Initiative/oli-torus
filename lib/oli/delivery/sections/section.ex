@@ -5,12 +5,16 @@ defmodule Oli.Delivery.Sections.Section do
   import Oli.Utils
   alias Oli.Utils.Slug
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.DeliveryPolicy
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
+
+  alias Oli.Delivery.Sections.{
+    SectionsProjectsPublications,
+    Enrollment,
+    SectionResource,
+    SectionInvite
+  }
 
   schema "sections" do
     field(:type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable)
@@ -74,6 +78,11 @@ defmodule Oli.Delivery.Sections.Section do
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
     has_many(:section_project_publications, SectionsProjectsPublications, on_replace: :delete)
+
+    # Section Invites are used for "LMS-Lite" sections (open and free and require enrollment)
+    # An instructor can create a "section invite" link with a hash that allows direct student
+    # enrollment.
+    has_many(:section_invites, SectionInvite, on_delete: :delete_all)
 
     field(:enrollments_count, :integer, virtual: true)
     field(:total_count, :integer, virtual: true)

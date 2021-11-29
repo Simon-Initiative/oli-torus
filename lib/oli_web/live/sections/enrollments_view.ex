@@ -119,6 +119,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
+      <button class="btn btn-primary" :on-click="open-invite-modal">Invite Students</button>
+
       <TextSearch id="text-search"/>
 
       <div class="mb-3"/>
@@ -153,6 +155,10 @@ defmodule OliWeb.Sections.EnrollmentsView do
          ),
        replace: true
      )}
+  end
+
+  def handle_event("open-invite-modal", params, socket) do
+
   end
 
   def handle_event(event, params, socket) do
