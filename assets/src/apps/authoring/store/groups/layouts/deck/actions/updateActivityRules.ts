@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { extractAllExpressionsFromText } from 'adaptivity/scripting';
+import { findReferencedActivitiesInConditions } from 'adaptivity/rules-engine';
 import { inferTypeFromOperatorAndValue } from 'apps/authoring/components/AdaptivityEditor/AdaptiveItemOptions';
 import { findInSequence } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
@@ -33,40 +33,13 @@ const updateNestedConditions = (conditions: any) => {
   });
 };
 
-const findReferencedActivitiesInConditions = (conditions: any) => {
-  const referencedActivities: Set<string> = new Set();
-
-  conditions.forEach((condition: any) => {
-    if (condition.fact && condition.fact.indexOf('|stage.') !== -1) {
-      const referencedSequenceId = condition.fact.split('|stage.')[0];
-      referencedActivities.add(referencedSequenceId);
-    }
-    if (typeof condition.value === 'string' && condition.value.indexOf('|stage.') !== -1) {
-      // value could have more than one reference inside it
-      const exprs = extractAllExpressionsFromText(condition.value);
-      exprs.forEach((expr: string) => {
-        if (expr.indexOf('|stage.') !== -1) {
-          const referencedSequenceId = expr.split('|stage.')[0];
-          referencedActivities.add(referencedSequenceId);
-        }
-      });
-    }
-    if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
-      childRefs.forEach((ref) => referencedActivities.add(ref));
-    }
-  });
-
-  return Array.from(referencedActivities);
-};
-
 export const updateActivityRules = createAsyncThunk(
   `${GroupsSlice}/updateActivityRules`,
   async (deck: any, { dispatch, getState }) => {
     const rootState = getState() as any;
     const activitiesToUpdate: any[] = [];
 
-    console.log(`UPDATE RULES for ${deck.children.length} activities`, deck);
+    // console.log(`UPDATE RULES for ${deck.children.length} activities`, deck);
     deck.children.forEach((child: any) => {
       const childActivity = selectActivityById(rootState, child.resourceId);
 
@@ -116,7 +89,7 @@ export const updateActivityRules = createAsyncThunk(
           referencedActivityIds,
         )
       ) {
-        console.log('RULE REFS: ', referencedActivityIds);
+        // console.log('RULE REFS: ', referencedActivityIds);
         childActivityClone.authoring.activitiesRequiredForEvaluation = referencedActivityIds;
         activitiesToUpdate.push(childActivityClone);
       }
@@ -130,7 +103,7 @@ export const updateActivityRules = createAsyncThunk(
       }
     });
 
-    console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate);
+    // console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate);
 
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
