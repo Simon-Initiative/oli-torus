@@ -10,7 +10,7 @@
     <title>OliWeb.ViewHelpers — OLI Torus v0.16.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-46b9bbf47e.js"></script>
+    <script src="dist/sidebar_items-e65a66b3f9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -258,16 +258,16 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
   <a href="#dt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0073855718-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="0073855718-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6787295724-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="6787295724-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0073855718-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="0073855718-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6787295724-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="6787295724-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0073855718-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="0073855718-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6787295724-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="6787295724-3">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0073855718-4">(</span><span class="n">datetime</span><span class="p" data-group-id="0073855718-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6787295724-4">(</span><span class="n">datetime</span><span class="p" data-group-id="6787295724-4">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span></code></pre>
   </section>
 </section>
@@ -321,16 +321,16 @@ it is assumed this datetime has not been localized and the timezone is included.
   <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9292135203-1">(</span><span class="n">datetime</span><span class="p" data-group-id="9292135203-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0977464367-1">(</span><span class="n">datetime</span><span class="p" data-group-id="0977464367-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9292135203-2">(</span><span class="n">datetime_utc</span><span class="p" data-group-id="9292135203-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0977464367-2">(</span><span class="n">datetime_utc</span><span class="p" data-group-id="0977464367-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9292135203-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9292135203-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0977464367-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="0977464367-3">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9292135203-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="9292135203-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0977464367-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="0977464367-4">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span></code></pre>
   </section>
 </section>
