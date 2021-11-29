@@ -305,7 +305,9 @@ export const applyState = (
   } else {
     result = evalScript(script, env);
   }
-  /* console.log('APPLY STATE RESULTS: ', { script, result }); */
+  if (result.result) {
+    console.log('APPLY STATE RESULTS: ', { script, result });
+  }
   return result;
 };
 
@@ -338,6 +340,38 @@ export const getLocalizedStateSnapshot = (
     Object.assign(finalState, activityState);
   });
   return finalState;
+};
+
+// function to select the content between only the outermost {}
+export const extractExpressionFromText = (text: string) => {
+  const firstCurly = text.indexOf('{');
+  let lastCurly = -1;
+  let counter = 1;
+  let opens = 1;
+  while (counter < text.length && lastCurly === -1) {
+    if (text[firstCurly + counter] === '{') {
+      opens++;
+    } else if (text[firstCurly + counter] === '}') {
+      opens--;
+      if (opens === 0) {
+        lastCurly = firstCurly + counter;
+      }
+    }
+    counter++;
+  }
+  return text.substring(firstCurly + 1, lastCurly);
+};
+
+// extract all expressions from a string
+export const extractAllExpressionsFromText = (text: string): string[] => {
+  const expressions = [];
+  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+    const expr = extractExpressionFromText(text);
+    const rest = text.substring(text.indexOf(expr) + expr.length + 1);
+    expressions.push(expr);
+    expressions.push(...extractAllExpressionsFromText(rest));
+  }
+  return expressions;
 };
 
 // for use by client side scripting evalution

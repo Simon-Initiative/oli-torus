@@ -17,7 +17,14 @@ import containsOperators from './operators/contains';
 import equalityOperators from './operators/equality';
 import mathOperators from './operators/math';
 import rangeOperators from './operators/range';
-import { bulkApplyState, evalAssignScript, evalScript, getValue, looksLikeJson } from './scripting';
+import {
+  bulkApplyState,
+  evalAssignScript,
+  evalScript,
+  extractAllExpressionsFromText,
+  getValue,
+  looksLikeJson,
+} from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
   id?: string;
@@ -229,6 +236,33 @@ export const defaultWrongRule = {
       ],
     },
   },
+};
+
+export const findReferencedActivitiesInConditions = (conditions: any) => {
+  const referencedActivities: Set<string> = new Set();
+
+  conditions.forEach((condition: any) => {
+    if (condition.fact && condition.fact.indexOf('|stage.') !== -1) {
+      const referencedSequenceId = condition.fact.split('|stage.')[0];
+      referencedActivities.add(referencedSequenceId);
+    }
+    if (typeof condition.value === 'string' && condition.value.indexOf('|stage.') !== -1) {
+      // value could have more than one reference inside it
+      const exprs = extractAllExpressionsFromText(condition.value);
+      exprs.forEach((expr: string) => {
+        if (expr.indexOf('|stage.') !== -1) {
+          const referencedSequenceId = expr.split('|stage.')[0];
+          referencedActivities.add(referencedSequenceId);
+        }
+      });
+    }
+    if (condition.any || condition.all) {
+      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
+      childRefs.forEach((ref) => referencedActivities.add(ref));
+    }
+  });
+
+  return Array.from(referencedActivities);
 };
 
 export interface CheckResult {
