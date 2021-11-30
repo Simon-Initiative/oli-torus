@@ -4,6 +4,8 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   alias Oli.Groups
   alias OliWeb.Common.{Breadcrumb, DeleteModal}
+  alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
+  alias Surface.Components.Link
 
   alias OliWeb.CommunityLive.{
     Form,
@@ -52,7 +54,8 @@ defmodule OliWeb.CommunityLive.ShowView do
             community: community,
             changeset: changeset,
             breadcrumbs: breadcrumb(community_id),
-            community_admins: community_admins
+            community_admins: community_admins,
+            community_id: community_id
           )
       end
 
@@ -77,6 +80,15 @@ defmodule OliWeb.CommunityLive.ShowView do
             placeholder="admin@example.edu"
             button_text="Add"
             collaborators={@community_admins}/>
+        </ShowSection>
+
+        <ShowSection
+          section_title="Projects and Products"
+          section_description="Make selected Projects and Products available to members of this Community."
+        >
+          <Link class="btn btn-link" to={Routes.live_path(@socket, IndexAssociated, @community_id)}>
+            See associated
+          </Link>
         </ShowSection>
 
         <ShowSection section_title="Actions">

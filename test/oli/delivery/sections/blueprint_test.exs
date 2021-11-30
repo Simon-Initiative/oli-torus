@@ -1,11 +1,13 @@
 defmodule Oli.Delivery.Sections.BlueprintTest do
   use Oli.DataCase
 
+  import Oli.Factory
+  import Ecto.Query, warn: false
+
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
-  import Ecto.Query, warn: false
 
   describe "basic blueprint operations" do
     setup do
@@ -173,6 +175,16 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       {:ok, _} = Publishing.publish_project(another.project, "some changes")
       available = Blueprint.available_products(author, institution)
       assert length(available) == 3
+    end
+
+    test "list_products_not_in_community/1 returns the products that are not associated to the community" do
+      [first_section | _tail] = insert_list(2, :section)
+      community_visibility = insert(:community_visibility, %{section: first_section})
+
+      assert 2 = length(Blueprint.list())
+
+      assert 1 =
+               length(Blueprint.list_products_not_in_community(community_visibility.community_id))
     end
   end
 end
