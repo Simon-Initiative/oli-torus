@@ -16,6 +16,7 @@ defmodule OliWeb.Api.ProductView do
   def render("product.json", %{product: product}) do
     %{
       slug: product.slug,
+      description: product.description,
       title: product.title,
       status: product.status,
       requires_payment: product.requires_payment,
