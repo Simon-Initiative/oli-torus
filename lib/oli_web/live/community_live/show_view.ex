@@ -6,7 +6,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   alias Oli.Accounts.{AuthorBrowseOptions, UserBrowseOptions}
   alias Oli.Groups
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, DeleteModal}
+  alias OliWeb.Common.{Breadcrumb, DeleteModal, Params}
   alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
   alias Surface.Components.Link
 
@@ -137,7 +137,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def handle_event("save", %{"community" => params}, socket) do
-    case Groups.update_community(socket.assigns.community, params) do
+    case Groups.update_community(socket.assigns.community, Params.trim(params)) do
       {:ok, community} ->
         socket = put_flash(socket, :info, "Community successfully updated.")
 

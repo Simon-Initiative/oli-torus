@@ -3,7 +3,7 @@ defmodule OliWeb.CommunityLive.NewView do
 
   alias Oli.Groups
   alias Oli.Groups.Community
-  alias OliWeb.Common.{Breadcrumb, FormContainer}
+  alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
   alias OliWeb.CommunityLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -37,7 +37,10 @@ defmodule OliWeb.CommunityLive.NewView do
   end
 
   def handle_event("save", %{"community" => params}, socket) do
-    case Groups.create_community(params) do
+    params
+    |> Params.trim()
+    |> Groups.create_community()
+    |> case do
       {:ok, _community} ->
         {:noreply,
          socket

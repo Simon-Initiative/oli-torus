@@ -219,6 +219,26 @@ defmodule OliWeb.CommunityLiveTest do
       assert [] = Groups.list_communities()
     end
 
+    test "displays error message when community name already exists with leading or trailing whitespaces",
+         %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_new_route)
+
+      community = insert(:community)
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{community: %{name: community.name <> " "}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community couldn&#39;t be created. Please check the errors below."
+
+      assert has_element?(view, "span", "has already been taken")
+
+      assert 1 = Groups.list_communities() |> length()
+    end
+
     test "saves new community when data is valid", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_new_route)
 
@@ -306,6 +326,27 @@ defmodule OliWeb.CommunityLiveTest do
       %Community{name: new_name} = Groups.get_community(id)
 
       assert new_attributes.name == new_name
+    end
+
+    test "displays error message when updating a community and the name already exists with leading or trailing whitespaces",
+         %{conn: conn, community: %Community{id: id}} do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      community = insert(:community)
+      new_attributes = params_for(:community, name: community.name <> " ")
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{community: new_attributes})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community couldn&#39;t be updated. Please check the errors below."
+
+      assert has_element?(view, "span", "has already been taken")
+
+      assert 2 = Groups.list_communities() |> length()
     end
 
     test "redirects to index view and displays error message when community does not exist", %{
