@@ -857,7 +857,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Association to project succesfully added."
+               "Association to project successfully added."
 
       assert 1 == length(Groups.list_community_visibilities(id))
     end
