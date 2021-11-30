@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.16.0">
+    <meta name="project" content="OLI Torus v0.17.0">
 
-    <title>Oli.Qa.Warnings — OLI Torus v0.16.0</title>
+    <title>Oli.Qa.Warnings — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-f5392356e0.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.16.0
+        v0.17.0
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Qa.Warnings <small class="app-vsn">(OLI Torus v0.16.0)</small>
+Oli.Qa.Warnings <small class="app-vsn">(OLI Torus v0.17.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/qa/warnings.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -212,8 +212,8 @@ Functions
   <a href="#change_warning/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_warning</span><span class="p" data-group-id="0725342923-1">(</span><span class="n">warning</span><span class="p" data-group-id="0725342923-1">)</span><span class="w">
-</span><span class="p" data-group-id="0725342923-2">%</span><span class="nc" data-group-id="0725342923-2">Ecto.Changeset</span><span class="p" data-group-id="0725342923-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="0725342923-3">%</span><span class="nc" data-group-id="0725342923-3">Warning</span><span class="p" data-group-id="0725342923-3">{</span><span class="p" data-group-id="0725342923-3">}</span><span class="p" data-group-id="0725342923-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_warning</span><span class="p" data-group-id="5921271222-1">(</span><span class="n">warning</span><span class="p" data-group-id="5921271222-1">)</span><span class="w">
+</span><span class="p" data-group-id="5921271222-2">%</span><span class="nc" data-group-id="5921271222-2">Ecto.Changeset</span><span class="p" data-group-id="5921271222-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="5921271222-3">%</span><span class="nc" data-group-id="5921271222-3">Warning</span><span class="p" data-group-id="5921271222-3">{</span><span class="p" data-group-id="5921271222-3">}</span><span class="p" data-group-id="5921271222-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_warning/1">
@@ -241,10 +241,10 @@ Functions
   <a href="#create_warning/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_warning</span><span class="p" data-group-id="3785144081-1">(</span><span class="p" data-group-id="3785144081-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3785144081-2">}</span><span class="p" data-group-id="3785144081-1">)</span><span class="w">
-</span><span class="p" data-group-id="3785144081-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3785144081-4">%</span><span class="nc" data-group-id="3785144081-4">Warning</span><span class="p" data-group-id="3785144081-4">{</span><span class="p" data-group-id="3785144081-4">}</span><span class="p" data-group-id="3785144081-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_warning</span><span class="p" data-group-id="3785144081-5">(</span><span class="p" data-group-id="3785144081-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3785144081-6">}</span><span class="p" data-group-id="3785144081-5">)</span><span class="w">
-</span><span class="p" data-group-id="3785144081-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3785144081-8">%</span><span class="nc" data-group-id="3785144081-8">Ecto.Changeset</span><span class="p" data-group-id="3785144081-8">{</span><span class="p" data-group-id="3785144081-8">}</span><span class="p" data-group-id="3785144081-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_warning</span><span class="p" data-group-id="5558288531-1">(</span><span class="p" data-group-id="5558288531-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="5558288531-2">}</span><span class="p" data-group-id="5558288531-1">)</span><span class="w">
+</span><span class="p" data-group-id="5558288531-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5558288531-4">%</span><span class="nc" data-group-id="5558288531-4">Warning</span><span class="p" data-group-id="5558288531-4">{</span><span class="p" data-group-id="5558288531-4">}</span><span class="p" data-group-id="5558288531-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_warning</span><span class="p" data-group-id="5558288531-5">(</span><span class="p" data-group-id="5558288531-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5558288531-6">}</span><span class="p" data-group-id="5558288531-5">)</span><span class="w">
+</span><span class="p" data-group-id="5558288531-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5558288531-8">%</span><span class="nc" data-group-id="5558288531-8">Ecto.Changeset</span><span class="p" data-group-id="5558288531-8">{</span><span class="p" data-group-id="5558288531-8">}</span><span class="p" data-group-id="5558288531-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_warning/1">
@@ -270,10 +270,10 @@ Functions
   <a href="#delete_warning/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_warning</span><span class="p" data-group-id="4489453906-1">(</span><span class="n">warning</span><span class="p" data-group-id="4489453906-1">)</span><span class="w">
-</span><span class="p" data-group-id="4489453906-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4489453906-3">%</span><span class="nc" data-group-id="4489453906-3">Warning</span><span class="p" data-group-id="4489453906-3">{</span><span class="p" data-group-id="4489453906-3">}</span><span class="p" data-group-id="4489453906-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_warning</span><span class="p" data-group-id="4489453906-4">(</span><span class="n">warning</span><span class="p" data-group-id="4489453906-4">)</span><span class="w">
-</span><span class="p" data-group-id="4489453906-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4489453906-6">%</span><span class="nc" data-group-id="4489453906-6">Ecto.Changeset</span><span class="p" data-group-id="4489453906-6">{</span><span class="p" data-group-id="4489453906-6">}</span><span class="p" data-group-id="4489453906-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_warning</span><span class="p" data-group-id="5215535288-1">(</span><span class="n">warning</span><span class="p" data-group-id="5215535288-1">)</span><span class="w">
+</span><span class="p" data-group-id="5215535288-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5215535288-3">%</span><span class="nc" data-group-id="5215535288-3">Warning</span><span class="p" data-group-id="5215535288-3">{</span><span class="p" data-group-id="5215535288-3">}</span><span class="p" data-group-id="5215535288-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_warning</span><span class="p" data-group-id="5215535288-4">(</span><span class="n">warning</span><span class="p" data-group-id="5215535288-4">)</span><span class="w">
+</span><span class="p" data-group-id="5215535288-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5215535288-6">%</span><span class="nc" data-group-id="5215535288-6">Ecto.Changeset</span><span class="p" data-group-id="5215535288-6">{</span><span class="p" data-group-id="5215535288-6">}</span><span class="p" data-group-id="5215535288-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_warnings/1">
@@ -387,10 +387,10 @@ Functions
   <a href="#update_warning/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_warning</span><span class="p" data-group-id="0486326122-1">(</span><span class="n">warning</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0486326122-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0486326122-2">}</span><span class="p" data-group-id="0486326122-1">)</span><span class="w">
-</span><span class="p" data-group-id="0486326122-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0486326122-4">%</span><span class="nc" data-group-id="0486326122-4">Warning</span><span class="p" data-group-id="0486326122-4">{</span><span class="p" data-group-id="0486326122-4">}</span><span class="p" data-group-id="0486326122-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_warning</span><span class="p" data-group-id="0486326122-5">(</span><span class="n">warning</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0486326122-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0486326122-6">}</span><span class="p" data-group-id="0486326122-5">)</span><span class="w">
-</span><span class="p" data-group-id="0486326122-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0486326122-8">%</span><span class="nc" data-group-id="0486326122-8">Ecto.Changeset</span><span class="p" data-group-id="0486326122-8">{</span><span class="p" data-group-id="0486326122-8">}</span><span class="p" data-group-id="0486326122-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_warning</span><span class="p" data-group-id="9151752763-1">(</span><span class="n">warning</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9151752763-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9151752763-2">}</span><span class="p" data-group-id="9151752763-1">)</span><span class="w">
+</span><span class="p" data-group-id="9151752763-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9151752763-4">%</span><span class="nc" data-group-id="9151752763-4">Warning</span><span class="p" data-group-id="9151752763-4">{</span><span class="p" data-group-id="9151752763-4">}</span><span class="p" data-group-id="9151752763-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_warning</span><span class="p" data-group-id="9151752763-5">(</span><span class="n">warning</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9151752763-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9151752763-6">}</span><span class="p" data-group-id="9151752763-5">)</span><span class="w">
+</span><span class="p" data-group-id="9151752763-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9151752763-8">%</span><span class="nc" data-group-id="9151752763-8">Ecto.Changeset</span><span class="p" data-group-id="9151752763-8">{</span><span class="p" data-group-id="9151752763-8">}</span><span class="p" data-group-id="9151752763-7">}</span></code></pre>
   </section>
 </section>
 

@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.16.0">
+    <meta name="project" content="OLI Torus v0.17.0">
 
-    <title>OliWeb.ViewHelpers — OLI Torus v0.16.0</title>
+    <title>OliWeb.ViewHelpers — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
     <script src="dist/sidebar_items-f5392356e0.js"></script>
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.16.0
+        v0.17.0
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.16.0)</small>
+OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.17.0)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -258,16 +258,16 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
   <a href="#dt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6133335316-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="6133335316-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8361372496-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="8361372496-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6133335316-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="6133335316-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8361372496-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="8361372496-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6133335316-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="6133335316-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8361372496-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="8361372496-3">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6133335316-4">(</span><span class="n">datetime</span><span class="p" data-group-id="6133335316-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8361372496-4">(</span><span class="n">datetime</span><span class="p" data-group-id="8361372496-4">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span></code></pre>
   </section>
 </section>
@@ -321,16 +321,16 @@ it is assumed this datetime has not been localized and the timezone is included.
   <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9382998661-1">(</span><span class="n">datetime</span><span class="p" data-group-id="9382998661-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9262627615-1">(</span><span class="n">datetime</span><span class="p" data-group-id="9262627615-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9382998661-2">(</span><span class="n">datetime_utc</span><span class="p" data-group-id="9382998661-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9262627615-2">(</span><span class="n">datetime_utc</span><span class="p" data-group-id="9262627615-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9382998661-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9382998661-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9262627615-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9262627615-3">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9382998661-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="9382998661-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9262627615-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="9262627615-4">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span></code></pre>
   </section>
 </section>
