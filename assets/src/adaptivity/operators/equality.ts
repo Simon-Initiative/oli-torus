@@ -116,8 +116,14 @@ export const getValueWithTolerance = (
   if (tolerance > 0) {
     const calculateMinWithToleranceValue = (tolerance * baseMinValue) / 100;
     const calculateMaxWithToleranceValue = (tolerance * baseMaxValue) / 100;
-    const minToleranceValue = baseMinValue - calculateMinWithToleranceValue;
-    const maxToleranceValue = baseMaxValue + calculateMaxWithToleranceValue;
+    const minToleranceValue =
+      baseMinValue >= 0
+        ? baseMinValue - calculateMinWithToleranceValue
+        : baseMinValue + calculateMinWithToleranceValue;
+    const maxToleranceValue =
+      baseMinValue >= 0
+        ? baseMaxValue + calculateMaxWithToleranceValue
+        : baseMinValue - calculateMinWithToleranceValue;
     newValue = {
       minToleranceValue: minToleranceValue,
       maxToleranceValue: maxToleranceValue,
