@@ -137,6 +137,8 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def handle_event("save", %{"community" => params}, socket) do
+    socket = clear_flash(socket)
+
     case Groups.update_community(socket.assigns.community, Params.trim(params)) do
       {:ok, community} ->
         socket = put_flash(socket, :info, "Community successfully updated.")
@@ -157,6 +159,8 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def handle_event("delete", _params, socket) do
+    socket = clear_flash(socket)
+
     socket =
       case Groups.delete_community(socket.assigns.community) do
         {:ok, _community} ->
