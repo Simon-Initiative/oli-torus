@@ -84,7 +84,7 @@ export interface AppConfig {
 }
 
 const slice: Slice<AppState> = createSlice({
-  name: 'app',
+  name: 'mainApp',
   initialState,
   reducers: {
     setInitialConfig(state, action: PayloadAction<AppConfig>) {

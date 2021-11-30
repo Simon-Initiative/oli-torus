@@ -43,7 +43,7 @@ export interface AuthoringProps {
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
-  const requestEditLock = async () => await dispatch(acquireEditingLock());
+  // const requestEditLock = async () => await dispatch(acquireEditingLock());
 
   const authoringContainer = document.getElementById('advanced-authoring');
   const [isAppVisible, setIsAppVisible] = useState(false);
@@ -53,6 +53,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const showEditingLockErrMsg = useSelector(selectshowEditingLockErrMsg);
   const isReadOnly = useSelector(selectReadOnly);
   const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
+  const [isAttemptDisableReadOnlyFailed, setIsAttemptDisableReadOnlyFailed] = useState(false);
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const currentRule = useSelector(selectCurrentRule);
@@ -85,10 +86,15 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     dispatch(setPanelState({ top, right, left, bottom }));
   };
 
-  const dismissReadOnlyWarning = async (attemptEdit: boolean) => {
+  const dismissReadOnlyWarning = async ({ attemptEdit }: { attemptEdit: boolean }) => {
     if (attemptEdit) {
-      await dispatch(attemptDisableReadOnly());
-      await requestEditLock();
+      const attemptResult = await dispatch(attemptDisableReadOnly());
+      if ((attemptResult as any).meta.requestStatus !== 'fulfilled') {
+        // TODO: display error message, but proceed to leave read only engaged
+        console.error('Failed to disable read only', attemptResult);
+        setIsAttemptDisableReadOnlyFailed(true);
+        return;
+      }
     }
     setIsReadOnlyWarningDismissed(true);
   };
@@ -157,10 +163,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
     };
   }, [hasEditingLock]);
-
-  useEffect(() => {
-    // requestEditLock();
-  }, []);
 
   const shouldShowLockError = !hasEditingLock && !isReadOnly;
   const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
@@ -234,20 +236,24 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             of this page, but any changes you make will not be saved.
           </p>
           <hr />
-          <Button
-            variant="outline-warning"
-            className="text-dark"
-            onClick={() => dismissReadOnlyWarning(false)}
-          >
-            Continue
-          </Button>
-          <Button
-            variant="outline-warning"
-            className="text-dark"
-            onClick={() => dismissReadOnlyWarning(true)}
-          >
-            Open In Edit Mode
-          </Button>
+          <div style={{ textAlign: 'center' }}>
+            <Button
+              variant="outline-warning"
+              className="text-dark"
+              onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
+            >
+              Continue
+            </Button>{' '}
+            {!isAttemptDisableReadOnlyFailed && (
+              <Button
+                variant="outline-warning"
+                className="text-dark"
+                onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
+              >
+                Open In Edit Mode
+              </Button>
+            )}
+          </div>
         </Alert>
       )}
     </>
