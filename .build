@@ -195,6 +195,7 @@ Oli.Grading.GradebookScore.html
 Oli.Grading.html
 Oli.Groups.Community.html
 Oli.Groups.CommunityAccount.html
+Oli.Groups.CommunityVisibility.html
 Oli.Groups.html
 Oli.HTTP.html
 Oli.Help.Dispatcher.html
@@ -409,6 +410,9 @@ OliWeb.Common.Table.SortableTableModel.html
 OliWeb.Common.TextSearch.html
 OliWeb.Common.Utils.html
 OliWeb.CommunityLive.AccountInvitation.html
+OliWeb.CommunityLive.Associated.IndexView.html
+OliWeb.CommunityLive.Associated.NewView.html
+OliWeb.CommunityLive.Associated.TableModel.html
 OliWeb.CommunityLive.Form.html
 OliWeb.CommunityLive.IndexView.html
 OliWeb.CommunityLive.NewView.html
@@ -612,8 +616,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-fe254cf07e.js
-dist/sidebar_items-e65a66b3f9.js
+dist/search_items-bbdeb323e5.js
+dist/sidebar_items-f5392356e0.js
 index.html
 license.html
 readme.html
