@@ -50,6 +50,7 @@ export interface AppState {
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
   copiedPart: any | null;
+  readonly: boolean;
 }
 
 const initialState: AppState = {
@@ -69,6 +70,7 @@ const initialState: AppState = {
   partComponentTypes: [],
   activityTypes: [],
   copiedPart: null,
+  readonly: false,
 };
 
 export interface AppConfig {
@@ -130,6 +132,9 @@ const slice: Slice<AppState> = createSlice({
     setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
     },
+    setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
+      state.readonly = action.payload.readonly;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
@@ -168,6 +173,7 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setReadonly,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -216,5 +222,7 @@ export const selectActivityTypes = createSelector(
   selectState,
   (state: AppState) => state.activityTypes,
 );
+
+export const selectReadOnly = createSelector(selectState, (state: AppState) => state.readonly);
 
 export default slice.reducer;

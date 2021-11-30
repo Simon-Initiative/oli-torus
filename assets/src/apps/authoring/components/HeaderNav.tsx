@@ -1,8 +1,14 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import { selectPaths, selectProjectSlug, selectRevisionSlug } from '../store/app/slice';
+import { Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch, useSelector } from 'react-redux';
+import { attemptDisableReadOnly } from '../store/app/actions/readonly';
+import {
+  selectPaths,
+  selectProjectSlug,
+  selectReadOnly,
+  selectRevisionSlug,
+} from '../store/app/slice';
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 
@@ -12,14 +18,20 @@ interface HeaderNavProps {
 }
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
+  const dispatch = useDispatch();
   const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
+  const isReadOnly = useSelector(selectReadOnly);
   const PANEL_SIDE_WIDTH = '270px';
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
+
+  const handleReadOnlyClick = () => {
+    dispatch(attemptDisableReadOnly());
+  };
 
   return (
     paths && (
@@ -54,21 +66,12 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 </button>
               </span>
             </OverlayTrigger>
-            <OverlayTrigger
-              placement="bottom"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  Publish
-                </Tooltip>
-              }
-            >
-              <span>
-                <button className="px-2 btn btn-link" disabled>
-                  <img src={`${paths.images}/icons/icon-publish.svg`}></img>
-                </button>
-              </span>
-            </OverlayTrigger>
+            {!isReadOnly && (
+              <Alert className="readonly-warning" variant="warning">
+                <i className="fa fa-exclamation-triangle" />{' '}
+                <Alert.Link onClick={handleReadOnlyClick}>Read Only</Alert.Link>
+              </Alert>
+            )}
           </div>
         </div>
       </nav>
