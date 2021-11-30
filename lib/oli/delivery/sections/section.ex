@@ -8,12 +8,12 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
   alias Oli.Delivery.DeliveryPolicy
-
   alias Oli.Delivery.Sections.{
     SectionsProjectsPublications,
     Enrollment,
     SectionResource,
-    SectionInvite
+    SectionInvite,
+    Section
   }
 
   schema "sections" do
@@ -73,7 +73,7 @@ defmodule Oli.Delivery.Sections.Section do
     # section delivery policy
     belongs_to(:delivery_policy, DeliveryPolicy)
 
-    belongs_to(:blueprint, Oli.Delivery.Sections.Section)
+    belongs_to(:blueprint, Section)
 
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution

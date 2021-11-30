@@ -11,6 +11,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
+  use OliWeb.Common.Modal
+  alias OliWeb.Sections.InviteStudentsModal
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -69,7 +71,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           options: @default_options
+           options: @default_options,
+           modal: nil
          )}
     end
   end
@@ -119,7 +122,11 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
-      <button class="btn btn-primary" :on-click="open-invite-modal">Invite Students</button>
+      <button class="btn btn-primary" :on-click="InviteStudentsModal.show">Invite Students</button>
+      <div id="invite-students-popup"></div>
+      {#if !is_nil(@modal)}
+        {render_modal(assigns)}
+      {/if}
 
       <TextSearch id="text-search"/>
 
@@ -157,8 +164,53 @@ defmodule OliWeb.Sections.EnrollmentsView do
      )}
   end
 
-  def handle_event("open-invite-modal", params, socket) do
+  def handle_event("InviteStudentsModal.show", _params, socket) do
+    {:noreply,
+     assign(socket,
+       modal: %{
+         component: InviteStudentsModal,
+         assigns: %{section: socket.assigns.section, emails: []}
+       }
+     )}
+  end
 
+  def handle_event("InviteStudentsModal.hide", _, socket) do
+    {:noreply,
+     assign(socket,
+       modal: nil
+     )
+     |> hide_modal()}
+  end
+
+  def handle_event("InviteStudentsModal.addEmails", params, socket) do
+    new_emails = Enum.uniq(String.split(params["emails"], ~r/(,|;|\s)+/))
+    modal = socket.assigns.modal
+
+    IO.inspect(socket.assigns.modal, label: "Modal before")
+
+    socket =
+      assign(socket,
+        modal:
+          Map.put(
+            modal,
+            :assigns,
+            Map.put(modal.assigns, :emails, new_emails)
+          )
+      )
+
+    IO.inspect(socket.assigns.modal, label: "modal after")
+    {:noreply, socket}
+  end
+
+  def handle_event("InviteStudentsModal.removeEmail", params, socket) do
+    IO.inspect(params, label: "remove email")
+    {:noreply, socket}
+  end
+
+  def handle_event("InviteStudentsModal.cancel", _, socket) do
+    {:noreply,
+     assign(socket, modal: nil)
+     |> hide_modal()}
   end
 
   def handle_event(event, params, socket) do
