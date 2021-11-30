@@ -104,7 +104,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
     } else {
       paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
       paletteStyles.borderRadius = 0;
-      paletteStyles.borderStyle = palette.lineStyle === 0 ? 'none' : 'solid';
+      paletteStyles.borderStyle = palette.lineStyle === 0 ? 'solid' : 'inherit';
       let borderColor = 'transparent';
       if (palette.lineColor! >= 0) {
         borderColor = chroma(palette.lineColor || 0)
