@@ -1,7 +1,7 @@
-import { isFirefox } from 'utils/browser';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button } from 'react-bootstrap';
 import { Provider, useDispatch, useSelector } from 'react-redux';
+import { isFirefox } from 'utils/browser';
 import { BottomPanel } from './BottomPanel';
 import { AdaptivityEditor } from './components/AdaptivityEditor/AdaptivityEditor';
 import { InitStateEditor } from './components/AdaptivityEditor/InitStateEditor';
@@ -12,12 +12,14 @@ import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
 import { acquireEditingLock, releaseEditingLock } from './store/app/actions/locking';
+import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
   selectBottomPanel,
   selectCurrentRule,
   selectHasEditingLock,
   selectLeftPanel,
   selectProjectSlug,
+  selectReadOnly,
   selectRevisionSlug,
   selectRightPanel,
   selectshowEditingLockErrMsg,
@@ -49,6 +51,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   const hasEditingLock = useSelector(selectHasEditingLock);
   const showEditingLockErrMsg = useSelector(selectshowEditingLockErrMsg);
+  const isReadOnly = useSelector(selectReadOnly);
+  const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const currentRule = useSelector(selectCurrentRule);
@@ -79,6 +83,14 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     bottom?: boolean;
   }) => {
     dispatch(setPanelState({ top, right, left, bottom }));
+  };
+
+  const dismissReadOnlyWarning = async (attemptEdit: boolean) => {
+    if (attemptEdit) {
+      await dispatch(attemptDisableReadOnly());
+      await requestEditLock();
+    }
+    setIsReadOnlyWarningDismissed(true);
   };
 
   useEffect(() => {
@@ -147,8 +159,13 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [hasEditingLock]);
 
   useEffect(() => {
-    requestEditLock();
+    // requestEditLock();
   }, []);
+
+  const shouldShowLockError = !hasEditingLock && !isReadOnly;
+  const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
+  const shouldShowEditor =
+    !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
 
   return (
     <>
@@ -159,7 +176,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </div>
         </div>
       )}
-      {hasEditingLock && (
+      {shouldShowEditor && (
         <div id="advanced-authoring" className={`advanced-authoring d-none`}>
           <HeaderNav panelState={panelState} isVisible={panelState.top} />
           <SidePanel
@@ -186,7 +203,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </SidePanel>
         </div>
       )}
-      {!hasEditingLock && (
+      {shouldShowLockError && (
         <Alert variant="warning">
           <Alert.Heading>
             {showEditingLockErrMsg ? 'Editing Session Timed Out' : 'Editing In Progress'}
@@ -205,6 +222,31 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             onClick={() => window.open(url, windowName)}
           >
             Open Preview <i className="las la-external-link-alt ml-1"></i>
+          </Button>
+        </Alert>
+      )}
+
+      {shouldShowReadOnlyWarning && (
+        <Alert variant="info">
+          <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
+          <p>
+            You are currently viewing this page in read-only mode. You are able to view the contents
+            of this page, but any changes you make will not be saved.
+          </p>
+          <hr />
+          <Button
+            variant="outline-warning"
+            className="text-dark"
+            onClick={() => dismissReadOnlyWarning(false)}
+          >
+            Continue
+          </Button>
+          <Button
+            variant="outline-warning"
+            className="text-dark"
+            onClick={() => dismissReadOnlyWarning(true)}
+          >
+            Open In Edit Mode
           </Button>
         </Alert>
       )}

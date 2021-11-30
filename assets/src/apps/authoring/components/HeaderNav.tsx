@@ -66,11 +66,25 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 </button>
               </span>
             </OverlayTrigger>
-            {!isReadOnly && (
-              <Alert className="readonly-warning" variant="warning">
-                <i className="fa fa-exclamation-triangle" />{' '}
-                <Alert.Link onClick={handleReadOnlyClick}>Read Only</Alert.Link>
-              </Alert>
+            {isReadOnly && (
+              <OverlayTrigger
+                placement="bottom"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    Read Only
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button className="px-2 btn btn-link" onClick={handleReadOnlyClick}>
+                    <i
+                      className="fa fa-exclamation-triangle"
+                      style={{ fontSize: 40, color: 'goldenrod' }}
+                    />
+                  </button>
+                </span>
+              </OverlayTrigger>
             )}
           </div>
         </div>

@@ -70,7 +70,7 @@ const initialState: AppState = {
   partComponentTypes: [],
   activityTypes: [],
   copiedPart: null,
-  readonly: false,
+  readonly: true,
 };
 
 export interface AppConfig {

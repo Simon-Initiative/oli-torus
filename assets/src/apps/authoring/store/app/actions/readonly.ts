@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AppSlice, selectReadOnly } from '../slice';
+import { AppSlice, selectReadOnly, setReadonly } from '../slice';
 
 export const attemptDisableReadOnly = createAsyncThunk(
   `${AppSlice}/attemptDisableReadOnly`,
@@ -8,7 +8,11 @@ export const attemptDisableReadOnly = createAsyncThunk(
     const isReadOnly = selectReadOnly(rootState);
 
     if (!isReadOnly) {
-      return;
+      throw new Error('Cannot disable read-only mode');
     }
+
+    dispatch(setReadonly({ readonly: false }));
+
+    return;
   },
 );
