@@ -9,7 +9,7 @@ export const attemptDisableReadOnly = createAsyncThunk(
     const isReadOnly = selectReadOnly(rootState);
 
     if (!isReadOnly) {
-      throw new Error('Cannot disable read-only mode');
+      return rejectWithValue('Cannot disable read-only mode, already disabled.');
     }
 
     try {
@@ -21,6 +21,8 @@ export const attemptDisableReadOnly = createAsyncThunk(
     } catch (error) {
       return rejectWithValue('Cannot disable read-only mode, locked by another user');
     }
+
+    console.log('attemptDisableReadOnly: success');
 
     dispatch(setReadonly({ readonly: false }));
 

@@ -6,7 +6,7 @@ import {
   IActivity,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
-import { selectProjectSlug } from '../../app/slice';
+import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { selectResourceId } from '../../page/slice';
 
 export const saveActivity = createAsyncThunk(
@@ -17,21 +17,27 @@ export const saveActivity = createAsyncThunk(
     const projectSlug = selectProjectSlug(rootState);
     const resourceId = selectResourceId(rootState);
 
+    const isReadOnlyMode = selectReadOnly(rootState);
+
     const changeData: ActivityUpdate = {
       title: activity.title as string,
       objectives: activity.objectives as ObjectiveMap,
       content: { ...activity.content, authoring: activity.authoring },
       tags: activity.tags,
     };
-    /* console.log('going to save acivity: ', { changeData, activity }); */
-    const editResults = await edit(
-      projectSlug,
-      resourceId,
-      activity.resourceId as number,
-      changeData,
-      false,
-    );
-    /* console.log('EDIT SAVE RESULTS', { editResults }); */
+
+    if (!isReadOnlyMode) {
+      /* console.log('going to save acivity: ', { changeData, activity }); */
+      const editResults = await edit(
+        projectSlug,
+        resourceId,
+        activity.resourceId as number,
+        changeData,
+        false,
+      );
+      /* console.log('EDIT SAVE RESULTS', { editResults }); */
+    }
+
     await dispatch(upsertActivity({ activity }));
     return;
   },

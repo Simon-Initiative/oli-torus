@@ -138,6 +138,7 @@ const slice: Slice<AppState> = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
+      console.log('acquireEditingLock.fulfilled reducer effect');
       state.hasEditingLock = true;
     });
     builder.addCase(acquireEditingLock.rejected, (state) => {

@@ -1,8 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch, useSelector } from 'react-redux';
-import { attemptDisableReadOnly } from '../store/app/actions/readonly';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
 import {
   selectPaths,
   selectProjectSlug,
@@ -18,7 +17,6 @@ interface HeaderNavProps {
 }
 
 const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const dispatch = useDispatch();
   const { panelState, isVisible } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
@@ -30,7 +28,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const windowName = `preview-${projectSlug}`;
 
   const handleReadOnlyClick = () => {
-    dispatch(attemptDisableReadOnly());
+    // TODO: show a modal offering to confirm if you want to disable read only
+    // but changes that were made will be lost. better right now to just use browser refresh
   };
 
   return (

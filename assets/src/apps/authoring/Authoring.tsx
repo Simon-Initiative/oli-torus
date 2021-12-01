@@ -43,7 +43,6 @@ export interface AuthoringProps {
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const dispatch = useDispatch();
-  // const requestEditLock = async () => await dispatch(acquireEditingLock());
 
   const authoringContainer = document.getElementById('advanced-authoring');
   const [isAppVisible, setIsAppVisible] = useState(false);
@@ -54,6 +53,20 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const isReadOnly = useSelector(selectReadOnly);
   const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
   const [isAttemptDisableReadOnlyFailed, setIsAttemptDisableReadOnlyFailed] = useState(false);
+
+  const shouldShowLockError = !hasEditingLock && !isReadOnly;
+  const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
+  const shouldShowEditor =
+    !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
+
+  /* console.log('RENDER IT', {
+    shouldShowEditor,
+    shouldShowLockError,
+    shouldShowReadOnlyWarning,
+    isAppVisible,
+    hasEditingLock,
+  }); */
+
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const currentRule = useSelector(selectCurrentRule);
@@ -126,7 +139,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         authoringContainer?.classList.add('startup');
       }, 50);
     }
-    if (!isAppVisible || !hasEditingLock) {
+    if (!isAppVisible) {
       // reset forced light mode
       const darkModeCss: any = document.getElementById('authoring-theme-dark');
       darkModeCss.href = '/css/authoring_torus_dark.css';
@@ -139,7 +152,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       document.body.classList.remove('overflow-hidden');
     };
-  }, [isAppVisible, hasEditingLock]);
+  }, [isAppVisible]);
 
   useEffect(() => {
     window.addEventListener('beforeunload', async () =>
@@ -151,7 +164,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     );
 
     setTimeout(() => {
-      if (hasEditingLock) {
+      if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
         setIsAppVisible(true);
       }
     }, 500);
@@ -162,12 +175,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
     };
-  }, [hasEditingLock]);
-
-  const shouldShowLockError = !hasEditingLock && !isReadOnly;
-  const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
-  const shouldShowEditor =
-    !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
+  }, [hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
 
   return (
     <>
@@ -238,7 +246,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           <hr />
           <div style={{ textAlign: 'center' }}>
             <Button
-              variant="outline-warning"
+              variant="outline-info"
               className="text-dark"
               onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
             >
@@ -246,7 +254,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             </Button>{' '}
             {!isAttemptDisableReadOnlyFailed && (
               <Button
-                variant="outline-warning"
+                variant="outline-info"
                 className="text-dark"
                 onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
               >
