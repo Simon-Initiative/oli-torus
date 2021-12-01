@@ -206,6 +206,40 @@ defmodule Oli.Groups do
   end
 
   @doc """
+  Creates community accounts from user type and emails.
+
+  ## Examples
+
+      iex> create_community_accounts_from_emails("admin", ["foo@foo.com", "bar@bar.com"], %{field: new_value})
+      {:ok, [%CommunityAccount{}, %CommunityAccount{}]}
+
+      iex> create_community_accounts_from_emails("member", ["example@foo.com"], %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_accounts_from_emails(user_type, emails, attrs) do
+    {created_accounts, errors} =
+      Enum.reduce(emails, {[], []}, fn email, {created, errors} ->
+        case create_community_account_from_email(user_type, email, attrs) do
+          {:ok, community_account} ->
+            {[community_account | created], errors}
+
+          {:error, error} ->
+            {created, [error | errors]}
+        end
+      end)
+
+    case errors do
+      [error | _errors] ->
+        {:error, error}
+
+      _errors ->
+        {:ok, created_accounts}
+    end
+  end
+
+  @doc """
   Gets a community account by id.
 
   ## Examples

@@ -219,28 +219,35 @@ defmodule OliWeb.CommunityLive.ShowView do
       is_admin: user_type == "admin"
     }
 
-    case Groups.create_community_account_from_email(user_type, email, attrs) do
-      {:ok, _community_account} ->
-        socket = put_flash(socket, :info, "Community #{user_type} successfully added.")
-        updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
+    emails =
+      email
+      |> String.split(",")
+      |> Enum.map(&String.trim(&1))
 
-        {:noreply, assign(socket, updated_assigns)}
+    socket =
+      case Groups.create_community_accounts_from_emails(user_type, emails, attrs) do
+        {:ok, _community_accounts} ->
+          put_flash(socket, :info, "Community #{user_type}(s) successfully added.")
 
-      {:error, error} ->
-        message =
-          case error do
-            :author_not_found ->
-              "Community admin couldn't be added. Author does not exist."
+        {:error, error} ->
+          message =
+            case error do
+              :author_not_found ->
+                "Community admin couldn't be added. Author does not exist."
 
-            :user_not_found ->
-              "Community member couldn't be added. User does not exist."
+              :user_not_found ->
+                "Community member couldn't be added. User does not exist."
 
-            %Ecto.Changeset{} ->
-              "Community user couldn't be added. It is already associated to the community or an unexpected error occurred."
-          end
+              %Ecto.Changeset{} ->
+                "Community user couldn't be added. It is already associated to the community or an unexpected error occurred."
+            end
 
-        {:noreply, put_flash(socket, :error, message)}
-    end
+          put_flash(socket, :error, message)
+      end
+
+    updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
+
+    {:noreply, assign(socket, updated_assigns)}
   end
 
   def handle_event("remove_" <> user_type, %{"collaborator-id" => user_id}, socket) do

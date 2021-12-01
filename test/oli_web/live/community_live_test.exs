@@ -462,7 +462,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Community admin successfully added."
+               "Community admin(s) successfully added."
 
       assert 2 == length(Groups.list_community_admins(community.id))
     end
@@ -495,6 +495,29 @@ defmodule OliWeb.CommunityLiveTest do
                "Community admin couldn&#39;t be added. Author does not exist."
 
       assert 1 == length(Groups.list_community_admins(community.id))
+    end
+
+    test "adds more than one community admin correctly", %{
+      conn: conn,
+      community: community
+    } do
+      emails = insert_pair(:author) |> Enum.map(& &1.email)
+      insert(:community_account, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_admins(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_admin\"")
+      |> render_submit(%{collaborator: %{email: Enum.join(emails, ",")}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community admin(s) successfully added."
+
+      assert 3 == length(Groups.list_community_admins(community.id))
     end
 
     test "removes community admin correctly", %{
@@ -588,7 +611,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Community member successfully added."
+               "Community member(s) successfully added."
 
       assert 2 == length(Groups.list_community_members(community.id))
     end
@@ -621,6 +644,29 @@ defmodule OliWeb.CommunityLiveTest do
                "Community member couldn&#39;t be added. User does not exist."
 
       assert 1 == length(Groups.list_community_members(community.id))
+    end
+
+    test "adds more than one community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      emails = insert_pair(:user) |> Enum.map(& &1.email)
+      insert(:community_member_account, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: Enum.join(emails, ",")}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member(s) successfully added."
+
+      assert 3 == length(Groups.list_community_members(community.id))
     end
 
     test "removes community member correctly", %{
