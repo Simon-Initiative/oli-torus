@@ -415,6 +415,8 @@ OliWeb.CommunityLive.Associated.NewView.html
 OliWeb.CommunityLive.Associated.TableModel.html
 OliWeb.CommunityLive.Form.html
 OliWeb.CommunityLive.IndexView.html
+OliWeb.CommunityLive.MembersIndexView.html
+OliWeb.CommunityLive.MembersTableModel.html
 OliWeb.CommunityLive.NewView.html
 OliWeb.CommunityLive.ShowSection.html
 OliWeb.CommunityLive.ShowView.html
@@ -616,8 +618,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-bbdeb323e5.js
-dist/sidebar_items-f5392356e0.js
+dist/search_items-78ff4b33ec.js
+dist/sidebar_items-ca3699ecc4.js
 index.html
 license.html
 readme.html
