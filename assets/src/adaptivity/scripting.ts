@@ -75,6 +75,11 @@ export const getExpressionStringForValue = (
         } catch (e) {
           actuallyAString = true;
         }
+      } else {
+        const testVal = getValue('foo', testEnv);
+        if (testVal === undefined) {
+          return `"${val}"`;
+        }
       }
     } catch (e) {
       // if we have parsing error then we're guessing it's CSS
