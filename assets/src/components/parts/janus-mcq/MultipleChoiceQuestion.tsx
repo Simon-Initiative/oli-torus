@@ -652,15 +652,20 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   // will always *replace* the selected choices (used by init & mutate)
   const handleMultipleItemSelection = (selections: ItemSelectionInput[], shouldSave = true) => {
+    let modifiedSelections = selections;
     const newCount = selections.length;
-
-    const newSelectedChoices = selections
+    const blankValueExit =
+      (selections.length === 1 && selections.filter((item) => item.value <= 0)) || [];
+    if (blankValueExit.length) {
+      modifiedSelections = [];
+    }
+    const newSelectedChoices = modifiedSelections
       .sort((a, b) => a.value - b.value)
       .map((item) => item.value);
 
     const newSelectedChoice = newSelectedChoices[0];
 
-    const newSelectedChoicesText = selections
+    const newSelectedChoicesText = modifiedSelections
       .sort((a, b) => a.value - b.value)
       .map((item) => item.textValue);
 
@@ -697,7 +702,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (multipleSelection) {
       // sets data for checkboxes, which can have multiple values
       newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
-        (c) => checked || (!checked && originalValue !== c),
+        (c) => checked || (!checked && originalValue !== c && c > 0),
       );
 
       newChoice = newSelectedChoices.sort()[0] || 0;
@@ -705,14 +710,20 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       updatedChoicesText = newSelectedChoices
         .sort()
         .map((choice) => getOptionTextById(options, choice));
-      updatedChoiceText = updatedChoicesText[0];
+      updatedChoiceText = updatedChoicesText[0] || '';
 
       newCount = newSelectedChoices.length;
     }
-
+    let modifiedNewSelectedChoices = newSelectedChoices;
+    const blankValueExit =
+      (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
+    if (blankValueExit.length) {
+      modifiedNewSelectedChoices = [];
+      updatedChoicesText = [];
+    }
     setNumberOfSelectedChoices(newCount);
     setSelectedChoice(newChoice);
-    setSelectedChoices(newSelectedChoices);
+    setSelectedChoices(modifiedNewSelectedChoices);
     setSelectedChoiceText(updatedChoiceText);
     setSelectedChoicesText(updatedChoicesText);
 
@@ -721,7 +732,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         numberOfSelectedChoices: newCount,
         selectedChoice: newChoice,
         selectedChoiceText: updatedChoiceText,
-        selectedChoices: newSelectedChoices,
+        selectedChoices: modifiedNewSelectedChoices,
         selectedChoicesText: updatedChoicesText,
       });
     }

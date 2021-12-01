@@ -144,27 +144,77 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   }
   """
   def get_latest_attempts(resource_attempt_id) do
-    results =
-      Repo.all(
-        from(aa1 in ActivityAttempt,
-          join: r in assoc(aa1, :revision),
-          left_join: aa2 in ActivityAttempt,
-          on:
-            aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and
-              aa1.resource_attempt_id == aa2.resource_attempt_id,
-          join: pa1 in PartAttempt,
-          on: aa1.id == pa1.activity_attempt_id,
-          left_join: pa2 in PartAttempt,
-          on:
-            aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and
-              pa1.activity_attempt_id == pa2.activity_attempt_id,
-          where:
-            aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
-          preload: [revision: r],
-          select: {pa1, aa1}
-        )
+    Repo.all(
+      from(aa1 in ActivityAttempt,
+        join: r in assoc(aa1, :revision),
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and
+            aa1.resource_attempt_id == aa2.resource_attempt_id,
+        join: pa1 in PartAttempt,
+        on: aa1.id == pa1.activity_attempt_id,
+        left_join: pa2 in PartAttempt,
+        on:
+          aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and
+            pa1.activity_attempt_id == pa2.activity_attempt_id,
+        where:
+          aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
+        preload: [revision: r],
+        select: {pa1, aa1}
       )
+    )
+    |> results_to_activity_map
+  end
 
+  @doc """
+  Retrieves the state of the latest attempts for a given resource attempt id and
+  a given list of activity ids.
+
+  Return value is a map of activity ids to a two element tuple.  The first
+  element is the latest activity attempt and the second is a map of part ids
+  to their part attempts. As an example:
+
+  %{
+    232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
+    233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
+  }
+  """
+  def get_latest_attempts(resource_attempt_id, activity_ids) do
+    Repo.all(
+      from(aa1 in ActivityAttempt,
+        join: r in assoc(aa1, :revision),
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and
+            aa1.resource_attempt_id == aa2.resource_attempt_id,
+        join: pa1 in PartAttempt,
+        on: aa1.id == pa1.activity_attempt_id,
+        left_join: pa2 in PartAttempt,
+        on:
+          aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and
+            pa1.activity_attempt_id == pa2.activity_attempt_id,
+        where:
+          aa1.resource_id in ^activity_ids and
+            aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and
+            is_nil(pa2.id),
+        preload: [revision: r],
+        select: {pa1, aa1}
+      )
+    )
+    |> results_to_activity_map
+  end
+
+  # Take results in the form of a list of {part attempt, activity attempt} tuples
+  # and convert that to a map of activity id to tuple of the activity attempt and
+  # a map of part ids to part attempts.
+  #
+  # For example:
+  #
+  # %{
+  #  232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
+  #  233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
+  # }
+  defp results_to_activity_map(results) do
     Enum.reduce(results, %{}, fn {part_attempt, activity_attempt}, m ->
       activity_id = activity_attempt.resource_id
       part_id = part_attempt.part_id
