@@ -46,7 +46,7 @@ defmodule OliWeb.CommunityLive.ShowView do
       ]
   end
 
-  def mount(%{"community_id" => community_id}, _session, socket) do
+  def mount(%{"community_id" => community_id}, %{"is_system_admin" => is_system_admin}, socket) do
     socket =
       case Groups.get_community(community_id) do
         nil ->
@@ -65,7 +65,8 @@ defmodule OliWeb.CommunityLive.ShowView do
             breadcrumbs: breadcrumb(community_id),
             community_admins: community_admins,
             community_id: community_id,
-            community_members: community_members
+            community_members: community_members,
+            is_system_admin: is_system_admin
           )
       end
 
@@ -95,7 +96,8 @@ defmodule OliWeb.CommunityLive.ShowView do
             matches={@matches["admin"]}
             placeholder="admin@example.edu"
             button_text="Add"
-            collaborators={@community_admins}/>
+            collaborators={@community_admins}
+            allow_removal={@is_system_admin}/>
         </ShowSection>
 
         <ShowSection
