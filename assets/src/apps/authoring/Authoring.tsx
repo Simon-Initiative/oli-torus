@@ -11,7 +11,7 @@ import LeftMenu from './components/LeftMenu/LeftMenu';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
-import { acquireEditingLock, releaseEditingLock } from './store/app/actions/locking';
+import { releaseEditingLock } from './store/app/actions/locking';
 import { attemptDisableReadOnly } from './store/app/actions/readonly';
 import {
   selectBottomPanel,
@@ -22,7 +22,6 @@ import {
   selectReadOnly,
   selectRevisionSlug,
   selectRightPanel,
-  selectshowEditingLockErrMsg,
   selectTopPanel,
   setInitialConfig,
   setPanelState,
@@ -49,7 +48,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const hasEditingLock = useSelector(selectHasEditingLock);
-  const showEditingLockErrMsg = useSelector(selectshowEditingLockErrMsg);
   const isReadOnly = useSelector(selectReadOnly);
   const [isReadOnlyWarningDismissed, setIsReadOnlyWarningDismissed] = useState(false);
   const [isAttemptDisableReadOnlyFailed, setIsAttemptDisableReadOnlyFailed] = useState(false);
@@ -58,6 +56,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const shouldShowReadOnlyWarning = !isLoading && isReadOnly && !isReadOnlyWarningDismissed;
   const shouldShowEditor =
     !isLoading && (hasEditingLock || isReadOnly) && !shouldShowReadOnlyWarning;
+
+  const alertSeverity = isAttemptDisableReadOnlyFailed || shouldShowLockError ? 'warning' : 'info';
 
   /* console.log('RENDER IT', {
     shouldShowEditor,
@@ -103,8 +103,10 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     if (attemptEdit) {
       const attemptResult = await dispatch(attemptDisableReadOnly());
       if ((attemptResult as any).meta.requestStatus !== 'fulfilled') {
-        // TODO: display error message, but proceed to leave read only engaged
-        console.error('Failed to disable read only', attemptResult);
+        const errorCode = (attemptResult as any)?.payload?.error;
+        if (errorCode === 'SESSION_EXPIRED') {
+          window.location.reload();
+        }
         setIsAttemptDisableReadOnlyFailed(true);
         return;
       }
@@ -213,54 +215,51 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </SidePanel>
         </div>
       )}
-      {shouldShowLockError && (
-        <Alert variant="warning">
-          <Alert.Heading>
-            {showEditingLockErrMsg ? 'Editing Session Timed Out' : 'Editing In Progress'}
-          </Alert.Heading>
-          <p>
-            {showEditingLockErrMsg
-              ? `Too much time passed since your last edit and now someone else is currently editing this page. `
-              : `Sorry, someone else is currently editing this page. `}
-            You can try refreshing the browser to see if the current editor is done, or you can use
-            the link below to open a preview of the page.
-          </p>
-          <hr />
-          <Button
-            variant="outline-warning"
-            className="text-dark"
-            onClick={() => window.open(url, windowName)}
-          >
-            Open Preview <i className="las la-external-link-alt ml-1"></i>
-          </Button>
-        </Alert>
-      )}
 
       {shouldShowReadOnlyWarning && (
-        <Alert variant="info">
+        <Alert variant={alertSeverity}>
           <Alert.Heading>Opening in Read-Only Mode</Alert.Heading>
-          <p>
-            You are currently viewing this page in read-only mode. You are able to view the contents
-            of this page, but any changes you make will not be saved.
-          </p>
+          {!isAttemptDisableReadOnlyFailed && (
+            <p>
+              You are about to open this page in read-only mode. You are able to view the contents
+              of this page, but any changes you make will not be saved. You may instead attempt to
+              open in editing mode, or open a preview of the page.
+            </p>
+          )}
+          {isAttemptDisableReadOnlyFailed && (
+            <p>
+              Unfortunately, we were unable to disable read-only mode. Another author currently has
+              the page locked for editing. Please try again later. In the meantime, you may continue
+              in Read Only mode or open a preview of the page.
+            </p>
+          )}
           <hr />
           <div style={{ textAlign: 'center' }}>
             <Button
-              variant="outline-info"
+              variant={`outline-${alertSeverity}`}
               className="text-dark"
               onClick={() => dismissReadOnlyWarning({ attemptEdit: false })}
             >
-              Continue
+              Continue In Read-Only Mode
             </Button>{' '}
             {!isAttemptDisableReadOnlyFailed && (
-              <Button
-                variant="outline-info"
-                className="text-dark"
-                onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
-              >
-                Open In Edit Mode
-              </Button>
+              <>
+                <Button
+                  variant={`outline-${alertSeverity}`}
+                  className="text-dark"
+                  onClick={() => dismissReadOnlyWarning({ attemptEdit: true })}
+                >
+                  Open In Edit Mode
+                </Button>{' '}
+              </>
             )}
+            <Button
+              variant={`outline-${alertSeverity}`}
+              className="text-dark"
+              onClick={() => window.open(url, windowName)}
+            >
+              Open Preview <i className="las la-external-link-alt ml-1"></i>
+            </Button>
           </div>
         </Alert>
       )}

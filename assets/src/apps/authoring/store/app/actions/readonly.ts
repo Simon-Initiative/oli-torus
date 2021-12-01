@@ -9,20 +9,38 @@ export const attemptDisableReadOnly = createAsyncThunk(
     const isReadOnly = selectReadOnly(rootState);
 
     if (!isReadOnly) {
-      return rejectWithValue('Cannot disable read-only mode, already disabled.');
+      return rejectWithValue({
+        error: 'ALREADY_DISABLED',
+        msg: 'Cannot disable read-only mode, already disabled.',
+      });
     }
 
     try {
       const lockResult = await dispatch(acquireEditingLock()); // .unwrap();
-      console.log('attemptDisableReadOnly: lockResult', lockResult);
+      // console.log('attemptDisableReadOnly: lockResult', lockResult);
       if (lockResult.meta.requestStatus !== 'fulfilled') {
-        return rejectWithValue('Cannot acquire lock');
+        let error = 'LOCK_FAILED';
+        const lockErrorCode = (lockResult as any)?.payload?.error;
+        let msg = 'Failed to acquire editing lock.';
+        if (lockErrorCode === 'ALREADY_LOCKED') {
+          msg = (lockResult as any)?.payload?.msg;
+          error = lockErrorCode;
+        }
+        if (lockErrorCode === 'SERVER_ERROR') {
+          msg = (lockResult as any)?.payload?.msg;
+          error = 'SESSION_EXPIRED';
+        }
+        return rejectWithValue({ error, msg });
       }
     } catch (error) {
-      return rejectWithValue('Cannot disable read-only mode, locked by another user');
+      return rejectWithValue({
+        error: 'EXCEPTION',
+        exception: error,
+        msg: 'Cannot disable read-only mode, exception',
+      });
     }
 
-    console.log('attemptDisableReadOnly: success');
+    // console.log('attemptDisableReadOnly: success');
 
     dispatch(setReadonly({ readonly: false }));
 

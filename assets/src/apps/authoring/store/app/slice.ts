@@ -44,7 +44,6 @@ export interface AppState {
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
   hasEditingLock: boolean;
-  showEditingLockErrMsg: boolean;
   rightPanelActiveTab: RightPanelTabs;
   currentRule: any;
   partComponentTypes: PartComponentRegistration[];
@@ -64,7 +63,6 @@ const initialState: AppState = {
   bottomPanel: true,
   visible: false,
   hasEditingLock: false,
-  showEditingLockErrMsg: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
   currentRule: undefined,
   partComponentTypes: [],
@@ -120,9 +118,6 @@ const slice: Slice<AppState> = createSlice({
     setHasEditingLock(state, action: PayloadAction<{ hasEditingLock: boolean }>) {
       state.hasEditingLock = action.payload.hasEditingLock;
     },
-    setShowEditingLockErrMsg(state, action: PayloadAction<{ showEditingLockErrMsg: boolean }>) {
-      state.showEditingLockErrMsg = action.payload.showEditingLockErrMsg;
-    },
     setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
@@ -138,26 +133,21 @@ const slice: Slice<AppState> = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
-      console.log('acquireEditingLock.fulfilled reducer effect');
       state.hasEditingLock = true;
     });
     builder.addCase(acquireEditingLock.rejected, (state) => {
       state.hasEditingLock = false;
     });
     builder.addCase(savePage.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(saveActivity.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(savePartState.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(savePartStateToTree.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
   },
@@ -210,10 +200,7 @@ export const selectHasEditingLock = createSelector(
   selectState,
   (state: AppState) => state.hasEditingLock,
 );
-export const selectshowEditingLockErrMsg = createSelector(
-  selectState,
-  (state: AppState) => state.showEditingLockErrMsg,
-);
+
 export const selectPartComponentTypes = createSelector(
   selectState,
   (state: AppState) => state.partComponentTypes,
