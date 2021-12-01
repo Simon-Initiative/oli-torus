@@ -22,7 +22,6 @@ import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
-import { InviteStudentsPopup } from '../components/messages/InviteStudentsPopup';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -63,7 +62,6 @@ function mount(Component: any, element: HTMLElement, context: any = {}) {
   retrieveCookies,
   onReady,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
-  InviteStudentsPopup: (node: any, props: any) => mount(InviteStudentsPopup, node, props),
 };
 
 // connect if there are any LiveViews on the page
