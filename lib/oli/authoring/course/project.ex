@@ -26,6 +26,8 @@ defmodule Oli.Authoring.Course.Project do
     many_to_many :part_component_registrations, Oli.PartComponents.PartComponentRegistration,
       join_through: Oli.PartComponents.PartComponentRegistrationProject
 
+    many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility
+
     has_many :publications, Oli.Publishing.Publication
 
     field :owner_id, :integer, virtual: true

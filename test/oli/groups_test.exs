@@ -232,4 +232,77 @@ defmodule Oli.GroupsTest do
                    end
     end
   end
+
+  describe "community visibility" do
+    alias Oli.Groups.CommunityVisibility
+
+    test "create_community_visibility/1 with valid data creates a community account" do
+      params = params_for(:community_visibility)
+
+      assert {:ok, %CommunityVisibility{} = community_visibility} =
+               Groups.create_community_visibility(params)
+
+      assert community_visibility.project_id == params.project_id
+      assert community_visibility.community_id == params.community_id
+    end
+
+    test "create_community_visibility/1 for existing project and community returns error changeset" do
+      project = build(:project)
+      community = build(:community)
+      insert(:community_visibility, %{project: project, community: community})
+
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community_visibility(%{project: project, community: community})
+    end
+
+    test "get_community_visibility/1 returns a community visibility when the id exists" do
+      community_visibility = insert(:community_visibility)
+
+      returned_community_visibility = Groups.get_community_visibility(community_visibility.id)
+
+      assert community_visibility.id == returned_community_visibility.id
+      assert community_visibility.project_id == returned_community_visibility.project_id
+      assert community_visibility.community_id == returned_community_visibility.community_id
+    end
+
+    test "get_community_visibility/1 returns nil if the community visibility does not exist" do
+      assert nil == Groups.get_community_visibility(123)
+    end
+
+    test "delete_community_visibility/1 deletes the community visibility" do
+      community_visibility = insert(:community_visibility)
+
+      assert {:ok, %CommunityVisibility{}} =
+               Groups.delete_community_visibility(community_visibility.id)
+
+      refute Groups.get_community_visibility(community_visibility.id)
+    end
+
+    test "delete_community_visibility/1 fails when the community visibility does not exist" do
+      community_visibility = insert(:community_visibility)
+
+      assert {:error, :not_found} = Groups.delete_community_visibility(12345)
+
+      assert Groups.get_community_visibility(community_visibility.id)
+    end
+
+    test "list_community_visibilities/1 returns the communities visibilities for a community" do
+      community = insert(:community)
+      insert(:community_visibility, %{community: community})
+      insert(:community_visibility, %{community: community})
+
+      communities_visibilities = Groups.list_community_visibilities(community.id)
+
+      assert [%CommunityVisibility{} | _tail] = communities_visibilities
+      assert 2 = length(communities_visibilities)
+    end
+
+    test "list_community_visibilities/1 returns empty when the community doesn't have any associated" do
+      community = insert(:community)
+
+      communities_visibilities = Groups.list_community_visibilities(community.id)
+
+      assert [] = communities_visibilities
+    end
+  end
 end

@@ -15,7 +15,9 @@ const handleContainsOperator = (
     if (!isString(value)) {
       // use case: factValue = 'abc' and value = ['abc',' abc']
       if (Array.isArray(value)) {
-        return value.some((item: any) => item.trim() === factValue.trim());
+        return value.some((item: any) => {
+          return factValue.trim().includes(item.trim());
+        });
       }
       return false;
     }

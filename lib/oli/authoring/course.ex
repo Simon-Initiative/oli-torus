@@ -1,13 +1,14 @@
 defmodule Oli.Authoring.Course do
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Publishing
-  alias Oli.Authoring.{Collaborators, ProjectSearch}
-  alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.{Collaborators, ProjectSearch}
+  alias Oli.Authoring.Course.{Project, Family, ProjectResource}
+  alias Oli.Groups.CommunityVisibility
+  alias Oli.Publishing
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   def create_project_resource(attrs) do
     %ProjectResource{}
@@ -42,6 +43,30 @@ defmodule Oli.Authoring.Course do
         where: pr.resource_id == ^resource_id,
         select: p
     )
+  end
+
+  @doc """
+  Get all the projects that are not associated within a community.
+
+  ## Examples
+
+      iex> list_projects_not_in_community(1)
+      {:ok, [%Project{}, ,...]}
+
+      iex> list_projects_not_in_community(123)
+      {:ok, []}
+  """
+  def list_projects_not_in_community(community_id) do
+    from(
+      project in Project,
+      left_join: community_visibility in CommunityVisibility,
+      on:
+        project.id ==
+          community_visibility.project_id and community_visibility.community_id == ^community_id,
+      where: is_nil(community_visibility.id),
+      select: project
+    )
+    |> Repo.all()
   end
 
   def get_projects_for_author(author) do
