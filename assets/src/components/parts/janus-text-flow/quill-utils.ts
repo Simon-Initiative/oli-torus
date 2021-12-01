@@ -225,6 +225,9 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
             parentAttrs.list = 'bullet';
           }
           if (child.tag === 'li') {
+            if (index === 0) {
+              doc.insert('\n');
+            }
             lineAttrs.list = parentAttrs.list;
           }
           if (child.style?.textAlign) {
@@ -233,6 +236,7 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
           if (child.tag === 'img') {
             doc.insert({ image: child.src });
           }
+          line.insert('\n', lineAttrs);
         }
       }
       const childLine = processJanusChildren(child, new Delta(), attrs);
@@ -268,6 +272,9 @@ export const convertJanusToQuill = (nodes: JanusMarkupNode[]) => {
           attrs.list = parentAttrs.list;
         }
         if (node.style?.textAlign) {
+          if (index === 1) {
+            doc.insert('\n');
+          }
           attrs.align = node.style.textAlign;
         }
         line.insert('\n', attrs);
