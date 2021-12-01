@@ -403,6 +403,7 @@ defmodule Oli.Seeder do
           start_date: ~U[2010-04-17 00:00:00.000000Z],
           timezone: "some timezone",
           title: "some title",
+          description: "a description",
           context_id: UUID.uuid4(),
           base_project_id: map.project.id,
           institution_id: map.institution.id
