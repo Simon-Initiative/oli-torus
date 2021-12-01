@@ -10,7 +10,7 @@ defmodule Oli.Repo.Migrations.CreateSectionInvitesTable do
       timestamps(type: :timestamptz)
     end
 
-    create index(:section_invites, [:date_expire])
+    create index(:section_invites, [:date_expires])
     create unique_index(:section_invites, [:slug])
   end
 end

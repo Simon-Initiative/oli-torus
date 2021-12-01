@@ -2,7 +2,7 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Section, SectionInvites}
   alias Oli.Publishing
   alias Oli.Institutions
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
@@ -440,6 +440,19 @@ defmodule OliWeb.DeliveryController do
     else
       _ ->
         render(conn, "enroll.html", section: section)
+    end
+  end
+
+  def enroll_independent(conn, %{"section_invite_slug" => invite_slug}) do
+    section_invite = SectionInvites.get_section_invite(invite_slug)
+
+    if SectionInvites.is_link_valid?(section_invite) do
+      conn
+      |> assign(:section, SectionInvites.get_section_by_invite_slug(invite_slug))
+      |> enroll(%{})
+    else
+      conn
+      |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InvalidSectionInviteView))
     end
   end
 

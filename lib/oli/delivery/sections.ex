@@ -202,6 +202,39 @@ defmodule Oli.Delivery.Sections do
     |> Repo.insert_or_update()
   end
 
+  def unenroll(user_id, section_id, context_roles) do
+    context_roles = EctoProvider.Marshaler.to(context_roles)
+
+    case Repo.one(
+           from(e in Enrollment,
+             preload: [:context_roles],
+             where: e.user_id == ^user_id and e.section_id == ^section_id,
+             select: e
+           )
+         ) do
+      nil ->
+        # Enrollment not found
+        {:error, nil}
+
+      enrollment ->
+        other_context_roles =
+          Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
+
+        if Enum.count(other_context_roles) == 0 do
+          Repo.delete(enrollment)
+        else
+          enrollment
+          |> Enrollment.changeset(%{section_id: section_id})
+          |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
+          |> Repo.update()
+        end
+    end
+  end
+
+  def unenroll_learner(user_id, section_id) do
+    unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
+  end
+
   @doc """
   Determines if a particular user is enrolled in a section.
 

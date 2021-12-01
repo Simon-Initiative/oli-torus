@@ -572,6 +572,9 @@ defmodule OliWeb.Router do
     ])
 
     get("/", DeliveryController, :open_and_free_index)
+
+    live("/join/invalid", Sections.InvalidSectionInviteView)
+    get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
   # Sections - Independent Learner Section Creation
@@ -586,7 +589,6 @@ defmodule OliWeb.Router do
 
     live("/independent/create", Delivery.SelectSource, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
-    # live("/new/:source_id", OpenAndFree.SectionForm, :section, as: :section_form)
   end
 
   ### Sections - Payments
@@ -763,6 +765,7 @@ defmodule OliWeb.Router do
         resources("/deployments", DeploymentController, except: [:index, :show])
       end
     end
+
     put("/approve_registration", InstitutionController, :approve_registration)
     delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
@@ -788,12 +791,15 @@ defmodule OliWeb.Router do
     get("/invite", InviteController, :index)
     post("/invite", InviteController, :create)
     post("/accounts/resend_user_confirmation_link", PowController, :resend_user_confirmation_link)
+
     post(
       "/accounts/resend_author_confirmation_link",
       PowController,
       :resend_author_confirmation_link
     )
+
     post("/accounts/send_user_password_reset_link", PowController, :send_user_password_reset_link)
+
     post(
       "/accounts/send_author_password_reset_link",
       PowController,

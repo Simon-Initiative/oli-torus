@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Add student input parsing to show student responses in datashop export
+- Change datashop session id to not reflect the user
 
 ### Enhancements
 

@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.SectionInvite do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Oli.Utils.Slug
 
   schema "section_invites" do
     belongs_to :section, Oli.Delivery.Sections.Section
@@ -11,9 +12,12 @@ defmodule Oli.Delivery.Sections.SectionInvite do
   end
 
   @doc false
-  def changeset(section, attrs) do
+  def changeset(section, attrs \\ %{}) do
     section
     |> cast(attrs, [:section_id, :slug, :date_expires])
-    |> validate_required([:section_id, :slug, :date_expires])
+    |> validate_required([:section_id, :date_expires])
+    |> Slug.update_never_seedless("section_invites")
+    |> validate_required([:slug])
+    |> unique_constraint(:slug, name: :section_invites_slug_unique_index)
   end
 end

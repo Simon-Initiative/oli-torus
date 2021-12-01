@@ -5,9 +5,6 @@ defmodule Oli.Plugs.RequireIndependentInstructor do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-
-    IO.inspect(Sections.is_independent_instructor?(Pow.Plug.current_user(conn)), label: "User can create sections")
-
     if Sections.is_independent_instructor?(Pow.Plug.current_user(conn)) do
       conn
     else

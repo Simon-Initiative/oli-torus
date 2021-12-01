@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
+  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions, SectionInvite}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
@@ -13,6 +13,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
   alias OliWeb.Sections.Mount
   use OliWeb.Common.Modal
   alias OliWeb.Sections.InviteStudentsModal
+  alias Oli.Delivery.Sections.SectionInvites
+  import Oli.Utils.Time
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -52,17 +54,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        enrollments =
-          Sections.browse_enrollments(
-            section,
-            %Paging{offset: 0, limit: @limit},
-            %Sorting{direction: :asc, field: :name},
-            @default_options
-          )
-
-        total_count = determine_total(enrollments)
-
-        {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section)
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section)
 
         {:ok,
          assign(socket,
@@ -122,13 +114,15 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
-      <button class="btn btn-primary" :on-click="InviteStudentsModal.show">Invite Students</button>
-      <div id="invite-students-popup"></div>
+    <div id="invite-students-popup"></div>
       {#if !is_nil(@modal)}
         {render_modal(assigns)}
       {/if}
 
-      <TextSearch id="text-search"/>
+      <div class="d-flex justify-content-between">
+        <TextSearch id="text-search"/>
+        <button class="btn btn-primary" :on-click="InviteStudentsModal.show">Invite Students</button>
+      </div>
 
       <div class="mb-3"/>
 
@@ -165,52 +159,82 @@ defmodule OliWeb.Sections.EnrollmentsView do
   end
 
   def handle_event("InviteStudentsModal.show", _params, socket) do
+    section = socket.assigns.section
+
+    {:ok, section_invite} = SectionInvites.create_default_section_invite(section.id)
+
     {:noreply,
      assign(socket,
        modal: %{
          component: InviteStudentsModal,
-         assigns: %{section: socket.assigns.section, emails: []}
+         assigns: %{
+           section: section,
+           section_invite: section_invite,
+           show_invite_settings: false,
+           date_expires_options: SectionInvites.expire_after_options(now(), section)
+         }
        }
      )}
   end
 
-  def handle_event("InviteStudentsModal.hide", _, socket) do
+  # TODO: Change this to "suspend" rather than removing the enrollment,
+  # and introduce separate view for suspended students. Also remove from non-independent learner mode.
+  # (Why do we want to keep enrollments if they're removed from course instead of re-enrolling?)
+  def handle_event("unenroll", %{"id" => user_id}, socket) do
+    section = socket.assigns.section
+
+    case Sections.unenroll_learner(user_id, section.id) do
+      {:ok, _} ->
+        %{total_count: total_count, table_model: table_model} = enrollment_assigns(section)
+
+        {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("open_link_settings", _, socket) do
+    modal_assigns = socket.assigns.modal.assigns
+
     {:noreply,
      assign(socket,
-       modal: nil
-     )
-     |> hide_modal()}
+       modal: %{
+         component: InviteStudentsModal,
+         assigns:
+           modal_assigns
+           |> Map.put(:show_invite_settings, true)
+           |> Map.put(:section_invite, SectionInvite.changeset(modal_assigns.section_invite))
+       }
+     )}
   end
 
-  def handle_event("InviteStudentsModal.addEmails", params, socket) do
-    new_emails = Enum.uniq(String.split(params["emails"], ~r/(,|;|\s)+/))
-    modal = socket.assigns.modal
+  def handle_event("update_section_invite", _params, socket) do
+    modal_assigns = socket.assigns.modal.assigns
+    # pull out params and assign to changeset
 
-    IO.inspect(socket.assigns.modal, label: "Modal before")
-
-    socket =
-      assign(socket,
-        modal:
-          Map.put(
-            modal,
-            :assigns,
-            Map.put(modal.assigns, :emails, new_emails)
-          )
-      )
-
-    IO.inspect(socket.assigns.modal, label: "modal after")
-    {:noreply, socket}
-  end
-
-  def handle_event("InviteStudentsModal.removeEmail", params, socket) do
-    IO.inspect(params, label: "remove email")
-    {:noreply, socket}
-  end
-
-  def handle_event("InviteStudentsModal.cancel", _, socket) do
     {:noreply,
-     assign(socket, modal: nil)
-     |> hide_modal()}
+     assign(socket,
+       modal: %{
+         component: InviteStudentsModal,
+         assigns:
+           modal_assigns
+           |> Map.put(:section_invite, SectionInvite.changeset(modal_assigns.section_invite))
+       }
+     )}
+  end
+
+  def handle_event("generate_section_invite", _, socket) do
+    modal_assigns = socket.assigns.modal.assigns
+    {:ok, section_invite} = SectionInvites.create_section_invite(modal_assigns.section_invite)
+
+    {:noreply,
+     assign(socket,
+       modal: %{
+         component: InviteStudentsModal,
+         assigns: Map.put(socket.assigns.modal.assigns, :section_invite, section_invite)
+       }
+     )}
   end
 
   def handle_event(event, params, socket) do
@@ -219,5 +243,21 @@ defmodule OliWeb.Sections.EnrollmentsView do
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  def enrollment_assigns(section) do
+    enrollments =
+      Sections.browse_enrollments(
+        section,
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :asc, field: :name},
+        @default_options
+      )
+
+    total_count = determine_total(enrollments)
+
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section)
+
+    %{total_count: total_count, table_model: table_model}
   end
 end

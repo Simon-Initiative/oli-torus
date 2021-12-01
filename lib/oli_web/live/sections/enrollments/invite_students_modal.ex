@@ -1,58 +1,50 @@
 defmodule OliWeb.Sections.InviteStudentsModal do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
   use Phoenix.HTML
+  import Phoenix.LiveView.Helpers
 
-  alias Oli.Delivery.Sections.Section
-
-  def render(%{section: %Section{} = section, emails: emails} = assigns) do
+  def render(assigns) do
     ~L"""
-    <style>
-      # .email-invite-list {
-      #   max-height: 300px;
-      #   overflow: scroll;
-      # }
-    </style>
     <div class="modal fade show" id="delete" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Invite students to <%= section.title %></h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <div class="form-group">
-                <form phx-change="InviteStudentsModal.addEmails">
-                  <label for="addEmailsTextarea">Add students by email</label>
-                  <textarea name="emails" class="form-control" id="addEmailsTextarea" rows="3">hey</textarea>
-                </form>
-                <button type="button" class="btn btn-primary" phx-click="InviteStudentsModal.sendEmail">
-                  Send email invitations
+          <div class="modal-header">
+            <h5 class="modal-title">Invite students to <%= @section.title %></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+          <%= if @show_invite_settings do %>
+
+            <p>Invite link settings</p>
+
+            <%= #How do you use a form in liveview?? this doesnt work %>
+            <%= form_for @section_invite, :create, [phx_change: :update_section_invite, phx_submit: :generate_section_invite], fn f -> %>
+              <%= label f, :date_expires, "Expire after" %>
+              <%= multiple_select f, :date_expires, @date_expires_options, class: "form-control w-100" %>
+              <%= submit "Generate Link" %>
+            <% end %>
+
+          <% else %>
+
+            <label for="invite-link">Send an invite link to students</label>
+            <div class="input-group mb-3">
+              <input readonly type="text" id="invite-link" class="form-control" placeholder="Section Invite Link" aria-label="Section Invite Link" value="<%= Routes.delivery_url(OliWeb.Endpoint, :enroll_independent,@section_invite.slug) %>">
+              <div class="input-group-append">
+                <button id="copy-invite-link-button" class="btn btn-outline-secondary" data-clipboard-target="#invite-link" phx-hook="CopyListener">
+                  <i class="lar la-clipboard"></i> Copy
                 </button>
               </div>
-              <ul class="list-group email-invite-list">
-                <% IO.inspect(emails, label: "Emails in modal") %>
-                <%= for email <- emails do %>
-                  <li class="list-group-item">
-                    <span><%=email%></span>
-                    <button class="btn btn-outline" phx-click="InviteStudentsModal.removeEmail" phx-value-email="<%=email%>" type="button" class="close" aria-label="Remove">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
-                  </li>
-                <% end %>
-              </ul>
             </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="InviteStudentsModal.hide">Cancel</button>
-              <button
-                phx-click="InviteStudentsModal.remove"
-                phx-key="enter"
-                phx-value-uuid="<%= 1 %>"
-                class="btn btn-danger">
-                Remove
-              </button>
+            <div>
+              <small>
+                Your invite link expires in 7 days. <button phx-click="open_link_settings" class="btn btn-link">Edit invite link.</button>
+              </small>
             </div>
+
+          <% end %>
+          </div>
         </div>
       </div>
     </div>

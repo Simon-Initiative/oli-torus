@@ -26,6 +26,7 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   end
 
   # Sections that require_enrollment disallow guest users
+  # Todo: Save redirect path to enroll directly after signin, and bypass captcha
   defp handle_user_for_section(conn, user, %Section{requires_enrollment: true}) do
     if is_nil(user) or Accounts.user_is_guest?(conn) do
       require_signin(conn)
@@ -70,7 +71,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
           |> section_unavailable(:after_end_date)
 
         true ->
-          IO.inspect(user, label: "User")
           # enroll new open and free user in this section as a student/learner
           Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
