@@ -53,7 +53,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (frameHeight != undefined) {
       styleChanges.height = { value: frameHeight as number };
     }
-    console.log({ styleChanges });
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [frameWidth, frameHeight]);
@@ -653,56 +652,64 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }, 150);
   };
 
-  const handleResizeParentContainer = (data: any) => {
-    const iFrameResponse: { key: string; type: number; value: string }[] = [];
-    const modifiedData = data;
-    if (frameWidth && data?.width) {
-      const newW = parseFloat(data.width.value);
-      if (data.width.type === 'relative') {
-        modifiedData.width.value = frameWidth + newW;
-      } else {
-        modifiedData.width.value = newW;
+  const handleResizeParentContainer = useCallback(
+    (data: any) => {
+      const iFrameResponse: { key: string; type: number; value: string }[] = [];
+      const modifiedData = data;
+      if (data?.width) {
+        setFrameWidth((previousWidth) => {
+          const newW = parseFloat(data.width.value);
+          if (data.width.type === 'relative') {
+            modifiedData.width.value = previousWidth + newW;
+          } else {
+            modifiedData.width.value = newW;
+          }
+          return modifiedData.width.value;
+        });
       }
-      setFrameWidth(modifiedData.width.value);
-    }
-    if (frameHeight && data?.height) {
-      const newH = parseFloat(data.height.value);
-      if (data.height.type === 'relative') {
-        modifiedData.height.value = frameHeight + newH;
-      } else {
-        modifiedData.height.value = newH;
+      if (data?.height) {
+        setFrameHeight((previousHeight) => {
+          const newW = parseFloat(data.height.value);
+          if (data.height.type === 'relative') {
+            modifiedData.height.value = previousHeight + newW;
+          } else {
+            modifiedData.height.value = newW;
+          }
+          return modifiedData.height.value;
+        });
       }
-      setFrameHeight(modifiedData.height.value);
-    }
-    if (modifiedData?.height?.value) {
-      iFrameResponse.push({
-        key: `IFRAME_frameHeight`,
-        type: CapiVariableTypes.NUMBER,
-        value: modifiedData?.height?.value || frameHeight,
+
+      if (modifiedData?.height?.value) {
+        iFrameResponse.push({
+          key: `IFRAME_frameHeight`,
+          type: CapiVariableTypes.NUMBER,
+          value: modifiedData?.height?.value || frameHeight,
+        });
+      }
+      if (modifiedData?.width?.value) {
+        iFrameResponse.push({
+          key: `IFRAME_frameWidth`,
+          type: CapiVariableTypes.NUMBER,
+          value: modifiedData?.width?.value || frameWidth,
+        });
+      }
+      props.onSave({
+        id,
+        responses: iFrameResponse,
       });
-    }
-    if (modifiedData?.width?.value) {
-      iFrameResponse.push({
-        key: `IFRAME_frameWidth`,
-        type: CapiVariableTypes.NUMBER,
-        value: modifiedData?.width?.value || frameWidth,
-      });
-    }
-    props.onSave({
-      id,
-      responses: iFrameResponse,
-    });
-    //props.onResize({ id: `${id}`, settings: modifiedData });
-    sendFormedResponse(
-      simLife.handshake,
-      {},
-      JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_RESPONSE,
-      {
-        messageId: data.messageId,
-        responseType: 'success',
-      },
-    );
-  };
+      props.onResize({ id: `${id}`, settings: modifiedData });
+      sendFormedResponse(
+        simLife.handshake,
+        {},
+        JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_RESPONSE,
+        {
+          messageId: data.messageId,
+          responseType: 'success',
+        },
+      );
+    },
+    [frameWidth, frameHeight],
+  );
 
   //#endregion
 
