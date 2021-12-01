@@ -70,6 +70,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
       setEnabled(false);
     }
     setReady(true);
+    handleStylingChanges();
   }, []);
 
   useEffect(() => {
@@ -196,6 +197,14 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   };
   const inputNumberCompStyles: CSSProperties = {
     width: '100%',
+  };
+
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width.value = width as number;
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
   };
 
   const debouncetime = 300;

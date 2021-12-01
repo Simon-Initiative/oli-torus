@@ -33,7 +33,16 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
       ],
     });
   };
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -90,6 +99,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
+    handleStylingChanges();
     setReady(true);
   }, []);
 
