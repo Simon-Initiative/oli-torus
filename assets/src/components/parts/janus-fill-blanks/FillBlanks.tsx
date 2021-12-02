@@ -97,6 +97,16 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     borderRadius: '5px',
     fontFamily: 'revert',
   };
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     const partResponses: any[] = pModel?.elements?.map((el: any) => {
       const val: string = getElementValueByKey(el.key);
@@ -151,7 +161,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
-
+    handleStylingChanges();
     setReady(true);
   }, []);
 

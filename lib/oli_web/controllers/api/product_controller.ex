@@ -38,6 +38,7 @@ defmodule OliWeb.Api.ProductController do
           %{
             "slug" => "my_first_product",
             "title" => "Introduction to World Cultures",
+            "description" => "World Cultures is a great....",
             "status" => "active",
             "requires_payment" => true,
             "amount" => "$100.00",

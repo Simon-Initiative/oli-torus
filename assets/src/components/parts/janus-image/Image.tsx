@@ -12,7 +12,16 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
   const id: string = props.id;
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
@@ -23,7 +32,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
       const currentStateSnapshot = initResult.snapshot;
       setState(currentStateSnapshot);
     }
-
+    handleStylingChanges();
     setReady(true);
   }, []);
 

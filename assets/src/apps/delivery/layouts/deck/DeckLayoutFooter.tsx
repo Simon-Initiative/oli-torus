@@ -211,6 +211,24 @@ const DeckLayoutFooter: React.FC = () => {
     return isDifferentNavigationExist;
   };
 
+  const checkIfAllEventsHaveSameNavigation = (results: any) => {
+    const navigationTargets: string[] = [];
+    const resultHavingNavigation = results.filter((result: any) => {
+      const { actions } = result.params;
+      let hasNavigation = false;
+      actions.forEach((action: any) => {
+        if (action.type === 'navigation') {
+          if (!navigationTargets.includes(action.params.target)) {
+            navigationTargets.push(action.params.target);
+          }
+          hasNavigation = true;
+        }
+      });
+      return hasNavigation;
+    });
+    return resultHavingNavigation.length === results.length && navigationTargets.length === 1;
+  };
+
   useEffect(() => {
     if (!lastCheckResults || !lastCheckResults.results.length) {
       return;
@@ -223,15 +241,23 @@ const DeckLayoutFooter: React.FC = () => {
     const combineFeedback = !!currentActivity?.custom.combineFeedback;
     let eventsToProcess = [lastCheckResults.results[0]];
     let doesFirstEventHasNavigation = false;
+    let doesAllEventsHaveSameNavigation = false;
     if (combineFeedback) {
       //if the first event has a navigation to different screen
       // we ignore the rest of the events and fire this one.
-      doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
-      // if all the rules are correct, we process all the events because we want to display all the correct feedbacks
-      if (doesFirstEventHasNavigation && !isCorrect) {
-        eventsToProcess = [lastCheckResults.results[0]];
-      } else {
+      doesAllEventsHaveSameNavigation = checkIfAllEventsHaveSameNavigation(
+        lastCheckResults.results,
+      );
+      if (doesAllEventsHaveSameNavigation) {
         eventsToProcess = lastCheckResults.results;
+      } else {
+        doesFirstEventHasNavigation = checkIfFirstEventHasNavigation(lastCheckResults.results[0]);
+        // if all the rules are correct, we process all the events because we want to display all the correct feedbacks
+        if (doesFirstEventHasNavigation && !isCorrect) {
+          eventsToProcess = [lastCheckResults.results[0]];
+        } else {
+          eventsToProcess = lastCheckResults.results;
+        }
       }
     }
     const actionsByType = processResults(eventsToProcess);

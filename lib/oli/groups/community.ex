@@ -13,6 +13,13 @@ defmodule Oli.Groups.Community do
 
     many_to_many :authors, Oli.Accounts.Author, join_through: Oli.Groups.CommunityAccount
 
+    many_to_many :projects, Oli.Authoring.Course.Project,
+      join_through: Oli.Groups.CommunityVisibility
+
+    many_to_many :sections, Oli.Delivery.Sections.Section,
+      join_through: Oli.Groups.CommunityVisibility,
+      where: [type: {:fragment, "? = 'blueprint'"}]
+
     timestamps(type: :utc_datetime)
   end
 

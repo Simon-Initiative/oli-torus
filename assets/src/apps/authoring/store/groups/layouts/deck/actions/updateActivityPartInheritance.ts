@@ -10,13 +10,15 @@ import {
   DeckLayoutGroup,
   GroupsSlice,
 } from '../../../../../../delivery/store/features/groups/slice';
-import { selectProjectSlug } from '../../../../app/slice';
+import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,
   async (deck: DeckLayoutGroup, { dispatch, getState }) => {
     const rootState = getState() as any;
+    const isReadOnlyMode = selectReadOnly(rootState);
+
     const activitiesToUpdate: any[] = [];
     deck.children.forEach((child: any) => {
       const lineage = getSequenceLineage(deck.children, child.custom.sequenceId);
@@ -24,6 +26,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
       /* console.log('LINEAGE: ', { lineage, child }); */
       const combinedParts = lineage.reduce((collect: any, sequenceEntry) => {
         // load the activity record
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const activity = selectActivityById(rootState, sequenceEntry.resourceId!);
         if (!activity) {
           // this is really an error
@@ -62,20 +65,21 @@ export const updateActivityPartInheritance = createAsyncThunk(
     });
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
-      // TODO: write to server
-      const projectSlug = selectProjectSlug(rootState);
-      const pageResourceId = selectResourceId(rootState);
-      const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
-        const changeData: BulkActivityUpdate = {
-          title: activity.title,
-          objectives: activity.objectives,
-          content: activity.content,
-          authoring: activity.authoring,
-          resource_id: activity.resourceId,
-        };
-        return changeData;
-      });
-      await bulkEdit(projectSlug, pageResourceId, updates);
+      if (!isReadOnlyMode) {
+        const projectSlug = selectProjectSlug(rootState);
+        const pageResourceId = selectResourceId(rootState);
+        const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
+          const changeData: BulkActivityUpdate = {
+            title: activity.title,
+            objectives: activity.objectives,
+            content: activity.content,
+            authoring: activity.authoring,
+            resource_id: activity.resourceId,
+          };
+          return changeData;
+        });
+        await bulkEdit(projectSlug, pageResourceId, updates);
+      }
       return;
     }
   },

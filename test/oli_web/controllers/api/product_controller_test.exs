@@ -22,8 +22,12 @@ defmodule OliWeb.ProductControllerTest do
         |> get(Routes.product_path(conn, :index))
 
       assert json_response(conn, 200)["products"] |> Enum.count() == 2
-      assert json_response(conn, 200)["products"] |> Enum.find(fn p -> p == %{
+
+      assert json_response(conn, 200)["products"]
+             |> Enum.find(fn p ->
+               p == %{
                  "amount" => Money.to_string!(prod1.amount),
+                 "description" => "a description",
                  "grace_period_days" => prod1.grace_period_days,
                  "grace_period_strategy" => Atom.to_string(prod1.grace_period_strategy),
                  "has_grace_period" => prod1.has_grace_period,
@@ -31,10 +35,14 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod1.slug,
                  "status" => Atom.to_string(prod1.status),
                  "title" => prod1.title
-               } end)
+               }
+             end)
 
-      assert json_response(conn, 200)["products"] |> Enum.find(fn p -> p == %{
+      assert json_response(conn, 200)["products"]
+             |> Enum.find(fn p ->
+               p == %{
                  "amount" => nil,
+                 "description" => nil,
                  "grace_period_days" => 0,
                  "grace_period_strategy" => Atom.to_string(prod2.grace_period_strategy),
                  "has_grace_period" => prod2.has_grace_period,
@@ -42,7 +50,8 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod2.slug,
                  "status" => Atom.to_string(prod2.status),
                  "title" => prod2.title
-               } end)
+               }
+             end)
     end
 
     test "renders error when api key does not have product scope", %{
@@ -87,7 +96,7 @@ defmodule OliWeb.ProductControllerTest do
         :prod1
       )
       |> Seeder.create_product(
-        %{title: "My 2nd product", amount: Money.new(:USD, "24.99")},
+        %{title: "My 2nd product", amount: Money.new(:USD, "24.99"), description: nil},
         :prod2
       )
 

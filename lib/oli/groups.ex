@@ -6,9 +6,12 @@ defmodule Oli.Groups do
   import Ecto.Query, warn: false
 
   alias Oli.Accounts
-  alias Oli.Accounts.Author
-  alias Oli.Groups.{Community, CommunityAccount}
+  alias Oli.Accounts.{Author, User}
+  alias Oli.Groups.{Community, CommunityAccount, CommunityVisibility}
   alias Oli.Repo
+
+  # ------------------------------------------------------------
+  # Communities
 
   @doc """
   Returns the list of communities.
@@ -112,11 +115,8 @@ defmodule Oli.Groups do
     Community.changeset(community, attrs)
   end
 
-  defp filter_conditions(filter) do
-    Enum.reduce(filter, false, fn {field, value}, conditions ->
-      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
-    end)
-  end
+  # ------------------------------------------------------------
+  # Communities accounts
 
   @doc """
   Creates a community account.
@@ -157,6 +157,52 @@ defmodule Oli.Groups do
       nil ->
         {:error, :author_not_found}
     end
+  end
+
+  @doc """
+  Creates a community account from a user email (gets the user first).
+
+  ## Examples
+
+      iex> create_community_account_from_user_email("example@foo.com", %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_user_email("example@foo.com", %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_user_email(email, attrs \\ %{}) do
+    case Accounts.get_user_by(%{email: email}) do
+      %User{id: id} ->
+        attrs |> Map.put(:user_id, id) |> create_community_account()
+
+      nil ->
+        {:error, :user_not_found}
+    end
+  end
+
+  @doc """
+  Creates a community account from a user type and email (gets the user first).
+
+  ## Examples
+
+      iex> create_community_account_from_email("admin", "example@foo.com", %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_user_email("member", "example@foo.com", %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_email(user_type, email, attrs \\ %{})
+
+  def create_community_account_from_email("admin", email, attrs) do
+    create_community_account_from_author_email(email, attrs)
+  end
+
+  def create_community_account_from_email("member", email, attrs) do
+    create_community_account_from_user_email(email, attrs)
   end
 
   @doc """
@@ -221,10 +267,119 @@ defmodule Oli.Groups do
       from(
         community_account in CommunityAccount,
         join: author in assoc(community_account, :author),
-        where:
-          community_account.community_id == ^community_id and community_account.is_admin == true,
+        where: community_account.community_id == ^community_id and community_account.is_admin,
         select: author
       )
     )
+  end
+
+  # ------------------------------------------------------------
+  # Communities visibilities
+
+  @doc """
+  Creates a community visibility.
+
+  ## Examples
+
+      iex> create_community_visibility(%{field: new_value})
+      {:ok, %CommunityVisibility{}}
+
+      iex> create_community_visibility(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_community_visibility(attrs \\ %{}) do
+    %CommunityVisibility{}
+    |> CommunityVisibility.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a community visibility by id.
+
+  ## Examples
+
+      iex> get_community_visibility(1)
+      %CommunityVisibility{}
+      iex> get_community_visibility(123)
+      nil
+  """
+  def get_community_visibility(id), do: Repo.get(CommunityVisibility, id)
+
+  @doc """
+  Deletes a community visibility.
+
+  ## Examples
+
+      iex> delete_community_visibility(%{community_id: 1, project_id: 1})
+      {:ok, %CommunityVisibility{}}
+
+      iex> delete_community_visibility(%{community_id: 1, project_id: bad})
+      nil
+
+  """
+  def delete_community_visibility(id) do
+    case get_community_visibility(id) do
+      nil -> {:error, :not_found}
+      community_visibility -> Repo.delete(community_visibility)
+    end
+  end
+
+  @doc """
+  Get all the projects and products associated within a community in only one query.
+
+  ## Examples
+
+      iex> list_community_visibilities(1)
+      {:ok, [%CommunityVisibility{project: %Project{}, section: nil, ...}, ,...]}
+
+      iex> list_community_visibilities(123)
+      {:ok, []}
+  """
+  def list_community_visibilities(community_id) do
+    from(
+      community_visibility in CommunityVisibility,
+      left_join: project in assoc(community_visibility, :project),
+      left_join: section in assoc(community_visibility, :section),
+      where: community_visibility.community_id == ^community_id,
+      select: community_visibility,
+      select_merge: %{
+        project: project,
+        section: section,
+        unique_type:
+          fragment("case when section_id is not null then 'product' else 'project' end")
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get all the members for a specific community.
+
+  ## Examples
+
+      iex> list_community_members(1)
+      {:ok, [%User{}, ...]}
+
+      iex> list_community_members(123)
+      {:ok, []}
+  """
+  def list_community_members(community_id, limit \\ nil) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: member in assoc(community_account, :user),
+        where: community_account.community_id == ^community_id and not community_account.is_admin,
+        select: member,
+        order_by: [desc: :inserted_at],
+        limit: ^limit
+      )
+    )
+  end
+
+  defp filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
+    end)
   end
 end

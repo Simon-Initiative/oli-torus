@@ -6,6 +6,16 @@
 
 ### Enhancements
 
+## 0.17.0 (2021-11-30)
+
+### Bug Fixes
+
+- Add student input parsing to show student responses in datashop export
+
+### Enhancements
+
+- Gating and Scheduling
+
 ## 0.16.0 (2021-11-19)
 
 ### Bug Fixes

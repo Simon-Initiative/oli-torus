@@ -16,6 +16,18 @@ defmodule OliWeb.CommunityLiveTest do
     Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.ShowView, community_id)
   end
 
+  defp live_view_associated_index_route(community_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Associated.IndexView, community_id)
+  end
+
+  defp live_view_associated_new_route(community_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.Associated.NewView, community_id)
+  end
+
+  defp live_view_members_index_route(community_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.CommunityLive.MembersIndexView, community_id)
+  end
+
   defp create_community(_conn) do
     community = insert(:community)
 
@@ -218,10 +230,8 @@ defmodule OliWeb.CommunityLiveTest do
         community: params
       })
 
-      assert view
-             |> element("div.alert.alert-info")
-             |> render() =~
-               "Community succesfully created."
+      flash = assert_redirected(view, @live_view_index_route)
+      assert flash["info"] == "Community successfully created."
 
       [%Community{name: name} | _tail] = Groups.list_communities()
 
@@ -252,6 +262,8 @@ defmodule OliWeb.CommunityLiveTest do
                |> render() =~
                  value
       end)
+
+      assert has_element?(view, "a[href=\"#{live_view_associated_index_route(community.id)}\"]")
     end
 
     test "displays error message when data is invalid", %{
@@ -403,13 +415,13 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: author.email}})
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Admin successfully added."
+               "Community admin successfully added."
 
       assert 2 == length(Groups.list_community_admins(community.id))
     end
@@ -424,16 +436,16 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: author.email}})
 
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "Community admin couldn&#39;t be added. Author is already an admin or an unexpected error occurred."
+               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
 
       view
-      |> element("form[phx-submit=\"add_collaborator\"")
+      |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
 
       assert view
@@ -456,13 +468,13 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_collaborator\"")
+      |> element("button[phx-click=\"remove_admin\"")
       |> render_click(%{"collaborator-id" => author.id})
 
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Admin successfully removed."
+               "Community admin successfully removed."
 
       assert 0 == length(Groups.list_community_admins(community.id))
     end
@@ -479,7 +491,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert 1 == length(Groups.list_community_admins(community.id))
 
       view
-      |> element("button[phx-click=\"remove_collaborator\"")
+      |> element("button[phx-click=\"remove_admin\"")
       |> render_click(%{"collaborator-id" => 12345})
 
       assert view
@@ -488,6 +500,555 @@ defmodule OliWeb.CommunityLiveTest do
                "Community admin couldn&#39;t be removed."
 
       assert 1 == length(Groups.list_community_admins(community.id))
+    end
+
+    test "suggests community admin correctly", %{
+      conn: conn,
+      community: community
+    } do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_admin\"")
+      |> render_change(%{collaborator: %{email: author.name}})
+
+      assert view
+             |> element("#admin_matches")
+             |> render() =~
+               author.email
+
+      view
+      |> element("form[phx-change=\"suggest_admin\"")
+      |> render_change(%{collaborator: %{email: "other_name"}})
+
+      refute view
+             |> element("#admin_matches")
+             |> render() =~
+               author.email
+    end
+
+    test "adds community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: user.email}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully added."
+
+      assert 2 == length(Groups.list_community_members(community.id))
+    end
+
+    test "displays error messages when adding community member fails", %{
+      conn: conn,
+      community: community
+    } do
+      user = build(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: user.email}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
+
+      view
+      |> element("form[phx-submit=\"add_member\"")
+      |> render_submit(%{collaborator: %{email: "wrong@example.com"}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community member couldn&#39;t be added. User does not exist."
+
+      assert 1 == length(Groups.list_community_members(community.id))
+    end
+
+    test "removes community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_member\"")
+      |> render_click(%{"collaborator-id" => user.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully removed."
+
+      assert 0 == length(Groups.list_community_admins(community.id))
+    end
+
+    test "displays error messages when removing community member fails", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+      insert(:community_member_account, %{community: community, user: user})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_members(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_member\"")
+      |> render_click(%{"collaborator-id" => 12345})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community member couldn&#39;t be removed."
+
+      assert 1 == length(Groups.list_community_members(community.id))
+    end
+
+    test "suggests community member correctly", %{
+      conn: conn,
+      community: community
+    } do
+      user = insert(:user)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_member\"")
+      |> render_change(%{collaborator: %{email: user.name}})
+
+      assert view
+             |> element("#member_matches")
+             |> render() =~
+               user.email
+
+      view
+      |> element("form[phx-change=\"suggest_member\"")
+      |> render_change(%{collaborator: %{email: "other_name"}})
+
+      refute view
+             |> element("#member_matches")
+             |> render() =~
+               user.email
+    end
+  end
+
+  describe "associated index" do
+    setup [:admin_conn, :create_community]
+
+    test "loads correctly when there are no communities visibilities", %{
+      conn: conn,
+      community: %Community{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(id))
+
+      assert has_element?(view, "p", "None exist")
+      assert has_element?(view, "a[href=\"#{live_view_associated_new_route(id)}\"]")
+    end
+
+    test "lists communities visibilities", %{conn: conn, community: community} do
+      cv1 = insert(:community_visibility, %{community: community})
+      cv2 = insert(:community_visibility, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      assert has_element?(view, "##{cv1.id}")
+      assert has_element?(view, "##{cv2.id}")
+    end
+
+    test "removes community visibility", %{conn: conn, community: community} do
+      cv1 = insert(:community_visibility, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      view
+      |> element("tr:first-child > td:last-child > button")
+      |> render_click(%{"id" => cv1.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Association successfully removed."
+
+      refute has_element?(view, "##{cv1.id}")
+
+      assert has_element?(view, "p", "None exist")
+    end
+
+    test "applies searching", %{conn: conn, community: community} do
+      project = insert(:project, %{title: "Testing"})
+      cv1 = insert(:community_visibility, %{community: community, project: project})
+      cv2 = insert(:community_visibility, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "testing"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "##{cv1.id}")
+      refute has_element?(view, "##{cv2.id}")
+
+      view
+      |> element("button[phx-click=\"reset_search\"]")
+      |> render_click()
+
+      assert has_element?(view, "##{cv1.id}")
+      assert has_element?(view, "##{cv2.id}")
+    end
+
+    test "applies sorting", %{conn: conn, community: community} do
+      project_1 = insert(:project, %{title: "Testing A"})
+      project_2 = insert(:project, %{title: "Testing B"})
+      insert(:community_visibility, %{community: community, project: project_1})
+      insert(:community_visibility, %{community: community, project: project_2})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Testing A"
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "title"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Testing B"
+    end
+
+    test "applies paging", %{conn: conn, community: community} do
+      [first_cv | tail] =
+        insert_list(21, :community_visibility, %{community: community}) |> Enum.sort()
+
+      last_cv = List.last(tail)
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      assert has_element?(view, "##{first_cv.id}")
+      refute has_element?(view, "##{last_cv.id}")
+
+      view
+      |> element("a[phx-click=\"page_change\"]", "2")
+      |> render_click()
+
+      refute has_element?(view, "##{first_cv.id}")
+      assert has_element?(view, "##{last_cv.id}")
+    end
+  end
+
+  describe "associated index new" do
+    setup [:admin_conn, :create_community]
+
+    test "loads correctly when there are no projects or products", %{
+      conn: conn,
+      community: %Community{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+
+      assert has_element?(view, "p", "None exist")
+    end
+
+    test "lists projects and products that aren't related to any community", %{
+      conn: conn,
+      community: community
+    } do
+      associated_project = insert(:project)
+      associated_product = insert(:section)
+      insert(:community_visibility, %{community: community, project: associated_project})
+      insert(:community_visibility, %{community: community, section: associated_product})
+
+      project = insert(:project)
+      product = insert(:section)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               project.title
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               product.title
+    end
+
+    test "adds project to community", %{conn: conn, community: %Community{id: id}} do
+      project = insert(:project)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+
+      view
+      |> element("tr:first-child > td:last-child > button")
+      |> render_click(%{"id" => project.id, "type" => "project"})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Association to project succesfully added."
+
+      assert 1 == length(Groups.list_community_visibilities(id))
+    end
+
+    test "applies searching", %{conn: conn, community: %Community{id: id}} do
+      project_1 = insert(:project, %{title: "Testing"})
+      project_2 = insert(:project)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "testing"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               project_1.title
+
+      refute view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               project_2.title
+
+      view
+      |> element("button[phx-click=\"reset_search\"]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               project_2.title
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               project_1.title
+    end
+
+    test "applies sorting", %{conn: conn, community: %Community{id: id}} do
+      insert(:section, %{title: "Testing B"})
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Example Course"
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "title"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Testing B"
+    end
+
+    test "applies paging", %{conn: conn, community: %Community{id: id}} do
+      [first_project | _tail] = insert_list(19, :project)
+      section = insert(:section)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               first_project.title
+
+      refute view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               section.title
+
+      view
+      |> element("a[phx-click=\"page_change\"]", "2")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               section.title
+    end
+  end
+
+  describe "members index" do
+    setup [:admin_conn, :create_community]
+
+    test "loads correctly when there are no members associated to the community", %{
+      conn: conn,
+      community: %Community{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_members_index_route(id))
+
+      assert has_element?(view, "p", "None exist")
+    end
+
+    test "lists community members", %{conn: conn, community: community} do
+      user = insert(:user)
+      insert(:community_member_account, %{user: user, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               user.name
+    end
+
+    test "removes community member", %{conn: conn, community: community} do
+      user = insert(:user)
+      insert(:community_member_account, %{user: user, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      view
+      |> element("tr:first-child > td:last-child > button")
+      |> render_click(%{"id" => user.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community member successfully removed."
+
+      assert has_element?(view, "p", "None exist")
+    end
+
+    test "applies searching", %{conn: conn, community: community} do
+      user_1 = insert(:user, %{name: "Testing"})
+      user_2 = insert(:user)
+      insert(:community_member_account, %{user: user_1, community: community})
+      insert(:community_member_account, %{user: user_2, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      view
+      |> element("input[phx-blur=\"change_search\"]")
+      |> render_blur(%{value: "testing"})
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"apply_search\"]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               user_1.name
+
+      refute view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               user_2.name
+
+      view
+      |> element("button[phx-click=\"reset_search\"]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               user_1.name
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               user_2.name
+    end
+
+    test "applies sorting", %{conn: conn, community: community} do
+      user_1 = insert(:user, %{name: "Testing A"})
+      user_2 = insert(:user, %{name: "Testing B"})
+      insert(:community_member_account, %{user: user_1, community: community})
+      insert(:community_member_account, %{user: user_2, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Testing A"
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "name"})
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Testing B"
+    end
+
+    test "applies paging", %{conn: conn, community: community} do
+      [first_cma | tail] =
+        insert_list(21, :community_member_account, %{community: community})
+        |> Enum.sort_by(& &1.user.name)
+
+      last_cma = List.last(tail)
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               first_cma.user.name
+
+      refute view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               last_cma.user.name
+
+      view
+      |> element("a[phx-click=\"page_change\"]", "2")
+      |> render_click()
+
+      refute view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               first_cma.user.name
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               last_cma.user.name
     end
   end
 end

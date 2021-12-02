@@ -3,13 +3,17 @@ import { ResourceContent } from 'data/content/resource';
 import { edit, Edited, ResourceUpdate } from 'data/persistence/resource';
 import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
-import { selectProjectSlug } from '../../app/slice';
+import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { RootState } from '../../rootReducer';
 import { PageSlice, PageState, selectRevisionSlug, selectState, setRevisionSlug } from '../slice';
 
 export const savePage = createAsyncThunk(
   `${PageSlice}/savePage`,
   async (payload: Partial<PageState> = {}, { getState, dispatch }) => {
+    const isReadOnlyMode = selectReadOnly(getState() as RootState);
+    if (isReadOnlyMode) {
+      return;
+    }
     const projectSlug = selectProjectSlug(getState() as RootState);
     const revisionSlug = selectRevisionSlug(getState() as RootState);
     const currentPage = selectState(getState() as RootState);

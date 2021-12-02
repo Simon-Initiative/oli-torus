@@ -73,6 +73,9 @@ const Markup: React.FC<any> = ({
     // add a non breaking space instead of nothing
 
     processedText = processedText.length < 2 && !processedText.trim() ? '\u00a0' : processedText;
+    if (tag === 'span') {
+      renderStyles.visibility = 'hidden';
+    }
   }
   if (processedText.length !== processedText.trimLeft().length) {
     const noOfleadingSpaces = processedText.length - processedText.trimLeft().length;

@@ -23,7 +23,7 @@ export const isEqual = (factValue: any, value: any): boolean => {
   }
   if (Array.isArray(factValue)) {
     let compareValue = value;
-    const updatedFactValue = parseArray(factValue);
+    const updatedFactValue: any = parseArray(factValue);
     let updatedValue = value;
     //Need to parse before we check "if" condition else it will fail for cases where value = '[0,0]'.
     if (!Array.isArray(value) && typeOfValue === 'number') {
@@ -39,6 +39,10 @@ export const isEqual = (factValue: any, value: any): boolean => {
     // ** DT - Sorting both arrays. depending upon user selection in UI the array sometimes comes
     // ** like factValue=[2,5] and value = [5,2] which is right selection but it evaluates to false*/
     updatedFactValue.sort();
+    //compareValue = [] & updatedFactValue = ['']
+    if (compareValue.toString() === updatedFactValue.toString()) {
+      return true;
+    }
     return JSON.stringify(updatedFactValue) === JSON.stringify(compareValue);
   }
   // for boolean values,  factValue comes as true and value comes as 'true'
@@ -112,8 +116,14 @@ export const getValueWithTolerance = (
   if (tolerance > 0) {
     const calculateMinWithToleranceValue = (tolerance * baseMinValue) / 100;
     const calculateMaxWithToleranceValue = (tolerance * baseMaxValue) / 100;
-    const minToleranceValue = baseMinValue - calculateMinWithToleranceValue;
-    const maxToleranceValue = baseMaxValue + calculateMaxWithToleranceValue;
+    const minToleranceValue =
+      baseMinValue >= 0
+        ? baseMinValue - calculateMinWithToleranceValue
+        : baseMinValue + calculateMinWithToleranceValue;
+    const maxToleranceValue =
+      baseMinValue >= 0
+        ? baseMaxValue + calculateMaxWithToleranceValue
+        : baseMinValue - calculateMinWithToleranceValue;
     newValue = {
       minToleranceValue: minToleranceValue,
       maxToleranceValue: maxToleranceValue,

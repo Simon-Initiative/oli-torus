@@ -1,6 +1,8 @@
 defmodule Oli.CourseTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.{Family, Project}
 
@@ -69,6 +71,14 @@ defmodule Oli.CourseTest do
     test "update_project/2 with invalid data returns error changeset", %{project: project} do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
       assert project == Course.get_project!(project.id)
+    end
+
+    test "list_projects_not_in_community/1 returns the projects that are not associated to the community" do
+      community_visibility = insert(:community_visibility)
+
+      # a project is created in the setup
+      assert 2 = length(Course.list_projects())
+      assert 1 = length(Course.list_projects_not_in_community(community_visibility.community_id))
     end
   end
 

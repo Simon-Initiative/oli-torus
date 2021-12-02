@@ -289,6 +289,12 @@ defmodule OliWeb.Router do
         pipe_through [:authorize_community]
 
         live("/", CommunityLive.ShowView)
+        live("/members", CommunityLive.MembersIndexView)
+
+        scope "/associated" do
+          live("/", CommunityLive.Associated.IndexView)
+          live("/new", CommunityLive.Associated.NewView)
+        end
       end
     end
   end
@@ -657,6 +663,9 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
     live("/:section_slug/edit", Sections.EditView)
+    live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
+    live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
+    live("/:section_slug/gating_and_scheduling/:id/edit", Sections.GatingAndScheduling.Edit)
   end
 
   scope "/sections", OliWeb do

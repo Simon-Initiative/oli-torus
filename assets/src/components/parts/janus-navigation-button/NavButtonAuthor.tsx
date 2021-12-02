@@ -39,10 +39,20 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
   if (buttonColor) {
     styles.backgroundColor = buttonColor;
   }
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${props.id}`, settings: styleChanges });
+  };
   useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
+    handleStylingChanges();
   }, []);
 
   const buttonProps = {
