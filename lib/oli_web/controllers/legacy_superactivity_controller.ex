@@ -9,9 +9,9 @@ defmodule OliWeb.LegacySuperactivityController do
     AttemptHistory,
     FileRecord,
     FileDirectory
-  }
+    }
 
-  alias Oli.Delivery.Student.Summary
+  #  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Grading
@@ -29,8 +29,6 @@ defmodule OliWeb.LegacySuperactivityController do
     activity_attempt =
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
-
-    IO.inspect(activity_attempt, limit: :infinity)
 
     part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
 
@@ -131,9 +129,11 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
     xml =
-      SuperActivityClient.setup(%{
-        context: context
-      })
+      SuperActivityClient.setup(
+        %{
+          context: context
+        }
+      )
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 
@@ -143,9 +143,11 @@ defmodule OliWeb.LegacySuperactivityController do
   defp process_command(command_name, context, _params) when command_name === "beginSession" do
     #        IO.inspect(context, limit: :infinity)
     xml =
-      SuperActivitySession.setup(%{
-        context: context
-      })
+      SuperActivitySession.setup(
+        %{
+          context: context
+        }
+      )
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 
@@ -191,12 +193,17 @@ defmodule OliWeb.LegacySuperactivityController do
   defp process_command(
          command_name,
          context,
-         %{"scoreValue" => score_value, "scoreId" => score_type} = _params
+         %{"scoreValue" => score_value, "scoreId" => score_type} = params
        )
        when command_name === "scoreAttempt" do
 
-    # Assumes all custom activities have a single part
-    part_attempt = Enum.at(context.activity_attempt.part_attempts, 0)
+    part_attempt = case Map.get(params, "partId") do
+      nil ->
+        # Assumes custom has a single part if partId is not one of the request parameters
+        Enum.at(context.activity_attempt.part_attempts, 0)
+      part_id -> Enum.filter(context.activity_attempt.part_attempts, fn p -> part_id === p.part_id end)
+    end
+
     # :TODO: oli legacy allows for custom activities to supply arbitrary score types.
     # :TODO: Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
 
@@ -209,6 +216,141 @@ defmodule OliWeb.LegacySuperactivityController do
 
   end
 
+  defp process_command(command_name, context, _params) when command_name === "endAttempt" do
+    attempt_history(context)
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "loadUserSyllabus" do
+    #    summary = Summary.get_summary(context.section.slug, context.user)
+    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
+
+    #    page_nodes =
+    #      hierarchy
+    #      |> Oli.Delivery.Hierarchy.flatten()
+
+    #      |> Enum.filter(fn node ->
+    #        node.revision.resource_type_id ==
+    #          Oli.Resources.ResourceType.get_id_by_type("page")
+    #      end)
+
+    IO.inspect(hierarchy, limit: :infinity)
+    {:error, "command not supported", 400}
+  end
+
+  defp process_command(
+         command_name,
+         context,
+         %{
+           "activityContextGuid" => attempt_guid,
+           "byteEncoding" => byte_encoding,
+           "fileName" => file_name,
+           "fileRecordData" => content,
+           "resourceTypeID" => activity_type,
+           "mimeType" => mime_type,
+           "userGuid" => user_id
+         } = params
+       )
+       when command_name === "writeFileRecord" do
+
+    {:ok, save_file} = case context.activity_attempt.date_evaluated do
+      nil ->
+        IO.inspect "prong 1"
+        file_info = %{
+          attempt_guid: attempt_guid,
+          user_id: user_id,
+          content: content,
+          mime_type: mime_type,
+          byte_encoding: byte_encoding,
+          activity_type: activity_type,
+          file_name: file_name
+        }
+
+        attempt_number = Map.get(params, "attemptNumber")
+
+        file_info =
+          if attempt_number != nil do
+            Map.merge(file_info, %{attempt_number: attempt_number})
+          else
+            file_info
+          end
+
+        ActivityLifecycle.save_activity_attempt_state_file(file_info)
+      _ ->
+        IO.inspect "prong 2"
+        attempt_number = Map.get(params, "attemptNumber")
+
+        save_file = ActivityLifecycle.get_activity_attempt_save_file(
+          attempt_guid,
+          user_id,
+          attempt_number,
+          file_name
+        )
+        {:ok, save_file}
+    end
+
+    case save_file do
+      nil -> {:error, "file not found", 404}
+      _ -> xml =
+             FileRecord.setup(
+               %{
+                 context: context,
+                 date_created: DateTime.to_unix(save_file.inserted_at),
+                 file_name: save_file.file_name,
+                 guid: save_file.file_guid
+               }
+             )
+             |> XmlBuilder.document()
+             |> XmlBuilder.generate()
+           {:ok, xml}
+    end
+
+  end
+
+  defp process_command(
+         command_name,
+         _context,
+         %{
+           "activityContextGuid" => attempt_guid
+         } = params
+       )
+       when command_name === "loadFileRecord" do
+    file_name = Map.get(params, "fileName")
+    attempt_number = Map.get(params, "attemptNumber")
+    user_id = Map.get(params, "userGuid")
+
+    save_file =
+      ActivityLifecycle.get_activity_attempt_save_file(
+        attempt_guid,
+        user_id,
+        attempt_number,
+        file_name
+      )
+
+    case save_file do
+      nil -> {:error, "file not found", 404}
+      _ -> {:ok, URI.decode(save_file.content)}
+    end
+  end
+
+  defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
+    # :TODO: no op?
+    xml =
+      FileDirectory.setup(
+        %{
+          context: context
+        }
+      )
+      |> XmlBuilder.document()
+      |> XmlBuilder.generate()
+
+    {:ok, xml}
+  end
+
+  defp process_command(_command_name, _context, _params) do
+    {:error, "command not supported", 400}
+  end
+
+
   defp eval_numeric_score(context, score, out_of, part_attempt) do
     {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "some-feedback"})
 
@@ -216,7 +358,9 @@ defmodule OliWeb.LegacySuperactivityController do
       %{
         attempt_guid: part_attempt.attempt_guid,
         client_evaluation: %ClientEvaluation{
-          input: %StudentInput{input: "some-input"},
+          input: %StudentInput{
+            input: "some-input"
+          },
           score: score,
           out_of: out_of,
           feedback: feedback
@@ -231,7 +375,7 @@ defmodule OliWeb.LegacySuperactivityController do
          ) do
       {:ok, _evaluations} ->
         attempt_history(fetch_context(context.host, context.user, context.activity_attempt.attempt_guid))
-#        attempt_history(context)
+      #        attempt_history(context)
       {:error, _} ->
         {:error, "server error", 500}
     end
@@ -291,122 +435,13 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, context, _params) when command_name === "endAttempt" do
-    attempt_history(context)
-  end
-
-  defp process_command(command_name, context, _params) when command_name === "loadUserSyllabus" do
-    #    summary = Summary.get_summary(context.section.slug, context.user)
-    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
-
-    page_nodes =
-      hierarchy
-      |> Oli.Delivery.Hierarchy.flatten()
-
-    #      |> Enum.filter(fn node ->
-    #        node.revision.resource_type_id ==
-    #          Oli.Resources.ResourceType.get_id_by_type("page")
-    #      end)
-
-    IO.inspect(hierarchy, limit: :infinity)
-    {:error, "command not supported", 400}
-  end
-
-  defp process_command(
-         command_name,
-         context,
-         %{
-           "activityContextGuid" => attempt_guid,
-           "byteEncoding" => byte_encoding,
-           "fileName" => file_name,
-           "fileRecordData" => content,
-           "resourceTypeID" => activity_type,
-           "mimeType" => mime_type,
-           "userGuid" => user_id
-         } = params
-       )
-       when command_name === "writeFileRecord" do
-    file_info = %{
-      attempt_guid: attempt_guid,
-      user_id: user_id,
-      content: content,
-      mime_type: mime_type,
-      byte_encoding: byte_encoding,
-      activity_type: activity_type,
-      file_name: file_name
-    }
-
-    attempt_number = Map.get(params, "attemptNumber")
-
-    file_info =
-      if attempt_number != nil do
-        Map.merge(file_info, %{attempt_number: attempt_number})
-      else
-        file_info
-      end
-
-    {:ok, save_file} = ActivityLifecycle.save_activity_attempt_state_file(file_info)
-
-    xml =
-      FileRecord.setup(%{
-        context: context,
-        date_created: DateTime.to_unix(save_file.inserted_at),
-        file_name: save_file.file_name,
-        guid: save_file.file_guid
-      })
-      |> XmlBuilder.document()
-      |> XmlBuilder.generate()
-
-    {:ok, xml}
-  end
-
-  defp process_command(
-         command_name,
-         _context,
-         %{
-           "activityContextGuid" => attempt_guid
-         } = params
-       )
-       when command_name === "loadFileRecord" do
-    file_name = Map.get(params, "fileName")
-    attempt_number = Map.get(params, "attemptNumber")
-    user_id = Map.get(params, "userGuid")
-
-    save_file =
-      ActivityLifecycle.get_activity_attempt_save_file(
-        attempt_guid,
-        user_id,
-        attempt_number,
-        file_name
-      )
-
-    case save_file do
-      nil -> {:error, "file not found", 404}
-      _ -> {:ok, URI.decode(save_file.content)}
-    end
-  end
-
-  defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
-    # :TODO: no op?
-    xml =
-      FileDirectory.setup(%{
-        context: context
-      })
-      |> XmlBuilder.document()
-      |> XmlBuilder.generate()
-
-    {:ok, xml}
-  end
-
-  defp process_command(_command_name, _context, _params) do
-    {:error, "command not supported", 400}
-  end
-
   defp attempt_history(context) do
     xml =
-      AttemptHistory.setup(%{
-        context: context
-      })
+      AttemptHistory.setup(
+        %{
+          context: context
+        }
+      )
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 

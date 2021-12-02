@@ -15,7 +15,6 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
       '\t<assets>\n' +
       '\t\t<asset name="layout">webcontent/custom_activity/layout.html</asset>\n' +
       '\t\t<asset name="controls">webcontent/custom_activity/controls.html</asset>\n' +
-      '\t\t<!-- This is a global asset for activity -->\n' +
       '\t\t<asset name="styles">webcontent/custom_activity/styles.css</asset>\n' +
       '\t\t<asset name="questions">webcontent/custom_activity/questions.xml</asset>\n' +
       '\t</assets>\n' +
@@ -30,13 +29,7 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
         scoringStrategy: ScoringStrategy.average,
         responses: [],
         hints: [],
-      },
-        {
-          id: guid(),
-          scoringStrategy: ScoringStrategy.average,
-          responses: [],
-          hints: [],
-        }],
+      }],
       previewText: '',
     },
   };

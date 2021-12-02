@@ -16,7 +16,7 @@ import guid from "utils/guid";
 import {uploadFiles} from "components/media/manager/upload";
 import {CloseButton} from "components/misc/CloseButton";
 import * as ContentModel from "data/content/model";
-import {MediaItemRequest} from "components/activities/types";
+import {MediaItemRequest, ScoringStrategy} from "components/activities/types";
 import {lastPart} from "components/activities/oli_embedded/utils";
 import {ActivityXmlEditor} from "components/common/ActivityXmlEditor";
 const store = configureStore();
@@ -80,11 +80,26 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     (window as any).$('#' + id).trigger('click');
   }
 
+  const handleScoringChange = (partId: string, key: string) => {
+    // @ts-ignore
+    const scoring: ScoringStrategy = ScoringStrategy[key];
+    dispatch(OliEmbeddedActions.updatePartScoringStrategy(partId, scoring));
+  }
+
+
+  const removePart = (partId: string) => {
+    dispatch(OliEmbeddedActions.removePart(partId));
+  }
+
+  const addNewPart = () => {
+    dispatch(OliEmbeddedActions.addNewPart());
+  }
+
   useEffect(() => {
-     // console.log(JSON.stringify(model));
   }, []);
 
   const id = guid();
+
   return (
     <>
       <ActivityXmlEditor
@@ -128,34 +143,54 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       <div className="card" >
         <div className="card-body">
           <div className="card-title">Parts</div>
-      <div className="d-flex flex-row align-items-baseline">
-        <div className="flex-grow-1">
-          <div className="d-flex justify-content-start m-2">
-            <div className="mr-2 p-2">&nbsp;</div>
-            <div className="mr-2 p-2">Id</div>
-            <div className="mr-2 p-2">Scoring Strategy</div>
-          </div>
-        {model.authoring.parts.map((part, i) => (
-            <div className="d-flex justify-content-start m-2" key={i}>
-              <div className="mr-2 p-2">Part {i+1}</div>
-              <div className="d-flex justify-content-start bg-white p-2">
-              <div className="mr-3">{part.id}</div>
-              <div>
-                <select onChange={handleValueChange} className="custom-select custom-select-sm">
-                  {value?.allowedValues?.map((item: any) => {
-                    return (
-                      <option key={item} value={item} selected={internalValue === item}>
-                        {item}
-                      </option>
-                    );
-                  })}
-                </select>
+
+          <div className="container">
+            <div className="row mb-2 text-center">
+              <div className="col col-sm-2">
+                &nbsp;
               </div>
+              <div className="col col-lg-2">
+                Id
+              </div>
+              <div className="col col-lg-2">
+                Scoring
               </div>
             </div>
-        ))}
-      </div>
+            {model.authoring.parts.map((part, i) => (
+            <div className="row mb-2">
+              <div className="col col-sm-2">
+                Part {i+1}
+              </div>
+              <div className="col col-lg-2">
+                {part.id}
+              </div>
+              <div className="col col-lg-2">
+                <select onChange={(e) =>handleScoringChange(part.id, e.target.value)}
+                        className="custom-select custom-select-sm">
+                  {Object.keys(ScoringStrategy).map((key: string) => (
+                    <option key={key} value={key} selected={part.scoringStrategy === key}>
+                      {
+                        // @ts-ignore
+                        ScoringStrategy[key]
+                      }
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-auto">
+                <button onClick={() => removePart(part.id)} type="button" className="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+            </div>
+            ))}
         </div>
+          <button
+            className="btn btn-primary"
+            onClick={() => addNewPart()}
+          >
+            Add Part
+          </button>
         </div>
       </div>
     </>
