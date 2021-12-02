@@ -33,7 +33,10 @@ defmodule Oli.Delivery.Sections.SectionInvites do
   end
 
   def list_section_invites(section_id) do
-    Repo.get_by(SectionInvite, section_id: section_id)
+    from(s in SectionInvite,
+      where: s.section_id == ^section_id
+    )
+    |> Repo.all()
   end
 
   def is_link_valid?(%SectionInvite{} = section_invite) do

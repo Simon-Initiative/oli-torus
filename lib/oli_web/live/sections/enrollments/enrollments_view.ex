@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions, SectionInvite}
+  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
@@ -12,8 +12,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   use OliWeb.Common.Modal
-  alias OliWeb.Sections.InviteStudentsModal
-  alias Oli.Delivery.Sections.SectionInvites
   import Oli.Utils.Time
 
   @limit 25
@@ -114,15 +112,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
-    <div id="invite-students-popup"></div>
-      {#if !is_nil(@modal)}
-        {render_modal(assigns)}
-      {/if}
 
-      <div class="d-flex justify-content-between">
-        <TextSearch id="text-search"/>
-        <button class="btn btn-primary" :on-click="InviteStudentsModal.show">Invite Students</button>
-      </div>
+      <TextSearch id="text-search"/>
 
       <div class="mb-3"/>
 
@@ -158,25 +149,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
      )}
   end
 
-  def handle_event("InviteStudentsModal.show", _params, socket) do
-    section = socket.assigns.section
-
-    {:ok, section_invite} = SectionInvites.create_default_section_invite(section.id)
-
-    {:noreply,
-     assign(socket,
-       modal: %{
-         component: InviteStudentsModal,
-         assigns: %{
-           section: section,
-           section_invite: section_invite,
-           show_invite_settings: false,
-           date_expires_options: SectionInvites.expire_after_options(now(), section)
-         }
-       }
-     )}
-  end
-
   # TODO: Change this to "suspend" rather than removing the enrollment,
   # and introduce separate view for suspended students. Also remove from non-independent learner mode.
   # (Why do we want to keep enrollments if they're removed from course instead of re-enrolling?)
@@ -192,49 +164,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
       _ ->
         {:noreply, socket}
     end
-  end
-
-  def handle_event("open_link_settings", _, socket) do
-    modal_assigns = socket.assigns.modal.assigns
-
-    {:noreply,
-     assign(socket,
-       modal: %{
-         component: InviteStudentsModal,
-         assigns:
-           modal_assigns
-           |> Map.put(:show_invite_settings, true)
-           |> Map.put(:section_invite, SectionInvite.changeset(modal_assigns.section_invite))
-       }
-     )}
-  end
-
-  def handle_event("update_section_invite", _params, socket) do
-    modal_assigns = socket.assigns.modal.assigns
-    # pull out params and assign to changeset
-
-    {:noreply,
-     assign(socket,
-       modal: %{
-         component: InviteStudentsModal,
-         assigns:
-           modal_assigns
-           |> Map.put(:section_invite, SectionInvite.changeset(modal_assigns.section_invite))
-       }
-     )}
-  end
-
-  def handle_event("generate_section_invite", _, socket) do
-    modal_assigns = socket.assigns.modal.assigns
-    {:ok, section_invite} = SectionInvites.create_section_invite(modal_assigns.section_invite)
-
-    {:noreply,
-     assign(socket,
-       modal: %{
-         component: InviteStudentsModal,
-         assigns: Map.put(socket.assigns.modal.assigns, :section_invite, section_invite)
-       }
-     )}
   end
 
   def handle_event(event, params, socket) do
