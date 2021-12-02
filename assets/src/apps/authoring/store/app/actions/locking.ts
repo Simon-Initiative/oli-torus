@@ -3,16 +3,26 @@ import { acquireLock, releaseLock } from 'data/persistence/lock';
 import { RootState } from '../../rootReducer';
 import { AppSlice, selectProjectSlug, selectRevisionSlug } from '../slice';
 
-/* console.log('why is this undefined????', { AppSlice }); */
-
 export const acquireEditingLock = createAsyncThunk(
   `${AppSlice}/acquireEditingLock`,
-  async (_, { getState }) => {
+  async (_, { getState, rejectWithValue }) => {
     const projectSlug = selectProjectSlug(getState() as RootState);
     const resourceSlug = selectRevisionSlug(getState() as RootState);
-    const lockResult = await acquireLock(projectSlug, resourceSlug);
-    if (lockResult.type !== 'acquired') {
-      throw new Error('acquiring lock failed');
+
+    try {
+      const lockResult = await acquireLock(projectSlug, resourceSlug);
+      if (lockResult.type !== 'acquired') {
+        return rejectWithValue({
+          error: 'ALREADY_LOCKED',
+          msg: 'Error acquiring a lock, most likely due to another user already owning the lock.',
+        });
+      }
+    } catch (e) {
+      return rejectWithValue({
+        error: 'SERVER_ERROR',
+        server: e,
+        msg: 'Server error attempting to acquire lock, this is most likely a session timeout',
+      });
     }
   },
 );
