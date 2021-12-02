@@ -39,10 +39,7 @@ defmodule OliWeb.CommunityLive.NewView do
   def handle_event("save", %{"community" => params}, socket) do
     socket = clear_flash(socket)
 
-    params
-    |> Params.trim()
-    |> Groups.create_community()
-    |> case do
+    case Groups.create_community(Params.trim(params)) do
       {:ok, _community} ->
         {:noreply,
          socket

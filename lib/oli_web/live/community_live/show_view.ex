@@ -231,18 +231,9 @@ defmodule OliWeb.CommunityLive.ShowView do
         {:ok, _community_accounts} ->
           put_flash(socket, :info, "Community #{user_type}(s) successfully added.")
 
-        {:error, error} ->
+        {:error, _error} ->
           message =
-            case error do
-              :author_not_found ->
-                "Community admin couldn't be added. Author does not exist."
-
-              :user_not_found ->
-                "Community member couldn't be added. User does not exist."
-
-              %Ecto.Changeset{} ->
-                "Community user couldn't be added. It is already associated to the community or an unexpected error occurred."
-            end
+            "Some of the community #{user_type}s couldn't be added because the users don't exist in the system or are already associated."
 
           put_flash(socket, :error, message)
       end

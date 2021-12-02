@@ -234,7 +234,7 @@ defmodule Oli.Groups do
       [error | _errors] ->
         {:error, error}
 
-      _errors ->
+      [] ->
         {:ok, created_accounts}
     end
   end

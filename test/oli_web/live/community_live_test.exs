@@ -480,10 +480,12 @@ defmodule OliWeb.CommunityLiveTest do
       |> element("form[phx-submit=\"add_admin\"")
       |> render_submit(%{collaborator: %{email: author.email}})
 
+      error_message =
+        "Some of the community admins couldn&#39;t be added because the users don&#39;t exist in the system or are already associated."
+
       assert view
              |> element("div.alert.alert-danger")
-             |> render() =~
-               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
+             |> render() =~ error_message
 
       view
       |> element("form[phx-submit=\"add_admin\"")
@@ -491,8 +493,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       assert view
              |> element("div.alert.alert-danger")
-             |> render() =~
-               "Community admin couldn&#39;t be added. Author does not exist."
+             |> render() =~ error_message
 
       assert 1 == length(Groups.list_community_admins(community.id))
     end
@@ -629,10 +630,12 @@ defmodule OliWeb.CommunityLiveTest do
       |> element("form[phx-submit=\"add_member\"")
       |> render_submit(%{collaborator: %{email: user.email}})
 
+      error_message =
+        "Some of the community members couldn&#39;t be added because the users don&#39;t exist in the system or are already associated."
+
       assert view
              |> element("div.alert.alert-danger")
-             |> render() =~
-               "Community user couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
+             |> render() =~ error_message
 
       view
       |> element("form[phx-submit=\"add_member\"")
@@ -640,8 +643,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       assert view
              |> element("div.alert.alert-danger")
-             |> render() =~
-               "Community member couldn&#39;t be added. User does not exist."
+             |> render() =~ error_message
 
       assert 1 == length(Groups.list_community_members(community.id))
     end
