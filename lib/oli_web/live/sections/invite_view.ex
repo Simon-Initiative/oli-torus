@@ -4,12 +4,15 @@ defmodule OliWeb.Sections.InviteView do
   alias Oli.Delivery.Sections.SectionInvites
   alias OliWeb.Sections.Invites.Invitation
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Confirm
   alias OliWeb.Sections.Mount
   import Oli.Utils.Time
 
   data breadcrumbs, :any
   data title, :string, default: "Invite Students"
   data section, :any, default: nil
+  data show_confirm, :boolean, default: false
+  data to_delete, :integer, default: nil
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -59,12 +62,31 @@ defmodule OliWeb.Sections.InviteView do
     {#if length(@invitations) > 0}
       <div class="list-group">
       {#for invitation <- @invitations}
-        <Invitation invitation={invitation} delete="delete"/>
+        <Invitation invitation={invitation} delete="request_delete"/>
       {/for}
       </div>
     {/if}
+
+    {#if @show_confirm}
+      <Confirm title="Confirm Deletion" id="dialog" ok="delete" cancel="cancel_modal">
+        Are you sure that you wish to delete this course section invitation?
+      </Confirm>
+    {/if}
     </div>
     """
+  end
+
+  def handle_event("request_delete", %{"id" => id}, socket) do
+    {int_id, _} = Integer.parse(id)
+    {:noreply, assign(socket, show_confirm: true, to_delete: int_id)}
+  end
+
+  def handle_event("cancel_modal", _, socket) do
+    {:noreply, assign(socket, show_confirm: false)}
+  end
+
+  def handle_event("_bsmodal.unmount", _, socket) do
+    {:noreply, assign(socket, show_confirm: false)}
   end
 
   def handle_event("new", %{"option" => option}, socket) do
@@ -83,11 +105,9 @@ defmodule OliWeb.Sections.InviteView do
      )}
   end
 
-  def handle_event("delete", %{"id" => id}, socket) do
-    {int_id, _} = Integer.parse(id)
-
+  def handle_event("delete", _, socket) do
     socket =
-      case Enum.find(socket.assigns.invitations, fn i -> i.id == int_id end) do
+      case Enum.find(socket.assigns.invitations, fn i -> i.id == socket.assigns.to_delete end) do
         nil ->
           socket
 
