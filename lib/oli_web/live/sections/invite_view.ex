@@ -53,8 +53,8 @@ defmodule OliWeb.Sections.InviteView do
         <div class="btn-group" role="group">
           <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_day">One day</button>
           <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="one_week">One week</button>
-          <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_start">Section start</button>
-          <button type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_end">Section end</button>
+          <button disabled={is_nil(@section.start_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_start">Section start</button>
+          <button disabled={is_nil(@section.end_date)} type="button" class="btn btn-secondary" :on-click="new" phx-value-option="section_end">Section end</button>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ defmodule OliWeb.Sections.InviteView do
              section_id: socket.assigns.section.id,
              date_expires: SectionInvites.expire_after(now(), String.to_existing_atom(option))
            }) do
-        {:ok, _} -> put_flash(socket, :info, "Invitation deleted")
+        {:ok, _} -> put_flash(socket, :info, "Invitation created")
         _ -> put_flash(socket, :error, "Could not create invitation")
       end
 
