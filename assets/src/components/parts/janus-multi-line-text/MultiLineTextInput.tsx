@@ -145,6 +145,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     prompt,
     showLabel,
     showCharacterCount,
+    fontSize,
   } = model;
 
   useEffect(() => {
@@ -230,6 +231,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     width,
     height,
     resize: 'none',
+    fontSize: fontSize,
   };
 
   useEffect(() => {
@@ -298,7 +300,6 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
           color: 'rgba(0,0,0,0.6)',
           display: showCharacterCount ? 'block' : 'none',
           width: '250px',
-          fontSize: '12px',
           fontFamily: 'Arial',
           textAlign: 'right',
         }}
