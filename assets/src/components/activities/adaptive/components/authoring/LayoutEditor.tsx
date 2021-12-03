@@ -532,7 +532,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               <PartComponent
                 {...partProps}
                 className={selectedPartId === part.id ? 'selected' : ''}
-                onClick={(event) => handlePartClick(event, {id: part.id })}
+                onClick={(event) => handlePartClick(event, { id: part.id })}
                 onConfigure={({ configure, context }) =>
                   handlePartConfigure(part.id, configure, context)
                 }
