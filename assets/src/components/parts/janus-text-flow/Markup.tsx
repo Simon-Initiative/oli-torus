@@ -258,6 +258,9 @@ const Markup: React.FC<any> = ({
         </sup>
       );
     case 'small':
+      if (!renderStyles.display) {
+        renderStyles.display = 'inline';
+      }
       return (
         <small ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
