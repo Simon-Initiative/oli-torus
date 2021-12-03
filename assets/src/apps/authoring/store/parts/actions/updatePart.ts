@@ -1,5 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { selectActivityById } from 'apps/delivery/store/features/activities/slice';
+import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import merge from 'lodash/merge';
 import { clone } from 'utils/common';
 import { saveActivity } from '../../activities/actions/saveActivity';
@@ -19,6 +21,27 @@ export const updatePart = createAsyncThunk(
     );
     if (!partDef) {
       throw new Error(`Part: ${payload.partId} not found in Activity: ${payload.activityId}`);
+    }
+
+    if (payload.changes.id) {
+      // need to also update the authoring parts list
+      const authorPart = activityClone.authoring.parts.find(
+        (part: any) => part.id === payload.partId && !part.inherited,
+      );
+      if (!authorPart) {
+        const sequence = selectSequence(rootState);
+        const sequenceEntry = findInSequenceByResourceId(sequence, activityClone.id);
+        const activitySequenceId = sequenceEntry?.custom.sequenceId;
+        // this shouldn't happen, but maybe it was missing?? add it
+        activityClone.authoring.parts.push({
+          id: payload.changes.id,
+          inherited: false,
+          type: partDef.type,
+          owner: activitySequenceId,
+        });
+      } else {
+        authorPart.id = payload.changes.id;
+      }
     }
 
     // merge so that a partial of {custom: {x: 1, y: 1}} will not overwrite the entire custom object

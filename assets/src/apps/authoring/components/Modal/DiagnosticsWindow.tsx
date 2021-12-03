@@ -1,12 +1,40 @@
-import { setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
+import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
-const ActivityPartError: React.FC<{ error: any }> = ({ error }) => {
+const FixIdButton: React.FC<{ suggestion: string; onClick: (val: string) => void }> = ({
+  suggestion,
+  onClick,
+}) => {
+  const txtRef = React.useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (txtRef.current) {
+      const newVal = txtRef.current.value;
+      onClick(newVal);
+    }
+  };
+
+  return (
+    <>
+      <input ref={txtRef} type="text" defaultValue={suggestion} />
+      <button className="btn btn-sm btn-primary" onClick={handleClick}>
+        Apply
+      </button>
+    </>
+  );
+};
+
+const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
+  error,
+  onApplyFix,
+}) => {
   const dispatch = useDispatch();
+  const isReadOnlyMode = useSelector(selectReadOnly);
 
   const handleClickScreen = (sequenceId: string) => {
     dispatch(setCurrentActivityFromSequence(sequenceId));
@@ -30,6 +58,35 @@ const ActivityPartError: React.FC<{ error: any }> = ({ error }) => {
   if (error.problems.length) {
     errorTotals += `${error.problems.length} components with problematic IDs found.\n`;
   }
+
+  const handleProblemFix = async (problem: any, fixed: string) => {
+    console.log('fixing', problem, fixed);
+    const activityId = problem.owner.resourceId;
+    const partId = problem.id;
+    const changes = { id: fixed };
+
+    const result = await dispatch(updatePart({ activityId, partId, changes }));
+
+    console.log('handleProblemFix', result);
+
+    // TODO: something if it fails
+    onApplyFix();
+  };
+
+  // generate a suggestion for the id based on the input id that is only alpha numeric or underscores
+  const generateSuggestion = (id: string, dedup = false) => {
+    const newId = id.replace(/[^a-zA-Z0-9_]/g, '');
+    if (dedup) {
+      // if the last character of the id is already a number, increment it, otherwise add 1
+      const lastChar = newId.slice(-1);
+      if (lastChar.match(/[0-9]/)) {
+        const newLastChar = parseInt(lastChar, 10) + 1;
+        return `${newId.slice(0, -1)}${newLastChar}`;
+      }
+      return `${newId}1`;
+    }
+    return newId;
+  };
 
   return (
     <ListGroup>
@@ -57,6 +114,14 @@ const ActivityPartError: React.FC<{ error: any }> = ({ error }) => {
             >
               {getOwnerName(duplicate)}
             </ListGroup.Item>
+            {!isReadOnlyMode && (
+              <ListGroup.Item>
+                <FixIdButton
+                  suggestion={generateSuggestion(duplicate.id, true)}
+                  onClick={(val) => handleProblemFix(duplicate, val)}
+                />
+              </ListGroup.Item>
+            )}
           </ListGroup>
         </ListGroup.Item>
       ))}
@@ -67,6 +132,14 @@ const ActivityPartError: React.FC<{ error: any }> = ({ error }) => {
               A {problem.type} component with the ID &quot;<strong>{problem.id}</strong>&quot;, has
               problematic characters. It is best to use alphanumeric characters only.
             </ListGroup.Item>
+            {!isReadOnlyMode && (
+              <ListGroup.Item>
+                <FixIdButton
+                  suggestion={generateSuggestion(problem.id)}
+                  onClick={(val) => handleProblemFix(problem, val)}
+                />
+              </ListGroup.Item>
+            )}
           </ListGroup>
         </ListGroup.Item>
       ))}
@@ -94,7 +167,13 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     if ((result as any).meta.requestStatus === 'fulfilled') {
       if ((result as any).payload.errors.length > 0) {
         const errorList = (result as any).payload.errors.map((item: any) => {
-          return <ActivityPartError key={item.activity.resourceId} error={item} />;
+          return (
+            <ActivityPartError
+              key={item.activity.resourceId}
+              error={item}
+              onApplyFix={() => setResults(null)}
+            />
+          );
         });
         setResults(errorList);
       } else {

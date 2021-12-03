@@ -11,6 +11,8 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
     const allActivities = selectAllActivities(rootState as any);
     const sequence = selectSequence(rootState as any);
 
+    console.log('validatePartIds', allActivities);
+
     const errors: any[] = [];
 
     allActivities.forEach((activity) => {
@@ -42,6 +44,8 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
         });
       }
     });
+
+    console.log('WTF', errors);
 
     return fulfillWithValue({ errors });
   },
