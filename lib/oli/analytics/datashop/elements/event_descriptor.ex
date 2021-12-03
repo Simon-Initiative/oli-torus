@@ -155,8 +155,10 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   defp selected_choices(all_choices, selected_ids),
     do: Enum.filter(all_choices, &Enum.member?(selected_ids, &1["id"]))
 
-  defp get_content(content_item), do: maybe_get_model(hd(content_item["content"]))
+  defp get_content(content_item), do: maybe_get_model(content_item["content"])
+
   defp maybe_get_model(%{"model" => model}), do: model
+  defp maybe_get_model(contents) when is_list(contents), do: maybe_get_model(hd(contents))
   defp maybe_get_model(content), do: content
 
   defp select_feedback(%PartAttempt{} = part_attempt) do
