@@ -231,7 +231,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     width,
     height,
     resize: 'none',
-    fontSize: fontSize,
+    fontSize,
   };
 
   useEffect(() => {
