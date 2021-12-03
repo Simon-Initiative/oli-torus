@@ -83,7 +83,7 @@ export const adaptivitySchema = {
   duration: CapiVariableTypes.STRING,
   endTime: CapiVariableTypes.STRING,
   exposureInSeconds: CapiVariableTypes.NUMBER,
-  exposureInPercentage: CapiVariableTypes.NUMBER,
+  exposurePercentage: CapiVariableTypes.NUMBER,
   hasCompleted: CapiVariableTypes.BOOLEAN,
   startTime: CapiVariableTypes.STRING,
   state: CapiVariableTypes.STRING,
