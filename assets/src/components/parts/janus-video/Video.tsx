@@ -262,8 +262,8 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     src,
     triggerCheck,
     autoPlay = false,
-    startTime,
-    endTime,
+    startTime = 0,
+    endTime = 0,
     enableReplay = true,
     subtitles,
   } = model;
@@ -294,7 +294,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     playerVars: {
       autoplay: autoPlay ? 1 : 0,
       loop: autoPlay ? 1 : 0,
-      controls: enableReplay ? 1 : 0,
+      controls: !_videoIsCompleted || enableReplay ? 1 : 0,
     },
   };
   if (youtubeRegex.test(finalSrc)) {
@@ -315,18 +315,13 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       }
     }
   } else {
-    if (startTime && startTime >= 0) {
-      finalSrc = `${finalSrc}#t=${startTime}`;
-      if (endTime && endTime >= 0) {
-        finalSrc = `${finalSrc},${endTime}`;
-      }
-    }
+    finalSrc = `${finalSrc}#t=${startTime}${endTime > 0 ? `,${endTime}` : ''}`;
   }
 
   const handleVideoEnd = (data: any) => {
-    setVideoIsPlayerStarted(true);
+    setVideoIsCompleted(true);
     saveState({
-      isVideoPlayerStarted: true,
+      isVideoPlayerStarted: videoIsPlayerStarted,
       currentTime: isYoutubeSrc ? data.target.getCurrentTime() : data.target.currentTime,
       duration: isYoutubeSrc ? data.target.getDuration() : data.target.duration,
       isVideoCompleted: true,
@@ -337,27 +332,23 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     }
   };
 
-  let isVideoStarted = false;
   const handleVideoPlay = (data: any) => {
-    if (isVideoStarted) return;
-    isVideoStarted = true;
     setVideoIsPlayerStarted(true);
     saveState({
       isVideoPlayerStarted: true,
       currentTime: isYoutubeSrc ? data.target.getCurrentTime() : data.target.currentTime,
       duration: isYoutubeSrc ? data.target.getDuration() : data.target.duration,
-      isVideoCompleted: false,
+      isVideoCompleted: _videoIsCompleted,
       videoState: 'playing',
     });
   };
 
   const handleVideoPause = (data: any) => {
-    setVideoIsPlayerStarted(true);
     saveState({
-      isVideoPlayerStarted: true,
+      isVideoPlayerStarted: videoIsPlayerStarted,
       currentTime: isYoutubeSrc ? data.target.getCurrentTime() : data.target.currentTime,
       duration: isYoutubeSrc ? data.target.getDuration() : data.target.duration,
-      isVideoCompleted: false,
+      isVideoCompleted: _videoIsCompleted,
       videoState: 'paused',
     });
   };
@@ -455,7 +446,9 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     />
   );
 
-  const srcAsWebm = src?.substr(0, src?.lastIndexOf('.')) + '.webm';
+  const srcAsWebm =
+    finalSrc?.substring(0, finalSrc?.lastIndexOf('.')) +
+    `.webm#t=${startTime}${endTime > 0 ? `,${endTime}` : ''}`;
 
   const videoTag = (
     <video
@@ -463,13 +456,12 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
       height="100%"
       /* className={cssClass} */
       autoPlay={autoPlay}
-      loop={autoPlay}
-      controls={enableReplay}
+      controls={!_videoIsCompleted || enableReplay}
       onEnded={handleVideoEnd}
       onPlay={handleVideoPlay}
       onPause={handleVideoPause}
     >
-      <source src={src} />
+      <source src={finalSrc} />
       <source src={srcAsWebm} />
       {subtitles &&
         subtitles.length > 0 &&
