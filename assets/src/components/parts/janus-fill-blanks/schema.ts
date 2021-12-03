@@ -109,6 +109,8 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   adaptivitySchema.customCss = CapiVariableTypes.STRING;
   adaptivitySchema.customCssClass = CapiVariableTypes.STRING;
   adaptivitySchema.enabled = CapiVariableTypes.BOOLEAN;
+  adaptivitySchema.showCorrect = CapiVariableTypes.BOOLEAN;
+  adaptivitySchema.showHints = CapiVariableTypes.BOOLEAN;
 
   if (elementData.length > 0) {
     elementData.forEach((element: Record<string, unknown>, index: number) => {

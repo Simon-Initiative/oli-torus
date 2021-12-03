@@ -82,6 +82,9 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const [showCorrect, setShowCorrect] = useState<boolean>(
     model?.showCorrect ? parseBool(model.showCorrect) : false,
   );
+  const [showHints, setShowHints] = useState<boolean>(
+    model?.showHints ? parseBool(model.showHints) : false,
+  );
   const [customCss, setCustomCss] = useState<string>(model?.customCss ? model.customCss : '');
   const [customCssClass, setCustomCssClass] = useState<string>(
     model?.customCss ? model.customCss : '',
@@ -123,6 +126,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: isCorrect(val, el.correct, el.alternateCorrect),
         },
+        { key: `showCorrect`, type: CapiVariableTypes.BOOLEAN, value: pModel.showCorrect },
+        { key: `showHints`, type: CapiVariableTypes.BOOLEAN, value: pModel.showHints },
       ];
     });
     const elementPartResponses = [].concat(...partResponses);
@@ -146,6 +151,19 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const sShowCorrect = currentStateSnapshot[`stage.${id}.showCorrect`];
     if (sShowCorrect) {
       setShowCorrect(parseBool(sShowCorrect));
+      pModel.elements.forEach((el: Record<string, any>) => {
+        setTimeout(() => {
+          setNewElement({
+            key: el.key,
+            value: el.correct,
+          });
+        });
+      });
+    }
+
+    const sShowHints = currentStateSnapshot[`stage.${id}.showHints`];
+    if (sShowHints) {
+      setShowHints(parseBool(sShowHints));
     }
 
     const sCustomCss = currentStateSnapshot[`stage.${id}.customCss`];
@@ -156,6 +174,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const sCustomCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
     if (sEnabled) {
       setCustomCssClass(sCustomCssClass);
+    }
+
+    const sAttempted = currentStateSnapshot[`stage.${id}.attempted`];
+    if (sAttempted) {
+      setAttempted(parseBool(sAttempted));
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
@@ -204,21 +227,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   }, [elementValues]);
 
   useEffect(() => {
-    if (parseBool(attempted)) {
-      props.onSave({
-        activityId: `${id}`,
-        partResponses: [
-          {
-            key: 'attempted',
-            type: CapiVariableTypes.BOOLEAN,
-            value: attempted,
-          },
-        ],
-      });
-    }
-  }, [attempted]);
-
-  useEffect(() => {
     // update `elementValues` when `newElement` is updated
     if (newElement) {
       setElementValues([newElement, ...elementValues.filter((obj) => newElement.key !== obj?.key)]);
@@ -256,6 +264,18 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             const sShowCorrect = changes[`stage.${id}.showCorrect`];
             if (sShowCorrect) {
               setShowCorrect(parseBool(sShowCorrect));
+              model.elements.forEach((el: Record<string, any>) => {
+                setTimeout(() => {
+                  setNewElement({
+                    key: el.key,
+                    value: el.correct,
+                  });
+                });
+              });
+            }
+            const showHints = changes[`stage.${id}.showHints`];
+            if (showHints) {
+              setShowHints(parseBool(showHints));
             }
             const sCustomCss = changes[`stage.${id}.customCss`];
             if (sCustomCss) {
@@ -264,6 +284,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             const sCustomCssClass = changes[`stage.${id}.customCssClass`];
             if (sCustomCssClass) {
               setCustomCssClass(sCustomCssClass);
+            }
+            const sAttempted = changes[`stage.${id}.attempted`];
+            if (sAttempted) {
+              setAttempted(parseBool(sAttempted));
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -276,6 +300,18 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               const sShowCorrect = changes[`stage.${id}.showCorrect`];
               if (sShowCorrect) {
                 setShowCorrect(parseBool(sShowCorrect));
+                model.elements.forEach((el: Record<string, any>) => {
+                  setTimeout(() => {
+                    setNewElement({
+                      key: el.key,
+                      value: el.correct,
+                    });
+                  });
+                });
+              }
+              const showHints = changes[`stage.${id}.showHints`];
+              if (showHints) {
+                setShowHints(parseBool(showHints));
               }
               const sCustomCss = changes[`stage.${id}.customCss`];
               if (sCustomCss) {
@@ -284,6 +320,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               const sCustomCssClass = changes[`stage.${id}.customCssClass`];
               if (sCustomCssClass) {
                 setCustomCssClass(sCustomCssClass);
+              }
+              const sAttempted = changes[`stage.${id}.attempted`];
+              if (sAttempted) {
+                setAttempted(parseBool(sAttempted));
               }
             }
             break;
@@ -297,12 +337,13 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify]);
+  }, [props.notify, model]);
 
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
-
-    setAttempted(true);
+    if (prevElementValues && prevElementValues.length > 0) {
+      setAttempted(true);
+    }
     setNewElement({
       key: e?.name,
       value: e?.value,
@@ -390,6 +431,16 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             type: CapiVariableTypes.BOOLEAN,
             value: allCorrect,
           },
+          {
+            key: 'attempted',
+            type: CapiVariableTypes.BOOLEAN,
+            value: attempted,
+          },
+          {
+            key: 'showHints',
+            type: CapiVariableTypes.BOOLEAN,
+            value: showHints,
+          },
         ],
       });
     } catch (err) {
@@ -446,7 +497,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
           );
           const answerStatus: string =
-            showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
+            (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+            (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
               ? 'correct'
               : 'incorrect';
 
@@ -454,7 +506,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             <span className="dropdown-blot" tabIndex={-1}>
               <span className="dropdown-container" tabIndex={-1}>
                 <Select2
-                  className={`dropdown ${showCorrect ? answerStatus : ''}`}
+                  className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
                   name={insertEl.key}
                   data={optionsList}
                   value={elVal}
@@ -479,14 +531,15 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         if (insertEl) {
           const elVal: string = getElementValueByKey(insertEl.key);
           const answerStatus: string =
-            showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
+            (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+            (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
               ? 'correct'
               : 'incorrect';
 
           insertList.push(
             <span className="text-input-blot">
               <span
-                className={`text-input-container ${showCorrect ? answerStatus : ''}`}
+                className={`text-input-container ${showCorrect || showHints ? answerStatus : ''}`}
                 tabIndex={-1}
               >
                 <input
