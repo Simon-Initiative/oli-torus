@@ -203,7 +203,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, showLabel, label, prompt } = model;
+  const { x, y, z, width, height, showLabel, label, prompt, fontSize } = model;
   const styles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -258,7 +258,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
         onChange={handleOnChange}
         disabled={!enabled}
         value={text}
-        style={{ width: '100%' }}
+        style={{ width: '100%', fontSize }}
       />
     </div>
   ) : null;
