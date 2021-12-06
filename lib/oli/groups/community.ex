@@ -22,6 +22,9 @@ defmodule Oli.Groups.Community do
       join_through: Oli.Groups.CommunityVisibility,
       where: [type: {:fragment, "? = 'blueprint'"}]
 
+    many_to_many :institutions, Oli.Institutions.Institution,
+      join_through: Oli.Groups.CommunityInstitution
+
     timestamps(type: :utc_datetime)
   end
 

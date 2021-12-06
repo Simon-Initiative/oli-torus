@@ -7,7 +7,9 @@ defmodule Oli.Groups do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
-  alias Oli.Groups.{Community, CommunityAccount, CommunityVisibility}
+  alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
+  alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Repo
 
   # ------------------------------------------------------------
@@ -307,6 +309,30 @@ defmodule Oli.Groups do
     )
   end
 
+  @doc """
+  Get all the members for a specific community.
+
+  ## Examples
+
+      iex> list_community_members(1)
+      {:ok, [%User{}, ...]}
+
+      iex> list_community_members(123)
+      {:ok, []}
+  """
+  def list_community_members(community_id, limit \\ nil) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: member in assoc(community_account, :user),
+        where: community_account.community_id == ^community_id and not community_account.is_admin,
+        select: member,
+        order_by: [desc: :inserted_at],
+        limit: ^limit
+      )
+    )
+  end
+
   # ------------------------------------------------------------
   # Communities visibilities
 
@@ -387,28 +413,104 @@ defmodule Oli.Groups do
     |> Repo.all()
   end
 
+  # ------------------------------------------------------------
+  # Communities institutions
+
   @doc """
-  Get all the members for a specific community.
+  Get all the institutions for a specific community.
 
   ## Examples
 
-      iex> list_community_members(1)
-      {:ok, [%User{}, ...]}
+      iex> list_community_institutions(1)
+      {:ok, [%Institution{}, ...]}
 
-      iex> list_community_members(123)
+      iex> list_community_institutions(123)
       {:ok, []}
   """
-  def list_community_members(community_id, limit \\ nil) do
+  def list_community_institutions(community_id) do
     Repo.all(
       from(
-        community_account in CommunityAccount,
-        join: member in assoc(community_account, :user),
-        where: community_account.community_id == ^community_id and not community_account.is_admin,
-        select: member,
-        order_by: [desc: :inserted_at],
-        limit: ^limit
+        community_institution in CommunityInstitution,
+        join: institution in assoc(community_institution, :institution),
+        where: community_institution.community_id == ^community_id,
+        select: institution
       )
     )
+  end
+
+  @doc """
+  Creates a community institution.
+
+  ## Examples
+
+      iex> create_community_institution(%{community_id: 1, institution_id: 2})
+      {:ok, %CommunityInstitution{}}
+
+      iex> create_community_institution(%{community_id: 1, institution_id: bad_institution})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_community_institution(attrs) do
+    %CommunityInstitution{}
+    |> CommunityInstitution.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a community institution from an institution name (gets the institution first).
+
+  ## Examples
+
+      iex> create_community_institution_from_institution_name("My institution", %{community_id: 1})
+      {:ok, %CommunityInstitution{}}
+
+      iex> create_community_institution_from_institution_name("Bad institution", %{community_id: 1})
+      {:error, :institution_not_found}
+
+  """
+
+  def create_community_institution_from_institution_name(institution_name, attrs \\ %{}) do
+    case Institutions.get_institution_by!(%{name: institution_name}) do
+      %Institution{id: id} ->
+        attrs |> Map.put(:institution_id, id) |> create_community_institution()
+
+      nil ->
+        {:error, :institution_not_found}
+    end
+  end
+
+  @doc """
+  Gets a community institution by clauses. Will raise an error if
+  more than one matches the criteria.
+
+  ## Examples
+
+      iex> get_community_institution_by!(%{community_id: 1, institution_id: 3})
+      %CommunityInstitution{}
+      iex> get_community_institution_by!(%{community_id: 123})
+      nil
+      iex> get_community_institution_by!(%{community_id: 2})
+      Ecto.MultipleResultsError
+  """
+  def get_community_institution_by!(clauses), do: Repo.get_by(CommunityInstitution, clauses)
+
+  @doc """
+  Deletes a community institution.
+
+  ## Examples
+
+      iex> delete_community_institution(%{community_id: 1, institution_id: 1})
+      {:ok, %CommunityInstitution{}}
+
+      iex> delete_community_institution(%{community_id: 1, institution_id: bad})
+      {:error, :not_found}
+
+  """
+  def delete_community_institution(clauses) do
+    case get_community_institution_by!(clauses) do
+      nil -> {:error, :not_found}
+      community_institution -> Repo.delete(community_institution)
+    end
   end
 
   defp filter_conditions(filter) do

@@ -14,6 +14,8 @@ defmodule Oli.Institutions.Institution do
     has_many :sections, Oli.Delivery.Sections.Section
     has_many :brands, Oli.Branding.Brand
 
+    many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityInstitution
+
     timestamps(type: :utc_datetime)
   end
 
