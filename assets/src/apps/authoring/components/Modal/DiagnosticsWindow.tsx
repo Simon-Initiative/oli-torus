@@ -60,32 +60,17 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   }
 
   const handleProblemFix = async (problem: any, fixed: string) => {
-    console.log('fixing', problem, fixed);
+    /* console.log('fixing', problem, fixed); */
     const activityId = problem.owner.resourceId;
     const partId = problem.id;
     const changes = { id: fixed };
 
     const result = await dispatch(updatePart({ activityId, partId, changes }));
 
-    console.log('handleProblemFix', result);
+    /* console.log('handleProblemFix', result); */
 
     // TODO: something if it fails
     onApplyFix();
-  };
-
-  // generate a suggestion for the id based on the input id that is only alpha numeric or underscores
-  const generateSuggestion = (id: string, dedup = false) => {
-    const newId = id.replace(/[^a-zA-Z0-9_]/g, '');
-    if (dedup) {
-      // if the last character of the id is already a number, increment it, otherwise add 1
-      const lastChar = newId.slice(-1);
-      if (lastChar.match(/[0-9]/)) {
-        const newLastChar = parseInt(lastChar, 10) + 1;
-        return `${newId.slice(0, -1)}${newLastChar}`;
-      }
-      return `${newId}1`;
-    }
-    return newId;
   };
 
   return (
@@ -117,7 +102,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
             {!isReadOnlyMode && (
               <ListGroup.Item>
                 <FixIdButton
-                  suggestion={generateSuggestion(duplicate.id, true)}
+                  suggestion={duplicate.suggestedFix}
                   onClick={(val) => handleProblemFix(duplicate, val)}
                 />
               </ListGroup.Item>
@@ -135,7 +120,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
             {!isReadOnlyMode && (
               <ListGroup.Item>
                 <FixIdButton
-                  suggestion={generateSuggestion(problem.id)}
+                  suggestion={problem.suggestedFix}
                   onClick={(val) => handleProblemFix(problem, val)}
                 />
               </ListGroup.Item>
