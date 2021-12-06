@@ -852,7 +852,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
     writeCapiLog('INIT STATE APPLIED', 3, { initState });
     const arrInitStateVars = Object.keys(initState);
-    //hack for KIP SIMs
+    //hack for KIP SIMs. 'CurrentEclipse' variables needs to be sent at last so moving it to last position in array.
     if (arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse') !== -1) {
       arrInitStateVars.push(
         arrInitStateVars.splice(
