@@ -82,7 +82,10 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
             >
               <span>
                 <button className="px-2 btn btn-link" onClick={handleDiagnosticsClick}>
-                  <i className="fa fa-wrench" style={{ fontSize: 40, color: 'blue' }} />
+                  <i
+                    className="fa fa-wrench"
+                    style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                  />
                 </button>
               </span>
             </OverlayTrigger>
