@@ -63,14 +63,15 @@ export const getExpressionStringForValue = (
     if (isCSSString?.length) {
       actuallyAString = true;
     }
-    try {
-      const testEnv = new Environment(env);
-      evalScript(`let foo = ${val};`, testEnv);
-    } catch (e) {
-      // if we have parsing error then we're guessing it's CSS
-      actuallyAString = true;
+    if (!actuallyAString) {
+      try {
+        const testEnv = new Environment(env);
+        evalScript(`let foo = ${val};`, testEnv);
+      } catch (e) {
+        // if we have parsing error then we're guessing it's CSS
+        actuallyAString = true;
+      }
     }
-
     if (!actuallyAString) {
       return `${val}`;
     }
