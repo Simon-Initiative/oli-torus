@@ -6,10 +6,8 @@ defmodule OliWeb.Sections.Invites.Invitation do
   prop delete, :event, required: true
 
   def render(assigns) do
-    case duration(assigns.invitation.date_expires, DateTime.utc_now()) <= 0 do
-      true -> do_render(assigns, false)
-      _ -> do_render(assigns, true)
-    end
+    assigns
+    |> do_render(Timex.diff(assigns.invitation.date_expires, DateTime.utc_now()) > 0)
   end
 
   def do_render(assigns, active) do

@@ -95,7 +95,7 @@ defmodule Oli.Utils.Slug do
   end
 
   def generate_seedless(table) do
-    unique_slug(table, fn -> str(5) end)
+    unique_slug(table, fn -> random_string(5) end)
   end
 
   @doc """
@@ -119,11 +119,14 @@ defmodule Oli.Utils.Slug do
   end
 
   def str(length) do
-    "_" <>
-      (Enum.reduce(1..length, [], fn _i, acc ->
-         [Enum.random(@chars) | acc]
-       end)
-       |> Enum.join(""))
+    "_" <> random_string(length)
+  end
+
+  def random_string(length) do
+    Enum.reduce(1..length, [], fn _i, acc ->
+      [Enum.random(@chars) | acc]
+    end)
+    |> Enum.join("")
   end
 
   def slugify(nil), do: ""
@@ -141,17 +144,6 @@ defmodule Oli.Utils.Slug do
     _unique_slug_helper(table, generate_candidate, 0)
   end
 
-  defp _unique_slug_helper(table, generate_candidate, count) do
-    if count > 100 do
-      ""
-    else
-      case check_unique_slug(table, generate_candidate.()) do
-        {:ok, slug} -> slug
-        :error -> _unique_slug_helper(table, generate_candidate, count + 1)
-      end
-    end
-  end
-
   defp unique_slug(_table, "", _suffixes), do: ""
 
   defp unique_slug(table, title, [suffix | remaining]) do
@@ -165,6 +157,17 @@ defmodule Oli.Utils.Slug do
 
   defp unique_slug(_table, _, []) do
     ""
+  end
+
+  defp _unique_slug_helper(table, generate_candidate, count) do
+    if count > 100 do
+      ""
+    else
+      case check_unique_slug(table, generate_candidate.()) do
+        {:ok, slug} -> slug
+        :error -> _unique_slug_helper(table, generate_candidate, count + 1)
+      end
+    end
   end
 
   defp check_unique_slug(table, candidate) do

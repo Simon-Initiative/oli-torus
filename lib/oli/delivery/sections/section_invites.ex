@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Sections.SectionInvites do
   def create_default_section_invite(section_id) do
     create_section_invite(%{
       section_id: section_id,
-      date_expires: expire_after(now(), :one_week)
+      date_expires: expire_after(Sections.get_section!(section_id), now(), :one_week)
     })
   end
 
@@ -49,28 +49,28 @@ defmodule Oli.Delivery.Sections.SectionInvites do
     |> is_link_valid?()
   end
 
-  def expire_after(date, :one_day) do
+  def expire_after(_section, date, :one_day) do
     NaiveDateTime.add(date, one_day())
   end
 
-  def expire_after(date, :one_week) do
+  def expire_after(_section, date, :one_week) do
     NaiveDateTime.add(date, one_week())
   end
 
-  def expire_after(%Section{} = section, :section_start) do
+  def expire_after(%Section{} = section, _date, :section_start) do
     section.start_date
   end
 
-  def expire_after(%Section{} = section, :section_end) do
+  def expire_after(%Section{} = section, _date, :section_end) do
     section.end_date
   end
 
   def expire_after_options(date, section) do
     [
-      {:one_day, expire_after(date, :one_day)},
-      {:one_week, expire_after(date, :one_week)},
-      {:section_start, expire_after(section, :section_start)},
-      {:section_end, expire_after(section, :section_end)}
+      {:one_day, expire_after(section, date, :one_day)},
+      {:one_week, expire_after(section, date, :one_week)},
+      {:section_start, expire_after(section, date, :section_start)},
+      {:section_end, expire_after(section, date, :section_end)}
     ]
   end
 end

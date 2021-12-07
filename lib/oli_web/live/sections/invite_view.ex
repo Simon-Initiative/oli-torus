@@ -93,10 +93,22 @@ defmodule OliWeb.Sections.InviteView do
     socket =
       case SectionInvites.create_section_invite(%{
              section_id: socket.assigns.section.id,
-             date_expires: SectionInvites.expire_after(now(), String.to_existing_atom(option))
+             date_expires:
+               SectionInvites.expire_after(
+                 socket.assigns.section,
+                 now(),
+                 String.to_existing_atom(option)
+               )
            }) do
-        {:ok, _} -> put_flash(socket, :info, "Invitation created")
-        _ -> put_flash(socket, :error, "Could not create invitation")
+        {:ok, invite} ->
+          put_flash(
+            socket,
+            :info,
+            "Invitation created: #{Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, invite.slug)}"
+          )
+
+        _ ->
+          put_flash(socket, :error, "Could not create invitation")
       end
 
     {:noreply,
