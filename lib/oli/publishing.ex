@@ -14,6 +14,7 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Clone
   alias Oli.Publishing
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Authoring.Authors.AuthorProject
 
   def get_publication_id_for_resource(section_slug, resource_id) do
     spp =
@@ -115,53 +116,56 @@ defmodule Oli.Publishing do
       [%Publication{}, ...]
   """
   def available_publications() do
-    subquery =
-      from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.published)},
-        where: not is_nil(t.published),
-        group_by: t.project_id
-
-    query =
-      from pub in Publication,
-        join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.published,
-        join: proj in Project,
-        on: pub.project_id == proj.id,
-        where:
-          not is_nil(pub.published) and proj.visibility == :global and proj.status == :active,
-        preload: [:project],
-        distinct: true,
-        select: pub
-
-    Repo.all(query)
+    available_publications(nil, nil)
   end
 
-  def available_publications(nil, %Institution{} = _institution), do: available_publications()
-
-  def available_publications(%Author{} = author, %Institution{} = institution) do
+  def available_publications(author, institution) do
     subquery =
       from t in Publication,
-        select: %{project_id: t.project_id, max_date: max(t.published)},
+        select: max(t.id),
         where: not is_nil(t.published),
         group_by: t.project_id
 
+    by_active_project =
+      dynamic([pub, p, _, _], p.status == :active and pub.id in subquery(subquery))
+
+    by_visibility =
+      case {author, institution} do
+        {nil, nil} ->
+          dynamic([_, p, _], p.visibility == :global)
+
+        {%Author{id: id}, nil} ->
+          dynamic(
+            [_, p, ap, v],
+            p.visibility == :global or ap.author_id == ^id or
+              (p.visibility == :selected and v.author_id == ^id)
+          )
+
+        {nil, %Institution{id: id}} ->
+          dynamic(
+            [_, p, _, v],
+            p.visibility == :global or (p.visibility == :selected and v.institution_id == ^id)
+          )
+
+        {%Author{id: author_id}, %Institution{id: id}} ->
+          dynamic(
+            [_, p, ap, v],
+            p.visibility == :global or ap.author_id == ^author_id or
+              (p.visibility == :selected and v.institution_id == ^id) or
+              (p.visibility == :selected and v.author_id == ^author_id)
+          )
+      end
+
     query =
-      from pub in Publication,
-        join: u in subquery(subquery),
-        on: pub.project_id == u.project_id and u.max_date == pub.published,
-        join: proj in Project,
-        on: pub.project_id == proj.id,
-        left_join: a in assoc(proj, :authors),
-        left_join: v in ProjectVisibility,
-        on: proj.id == v.project_id,
-        where:
-          not is_nil(pub.published) and proj.status == :active and
-            (a.id == ^author.id or proj.visibility == :global or
-               (proj.visibility == :selected and
-                  (v.author_id == ^author.id or v.institution_id == ^institution.id))),
-        preload: [:project],
-        distinct: true,
-        select: pub
+      Publication
+      |> join(:left, [p, _], proj in Project, on: p.project_id == proj.id)
+      |> join(:left, [_, p], a in AuthorProject, on: p.id == a.project_id)
+      |> join(:left, [_, p, _], v in ProjectVisibility, on: v.project_id == p.id)
+      |> where(^by_active_project)
+      |> where(^by_visibility)
+      |> preload([_, p, _, _], project: p)
+      |> distinct([p, _, _, _], p.project_id)
+      |> select([p, _, _, _], p)
 
     Repo.all(query)
   end
