@@ -428,6 +428,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     if (!enableReplay) {
       setShowControls(false);
     }
+    if (triggerCheck) {
+      props.onSubmit({ id: `${id}`, responses: [] });
+    }
   };
 
   useEffect(() => {
