@@ -220,26 +220,13 @@ defmodule Oli.Groups do
 
   """
 
-  def create_community_accounts_from_emails(user_type, emails, attrs) do
-    {created_accounts, errors} =
-      Enum.reduce(emails, {[], []}, fn email, {created, errors} ->
-        case create_community_account_from_email(user_type, email, attrs) do
-          {:ok, community_account} ->
-            {[community_account | created], errors}
-
-          {:error, error} ->
-            {created, [error | errors]}
-        end
-      end)
-
-    case errors do
-      [error | _errors] ->
-        {:error, error}
-
-      [] ->
-        {:ok, created_accounts}
-    end
-  end
+  def create_community_accounts_from_emails(user_type, emails, attrs),
+    do:
+      create_community_associations_from_fields(
+        emails,
+        attrs,
+        &create_community_account_from_email(user_type, &1, &2)
+      )
 
   @doc """
   Gets a community account by id.
@@ -480,6 +467,23 @@ defmodule Oli.Groups do
   end
 
   @doc """
+  Creates community institutions from names.
+  ## Examples
+      iex> create_community_institutions_from_names(["Institution 1", "Institution 2"], %{community_id: 1})
+      {:ok, [%CommunityInstitution{}, %CommunityInstitution{}]}
+      iex> create_community_institutions_from_names(["Institution 1", "Institution 2"], %{community_id: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+
+  def create_community_institutions_from_names(names, attrs),
+    do:
+      create_community_associations_from_fields(
+        names,
+        attrs,
+        &create_community_institution_from_institution_name/2
+      )
+
+  @doc """
   Gets a community institution by clauses. Will raise an error if
   more than one matches the criteria.
 
@@ -517,5 +521,26 @@ defmodule Oli.Groups do
     Enum.reduce(filter, false, fn {field, value}, conditions ->
       dynamic([entity], field(entity, ^field) == ^value or ^conditions)
     end)
+  end
+
+  defp create_community_associations_from_fields(fields, attrs, create_association) do
+    {created_community_associations, errors} =
+      Enum.reduce(fields, {[], []}, fn field, {created, errors} ->
+        case create_association.(field, attrs) do
+          {:ok, community_association} ->
+            {[community_association | created], errors}
+
+          {:error, error} ->
+            {created, [error | errors]}
+        end
+      end)
+
+    case errors do
+      [error | _errors] ->
+        {:error, error}
+
+      [] ->
+        {:ok, created_community_associations}
+    end
   end
 end

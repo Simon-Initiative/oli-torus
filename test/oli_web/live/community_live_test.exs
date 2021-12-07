@@ -762,7 +762,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-info")
              |> render() =~
-               "Community institution successfully added."
+               "Community institution(s) successfully added."
 
       assert 2 == length(Groups.list_community_institutions(community.id))
     end
@@ -783,7 +783,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "Community institution couldn&#39;t be added. It is already associated to the community or an unexpected error occurred."
+               "Some of the community institutions couldn&#39;t be added because the institutions don&#39;t exist in the system or are already associated."
 
       view
       |> element("form[phx-submit=\"add_institution\"")
@@ -792,9 +792,32 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("div.alert.alert-danger")
              |> render() =~
-               "Community institution couldn&#39;t be added. It does not exist."
+               "Some of the community institutions couldn&#39;t be added because the institutions don&#39;t exist in the system or are already associated."
 
       assert 1 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "adds more than one community institution correctly", %{
+      conn: conn,
+      community: community
+    } do
+      names = insert_pair(:institution) |> Enum.map(& &1.name)
+      insert(:community_institution, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution: %{name: Enum.join(names, ",")}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community institution(s) successfully added."
+
+      assert 3 == length(Groups.list_community_institutions(community.id))
     end
 
     test "removes community institution correctly", %{

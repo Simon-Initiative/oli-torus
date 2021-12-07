@@ -269,27 +269,27 @@ defmodule OliWeb.CommunityLive.ShowView do
     socket = clear_flash(socket)
     community_id = socket.assigns.community.id
 
-    case Groups.create_community_institution_from_institution_name(name, %{
-           community_id: community_id
-         }) do
-      {:ok, _community} ->
-        socket = put_flash(socket, :info, "Community institution successfully added.")
+    names =
+      name
+      |> String.split(",")
+      |> Enum.map(&String.trim(&1))
 
-        {:noreply,
-         assign(socket, community_institutions: Groups.list_community_institutions(community_id))}
+    socket =
+      case Groups.create_community_institutions_from_names(names, %{
+             community_id: community_id
+           }) do
+        {:ok, _community_institutions} ->
+          put_flash(socket, :info, "Community institution(s) successfully added.")
 
-      {:error, error} ->
-        message =
-          case error do
-            :institution_not_found ->
-              "Community institution couldn't be added. It does not exist."
+        {:error, _error} ->
+          message =
+            "Some of the community institutions couldn't be added because the institutions don't exist in the system or are already associated."
 
-            %Ecto.Changeset{} ->
-              "Community institution couldn't be added. It is already associated to the community or an unexpected error occurred."
-          end
+          put_flash(socket, :error, message)
+      end
 
-        {:noreply, put_flash(socket, :error, message)}
-    end
+    {:noreply,
+     assign(socket, community_institutions: Groups.list_community_institutions(community_id))}
   end
 
   def handle_event("remove_institution", %{"collaborator-id" => institution_id}, socket) do
