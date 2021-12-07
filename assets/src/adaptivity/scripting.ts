@@ -68,7 +68,8 @@ export const getExpressionStringForValue = (
         const testEnv = new Environment(env);
         const testResult = evalScript(`let foo = ${val};`, testEnv);
         if (testResult?.result !== null) {
-          actuallyAString = true;
+          //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+          actuallyAString = expressions?.length ? false : true;
         }
       } catch (e) {
         // if we have parsing error then we're guessing it's CSS
