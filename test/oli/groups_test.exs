@@ -204,6 +204,43 @@ defmodule Oli.GroupsTest do
       assert community_account.is_admin == params.is_admin
     end
 
+    test "create_community_accounts_from_emails/3 with valid data creates community accounts" do
+      users = insert_pair(:user)
+      emails = Enum.map(users, & &1.email)
+      params = params_for(:community_member_account)
+
+      assert {:ok, accounts} =
+               Groups.create_community_accounts_from_emails("member", emails, params)
+
+      assert 2 == length(accounts)
+
+      assert accounts |> Enum.map(& &1.user_id) |> Enum.sort() ==
+               users |> Enum.map(& &1.id) |> Enum.sort()
+
+      for account <- accounts do
+        assert account.community_id == params.community_id
+        assert account.is_admin == params.is_admin
+      end
+    end
+
+    test "create_community_accounts_from_emails/3 with partially invalid data returns error and creates valid accounts" do
+      user = insert(:user)
+      params = params_for(:community_member_account)
+
+      assert {:error, :user_not_found} =
+               Groups.create_community_accounts_from_emails(
+                 "member",
+                 [user.email, "invalid_email"],
+                 params
+               )
+
+      account = Groups.get_community_account_by!(%{user_id: user.id})
+
+      assert account.user_id == user.id
+      assert account.community_id == params.community_id
+      assert account.is_admin == params.is_admin
+    end
+
     test "get_community_account/1 returns a community account when the id exists" do
       community_account = insert(:community_account)
 
