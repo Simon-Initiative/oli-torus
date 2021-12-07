@@ -119,22 +119,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   };
 
   useEffect(() => {
-    const appConfig = {
-      paths: props.paths,
-      isAdmin: props.isAdmin,
-      projectSlug: props.projectSlug,
-      revisionSlug: props.revisionSlug,
-      partComponentTypes: props.partComponentTypes,
-      activityTypes: props.activityTypes,
-    };
-    dispatch(setInitialConfig(appConfig));
-
-    if (props.content) {
-      dispatch(initializeFromContext({ context: props.content, config: appConfig }));
-    }
-  }, [props]);
-
-  useEffect(() => {
     if (isAppVisible) {
       // forced light mode to save on initial dev time
       const darkModeCss: any = document.getElementById('authoring-theme-dark');
@@ -161,6 +145,18 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   useEffect(() => {
+    const appConfig = {
+      paths: props.paths,
+      isAdmin: props.isAdmin,
+      projectSlug: props.projectSlug,
+      revisionSlug: props.revisionSlug,
+      partComponentTypes: props.partComponentTypes,
+      activityTypes: props.activityTypes,
+    };
+    dispatch(setInitialConfig(appConfig));
+  }, [props]);
+
+  useEffect(() => {
     window.addEventListener('beforeunload', async () =>
       isFirefox
         ? setTimeout(async () => {
@@ -171,6 +167,18 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
     setTimeout(() => {
       if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
+        if (props.content) {
+          const appConfig = {
+            paths: props.paths,
+            isAdmin: props.isAdmin,
+            projectSlug: props.projectSlug,
+            revisionSlug: props.revisionSlug,
+            partComponentTypes: props.partComponentTypes,
+            activityTypes: props.activityTypes,
+          };
+          dispatch(initializeFromContext({ context: props.content, config: appConfig }));
+        }
+
         setIsAppVisible(true);
       }
     }, 500);
@@ -181,7 +189,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     return () => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
     };
-  }, [hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
+  }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
 
   return (
     <>
