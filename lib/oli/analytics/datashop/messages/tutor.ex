@@ -3,7 +3,7 @@ defmodule Oli.Analytics.Datashop.Messages.Tutor do
     <tutor_message context_message_id="mary-smith-MAJOR-ARC-BFD-2-0">
       <meta>
        <user_id>mary-smith</user_id>
-        <session_id>mary-smith-2006-07-22</session_id>
+        <session_id>6c6d381e-1598-4924-9b60-30dce843e417</session_id>
         <time>2006-07-22 12:58:50 EST</time>
         <time_zone>EST</time_zone>
       </meta>
