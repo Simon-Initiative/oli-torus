@@ -77,16 +77,16 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 1;
+    const currentAttemptNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const targettedAttemptNumberOp: ApplyStateOperation = {
       target: `${currentSequenceId}|session.attemptNumber`,
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const tutorialScoreOp: ApplyStateOperation = {
       target: 'session.tutorialScore',
