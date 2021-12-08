@@ -21,7 +21,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
-import { selectCurrentActivityId } from '../store/features/activities/slice';
+import {
+  selectCurrentActivityId,
+  selectIsQuestionBankActivity,
+} from '../store/features/activities/slice';
 import {
   CheckResults,
   selectHistoryNavigationActivity,
@@ -324,6 +327,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const lastCheckResults = useSelector(selectLastCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const isQuestionBankActivity = useSelector(selectIsQuestionBankActivity);
   useEffect(() => {
     if (!lastCheckTriggered || !ref.current) {
       return;
@@ -417,6 +421,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
       initStateFacts: finalInitSnapshot,
       domain: adaptivityDomain,
+      isQuestionBankActivity: isQuestionBankActivity,
     });
   };
 

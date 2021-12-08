@@ -554,7 +554,20 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { snapshot: changes } = payload;
+              const {
+                snapshot: changes,
+                initStateFacts: iniStateFacts,
+                isQuestionBankActivity,
+                mode,
+              } = payload;
+              if (isQuestionBankActivity) {
+                setSelectedChoice(0);
+                //iniStateFacts length is not greater than 0 then it means that no init state defined for the screen
+                //If it's history mode then we have to populate the selected choice with the value from the history
+                if (!iniStateFacts?.length && payload.context.mode !== contexts.REVIEW) {
+                  return;
+                }
+              }
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);

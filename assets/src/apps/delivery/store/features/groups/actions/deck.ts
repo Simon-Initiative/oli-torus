@@ -23,6 +23,7 @@ import {
   selectCurrentActivityId,
   setActivities,
   setCurrentActivityId,
+  setIsQuestionBankActivity,
 } from '../../activities/slice';
 import { setInitStateFacts, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
@@ -208,6 +209,21 @@ const getSessionVisitHistory = async (
     }));
 };
 
+export const IsQuestionBankActivity = (currentSequence: any, sequence: any[], thunkApi: any) => {
+  const subScreenId = currentSequence?.custom?.layerRef;
+  if (!subScreenId) {
+    thunkApi.dispatch(setIsQuestionBankActivity({ IsQuestionBankActivity: false }));
+    return;
+  }
+  const layerIndex = sequence.findIndex((entry) => entry.custom.sequenceId === subScreenId);
+  const layerSequenceEntry = sequence[layerIndex];
+  if (layerSequenceEntry?.custom?.isBank) {
+    thunkApi.dispatch(setIsQuestionBankActivity({ IsQuestionBankActivity: true }));
+  } else {
+    thunkApi.dispatch(setIsQuestionBankActivity({ IsQuestionBankActivity: false }));
+  }
+};
+
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (_, thunkApi) => {
@@ -268,7 +284,7 @@ export const navigateToNextActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-
+    IsQuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
@@ -301,6 +317,7 @@ export const navigateToPrevActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
+    IsQuestionBankActivity(previousEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: previousEntry?.custom.sequenceId }));
   },
 );
@@ -384,7 +401,7 @@ export const navigateToActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-
+    IsQuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );

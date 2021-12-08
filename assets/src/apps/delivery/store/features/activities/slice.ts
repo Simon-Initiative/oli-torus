@@ -29,6 +29,7 @@ export interface IActivity {
 
 export interface ActivitiesState extends EntityState<IActivity> {
   currentActivityId: EntityId;
+  IsQuestionBankActivity?: boolean;
 }
 
 const adapter: EntityAdapter<IActivity> = createEntityAdapter<IActivity>();
@@ -57,6 +58,9 @@ const slice: Slice<ActivitiesState> = createSlice({
     setCurrentActivityId(state, action: PayloadAction<{ activityId: EntityId }>) {
       state.currentActivityId = action.payload.activityId;
     },
+    setIsQuestionBankActivity(state, action: PayloadAction<{ IsQuestionBankActivity: boolean }>) {
+      state.IsQuestionBankActivity = action.payload.IsQuestionBankActivity;
+    },
   },
 });
 
@@ -69,6 +73,7 @@ export const {
   deleteActivity,
   deleteActivities,
   setCurrentActivityId,
+  setIsQuestionBankActivity,
 } = slice.actions;
 
 // SELECTORS
@@ -77,6 +82,10 @@ export const selectState = (state: RootState): ActivitiesState =>
 export const selectCurrentActivityId = createSelector(
   selectState,
   (state) => state.currentActivityId,
+);
+export const selectIsQuestionBankActivity = createSelector(
+  selectState,
+  (state) => state.IsQuestionBankActivity,
 );
 const { selectAll, selectById, selectTotal, selectEntities } = adapter.getSelectors(selectState);
 export const selectAllActivities = selectAll;
