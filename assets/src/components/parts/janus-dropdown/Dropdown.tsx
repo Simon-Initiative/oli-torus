@@ -318,7 +318,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: changes, isQuestionBankActivity } = payload;
-              if (isQuestionBankActivity) {
+              if (isQuestionBankActivity && payload?.context?.mode !== contexts.REVIEW) {
                 setSelectedIndex(0);
               }
 
