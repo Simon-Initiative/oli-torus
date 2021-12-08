@@ -57,30 +57,25 @@ export const getExpressionStringForValue = (
 
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
-    try {
-      const testEnv = new Environment(env);
-      const evalResult = evalScript(`let foo = ${val};`, testEnv);
-      // when evalScript is executed successfully, evalResult.result is null.
-      // evalScript does not trigger catch block even though there is error and add the error in stack property.
-      if (evalResult?.result !== null) {
-        try {
-          //trying to check if it is a CSS string.This might not handle any advance CSS string.
-          const matchingCssElements = val.match(
-            /^(([a-z0-9\\[\]=:]+\s?)|((div|span|body.*|.box-sizing:*|.columns-container.*|background-color.*)?(#|\.){1}[a-z0-9\-_\s?:]+\s?)+)(\{[\s\S][^}]*})$/im,
-          );
-          //matchingCssElements !== null then it means it's a CSS string so set actuallyAString=true so that it can be wrapped in ""
-          if (matchingCssElements) {
-            actuallyAString = true;
-          }
-        } catch (e) {
-          actuallyAString = true;
-        }
-      }
-    } catch (e) {
-      // if we have parsing error then we're guessing it's CSS
+    const expressions = extractAllExpressionsFromText(val);
+    // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS.
+    const isCSSString = expressions.filter((e) => e.includes(';'));
+    if (isCSSString?.length) {
       actuallyAString = true;
     }
-
+    if (!actuallyAString) {
+      try {
+        const testEnv = new Environment(env);
+        const testResult = evalScript(`let foo = ${val};`, testEnv);
+        if (testResult?.result !== null) {
+          //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+          actuallyAString = expressions?.length ? false : true;
+        }
+      } catch (e) {
+        // if we have parsing error then we're guessing it's CSS
+        actuallyAString = true;
+      }
+    }
     if (!actuallyAString) {
       return `${val}`;
     }
