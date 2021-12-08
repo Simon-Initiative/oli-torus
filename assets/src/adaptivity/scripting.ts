@@ -321,7 +321,7 @@ export const getLocalizedStateSnapshot = (
   const finalState: any = { ...snapshot };
   activityIds.forEach((activityId: string) => {
     const activityState = Object.keys(snapshot)
-      .filter((key) => key.indexOf(`${activityId}|`) === 0)
+      .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
       .reduce((collect: any, key) => {
         const localizedKey = key.replace(`${activityId}|`, '');
         collect[localizedKey] = snapshot[key];

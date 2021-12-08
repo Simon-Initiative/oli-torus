@@ -2,19 +2,20 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   @moduledoc """
   <meta>
     <user_id>t.stark+0@avengers.com</user_id>
-    <session_id>t.stark+0@avengers.com 2020-06-29 13:34</session_id>
+    <session_id>6c6d381e-1598-4924-9b60-30dce843e417</session_id>
     <time>2020-06-29 13:34</time>
     <time_zone>GMT</time_zone>
   </meta>
   """
   import XmlBuilder
+  import Oli.Utils
 
   def setup(%{date: date, email: nil}), do: setup(%{date: date, email: "Anonymous"})
 
   def setup(%{date: date, email: email}) do
     element(:meta, %{}, [
       element(:user_id, email),
-      element(:session_id, email <> " " <> format_date(date)),
+      element(:session_id, uuid()),
       element(:time, format_date(date)),
       element(:time_zone, "GMT")
     ])

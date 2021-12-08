@@ -31,7 +31,7 @@ defmodule OliWeb.ProjectVisibilityTest do
       assert updated_project.visibility == :global
 
       available_publications = Publishing.available_publications(author, institution)
-      assert available_publications == []
+      assert Enum.count(available_publications) == 0
 
       Publishing.publish_project(project, "some changes")
 

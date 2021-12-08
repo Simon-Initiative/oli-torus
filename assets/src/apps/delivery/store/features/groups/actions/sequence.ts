@@ -52,13 +52,13 @@ export const getHierarchy = (
 
 export const findInHierarchy = (
   hierarchy: SequenceHierarchyItem<SequenceEntryChild>[],
-  id: string | number,
+  sequenceId: string | number,
 ): SequenceHierarchyItem<SequenceEntryChild> | undefined => {
-  let found = hierarchy.find((i) => i.custom.sequenceId === id);
+  let found = hierarchy.find((i) => i.custom.sequenceId === sequenceId);
   if (!found) {
     // now need to search all the children recursively
     for (let i = 0; i < hierarchy.length; i++) {
-      found = findInHierarchy(hierarchy[i].children, id);
+      found = findInHierarchy(hierarchy[i].children, sequenceId);
       if (found) {
         break;
       }

@@ -50,4 +50,10 @@ defmodule OliWeb.Common.Params do
         end
     end
   end
+
+  def trim(params) do
+    Enum.reduce(params, %{}, fn {field, value}, acc ->
+      Map.put(acc, field, String.trim(value))
+    end)
+  end
 end

@@ -13,6 +13,7 @@ defmodule OliWeb.CommunityLive.AccountInvitation do
   prop to_invite, :any, default: :collaborator
   prop placeholder, :string, default: "collaborator@example.edu"
   prop button_text, :string, default: "Send invite"
+  prop allow_removal, :boolean, default: true
 
   def render(assigns) do
     ~F"""
@@ -34,9 +35,11 @@ defmodule OliWeb.CommunityLive.AccountInvitation do
             <div>{collaborator.name}</div>
             <div class="text-muted">{collaborator.email}</div>
           </div>
-          <div class="user-actions">
-            <button class="btn btn-link text-danger" :on-click={@remove} phx-value-collaborator-id={collaborator.id}>Remove</button>
-          </div>
+          {#if @allow_removal}
+            <div class="user-actions">
+              <button class="btn btn-link text-danger" :on-click={@remove} phx-value-collaborator-id={collaborator.id}>Remove</button>
+            </div>
+          {/if}
         </div>
       {/for}
     """

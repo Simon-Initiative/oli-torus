@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { UiSchema } from '@rjsf/core';
+import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { JSONSchema7 } from 'json-schema';
 import { debounce, isEqual } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -277,34 +278,12 @@ const RightMenu: React.FC<any> = () => {
         }
 
         /* console.log('COMPONENT PROP CHANGED', { properties, modelChanges }); */
+        dispatch(
+          updatePart({ activityId: origActivity.id, partId: origId, changes: modelChanges }),
+        );
 
-        const cloneActivity = clone(origActivity);
-        const ogPart = cloneActivity.content?.partsLayout.find((part: any) => part.id === origId);
-        if (!ogPart) {
-          // hopefully UI will prevent this from happening
-          console.warn(
-            'couldnt find part in current activity, most like lives on a layer; you need to update they layer copy directly',
-          );
-          return;
-        }
-        if (modelChanges.id !== ogPart.id) {
-          ogPart.id = modelChanges.id;
-          // also need to update the authoring.parts
-          const authoringPart = cloneActivity.authoring?.parts?.find((p: any) => p.id === origId);
-          // TODO: if that isn't found, then it's a problem. maybe should write it new?
-          /* console.log('CHANGING PART ID: ', { authoringPart, ogPart, origId }); */
-          if (authoringPart) {
-            authoringPart.id = modelChanges.id;
-          }
-          // in case the id changes, update the selection
-          dispatch(setCurrentSelection({ selection: modelChanges.id }));
-        }
-        ogPart.custom = modelChanges.custom;
-
-        if (JSON.stringify(cloneActivity) !== JSON.stringify(origActivity)) {
-          /* console.log('actually saving activity:', { cloneActivity }); */
-          dispatch(saveActivity({ activity: cloneActivity }));
-        }
+        // in case the id changes, update the selection
+        dispatch(setCurrentSelection({ selection: modelChanges.id }));
       },
       500,
       { maxWait: 10000, leading: false },
