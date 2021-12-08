@@ -857,9 +857,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const formatted: Record<string, unknown> = {};
         const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
         const value = initState[key];
+        const typeOfValue = typeof value;
         const cVar = new CapiVariable({
           key: baseKey,
           value,
+          type: typeOfValue === 'string' ? CapiVariableTypes.STRING : CapiVariableTypes.UNKNOWN,
         });
         formatted[baseKey] = cVar;
         //hack for Small world type SIMs
