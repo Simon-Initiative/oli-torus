@@ -26,7 +26,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   ## Optional Parameters:
 
-  select_mode:            Which selection mode to operate in. This can be set to :single, :multi or
+  select_mode:            Which selection mode to operate in. This can be set to :single, :multiple or
                           :container. Defaults to :single
   filter_items_fn:        Filter function applied to items shown. Default is no filter.
   sort_items_fn:          Sorting function applied to items shown. Default is to sort containers first.
@@ -101,35 +101,6 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
 
   def render_child(
         %{
-          select_mode: :multi,
-          selection: selection,
-          preselected: preselected,
-          selected_publication: pub
-        } = assigns,
-        %{uuid: uuid, resource_id: resource_id, revision: revision} = child
-      ) do
-    click_handler =
-      if {pub.id, resource_id} in preselected do
-        ""
-      else
-        "phx-click=HierarchyPicker.select phx-value-publication_id=#{pub.id} phx-value-resource_id=#{resource_id}"
-      end
-
-    ~L"""
-    <div id="hierarchy_item_<%= uuid %>" <%= click_handler %>>
-      <div class="flex-1 mx-2">
-        <span class="align-middle">
-          <input type="checkbox" <%= maybe_checked(selection, pub.id, resource_id) %> <%= maybe_preselected(preselected, pub.id, resource_id) %>></input>
-          <%= OliWeb.Curriculum.EntryLive.icon(%{child: revision}) %>
-        </span>
-        <%= resource_link assigns, child %>
-      </div>
-    </div>
-    """
-  end
-
-  def render_child(
-        %{
           select_mode: :single,
           selection: selection
         } = assigns,
@@ -152,15 +123,23 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         %{
           select_mode: :multiple,
           selection: selection,
+          preselected: preselected,
           selected_publication: pub
         } = assigns,
         %{uuid: uuid, revision: revision} = child
       ) do
+    click_handler =
+      if {pub.id, revision.resource_id} in preselected do
+        ""
+      else
+        "phx-click=HierarchyPicker.select phx-value-uuid=#{uuid}"
+      end
+
     ~L"""
-    <div id="hierarchy_item_<%= uuid %>" phx-click="HierarchyPicker.select" phx-value-uuid="<%= uuid %>">
+    <div id="hierarchy_item_<%= uuid %>" <%= click_handler %>>
       <div class="flex-1 mx-2">
         <span class="align-middle">
-          <input type="checkbox" <%= maybe_checked(selection, pub.id, revision.resource_id) %>></input>
+          <input type="checkbox" <%= maybe_checked(selection, pub.id, revision.resource_id) %> <%= maybe_preselected(preselected, pub.id, revision.resource_id) %>></input>
           <%= OliWeb.Curriculum.EntryLive.icon(%{child: revision}) %>
         </span>
         <%= resource_link assigns, child %>
