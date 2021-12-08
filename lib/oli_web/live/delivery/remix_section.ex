@@ -488,17 +488,31 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event(
         "HierarchyPicker.select",
-        %{"publication_id" => publication_id, "resource_id" => resource_id},
+        %{"uuid" => uuid},
         socket
       ) do
-    %{modal: %{assigns: %{selection: selection}} = modal} = socket.assigns
+    %{
+      modal:
+        %{
+          assigns: %{
+            selection: selection,
+            hierarchy: hierarchy,
+            selected_publication: publication
+          }
+        } = modal
+    } = socket.assigns
+
+    item = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     modal = %{
       modal
       | assigns: %{
           modal.assigns
           | selection:
-              xor(selection, {String.to_integer(publication_id), String.to_integer(resource_id)})
+              xor(
+                selection,
+                {publication.id, item.revision.resource_id}
+              )
         }
     }
 

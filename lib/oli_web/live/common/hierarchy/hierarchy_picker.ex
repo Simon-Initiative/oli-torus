@@ -148,6 +148,27 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     """
   end
 
+  def render_child(
+        %{
+          select_mode: :multiple,
+          selection: selection,
+          selected_publication: pub
+        } = assigns,
+        %{uuid: uuid, revision: revision} = child
+      ) do
+    ~L"""
+    <div id="hierarchy_item_<%= uuid %>" phx-click="HierarchyPicker.select" phx-value-uuid="<%= uuid %>">
+      <div class="flex-1 mx-2">
+        <span class="align-middle">
+          <input type="checkbox" <%= maybe_checked(selection, pub.id, revision.resource_id) %>></input>
+          <%= OliWeb.Curriculum.EntryLive.icon(%{child: revision}) %>
+        </span>
+        <%= resource_link assigns, child %>
+      </div>
+    </div>
+    """
+  end
+
   def render_child(assigns, child) do
     ~L"""
     <div id="hierarchy_item_<%= child.uuid %>">
