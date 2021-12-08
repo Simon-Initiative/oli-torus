@@ -2,7 +2,7 @@ defmodule Oli.Groups.Community do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @string_field_limit 256
+  @string_field_limit 255
 
   schema "communities" do
     field :name, :string
