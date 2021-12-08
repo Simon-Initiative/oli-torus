@@ -562,7 +562,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               } = payload;
               if (isQuestionBankActivity) {
                 setSelectedChoice(0);
-                //iniStateFacts length is not greater than 0 then it means that no init state defined for the screen
+                //iniStateFacts length is not greater than 0 then it means that no init state variables are defined for the screen so we have to ignore 'snapshot'
                 //If it's history mode then we have to populate the selected choice with the value from the history
                 if (!iniStateFacts?.length && payload.context.mode !== contexts.REVIEW) {
                   return;
