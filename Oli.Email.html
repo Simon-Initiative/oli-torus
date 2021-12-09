@@ -10,7 +10,7 @@
     <title>Oli.Email — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-5a97e4e83e.js"></script>
+    <script src="dist/sidebar_items-a856441d2d.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -157,13 +157,6 @@ Returns a Bamboo.Email struct ready for delivery.</p></div>
     <div class="summary-synopsis"><p>Render an Phoenix template and set the body on the email.</p></div>
 
 </div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#welcome_author_email/1">welcome_author_email(recipient_email)</a>
-
-  </div>
-
-</div>
 
   </div>
 
@@ -188,7 +181,7 @@ Functions
     </a>
     <h1 class="signature">base_email()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L52" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -210,7 +203,7 @@ Functions
     </a>
     <h1 class="signature">create_email(recipient_email, subject, view, assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L44" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -245,7 +238,7 @@ Returns a Bamboo.Email struct ready for delivery.</p><h2 id="create_email/4-exam
     </a>
     <h1 class="signature">help_desk_email(name, from_email, help_desk_email, subject, view, assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L25" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -275,7 +268,7 @@ Returns a Bamboo.Email struct ready for delivery.</p><h2 id="create_email/4-exam
     </a>
     <h1 class="signature">html_text_body(email)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L64" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L55" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -297,7 +290,7 @@ Returns a Bamboo.Email struct ready for delivery.</p><h2 id="create_email/4-exam
     </a>
     <h1 class="signature">invitation_email(recipient_email, view, assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L15" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L6" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -341,35 +334,6 @@ Returns a Bamboo.Email struct ready for delivery.</p><h2 id="create_email/4-exam
 <p>Render an Phoenix template and set the body on the email.</p><p>Pass an atom as the template name (:welcome_email) to render HTML <em>and</em> plain
 text emails. Use a string if you only want to render one type, e.g.
 &quot;welcome_email.text&quot; or &quot;welcome_email.html&quot;. Scroll to the top for more examples.</p>
-  </section>
-</section>
-<section class="detail" id="welcome_author_email/1">
-
-  <div class="detail-header">
-    <a href="#welcome_author_email/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">welcome_author_email(recipient_email)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/email.ex#L6" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>welcome_author_email(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()) :: <a href="https://hexdocs.pm/bamboo/1.6.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>()</pre>
-
-      </div>
-
-
   </section>
 </section>
 
