@@ -8,7 +8,7 @@
     <% end %>
 
   <% else %>
-    <h1><%= gettext "Welcome to %{name}!", name: "OLI Torus" %></h1>
+    <h1>Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
     <p>Create, deliver and continuously improve your course content using your web browser.</p>
 
     <p>

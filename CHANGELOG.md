@@ -9,6 +9,8 @@
 
 ### Enhancements
 
+- Add support for configurable vendor properties
+
 ## 0.17.0 (2021-11-30)
 
 ### Bug Fixes
