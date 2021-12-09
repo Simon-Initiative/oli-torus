@@ -42,6 +42,14 @@ const lessonSchema: JSONSchema7 = {
               type: 'string',
               title: 'Custom CSS URL',
             },
+            backgroundImageURL: {
+              type: 'string',
+              title: 'Background Image URL',
+            },
+            backgroundImageScaleContent: {
+              type: 'boolean',
+              title: 'Scale Background Image to Fit',
+            },
           },
         },
         FinishPanel: {
@@ -136,13 +144,15 @@ export const lessonUiSchema: UiSchema = {
 
 export const transformModelToSchema = (model: any) => {
   const [themeUrl, customCssUrl] = model.additionalStylesheets;
-
+  console.log('lesson model', model);
   return {
     Properties: {
       Size: { width: model.custom.defaultScreenWidth, height: model.custom.defaultScreenHeight },
       Appearance: {
         theme: themeUrl,
         customCssUrl,
+        backgroundImageURL: model.custom.backgroundImageURL,
+        backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
       },
       ScoreOverview: {
         enableLessonMax: model.custom.enableLessonMax,
@@ -189,6 +199,8 @@ export const transformSchemaToModel = (schema: any) => {
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,
       logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
+      backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
+      backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
     },
     additionalStylesheets,
     title: schema.Properties.title,
