@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { CapiVariableTypes } from 'adaptivity/capi';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
@@ -53,11 +54,13 @@ const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: a
         target: `${ownerActivity.id}|stage.${parts.id}.value`,
         operator: '=',
         value: 0,
+        type: CapiVariableTypes.NUMBER,
       },
       {
         target: `${ownerActivity.id}|stage.${parts.id}.selectedIndex`,
         operator: '=',
         value: 0,
+        type: CapiVariableTypes.NUMBER,
       },
     );
   } else if (parts.type === 'janus-input-number') {
@@ -65,6 +68,7 @@ const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: a
       target: `${ownerActivity.id}|stage.${parts.id}.value`,
       operator: '=',
       value: 0,
+      type: CapiVariableTypes.NUMBER,
     });
   } else if (parts.type === 'janus-mcq') {
     script.push(
@@ -72,11 +76,13 @@ const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: a
         target: `${ownerActivity.id}|stage.${parts.id}.selectedChoice`,
         operator: '=',
         value: '',
+        type: CapiVariableTypes.STRING,
       },
       {
         target: `${ownerActivity.id}|stage.${parts.id}.selectedChoices`,
         operator: '=',
         value: '',
+        type: CapiVariableTypes.STRING,
       },
     );
   } else if (parts.type === 'janus-input-text' || parts.type === 'janus-multi-line-text') {
@@ -84,9 +90,10 @@ const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: a
       target: `${ownerActivity.id}|stage.${parts.id}.text`,
       operator: '=',
       value: '',
+      type: CapiVariableTypes.STRING,
     });
   }
-  bulkApplyState(script, defaultGlobalEnv);
+  return script;
 };
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
@@ -174,17 +181,24 @@ export const initializeActivity = createAsyncThunk(
       };
       sessionOps.push(targetVisitTimeStampOp);
     }
-
-    if (isQuestionBankActivity && currentActivityTree) {
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      currentActivity.authoring.parts.forEach((p: any) => {
-        handleQuestionBankResetControlValues(p, currentActivityTree);
-      });
-    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: string[] = [];
+    const quetionBankResetScript: ApplyStateOperation[] = [];
+    if (isQuestionBankActivity && currentActivityTree) {
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      currentActivity?.authoring?.parts?.forEach((p: any) => {
+        const script = handleQuestionBankResetControlValues(p, currentActivityTree);
+        if (script?.length) {
+          quetionBankResetScript.push(...script);
+        }
+      });
+    }
+    quetionBankResetScript.forEach((s: any) => {
+      const [, targetPart] = s.target.split('|');
+      arrInitFacts.push(`${targetPart}`);
+    });
     const globalizedInitState = initState.map((s: any) => {
       arrInitFacts.push(`${s.target}`);
       if (s.target.indexOf('stage.') !== 0) {
@@ -203,7 +217,10 @@ export const initializeActivity = createAsyncThunk(
     });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
-    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    const results = bulkApplyState(
+      [...sessionOps, ...quetionBankResetScript, ...globalizedInitState],
+      defaultGlobalEnv,
+    );
     const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {
       console.warn('[INIT STATE] applyState has errors', results);
