@@ -50,7 +50,7 @@ defmodule OliWeb.Pow.UserRoutes do
   # Pow stores the request redirect path in the assigns. If that value is
   # present, we use it. Otherwise, we specify default redirect paths.
   def request_path_or(conn, alternative) do
-    if !is_nil(conn.assigns.request_path) do
+    if !is_nil(Map.get(conn.assigns, :request_path)) do
       conn.assigns.request_path
     else
       alternative

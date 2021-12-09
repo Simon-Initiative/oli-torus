@@ -12,8 +12,8 @@ defmodule Oli.Delivery.Sections.SectionInvite do
   end
 
   @doc false
-  def changeset(section, attrs \\ %{}) do
-    section
+  def changeset(section_invite, attrs \\ %{}) do
+    section_invite
     |> cast(attrs, [:section_id, :slug, :date_expires])
     |> validate_required([:section_id, :date_expires])
     |> Slug.update_never_seedless("section_invites")

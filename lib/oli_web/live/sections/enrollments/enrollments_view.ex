@@ -12,7 +12,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   use OliWeb.Common.Modal
-  import Oli.Utils.Time
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -149,9 +148,6 @@ defmodule OliWeb.Sections.EnrollmentsView do
      )}
   end
 
-  # TODO: Change this to "suspend" rather than removing the enrollment,
-  # and introduce separate view for suspended students. Also remove from non-independent learner mode.
-  # (Why do we want to keep enrollments if they're removed from course instead of re-enrolling?)
   def handle_event("unenroll", %{"id" => user_id}, socket) do
     section = socket.assigns.section
 

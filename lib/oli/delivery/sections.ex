@@ -202,6 +202,11 @@ defmodule Oli.Delivery.Sections do
     |> Repo.insert_or_update()
   end
 
+  @doc """
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+
+  To unenroll a student, use unenrolle_learner/2
+  """
   def unenroll(user_id, section_id, context_roles) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
 
@@ -231,6 +236,9 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @doc """
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  """
   def unenroll_learner(user_id, section_id) do
     unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
   end

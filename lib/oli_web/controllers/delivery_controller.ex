@@ -446,7 +446,7 @@ defmodule OliWeb.DeliveryController do
   def enroll_independent(conn, %{"section_invite_slug" => invite_slug}) do
     section_invite = SectionInvites.get_section_invite(invite_slug)
 
-    if SectionInvites.is_link_valid?(section_invite) do
+    if !SectionInvites.link_expired?(section_invite) do
       conn
       |> assign(:section, SectionInvites.get_section_by_invite_slug(invite_slug))
       |> enroll(%{})

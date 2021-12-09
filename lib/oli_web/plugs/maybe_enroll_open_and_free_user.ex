@@ -26,7 +26,6 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   end
 
   # Sections that require_enrollment disallow guest users
-  # Todo: Save redirect path to enroll directly after signin, and bypass captcha
   defp handle_user_for_section(conn, user, %Section{requires_enrollment: true}) do
     if is_nil(user) or Accounts.user_is_guest?(conn) do
       require_signin(conn)
