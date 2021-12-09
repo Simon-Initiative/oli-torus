@@ -25,7 +25,16 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
 
   const [activityHost, setActivityHost] = useState<any>(null);
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
       id,
@@ -77,6 +86,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     if (initResult.context.mode === contexts.REVIEW) {
       setContext(false);
     }
+    handleStylingChanges();
     setReady(true);
   }, []);
 

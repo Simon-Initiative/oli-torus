@@ -21,28 +21,14 @@ type DeliveryProps = PartComponentProps<CustomProperties>;
 
 const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   const pusherContext = useContext(NotificationContext);
-
-  let height = props.model.height;
-  // TODO: figure out how to default TF *only* to height auto without hard coding type
-  if (props.type === 'janus-mcq') {
-    if (!props.model.overrideHeight) {
-      height = 'auto';
-    }
-  }
   const initialStyles: CSSProperties = {
     display: 'block',
     position: 'absolute',
     top: props.model.y,
     left: props.model.x,
     zIndex: props.model.z || 0,
-    width: props.model.width,
   };
-  if (
-    props.type !== 'janus-text-flow' ||
-    (props.type === 'janus-text-flow' && props.model.overrideHeight)
-  ) {
-    initialStyles.height = height;
-  }
+
   const [componentStyle, setComponentStyle] = useState<CSSProperties>(initialStyles);
 
   const [customCssClass, setCustomCssClass] = useState<string>(props.model.customCssClass || '');
@@ -93,22 +79,12 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       const settings = payload.settings;
       const styleChanges: CSSProperties = {};
 
-      if (componentStyle.width && settings?.width) {
-        const newW = settings.width.value;
-        if (settings.width.type === 'relative') {
-          styleChanges.width = parseFloat(componentStyle.width.toString()) + newW;
-        } else {
-          styleChanges.width = newW;
-        }
+      if (settings?.width) {
+        styleChanges.width = settings.width.value;
       }
 
-      if (componentStyle.height && settings?.height) {
-        const newH = settings.height.value;
-        if (settings.height.type === 'relative') {
-          styleChanges.height = parseFloat(componentStyle.height.toString()) + newH;
-        } else {
-          styleChanges.height = newH;
-        }
+      if (settings?.height) {
+        styleChanges.height = settings.height.value;
       }
 
       if (settings?.zIndex) {

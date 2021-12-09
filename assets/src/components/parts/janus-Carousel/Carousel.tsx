@@ -31,6 +31,17 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   // initialize the swiper
   SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
 
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
@@ -75,7 +86,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     if (sCurrentImage !== undefined) {
       setCurrentSlide(sCurrentImage);
     }
-
+    handleStylingChanges();
     setReady(true);
   }, []);
 

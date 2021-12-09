@@ -33,7 +33,16 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
       ],
     });
   };
-
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -90,6 +99,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
+    handleStylingChanges();
     setReady(true);
   }, []);
 
@@ -193,7 +203,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { x, y, z, width, height, showLabel, label, prompt } = model;
+  const { x, y, z, width, height, showLabel, label, prompt, fontSize } = model;
   const styles: CSSProperties = {
     position: 'absolute',
     top: y,
@@ -248,7 +258,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
         onChange={handleOnChange}
         disabled={!enabled}
         value={text}
-        style={{ width: '100%' }}
+        style={{ width: '100%', fontSize }}
       />
     </div>
   ) : null;

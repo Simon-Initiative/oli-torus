@@ -2,6 +2,8 @@ defmodule Oli.Groups.Community do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @string_field_limit 256
+
   schema "communities" do
     field :name, :string
     field :description, :string
@@ -29,5 +31,7 @@ defmodule Oli.Groups.Community do
     |> cast(attrs, [:name, :description, :key_contact, :global_access, :status])
     |> validate_required([:name, :global_access, :status])
     |> unique_constraint(:name)
+    |> validate_length(:name, max: @string_field_limit)
+    |> validate_length(:key_contact, max: @string_field_limit)
   end
 end

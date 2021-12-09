@@ -258,6 +258,9 @@ const Markup: React.FC<any> = ({
         </sup>
       );
     case 'small':
+      if (!renderStyles.display) {
+        renderStyles.display = 'inline';
+      }
       return (
         <small ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
@@ -300,7 +303,13 @@ const Markup: React.FC<any> = ({
       );
     case 'li':
       // eslint-disable-next-line
+      const spanChildren = children.filter((child: any) => {
+        return child.props.tag === 'span';
+      });
       const listStyle = { ...renderStyles, display: 'list-item' };
+      if (spanChildren.length === 1 && spanChildren[0].props.style.color && !listStyle.color) {
+        listStyle.color = spanChildren[0].props.style.color;
+      }
       return (
         <li ref={el} key={key} className={customCssClass} style={listStyle}>
           {processedText}

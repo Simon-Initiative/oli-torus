@@ -11,7 +11,7 @@ import {
   upsertActivities,
 } from '../../../../../../delivery/store/features/activities/slice';
 import { GroupsSlice } from '../../../../../../delivery/store/features/groups/slice';
-import { selectProjectSlug } from '../../../../app/slice';
+import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 
 const updateNestedConditions = (conditions: any) => {
@@ -37,6 +37,8 @@ export const updateActivityRules = createAsyncThunk(
   `${GroupsSlice}/updateActivityRules`,
   async (deck: any, { dispatch, getState }) => {
     const rootState = getState() as any;
+    const isReadOnlyMode = selectReadOnly(rootState);
+
     const activitiesToUpdate: any[] = [];
 
     // console.log(`UPDATE RULES for ${deck.children.length} activities`, deck);
@@ -113,20 +115,21 @@ export const updateActivityRules = createAsyncThunk(
 
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));
-      // TODO: write to server
-      const projectSlug = selectProjectSlug(rootState);
-      const pageResourceId = selectResourceId(rootState);
-      const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
-        const changeData: BulkActivityUpdate = {
-          title: activity.title,
-          objectives: activity.objectives,
-          content: activity.content,
-          authoring: activity.authoring,
-          resource_id: activity.resourceId,
-        };
-        return changeData;
-      });
-      await bulkEdit(projectSlug, pageResourceId, updates);
+      if (!isReadOnlyMode) {
+        const projectSlug = selectProjectSlug(rootState);
+        const pageResourceId = selectResourceId(rootState);
+        const updates: BulkActivityUpdate[] = activitiesToUpdate.map((activity) => {
+          const changeData: BulkActivityUpdate = {
+            title: activity.title,
+            objectives: activity.objectives,
+            content: activity.content,
+            authoring: activity.authoring,
+            resource_id: activity.resourceId,
+          };
+          return changeData;
+        });
+        await bulkEdit(projectSlug, pageResourceId, updates);
+      }
     }
     return;
   },

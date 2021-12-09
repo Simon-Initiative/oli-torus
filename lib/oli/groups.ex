@@ -6,7 +6,7 @@ defmodule Oli.Groups do
   import Ecto.Query, warn: false
 
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
   alias Oli.Groups.{Community, CommunityAccount, CommunityVisibility}
   alias Oli.Repo
 
@@ -115,12 +115,6 @@ defmodule Oli.Groups do
     Community.changeset(community, attrs)
   end
 
-  defp filter_conditions(filter) do
-    Enum.reduce(filter, false, fn {field, value}, conditions ->
-      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
-    end)
-  end
-
   # ------------------------------------------------------------
   # Communities accounts
 
@@ -162,6 +156,86 @@ defmodule Oli.Groups do
 
       nil ->
         {:error, :author_not_found}
+    end
+  end
+
+  @doc """
+  Creates a community account from a user email (gets the user first).
+
+  ## Examples
+
+      iex> create_community_account_from_user_email("example@foo.com", %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_user_email("example@foo.com", %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_user_email(email, attrs \\ %{}) do
+    case Accounts.get_user_by(%{email: email}) do
+      %User{id: id} ->
+        attrs |> Map.put(:user_id, id) |> create_community_account()
+
+      nil ->
+        {:error, :user_not_found}
+    end
+  end
+
+  @doc """
+  Creates a community account from a user type and email (gets the user first).
+
+  ## Examples
+
+      iex> create_community_account_from_email("admin", "example@foo.com", %{field: new_value})
+      {:ok, %CommunityAccount{}}
+
+      iex> create_community_account_from_user_email("member", "example@foo.com", %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_account_from_email(user_type, email, attrs \\ %{})
+
+  def create_community_account_from_email("admin", email, attrs) do
+    create_community_account_from_author_email(email, attrs)
+  end
+
+  def create_community_account_from_email("member", email, attrs) do
+    create_community_account_from_user_email(email, attrs)
+  end
+
+  @doc """
+  Creates community accounts from user type and emails.
+
+  ## Examples
+
+      iex> create_community_accounts_from_emails("admin", ["foo@foo.com", "bar@bar.com"], %{field: new_value})
+      {:ok, [%CommunityAccount{}, %CommunityAccount{}]}
+
+      iex> create_community_accounts_from_emails("member", ["example@foo.com"], %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_community_accounts_from_emails(user_type, emails, attrs) do
+    {created_accounts, errors} =
+      Enum.reduce(emails, {[], []}, fn email, {created, errors} ->
+        case create_community_account_from_email(user_type, email, attrs) do
+          {:ok, community_account} ->
+            {[community_account | created], errors}
+
+          {:error, error} ->
+            {created, [error | errors]}
+        end
+      end)
+
+    case errors do
+      [error | _errors] ->
+        {:error, error}
+
+      [] ->
+        {:ok, created_accounts}
     end
   end
 
@@ -227,8 +301,7 @@ defmodule Oli.Groups do
       from(
         community_account in CommunityAccount,
         join: author in assoc(community_account, :author),
-        where:
-          community_account.community_id == ^community_id and community_account.is_admin == true,
+        where: community_account.community_id == ^community_id and community_account.is_admin,
         select: author
       )
     )
@@ -312,5 +385,35 @@ defmodule Oli.Groups do
       }
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Get all the members for a specific community.
+
+  ## Examples
+
+      iex> list_community_members(1)
+      {:ok, [%User{}, ...]}
+
+      iex> list_community_members(123)
+      {:ok, []}
+  """
+  def list_community_members(community_id, limit \\ nil) do
+    Repo.all(
+      from(
+        community_account in CommunityAccount,
+        join: member in assoc(community_account, :user),
+        where: community_account.community_id == ^community_id and not community_account.is_admin,
+        select: member,
+        order_by: [desc: :inserted_at],
+        limit: ^limit
+      )
+    )
+  end
+
+  defp filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
+    end)
   end
 end

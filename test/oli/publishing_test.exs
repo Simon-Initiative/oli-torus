@@ -10,6 +10,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Editing.ObjectiveEditor
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Locks
+  alias Oli.Accounts.{SystemRole, Author}
 
   def create_activity(parts, author, project, page_revision, obj_resource_id) do
     # Create a two part activity where each part is tied to one of the objectives above
@@ -419,6 +420,55 @@ defmodule Oli.PublishingTest do
       assert {:changed, _} = diff[revision.resource_id]
       assert {:deleted, _} = diff[r3_revision.resource_id]
       assert {:added, _} = diff[r4_revision.resource_id]
+    end
+
+    test "available_publications/2 returns the publications",
+         %{
+           project: project,
+           author2: author2,
+           institution: institution
+         } do
+      {:ok, author3} =
+        Author.noauth_changeset(%Author{}, %{
+          email: "test33@test.com",
+          given_name: "First",
+          family_name: "Last",
+          provider: "foo",
+          system_role_id: SystemRole.role_id().author
+        })
+        |> Repo.insert()
+
+      # create first publication
+      {:ok, _} = Publishing.publish_project(project, "some changes")
+
+      second = Oli.Seeder.another_project(author2, institution, "second one")
+      {:ok, _} = Publishing.publish_project(second.project, "some changes")
+      {:ok, _} = Publishing.publish_project(second.project, "some changes")
+
+      # by default, these projects are set to "private"
+      assert Publishing.available_publications(nil, nil) |> length == 0
+      assert Publishing.available_publications(author2, nil) |> length == 2
+      assert Publishing.available_publications(author3, nil) |> length == 0
+
+      # setting them to global
+      {:ok, project} = Course.update_project(project, %{visibility: :global})
+      Course.update_project(second.project, %{visibility: :global})
+
+      assert Publishing.available_publications(nil, nil) |> length == 2
+      assert Publishing.available_publications(author2, nil) |> length == 2
+      assert Publishing.available_publications(author3, nil) |> length == 2
+
+      # setting one to specific authors
+      {:ok, project} = Course.update_project(project, %{visibility: :authors})
+      Course.update_project(second.project, %{visibility: :selected})
+      Publishing.insert_visibility(%{project_id: second.project.id, author_id: author3.id})
+      assert Publishing.available_publications(author3, nil) |> length == 1
+
+      # setting one to specific author and other to specific institution
+      Course.update_project(project, %{visibility: :selected})
+      Publishing.insert_visibility(%{project_id: project.id, institution_id: institution.id})
+      assert Publishing.available_publications(author3, institution) |> length == 2
+      assert Publishing.available_publications(author2, institution) |> length == 2
     end
   end
 end

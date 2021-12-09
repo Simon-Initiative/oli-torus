@@ -142,8 +142,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   }, [props, parts, configurePartId]);
 
   const handlePartClick = useCallback(
-    async (payload: any) => {
+    async (e: any, payload: any) => {
       // console.log('AUTHOR PART CLICK', { payload, props });
+      e.stopPropagation();
       if (selectedPartId === payload.id) {
         return;
       }
@@ -531,7 +532,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
               <PartComponent
                 {...partProps}
                 className={selectedPartId === part.id ? 'selected' : ''}
-                onClick={() => handlePartClick({ id: part.id })}
+                onClick={(event) => handlePartClick(event, { id: part.id })}
                 onConfigure={({ configure, context }) =>
                   handlePartConfigure(part.id, configure, context)
                 }

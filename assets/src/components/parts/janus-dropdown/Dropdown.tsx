@@ -21,6 +21,17 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [cssClass, setCssClass] = useState('');
 
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -115,6 +126,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
+    handleStylingChanges();
     setReady(true);
   }, []);
 
