@@ -861,6 +861,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           key: baseKey,
           value,
         });
+        if (typeof cVar.value === 'object') {
+          cVar.value = JSON.stringify(cVar.value);
+        }
         formatted[baseKey] = cVar;
         //hack for Small world type SIMs
         if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
