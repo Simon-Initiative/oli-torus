@@ -28,6 +28,7 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
             <div class="modal-body">
             <%= live_component HierarchyPicker,
               id: "hierarchy_picker",
+              select_mode: :multiple,
               hierarchy: hierarchy,
               active: active,
               selection: selection,

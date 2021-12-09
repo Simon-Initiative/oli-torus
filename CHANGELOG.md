@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Fix a bug that prevented editing internal links when only one other page exists
+- Fix a bug that prevented content from being added during remix
 
 ### Enhancements
 
