@@ -91,11 +91,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   );
   const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
     width,
-    zIndex: z, */
     height,
     borderRadius: '5px',
     fontFamily: 'revert',
