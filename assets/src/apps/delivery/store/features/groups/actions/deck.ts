@@ -10,6 +10,7 @@ import {
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import {
+  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
@@ -40,6 +41,53 @@ import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 
+let isQuestionBankActivity = false;
+const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: any) => {
+  const ownerActivity = currentActivityTree?.find(
+    (activity: any) => !!activity.content.partsLayout.find((p: any) => p.id === parts.id),
+  );
+  const script: ApplyStateOperation[] = [];
+  if (parts.type === 'janus-dropdown') {
+    script.push(
+      {
+        target: `${ownerActivity.id}|stage.${parts.id}.value`,
+        operator: '=',
+        value: 0,
+      },
+      {
+        target: `${ownerActivity.id}|stage.${parts.id}.selectedIndex`,
+        operator: '=',
+        value: 0,
+      },
+    );
+  } else if (parts.type === 'janus-input-number') {
+    script.push({
+      target: `${ownerActivity.id}|stage.${parts.id}.value`,
+      operator: '=',
+      value: 0,
+    });
+  } else if (parts.type === 'janus-mcq') {
+    script.push(
+      {
+        target: `${ownerActivity.id}|stage.${parts.id}.selectedChoice`,
+        operator: '=',
+        value: '',
+      },
+      {
+        target: `${ownerActivity.id}|stage.${parts.id}.selectedChoices`,
+        operator: '=',
+        value: '',
+      },
+    );
+  } else if (parts.type === 'janus-input-text' || parts.type === 'janus-multi-line-text') {
+    script.push({
+      target: `${ownerActivity.id}|stage.${parts.id}.text`,
+      operator: '=',
+      value: '',
+    });
+  }
+  bulkApplyState(script, defaultGlobalEnv);
+};
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
@@ -127,6 +175,12 @@ export const initializeActivity = createAsyncThunk(
       sessionOps.push(targetVisitTimeStampOp);
     }
 
+    if (isQuestionBankActivity && currentActivityTree) {
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      currentActivity.authoring.parts.forEach((p: any) => {
+        handleQuestionBankResetControlValues(p, currentActivityTree);
+      });
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
@@ -208,6 +262,20 @@ const getSessionVisitHistory = async (
     }));
 };
 
+export const QuestionBankActivity = (currentSequence: any, sequence: any[], thunkApi: any) => {
+  const subScreenId = currentSequence?.custom?.layerRef;
+  if (!subScreenId) {
+    isQuestionBankActivity = false;
+  }
+  const layerIndex = sequence.findIndex((entry) => entry.custom.sequenceId === subScreenId);
+  const layerSequenceEntry = sequence[layerIndex];
+  if (layerSequenceEntry?.custom?.isBank) {
+    isQuestionBankActivity = true;
+  } else {
+    isQuestionBankActivity = false;
+  }
+};
+
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (_, thunkApi) => {
@@ -268,7 +336,7 @@ export const navigateToNextActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-
+    QuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
@@ -384,7 +452,7 @@ export const navigateToActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-
+    QuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
