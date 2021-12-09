@@ -128,23 +128,41 @@ defmodule Oli.Utils.SlugTest do
       assert new_revision.slug == "whats_in_a_name"
     end
 
-    test "update_never_seedless/2 produces a valid alphanumeric slug" do
-      {:ok, section} = Sections.create_section()
+    test "update_never_seedless/2 produces a valid alphanumeric slug", %{project: project} do
+      {:ok, section} =
+        Sections.create_section(%{
+          base_project_id: project.id,
+          timezone: "some timezone",
+          title: "some title",
+          context_id: "context_id"
+        })
 
-      slug =
-        Ecto.Changeset.change(%SectionInvite{}, %{section_id: section.id, date_expires: now()})
+      section_invite =
+        Ecto.Changeset.change(%SectionInvite{}, %{
+          section_id: section.id,
+          date_expires: DateTime.truncate(now(), :second)
+        })
         |> Slug.update_never_seedless("section_invites")
+        |> Repo.insert!()
+
+      slug = section_invite.slug
 
       assert slug =~ ~r/^[a-zA-Z0-9]+$/
     end
 
-    test "update_never_seedless/2 cannot be changed" do
-      {:ok, section} = Sections.create_section()
+    test "update_never_seedless/2 cannot be changed", %{project: project} do
+      {:ok, section} =
+        Sections.create_section(%{
+          base_project_id: project.id,
+          timezone: "some timezone",
+          title: "some title",
+          context_id: "context_id"
+        })
 
       section_invite =
-        Ecto.Changeset.change(SectionInvite, %{
+        Ecto.Changeset.change(%SectionInvite{}, %{
           section_id: section.id,
-          date_expires: now()
+          date_expires: DateTime.truncate(now(), :second)
         })
         |> Slug.update_never_seedless("section_invites")
         |> Repo.insert!()

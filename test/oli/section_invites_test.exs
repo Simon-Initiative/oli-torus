@@ -74,7 +74,6 @@ defmodule Oli.SectionInvitesTest do
     test "getters work", %{section_invite: section_invite, section: section} do
       assert SectionInvites.get_section_invite(section_invite.slug) == section_invite
       assert SectionInvites.get_section_by_invite_slug(section_invite.slug).id == section.id
-      assert hd(SectionInvites.list_section_invites(section) == section)
     end
 
     test "expire_after/3 works", %{section: section} do
