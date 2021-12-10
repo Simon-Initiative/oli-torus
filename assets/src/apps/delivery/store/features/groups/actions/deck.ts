@@ -47,53 +47,21 @@ const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: a
   const ownerActivity = currentActivityTree?.find(
     (activity: any) => !!activity.content.partsLayout.find((p: any) => p.id === parts.id),
   );
-  const script: ApplyStateOperation[] = [];
-  if (parts.type === 'janus-dropdown') {
-    script.push(
-      {
-        target: `${ownerActivity.id}|stage.${parts.id}.value`,
-        operator: '=',
-        value: 0,
-        type: CapiVariableTypes.NUMBER,
-      },
-      {
-        target: `${ownerActivity.id}|stage.${parts.id}.selectedIndex`,
-        operator: '=',
-        value: 0,
-        type: CapiVariableTypes.NUMBER,
-      },
-    );
-  } else if (parts.type === 'janus-input-number') {
-    script.push({
-      target: `${ownerActivity.id}|stage.${parts.id}.value`,
-      operator: '=',
-      value: 0,
-      type: CapiVariableTypes.NUMBER,
-    });
-  } else if (parts.type === 'janus-mcq') {
-    script.push(
-      {
-        target: `${ownerActivity.id}|stage.${parts.id}.selectedChoice`,
-        operator: '=',
-        value: '',
-        type: CapiVariableTypes.STRING,
-      },
-      {
-        target: `${ownerActivity.id}|stage.${parts.id}.selectedChoices`,
-        operator: '=',
-        value: '',
-        type: CapiVariableTypes.STRING,
-      },
-    );
-  } else if (parts.type === 'janus-input-text' || parts.type === 'janus-multi-line-text') {
-    script.push({
-      target: `${ownerActivity.id}|stage.${parts.id}.text`,
-      operator: '=',
-      value: '',
-      type: CapiVariableTypes.STRING,
-    });
+  const PartClass = customElements.get(parts.type);
+  if (PartClass) {
+    // TODO: cache the instance data somewhere so we don't do this every time
+    const instance = new PartClass() as any; // TODO: extend HTMLElement?
+    if (instance.getInitDefaults) {
+      const initDefaults = instance.getInitDefaults();
+      const modifiedInitDefaults = initDefaults.map((defaultValue: ApplyStateOperation) => {
+        const updatedInit = { ...defaultValue };
+        updatedInit.target = `${ownerActivity.id}|stage.${parts.id}.${defaultValue.target}`;
+        return updatedInit;
+      });
+      return modifiedInitDefaults;
+    }
   }
-  return script;
+  return [];
 };
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,

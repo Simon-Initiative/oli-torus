@@ -68,6 +68,23 @@ export const adaptivitySchema = {
   enabled: CapiVariableTypes.BOOLEAN,
 };
 
+export const getInitDefaults = () => {
+  return [
+    {
+      target: `value`,
+      operator: '=',
+      value: 0,
+      type: CapiVariableTypes.NUMBER,
+    },
+    {
+      target: `selectedIndex`,
+      operator: '=',
+      value: 0,
+      type: CapiVariableTypes.NUMBER,
+    },
+  ];
+};
+
 export const createSchema = (): Partial<DropdownModel> => ({
   customCssClass: '',
   showLabel: true,

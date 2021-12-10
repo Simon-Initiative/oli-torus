@@ -68,6 +68,17 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
+export const getInitDefaults = () => {
+  return [
+    {
+      target: `value`,
+      operator: '=',
+      value: 0,
+      type: CapiVariableTypes.NUMBER,
+    },
+  ];
+};
+
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,
   enabled: CapiVariableTypes.BOOLEAN,
