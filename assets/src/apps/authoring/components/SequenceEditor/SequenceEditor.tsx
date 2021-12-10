@@ -15,6 +15,7 @@ import {
   findInHierarchy,
   flattenHierarchy,
   getHierarchy,
+  getSequenceLineage,
   SequenceEntry,
   SequenceEntryChild,
   SequenceEntryType,
@@ -573,6 +574,21 @@ const SequenceEditor: React.FC<any> = () => {
     );
   };
 
+  useEffect(() => {
+    // make sure that menus are expanded when the sequenceId is selected by any means
+    if (!currentSequenceId) {
+      return;
+    }
+    const lineage = getSequenceLineage(sequence, currentSequenceId);
+    /* console.log('lineage', lineage); */
+    // last one is the current sequence
+    lineage.pop();
+    lineage.reverse().forEach((item) => {
+      const eventName = `toggle_${item.custom.sequenceId}`;
+      document.dispatchEvent(new CustomEvent(eventName, { detail: 'expand' }));
+    });
+  }, [currentSequenceId, sequence]);
+
   const getHierarchyList = (items: any, isParentQB = false) =>
     items.map(
       (
@@ -595,7 +611,7 @@ const SequenceEditor: React.FC<any> = () => {
                 <div className="details">
                   {item.children.length ? (
                     <ContextAwareToggle
-                      eventKey={`${index}`}
+                      eventKey={`toggle_${item.custom.sequenceId}`}
                       className={`aa-sequence-item-toggle`}
                     />
                   ) : null}
@@ -644,7 +660,7 @@ const SequenceEditor: React.FC<any> = () => {
                 />
               </div>
               {item.children.length ? (
-                <Accordion.Collapse eventKey={`${index}`}>
+                <Accordion.Collapse eventKey={`toggle_${item.custom.sequenceId}`}>
                   <ListGroup as="ol" className="aa-sequence nested">
                     {getHierarchyList(item.children, item.custom.isBank)}
                   </ListGroup>

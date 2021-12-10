@@ -134,13 +134,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-          if (
-            typeof expr === 'string' &&
-            expr.charAt(0) === '[' &&
-            expr.charAt(expr.length - 1) === ']'
-          ) {
-            expr = parseArray(expr);
-          }
+
           const stmt = `let {variables.${v.name.trim()}} = ${expr};`;
           return stmt;
         })

@@ -189,7 +189,6 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   } = model;
 
   const inputNumberDivStyles: CSSProperties = {
-    position: 'absolute',
     top: y,
     left: x,
     zIndex: z,
@@ -249,7 +248,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   }, [inputNumberValue]);
 
   return ready ? (
-    <div data-janus-type={tagName} className={`number-input`}>
+    <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>
       {showLabel && (
         <React.Fragment>
           <label htmlFor={`${id}-number-input`} className="inputNumberLabel">

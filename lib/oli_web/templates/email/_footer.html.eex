@@ -2,8 +2,8 @@
     <tr>
         <td style="padding: 20px; font-family: sans-serif; font-size: 12px; line-height: 15px; text-align: center; color: #212529;">
             <br><br>
-            Open Learning Initiative<br>
-            Carnegie Mellon University<br><span class="unstyle-auto-detected-links">5000 Forbes Ave, Pittsburgh, PA 15213 US</span>
+            <%= Oli.VendorProperties.product_full_name() %><br>
+            <%= Oli.VendorProperties.company_name() %><br><span class="unstyle-auto-detected-links"><%= Oli.VendorProperties.company_address() %></span>
             <br><br>
         </td>
     </tr>

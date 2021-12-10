@@ -5,7 +5,7 @@
     </a>
     <div class="workspace-top d-flex flex-row">
       <div class="logo d-flex justify-content-center align-items-center">
-          <img src="/images/torus-icon.png" height="50px" width="50px"/>
+        <img src="<%= Oli.VendorProperties.workspace_logo() %>" height="50px" width="50px"/>
       </div>
       <%= render OliWeb.LayoutView,
         "_#{cond do

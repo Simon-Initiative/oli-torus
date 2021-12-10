@@ -58,7 +58,7 @@ export const templatizeText = (
         console.log('error evaluating text', { v, e });
       }
     }
-    if (!stateValue) {
+    if (stateValue === undefined) {
       if (isFromTrapStates) {
         return text;
       } else {
