@@ -16,17 +16,6 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [showControls, setShowControls] = useState(true);
   const [classes, setClasses] = useState<any>('');
 
-  const handleStylingChanges = () => {
-    const styleChanges: any = {};
-    if (width !== undefined) {
-      styleChanges.width = { value: width as number };
-    }
-    if (height != undefined) {
-      styleChanges.height = { value: height as number };
-    }
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  };
-
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dCssClass = pModel.customCssClass || classes;
@@ -87,7 +76,6 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     if (sEnableReplay !== undefined) {
       setAudioEnableReplay(sEnableReplay);
     }
-    handleStylingChanges();
     setReady(true);
   }, []);
 
@@ -303,6 +291,18 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
   let finalSrc = src;
   if (startTime && startTime >= 0) {
