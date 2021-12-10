@@ -119,9 +119,7 @@ defmodule Oli.Publishing do
     available_publications(nil, nil)
   end
 
-  def available_publications(nil, _institution), do: available_publications()
-
-  def available_publications(%Author{} = author, %Institution{} = institution) do
+  def available_publications(author, institution) do
     subquery =
       from t in Publication,
         select: max(t.id),
