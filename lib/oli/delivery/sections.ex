@@ -771,31 +771,58 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
+  def retrieve_visible_publications(user, institution) do
+    (Oli.Groups.list_community_associated_publications(user.id, institution) ++
+       Publishing.available_publications(
+         user.author,
+         institution,
+         can_access_global_content(user, institution)
+       ))
+    |> Enum.uniq()
+    |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+  end
+
   def retrieve_visible_sources(user, institution) do
-    all =
-      case user.author do
-        nil ->
-          {Oli.Delivery.Sections.Blueprint.available_products(),
-           Publishing.available_publications()}
+    sources =
+      Oli.Groups.list_community_associated_publications_and_products(user.id, institution) ++
+        Oli.Accounts.list_available_publications_and_products(
+          user.author,
+          institution,
+          can_access_global_content(user, institution)
+        )
 
-        author ->
-          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-           Publishing.available_publications(author, institution)}
-      end
-      |> then(fn {products, publications} ->
-        filtered =
-          Enum.filter(publications, fn p -> p.published end)
-          |> then(fn publications ->
-            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-              products,
-              publications
-            )
-          end)
+    {publication_list, section_list} =
+      Enum.reduce(
+        sources,
+        {[], []},
+        fn
+          {publication, nil}, {publication_list, section_list} ->
+            {[publication | publication_list], section_list}
 
-        filtered ++ products
-      end)
+          {%Publication{project: nil}, section}, {publication_list, section_list} ->
+            {publication_list, [section | section_list]}
 
-    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
+          {publication, section}, {publication_list, section_list} ->
+            {[publication | publication_list], [section | section_list]}
+        end
+      )
+
+    filtered_publications =
+      Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
+        section_list,
+        publication_list
+      )
+
+    (filtered_publications ++ section_list)
+    |> Enum.uniq()
+    |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+  end
+
+  defp can_access_global_content(user, institution) do
+    associated_communities = Oli.Groups.list_associated_communities(user.id, institution)
+
+    associated_communities == [] or
+      Enum.any?(associated_communities, fn community -> community.global_access end)
   end
 
   defp get_title(pub_or_prod) do

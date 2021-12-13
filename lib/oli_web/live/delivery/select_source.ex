@@ -1,13 +1,11 @@
 defmodule OliWeb.Delivery.SelectSource do
   use Surface.LiveView
 
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Filter
-  alias OliWeb.Common.Listing
-  alias OliWeb.Common.Breadcrumb
-  alias Oli.Delivery.Sections.Blueprint
   alias Oli.Accounts
-  alias Oli.Institutions.Institution
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Blueprint
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
+  alias OliWeb.Router.Helpers, as: Routes
 
   data breadcrumbs, :any,
     default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
@@ -74,7 +72,7 @@ defmodule OliWeb.Delivery.SelectSource do
     route = socket.assigns.live_action
 
     sources =
-      retrieve_all_sources(route, maybe_get_author(session))
+      retrieve_all_sources(route, session)
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
     total_count = length(sources)
@@ -124,41 +122,10 @@ defmodule OliWeb.Delivery.SelectSource do
 
   use OliWeb.Common.SortableTable.TableHandlers
 
-  # This route is used in both authoring and delivery.
-  # A user may have a linked author account or it may not.
-  # We check the session for the author_id or user_id which
-  # are both set by plugs in the router.
-  defp maybe_get_author(session) do
-    cond do
-      Map.has_key?(session, "current_author_id") ->
-        Accounts.get_author!(session["current_author_id"])
+  defp retrieve_all_sources(:admin, _session) do
+    products = Blueprint.list()
 
-      Map.has_key?(session, "current_user_id") ->
-        session["current_user_id"]
-        |> Accounts.get_user!(preload: [:author])
-        |> Map.get(:author)
-
-      true ->
-        nil
-    end
-  end
-
-  defp retrieve_all_sources(route, author) do
-    products = get_products(route, author)
-    project_publications = get_publications(route, author, products)
-
-    project_publications ++ products
-  end
-
-  defp get_products(:admin, _author), do: Blueprint.list()
-
-  defp get_products(:independent_learner, author) do
-    Blueprint.available_products(author, empty_institution())
-  end
-
-  # Admins filter to free pubs
-  defp get_publications(:admin, _author, products),
-    do:
+    free_project_publications =
       Oli.Publishing.all_available_publications()
       |> then(fn publications ->
         Blueprint.filter_for_free_projects(
@@ -167,11 +134,14 @@ defmodule OliWeb.Delivery.SelectSource do
         )
       end)
 
-  defp get_publications(:independent_learner, author, _products),
-    do: Oli.Publishing.available_publications(author, empty_institution())
+    free_project_publications ++ products
+  end
 
-  defp empty_institution(),
-    do: %Institution{
-      id: "invalid id used only to fulfill query requirement"
-    }
+  defp retrieve_all_sources(:independent_learner, session) do
+    Sections.retrieve_visible_sources(
+      session["current_user_id"]
+      |> Accounts.get_user!(preload: [:author, :platform_roles]),
+      nil
+    )
+  end
 end

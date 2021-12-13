@@ -119,7 +119,7 @@ defmodule Oli.Publishing do
     available_publications(nil, nil)
   end
 
-  def available_publications(author, institution) do
+  def available_publications(author, institution, include_global \\ true) do
     subquery =
       from t in Publication,
         select: max(t.id),
@@ -132,25 +132,26 @@ defmodule Oli.Publishing do
     by_visibility =
       case {author, institution} do
         {nil, nil} ->
-          dynamic([_, p, _], p.visibility == :global)
+          dynamic([_, p, _], ^include_global and p.visibility == :global)
 
         {%Author{id: id}, nil} ->
           dynamic(
             [_, p, ap, v],
-            p.visibility == :global or ap.author_id == ^id or
+            (^include_global and p.visibility == :global) or ap.author_id == ^id or
               (p.visibility == :selected and v.author_id == ^id)
           )
 
         {nil, %Institution{id: id}} ->
           dynamic(
             [_, p, _, v],
-            p.visibility == :global or (p.visibility == :selected and v.institution_id == ^id)
+            (^include_global and p.visibility == :global) or
+              (p.visibility == :selected and v.institution_id == ^id)
           )
 
         {%Author{id: author_id}, %Institution{id: id}} ->
           dynamic(
             [_, p, ap, v],
-            p.visibility == :global or ap.author_id == ^author_id or
+            (^include_global and p.visibility == :global) or ap.author_id == ^author_id or
               (p.visibility == :selected and v.institution_id == ^id) or
               (p.visibility == :selected and v.author_id == ^author_id)
           )
@@ -281,6 +282,14 @@ defmodule Oli.Publishing do
         select: pub
     )
   end
+
+  def last_publication_query(),
+    do:
+      from(p in Publication,
+        select: %{id: max(p.id), project_id: p.project_id},
+        where: not is_nil(p.published),
+        group_by: p.project_id
+      )
 
   @doc """
   Gets a single publication.

@@ -10,6 +10,8 @@ defmodule Oli.Groups do
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions
   alias Oli.Institutions.Institution
+  alias Oli.Publishing
+  alias Oli.Publishing.Publication
   alias Oli.Repo
 
   # ------------------------------------------------------------
@@ -400,6 +402,119 @@ defmodule Oli.Groups do
     |> Repo.all()
   end
 
+  @doc """
+  Get all the communities the user belongs and/or the communities the
+  user's institution belongs
+
+  ## Examples
+
+      iex> list_associated_communities(1, 1)
+      [%Community{}, ...]
+
+      iex> list_associated_communities(123, 1)
+      []
+  """
+  def list_associated_communities(user_id, institution),
+    do: Repo.all(associated_communities_query(user_id, institution))
+
+  @doc """
+  Get all the publications associated with:
+    - The communities the user belongs
+    - The communities the user's institution belongs
+
+  ## Examples
+
+      iex> list_community_associated_publications(1, 1)
+      [%Publication{project: %Project{}}, ...]
+
+      iex> list_community_associated_publications(123, 1)
+      []
+  """
+  def list_community_associated_publications(user_id, institution) do
+    from(
+      community in Community,
+      join:
+        associated_communities in subquery(associated_communities_query(user_id, institution)),
+      on: associated_communities.id == community.id,
+      join: community_visibility in CommunityVisibility,
+      on: community_visibility.community_id == community.id,
+      left_join: project in assoc(community_visibility, :project),
+      join: last_publication in subquery(Publishing.last_publication_query()),
+      on: last_publication.project_id == project.id,
+      join: publication in Publication,
+      on: publication.id == last_publication.id,
+      select: %{publication | project: project},
+      group_by: [project.id, publication.id]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get all the publications and products associated with:
+    - The communities the user belongs
+    - The communities the user's institution belongs
+
+  ## Examples
+
+      iex> list_community_associated_publications_and_products(1, 1)
+      [{%Publication{project: %Project{}}, nil}, {%Publication{}, %Section{}}, ...]
+
+      iex> list_community_associated_publications_and_products(123, 1)
+      []
+  """
+  def list_community_associated_publications_and_products(user_id, institution) do
+    from(
+      community in Community,
+      join:
+        associated_communities in subquery(associated_communities_query(user_id, institution)),
+      on: associated_communities.id == community.id,
+      join: community_visibility in CommunityVisibility,
+      on: community_visibility.community_id == community.id,
+      left_join: project in assoc(community_visibility, :project),
+      left_join: section in assoc(community_visibility, :section),
+      join: last_publication in subquery(Publishing.last_publication_query()),
+      on:
+        last_publication.project_id == project.id or
+          last_publication.project_id == section.base_project_id,
+      join: publication in Publication,
+      on: publication.id == last_publication.id,
+      select:
+        {%{
+           publication
+           | project: project
+         }, section},
+      distinct: true
+    )
+    |> Repo.all()
+  end
+
+  defp associated_communities_query(user_id, institution) do
+    user_communities_query =
+      from community in Community,
+        join: community_account in CommunityAccount,
+        on:
+          community.id == community_account.community_id and community_account.user_id == ^user_id,
+        select: community
+
+    case institution do
+      nil ->
+        user_communities_query
+
+      %Institution{id: institution_id} ->
+        institution_communities_query =
+          from community in Community,
+            join: community_institution in CommunityInstitution,
+            on:
+              community.id == community_institution.community_id and
+                community_institution.institution_id == ^institution_id,
+            select: community
+
+        from user_communities_query,
+          union: ^institution_communities_query,
+          distinct: true
+    end
+  end
+
   # ------------------------------------------------------------
   # Communities institutions
 
@@ -516,6 +631,8 @@ defmodule Oli.Groups do
       community_institution -> Repo.delete(community_institution)
     end
   end
+
+  # ------------------------------------------------------------
 
   defp filter_conditions(filter) do
     Enum.reduce(filter, false, fn {field, value}, conditions ->
