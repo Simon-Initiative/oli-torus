@@ -303,8 +303,17 @@ const Markup: React.FC<any> = ({
       );
     case 'li':
       // eslint-disable-next-line
-      const spanChildren = children.filter((child: any) => {
-        return child.props.tag === 'span';
+      let spanChildren: any[] = [];
+      children.map((child: any) => {
+        if (child.props.tag === 'p') {
+          child.props.children.map((child: any) => {
+            if (child.props.tag === 'span') {
+              spanChildren.push(child);
+            }
+          });
+        } else if (child.props.tag === 'span') {
+          spanChildren.push(child);
+        }
       });
       const listStyle = { ...renderStyles, display: 'list-item' };
       if (spanChildren.length === 1 && spanChildren[0].props.style.color && !listStyle.color) {
