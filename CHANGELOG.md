@@ -6,6 +6,8 @@
 
 - Fix a bug that prevented editing internal links when only one other page exists
 - Fix a bug that prevented content from being added during remix
+- Fix a bug that allowed paid status of a section to be toggled off
+- Fix a bug that resulted in products being able to be created with invalid grace period days
 
 ### Enhancements
 
