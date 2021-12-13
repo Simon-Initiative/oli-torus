@@ -313,6 +313,7 @@ defmodule Oli.Accounts do
   @doc """
   Returns true if an author is an administrator.
   """
+  def is_admin?(nil), do: false
   def is_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().admin == system_role_id
   end

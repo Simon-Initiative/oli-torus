@@ -70,7 +70,6 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
       setEnabled(false);
     }
     setReady(true);
-    handleStylingChanges();
   }, []);
 
   useEffect(() => {
@@ -198,13 +197,13 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     width: '100%',
   };
 
-  const handleStylingChanges = () => {
+  useEffect(() => {
     const styleChanges: any = {};
     if (width !== undefined) {
-      styleChanges.width.value = width as number;
+      styleChanges.width = { value: width as number };
     }
     props.onResize({ id: `${id}`, settings: styleChanges });
-  };
+  }, [width]);
 
   const debouncetime = 300;
   const debounceSave = useCallback(

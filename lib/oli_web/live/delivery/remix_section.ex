@@ -122,7 +122,7 @@ defmodule OliWeb.Delivery.RemixSection do
         section,
         _session
       ) do
-    redirect_after_save = Routes.open_and_free_path(OliWeb.Endpoint, :show, section)
+    redirect_after_save = OliWeb.OpenAndFreeView.get_path([:admin, :show, section])
 
     # only permit authoring admin level access
 
