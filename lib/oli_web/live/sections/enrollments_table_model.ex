@@ -22,6 +22,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         name: :enrollment_date,
         label: "Enrolled On",
         render_fn: &OliWeb.Common.Table.Common.render_short_date/3
+      },
+      %ColumnSpec{
+        name: :unenroll,
+        label: "Unenroll",
+        render_fn: &__MODULE__.render_unenroll_column/3
       }
     ]
 
@@ -64,6 +69,14 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}>
       {name(name, given_name, family_name)}
     </a>
+    """
+  end
+
+  def render_unenroll_column(assigns, user, _) do
+    ~F"""
+    <button class="btn btn-outline-danger" phx-click="unenroll" phx-value-id={user.id}>
+      Unenroll
+    </button>
     """
   end
 end
