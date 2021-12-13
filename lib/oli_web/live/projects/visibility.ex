@@ -82,7 +82,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                     <form phx-change="search" class="form-inline form-grow">
                       <%= text_input :search_field, :query, placeholder: "Search for users by email here",
                                     class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                                    autofocus: true, "phx-debounce": "300" %>
+                                    autofocus: true, "phx-debounce": "300", autocomplete: "off" %>
                       <%= hidden_input :search_field, :entity, value: "instructors" %>
                     </form>
                   </div>
@@ -177,7 +177,7 @@ defmodule OliWeb.Projects.VisibilityLive do
       "instructors" ->
         list =
           if String.length(query) > 1 do
-            Accounts.search_authors_matching(query)
+            Accounts.search_authors_matching(query, true)
           else
             []
           end

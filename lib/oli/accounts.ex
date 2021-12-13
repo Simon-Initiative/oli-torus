@@ -314,6 +314,7 @@ defmodule Oli.Accounts do
   Returns true if an author is an administrator.
   """
   def is_admin?(nil), do: false
+
   def is_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().admin == system_role_id
   end
@@ -420,9 +421,8 @@ defmodule Oli.Accounts do
   @doc """
   Searches for a list of authors with an email matching a wildcard pattern
   """
-  def search_authors_matching(query) do
-    q = query
-    q = "%" <> q <> "%"
+  def search_authors_matching(query, exact_match \\ false) do
+    q = if exact_match, do: query, else: "%#{query}%"
 
     Repo.all(
       from(author in Author,
