@@ -4,6 +4,7 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.PlatformInstance
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
+  alias Oli.Institutions
 
   import Mox
 
@@ -93,10 +94,13 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
-    test "launch successful for valid params and creates deployment on the fly", %{
+    test "show registration page when deployment doesnt exist", %{
       conn: conn,
-      registration: registration
+      registration: registration,
+      deployment: deployment
     } do
+      {:ok, _} = Institutions.delete_deployment(deployment)
+
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
@@ -120,7 +124,6 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       deployment_id = claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-      registration_id = registration.id
 
       assert nil ==
                Lti_1p3.Tool.get_registration_deployment(
@@ -131,18 +134,8 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
-
-      assert {%Lti_1p3.Tool.Registration{},
-              %Lti_1p3.Tool.Deployment{
-                deployment_id: ^deployment_id,
-                registration_id: ^registration_id
-              }} =
-               Lti_1p3.Tool.get_registration_deployment(
-                 registration.issuer,
-                 registration.client_id,
-                 deployment_id
-               )
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
     test "launch successful for valid params with no email", %{
@@ -361,8 +354,10 @@ defmodule OliWeb.LtiControllerTest do
   defp create_fixtures(%{conn: conn}) do
     jwk = jwk_fixture()
     institution = institution_fixture()
-    registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-    deployment = deployment_fixture(%{registration_id: registration.id})
+    registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+    deployment =
+      deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
     %{
       conn: conn,

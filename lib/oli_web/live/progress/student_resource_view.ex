@@ -182,8 +182,6 @@ defmodule OliWeb.Progress.StudentResourceView do
     user = socket.assigns.user
     revision = socket.assigns.revision
 
-    IO.inspect("passback")
-
     # Read the latest resource_access to account for cases where a student has
     # just finalized another attempt, or the instructor has overriden the grade in another
     # instance of this window

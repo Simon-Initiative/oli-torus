@@ -108,7 +108,7 @@ defmodule OliWeb.RegistrationController do
       {:ok, _registration} ->
         conn
         |> put_flash(:info, "Registration updated successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, id))
+        |> redirect(to: Routes.registration_path(conn, :show, id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",

@@ -262,8 +262,8 @@ defmodule Oli.Institutions do
     |> Repo.insert()
   end
 
-  def maybe_create_deployment(%{deployment_id: nil} = attrs), do: {:ok, nil}
-  def maybe_create_deployment(attrs), do: create_deployment(attrs)
+  def maybe_create_deployment(%{deployment_id: nil}), do: {:ok, nil}
+  def maybe_create_deployment(%{deployment_id: _} = attrs), do: create_deployment(attrs)
 
   @doc """
   Updates a deployment.
@@ -487,8 +487,7 @@ defmodule Oli.Institutions do
              Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
                institution_id: institution.id,
                registration_id: registration.id
-             })
-             |> IO.inspect(),
+             }),
            {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
            {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
         {institution, registration, deployment}

@@ -48,6 +48,9 @@ defmodule OliWeb.LtiController do
       {:ok, lti_params, lti_params_key} ->
         handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key)
 
+      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
+        handle_invalid_registration(conn, issuer, client_id)
+
       {:error,
        %{
          reason: :invalid_deployment,
@@ -291,9 +294,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_invalid_registration(conn, issuer, client_id, deployment_id) do
-    IO.inspect({issuer, client_id, deployment_id}, label: "handle_invalid_registration")
-
+  defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
     case Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
         conn
@@ -317,8 +318,6 @@ defmodule OliWeb.LtiController do
   end
 
   defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
-    IO.inspect({registration_id, deployment_id}, label: "handle_invalid_deployment")
-
     registration = Institutions.get_registration!(registration_id)
 
     handle_invalid_registration(conn, registration.issuer, registration.client_id, deployment_id)

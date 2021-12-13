@@ -94,7 +94,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
           {:error, err} ->
             Logger.debug("Error in apply client results! #{err}")
-            IO.inspect(err)
+
             {:error, err}
         end
 
