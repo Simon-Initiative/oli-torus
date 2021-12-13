@@ -26,8 +26,15 @@ defmodule OliWeb.LtiController do
         |> put_session("state", state)
         |> redirect(external: redirect_url)
 
-      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
-        handle_invalid_registration(conn, issuer, client_id)
+      {:error,
+       %{
+         reason: :invalid_registration,
+         msg: _msg,
+         issuer: issuer,
+         client_id: client_id,
+         lti_deployment_id: lti_deployment_id
+       }} ->
+        handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
       {:error, reason} ->
         render(conn, "lti_error.html", reason: reason)
@@ -40,9 +47,6 @@ defmodule OliWeb.LtiController do
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params, lti_params_key} ->
         handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key)
-
-      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
-        handle_invalid_registration(conn, issuer, client_id)
 
       {:error,
        %{
@@ -287,8 +291,10 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_invalid_registration(conn, issuer, client_id) do
-    case Oli.Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
+  defp handle_invalid_registration(conn, issuer, client_id, deployment_id) do
+    IO.inspect({issuer, client_id, deployment_id}, label: "handle_invalid_registration")
+
+    case Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
         conn
         |> render("register.html",
@@ -300,7 +306,8 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,
-          client_id: client_id
+          client_id: client_id,
+          deployment_id: deployment_id
         )
 
       pending_registration ->
@@ -309,18 +316,12 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_invalid_deployment(conn, params, registration_id, deployment_id) do
-    case Institutions.create_deployment(%{
-           deployment_id: deployment_id,
-           registration_id: registration_id
-         }) do
-      {:ok, _deployment} ->
-        # try the LTI launch again now that deployment is created
-        launch(conn, params)
+  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
+    IO.inspect({registration_id, deployment_id}, label: "handle_invalid_deployment")
 
-      _ ->
-        render(conn, "lti_error.html", reason: "Failed to create deployment")
-    end
+    registration = Institutions.get_registration!(registration_id)
+
+    handle_invalid_registration(conn, registration.issuer, registration.client_id, deployment_id)
   end
 
   defp handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key) do

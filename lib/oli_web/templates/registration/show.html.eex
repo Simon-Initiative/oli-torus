@@ -1,0 +1,3 @@
+<div class="container">
+    <%= render OliWeb.RegistrationView, "_details.html", assigns %>
+</div>

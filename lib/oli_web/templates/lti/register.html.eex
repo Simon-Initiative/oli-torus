@@ -183,6 +183,8 @@
 
             </div>
 
+            <%= hidden_input f, :deployment_id, value: @deployment_id %>
+
             <div>
               <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>
             </div>

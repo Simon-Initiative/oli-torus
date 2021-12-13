@@ -8,7 +8,7 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts.Author
   alias Oli.Institutions
   alias Oli.Lti_1p3.Tool.Registration
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
   alias Oli.Institutions.PendingRegistration
 
   @create_attrs %{
@@ -130,13 +130,13 @@ defmodule OliWeb.InstitutionControllerTest do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         conn =
           recycle(conn)
           |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
         get(conn, Routes.institution_path(conn, :show, institution))
-      end
+      end)
     end
   end
 

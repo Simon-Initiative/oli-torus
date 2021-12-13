@@ -114,7 +114,7 @@ defmodule Oli.InstitutionsTest do
   end
 
   describe "deployments" do
-    alias Lti_1p3.DataProviders.EctoProvider.Deployment
+    alias Oli.Lti_1p3.Tool.Deployment
 
     setup do
       institution = institution_fixture()
@@ -386,9 +386,10 @@ defmodule Oli.InstitutionsTest do
       assert Institutions.list_registrations() |> Enum.find(fn r -> r.issuer == "new issuer" end) !=
                nil
 
-      assert Institutions.get_pending_registration_by_issuer_client_id(
+      assert Institutions.get_pending_registration(
                "some issuer",
-               "some client_id"
+               "some client_id",
+               "some deployment_id"
              ) == nil
     end
 
@@ -416,9 +417,10 @@ defmodule Oli.InstitutionsTest do
       assert Institutions.list_registrations() |> Enum.find(fn r -> r.issuer == "new issuer" end) !=
                nil
 
-      assert Institutions.get_pending_registration_by_issuer_client_id(
+      assert Institutions.get_pending_registration(
                "some issuer",
-               "some client_id"
+               "some client_id",
+               "some deployment_id"
              ) == nil
     end
   end

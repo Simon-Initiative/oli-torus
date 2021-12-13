@@ -268,12 +268,12 @@ defmodule OliWeb.Router do
     get("/keep-alive", StaticPageController, :keep_alive)
 
     scope "/communities" do
-      pipe_through [:community_admin]
+      pipe_through([:community_admin])
 
       live("/", CommunityLive.IndexView)
 
       scope "/:community_id" do
-        pipe_through [:authorize_community]
+        pipe_through([:authorize_community])
 
         live("/", CommunityLive.ShowView)
         live("/members", CommunityLive.MembersIndexView)
@@ -725,10 +725,10 @@ defmodule OliWeb.Router do
     live("/open_and_free/create", Delivery.SelectSource)
     live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
 
-    resources "/institutions", InstitutionController do
-      resources "/registrations", RegistrationController, except: [:index, :show] do
-        resources("/deployments", DeploymentController, except: [:index, :show])
-      end
+    resources("/institutions", InstitutionController)
+
+    resources("/registrations", RegistrationController) do
+      resources("/deployments", DeploymentController, except: [:index, :show])
     end
 
     live("/communities/new", CommunityLive.NewView)

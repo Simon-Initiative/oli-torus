@@ -9,7 +9,7 @@ defmodule Oli.Institutions do
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Tool.Registration
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
 
   @doc """
   Returns the list of institutions.
@@ -31,7 +31,7 @@ defmodule Oli.Institutions do
       ** (Ecto.NoResultsError)
   """
   def get_institution!(id),
-    do: Repo.get!(Institution, id) |> Repo.preload(registrations: [:deployments, :brand])
+    do: Repo.get!(Institution, id) |> Repo.preload([:deployments, :default_brand])
 
   @doc """
   Creates a institution.
@@ -92,8 +92,10 @@ defmodule Oli.Institutions do
       [%Registration{}, ...]
 
   """
-  def list_registrations do
-    Repo.all(Registration)
+  def list_registrations(opts \\ []) do
+    preload = Keyword.get(opts, :preload, [])
+
+    Repo.all(Registration) |> Repo.preload(preload)
   end
 
   @doc """
@@ -123,9 +125,8 @@ defmodule Oli.Institutions do
   def get_registration_preloaded!(id) do
     from(r in Registration,
       left_join: d in assoc(r, :deployments),
-      left_join: b in assoc(r, :brand),
       where: r.id == ^id,
-      preload: [deployments: d, brand: b]
+      preload: [deployments: d]
     )
     |> Repo.one!()
   end
@@ -146,6 +147,28 @@ defmodule Oli.Institutions do
     %Registration{}
     |> Registration.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Returns a registration if one exists with the given params, otherwise creates a new one.
+
+  ## Examples
+
+      iex> find_or_create_registration(%{field: value})
+      {:ok, %Registration{}}
+  """
+  def find_or_create_registration(%{issuer: issuer, client_id: client_id} = registration_attrs) do
+    case Repo.one(
+           from(r in Registration,
+             where:
+               r.issuer == ^issuer and
+                 r.client_id == ^client_id,
+             select: r
+           )
+         ) do
+      nil -> create_registration(registration_attrs)
+      registration -> {:ok, registration}
+    end
   end
 
   @doc """
@@ -239,6 +262,9 @@ defmodule Oli.Institutions do
     |> Repo.insert()
   end
 
+  def maybe_create_deployment(%{deployment_id: nil} = attrs), do: {:ok, nil}
+  def maybe_create_deployment(attrs), do: create_deployment(attrs)
+
   @doc """
   Updates a deployment.
 
@@ -288,9 +314,10 @@ defmodule Oli.Institutions do
 
   def get_registration_by_issuer_client_id(issuer, client_id) do
     Repo.one(
-      from registration in Registration,
+      from(registration in Registration,
         where: registration.issuer == ^issuer and registration.client_id == ^client_id,
         select: registration
+      )
     )
   end
 
@@ -326,19 +353,31 @@ defmodule Oli.Institutions do
   def get_pending_registration!(id), do: Repo.get!(PendingRegistration, id)
 
   @doc """
-  Gets a single pending_registration by the issuer and client_id.
+  Gets a single pending_registration by the issuer, client_id and deployment_id.
   Returns nil if the PendingRegistration does not exist.
   ## Examples
-      iex> get_pending_registration_by_issuer_client_id(123)
+      iex> get_pending_registration(issuer, client_id, deployment_id)
       %PendingRegistration{}
-      iex> get_pending_registration_by_issuer_client_id(456)
+      iex> get_pending_registration(issuer, client_id, deployment_id)
       nil
   """
-  def get_pending_registration_by_issuer_client_id(issuer, client_id) do
+  def get_pending_registration(issuer, client_id, nil) do
     Repo.one(
-      from pr in PendingRegistration,
+      from(pr in PendingRegistration,
         where: pr.issuer == ^issuer and pr.client_id == ^client_id,
         select: pr
+      )
+    )
+  end
+
+  def get_pending_registration(issuer, client_id, deployment_id) do
+    Repo.one(
+      from(pr in PendingRegistration,
+        where:
+          pr.issuer == ^issuer and pr.client_id == ^client_id and
+            pr.deployment_id == ^deployment_id,
+        select: pr
+      )
     )
   end
 
@@ -407,10 +446,11 @@ defmodule Oli.Institutions do
       |> String.replace_trailing("/", "")
 
     case Repo.all(
-           from i in Institution,
+           from(i in Institution,
              where: like(i.institution_url, ^normalized_url),
              select: i,
              order_by: i.id
+           )
          ) do
       [] -> create_institution(institution_attrs)
       [institution] -> {:ok, institution}
@@ -419,9 +459,11 @@ defmodule Oli.Institutions do
   end
 
   @doc """
-  Approves a pending registration request. If successful, a new registration will be created and attached
+  Approves a pending registration request. If successful, a new deployment will be created and attached
   to a new or existing institution if one with a similar url already exists.
+
   The operation guarantees all actions or none are performed.
+
   ## Examples
       iex> approve_pending_registration(pending_registration)
       {:ok, {%Institution{}, %Registration{}}}
@@ -440,9 +482,16 @@ defmodule Oli.Institutions do
                institution_id: institution.id,
                tool_jwk_id: active_jwk.id
              }),
-           {:ok, registration} <- create_registration(registration_attrs),
+           {:ok, registration} <- find_or_create_registration(registration_attrs),
+           deployment_attrs =
+             Map.merge(PendingRegistration.deployment_attrs(pending_registration), %{
+               institution_id: institution.id,
+               registration_id: registration.id
+             })
+             |> IO.inspect(),
+           {:ok, deployment} <- maybe_create_deployment(deployment_attrs),
            {:ok, _pending_registration} <- delete_pending_registration(pending_registration) do
-        {institution, registration}
+        {institution, registration, deployment}
       else
         error -> Repo.rollback(error)
       end
@@ -459,15 +508,16 @@ defmodule Oli.Institutions do
   """
   def get_institution_registration_deployment(issuer, client_id, deployment_id) do
     Repo.one(
-      from institution in Oli.Institutions.Institution,
-        join: registration in Oli.Lti_1p3.Tool.Registration,
-        on: registration.institution_id == institution.id,
-        join: deployment in Lti_1p3.DataProviders.EctoProvider.Deployment,
-        on: deployment.registration_id == registration.id,
+      from(d in Deployment,
+        join: r in Registration,
+        on: r.id == d.registration_id,
+        join: i in Institution,
+        on: i.id == d.institution_id,
         where:
-          registration.issuer == ^issuer and registration.client_id == ^client_id and
-            deployment.deployment_id == ^deployment_id,
-        select: {institution, registration, deployment}
+          r.issuer == ^issuer and r.client_id == ^client_id and
+            d.deployment_id == ^deployment_id,
+        select: {i, r, d}
+      )
     )
   end
 
@@ -479,8 +529,9 @@ defmodule Oli.Institutions do
     q = "%" <> q <> "%"
 
     Repo.all(
-      from i in Institution,
+      from(i in Institution,
         where: ilike(i.name, ^q)
+      )
     )
   end
 end

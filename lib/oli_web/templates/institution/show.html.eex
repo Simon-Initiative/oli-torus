@@ -34,111 +34,33 @@
       </tr>
 
       <tr>
-        <td><strong>LTI 1.3 Registrations:</strong></td>
-        <td style="width: 80%;">
-          <%= for registration <- @institution.registrations do %>
-            <div class="registrations-accordion my-2">
-              <div class="registration card">
-                <div class="card-header" id="heading<%= registration.id %>">
-                  <div class="mb-0 d-flex">
-                    <div class="registration-title">
-                      <%= registration.issuer %> - <%= registration.client_id %>
-                    </div>
-                    <div class="flex-fill"></div>
-                    <div>
-                      <%= link "Edit Details", to: Routes.institution_registration_path(@conn, :edit, @institution.id, registration.id), class: "btn btn-sm btn-outline-primary ml-2" %>
-                      <%= link to: Routes.institution_registration_path(@conn, :delete, @institution.id, registration.id),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger ml-2",
-                        data: [confirm: "Are you sure you want to permanently remove this registration? \"#{registration.issuer} - #{registration.client_id}\""] do %>
-                          <i class="lar la-trash-alt"></i> Remove
-                      <% end %>
-                    </div>
-                  </div>
-                </div>
+        <td><strong>Brand:</strong></td>
+        <td>
+          <%= case @institution.default_brand do %>
+            <% nil -> %>
+              <span class="text-secondary font-italic">None</span>
 
-                <div aria-labelledby="heading<%= registration.id %>">
-                  <div class="card-body">
-
-                    <h5 class="mb-4">Registration Details</h5>
-                    <table class="table table-sm">
-                      <tbody>
-
-                        <tr>
-                          <td><strong>Brand:</strong></td>
-                          <td>
-                            <%= case registration.brand do %>
-                              <% nil -> %>
-                                <span class="text-secondary font-italic">None</span>
-
-                              <% brand -> %>
-                                <div class="logo-container">
-                                  <img src="<%= brand.logo %>" />
-                                </div>
-                            <% end %>
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Issuer:</strong></td>
-                          <td><%= registration.issuer %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Client ID:</strong></td>
-                          <td><%= registration.client_id %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Keyset URL:</strong></td>
-                          <td><%= registration.key_set_url %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Auth Token URL:</strong></td>
-                          <td><%= registration.auth_token_url %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Auth Login URL:</strong></td>
-                          <td><%= registration.auth_login_url %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Auth Server URL:</strong></td>
-                          <td><%= registration.auth_server %></td>
-                        </tr>
-
-                        <tr>
-                          <td><strong>Deployments:</strong></td>
-                          <td>
-                            <%= for deployment <- registration.deployments do %>
-                              <ul>
-                                <li>
-                                  <%= deployment.deployment_id %>
-                                  <%= link to: Routes.institution_registration_deployment_path(@conn, :delete, @institution.id, registration.id, deployment.id),
-                                    method: :delete,
-                                    class: "btn btn-xs btn-danger ml-2 float-right",
-                                    data: [confirm: "Are you sure you want to permanently remove this deployment? \"#{deployment.deployment_id}\""] do %>
-                                      <i class="lar la-trash-alt"></i> Remove
-                                  <% end %>
-                                </li>
-                              </ul>
-                            <% end %>
-
-                            <%= link "Add a Deployment", to: Routes.institution_registration_deployment_path(@conn, :new, @institution.id, registration.id), class: "btn btn-sm btn-outline-primary" %>
-                          </td>
-                        </tr>
-
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+            <% brand -> %>
+              <div class="logo-container">
+                <img src="<%= brand.logo %>" />
               </div>
-            </div>
           <% end %>
-
-          <%= link "Add a Registration", to: Routes.institution_registration_path(@conn, :new, @institution.id), class: "btn btn-sm btn-outline-primary" %>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Deployments:</strong></td>
+        <td>
+          <%= for deployment <- @institution.deployments do %>
+            <ul>
+              <li id="<%= "deployment-#{deployment.id}" %>">
+                <%= deployment.deployment_id %>
+                <%= link to: Routes.registration_path(@conn, :show, deployment.registration_id) <> "#deployment-#{deployment.id}",
+                  class: "btn btn-xs btn-link ml-2 float-right" do %>
+                    LTI 1.3 Registration Details
+                <% end %>
+              </li>
+            </ul>
+          <% end %>
         </td>
       </tr>
 

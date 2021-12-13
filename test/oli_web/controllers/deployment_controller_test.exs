@@ -17,7 +17,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         get(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :new,
             institution.id,
@@ -41,7 +41,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         post(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :create,
             institution.id,
@@ -69,7 +69,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         post(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :create,
             institution.id,
@@ -94,7 +94,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         get(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :edit,
             institution.id,
@@ -120,7 +120,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         put(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :update,
             institution.id,
@@ -149,7 +149,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         put(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :update,
             institution.id,
@@ -175,7 +175,7 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         delete(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :delete,
             institution.id,

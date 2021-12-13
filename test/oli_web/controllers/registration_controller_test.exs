@@ -35,7 +35,7 @@ defmodule OliWeb.RegistrationControllerTest do
     setup [:create_fixtures]
 
     test "renders form", %{conn: conn, institution: institution} do
-      conn = get(conn, Routes.institution_registration_path(conn, :new, institution.id))
+      conn = get(conn, Routes.registration_path(conn, :new, institution.id))
       assert html_response(conn, 200) =~ "Create Registration"
     end
   end
@@ -49,7 +49,7 @@ defmodule OliWeb.RegistrationControllerTest do
       admin: admin
     } do
       conn =
-        post(conn, Routes.institution_registration_path(conn, :create, institution.id),
+        post(conn, Routes.registration_path(conn, :create, institution.id),
           registration: Map.put(@create_attrs, :issuer, "some other issuer")
         )
 
@@ -65,7 +65,7 @@ defmodule OliWeb.RegistrationControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn, institution: institution} do
       conn =
-        post(conn, Routes.institution_registration_path(conn, :create, institution.id),
+        post(conn, Routes.registration_path(conn, :create, institution.id),
           registration: @invalid_attrs
         )
 
@@ -81,8 +81,7 @@ defmodule OliWeb.RegistrationControllerTest do
       registration: registration,
       institution: institution
     } do
-      conn =
-        get(conn, Routes.institution_registration_path(conn, :edit, institution.id, registration))
+      conn = get(conn, Routes.registration_path(conn, :edit, institution.id, registration))
 
       assert html_response(conn, 200) =~ "Edit Registration"
     end
@@ -100,7 +99,7 @@ defmodule OliWeb.RegistrationControllerTest do
       conn =
         put(
           conn,
-          Routes.institution_registration_path(conn, :update, institution.id, registration),
+          Routes.registration_path(conn, :update, institution.id, registration),
           registration: @update_attrs
         )
 
@@ -122,7 +121,7 @@ defmodule OliWeb.RegistrationControllerTest do
       conn =
         put(
           conn,
-          Routes.institution_registration_path(conn, :update, institution.id, registration),
+          Routes.registration_path(conn, :update, institution.id, registration),
           registration: @invalid_attrs
         )
 
@@ -142,7 +141,7 @@ defmodule OliWeb.RegistrationControllerTest do
       conn =
         delete(
           conn,
-          Routes.institution_registration_path(conn, :delete, institution.id, registration)
+          Routes.registration_path(conn, :delete, institution.id, registration)
         )
 
       assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)

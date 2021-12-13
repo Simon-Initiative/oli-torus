@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
   alias Oli.Lti_1p3.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
@@ -358,11 +358,12 @@ defmodule Oli.Delivery.Sections do
       left_join: b in assoc(s, :brand),
       left_join: d in assoc(s, :lti_1p3_deployment),
       left_join: r in assoc(d, :registration),
-      left_join: rb in assoc(r, :brand),
+      left_join: i in assoc(d, :institution),
+      left_join: default_brand in assoc(i, :default_brand),
       where: s.slug == ^slug,
       preload: [
         brand: b,
-        lti_1p3_deployment: {d, registration: {r, brand: rb}}
+        lti_1p3_deployment: {d, institution: {i, default_brand: default_brand}}
       ]
     )
     |> Repo.one()
@@ -386,7 +387,7 @@ defmodule Oli.Delivery.Sections do
     client_id = lti_params["aud"]
 
     Repo.all(
-      from s in Section,
+      from(s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
@@ -397,6 +398,7 @@ defmodule Oli.Delivery.Sections do
         order_by: [asc: :id],
         limit: 1,
         select: s
+      )
     )
     |> one_or_warn(context_id)
   end
@@ -429,11 +431,12 @@ defmodule Oli.Delivery.Sections do
         lti_1p3_deployment_id: lti_1p3_deployment_id
       }) do
     Repo.one(
-      from d in Deployment,
+      from(d in Deployment,
         join: r in Registration,
         on: d.registration_id == r.id,
         where: ^lti_1p3_deployment_id == d.id,
         select: {d, r}
+      )
     )
   end
 
