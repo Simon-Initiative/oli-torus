@@ -2,9 +2,6 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [value_or: 2]
 
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-
   alias Oli.Accounts.{
     User,
     Author,
@@ -14,7 +11,14 @@ defmodule Oli.Accounts do
     AuthorPreferences
   }
 
+  alias Oli.Authoring.Course.{Project, ProjectVisibility}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Groups.CommunityAccount
+  alias Oli.Institutions.Institution
+  alias Oli.Publishing
+  alias Oli.Publishing.Publication
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -596,5 +600,71 @@ defmodule Oli.Accounts do
         select: community
       )
     )
+  end
+
+  @doc """
+  Get all the available publications and products based on:
+    - User's linked author
+    - User's institution
+    - User's permission to access global content
+
+  ## Examples
+
+      iex> list_available_publications_and_products(nil, nil, false)
+      []
+
+      iex> list_available_publications_and_products(123, 1, true)
+      [{%Publication{project: %Project{}}, %Section{}}, ...]
+  """
+  def list_available_publications_and_products(nil, nil, false), do: []
+
+  def list_available_publications_and_products(author, institution, include_global) do
+    by_visibility =
+      case {author, institution} do
+        {nil, nil} ->
+          dynamic([project, _, _, _, _, _], ^include_global and project.visibility == :global)
+
+        {%Author{id: a_id}, nil} ->
+          dynamic(
+            [project, _, _, _, author, project_visibility],
+            (^include_global and project.visibility == :global) or author.id == ^a_id or
+              (project.visibility == :selected and project_visibility.author_id == ^a_id)
+          )
+
+        {nil, %Institution{id: i_id}} ->
+          dynamic(
+            [project, _, _, _, _, project_visibility],
+            (^include_global and project.visibility == :global) or
+              (project.visibility == :selected and project_visibility.institution_id == ^i_id)
+          )
+
+        {%Author{id: a_id}, %Institution{id: i_id}} ->
+          dynamic(
+            [project, _, _, _, author, project_visibility],
+            (^include_global and project.visibility == :global) or author.id == ^a_id or
+              (project.visibility == :selected and project_visibility.author_id == ^a_id) or
+              (project.visibility == :selected and project_visibility.institution_id == ^i_id)
+          )
+      end
+
+    from(
+      project in Project,
+      left_join: section in Section,
+      on: project.id == section.base_project_id and section.type == :blueprint,
+      join: last_publication in subquery(Publishing.last_publication_query()),
+      on:
+        last_publication.project_id == project.id or
+          last_publication.project_id == section.base_project_id,
+      join: publication in Publication,
+      on: publication.id == last_publication.id,
+      left_join: author in assoc(project, :authors),
+      left_join: project_visibility in ProjectVisibility,
+      on: project.id == project_visibility.project_id,
+      where: not is_nil(publication.published) and project.status == :active,
+      where: ^by_visibility,
+      select: {%{publication | project: project}, section},
+      distinct: true
+    )
+    |> Repo.all()
   end
 end
