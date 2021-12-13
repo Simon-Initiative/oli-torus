@@ -15,6 +15,7 @@ defmodule Oli.Grading do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
+  alias Oli.Activities.Realizer.Selection
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
@@ -55,14 +56,16 @@ defmodule Oli.Grading do
   end
 
   defp send_score(section, user, %ResourceAccess{} = resource_access, token) do
-    label = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id).title
+    revision = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id)
+
+    out_of = determine_page_out_of(section.slug, revision)
 
     # Next, fetch (and possibly create) the line item associated with this resource
     case LTI_AGS.fetch_or_create_line_item(
            section.line_items_service_url,
            resource_access.resource_id,
-           1,
-           label,
+           out_of,
+           revision.label,
            token
          ) do
       # Finally, post the score for this line item
@@ -205,6 +208,50 @@ defmodule Oli.Grading do
     column_labels = Enum.map(graded_pages, fn revision -> revision.title end)
 
     {gradebook, column_labels}
+  end
+
+  def determine_page_out_of(section_slug, %Revision{
+        content: %{"advancedDelivery" => true} = content
+      }) do
+    scoreable_activity_ids =
+      Oli.Resources.PageContent.flat_filter(content, fn e ->
+        case Map.get(e, "type", nil) do
+          nil -> false
+          "activity-reference" -> true
+          _ -> false
+        end
+      end)
+      |> Enum.filter(fn ref ->
+        case Map.get(ref, "custom", %{}) do
+          %{"isLayer" => true} -> false
+          %{"isBank" => true} -> false
+          _ -> true
+        end
+      end)
+      |> Enum.map(fn e -> e["activity_id"] end)
+
+    Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, scoreable_activity_ids)
+    |> Enum.reduce(0, fn activity, part_count ->
+      part_count + Enum.count(activity["authoring"]["parts"])
+    end)
+  end
+
+  def determine_page_out_of(_, %Revision{content: %{"model" => model}}) do
+    Enum.reduce(model, 0, fn e, count ->
+      case e["type"] do
+        "activity-reference" ->
+          count + 1
+
+        "selection" ->
+          case Selection.parse(e) do
+            {:ok, %Selection{count: selection_count}} -> selection_count + count
+            _ -> count
+          end
+
+        _ ->
+          count
+      end
+    end)
   end
 
   def fetch_students(section_slug) do

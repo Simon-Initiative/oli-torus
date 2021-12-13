@@ -291,10 +291,17 @@ defmodule OliWeb.Grades.GradesLive do
         p.resource_id == socket.assigns.selected_page
       end)
 
+    out_of = Oli.Grading.determine_page_out_of(section.slug, page)
+
     case access_token_provider(registration) do
       {:ok, access_token} ->
         case section.line_items_service_url
-             |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
+             |> LTI_AGS.fetch_or_create_line_item(
+               page.resource_id,
+               out_of,
+               page.title,
+               access_token
+             ) do
           {:ok, line_item} ->
             fetch_students(access_token, section)
             |> send_grades(access_token, section, page, line_item, socket)
