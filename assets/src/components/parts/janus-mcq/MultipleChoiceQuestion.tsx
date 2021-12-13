@@ -66,6 +66,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onConfigOptionClick,
   index,
   configureMode,
+  verticalGap = 0,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -83,6 +84,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
   if (layoutType === 'verticalLayout' && overrideHeight) {
     mcqItemStyles.height = `calc(${100 / totalItems}%)`;
+  }
+  if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
+    mcqItemStyles.marginTop = `${verticalGap}px`;
   }
 
   const textValue = getNodeText(nodes);
