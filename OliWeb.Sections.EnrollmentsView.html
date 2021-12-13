@@ -10,7 +10,7 @@
     <title>OliWeb.Sections.EnrollmentsView — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-a856441d2d.js"></script>
+    <script src="dist/sidebar_items-3ef05686db.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -88,7 +88,7 @@ OLI Torus
       <h1>
 OliWeb.Sections.EnrollmentsView <small class="app-vsn">(OLI Torus v0.17.0)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -130,6 +130,13 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#enrollment_assigns/1">enrollment_assigns(section)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#handle_event/3">handle_event(event, params, socket)</a>
 
   </div>
@@ -144,6 +151,13 @@ when the client connects, or reconnects to the stateful view.
   </div>
 
     <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_params/3"><code class="inline">Phoenix.LiveView.handle_params/3</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#hide_modal/1">hide_modal(socket)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -169,6 +183,13 @@ when the client connects, or reconnects to the stateful view.
   </div>
 
     <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_modal/1">render_modal(assigns)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -202,7 +223,29 @@ Functions
     </a>
     <h1 class="signature">breadcrumb(previous, section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L37" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="enrollment_assigns/1">
+
+  <div class="detail-header">
+    <a href="#enrollment_assigns/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">enrollment_assigns(section)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -224,7 +267,7 @@ Functions
     </a>
     <h1 class="signature">handle_event(event, params, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L158" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L14" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -246,7 +289,7 @@ Functions
     </a>
     <h1 class="signature">handle_params(params, _, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L84" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -259,6 +302,28 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_params/3"><code class="inline">Phoenix.LiveView.handle_params/3</code></a>.</p>
   </section>
 </section>
+<section class="detail" id="hide_modal/1">
+
+  <div class="detail-header">
+    <a href="#hide_modal/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">hide_modal(socket)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L14" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="mount/3">
 
   <div class="detail-header">
@@ -268,7 +333,7 @@ Functions
     </a>
     <h1 class="signature">mount(params, session, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L1" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -290,7 +355,7 @@ Functions
     </a>
     <h1 class="signature">patch_with(socket, changes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L136" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L129" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -312,7 +377,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L119" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L111" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -325,6 +390,28 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
   </section>
 </section>
+<section class="detail" id="render_modal/1">
+
+  <div class="detail-header">
+    <a href="#render_modal/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_modal(assigns)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L14" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="set_breadcrumbs/2">
 
   <div class="detail-header">
@@ -334,7 +421,7 @@ Functions
     </a>
     <h1 class="signature">set_breadcrumbs(type, section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments_view.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/enrollments/enrollments_view.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

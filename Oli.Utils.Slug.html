@@ -10,7 +10,7 @@
     <title>Oli.Utils.Slug — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-a856441d2d.js"></script>
+    <script src="dist/sidebar_items-3ef05686db.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -128,6 +128,13 @@ Oli.Utils.Slug <small class="app-vsn">(OLI Torus v0.17.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#generate_seedless/1">generate_seedless(table)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#handle_creation/3">handle_creation(changeset, table, title)</a>
 
   </div>
@@ -136,6 +143,13 @@ Oli.Utils.Slug <small class="app-vsn">(OLI Torus v0.17.0)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#handle_update/3">handle_update(changeset, table, title)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#random_string/1">random_string(length)</a>
 
   </div>
 
@@ -162,6 +176,13 @@ Oli.Utils.Slug <small class="app-vsn">(OLI Torus v0.17.0)</small>
 
     <div class="summary-synopsis"><p>Generates a slug once, but then guarantee that it never changes
 on future title changes.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#update_never_seedless/2">update_never_seedless(changeset, table)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -198,7 +219,7 @@ Functions
     </a>
     <h1 class="signature">alpha_numeric_only(str)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L146" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L187" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -220,7 +241,7 @@ Functions
     </a>
     <h1 class="signature">generate(table, title)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L88" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L104" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -231,6 +252,28 @@ Functions
   <section class="docstring">
 
 <p>Generates a unique slug for the table using the title provided</p>
+  </section>
+</section>
+<section class="detail" id="generate_seedless/1">
+
+  <div class="detail-header">
+    <a href="#generate_seedless/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">generate_seedless(table)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L97" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="handle_creation/3">
@@ -277,6 +320,28 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="random_string/1">
+
+  <div class="detail-header">
+    <a href="#random_string/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">random_string(length)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L125" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="slugify/1">
 
   <div class="detail-header">
@@ -286,7 +351,7 @@ Functions
     </a>
     <h1 class="signature">slugify(title)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L113" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L132" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -308,7 +373,7 @@ Functions
     </a>
     <h1 class="signature">str(length)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L105" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L121" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -342,6 +407,28 @@ Functions
 
 <p>Generates a slug once, but then guarantee that it never changes
 on future title changes.</p>
+  </section>
+</section>
+<section class="detail" id="update_never_seedless/2">
+
+  <div class="detail-header">
+    <a href="#update_never_seedless/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">update_never_seedless(changeset, table)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/slug.ex#L85" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="update_on_change/2">

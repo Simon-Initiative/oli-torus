@@ -170,6 +170,8 @@ Oli.Delivery.Sections.BrowseOptions.html
 Oli.Delivery.Sections.Enrollment.html
 Oli.Delivery.Sections.EnrollmentBrowseOptions.html
 Oli.Delivery.Sections.Section.html
+Oli.Delivery.Sections.SectionInvite.html
+Oli.Delivery.Sections.SectionInvites.html
 Oli.Delivery.Sections.SectionResource.html
 Oli.Delivery.Sections.SectionVisibility.html
 Oli.Delivery.Sections.SectionsProjectsPublications.html
@@ -238,6 +240,7 @@ Oli.Plugs.MaybeGatedResource.html
 Oli.Plugs.NoCache.html
 Oli.Plugs.RegistrationCaptcha.html
 Oli.Plugs.RemoveXFrameOptions.html
+Oli.Plugs.RequireIndependentInstructor.html
 Oli.Plugs.RequireLtiParams.html
 Oli.Plugs.RequireSection.html
 Oli.Plugs.SetCurrentUser.html
@@ -347,6 +350,7 @@ OliWeb.Api.ObjectivesController.ObjectiveCreationAttributes.html
 OliWeb.Api.ObjectivesController.ObjectiveResponse.html
 OliWeb.Api.ObjectivesController.ObjectiveUpdateAttributes.html
 OliWeb.Api.ObjectivesController.html
+OliWeb.Api.OpenAndFreeController.html
 OliWeb.Api.PaymentController.BatchPaymentCodeRequest.html
 OliWeb.Api.PaymentController.PaymentCodeBatch.html
 OliWeb.Api.PaymentController.html
@@ -582,6 +586,9 @@ OliWeb.Sections.GatingAndScheduling.Form.html
 OliWeb.Sections.GatingAndScheduling.New.html
 OliWeb.Sections.GatingAndScheduling.html
 OliWeb.Sections.Instructors.html
+OliWeb.Sections.InvalidSectionInviteView.html
+OliWeb.Sections.InviteView.html
+OliWeb.Sections.Invites.Invitation.html
 OliWeb.Sections.LtiSettings.html
 OliWeb.Sections.MainDetails.html
 OliWeb.Sections.Mount.html
@@ -619,8 +626,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-27b02bc057.js
-dist/sidebar_items-a856441d2d.js
+dist/search_items-15216b38e2.js
+dist/sidebar_items-3ef05686db.js
 index.html
 license.html
 readme.html
