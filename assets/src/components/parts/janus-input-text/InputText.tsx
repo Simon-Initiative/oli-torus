@@ -7,10 +7,10 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
-import { PartComponentProps } from '../types/parts';
+import { PartComponentProps, PartFC } from '../types/parts';
 import { InputTextModel } from './schema';
 
-const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
+const InputText: PartFC<PartComponentProps<InputTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -46,28 +46,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
 
     const initResult = await props.onInit({
       id,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dEnabled,
-        },
-        {
-          key: 'customCssClass',
-          type: CapiVariableTypes.STRING,
-          value: dCssClass,
-        },
-        {
-          key: 'text',
-          type: CapiVariableTypes.STRING,
-          value: dText,
-        },
-        {
-          key: 'textLength',
-          type: CapiVariableTypes.NUMBER,
-          value: dText.length,
-        },
-      ],
+      responses: InputText.getInitializeValues?.(pModel),
     });
 
     // result of init has a state snapshot with latest (init state applied)
@@ -262,6 +241,35 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
       />
     </div>
   ) : null;
+};
+
+InputText.getInitializeValues = (model: InputTextModel) => {
+  const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
+  const dText = typeof model.text === 'string' ? model.text : '';
+  const dCssClass = typeof model.customCssClass === 'string' ? model.customCssClass : '';
+
+  return [
+    {
+      key: 'enabled',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dEnabled,
+    },
+    {
+      key: 'customCssClass',
+      type: CapiVariableTypes.STRING,
+      value: dCssClass,
+    },
+    {
+      key: 'text',
+      type: CapiVariableTypes.STRING,
+      value: dText,
+    },
+    {
+      key: 'textLength',
+      type: CapiVariableTypes.NUMBER,
+      value: dText.length,
+    },
+  ];
 };
 
 export const tagName = 'janus-input-text';

@@ -51,17 +51,6 @@ export const schema: JSONSchema7Object = {
 
 export const uiSchema = {};
 
-export const getInitDefaults = () => {
-  return [
-    {
-      target: `text`,
-      operator: '=',
-      value: '',
-      type: CapiVariableTypes.STRING,
-    },
-  ];
-};
-
 export const adaptivitySchema = {
   text: CapiVariableTypes.STRING,
   textLength: CapiVariableTypes.NUMBER,

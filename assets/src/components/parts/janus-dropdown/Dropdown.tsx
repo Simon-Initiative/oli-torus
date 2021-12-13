@@ -7,10 +7,10 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
-import { PartComponentProps } from '../types/parts';
+import { PartComponentProps, PartFC } from '../types/parts';
 import { DropdownModel } from './schema';
 
-const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
+const Dropdown: PartFC<PartComponentProps<DropdownModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -31,36 +31,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
 
     const initResult = await props.onInit({
       id,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dEnabled,
-        },
-        {
-          key: 'customCssClass',
-          type: CapiVariableTypes.STRING,
-          value: dCssClass,
-        },
-        {
-          id: `selectedIndex`,
-          key: 'selectedIndex',
-          type: CapiVariableTypes.NUMBER,
-          value: selectedIndex,
-        },
-        {
-          id: `selectedItem`,
-          key: 'selectedItem',
-          type: CapiVariableTypes.STRING,
-          value: selectedItem,
-        },
-        {
-          id: `value`,
-          key: 'value',
-          type: CapiVariableTypes.STRING,
-          value: 'NULL',
-        },
-      ],
+      responses: Dropdown.getInitializeValues?.(pModel),
     });
 
     // result of init has a state snapshot with latest (init state applied)
@@ -418,6 +389,44 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       </select>
     </div>
   ) : null;
+};
+
+Dropdown.getInitializeValues = (model: any) => {
+  const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
+  const dCssClass = model.customCssClass || '';
+  const selectedIndex = -1;
+  const selectedItem = '';
+
+  return [
+    {
+      key: 'enabled',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dEnabled,
+    },
+    {
+      key: 'customCssClass',
+      type: CapiVariableTypes.STRING,
+      value: dCssClass,
+    },
+    {
+      id: `selectedIndex`,
+      key: 'selectedIndex',
+      type: CapiVariableTypes.NUMBER,
+      value: selectedIndex,
+    },
+    {
+      id: `selectedItem`,
+      key: 'selectedItem',
+      type: CapiVariableTypes.STRING,
+      value: selectedItem,
+    },
+    {
+      id: `value`,
+      key: 'value',
+      type: CapiVariableTypes.STRING,
+      value: 'NULL',
+    },
+  ];
 };
 
 export const tagName = 'janus-dropdown';

@@ -7,10 +7,10 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { PartComponentProps } from '../types/parts';
+import { PartComponentProps, PartFC } from '../types/parts';
 import { MultiLineTextModel } from './schema';
 
-const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (props) => {
+const MultiLineTextInput: PartFC<PartComponentProps<MultiLineTextModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -46,28 +46,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
 
     const initResult = await props.onInit({
       id,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dEnabled,
-        },
-        {
-          key: 'customCssClass',
-          type: CapiVariableTypes.STRING,
-          value: dCssClass,
-        },
-        {
-          key: 'text',
-          type: CapiVariableTypes.STRING,
-          value: dText,
-        },
-        {
-          key: 'textLength',
-          type: CapiVariableTypes.NUMBER,
-          value: dText.length,
-        },
-      ],
+      responses: MultiLineTextInput.getInitializeValues?.(pModel),
     });
 
     // result of init has a state snapshot with latest (init state applied)
@@ -318,6 +297,35 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
       </div>
     </div>
   ) : null;
+};
+
+MultiLineTextInput.getInitializeValues = (model: any) => {
+  const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
+  const dText = typeof model.text === 'string' ? model.text : '';
+  const dCssClass = typeof model.customCssClass === 'string' ? model.customCssClass : '';
+
+  return [
+    {
+      key: 'enabled',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dEnabled,
+    },
+    {
+      key: 'customCssClass',
+      type: CapiVariableTypes.STRING,
+      value: dCssClass,
+    },
+    {
+      key: 'text',
+      type: CapiVariableTypes.STRING,
+      value: dText,
+    },
+    {
+      key: 'textLength',
+      type: CapiVariableTypes.NUMBER,
+      value: dText.length,
+    },
+  ];
 };
 
 export const tagName = 'janus-multi-line-text';

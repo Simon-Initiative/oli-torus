@@ -1,5 +1,5 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface InputNumberModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -67,17 +67,6 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
-
-export const getInitDefaults = () => {
-  return [
-    {
-      target: `value`,
-      operator: '=',
-      value: 0,
-      type: CapiVariableTypes.NUMBER,
-    },
-  ];
-};
 
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,

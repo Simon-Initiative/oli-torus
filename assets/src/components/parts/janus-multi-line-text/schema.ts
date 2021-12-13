@@ -1,5 +1,5 @@
-import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
+import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface MultiLineTextModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -51,17 +51,6 @@ export const schema: JSONSchema7Object = {
 };
 
 export const uiSchema = {};
-
-export const getInitDefaults = () => {
-  return [
-    {
-      target: `text`,
-      operator: '=',
-      value: '',
-      type: CapiVariableTypes.STRING,
-    },
-  ];
-};
 
 export const adaptivitySchema = {
   enabled: CapiVariableTypes.BOOLEAN,

@@ -11,7 +11,6 @@ import {
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import {
-  applyState,
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
@@ -21,6 +20,7 @@ import {
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import {
+  selectActivityById,
   selectCurrentActivity,
   selectCurrentActivityId,
   setActivities,
@@ -40,29 +40,32 @@ import {
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
-import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
+import { getSequenceLineage, SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 
-let isQuestionBankActivity = false;
-const handleQuestionBankResetControlValues = (parts: any, currentActivityTree: any) => {
-  const ownerActivity = currentActivityTree?.find(
-    (activity: any) => !!activity.content.partsLayout.find((p: any) => p.id === parts.id),
-  );
-  const PartClass = customElements.get(parts.type);
+const getInitializeValuesForPart = (part: any, ownerId: string) => {
+  const PartClass = customElements.get(part.type);
   if (PartClass) {
     // TODO: cache the instance data somewhere so we don't do this every time
     const instance = new PartClass() as any; // TODO: extend HTMLElement?
     if (instance.getInitDefaults) {
-      const initDefaults = instance.getInitDefaults();
-      const modifiedInitDefaults = initDefaults.map((defaultValue: ApplyStateOperation) => {
-        const updatedInit = { ...defaultValue };
-        updatedInit.target = `${ownerActivity.id}|stage.${parts.id}.${defaultValue.target}`;
-        return updatedInit;
-      });
+      const initDefaults = instance.getInitDefaults({});
+      const modifiedInitDefaults: ApplyStateOperation[] = initDefaults.map(
+        (defaultValue: { key: string; value: any; type: CapiVariableTypes }) => {
+          const updatedInit: ApplyStateOperation = {
+            target: `${ownerId}|stage.${part.id}.${defaultValue.key}`,
+            operator: '=',
+            value: defaultValue.value,
+            type: defaultValue.type,
+          };
+          return updatedInit;
+        },
+      );
       return modifiedInitDefaults;
     }
   }
   return [];
 };
+
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
@@ -153,20 +156,31 @@ export const initializeActivity = createAsyncThunk(
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: string[] = [];
+
+    const currentSequenceLineage = getSequenceLineage(sequence, currentSequenceId);
+    const isQuestionBankActivity = currentSequenceLineage.some((s) => s.custom.isBank);
+
     const quetionBankResetScript: ApplyStateOperation[] = [];
     if (isQuestionBankActivity && currentActivityTree) {
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      currentActivity?.authoring?.parts?.forEach((p: any) => {
-        const script = handleQuestionBankResetControlValues(p, currentActivityTree);
-        if (script?.length) {
-          quetionBankResetScript.push(...script);
-        }
-      });
+      // question bank children cannot be nested, so the parent must be the bank
+      // TODO: QUESTION: if there are layers above the bank, should we reset them as well??
+      const parentBank = currentSequenceLineage[currentSequenceLineage.length - 1];
+      // in delivery activity id is sequence id
+      const bankActivity = selectActivityById(rootState, parentBank.custom.sequenceId);
+      if (bankActivity) {
+        bankActivity.content?.partsLayout.forEach((p: any) => {
+          const script = getInitializeValuesForPart(p, parentBank.custom.sequenceId);
+          if (script?.length) {
+            quetionBankResetScript.push(...script);
+          }
+        });
+      }
     }
     quetionBankResetScript.forEach((s: any) => {
       const [, targetPart] = s.target.split('|');
       arrInitFacts.push(`${targetPart}`);
     });
+
     const globalizedInitState = initState.map((s: any) => {
       arrInitFacts.push(`${s.target}`);
       if (s.target.indexOf('stage.') !== 0) {
@@ -247,20 +261,6 @@ const getSessionVisitHistory = async (
     }));
 };
 
-export const QuestionBankActivity = (currentSequence: any, sequence: any[], thunkApi: any) => {
-  const subScreenId = currentSequence?.custom?.layerRef;
-  if (!subScreenId) {
-    isQuestionBankActivity = false;
-  }
-  const layerIndex = sequence.findIndex((entry) => entry.custom.sequenceId === subScreenId);
-  const layerSequenceEntry = sequence[layerIndex];
-  if (layerSequenceEntry?.custom?.isBank) {
-    isQuestionBankActivity = true;
-  } else {
-    isQuestionBankActivity = false;
-  }
-};
-
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (_, thunkApi) => {
@@ -321,7 +321,6 @@ export const navigateToNextActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-    QuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
@@ -437,7 +436,6 @@ export const navigateToActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-    QuestionBankActivity(nextSequenceEntry, sequence, thunkApi);
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );

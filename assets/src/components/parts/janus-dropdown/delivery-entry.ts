@@ -6,7 +6,6 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import Dropdown from './Dropdown';
-import { getInitDefaults } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -15,6 +14,6 @@ register(Dropdown, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: false,
   customApi: {
-    getInitDefaults,
+    getInitDefaults: Dropdown.getInitializeValues,
   },
 });

@@ -31,6 +31,10 @@ export interface CapiVariable {
   value: any;
 }
 
+export interface PartFC<P> extends React.FC<P> {
+  getInitializeValues?: (model: any) => any[];
+}
+
 export interface PartComponentProps<T extends CustomProperties> {
   id: string;
   type: string;

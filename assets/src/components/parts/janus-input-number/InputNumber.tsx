@@ -8,11 +8,11 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
-import { PartComponentProps } from '../types/parts';
+import { PartComponentProps, PartFC } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
 
-const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
+const InputNumber: PartFC<PartComponentProps<InputNumberModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -32,23 +32,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
 
     const initResult = await props.onInit({
       id,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dEnabled,
-        },
-        {
-          key: 'value',
-          type: CapiVariableTypes.NUMBER,
-          value: '',
-        },
-        {
-          key: 'customCssClass',
-          type: CapiVariableTypes.STRING,
-          value: dCssClass,
-        },
-      ],
+      responses: InputNumber.getInitializeValues?.(pModel),
     });
 
     // result of init has a state snapshot with latest (init state applied)
@@ -271,6 +255,29 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
       {unitsLabel && <span className="unitsLabel">{unitsLabel}</span>}
     </div>
   ) : null;
+};
+
+InputNumber.getInitializeValues = (model: InputNumberModel) => {
+  const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
+  const dCssClass = model.customCssClass ? model.customCssClass : '';
+
+  return [
+    {
+      key: 'enabled',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dEnabled,
+    },
+    {
+      key: 'value',
+      type: CapiVariableTypes.NUMBER,
+      value: '',
+    },
+    {
+      key: 'customCssClass',
+      type: CapiVariableTypes.STRING,
+      value: dCssClass,
+    },
+  ];
 };
 
 export const tagName = 'janus-input-number';

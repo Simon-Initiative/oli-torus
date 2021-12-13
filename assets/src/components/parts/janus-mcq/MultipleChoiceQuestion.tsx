@@ -9,7 +9,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
-import { PartComponentProps } from '../types/parts';
+import { PartComponentProps, PartFC } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
 import { McqItem, McqModel } from './schema';
 
@@ -234,7 +234,7 @@ interface ItemSelectionInput {
   checked: boolean;
 }
 
-const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) => {
+const MultipleChoiceQuestion: PartFC<PartComponentProps<McqModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
@@ -274,43 +274,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     // now we need to save the defaults used in adaptivity (not necessarily the same)
     const initResult = await props.onInit({
       id,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dEnabled,
-        },
-        {
-          key: 'randomize',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dRandomized,
-        },
-        {
-          key: 'numberOfSelectedChoices',
-          type: CapiVariableTypes.NUMBER,
-          value: numberOfSelectedChoices,
-        },
-        {
-          key: 'selectedChoice',
-          type: CapiVariableTypes.NUMBER,
-          value: -1,
-        },
-        {
-          key: 'selectedChoiceText',
-          type: CapiVariableTypes.STRING,
-          value: selectedChoiceText,
-        },
-        {
-          key: 'selectedChoices',
-          type: CapiVariableTypes.ARRAY,
-          value: selectedChoices,
-        },
-        {
-          key: 'selectedChoicesText',
-          type: CapiVariableTypes.ARRAY,
-          value: selectedChoicesText,
-        },
-      ],
+      responses: MultipleChoiceQuestion.getInitializeValues?.(pModel),
     });
 
     // result of init has a state snapshot with latest (init state applied)
@@ -851,6 +815,53 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       ))}
     </div>
   ) : null;
+};
+
+MultipleChoiceQuestion.getInitializeValues = (model: any) => {
+  const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
+  const dRandomized = parseBoolean(model.randomize);
+  const numberOfSelectedChoices = 0;
+  const selectedChoiceText = '';
+  const selectedChoicesText = [''];
+  const selectedChoices: number[] = [];
+
+  return [
+    {
+      key: 'enabled',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dEnabled,
+    },
+    {
+      key: 'randomize',
+      type: CapiVariableTypes.BOOLEAN,
+      value: dRandomized,
+    },
+    {
+      key: 'numberOfSelectedChoices',
+      type: CapiVariableTypes.NUMBER,
+      value: numberOfSelectedChoices,
+    },
+    {
+      key: 'selectedChoice',
+      type: CapiVariableTypes.NUMBER,
+      value: -1,
+    },
+    {
+      key: 'selectedChoiceText',
+      type: CapiVariableTypes.STRING,
+      value: selectedChoiceText,
+    },
+    {
+      key: 'selectedChoices',
+      type: CapiVariableTypes.ARRAY,
+      value: selectedChoices,
+    },
+    {
+      key: 'selectedChoicesText',
+      type: CapiVariableTypes.ARRAY,
+      value: selectedChoicesText,
+    },
+  ];
 };
 
 export const tagName = 'janus-mcq';

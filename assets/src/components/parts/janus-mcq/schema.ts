@@ -84,23 +84,6 @@ export const getCapabilities = () => ({
   configure: true,
 });
 
-export const getInitDefaults = () => {
-  return [
-    {
-      target: `selectedChoice`,
-      operator: '=',
-      value: '',
-      type: CapiVariableTypes.STRING,
-    },
-    {
-      target: `selectedChoices`,
-      operator: '=',
-      value: '',
-      type: CapiVariableTypes.STRING,
-    },
-  ];
-};
-
 export const createSchema = (): Partial<McqModel> => {
   const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
