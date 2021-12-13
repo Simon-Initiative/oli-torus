@@ -12,6 +12,10 @@
     <div class="col-md-8">
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
       <div class="form-label-group mb-3">
+        <%= label f, :title, "Course Project ID", class: "control-label" %>
+        <%= text_input f, :slug, class: "form-control", disabled: true %>
+      </div>
+      <div class="form-label-group mb-3">
         <%= label f, :title, "Course Title", class: "control-label" %>
         <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
       </div>
