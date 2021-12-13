@@ -844,7 +844,6 @@ defmodule OliWeb.CommunityLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
 
-      assert has_element?(view, "##{first_cv.id}")
       refute has_element?(view, "##{last_cv.id}")
 
       view

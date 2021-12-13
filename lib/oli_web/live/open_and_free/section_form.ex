@@ -55,9 +55,10 @@ defmodule OliWeb.OpenAndFree.SectionForm do
         </div>
       <% end %>
 
-      <%= if @action == Routes.open_and_free_path(@socket, :create) do %>
-        <div class="form-label-group"
-          >
+      <% # Only show source if creating a new section (not editing) %>
+      <%= if @action == Routes.admin_open_and_free_path(@socket, :create)
+          || @action == Routes.independent_sections_path(@socket, :create) do %>
+        <div class="form-label-group">
           <%= hidden_input f, source_param_name, value: @source.slug %>
           <input type="text" value="<%= @source.title %>" disabled class="form-control"/>
           <label class="control-label"><%= source_label %></label>
@@ -146,13 +147,35 @@ defmodule OliWeb.OpenAndFree.SectionForm do
 
         <div class="custom-control custom-switch" style="width: 88px;">
           <%= checkbox f, :registration_open, class: "custom-control-input" <> error_class(f, :registration_open, "is-invalid"), autofocus: focusHelper(f, :registration_open) %>
-          <%= label f, :registration_open, "Open", class: "custom-control-label" %>
+          <%= label f, :registration_open, class: "custom-control-label" do %>
+            <%= if @changeset.data.registration_open do "Open" else "Closed" end %>
+          <% end %>
           <%= error_tag f, :registration_open %>
         </div>
 
         <script>
           $('#section_registration_open').change(function() {
             $('label[for="section_registration_open"]').text(this.checked ? 'Open' : 'Closed');
+          });
+        </script>
+      </div>
+
+      <div class="form-row d-flex flex-row px-1 my-4">
+        <div class="flex-grow-1 mr-2">
+          Allow Guests (Unenrolled Students)
+        </div>
+
+        <div class="custom-control custom-switch" style="width: 88px;">
+          <%= checkbox f, :requires_enrollment, checked_value: "false", unchecked_value: "true", class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+          <%= label f, :requires_enrollment, class: "custom-control-label" do %>
+            <%= if @changeset.data.requires_enrollment do "No" else "Yes" end %>
+          <% end %>
+          <%= error_tag f, :requires_enrollment %>
+        </div>
+
+        <script>
+          $('#section_requires_enrollment').change(function() {
+            $('label[for="section_requires_enrollment"]').text(this.checked ? 'Yes' : 'No');
           });
         </script>
       </div>

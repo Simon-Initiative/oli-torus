@@ -82,6 +82,22 @@ defmodule Oli.Utils.Slug do
     end
   end
 
+  def update_never_seedless(changeset, table) do
+    if not changeset.valid? or !is_nil(Ecto.Changeset.get_field(changeset, :slug)) do
+      changeset
+    else
+      Ecto.Changeset.put_change(
+        changeset,
+        :slug,
+        generate_seedless(table)
+      )
+    end
+  end
+
+  def generate_seedless(table) do
+    unique_slug(table, fn -> random_string(5) end)
+  end
+
   @doc """
   Generates a unique slug for the table using the title provided
   """
@@ -103,11 +119,14 @@ defmodule Oli.Utils.Slug do
   end
 
   def str(length) do
-    "_" <>
-      (Enum.reduce(1..length, [], fn _i, acc ->
-         [Enum.random(@chars) | acc]
-       end)
-       |> Enum.join(""))
+    "_" <> random_string(length)
+  end
+
+  def random_string(length) do
+    Enum.reduce(1..length, [], fn _i, acc ->
+      [Enum.random(@chars) | acc]
+    end)
+    |> Enum.join("")
   end
 
   def slugify(nil), do: ""
@@ -121,11 +140,37 @@ defmodule Oli.Utils.Slug do
     |> String.slice(0, 30)
   end
 
+  defp unique_slug(table, generate_candidate) when is_function(generate_candidate) do
+    _unique_slug_helper(table, generate_candidate, 0)
+  end
+
   defp unique_slug(_table, "", _suffixes), do: ""
 
   defp unique_slug(table, title, [suffix | remaining]) do
     candidate = title <> suffix.()
 
+    case check_unique_slug(table, candidate) do
+      {:ok, slug} -> slug
+      :error -> unique_slug(table, title, remaining)
+    end
+  end
+
+  defp unique_slug(_table, _, []) do
+    ""
+  end
+
+  defp _unique_slug_helper(table, generate_candidate, count) do
+    if count > 100 do
+      ""
+    else
+      case check_unique_slug(table, generate_candidate.()) do
+        {:ok, slug} -> slug
+        :error -> _unique_slug_helper(table, generate_candidate, count + 1)
+      end
+    end
+  end
+
+  defp check_unique_slug(table, candidate) do
     query =
       Ecto.Adapters.SQL.query(
         Oli.Repo,
@@ -134,13 +179,9 @@ defmodule Oli.Utils.Slug do
       )
 
     case query do
-      {:ok, %{num_rows: 0}} -> candidate
-      {:ok, _results} -> unique_slug(table, title, remaining)
+      {:ok, %{num_rows: 0}} -> {:ok, candidate}
+      {:ok, _results} -> :error
     end
-  end
-
-  defp unique_slug(_table, _, []) do
-    ""
   end
 
   def alpha_numeric_only(str) do

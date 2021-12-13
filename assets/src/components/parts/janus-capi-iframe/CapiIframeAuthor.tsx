@@ -403,7 +403,10 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
                     {
                       <a
                         href="#!"
-                        onClick={() => setconfigClicked(true)}
+                        onClick={() => {
+                          setconfigClicked(true);
+                          setInConfigureMode(true);
+                        }}
                         style={configAnchorStyles}
                       >
                         configure

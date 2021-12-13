@@ -2,6 +2,7 @@ import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/a
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
@@ -65,6 +66,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
     const partId = problem.id;
     const changes = { id: fixed };
 
+    await dispatch(setCurrentSelection(''));
     const result = await dispatch(updatePart({ activityId, partId, changes }));
 
     /* console.log('handleProblemFix', result); */
