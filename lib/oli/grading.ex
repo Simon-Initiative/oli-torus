@@ -58,14 +58,14 @@ defmodule Oli.Grading do
   defp send_score(section, user, %ResourceAccess{} = resource_access, token) do
     revision = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id)
 
-    out_of = determine_page_out_of(section.slug, revision)
+    out_of_provider = fn -> determine_page_out_of(section.slug, revision) end
 
     # Next, fetch (and possibly create) the line item associated with this resource
     case LTI_AGS.fetch_or_create_line_item(
            section.line_items_service_url,
            resource_access.resource_id,
-           out_of,
-           revision.label,
+           out_of_provider,
+           revision.title,
            token
          ) do
       # Finally, post the score for this line item
@@ -232,7 +232,7 @@ defmodule Oli.Grading do
 
     Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, scoreable_activity_ids)
     |> Enum.reduce(0, fn activity, part_count ->
-      part_count + Enum.count(activity["authoring"]["parts"])
+      part_count + Enum.count(activity.content["authoring"]["parts"])
     end)
   end
 

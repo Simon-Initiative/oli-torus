@@ -9,6 +9,8 @@
 
 ### Enhancements
 
+- Send total points available during LMS line item creation
+
 ## 0.17.0 (2021-11-30)
 
 ### Bug Fixes
