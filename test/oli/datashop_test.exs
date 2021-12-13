@@ -6,6 +6,8 @@ defmodule Oli.DatashopTest do
   alias Oli.Publishing
   alias Oli.Activities
 
+  import ExUnit.CaptureLog
+
   describe "datashop" do
     setup do
       mc_content = %{
@@ -830,55 +832,60 @@ defmodule Oli.DatashopTest do
     end
 
     test "should have analytics across all project publications", %{project: project} = map do
-      count_before =
-        Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+      # silence all errors logged by get_part_attempts_and_users
+      capture_log(fn ->
+        count_before =
+          Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
-      # Making a new publication should not "reset" data
-      {:ok, pub2} = Publishing.publish_project(project, "some changes")
-      count_after = Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
+        # Making a new publication should not "reset" data
+        {:ok, pub2} = Publishing.publish_project(project, "some changes")
 
-      assert count_before == count_after
+        count_after =
+          Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
-      # Adding new snapshots after a project has been re-published should append to the data
-      map =
-        map
-        |> Map.put(:publication, pub2)
-        |> Seeder.create_resource_attempt(
-          %{attempt_number: 1},
-          :user1,
-          :page1,
-          :revision1,
-          :p1_user1_attempt_x
+        assert count_before == count_after
+
+        # Adding new snapshots after a project has been re-published should append to the data
+        map =
+          map
+          |> Map.put(:publication, pub2)
+          |> Seeder.create_resource_attempt(
+            %{attempt_number: 1},
+            :user1,
+            :page1,
+            :revision1,
+            :p1_user1_attempt_x
+          )
+          |> Seeder.create_activity_attempt(
+            %{attempt_number: 1, transformed_model: %{}},
+            :mc1,
+            :p1_user1_attempt1,
+            :mc_user1_attempt_x
+          )
+          |> Seeder.create_part_attempt(
+            %{
+              date_evaluated: DateTime.utc_now(),
+              attempt_number: 1,
+              score: 0,
+              out_of: 1,
+              response: %{},
+              feedback: %{}
+            },
+            %Part{id: "1", responses: [], hints: []},
+            :mc_user1_attempt1,
+            :mc_user1_part_attempt_x
+          )
+
+        Oli.Delivery.Snapshots.Worker.perform_now(
+          [map.mc_user1_part_attempt_x.attempt_guid],
+          map.section.slug
         )
-        |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
-          :mc1,
-          :p1_user1_attempt1,
-          :mc_user1_attempt_x
-        )
-        |> Seeder.create_part_attempt(
-          %{
-            date_evaluated: DateTime.utc_now(),
-            attempt_number: 1,
-            score: 0,
-            out_of: 1,
-            response: %{},
-            feedback: %{}
-          },
-          %Part{id: "1", responses: [], hints: []},
-          :mc_user1_attempt1,
-          :mc_user1_part_attempt_x
-        )
 
-      Oli.Delivery.Snapshots.Worker.perform_now(
-        [map.mc_user1_part_attempt_x.attempt_guid],
-        map.section.slug
-      )
+        count_with_new_snapshot =
+          Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
 
-      count_with_new_snapshot =
-        Enum.count(Oli.Delivery.Attempts.Core.get_part_attempts_and_users(project.id))
-
-      assert count_with_new_snapshot == count_after + 1
+        assert count_with_new_snapshot == count_after + 1
+      end)
     end
   end
 end
