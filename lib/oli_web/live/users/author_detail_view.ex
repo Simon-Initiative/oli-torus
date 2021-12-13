@@ -79,7 +79,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
           <ReadOnly label="Email" value={@user.email}/>
           <ReadOnly label="Role" value={role(@user)}/>
         </Group>
-        <Group label="Actions" description="Actions that can be take for this user">
+        <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
             <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
           {#else}

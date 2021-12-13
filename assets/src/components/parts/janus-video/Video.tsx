@@ -20,16 +20,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   const [videoAutoPlay, setVideoAutoPlay] = useState(false);
   const [videoEnableReplay, setVideoEnableReplay] = useState(true);
   const [cssClass, setCssClass] = useState('');
-  const handleStylingChanges = () => {
-    const styleChanges: any = {};
-    if (width !== undefined) {
-      styleChanges.width = { value: width as number };
-    }
-    if (height != undefined) {
-      styleChanges.height = { value: height as number };
-    }
-    props.onResize({ id: `${props.id}`, settings: styleChanges });
-  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dCssClass = pModel.customCssClass || cssClass;
@@ -137,7 +128,6 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
     if (sCssClass !== undefined) {
       setCssClass(sCssClass);
     }
-    handleStylingChanges();
     setReady(true);
   }, []);
 
@@ -284,6 +274,17 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
   let videoId = src;
   let isYoutubeSrc = false;
 
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
   const getYoutubeId = (url: string) => {
     const match = url.match(youtubeRegex);
     return match && match[1].length == 11 ? match[1] : false;

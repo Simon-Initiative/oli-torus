@@ -99,7 +99,10 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>View Enrolled Students</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>Manage Enrolled Students</a></li>
+          {#if @section.open_and_free}
+            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}>Invite Students</a></li>
+          {/if}
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}>Edit Section Details</a></li>
         </ul>
       </Group>
