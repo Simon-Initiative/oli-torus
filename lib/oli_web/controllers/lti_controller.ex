@@ -137,7 +137,7 @@ defmodule OliWeb.LtiController do
       |> Keyword.get(:host)
 
     developer_key_config = %{
-      "title" => "OLI Torus",
+      "title" => Oli.VendorProperties.product_short_name(),
       "scopes" => [
         "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
         "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
@@ -154,7 +154,7 @@ defmodule OliWeb.LtiController do
               %{
                 "placement" => "link_selection",
                 "message_type" => "LtiResourceLinkRequest",
-                "icon_url" => "https://#{host}/images/oli-icon.png"
+                "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
               },
               %{
                 "placement" => "course_navigation",
@@ -188,8 +188,7 @@ defmodule OliWeb.LtiController do
         "kty" => "RSA",
         "use" => "sig"
       },
-      "description" =>
-        "Create, deliver and iteratively improve course content through the Open Learning Initiative",
+      "description" => "Create, deliver and iteratively improve course content",
       "custom_fields" => %{},
       "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
       "target_link_uri" => "https://#{host}/lti/launch",

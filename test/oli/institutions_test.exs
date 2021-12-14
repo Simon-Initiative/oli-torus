@@ -1,10 +1,34 @@
 defmodule Oli.InstitutionsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Tool.Registration
+
+  describe "institutions" do
+    test "get_institution_by!/1 with existing data returns an institution" do
+      %Institution{name: name} = insert(:institution)
+
+      institution = Institutions.get_institution_by!(%{name: name})
+
+      assert institution.name == name
+    end
+
+    test "get_institution_by!/1 with invalid data returns nil" do
+      refute Institutions.get_institution_by!(%{name: "invalid_name"})
+    end
+
+    test "get_institution_by!/1 with multiple results raises an error" do
+      insert_pair(:institution)
+
+      assert_raise Ecto.MultipleResultsError, fn ->
+        Institutions.get_institution_by!(%{country_code: "US"})
+      end
+    end
+  end
 
   describe "registrations" do
     setup do

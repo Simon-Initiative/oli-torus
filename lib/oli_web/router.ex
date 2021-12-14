@@ -9,7 +9,7 @@ defmodule OliWeb.Router do
   import Phoenix.LiveDashboard.Router
 
   ### BASE PIPELINES ###
-  # We have four "base" pipelines:   :browser, :api, :lti, and :skip_csrf_protection
+  # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
 
   # pipeline for all browser based routes
@@ -164,6 +164,11 @@ defmodule OliWeb.Router do
 
   pipeline :pow_email_layout do
     plug(:put_pow_mailer_layout, {OliWeb.LayoutView, :email})
+  end
+
+  # For independent section creation/management functionality
+  pipeline :require_independent_instructor do
+    plug(Oli.Plugs.RequireIndependentInstructor)
   end
 
   pipeline :community_admin do
@@ -558,6 +563,11 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
+  ###
+  # Section Routes
+  ###
+
+  ### Sections - View Public Open and Free Courses
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
@@ -568,8 +578,26 @@ defmodule OliWeb.Router do
     ])
 
     get("/", DeliveryController, :open_and_free_index)
+
+    live("/join/invalid", Sections.InvalidSectionInviteView)
+    get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
+  # Sections - Independent Learner Section Creation
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :delivery_protected,
+      :require_independent_instructor,
+      :delivery_layout
+    ])
+
+    live("/independent/create", Delivery.SelectSource, :independent_learner, as: :select_source)
+    resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
+  end
+
+  ### Sections - Payments
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
@@ -586,6 +614,7 @@ defmodule OliWeb.Router do
     post("/:section_slug/payment/code", PaymentController, :apply_code)
   end
 
+  ### Sections - Student Course Delivery
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
@@ -615,6 +644,7 @@ defmodule OliWeb.Router do
     )
   end
 
+  ### Sections - Preview
   scope "/sections/:section_slug/preview/", OliWeb do
     pipe_through([
       :browser,
@@ -629,6 +659,7 @@ defmodule OliWeb.Router do
     get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
 
+  ### Sections - Management
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
@@ -649,19 +680,27 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
+    live("/:section_slug/invitations", Sections.InviteView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
     live("/:section_slug/gating_and_scheduling/:id/edit", Sections.GatingAndScheduling.Edit)
   end
 
+  ### Sections - Enrollment
   scope "/sections", OliWeb do
-    pipe_through([:browser, :require_section, :delivery_layout, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery_layout,
+      :pow_email_layout
+    ])
 
     get("/:section_slug/enroll", DeliveryController, :enroll)
     post("/:section_slug/create_user", DeliveryController, :create_user)
   end
 
+  # Delivery Auth (Signin)
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery, :delivery_layout, :pow_email_layout])
 
@@ -669,6 +708,7 @@ defmodule OliWeb.Router do
     get("/create_account", DeliveryController, :create_account)
   end
 
+  # Delivery Auth (Signout)
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
@@ -690,6 +730,7 @@ defmodule OliWeb.Router do
     post("/", DeliveryController, :create_section)
   end
 
+  ### Admin Dashboard / Telemetry
   scope "/admin", OliWeb do
     pipe_through([:browser, :authoring_protected, :admin])
 
@@ -702,6 +743,7 @@ defmodule OliWeb.Router do
     resources("/platform_instances", PlatformInstanceController)
   end
 
+  ### Admin Portal / Management
   scope "/admin", OliWeb do
     pipe_through([
       :browser,
@@ -712,47 +754,49 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    # General
     live("/", Admin.AdminView)
-    live("/authors", Users.AuthorsView)
-    live("/authors/:user_id", Users.AuthorsDetailView)
-    live("/users", Users.UsersView)
-    live("/users/:user_id", Users.UsersDetailView)
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+
+    # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
+    live("/open_and_free/create", Delivery.SelectSource, :admin, as: :select_source)
+    resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
+    live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
-    live("/open_and_free/create", Delivery.SelectSource)
-    live("/open_and_free/new/:source_id", OpenAndFree.SectionForm)
-
+    # Publishing Institutions and Registrations
     resources("/institutions", InstitutionController)
 
     resources("/registrations", RegistrationController) do
       resources("/deployments", DeploymentController, except: [:index, :show])
     end
 
+    put("/approve_registration", InstitutionController, :approve_registration)
+    delete("/pending_registration/:id", InstitutionController, :remove_registration)
+
     live("/communities/new", CommunityLive.NewView)
 
+    # Course Ingestion
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)
 
-    get("/invite", InviteController, :index)
-    post("/invite", InviteController, :create)
-
+    # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)
     put("/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global)
     put("/manage_activities/make_private/:activity_slug", ActivityManageController, :make_private)
 
-    put("/approve_registration", InstitutionController, :approve_registration)
-    delete("/pending_registration/:id", InstitutionController, :remove_registration)
-
-    # Open and free sections
-    resources("/open_and_free", OpenAndFreeController)
-    live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
-
     # Branding
     resources("/brands", BrandController)
 
+    # Admin Author/User Account Management
+    live("/authors", Users.AuthorsView)
+    live("/authors/:user_id", Users.AuthorsDetailView)
+    live("/users", Users.UsersView)
+    live("/users/:user_id", Users.UsersDetailView)
+    get("/invite", InviteController, :index)
+    post("/invite", InviteController, :create)
     post("/accounts/resend_user_confirmation_link", PowController, :resend_user_confirmation_link)
 
     post(
@@ -790,7 +834,7 @@ defmodule OliWeb.Router do
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])
 
-      get("/openfree", OpenAndFreeController, :index_api)
+      get("/openfree", Api.OpenAndFreeController, :index)
     end
   end
 

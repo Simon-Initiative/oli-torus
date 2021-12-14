@@ -66,6 +66,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onConfigOptionClick,
   index,
   configureMode,
+  verticalGap = 0,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -83,6 +84,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
   if (layoutType === 'verticalLayout' && overrideHeight) {
     mcqItemStyles.height = `calc(${100 / totalItems}%)`;
+  }
+  if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
+    mcqItemStyles.marginTop = `${verticalGap}px`;
   }
 
   const textValue = getNodeText(nodes);
@@ -249,20 +253,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
   const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
   const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
-  const handleStylingChanges = () => {
-    const styleChanges: any = {};
-    if (width !== undefined) {
-      styleChanges.width = { value: width as number };
-    }
-    if (height != undefined) {
-      if (!props.model.overrideHeight) {
-        styleChanges.height = { value: 'auto' };
-      } else {
-        styleChanges.height = { value: height as number };
-      }
-    }
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  };
+
   const initialize = useCallback(async (pModel) => {
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -407,7 +398,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
-    handleStylingChanges();
     setReady(true);
   }, []);
 
@@ -663,6 +653,18 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       return currentOptions;
     });
   }, [randomized]);
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
   // will always *replace* the selected choices (used by init & mutate)
   const handleMultipleItemSelection = (selections: ItemSelectionInput[], shouldSave = true) => {

@@ -80,6 +80,30 @@ config :oli,
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
+default_description = """
+The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
+As a leader in higher education's innovation of online learning, we're a growing research and production project exploring effective approaches since the early 2000s.
+"""
+
+config :oli, :vendor_property,
+  workspace_logo: System.get_env("VENDOR_PROPERTY_WORKSPACE_LOGO", "/images/torus-icon.png"),
+  product_full_name:
+    System.get_env("VENDOR_PROPERTY_PRODUCT_FULL_NAME", "Open Learning Initiative"),
+  product_short_name: System.get_env("VENDOR_PROPERTY_PRODUCT_SHORT_NAME", "OLI Torus"),
+  product_description:
+    System.get_env(
+      "VENDOR_PROPERTY_PRODUCT_DESCRIPTION",
+      default_description
+    ),
+  product_learn_more_link:
+    System.get_env("VENDOR_PROPERTY_PRODUCT_LEARN_MORE_LINK", "https://oli.cmu.edu"),
+  company_name: System.get_env("VENDOR_PROPERTY_COMPANY_NAME", "Carnegie Mellon University"),
+  company_address:
+    System.get_env(
+      "VENDOR_PROPERTY_COMPANY_ADDRESS",
+      "5000 Forbes Ave, Pittsburgh, PA 15213 US"
+    )
+
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
   private_secret: System.get_env("STRIPE_PRIVATE_SECRET")

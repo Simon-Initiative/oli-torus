@@ -78,7 +78,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
       # validate still works when a user is already logged in
@@ -90,7 +90,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
       # form contains a required text input for deployment id
@@ -255,7 +255,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
@@ -366,7 +366,7 @@ defmodule OliWeb.LtiControllerTest do
       assert json_response(conn, 200) |> Map.get("title") =~ "OLI Torus"
 
       assert json_response(conn, 200) |> Map.get("description") =~
-               "Create, deliver and iteratively improve course content through the Open Learning Initiative"
+               "Create, deliver and iteratively improve course content"
 
       assert json_response(conn, 200) |> Map.get("oidc_initiation_url") =~
                "https://localhost/lti/login"

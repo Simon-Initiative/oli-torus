@@ -4,7 +4,7 @@ defmodule Oli.Factory do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project}
   alias Oli.Delivery.Sections.Section
-  alias Oli.Groups.{Community, CommunityAccount, CommunityVisibility}
+  alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.Institution
 
   def author_factory() do
@@ -87,7 +87,7 @@ defmodule Oli.Factory do
 
   def institution_factory() do
     %Institution{
-      name: "Example Institution",
+      name: sequence("Example Institution"),
       country_code: "US",
       institution_email: "ins@example.edu",
       institution_url: "example.edu",
@@ -100,6 +100,13 @@ defmodule Oli.Factory do
       community: insert(:community),
       user: insert(:user),
       is_admin: false
+    }
+  end
+
+  def community_institution_factory() do
+    %CommunityInstitution{
+      community: insert(:community),
+      institution: insert(:institution)
     }
   end
 end

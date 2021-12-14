@@ -411,4 +411,118 @@ defmodule Oli.GroupsTest do
       assert [] = communities_visibilities
     end
   end
+
+  describe "community institutions" do
+    alias Oli.Groups.CommunityInstitution
+
+    test "list_community_institutions/1 returns all the institutions for a given community" do
+      institution = insert(:institution)
+
+      %CommunityInstitution{community_id: community_id} =
+        insert(:community_institution, institution: institution)
+
+      [returned_institution] = Groups.list_community_institutions(community_id)
+
+      assert returned_institution == institution
+    end
+
+    test "create_community_institution/2 with valid data creates a community institution" do
+      params = params_for(:community_institution)
+
+      assert {:ok, %CommunityInstitution{} = community_institution} =
+               Groups.create_community_institution(params)
+
+      assert community_institution.community_id == params.community_id
+      assert community_institution.institution_id == params.institution_id
+    end
+
+    test "create_community_institution/2 for existing institution and community returns error changeset" do
+      institution = build(:institution)
+      community = build(:community)
+      insert(:community_institution, %{institution: institution, community: community})
+
+      assert {:error, %Ecto.Changeset{}} =
+               Groups.create_community_institution(%{
+                 institution: institution,
+                 community: community
+               })
+    end
+
+    test "create_community_institution_from_institution_name/2 with valid data creates a community institution" do
+      institution = insert(:institution)
+      community_id = insert(:community).id
+
+      assert {:ok, %CommunityInstitution{} = community_institution} =
+               Groups.create_community_institution_from_institution_name(institution.name, %{
+                 community_id: community_id
+               })
+
+      assert community_institution.community_id == community_id
+      assert community_institution.institution_id == institution.id
+    end
+
+    test "create_community_institution_from_institution_name/2 with invalid data returns an error" do
+      community_id = insert(:community).id
+
+      assert {:error, :institution_not_found} ==
+               Groups.create_community_institution_from_institution_name("invalid_name", %{
+                 community_id: community_id
+               })
+    end
+
+    test "get_community_institution_by!/1 returns a community institution when meets the clauses" do
+      community_institution = insert(:community_institution)
+
+      returned_community_institution =
+        Groups.get_community_institution_by!(%{
+          community_id: community_institution.community_id,
+          institution_id: community_institution.institution_id
+        })
+
+      assert community_institution.id == returned_community_institution.id
+      assert community_institution.community_id == returned_community_institution.community_id
+      assert community_institution.institution_id == returned_community_institution.institution_id
+    end
+
+    test "get_community_institution_by!/1 returns nil if the community institution does not exist" do
+      assert nil ==
+               Groups.get_community_institution_by!(%{
+                 community_id: 1,
+                 institution_id: 2
+               })
+    end
+
+    test "get_community_institution_by!/1 returns error if more than one meets the requirements" do
+      community_institution = insert(:community_institution)
+      insert(:community_institution, %{community: community_institution.community})
+
+      assert_raise Ecto.MultipleResultsError,
+                   ~r/^expected at most one result but got 2 in query/,
+                   fn ->
+                     Groups.get_community_institution_by!(%{
+                       community_id: community_institution.community_id
+                     })
+                   end
+    end
+
+    test "delete_community_institution/1 deletes the community institution" do
+      community_institution = insert(:community_institution)
+
+      args = %{
+        community_id: community_institution.community_id,
+        institution_id: community_institution.institution_id
+      }
+
+      assert {:ok, %CommunityInstitution{}} = Groups.delete_community_institution(args)
+
+      refute Groups.get_community_institution_by!(args)
+    end
+
+    test "delete_community_institution/1 fails when the community institution does not exist" do
+      assert {:error, :not_found} =
+               Groups.delete_community_institution(%{
+                 community_id: 12345
+               })
+    end
+  end
 end

@@ -6,14 +6,20 @@
 
 - Fix a bug that prevented editing internal links when only one other page exists
 - Fix a bug that prevented content from being added during remix
+- Fix Open and Free section creation when done through the admin panel
 
 ### Enhancements
+
+- LMS Lite functionality. Admins can allow delivery users to create sections through OLI by toggling their ability to "create sections" and adding the "independent learner" role in the admin interface. These "independent instructors" can then create sections with a start/end date that are private and require an invitation to join. Instructors can invite students by creating an invite link from the section management portal -- any student with this link can enroll automatically.
+- Add support for configurable vendor properties
+- Display course section and course project slug identifiers
 
 ## 0.17.0 (2021-11-30)
 
 ### Bug Fixes
 
 - Add student input parsing to show student responses in datashop export
+- Change datashop session id to not reflect the user
 
 ### Enhancements
 

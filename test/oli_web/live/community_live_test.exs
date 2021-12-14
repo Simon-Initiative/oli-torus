@@ -743,6 +743,155 @@ defmodule OliWeb.CommunityLiveTest do
              |> render() =~
                user.email
     end
+
+    test "adds community institution correctly", %{
+      conn: conn,
+      community: community
+    } do
+      institution = insert(:institution)
+      insert(:community_institution, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution: %{name: institution.name}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community institution(s) successfully added."
+
+      assert 2 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "displays error messages when adding community institution fails", %{
+      conn: conn,
+      community: community
+    } do
+      institution = build(:institution)
+      insert(:community_institution, %{community: community, institution: institution})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution: %{name: institution.name}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Some of the community institutions couldn&#39;t be added because the institutions don&#39;t exist in the system or are already associated."
+
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution: %{name: "Bad institution"}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Some of the community institutions couldn&#39;t be added because the institutions don&#39;t exist in the system or are already associated."
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "adds more than one community institution correctly", %{
+      conn: conn,
+      community: community
+    } do
+      names = insert_pair(:institution) |> Enum.map(& &1.name)
+      insert(:community_institution, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+
+      view
+      |> element("form[phx-submit=\"add_institution\"")
+      |> render_submit(%{institution: %{name: Enum.join(names, ",")}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community institution(s) successfully added."
+
+      assert 3 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "removes community institution correctly", %{
+      conn: conn,
+      community: community
+    } do
+      institution = insert(:institution)
+      insert(:community_institution, %{community: community, institution: institution})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_institution\"")
+      |> render_click(%{"collaborator-id" => institution.id})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Community institution successfully removed."
+
+      assert [] == Groups.list_community_institutions(community.id)
+    end
+
+    test "displays error messages when removing community institution fails", %{
+      conn: conn,
+      community: community
+    } do
+      institution = insert(:institution)
+      insert(:community_institution, %{community: community, institution: institution})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+
+      view
+      |> element("button[phx-click=\"remove_institution\"")
+      |> render_click(%{"collaborator-id" => 12345})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Community institution couldn&#39;t be removed."
+
+      assert 1 == length(Groups.list_community_institutions(community.id))
+    end
+
+    test "suggests community institution correctly", %{
+      conn: conn,
+      community: community
+    } do
+      institution = insert(:institution)
+
+      {:ok, view, _html} = live(conn, live_view_show_route(community.id))
+
+      view
+      |> element("form[phx-change=\"suggest_institution\"")
+      |> render_change(%{institution: %{name: institution.name}})
+
+      assert view
+             |> element("#institution_matches")
+             |> render() =~
+               institution.name
+
+      view
+      |> element("form[phx-change=\"suggest_institution\"")
+      |> render_change(%{institution: %{name: "other_name"}})
+
+      refute view
+             |> element("#institution_matches")
+             |> render() =~
+               institution.name
+    end
   end
 
   describe "associated index" do
@@ -844,7 +993,6 @@ defmodule OliWeb.CommunityLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
 
-      assert has_element?(view, "##{first_cv.id}")
       refute has_element?(view, "##{last_cv.id}")
 
       view

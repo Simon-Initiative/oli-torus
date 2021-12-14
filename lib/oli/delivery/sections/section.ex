@@ -5,12 +5,16 @@ defmodule Oli.Delivery.Sections.Section do
   import Oli.Utils
   alias Oli.Utils.Slug
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
-  alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.DeliveryPolicy
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Delivery.Sections.{
+    SectionsProjectsPublications,
+    Enrollment,
+    SectionResource,
+    SectionInvite,
+    Section
+  }
 
   schema "sections" do
     field(:type, Ecto.Enum, values: [:enrollable, :blueprint], default: :enrollable)
@@ -24,6 +28,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:context_id, :string)
     field(:slug, :string)
     field(:open_and_free, :boolean, default: false)
+    field(:requires_enrollment, :boolean, default: false)
     field(:status, Ecto.Enum, values: [:active, :deleted], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)
@@ -68,11 +73,16 @@ defmodule Oli.Delivery.Sections.Section do
     # section delivery policy
     belongs_to(:delivery_policy, DeliveryPolicy)
 
-    belongs_to(:blueprint, Oli.Delivery.Sections.Section)
+    belongs_to(:blueprint, Section)
 
     # ternary association for sections, projects, and publications used for pinning
     # specific projects and publications to a section for resource resolution
     has_many(:section_project_publications, SectionsProjectsPublications, on_replace: :delete)
+
+    # Section Invites are used for "LMS-Lite" sections (open and free and require enrollment)
+    # An instructor can create a "section invite" link with a hash that allows direct student
+    # enrollment.
+    has_many(:section_invites, SectionInvite, on_delete: :delete_all)
 
     field(:enrollments_count, :integer, virtual: true)
     field(:total_count, :integer, virtual: true)
@@ -118,7 +128,8 @@ defmodule Oli.Delivery.Sections.Section do
       :brand_id,
       :delivery_policy_id,
       :blueprint_id,
-      :root_section_resource_id
+      :root_section_resource_id,
+      :requires_enrollment
     ])
     |> validate_required([
       :type,

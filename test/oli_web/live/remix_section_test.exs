@@ -7,6 +7,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
+  alias Oli.Accounts
 
   describe "remix section live test" do
     setup [:setup_session]
@@ -146,7 +147,15 @@ defmodule OliWeb.RemixSectionLiveTest do
 
   defp setup_session(%{conn: conn}) do
     map = Seeder.base_project_with_resource4()
-    instructor = user_fixture()
+
+    {:ok, instructor} =
+      Accounts.update_user_platform_roles(
+        user_fixture(%{can_create_sections: true, independent_learner: true}),
+        [
+          Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
+        ]
+      )
+
     admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
 
     {:ok, _enrollment} =

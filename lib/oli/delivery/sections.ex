@@ -133,6 +133,27 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a user is a platform (institution) instructor.
+  """
+  def is_institution_instructor?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      Repo.preload(user, :platform_roles),
+      [
+        PlatformRoles.get_role(:institution_instructor)
+      ],
+      :any
+    )
+  end
+
+  @doc """
+  Can a user create independent, enrollable sections through OLI's LMS?
+  (user has the institution instructor platform role and user.can_create_sections is true)
+  """
+  def is_independent_instructor?(%User{} = user) do
+    is_institution_instructor?(user) && user.can_create_sections
+  end
+
+  @doc """
   Determines if a user is an administrator in a given section.
   """
   def is_admin?(nil, _) do
@@ -179,6 +200,47 @@ defmodule Oli.Delivery.Sections do
     |> Enrollment.changeset(%{section_id: section_id})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+
+  To unenroll a student, use unenrolle_learner/2
+  """
+  def unenroll(user_id, section_id, context_roles) do
+    context_roles = EctoProvider.Marshaler.to(context_roles)
+
+    case Repo.one(
+           from(e in Enrollment,
+             preload: [:context_roles],
+             where: e.user_id == ^user_id and e.section_id == ^section_id,
+             select: e
+           )
+         ) do
+      nil ->
+        # Enrollment not found
+        {:error, nil}
+
+      enrollment ->
+        other_context_roles =
+          Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
+
+        if Enum.count(other_context_roles) == 0 do
+          Repo.delete(enrollment)
+        else
+          enrollment
+          |> Enrollment.changeset(%{section_id: section_id})
+          |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
+          |> Repo.update()
+        end
+    end
+  end
+
+  @doc """
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  """
+  def unenroll_learner(user_id, section_id) do
+    unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
   end
 
   @doc """
@@ -564,6 +626,14 @@ defmodule Oli.Delivery.Sections do
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
     Section.changeset(section, attrs)
+  end
+
+  def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
+  end
+
+  def change_open_and_free_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
   @doc """

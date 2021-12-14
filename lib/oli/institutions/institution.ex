@@ -21,6 +21,8 @@ defmodule Oli.Institutions.Institution do
 
     has_many :deployments, Oli.Lti_1p3.Tool.Deployment
 
+    many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityInstitution
+
     timestamps(type: :utc_datetime)
   end
 
