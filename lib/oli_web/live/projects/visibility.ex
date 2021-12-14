@@ -177,7 +177,7 @@ defmodule OliWeb.Projects.VisibilityLive do
       "instructors" ->
         list =
           if String.length(query) > 1 do
-            Accounts.search_authors_matching(query, true)
+            Accounts.search_authors_matching(query)
           else
             []
           end

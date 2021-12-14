@@ -419,14 +419,12 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Searches for a list of authors with an email matching a wildcard pattern
+  Searches for a list of authors with an email matching the exact string
   """
-  def search_authors_matching(query, exact_match \\ false) do
-    q = if exact_match, do: query, else: "%#{query}%"
-
+  def search_authors_matching(query) do
     Repo.all(
       from(author in Author,
-        where: ilike(author.email, ^q)
+        where: ilike(author.email, ^query)
       )
     )
   end
