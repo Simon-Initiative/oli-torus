@@ -851,27 +851,35 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     writeCapiLog('INIT STATE APPLIED', 3, { initState });
-    Object.keys(initState)
-      .reverse()
-      .forEach((key: any) => {
-        const formatted: Record<string, unknown> = {};
-        const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
-        const value = initState[key];
-        const cVar = new CapiVariable({
-          key: baseKey,
-          value,
-        });
-        formatted[baseKey] = cVar;
-        //hack for Small world type SIMs
-        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
-          const mFormatted: Record<string, unknown> = {};
-          const updatedVar = { ...cVar };
-          updatedVar.value = !parseBool(cVar.value);
-          mFormatted[baseKey] = updatedVar;
-          sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
-        }
-        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    const arrInitStateVars = Object.keys(initState);
+    //hack for KIP SIMs. 'CurrentEclipse' variables needs to be sent at last so moving it to last position in array.
+    if (arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse') !== -1) {
+      arrInitStateVars.push(
+        arrInitStateVars.splice(
+          arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse'),
+          1,
+        )[0],
+      );
+    }
+    arrInitStateVars.forEach((key: any) => {
+      const formatted: Record<string, unknown> = {};
+      const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
+      const value = initState[key];
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
       });
+      formatted[baseKey] = cVar;
+      //hack for Small world type SIMs
+      if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
+        const mFormatted: Record<string, unknown> = {};
+        const updatedVar = { ...cVar };
+        updatedVar.value = !parseBool(cVar.value);
+        mFormatted[baseKey] = updatedVar;
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
+      }
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    });
     if (!simLife.init) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       simLife.init = true;
