@@ -163,19 +163,14 @@ export const initializeActivity = createAsyncThunk(
     const quetionBankResetScript: ApplyStateOperation[] = [];
     if (isQuestionBankActivity && currentActivityTree) {
       // question bank children cannot be nested, so the parent must be the bank
-      const parentBank = currentSequenceLineage[currentSequenceLineage.length - 1];
+      const parentBank = currentSequenceLineage[currentSequenceLineage.length - 2];
       // in delivery activity id is sequence id
       const bankActivity = selectActivityById(rootState, parentBank.custom.sequenceId);
       if (bankActivity) {
-        currentActivityTree.forEach((activity) => {
-          // if there are layers above the bank, we need to ignore it. we should not reset them as well. We only reset the question bank
-          if (activity.id === parentBank.custom.layerRef || activity.id === bankActivity.id) {
-            activity.content?.partsLayout.forEach((p: any) => {
-              const script = getInitializeValuesForPart(p, activity.id);
-              if (script?.length) {
-                quetionBankResetScript.push(...script);
-              }
-            });
+        bankActivity.content?.partsLayout.forEach((p: any) => {
+          const script = getInitializeValuesForPart(p, parentBank.custom.sequenceId);
+          if (script?.length) {
+            quetionBankResetScript.push(...script);
           }
         });
       }
