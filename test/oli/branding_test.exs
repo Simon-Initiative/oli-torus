@@ -2,6 +2,7 @@ defmodule Oli.BrandingTest do
   use Oli.DataCase
 
   alias Oli.Branding
+  alias Oli.Institutions.Institution
 
   describe "brands" do
     alias Oli.Branding.Brand
@@ -86,8 +87,10 @@ defmodule Oli.BrandingTest do
       %{project: project, institution: institution} =
         Oli.Seeder.base_project_with_resource(author)
 
-      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      deployment = deployment_fixture(%{registration_id: registration.id})
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
       {:ok, publication} = Oli.Publishing.publish_project(project, "some changes")
 
@@ -110,6 +113,7 @@ defmodule Oli.BrandingTest do
       %{
         section: section,
         oaf_section: oaf_section,
+        institution: institution,
         registration: registration,
         publication: publication
       }
@@ -119,20 +123,20 @@ defmodule Oli.BrandingTest do
     test "brand_name returns brand name with correct precedence", %{
       section: section,
       oaf_section: oaf_section,
-      registration: registration
+      institution: institution
     } do
       # section and registration without brand
       assert Branding.brand_name(section) == "OLI Torus Test"
 
       # create registration brand
-      registration_brand = brand_fixture(%{name: "Registration Brand"})
+      institution_brand = brand_fixture(%{name: "Institution Brand"})
 
-      {:ok, _registration} =
-        registration
-        |> Oli.Lti_1p3.Tool.Registration.changeset(%{brand_id: registration_brand.id})
+      {:ok, _institution} =
+        institution
+        |> Institution.changeset(%{default_brand_id: institution_brand.id})
         |> Repo.update()
 
-      assert Branding.brand_name(section) == "Registration Brand"
+      assert Branding.brand_name(section) == "Institution Brand"
 
       # create section brand
       section_brand = brand_fixture(%{name: "Section Brand"})

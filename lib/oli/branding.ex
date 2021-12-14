@@ -10,8 +10,8 @@ defmodule Oli.Branding do
 
   alias Oli.Branding.Brand
   alias Oli.Delivery.Sections.Section
-  alias Oli.Lti_1p3.Tool.Registration
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Institutions.Institution
 
   @doc """
   Returns the list of brands.
@@ -32,15 +32,16 @@ defmodule Oli.Branding do
   ## Examples
 
       iex> list_brands()
-      [{%Brand{}, registrations_count, sections_count}, ...]
+      [{%Brand{}, institutions_count, sections_count}, ...]
 
   """
   def list_brands_with_stats do
     from(b in Brand,
-      left_join: r in assoc(b, :registrations),
+      left_join: i in Institution,
+      on: i.default_brand_id == b.id,
       left_join: s in assoc(b, :sections),
       group_by: b.id,
-      select: {b, count(r.id), count(s.id)}
+      select: {b, count(i.id), count(s.id)}
     )
     |> Repo.all()
   end
@@ -57,6 +58,13 @@ defmodule Oli.Branding do
   def list_available_brands(institution_id) do
     from(b in Brand,
       where: b.institution_id == ^institution_id or is_nil(b.institution_id)
+    )
+    |> Repo.all()
+  end
+
+  def list_available_brands() do
+    from(b in Brand,
+      where: is_nil(b.institution_id)
     )
     |> Repo.all()
   end
@@ -181,33 +189,35 @@ defmodule Oli.Branding do
         |> get_most_relevant_brand()
 
       %Section{brand: section_brand, open_and_free: true} ->
-        section_registration_or_default(section_brand)
+        section_institution_or_default(section_brand)
 
       %Section{lti_1p3_deployment: %Ecto.Association.NotLoaded{}} ->
         section
-        |> ensure_preloaded(lti_1p3_deployment: [registration: [:brand]])
+        |> ensure_preloaded(lti_1p3_deployment: [institution: [:default_brand]])
         |> get_most_relevant_brand()
 
-      %Section{lti_1p3_deployment: %Deployment{registration: %Ecto.Association.NotLoaded{}}} ->
+      %Section{lti_1p3_deployment: %Deployment{institution: %Ecto.Association.NotLoaded{}}} ->
         section
-        |> ensure_preloaded(lti_1p3_deployment: [registration: [:brand]])
+        |> ensure_preloaded(lti_1p3_deployment: [institution: [:default_brand]])
         |> get_most_relevant_brand()
 
       %Section{
         brand: section_brand,
-        lti_1p3_deployment: %Deployment{registration: %Registration{brand: registration_brand}}
+        lti_1p3_deployment: %Deployment{
+          institution: %Institution{default_brand: institution_default_brand}
+        }
       } ->
-        section_registration_or_default(section_brand, registration_brand)
+        section_institution_or_default(section_brand, institution_default_brand)
 
       _ ->
         get_default_brand()
     end
   end
 
-  defp section_registration_or_default(section_brand, registration_brand \\ nil) do
+  defp section_institution_or_default(section_brand, institution_default_brand \\ nil) do
     case section_brand do
       nil ->
-        case registration_brand do
+        case institution_default_brand do
           nil ->
             # no brand defined for section or registration, use default compiled branding
             get_default_brand()

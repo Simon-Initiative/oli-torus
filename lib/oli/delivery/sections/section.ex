@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{}, null: false)
     field(:previous_next_index, :map, default: nil, null: true)
 
-    belongs_to(:lti_1p3_deployment, Lti_1p3.DataProviders.EctoProvider.Deployment,
+    belongs_to(:lti_1p3_deployment, Oli.Lti_1p3.Tool.Deployment,
       foreign_key: :lti_1p3_deployment_id
     )
 
@@ -88,7 +88,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:total_count, :integer, virtual: true)
     field(:institution_name, :string, virtual: true)
 
-    many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility
+    many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
 
     timestamps(type: :utc_datetime)
   end

@@ -6,16 +6,19 @@ defmodule Oli.Branding.Brand do
   alias Oli.Utils.Slug
 
   schema "brands" do
-    field :name, :string
-    field :slug, :string
-    field :favicons, :string
-    field :logo, :string
-    field :logo_dark, :string
+    field(:name, :string)
+    field(:slug, :string)
+    field(:favicons, :string)
+    field(:logo, :string)
+    field(:logo_dark, :string)
 
-    belongs_to :institution, Oli.Institutions.Institution
+    # a brand can be applied to a specific section by setting the brand_id
+    # within that section
+    has_many(:sections, Oli.Delivery.Sections.Section)
 
-    has_many :registrations, Oli.Lti_1p3.Tool.Registration
-    has_many :sections, Oli.Delivery.Sections.Section
+    # a brand may be associated with a particular institution in which case the brand
+    # can (and only) be selected by instuctors that belong to that particular institution
+    belongs_to(:institution, Oli.Institutions.Institution)
 
     timestamps(type: :utc_datetime)
   end
