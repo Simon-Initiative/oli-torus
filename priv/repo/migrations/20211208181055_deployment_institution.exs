@@ -91,6 +91,10 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
 
     flush()
 
+    alter table(:pending_registrations) do
+      remove :deployment_id, :string
+    end
+
     alter table(:institutions) do
       remove :default_brand_id, references(:brands)
     end
