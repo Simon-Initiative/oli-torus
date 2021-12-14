@@ -828,7 +828,11 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
+    <div
+      data-janus-type={tagName}
+      style={styles}
+      className={`mcq-input ${customCssClass === 'no-wrap' ? customCssClass : ''}`}
+    >
       {options?.map((item, index) => (
         <MCQItem
           idx={index}
