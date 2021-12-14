@@ -1,1 +1,0 @@
-{"version":3,"file":"input_auto_select.js","sourceRoot":"","sources":["../../../src/hooks/input_auto_select.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,MAAM,eAAe,GAAG;IAC7B,OAAO;QACL,IAAI,CAAC,EAAE,CAAC,MAAM,EAAE,CAAC;IACnB,CAAC;CACF,CAAC","sourcesContent":["export const InputAutoSelect = {\n  mounted() {\n    this.el.select();\n  },\n};\n"]}

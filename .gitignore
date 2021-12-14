@@ -40,6 +40,7 @@ npm-debug.log
 
 # The directory NPM downloads your dependencies sources to.
 /assets/node_modules/
+/assets/dev/
 
 # Since we are building assets from assets/ we ignore priv/static
 /priv/static/

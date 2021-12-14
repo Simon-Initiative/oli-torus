@@ -1,1 +1,0 @@
-{"version":3,"file":"delivery-entry.js","sourceRoot":"","sources":["../../../../../src/components/activities/short_answer/delivery-entry.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,uBAAuB,CAAC","sourcesContent":["export { ShortAnswerDelivery } from './ShortAnswerDelivery';\n"]}

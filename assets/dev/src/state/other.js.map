@@ -1,1 +1,0 @@
-{"version":3,"file":"other.js","sourceRoot":"","sources":["../../../src/state/other.ts"],"names":[],"mappings":"","sourcesContent":["export type OtherAction = { type: '' };\n"]}

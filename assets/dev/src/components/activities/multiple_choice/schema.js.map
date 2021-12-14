@@ -1,1 +1,0 @@
-{"version":3,"file":"schema.js","sourceRoot":"","sources":["../../../../../src/components/activities/multiple_choice/schema.ts"],"names":[],"mappings":"","sourcesContent":["import { MCSchemaV2 } from 'components/activities/multiple_choice/transformations/v2';\n\nexport type MCSchema = MCSchemaV2;\n"]}

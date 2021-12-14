@@ -1,1 +1,0 @@
-{"version":3,"file":"schema.js","sourceRoot":"","sources":["../../../../../src/components/activities/check_all_that_apply/schema.ts"],"names":[],"mappings":"","sourcesContent":["import { CATASchemaV2 } from 'components/activities/check_all_that_apply/transformations/v2';\n\nexport type CATASchema = CATASchemaV2;\n"]}

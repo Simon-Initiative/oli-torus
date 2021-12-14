@@ -1,1 +1,0 @@
-{"version":3,"file":"rules.js","sourceRoot":"","sources":["../../../src/adaptivity/rules.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,KAAK,EAAE,MAAM,gBAAgB,CAAC;AAEvC,MAAM,CAAC,OAAO,GAAG;IACf,KAAK;CACN,CAAC","sourcesContent":["import { check } from './rules-engine';\n\nmodule.exports = {\n  check,\n};\n"]}

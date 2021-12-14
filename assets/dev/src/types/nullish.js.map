@@ -1,1 +1,0 @@
-{"version":3,"file":"nullish.js","sourceRoot":"","sources":["../../../src/types/nullish.ts"],"names":[],"mappings":"","sourcesContent":["export type Nullish<T> = T | null | undefined;\n"]}

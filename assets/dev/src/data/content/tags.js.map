@@ -1,1 +1,0 @@
-{"version":3,"file":"tags.js","sourceRoot":"","sources":["../../../../src/data/content/tags.ts"],"names":[],"mappings":"","sourcesContent":["import { ResourceId } from 'data/types';\n\nexport interface Tag {\n  id: ResourceId;\n  title: string;\n}\n"]}
