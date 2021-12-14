@@ -31,7 +31,7 @@ defmodule OliWeb.Sections.PaywallSettings do
     ~F"""
     <Group label="Payment Settings" description="Settings related to requried student fee and optional grace periody">
       <Field name={:requires_payment} class="form-check">
-        <Checkbox class="form-check-input" value={get_field(@changeset, :requires_payment)}/>
+        <Checkbox class="form-check-input" value={get_field(@changeset, :requires_payment)} opts={disabled: @disabled}/>
         <Label class="form-check-label"/>
       </Field>
       <Field name={:amount} class="mt-2 form-label-group">

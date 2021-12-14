@@ -6,6 +6,8 @@
 
 - Fix a bug that prevented editing internal links when only one other page exists
 - Fix a bug that prevented content from being added during remix
+- Fix a bug that allowed paid status of a section to be toggled off
+- Fix a bug that resulted in products being able to be created with invalid grace period days
 - Fix Open and Free section creation when done through the admin panel
 - Fix an issue where LTI 1.3 deployments should represent individual institutions
 
