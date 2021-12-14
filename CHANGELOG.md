@@ -6,6 +6,7 @@
 
 - Fix a bug that prevented editing internal links when only one other page exists
 - Fix a bug that prevented content from being added during remix
+- Fix Open and Free section creation when done through the admin panel
 
 ### Enhancements
 
