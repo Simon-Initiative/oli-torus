@@ -14,6 +14,9 @@ defmodule Oli.Lti_1p3.Tool.Registration do
 
     has_many(:deployments, Oli.Lti_1p3.Tool.Deployment)
 
+    field :deployments_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 

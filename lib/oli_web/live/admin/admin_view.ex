@@ -48,7 +48,7 @@ defmodule OliWeb.Admin.AdminView do
       <Group label="System Management" description="Manage and support system level functionality">
         <ul class="link-list">
           <li><a href={Routes.activity_manage_path(OliWeb.Endpoint, :index)}>Manage Activities</a></li>
-          <li><a href={Routes.registration_path(OliWeb.Endpoint, :index)}>Manage LTI 1.3 Registrations</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}>Manage LTI 1.3 Registrations</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}>Enable and Disable Feature Flags</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}>Manage Third-Party API Keys</a></li>
           <li>
