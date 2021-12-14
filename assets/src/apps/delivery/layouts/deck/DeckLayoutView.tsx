@@ -506,7 +506,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>
-      <style>{`style { display: none !important; }`}</style>
+      <style>
+        {`style { display: none !important; }
+          .background.background-scaled {
+            background-image: url(${pageContent.custom.backgroundImageURL}) !important;
+            display: block;
+          }`}
+      </style>
       <DeckLayoutHeader
         pageName={pageTitle}
         userName={currentUserName}
