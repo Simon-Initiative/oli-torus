@@ -78,7 +78,17 @@ config :oli,
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
   load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
-  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
+  blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID"),
+  branding: [
+    name: System.get_env("BRANDING_NAME", "OLI Torus"),
+    logo: System.get_env("BRANDING_LOGO", "/images/oli_torus_logo.png"),
+    logo_dark:
+      System.get_env(
+        "BRANDING_LOGO_DARK",
+        System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
+      ),
+    favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
+  ]
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.

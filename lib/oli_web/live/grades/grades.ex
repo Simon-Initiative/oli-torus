@@ -132,7 +132,7 @@ defmodule OliWeb.Grades.GradesLive do
     """
   end
 
-  defp determine_line_item_tasks(graded_pages, line_items) do
+  defp determine_line_item_tasks(graded_pages, line_items, section) do
     line_item_map = Enum.reduce(line_items, %{}, fn i, m -> Map.put(m, i.resourceId, i) end)
 
     # tasks to create line items for graded pages that do not have them
@@ -142,10 +142,12 @@ defmodule OliWeb.Grades.GradesLive do
       end)
       |> Enum.map(fn p ->
         fn assigns ->
+          out_of = Oli.Grading.determine_page_out_of(section.slug, p)
+
           LTI_AGS.create_line_item(
             assigns.line_items_url,
             p.resource_id,
-            1,
+            out_of,
             p.title,
             assigns.access_token
           )
@@ -255,7 +257,7 @@ defmodule OliWeb.Grades.GradesLive do
       {:ok, line_items, access_token} ->
         graded_pages = Grading.fetch_graded_pages(socket.assigns.section.slug)
 
-        case determine_line_item_tasks(graded_pages, line_items) do
+        case determine_line_item_tasks(graded_pages, line_items, socket.assigns.section) do
           [] ->
             {:noreply,
              put_flash(socket, :info, dgettext("grades", "LMS line items already up to date"))}
@@ -291,10 +293,17 @@ defmodule OliWeb.Grades.GradesLive do
         p.resource_id == socket.assigns.selected_page
       end)
 
+    out_of = Oli.Grading.determine_page_out_of(section.slug, page)
+
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case section.line_items_service_url
-             |> LTI_AGS.fetch_or_create_line_item(page.resource_id, 1.0, page.title, access_token) do
+        case LTI_AGS.fetch_or_create_line_item(
+               section.line_items_service_url,
+               page.resource_id,
+               out_of,
+               page.title,
+               access_token
+             ) do
           {:ok, line_item} ->
             fetch_students(access_token, section)
             |> send_grades(access_token, section, page, line_item, socket)

@@ -123,7 +123,8 @@ config :lti_1p3,
     repo: Oli.Repo,
     schemas: [
       user: Oli.Accounts.User,
-      registration: Oli.Lti_1p3.Tool.Registration
+      registration: Oli.Lti_1p3.Tool.Registration,
+      deployment: Oli.Lti_1p3.Tool.Deployment,
     ]
   ]
 

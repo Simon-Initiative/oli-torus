@@ -234,8 +234,11 @@ defmodule Oli.SectionsTest do
       institution: institution
     } do
       jwk = jwk_fixture()
-      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      deployment = deployment_fixture(%{registration_id: registration.id})
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
+
       {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
 
       lti_params =
