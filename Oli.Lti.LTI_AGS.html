@@ -10,7 +10,7 @@
     <title>Oli.Lti.LTI_AGS — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-e8fe2be31b.js"></script>
+    <script src="dist/sidebar_items-31bbfccc97.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -134,7 +134,7 @@ in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.</p></di
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#fetch_or_create_line_item/5">fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)</a>
+    <a href="#fetch_or_create_line_item/5">fetch_or_create_line_item(line_items_service_url, resource_id, maximum_score_provider, label, access_token)</a>
 
   </div>
 
@@ -216,7 +216,7 @@ Functions
     </a>
     <h1 class="signature">create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L138" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L136" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -239,7 +239,7 @@ in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.</p>
     </a>
     <h1 class="signature">fetch_line_items(line_items_service_url, access_token)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L114" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L112" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -259,9 +259,9 @@ in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.</p>
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">fetch_or_create_line_item(line_items_service_url, resource_id, score_maximum, label, access_token)</h1>
+    <h1 class="signature">fetch_or_create_line_item(line_items_service_url, resource_id, maximum_score_provider, label, access_token)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L53" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -285,7 +285,7 @@ in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.</p>
     </a>
     <h1 class="signature">get_line_items_url(lti_launch_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L225" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L221" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -307,7 +307,7 @@ in a {:ok, line_item} tuple.  On error, returns a {:error, error} tuple.</p>
     </a>
     <h1 class="signature">grade_passback_enabled?(lti_launch_params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L211" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L207" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -332,7 +332,7 @@ endpoint is present.</p>
     </a>
     <h1 class="signature">has_scope?(lti_ags_claim, scope_url)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L232" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L228" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -376,7 +376,7 @@ endpoint is present.</p>
     </a>
     <h1 class="signature">update_line_item(line_item, changes, access_token)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L173" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_ags.ex#L171" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

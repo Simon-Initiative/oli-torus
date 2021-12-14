@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.ActivityLifecycle.Evaluate — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-e8fe2be31b.js"></script>
+    <script src="dist/sidebar_items-31bbfccc97.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,7 +112,7 @@ Oli.Delivery.Attempts.ActivityLifecycle.Evaluate <small class="app-vsn">(OLI Tor
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#apply_client_evaluation/3">apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations)</a>
+    <a href="#apply_client_evaluation/4">apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations, normalize_mode \\ :normalize)</a>
 
   </div>
 
@@ -170,7 +170,7 @@ submit all of the contained activites when the student clicks &quot;Submit Asses
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#rollup_part_attempt_evaluations/1">rollup_part_attempt_evaluations(activity_attempt_guid)</a>
+    <a href="#rollup_part_attempt_evaluations/2">rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)</a>
 
   </div>
 
@@ -190,16 +190,18 @@ submit all of the contained activites when the student clicks &quot;Submit Asses
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="apply_client_evaluation/3">
+<section class="detail" id="apply_client_evaluation/4">
+
+    <span id="apply_client_evaluation/3"></span>
 
   <div class="detail-header">
-    <a href="#apply_client_evaluation/3" class="detail-link" title="Link to this function">
+    <a href="#apply_client_evaluation/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations)</h1>
+    <h1 class="signature">apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations, normalize_mode \\ :normalize)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L361" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L370" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -209,18 +211,12 @@ Functions
 
   <section class="docstring">
 
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>apply_client_evaluation(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()]) ::
-  {:ok, [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
-
-      </div>
-
 <p>Processes a set of client evaluations for some number of parts for the given
 activity attempt guid.  If this collection of evaluations completes the activity
 the results of the part evalutions (including ones already having been evaluated)
-will be rolled up to the activity attempt record.</p><p>On success returns an <code class="inline">{:ok, results}</code> tuple where results in an array of maps. Each
+will be rolled up to the activity attempt record.</p><p>The optional &quot;normalize_mode&quot; takes values of :normalize or :do_not_normalize.  The default
+:normalize mode will normalize the part based score and out_of to a range of 0 to 1.
+This ensures for all basic page based assessments that every activity has equal weight.</p><p>On success returns an <code class="inline">{:ok, results}</code> tuple where results in an array of maps. Each
 map instance contains the result of one of the evaluations in the form:</p><p><code class="inline">${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}</code></p><p>On failure returns <code class="inline">{:error, error}</code></p>
   </section>
 </section>
@@ -255,7 +251,7 @@ map instance contains the result of one of the evaluations in the form:</p><p><c
     </a>
     <h1 class="signature">evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L242" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L247" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -291,7 +287,7 @@ been evaluated.</p><p>On failure returns <code class="inline">{:error, error}</c
     </a>
     <h1 class="signature">evaluate_from_preview(model, part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L273" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L278" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -342,7 +338,7 @@ been evaluated.</p><p>On failure returns <code class="inline">{:error, error}</c
     </a>
     <h1 class="signature">evaluate_from_stored_input(activity_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L315" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L320" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -357,16 +353,16 @@ the child part attempts.  This exists primarly to allow graded pages to
 submit all of the contained activites when the student clicks &quot;Submit Assessment&quot;.</p>
   </section>
 </section>
-<section class="detail" id="rollup_part_attempt_evaluations/1">
+<section class="detail" id="rollup_part_attempt_evaluations/2">
 
   <div class="detail-header">
-    <a href="#rollup_part_attempt_evaluations/1" class="detail-link" title="Link to this function">
+    <a href="#rollup_part_attempt_evaluations/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">rollup_part_attempt_evaluations(activity_attempt_guid)</h1>
+    <h1 class="signature">rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L430" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L444" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
