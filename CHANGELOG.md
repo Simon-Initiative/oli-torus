@@ -6,12 +6,16 @@
 
 - Fix a bug that prevented editing internal links when only one other page exists
 - Fix a bug that prevented content from being added during remix
+- Fix Open and Free section creation when done through the admin panel
+- Fix an issue where LTI 1.3 deployments should represent individual institutions
 
 ### Enhancements
 
+- Send total points available during LMS line item creation
 - LMS Lite functionality. Admins can allow delivery users to create sections through OLI by toggling their ability to "create sections" and adding the "independent learner" role in the admin interface. These "independent instructors" can then create sections with a start/end date that are private and require an invitation to join. Instructors can invite students by creating an invite link from the section management portal -- any student with this link can enroll automatically.
 - Add support for configurable vendor properties
 - Allow default brand to be changed via release env var
+- Display course section and course project slug identifiers
 
 ## 0.17.0 (2021-11-30)
 

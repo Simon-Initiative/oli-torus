@@ -183,6 +183,17 @@
 
             </div>
 
+            <%= if @deployment_id do %>
+              <%= hidden_input f, :deployment_id, value: @deployment_id, readonly: true %>
+            <% else %>
+              <div class="form-label-group">
+                <%= text_input f, :deployment_id, class: "deployment_id form-control " <> error_class(f, :deployment_id, "is-invalid"),
+                  placeholder: "Deployment ID", required: true, autofocus: focusHelper(f, :deployment_id) %>
+                <%= label f, :deployment_id, "Deployment ID", class: "control-label" %>
+                <%= error_tag f, :deployment_id %>
+              </div>
+            <% end %>
+
             <div>
               <%= submit "Register", disabled: true, class: "submit btn btn-md btn-primary btn-block" %>
             </div>

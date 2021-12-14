@@ -8,7 +8,7 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts.Author
   alias Oli.Institutions
   alias Oli.Lti_1p3.Tool.Registration
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
   alias Oli.Institutions.PendingRegistration
 
   @create_attrs %{
@@ -77,14 +77,12 @@ defmodule OliWeb.InstitutionControllerTest do
     test "renders institution registration details", %{conn: conn, institution: institution} do
       jwk = jwk_fixture()
 
-      %Registration{id: registration_id} =
-        registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
+      %Registration{id: registration_id} = registration_fixture(%{tool_jwk_id: jwk.id})
 
       %Deployment{deployment_id: deployment_id} =
-        deployment_fixture(%{registration_id: registration_id})
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration_id})
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
-      assert html_response(conn, 200) =~ "some issuer - some client_id"
       assert html_response(conn, 200) =~ deployment_id
     end
   end
@@ -130,13 +128,13 @@ defmodule OliWeb.InstitutionControllerTest do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         conn =
           recycle(conn)
           |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
         get(conn, Routes.institution_path(conn, :show, institution))
-      end
+      end)
     end
   end
 
