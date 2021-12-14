@@ -2,7 +2,7 @@ defmodule Oli.Groups.Community do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @string_field_limit 256
+  @string_field_limit 255
 
   schema "communities" do
     field :name, :string
@@ -21,6 +21,9 @@ defmodule Oli.Groups.Community do
     many_to_many :sections, Oli.Delivery.Sections.Section,
       join_through: Oli.Groups.CommunityVisibility,
       where: [type: {:fragment, "? = 'blueprint'"}]
+
+    many_to_many :institutions, Oli.Institutions.Institution,
+      join_through: Oli.Groups.CommunityInstitution
 
     timestamps(type: :utc_datetime)
   end

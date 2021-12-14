@@ -34,6 +34,21 @@ defmodule Oli.Institutions do
     do: Repo.get!(Institution, id) |> Repo.preload(registrations: [:deployments, :brand])
 
   @doc """
+  Gets an institution by clauses. Will raise an error if
+  more than one matches the criteria.
+
+  ## Examples
+
+      iex> get_institution_by!(%{name: "My institution"})
+      %Institution{}
+      iex> get_institution_by!(%{name: "bad name"})
+      nil
+      iex> get_institution_by!(%{country_code: "US"})
+      Ecto.MultipleResultsError
+  """
+  def get_institution_by!(clauses), do: Repo.get_by(Institution, clauses)
+
+  @doc """
   Creates a institution.
   ## Examples
       iex> create_institution(%{field: value})
