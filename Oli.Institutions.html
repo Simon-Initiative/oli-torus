@@ -10,7 +10,7 @@
     <title>Oli.Institutions — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-31bbfccc97.js"></script>
+    <script src="dist/sidebar_items-bbb53db595.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -122,6 +122,13 @@ Oli.Institutions <small class="app-vsn">(OLI Torus v0.17.0)</small>
 
     <div class="summary-synopsis"><p>Approves a pending registration request. If successful, a new deployment will be created and attached
 to a new or existing institution if one with a similar url already exists.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#browse_registrations/3">browse_registrations(paging, sorting, options)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -445,7 +452,7 @@ Functions
     </a>
     <h1 class="signature">approve_pending_registration(pending_registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L488" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L533" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -460,10 +467,32 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#approve_pending_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">approve_pending_registration</span><span class="p" data-group-id="7074755563-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="7074755563-1">)</span><span class="w">
-</span><span class="p" data-group-id="7074755563-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7074755563-3">{</span><span class="p" data-group-id="7074755563-4">%</span><span class="nc" data-group-id="7074755563-4">Institution</span><span class="p" data-group-id="7074755563-4">{</span><span class="p" data-group-id="7074755563-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7074755563-5">%</span><span class="nc" data-group-id="7074755563-5">Registration</span><span class="p" data-group-id="7074755563-5">{</span><span class="p" data-group-id="7074755563-5">}</span><span class="p" data-group-id="7074755563-3">}</span><span class="p" data-group-id="7074755563-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">approve_pending_registration</span><span class="p" data-group-id="7074755563-6">(</span><span class="n">pending_registration</span><span class="p" data-group-id="7074755563-6">)</span><span class="w">
-</span><span class="p" data-group-id="7074755563-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p" data-group-id="7074755563-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">approve_pending_registration</span><span class="p" data-group-id="5046867408-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="5046867408-1">)</span><span class="w">
+</span><span class="p" data-group-id="5046867408-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5046867408-3">{</span><span class="p" data-group-id="5046867408-4">%</span><span class="nc" data-group-id="5046867408-4">Institution</span><span class="p" data-group-id="5046867408-4">{</span><span class="p" data-group-id="5046867408-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5046867408-5">%</span><span class="nc" data-group-id="5046867408-5">Registration</span><span class="p" data-group-id="5046867408-5">{</span><span class="p" data-group-id="5046867408-5">}</span><span class="p" data-group-id="5046867408-3">}</span><span class="p" data-group-id="5046867408-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">approve_pending_registration</span><span class="p" data-group-id="5046867408-6">(</span><span class="n">pending_registration</span><span class="p" data-group-id="5046867408-6">)</span><span class="w">
+</span><span class="p" data-group-id="5046867408-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">reason</span><span class="p" data-group-id="5046867408-7">}</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="browse_registrations/3">
+
+  <div class="detail-header">
+    <a href="#browse_registrations/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">browse_registrations(paging, sorting, options)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L237" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="change_deployment/2">
@@ -477,7 +506,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">change_deployment(deployment, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L326" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L371" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -491,8 +520,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#change_deployment/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_deployment</span><span class="p" data-group-id="2433797829-1">(</span><span class="n">deployment</span><span class="p" data-group-id="2433797829-1">)</span><span class="w">
-</span><span class="p" data-group-id="2433797829-2">%</span><span class="nc" data-group-id="2433797829-2">Todo</span><span class="p" data-group-id="2433797829-2">{</span><span class="n">...</span><span class="p" data-group-id="2433797829-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_deployment</span><span class="p" data-group-id="4461799898-1">(</span><span class="n">deployment</span><span class="p" data-group-id="4461799898-1">)</span><span class="w">
+</span><span class="p" data-group-id="4461799898-2">%</span><span class="nc" data-group-id="4461799898-2">Todo</span><span class="p" data-group-id="4461799898-2">{</span><span class="n">...</span><span class="p" data-group-id="4461799898-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="change_institution/1">
@@ -504,7 +533,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">change_institution(institution)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L98" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -518,8 +547,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#change_institution/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_institution</span><span class="p" data-group-id="4148242207-1">(</span><span class="n">institution</span><span class="p" data-group-id="4148242207-1">)</span><span class="w">
-</span><span class="p" data-group-id="4148242207-2">%</span><span class="nc" data-group-id="4148242207-2">Ecto.Changeset</span><span class="p" data-group-id="4148242207-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4148242207-3">%</span><span class="nc" data-group-id="4148242207-3">Institution</span><span class="p" data-group-id="4148242207-3">{</span><span class="p" data-group-id="4148242207-3">}</span><span class="p" data-group-id="4148242207-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_institution</span><span class="p" data-group-id="9444334943-1">(</span><span class="n">institution</span><span class="p" data-group-id="9444334943-1">)</span><span class="w">
+</span><span class="p" data-group-id="9444334943-2">%</span><span class="nc" data-group-id="9444334943-2">Ecto.Changeset</span><span class="p" data-group-id="9444334943-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9444334943-3">%</span><span class="nc" data-group-id="9444334943-3">Institution</span><span class="p" data-group-id="9444334943-3">{</span><span class="p" data-group-id="9444334943-3">}</span><span class="p" data-group-id="9444334943-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="change_pending_registration/1">
@@ -531,7 +560,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">change_pending_registration(pending_registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L445" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L490" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -545,8 +574,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#change_pending_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_pending_registration</span><span class="p" data-group-id="9136250036-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="9136250036-1">)</span><span class="w">
-</span><span class="p" data-group-id="9136250036-2">%</span><span class="nc" data-group-id="9136250036-2">Ecto.Changeset</span><span class="p" data-group-id="9136250036-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="9136250036-3">%</span><span class="nc" data-group-id="9136250036-3">PendingRegistration</span><span class="p" data-group-id="9136250036-3">{</span><span class="p" data-group-id="9136250036-3">}</span><span class="p" data-group-id="9136250036-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_pending_registration</span><span class="p" data-group-id="7507343288-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="7507343288-1">)</span><span class="w">
+</span><span class="p" data-group-id="7507343288-2">%</span><span class="nc" data-group-id="7507343288-2">Ecto.Changeset</span><span class="p" data-group-id="7507343288-2">{</span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7507343288-3">%</span><span class="nc" data-group-id="7507343288-3">PendingRegistration</span><span class="p" data-group-id="7507343288-3">{</span><span class="p" data-group-id="7507343288-3">}</span><span class="p" data-group-id="7507343288-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="change_registration/2">
@@ -560,7 +589,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">change_registration(registration, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L232" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L233" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -574,8 +603,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#change_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="0169746366-1">(</span><span class="n">registration</span><span class="p" data-group-id="0169746366-1">)</span><span class="w">
-</span><span class="p" data-group-id="0169746366-2">%</span><span class="nc" data-group-id="0169746366-2">Todo</span><span class="p" data-group-id="0169746366-2">{</span><span class="n">...</span><span class="p" data-group-id="0169746366-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_registration</span><span class="p" data-group-id="4901475535-1">(</span><span class="n">registration</span><span class="p" data-group-id="4901475535-1">)</span><span class="w">
+</span><span class="p" data-group-id="4901475535-2">%</span><span class="nc" data-group-id="4901475535-2">Todo</span><span class="p" data-group-id="4901475535-2">{</span><span class="n">...</span><span class="p" data-group-id="4901475535-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="count_pending_registrations/0">
@@ -587,7 +616,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">count_pending_registrations()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L355" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L400" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -601,7 +630,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#count_pending_registrations/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">count_pending_registrations</span><span class="p" data-group-id="2988430018-1">(</span><span class="p" data-group-id="2988430018-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">count_pending_registrations</span><span class="p" data-group-id="8908444569-1">(</span><span class="p" data-group-id="8908444569-1">)</span><span class="w">
 </span><span class="mi">123</span></code></pre>
   </section>
 </section>
@@ -616,7 +645,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">create_deployment(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L274" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L319" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -630,11 +659,11 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#create_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_deployment</span><span class="p" data-group-id="9479441750-1">(</span><span class="p" data-group-id="9479441750-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9479441750-2">}</span><span class="p" data-group-id="9479441750-1">)</span><span class="w">
-</span><span class="p" data-group-id="9479441750-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9479441750-4">%</span><span class="nc" data-group-id="9479441750-4">Deployment</span><span class="p" data-group-id="9479441750-4">{</span><span class="p" data-group-id="9479441750-4">}</span><span class="p" data-group-id="9479441750-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_deployment</span><span class="p" data-group-id="4914883409-1">(</span><span class="p" data-group-id="4914883409-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4914883409-2">}</span><span class="p" data-group-id="4914883409-1">)</span><span class="w">
+</span><span class="p" data-group-id="4914883409-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4914883409-4">%</span><span class="nc" data-group-id="4914883409-4">Deployment</span><span class="p" data-group-id="4914883409-4">{</span><span class="p" data-group-id="4914883409-4">}</span><span class="p" data-group-id="4914883409-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_deployment</span><span class="p" data-group-id="9479441750-5">(</span><span class="p" data-group-id="9479441750-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9479441750-6">}</span><span class="p" data-group-id="9479441750-5">)</span><span class="w">
-</span><span class="p" data-group-id="9479441750-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9479441750-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_deployment</span><span class="p" data-group-id="4914883409-5">(</span><span class="p" data-group-id="4914883409-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4914883409-6">}</span><span class="p" data-group-id="4914883409-5">)</span><span class="w">
+</span><span class="p" data-group-id="4914883409-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4914883409-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_institution/1">
@@ -648,7 +677,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">create_institution(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L59" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L60" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -662,10 +691,10 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#create_institution/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_institution</span><span class="p" data-group-id="4309835773-1">(</span><span class="p" data-group-id="4309835773-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4309835773-2">}</span><span class="p" data-group-id="4309835773-1">)</span><span class="w">
-</span><span class="p" data-group-id="4309835773-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4309835773-4">%</span><span class="nc" data-group-id="4309835773-4">Institution</span><span class="p" data-group-id="4309835773-4">{</span><span class="p" data-group-id="4309835773-4">}</span><span class="p" data-group-id="4309835773-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_institution</span><span class="p" data-group-id="4309835773-5">(</span><span class="p" data-group-id="4309835773-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4309835773-6">}</span><span class="p" data-group-id="4309835773-5">)</span><span class="w">
-</span><span class="p" data-group-id="4309835773-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4309835773-8">%</span><span class="nc" data-group-id="4309835773-8">Ecto.Changeset</span><span class="p" data-group-id="4309835773-8">{</span><span class="p" data-group-id="4309835773-8">}</span><span class="p" data-group-id="4309835773-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_institution</span><span class="p" data-group-id="9013813200-1">(</span><span class="p" data-group-id="9013813200-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9013813200-2">}</span><span class="p" data-group-id="9013813200-1">)</span><span class="w">
+</span><span class="p" data-group-id="9013813200-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9013813200-4">%</span><span class="nc" data-group-id="9013813200-4">Institution</span><span class="p" data-group-id="9013813200-4">{</span><span class="p" data-group-id="9013813200-4">}</span><span class="p" data-group-id="9013813200-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_institution</span><span class="p" data-group-id="9013813200-5">(</span><span class="p" data-group-id="9013813200-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9013813200-6">}</span><span class="p" data-group-id="9013813200-5">)</span><span class="w">
+</span><span class="p" data-group-id="9013813200-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9013813200-8">%</span><span class="nc" data-group-id="9013813200-8">Ecto.Changeset</span><span class="p" data-group-id="9013813200-8">{</span><span class="p" data-group-id="9013813200-8">}</span><span class="p" data-group-id="9013813200-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_pending_registration/1">
@@ -679,7 +708,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">create_pending_registration(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L407" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L452" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -693,10 +722,10 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#create_pending_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_pending_registration</span><span class="p" data-group-id="8694876674-1">(</span><span class="p" data-group-id="8694876674-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="8694876674-2">}</span><span class="p" data-group-id="8694876674-1">)</span><span class="w">
-</span><span class="p" data-group-id="8694876674-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8694876674-4">%</span><span class="nc" data-group-id="8694876674-4">PendingRegistration</span><span class="p" data-group-id="8694876674-4">{</span><span class="p" data-group-id="8694876674-4">}</span><span class="p" data-group-id="8694876674-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_pending_registration</span><span class="p" data-group-id="8694876674-5">(</span><span class="p" data-group-id="8694876674-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8694876674-6">}</span><span class="p" data-group-id="8694876674-5">)</span><span class="w">
-</span><span class="p" data-group-id="8694876674-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8694876674-8">%</span><span class="nc" data-group-id="8694876674-8">Ecto.Changeset</span><span class="p" data-group-id="8694876674-8">{</span><span class="p" data-group-id="8694876674-8">}</span><span class="p" data-group-id="8694876674-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_pending_registration</span><span class="p" data-group-id="3435522918-1">(</span><span class="p" data-group-id="3435522918-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3435522918-2">}</span><span class="p" data-group-id="3435522918-1">)</span><span class="w">
+</span><span class="p" data-group-id="3435522918-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3435522918-4">%</span><span class="nc" data-group-id="3435522918-4">PendingRegistration</span><span class="p" data-group-id="3435522918-4">{</span><span class="p" data-group-id="3435522918-4">}</span><span class="p" data-group-id="3435522918-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_pending_registration</span><span class="p" data-group-id="3435522918-5">(</span><span class="p" data-group-id="3435522918-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="3435522918-6">}</span><span class="p" data-group-id="3435522918-5">)</span><span class="w">
+</span><span class="p" data-group-id="3435522918-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3435522918-8">%</span><span class="nc" data-group-id="3435522918-8">Ecto.Changeset</span><span class="p" data-group-id="3435522918-8">{</span><span class="p" data-group-id="3435522918-8">}</span><span class="p" data-group-id="3435522918-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_registration/1">
@@ -710,7 +739,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">create_registration(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L161" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L162" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -724,11 +753,11 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#create_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="2007457809-1">(</span><span class="p" data-group-id="2007457809-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2007457809-2">}</span><span class="p" data-group-id="2007457809-1">)</span><span class="w">
-</span><span class="p" data-group-id="2007457809-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2007457809-4">%</span><span class="nc" data-group-id="2007457809-4">Registration</span><span class="p" data-group-id="2007457809-4">{</span><span class="p" data-group-id="2007457809-4">}</span><span class="p" data-group-id="2007457809-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="0615956102-1">(</span><span class="p" data-group-id="0615956102-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="0615956102-2">}</span><span class="p" data-group-id="0615956102-1">)</span><span class="w">
+</span><span class="p" data-group-id="0615956102-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0615956102-4">%</span><span class="nc" data-group-id="0615956102-4">Registration</span><span class="p" data-group-id="0615956102-4">{</span><span class="p" data-group-id="0615956102-4">}</span><span class="p" data-group-id="0615956102-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="2007457809-5">(</span><span class="p" data-group-id="2007457809-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2007457809-6">}</span><span class="p" data-group-id="2007457809-5">)</span><span class="w">
-</span><span class="p" data-group-id="2007457809-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2007457809-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_registration</span><span class="p" data-group-id="0615956102-5">(</span><span class="p" data-group-id="0615956102-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0615956102-6">}</span><span class="p" data-group-id="0615956102-5">)</span><span class="w">
+</span><span class="p" data-group-id="0615956102-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0615956102-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_deployment/1">
@@ -740,7 +769,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">delete_deployment(deployment)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L313" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L358" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -754,11 +783,11 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#delete_deployment/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_deployment</span><span class="p" data-group-id="3841245881-1">(</span><span class="n">deployment</span><span class="p" data-group-id="3841245881-1">)</span><span class="w">
-</span><span class="p" data-group-id="3841245881-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3841245881-3">%</span><span class="nc" data-group-id="3841245881-3">Deployment</span><span class="p" data-group-id="3841245881-3">{</span><span class="p" data-group-id="3841245881-3">}</span><span class="p" data-group-id="3841245881-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_deployment</span><span class="p" data-group-id="5313958880-1">(</span><span class="n">deployment</span><span class="p" data-group-id="5313958880-1">)</span><span class="w">
+</span><span class="p" data-group-id="5313958880-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5313958880-3">%</span><span class="nc" data-group-id="5313958880-3">Deployment</span><span class="p" data-group-id="5313958880-3">{</span><span class="p" data-group-id="5313958880-3">}</span><span class="p" data-group-id="5313958880-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_deployment</span><span class="p" data-group-id="3841245881-4">(</span><span class="n">deployment</span><span class="p" data-group-id="3841245881-4">)</span><span class="w">
-</span><span class="p" data-group-id="3841245881-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3841245881-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_deployment</span><span class="p" data-group-id="5313958880-4">(</span><span class="n">deployment</span><span class="p" data-group-id="5313958880-4">)</span><span class="w">
+</span><span class="p" data-group-id="5313958880-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5313958880-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_institution/1">
@@ -770,7 +799,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">delete_institution(institution)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L88" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -784,10 +813,10 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#delete_institution/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_institution</span><span class="p" data-group-id="1163925497-1">(</span><span class="n">institution</span><span class="p" data-group-id="1163925497-1">)</span><span class="w">
-</span><span class="p" data-group-id="1163925497-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1163925497-3">%</span><span class="nc" data-group-id="1163925497-3">Institution</span><span class="p" data-group-id="1163925497-3">{</span><span class="p" data-group-id="1163925497-3">}</span><span class="p" data-group-id="1163925497-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_institution</span><span class="p" data-group-id="1163925497-4">(</span><span class="n">institution</span><span class="p" data-group-id="1163925497-4">)</span><span class="w">
-</span><span class="p" data-group-id="1163925497-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1163925497-6">%</span><span class="nc" data-group-id="1163925497-6">Ecto.Changeset</span><span class="p" data-group-id="1163925497-6">{</span><span class="p" data-group-id="1163925497-6">}</span><span class="p" data-group-id="1163925497-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_institution</span><span class="p" data-group-id="4559790327-1">(</span><span class="n">institution</span><span class="p" data-group-id="4559790327-1">)</span><span class="w">
+</span><span class="p" data-group-id="4559790327-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4559790327-3">%</span><span class="nc" data-group-id="4559790327-3">Institution</span><span class="p" data-group-id="4559790327-3">{</span><span class="p" data-group-id="4559790327-3">}</span><span class="p" data-group-id="4559790327-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_institution</span><span class="p" data-group-id="4559790327-4">(</span><span class="n">institution</span><span class="p" data-group-id="4559790327-4">)</span><span class="w">
+</span><span class="p" data-group-id="4559790327-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4559790327-6">%</span><span class="nc" data-group-id="4559790327-6">Ecto.Changeset</span><span class="p" data-group-id="4559790327-6">{</span><span class="p" data-group-id="4559790327-6">}</span><span class="p" data-group-id="4559790327-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_pending_registration/1">
@@ -799,7 +828,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">delete_pending_registration(pending_registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L435" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L480" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -813,10 +842,10 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#delete_pending_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_pending_registration</span><span class="p" data-group-id="3643904134-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="3643904134-1">)</span><span class="w">
-</span><span class="p" data-group-id="3643904134-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3643904134-3">%</span><span class="nc" data-group-id="3643904134-3">PendingRegistration</span><span class="p" data-group-id="3643904134-3">{</span><span class="p" data-group-id="3643904134-3">}</span><span class="p" data-group-id="3643904134-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_pending_registration</span><span class="p" data-group-id="3643904134-4">(</span><span class="n">pending_registration</span><span class="p" data-group-id="3643904134-4">)</span><span class="w">
-</span><span class="p" data-group-id="3643904134-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3643904134-6">%</span><span class="nc" data-group-id="3643904134-6">Ecto.Changeset</span><span class="p" data-group-id="3643904134-6">{</span><span class="p" data-group-id="3643904134-6">}</span><span class="p" data-group-id="3643904134-5">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_pending_registration</span><span class="p" data-group-id="5262264324-1">(</span><span class="n">pending_registration</span><span class="p" data-group-id="5262264324-1">)</span><span class="w">
+</span><span class="p" data-group-id="5262264324-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5262264324-3">%</span><span class="nc" data-group-id="5262264324-3">PendingRegistration</span><span class="p" data-group-id="5262264324-3">{</span><span class="p" data-group-id="5262264324-3">}</span><span class="p" data-group-id="5262264324-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_pending_registration</span><span class="p" data-group-id="5262264324-4">(</span><span class="n">pending_registration</span><span class="p" data-group-id="5262264324-4">)</span><span class="w">
+</span><span class="p" data-group-id="5262264324-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5262264324-6">%</span><span class="nc" data-group-id="5262264324-6">Ecto.Changeset</span><span class="p" data-group-id="5262264324-6">{</span><span class="p" data-group-id="5262264324-6">}</span><span class="p" data-group-id="5262264324-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_registration/1">
@@ -828,7 +857,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">delete_registration(registration)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L219" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L220" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -842,11 +871,11 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#delete_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="6347119692-1">(</span><span class="n">registration</span><span class="p" data-group-id="6347119692-1">)</span><span class="w">
-</span><span class="p" data-group-id="6347119692-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6347119692-3">%</span><span class="nc" data-group-id="6347119692-3">Registration</span><span class="p" data-group-id="6347119692-3">{</span><span class="p" data-group-id="6347119692-3">}</span><span class="p" data-group-id="6347119692-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="7561421842-1">(</span><span class="n">registration</span><span class="p" data-group-id="7561421842-1">)</span><span class="w">
+</span><span class="p" data-group-id="7561421842-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7561421842-3">%</span><span class="nc" data-group-id="7561421842-3">Registration</span><span class="p" data-group-id="7561421842-3">{</span><span class="p" data-group-id="7561421842-3">}</span><span class="p" data-group-id="7561421842-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="6347119692-4">(</span><span class="n">registration</span><span class="p" data-group-id="6347119692-4">)</span><span class="w">
-</span><span class="p" data-group-id="6347119692-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6347119692-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_registration</span><span class="p" data-group-id="7561421842-4">(</span><span class="n">registration</span><span class="p" data-group-id="7561421842-4">)</span><span class="w">
+</span><span class="p" data-group-id="7561421842-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7561421842-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="find_or_create_registration/1">
@@ -858,7 +887,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">find_or_create_registration(registration_attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L175" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L176" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -872,8 +901,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#find_or_create_registration/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">find_or_create_registration</span><span class="p" data-group-id="4941538746-1">(</span><span class="p" data-group-id="4941538746-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="4941538746-2">}</span><span class="p" data-group-id="4941538746-1">)</span><span class="w">
-</span><span class="p" data-group-id="4941538746-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4941538746-4">%</span><span class="nc" data-group-id="4941538746-4">Registration</span><span class="p" data-group-id="4941538746-4">{</span><span class="p" data-group-id="4941538746-4">}</span><span class="p" data-group-id="4941538746-3">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">find_or_create_registration</span><span class="p" data-group-id="9723489763-1">(</span><span class="p" data-group-id="9723489763-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="9723489763-2">}</span><span class="p" data-group-id="9723489763-1">)</span><span class="w">
+</span><span class="p" data-group-id="9723489763-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9723489763-4">%</span><span class="nc" data-group-id="9723489763-4">Registration</span><span class="p" data-group-id="9723489763-4">{</span><span class="p" data-group-id="9723489763-4">}</span><span class="p" data-group-id="9723489763-3">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_deployment!/1">
@@ -885,7 +914,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">get_deployment!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L260" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L305" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -899,8 +928,8 @@ to a new or existing institution if one with a similar url already exists.</p><p
   <a href="#get_deployment!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment!</span><span class="p" data-group-id="6495783083-1">(</span><span class="mi">123</span><span class="p" data-group-id="6495783083-1">)</span><span class="w">
-</span><span class="p" data-group-id="6495783083-2">%</span><span class="nc" data-group-id="6495783083-2">Deployment</span><span class="p" data-group-id="6495783083-2">{</span><span class="p" data-group-id="6495783083-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_deployment!</span><span class="p" data-group-id="7653459278-1">(</span><span class="mi">123</span><span class="p" data-group-id="7653459278-1">)</span><span class="w">
+</span><span class="p" data-group-id="7653459278-2">%</span><span class="nc" data-group-id="7653459278-2">Deployment</span><span class="p" data-group-id="7653459278-2">{</span><span class="p" data-group-id="7653459278-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_institution!/1">
@@ -912,7 +941,7 @@ to a new or existing institution if one with a similar url already exists.</p><p
     </a>
     <h1 class="signature">get_institution!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L33" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -927,9 +956,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_institution!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution!</span><span class="p" data-group-id="6452048869-1">(</span><span class="mi">123</span><span class="p" data-group-id="6452048869-1">)</span><span class="w">
-</span><span class="p" data-group-id="6452048869-2">%</span><span class="nc" data-group-id="6452048869-2">Institution</span><span class="p" data-group-id="6452048869-2">{</span><span class="p" data-group-id="6452048869-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution!</span><span class="p" data-group-id="6452048869-3">(</span><span class="mi">456</span><span class="p" data-group-id="6452048869-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution!</span><span class="p" data-group-id="7806919249-1">(</span><span class="mi">123</span><span class="p" data-group-id="7806919249-1">)</span><span class="w">
+</span><span class="p" data-group-id="7806919249-2">%</span><span class="nc" data-group-id="7806919249-2">Institution</span><span class="p" data-group-id="7806919249-2">{</span><span class="p" data-group-id="7806919249-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution!</span><span class="p" data-group-id="7806919249-3">(</span><span class="mi">456</span><span class="p" data-group-id="7806919249-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -942,7 +971,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_institution_by!(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L50" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -957,11 +986,11 @@ more than one matches the criteria.</p><h2 id="get_institution_by!/1-examples" c
   <a href="#get_institution_by!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="8542179604-1">(</span><span class="p" data-group-id="8542179604-2">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My institution&quot;</span><span class="p" data-group-id="8542179604-2">}</span><span class="p" data-group-id="8542179604-1">)</span><span class="w">
-</span><span class="p" data-group-id="8542179604-3">%</span><span class="nc" data-group-id="8542179604-3">Institution</span><span class="p" data-group-id="8542179604-3">{</span><span class="p" data-group-id="8542179604-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="8542179604-4">(</span><span class="p" data-group-id="8542179604-5">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bad name&quot;</span><span class="p" data-group-id="8542179604-5">}</span><span class="p" data-group-id="8542179604-4">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="3505952638-1">(</span><span class="p" data-group-id="3505952638-2">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;My institution&quot;</span><span class="p" data-group-id="3505952638-2">}</span><span class="p" data-group-id="3505952638-1">)</span><span class="w">
+</span><span class="p" data-group-id="3505952638-3">%</span><span class="nc" data-group-id="3505952638-3">Institution</span><span class="p" data-group-id="3505952638-3">{</span><span class="p" data-group-id="3505952638-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="3505952638-4">(</span><span class="p" data-group-id="3505952638-5">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;bad name&quot;</span><span class="p" data-group-id="3505952638-5">}</span><span class="p" data-group-id="3505952638-4">)</span><span class="w">
 </span><span class="no">nil</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="8542179604-6">(</span><span class="p" data-group-id="8542179604-7">%{</span><span class="ss">country_code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;US&quot;</span><span class="p" data-group-id="8542179604-7">}</span><span class="p" data-group-id="8542179604-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_by!</span><span class="p" data-group-id="3505952638-6">(</span><span class="p" data-group-id="3505952638-7">%{</span><span class="ss">country_code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;US&quot;</span><span class="p" data-group-id="3505952638-7">}</span><span class="p" data-group-id="3505952638-6">)</span><span class="w">
 </span><span class="nc">Ecto.MultipleResultsError</span></code></pre>
   </section>
 </section>
@@ -974,7 +1003,7 @@ more than one matches the criteria.</p><h2 id="get_institution_by!/1-examples" c
     </a>
     <h1 class="signature">get_institution_registration_deployment(issuer, client_id, deployment_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L523" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L568" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -988,9 +1017,9 @@ more than one matches the criteria.</p><h2 id="get_institution_by!/1-examples" c
   <a href="#get_institution_registration_deployment/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_registration_deployment</span><span class="p" data-group-id="9691093188-1">(</span><span class="s">&quot;some-issuer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-client-id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-deployment-id&quot;</span><span class="p" data-group-id="9691093188-1">)</span><span class="w">
-</span><span class="p" data-group-id="9691093188-2">{</span><span class="p" data-group-id="9691093188-3">%</span><span class="nc" data-group-id="9691093188-3">Institution</span><span class="p" data-group-id="9691093188-3">{</span><span class="p" data-group-id="9691093188-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9691093188-4">%</span><span class="nc" data-group-id="9691093188-4">Registration</span><span class="p" data-group-id="9691093188-4">{</span><span class="p" data-group-id="9691093188-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9691093188-5">%</span><span class="nc" data-group-id="9691093188-5">Deployment</span><span class="p" data-group-id="9691093188-5">{</span><span class="p" data-group-id="9691093188-5">}</span><span class="p" data-group-id="9691093188-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_registration_deployment</span><span class="p" data-group-id="9691093188-6">(</span><span class="s">&quot;some-issuer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-client-id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-deployment-id&quot;</span><span class="p" data-group-id="9691093188-6">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_registration_deployment</span><span class="p" data-group-id="8595197594-1">(</span><span class="s">&quot;some-issuer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-client-id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-deployment-id&quot;</span><span class="p" data-group-id="8595197594-1">)</span><span class="w">
+</span><span class="p" data-group-id="8595197594-2">{</span><span class="p" data-group-id="8595197594-3">%</span><span class="nc" data-group-id="8595197594-3">Institution</span><span class="p" data-group-id="8595197594-3">{</span><span class="p" data-group-id="8595197594-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8595197594-4">%</span><span class="nc" data-group-id="8595197594-4">Registration</span><span class="p" data-group-id="8595197594-4">{</span><span class="p" data-group-id="8595197594-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8595197594-5">%</span><span class="nc" data-group-id="8595197594-5">Deployment</span><span class="p" data-group-id="8595197594-5">{</span><span class="p" data-group-id="8595197594-5">}</span><span class="p" data-group-id="8595197594-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_institution_registration_deployment</span><span class="p" data-group-id="8595197594-6">(</span><span class="s">&quot;some-issuer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-client-id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;some-deployment-id&quot;</span><span class="p" data-group-id="8595197594-6">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -1003,7 +1032,7 @@ more than one matches the criteria.</p><h2 id="get_institution_by!/1-examples" c
     </a>
     <h1 class="signature">get_pending_registration(issuer, client_id, deployment_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L379" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L424" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1018,9 +1047,9 @@ Returns nil if the PendingRegistration does not exist.</p><h2 id="get_pending_re
   <a href="#get_pending_registration/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration</span><span class="p" data-group-id="7938921230-1">(</span><span class="n">issuer</span><span class="p">,</span><span class="w"> </span><span class="n">client_id</span><span class="p">,</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="7938921230-1">)</span><span class="w">
-</span><span class="p" data-group-id="7938921230-2">%</span><span class="nc" data-group-id="7938921230-2">PendingRegistration</span><span class="p" data-group-id="7938921230-2">{</span><span class="p" data-group-id="7938921230-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration</span><span class="p" data-group-id="7938921230-3">(</span><span class="n">issuer</span><span class="p">,</span><span class="w"> </span><span class="n">client_id</span><span class="p">,</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="7938921230-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration</span><span class="p" data-group-id="2044617106-1">(</span><span class="n">issuer</span><span class="p">,</span><span class="w"> </span><span class="n">client_id</span><span class="p">,</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="2044617106-1">)</span><span class="w">
+</span><span class="p" data-group-id="2044617106-2">%</span><span class="nc" data-group-id="2044617106-2">PendingRegistration</span><span class="p" data-group-id="2044617106-2">{</span><span class="p" data-group-id="2044617106-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration</span><span class="p" data-group-id="2044617106-3">(</span><span class="n">issuer</span><span class="p">,</span><span class="w"> </span><span class="n">client_id</span><span class="p">,</span><span class="w"> </span><span class="n">deployment_id</span><span class="p" data-group-id="2044617106-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -1033,7 +1062,7 @@ Returns nil if the PendingRegistration does not exist.</p><h2 id="get_pending_re
     </a>
     <h1 class="signature">get_pending_registration!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L368" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L413" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1048,9 +1077,9 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_pending_registration!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration!</span><span class="p" data-group-id="7336022465-1">(</span><span class="mi">123</span><span class="p" data-group-id="7336022465-1">)</span><span class="w">
-</span><span class="p" data-group-id="7336022465-2">%</span><span class="nc" data-group-id="7336022465-2">PendingRegistration</span><span class="p" data-group-id="7336022465-2">{</span><span class="p" data-group-id="7336022465-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration!</span><span class="p" data-group-id="7336022465-3">(</span><span class="mi">456</span><span class="p" data-group-id="7336022465-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration!</span><span class="p" data-group-id="0737778060-1">(</span><span class="mi">123</span><span class="p" data-group-id="0737778060-1">)</span><span class="w">
+</span><span class="p" data-group-id="0737778060-2">%</span><span class="nc" data-group-id="0737778060-2">PendingRegistration</span><span class="p" data-group-id="0737778060-2">{</span><span class="p" data-group-id="0737778060-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_pending_registration!</span><span class="p" data-group-id="0737778060-3">(</span><span class="mi">456</span><span class="p" data-group-id="0737778060-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -1063,7 +1092,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_registration!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L127" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L128" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1077,8 +1106,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_registration!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="7285172446-1">(</span><span class="mi">123</span><span class="p" data-group-id="7285172446-1">)</span><span class="w">
-</span><span class="p" data-group-id="7285172446-2">%</span><span class="nc" data-group-id="7285172446-2">Registration</span><span class="p" data-group-id="7285172446-2">{</span><span class="p" data-group-id="7285172446-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration!</span><span class="p" data-group-id="3358992302-1">(</span><span class="mi">123</span><span class="p" data-group-id="3358992302-1">)</span><span class="w">
+</span><span class="p" data-group-id="3358992302-2">%</span><span class="nc" data-group-id="3358992302-2">Registration</span><span class="p" data-group-id="3358992302-2">{</span><span class="p" data-group-id="3358992302-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_registration_by_issuer_client_id/2">
@@ -1090,7 +1119,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_registration_by_issuer_client_id(issuer, client_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L330" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L375" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1112,7 +1141,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">get_registration_preloaded!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L140" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L141" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1126,8 +1155,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#get_registration_preloaded!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration_preloaded!</span><span class="p" data-group-id="9933959560-1">(</span><span class="mi">123</span><span class="p" data-group-id="9933959560-1">)</span><span class="w">
-</span><span class="p" data-group-id="9933959560-2">%</span><span class="nc" data-group-id="9933959560-2">Registration</span><span class="p" data-group-id="9933959560-2">{</span><span class="p" data-group-id="9933959560-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_registration_preloaded!</span><span class="p" data-group-id="6139292236-1">(</span><span class="mi">123</span><span class="p" data-group-id="6139292236-1">)</span><span class="w">
+</span><span class="p" data-group-id="6139292236-2">%</span><span class="nc" data-group-id="6139292236-2">Registration</span><span class="p" data-group-id="6139292236-2">{</span><span class="p" data-group-id="6139292236-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_deployments/0">
@@ -1139,7 +1168,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_deployments()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L245" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L290" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1153,8 +1182,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_deployments/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_deployments</span><span class="p" data-group-id="8570737956-1">(</span><span class="p" data-group-id="8570737956-1">)</span><span class="w">
-</span><span class="p" data-group-id="8570737956-2">[</span><span class="p" data-group-id="8570737956-3">%</span><span class="nc" data-group-id="8570737956-3">Deployment</span><span class="p" data-group-id="8570737956-3">{</span><span class="p" data-group-id="8570737956-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="8570737956-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_deployments</span><span class="p" data-group-id="5486861584-1">(</span><span class="p" data-group-id="5486861584-1">)</span><span class="w">
+</span><span class="p" data-group-id="5486861584-2">[</span><span class="p" data-group-id="5486861584-3">%</span><span class="nc" data-group-id="5486861584-3">Deployment</span><span class="p" data-group-id="5486861584-3">{</span><span class="p" data-group-id="5486861584-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5486861584-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_institutions/0">
@@ -1166,7 +1195,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_institutions()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L20" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L21" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1180,8 +1209,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_institutions/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_institutions</span><span class="p" data-group-id="5854619579-1">(</span><span class="p" data-group-id="5854619579-1">)</span><span class="w">
-</span><span class="p" data-group-id="5854619579-2">[</span><span class="p" data-group-id="5854619579-3">%</span><span class="nc" data-group-id="5854619579-3">Institution</span><span class="p" data-group-id="5854619579-3">{</span><span class="p" data-group-id="5854619579-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5854619579-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_institutions</span><span class="p" data-group-id="7426614385-1">(</span><span class="p" data-group-id="7426614385-1">)</span><span class="w">
+</span><span class="p" data-group-id="7426614385-2">[</span><span class="p" data-group-id="7426614385-3">%</span><span class="nc" data-group-id="7426614385-3">Institution</span><span class="p" data-group-id="7426614385-3">{</span><span class="p" data-group-id="7426614385-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7426614385-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_pending_registrations/0">
@@ -1193,7 +1222,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_pending_registrations()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L345" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L390" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1207,8 +1236,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_pending_registrations/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_pending_registrations</span><span class="p" data-group-id="3702054923-1">(</span><span class="p" data-group-id="3702054923-1">)</span><span class="w">
-</span><span class="p" data-group-id="3702054923-2">[</span><span class="p" data-group-id="3702054923-3">%</span><span class="nc" data-group-id="3702054923-3">PendingRegistration</span><span class="p" data-group-id="3702054923-3">{</span><span class="p" data-group-id="3702054923-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3702054923-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_pending_registrations</span><span class="p" data-group-id="0867612989-1">(</span><span class="p" data-group-id="0867612989-1">)</span><span class="w">
+</span><span class="p" data-group-id="0867612989-2">[</span><span class="p" data-group-id="0867612989-3">%</span><span class="nc" data-group-id="0867612989-3">PendingRegistration</span><span class="p" data-group-id="0867612989-3">{</span><span class="p" data-group-id="0867612989-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0867612989-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_registrations/1">
@@ -1222,7 +1251,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">list_registrations(opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L110" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L111" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1236,8 +1265,8 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#list_registrations/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_registrations</span><span class="p" data-group-id="6334943280-1">(</span><span class="p" data-group-id="6334943280-1">)</span><span class="w">
-</span><span class="p" data-group-id="6334943280-2">[</span><span class="p" data-group-id="6334943280-3">%</span><span class="nc" data-group-id="6334943280-3">Registration</span><span class="p" data-group-id="6334943280-3">{</span><span class="p" data-group-id="6334943280-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6334943280-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_registrations</span><span class="p" data-group-id="2878811833-1">(</span><span class="p" data-group-id="2878811833-1">)</span><span class="w">
+</span><span class="p" data-group-id="2878811833-2">[</span><span class="p" data-group-id="2878811833-3">%</span><span class="nc" data-group-id="2878811833-3">Registration</span><span class="p" data-group-id="2878811833-3">{</span><span class="p" data-group-id="2878811833-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2878811833-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="maybe_create_deployment/1">
@@ -1249,7 +1278,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">maybe_create_deployment(attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L280" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L325" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1271,7 +1300,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">search_institutions_matching(query)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L541" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L586" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1293,7 +1322,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_deployment(deployment, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L295" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L340" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1307,11 +1336,11 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_deployment/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_deployment</span><span class="p" data-group-id="5110585921-1">(</span><span class="n">deployment</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5110585921-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5110585921-2">}</span><span class="p" data-group-id="5110585921-1">)</span><span class="w">
-</span><span class="p" data-group-id="5110585921-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5110585921-4">%</span><span class="nc" data-group-id="5110585921-4">Deployment</span><span class="p" data-group-id="5110585921-4">{</span><span class="p" data-group-id="5110585921-4">}</span><span class="p" data-group-id="5110585921-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_deployment</span><span class="p" data-group-id="1781144202-1">(</span><span class="n">deployment</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1781144202-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1781144202-2">}</span><span class="p" data-group-id="1781144202-1">)</span><span class="w">
+</span><span class="p" data-group-id="1781144202-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1781144202-4">%</span><span class="nc" data-group-id="1781144202-4">Deployment</span><span class="p" data-group-id="1781144202-4">{</span><span class="p" data-group-id="1781144202-4">}</span><span class="p" data-group-id="1781144202-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_deployment</span><span class="p" data-group-id="5110585921-5">(</span><span class="n">deployment</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5110585921-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5110585921-6">}</span><span class="p" data-group-id="5110585921-5">)</span><span class="w">
-</span><span class="p" data-group-id="5110585921-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5110585921-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_deployment</span><span class="p" data-group-id="1781144202-5">(</span><span class="n">deployment</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1781144202-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1781144202-6">}</span><span class="p" data-group-id="1781144202-5">)</span><span class="w">
+</span><span class="p" data-group-id="1781144202-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1781144202-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_institution/2">
@@ -1323,7 +1352,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_institution(institution, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L73" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L74" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1337,10 +1366,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_institution/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_institution</span><span class="p" data-group-id="8246860681-1">(</span><span class="n">institution</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8246860681-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="8246860681-2">}</span><span class="p" data-group-id="8246860681-1">)</span><span class="w">
-</span><span class="p" data-group-id="8246860681-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8246860681-4">%</span><span class="nc" data-group-id="8246860681-4">Institution</span><span class="p" data-group-id="8246860681-4">{</span><span class="p" data-group-id="8246860681-4">}</span><span class="p" data-group-id="8246860681-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_institution</span><span class="p" data-group-id="8246860681-5">(</span><span class="n">institution</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8246860681-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="8246860681-6">}</span><span class="p" data-group-id="8246860681-5">)</span><span class="w">
-</span><span class="p" data-group-id="8246860681-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8246860681-8">%</span><span class="nc" data-group-id="8246860681-8">Ecto.Changeset</span><span class="p" data-group-id="8246860681-8">{</span><span class="p" data-group-id="8246860681-8">}</span><span class="p" data-group-id="8246860681-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_institution</span><span class="p" data-group-id="4322067288-1">(</span><span class="n">institution</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4322067288-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="4322067288-2">}</span><span class="p" data-group-id="4322067288-1">)</span><span class="w">
+</span><span class="p" data-group-id="4322067288-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4322067288-4">%</span><span class="nc" data-group-id="4322067288-4">Institution</span><span class="p" data-group-id="4322067288-4">{</span><span class="p" data-group-id="4322067288-4">}</span><span class="p" data-group-id="4322067288-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_institution</span><span class="p" data-group-id="4322067288-5">(</span><span class="n">institution</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4322067288-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4322067288-6">}</span><span class="p" data-group-id="4322067288-5">)</span><span class="w">
+</span><span class="p" data-group-id="4322067288-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4322067288-8">%</span><span class="nc" data-group-id="4322067288-8">Ecto.Changeset</span><span class="p" data-group-id="4322067288-8">{</span><span class="p" data-group-id="4322067288-8">}</span><span class="p" data-group-id="4322067288-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_pending_registration/2">
@@ -1352,7 +1381,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_pending_registration(pending_registration, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L421" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L466" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1366,10 +1395,10 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_pending_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_pending_registration</span><span class="p" data-group-id="1266138460-1">(</span><span class="n">pending_registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1266138460-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1266138460-2">}</span><span class="p" data-group-id="1266138460-1">)</span><span class="w">
-</span><span class="p" data-group-id="1266138460-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1266138460-4">%</span><span class="nc" data-group-id="1266138460-4">PendingRegistration</span><span class="p" data-group-id="1266138460-4">{</span><span class="p" data-group-id="1266138460-4">}</span><span class="p" data-group-id="1266138460-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_pending_registration</span><span class="p" data-group-id="1266138460-5">(</span><span class="n">pending_registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1266138460-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1266138460-6">}</span><span class="p" data-group-id="1266138460-5">)</span><span class="w">
-</span><span class="p" data-group-id="1266138460-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1266138460-8">%</span><span class="nc" data-group-id="1266138460-8">Ecto.Changeset</span><span class="p" data-group-id="1266138460-8">{</span><span class="p" data-group-id="1266138460-8">}</span><span class="p" data-group-id="1266138460-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_pending_registration</span><span class="p" data-group-id="7977319282-1">(</span><span class="n">pending_registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7977319282-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7977319282-2">}</span><span class="p" data-group-id="7977319282-1">)</span><span class="w">
+</span><span class="p" data-group-id="7977319282-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7977319282-4">%</span><span class="nc" data-group-id="7977319282-4">PendingRegistration</span><span class="p" data-group-id="7977319282-4">{</span><span class="p" data-group-id="7977319282-4">}</span><span class="p" data-group-id="7977319282-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_pending_registration</span><span class="p" data-group-id="7977319282-5">(</span><span class="n">pending_registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7977319282-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7977319282-6">}</span><span class="p" data-group-id="7977319282-5">)</span><span class="w">
+</span><span class="p" data-group-id="7977319282-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7977319282-8">%</span><span class="nc" data-group-id="7977319282-8">Ecto.Changeset</span><span class="p" data-group-id="7977319282-8">{</span><span class="p" data-group-id="7977319282-8">}</span><span class="p" data-group-id="7977319282-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_registration/2">
@@ -1381,7 +1410,7 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
     </a>
     <h1 class="signature">update_registration(registration, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L201" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/institutions.ex#L202" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1395,11 +1424,11 @@ Raises <a href="https://hexdocs.pm/ecto/3.7.1/Ecto.NoResultsError.html"><code cl
   <a href="#update_registration/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="1601723539-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1601723539-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1601723539-2">}</span><span class="p" data-group-id="1601723539-1">)</span><span class="w">
-</span><span class="p" data-group-id="1601723539-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1601723539-4">%</span><span class="nc" data-group-id="1601723539-4">Registration</span><span class="p" data-group-id="1601723539-4">{</span><span class="p" data-group-id="1601723539-4">}</span><span class="p" data-group-id="1601723539-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="1189085179-1">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1189085179-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1189085179-2">}</span><span class="p" data-group-id="1189085179-1">)</span><span class="w">
+</span><span class="p" data-group-id="1189085179-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1189085179-4">%</span><span class="nc" data-group-id="1189085179-4">Registration</span><span class="p" data-group-id="1189085179-4">{</span><span class="p" data-group-id="1189085179-4">}</span><span class="p" data-group-id="1189085179-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="1601723539-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1601723539-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1601723539-6">}</span><span class="p" data-group-id="1601723539-5">)</span><span class="w">
-</span><span class="p" data-group-id="1601723539-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1601723539-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_registration</span><span class="p" data-group-id="1189085179-5">(</span><span class="n">registration</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1189085179-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1189085179-6">}</span><span class="p" data-group-id="1189085179-5">)</span><span class="w">
+</span><span class="p" data-group-id="1189085179-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1189085179-7">}</span></code></pre>
   </section>
 </section>
 

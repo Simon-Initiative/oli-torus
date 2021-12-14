@@ -208,6 +208,7 @@ Oli.Help.Providers.FreshdeskHelp.html
 Oli.Ingest.RewireLinks.html
 Oli.Institutions.Institution.html
 Oli.Institutions.PendingRegistration.html
+Oli.Institutions.RegistrationBrowseOptions.html
 Oli.Institutions.html
 Oli.Interop.ApiKey.html
 Oli.Interop.Export.html
@@ -325,6 +326,8 @@ OliWeb.ActivityManageController.html
 OliWeb.ActivityManageView.html
 OliWeb.ActivityView.html
 OliWeb.Admin.AdminView.html
+OliWeb.Admin.RegistrationsTableModel.html
+OliWeb.Admin.RegistrationsView.html
 OliWeb.Api.ActivityBankController.html
 OliWeb.Api.ActivityController.BulkDocumentRequestBody.html
 OliWeb.Api.ActivityController.BulkDocumentResponse.html
@@ -628,8 +631,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-d96e3f83c5.js
-dist/sidebar_items-31bbfccc97.js
+dist/search_items-1b98e89fc1.js
+dist/sidebar_items-bbb53db595.js
 index.html
 license.html
 readme.html
