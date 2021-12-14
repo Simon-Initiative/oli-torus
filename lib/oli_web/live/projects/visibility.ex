@@ -82,7 +82,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                     <form phx-change="search" class="form-inline form-grow">
                       <%= text_input :search_field, :query, placeholder: "Search for users by email here",
                                     class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                                    autofocus: true, "phx-debounce": "300" %>
+                                    autofocus: true, "phx-debounce": "300", autocomplete: "off" %>
                       <%= hidden_input :search_field, :entity, value: "instructors" %>
                     </form>
                   </div>
