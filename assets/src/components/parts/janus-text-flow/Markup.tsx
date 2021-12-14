@@ -304,9 +304,9 @@ const Markup: React.FC<any> = ({
     case 'li':
       // eslint-disable-next-line
       let spanChildren: any[] = [];
-      children.map((child: any) => {
+      children.forEach((child: any) => {
         if (child.props.tag === 'p') {
-          child.props.children.map((child: any) => {
+          child.props.children.forEach((child: any) => {
             if (child.props.tag === 'span') {
               spanChildren.push(child);
             }
