@@ -23,6 +23,6 @@
 
   <div>
     <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
-  <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.registration_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
+  <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.registration_path(@conn, :show, @registration_id)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
   </div>
 <% end %>

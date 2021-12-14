@@ -4,10 +4,11 @@ defmodule Oli.Institutions do
   """
 
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
-  alias Oli.Institutions.Institution
-  alias Oli.Institutions.PendingRegistration
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+
+  alias Oli.Institutions.{Institution, RegistrationBrowseOptions, PendingRegistration}
   alias Oli.Lti_1p3.Tool.Registration
   alias Oli.Lti_1p3.Tool.Deployment
 
@@ -231,6 +232,50 @@ defmodule Oli.Institutions do
   """
   def change_registration(%Registration{} = registration, _attrs \\ %{}) do
     Registration.changeset(registration, %{})
+  end
+
+  def browse_registrations(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %RegistrationBrowseOptions{} = options
+      ) do
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        text_search = String.trim(options.text_search)
+
+        dynamic(
+          [s, d],
+          ilike(s.issuer, ^"%#{text_search}%") or
+            ilike(s.client_id, ^"%#{text_search}%") or
+            ilike(s.key_set_url, ^"%#{text_search}%") or
+            ilike(s.auth_token_url, ^"%#{text_search}%") or
+            ilike(s.auth_login_url, ^"%#{text_search}%") or
+            ilike(s.auth_server, ^"%#{text_search}%") or
+            ilike(d.deployment_id, ^"%#{text_search}%")
+        )
+      end
+
+    query =
+      Registration
+      |> join(:left, [r], d in Oli.Lti_1p3.Tool.Deployment, on: r.id == d.registration_id)
+      |> where(^filter_by_text)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> group_by([r, _], r.id)
+      |> select_merge([r, d], %{
+        deployments_count: count(d.registration_id),
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :deployments_count -> order_by(query, [_, d], {^direction, count(d.registration_id)})
+        _ -> order_by(query, [r, _], {^direction, field(r, ^field)})
+      end
+
+    Repo.all(query)
   end
 
   @doc """

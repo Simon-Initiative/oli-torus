@@ -11,6 +11,7 @@
 - Fix a bug that resulted in products being able to be created with invalid grace period days
 - Fix Open and Free section creation when done through the admin panel
 - Fix an issue where LTI 1.3 deployments should represent individual institutions
+- Move LTI 1.3 registrations listing to live view table with search, sorting and paging
 
 ### Enhancements
 

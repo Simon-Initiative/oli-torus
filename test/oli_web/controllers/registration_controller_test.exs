@@ -128,7 +128,8 @@ defmodule OliWeb.RegistrationControllerTest do
           Routes.registration_path(conn, :delete, registration)
         )
 
-      assert redirected_to(conn) == Routes.registration_path(conn, :index)
+      assert redirected_to(conn) ==
+               Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)
 
       assert_raise Ecto.NoResultsError, fn ->
         recycle(conn)
